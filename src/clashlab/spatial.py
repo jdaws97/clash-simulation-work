@@ -6,6 +6,7 @@ feedback. It does not supply Clash entity adapters or claim game fidelity.
 
 from collections import defaultdict, deque
 from copy import deepcopy
+from functools import lru_cache
 from math import floor, hypot
 
 from .spell_visibility import untargetable_until
@@ -41,6 +42,21 @@ def target_distance(position, target):
 
 def ground_attack_point(cell, target, attack_range):
     """Find an in-cell point that reaches a footprint with a short melee range."""
+    return _ground_attack_point(
+        tuple(cell),
+        target["x"],
+        target["y"],
+        target["width"],
+        target["height"],
+        attack_range,
+    )
+
+
+@lru_cache(maxsize=65536)
+def _ground_attack_point(cell, x, y, width, height, attack_range):
+    # Pure geometry only. Moving/resized targets and changed ranges use new
+    # keys; live wall HP, path costs and obstruction eligibility are not cached.
+    target = {"x": x, "y": y, "width": width, "height": height}
     point = cell[0] + 0.5, cell[1] + 0.5
     if target_distance(point, target) <= attack_range + EPSILON:
         return point
@@ -73,6 +89,7 @@ def _blocked(actors, time):
 def _active(actor, time):
     return (
         actor["hp"] > 0
+        and not actor.get("_recalled", False)
         and actor["spawn_seconds"] != "controlled"
         and actor["spawn_seconds"] <= time + EPSILON
     )
@@ -215,6 +232,10 @@ def _route_length(actor, route):
 def _weapon_range_boundary(actors, motions, time, next_time, excluded_sources):
     """Resolve positive range entries without mutating routes or target locks."""
     active = [actor for actor in actors.values() if _active(actor, time)]
+    # All trajectories and actor categories are fixed for this one query.
+    # Reuse the coarse candidate list across weapons with the same categories;
+    # retain active order and still apply every live eligibility predicate.
+    candidate_pools = {}
     for source in active:
         if (
             source["damage"] <= 0
@@ -225,7 +246,23 @@ def _weapon_range_boundary(actors, motions, time, next_time, excluded_sources):
             continue
         source_route, source_speed = motions.get(source["id"], ([], 0))
         minimum_range = source.get("_minimum_range", 0)
-        for target in active:
+        key = (
+            source["team"],
+            tuple(source["target_priorities"]),
+            tuple(source["target_layers"]),
+        )
+        if key not in candidate_pools:
+            candidate_pools[key] = [
+                target
+                for target in active
+                if target["team"] != source["team"]
+                and target["kind"] in source["target_priorities"]
+                and (
+                    target["layer"] in source["target_layers"]
+                    or "spell_decoy_model" in target
+                )
+            ]
+        for target in candidate_pools[key]:
             if not _eligible(source, target, time):
                 continue
             target_route, target_speed = motions.get(target["id"], ([], 0))
@@ -257,8 +294,16 @@ def _weapon_range_boundary(actors, motions, time, next_time, excluded_sources):
 def _eligible(actor, target, time):
     return (
         target["team"] != actor["team"]
+        and (
+            not actor.get("_totem_forced_target")
+            or target["id"] == actor["_totem_forced_target"]
+        )
+        and (
+            not actor.get("_recipe_priority_targets")
+            or target["id"] in actor["_recipe_priority_targets"]
+        )
         and target["kind"] in actor["target_priorities"]
-        and target["layer"] in actor["target_layers"]
+        and (target["layer"] in actor["target_layers"] or "spell_decoy_model" in target)
         and _active(target, time)
         and untargetable_until(target) <= time + EPSILON
     )
@@ -390,7 +435,7 @@ def _load_actors(specification, width, height):
         spawn = require(actor, "spawn_seconds")
         if spawn != "controlled":
             number(spawn, "spawn time", 0)
-        elif actor["movement"] == "stationary":
+        elif actor["movement"] == "stationary" and "spell_decoy_model" not in actor:
             raise InputError("Only moving units can await a controlled deployment")
         number(require(actor, "damage"), "damage per hit", 0)
         number(require(actor, "attack_interval_seconds"), "attack interval", EPSILON)
@@ -434,10 +479,18 @@ def _load_actors(specification, width, height):
         if actor["movement"] == "stationary":
             if actor["speed"] != 0:
                 raise InputError("Stationary actors need zero movement speed")
-            for field, maximum in (("x", width), ("y", height)):
-                integer(require(actor, field), field, 0, maximum - 1)
-            for field in ("width", "height"):
-                integer(require(actor, field), field, 1)
+            if "spell_decoy_model" in actor:
+                if actor["width"] != 0 or actor["height"] != 0 or actor["blocking"]:
+                    raise InputError(
+                        "Totem reserves must be nonblocking stationary points"
+                    )
+                number(actor["x"], "Totem x", 0, width - EPSILON)
+                number(actor["y"], "Totem y", 0, height - EPSILON)
+            else:
+                for field, maximum in (("x", width), ("y", height)):
+                    integer(require(actor, field), field, 0, maximum - 1)
+                for field in ("width", "height"):
+                    integer(require(actor, field), field, 1)
         else:
             actor_width = number(require(actor, "width"), "moving actor width", 0)
             actor_height = number(require(actor, "height"), "moving actor height", 0)
@@ -717,7 +770,7 @@ def simulate_spatial(specification, controller=None, termination=None):
     from .guardians import GuardianCombat, validate_guardian_deployment
     from .guardian_rules import RULESET as GUARDIAN_RULESET, RULES as GUARDIAN_RULES
     from .reinforcements import ReinforcementCombat
-    from .siege_machines import SiegeCombat
+    from .siege_extensions import recipe_siege_runtime
     from .siege_rules import RULESET as SIEGE_RULESET, RULES as SIEGE_RULES
     from .pet_rules import RULESET as PET_RULESET, RULES as PET_RULES
     from .advanced_defense_rules import (
@@ -744,6 +797,9 @@ def simulate_spatial(specification, controller=None, termination=None):
     from .battle_continuation import runtime_continuation_reasons
     from .damage_receipts import DamageReceipts
     from .hero_pets import PetCombat, validate_pet_deployment
+    from .recipe_troops import RecipeTroopCombat, recipe_status_eligible
+    from .defense_variants import GearedCannonCombat
+    from .electro_titans import ElectroTitanCombat
 
     from .firespitters import FirespitterCombat
     from .firespitter_rules import (
@@ -859,6 +915,17 @@ def simulate_spatial(specification, controller=None, termination=None):
     )
     actors = _load_actors(specification, width, height)
     for actor in actors.values():
+        if "aura_model" in actor and (
+            ruleset
+            not in {HERO_ROSTER_RULESET, TERMINATION_RULESET, ATTACK_SPELL_RULESET}
+            or actor.get("entity_adapter", {}).get("entity") != "electro-titan"
+            or actor.get("entity_adapter", {}).get("attacking_extension_scope")
+            != "explicit_experimental_attacking_troop_extensions"
+        ):
+            raise InputError(
+                "Titan aura requires its compiled owner and explicit v27+ extension contract"
+            )
+    for actor in actors.values():
         if "duke_model" in actor and (
             actor.get("hero_model", {}).get("entity") != "dragon-duke"
         ):
@@ -877,6 +944,13 @@ def simulate_spatial(specification, controller=None, termination=None):
         giga_bomb_models
         or any(
             "multi_gear_model" in actor
+            or "revenge_model" in actor
+            or "geared_cannon_model" in actor
+            or (
+                actor.get("entity_adapter", {}).get("entity") == "x-bow"
+                and "weapon_ammunition" in actor
+            )
+            or actor.get("spell_tower_model", {}).get("mode") == "earthquake"
             or actor.get("attack_model", {}).get("kind") == FANOUT_PATTERN
             for actor in actors.values()
         )
@@ -903,7 +977,8 @@ def simulate_spatial(specification, controller=None, termination=None):
         or any(
             "siege_model" in actor
             or "payload_member_model" in actor
-            or actor.get("attack_model", {}).get("kind") == "siege_area"
+            or actor.get("attack_model", {}).get("kind")
+            in {"siege_area", "siege_extended"}
             for actor in actors.values()
         )
     ):
@@ -1716,12 +1791,14 @@ def simulate_spatial(specification, controller=None, termination=None):
         reinforcements = ReinforcementCombat(
             actors, specification["attacking_reinforcements"], width, height
         )
-        sieges = SiegeCombat(actors, select_target, reinforcements, width, height)
+        sieges = recipe_siege_runtime(
+            actors, select_target, reinforcements, width, height
+        )
         select_target = sieges.select_target
     elif any(
         "siege_model" in actor
         or "payload_member_model" in actor
-        or actor.get("attack_model", {}).get("kind") == "siege_area"
+        or actor.get("attack_model", {}).get("kind") in {"siege_area", "siege_extended"}
         for actor in actors.values()
     ):
         raise InputError(
@@ -1757,10 +1834,18 @@ def simulate_spatial(specification, controller=None, termination=None):
     attack_spells = None
     if ruleset == ATTACK_SPELL_RULESET:
         attack_spells = AttackSpellCombat(
-            require(specification, "attack_spell_models"), actors, town_halls.hazards
+            require(specification, "attack_spell_models"),
+            actors,
+            town_halls.hazards,
+            width,
+            height,
         )
     elif "attack_spell_models" in specification:
         raise InputError("Attacking spell models require the explicit v29 ruleset")
+    elif any("spell_decoy_model" in actor for actor in actors.values()):
+        raise InputError(
+            "Generated Totem actors require the explicit v29 spell runtime"
+        )
     hero_roster = None
     damage_receipts = None
     if ruleset in {HERO_ROSTER_RULESET, TERMINATION_RULESET, ATTACK_SPELL_RULESET}:
@@ -1769,7 +1854,7 @@ def simulate_spatial(specification, controller=None, termination=None):
         )
         heroes.extensions = hero_roster
         select_target = hero_roster.select_target
-        wall_routing.area_impacts = hero_roster.king.wall_impacts
+        wall_routing.area_impacts = hero_roster.wall_impacts
         damage_receipts = DamageReceipts(
             {
                 key
@@ -1787,12 +1872,24 @@ def simulate_spatial(specification, controller=None, termination=None):
             firespitters,
             deaths,
             attack_spells,
+            spell_towers,
+            sieges,
             town_halls.hazards if town_halls is not None else None,
         ):
             if runtime is not None:
                 runtime.damage_receipts = damage_receipts
     elif any("duke_model" in actor for actor in actors.values()):
         raise InputError("Duke runtime behavior requires the explicit v27 ruleset")
+
+    recipe_troops = RecipeTroopCombat(actors)
+    geared_cannons = GearedCannonCombat(actors, combat)
+    titans = ElectroTitanCombat(actors)
+    titans.damage_receipts = damage_receipts
+    if recipe_troops.models and hero_roster is None:
+        raise InputError("Recipe troop runtime requires the explicit v27+ ruleset")
+    recipe_troops.damage_receipts = damage_receipts
+    recipe_troops.base_selector = select_target
+    select_target = recipe_troops.select_target
 
     def apply_health(health_actors, damage, healing, at_time):
         settled_receipts = (
@@ -1834,8 +1931,13 @@ def simulate_spatial(specification, controller=None, termination=None):
         )
 
     def pet_status_impact(packet, target, impact_actors, at_time, impact_trace):
-        if hit_status is not None:
+        if (
+            hit_status is not None
+            and "spell_decoy_model" not in target
+            and recipe_status_eligible(impact_actors[packet["source"]], target)
+        ):
             hit_status.impact(packet, target, impact_actors, at_time, impact_trace)
+        recipe_troops.impact(packet, target, impact_actors, at_time, impact_trace)
         if pets is not None:
             pets.impact(packet, target, impact_actors, at_time, impact_trace)
 
@@ -1862,6 +1964,11 @@ def simulate_spatial(specification, controller=None, termination=None):
                     changed = True
             if spell_towers is not None:
                 spell_towers.prepare(actors, time, trace)
+                quake_damage = spell_towers.resolve(actors, time, trace)
+                if quake_damage:
+                    apply_health(actors, quake_damage, defaultdict(float), time)
+                    changed = True
+            geared_cannons.prepare(actors, time, trace)
             if town_halls is not None:
                 town_halls.settle(
                     actors, time, trace, deaths, effect_observer, apply_health
@@ -2035,6 +2142,7 @@ def simulate_spatial(specification, controller=None, termination=None):
             _validate_ground_positions(actors, blocked, time)
         if support is not None:
             support.prepare_targets(actors, time, blocked, width, height)
+        recipe_troops.prepare(time, trace)
         if ramp is not None:
             ramp.prepare(actors, time, select_target, blocked, width, height, trace)
         damage = defaultdict(float)
@@ -2071,6 +2179,9 @@ def simulate_spatial(specification, controller=None, termination=None):
             if target_distance(center(actor), target) > actor["range"] + EPSILON:
                 continue
             if combat is not None:
+                if actor["id"] in geared_cannons.models:
+                    geared_cannons.launch(actor, target, actors, time, trace)
+                    continue
                 if multi_gear is not None and actor["id"] in multi_gear.models:
                     multi_gear.launch(actor, target, actors, time, trace)
                     continue
@@ -2090,6 +2201,7 @@ def simulate_spatial(specification, controller=None, termination=None):
                     )
                 else:
                     combat.launch(actor, target, actors, time, trace)
+                    recipe_troops.launched(actor["id"], time, trace)
                     if heroes is not None:
                         heroes.weapon_launched(actor["id"], time, trace)
             elif target["immune_until"] <= time + EPSILON:
@@ -2154,6 +2266,10 @@ def simulate_spatial(specification, controller=None, termination=None):
         if pets is not None:
             for target_id, amount in pets.resolve_healing(actors, time, trace).items():
                 healing[target_id] += amount
+        for target_id, amount in recipe_troops.resolve(time, trace).items():
+            damage[target_id] += amount
+        for target_id, amount in titans.resolve(time, trace).items():
+            damage[target_id] += amount
         apply_health(actors, damage, healing, time)
         if hit_status is not None:
             hit_status.prepare(actors, time, trace)
@@ -2208,6 +2324,7 @@ def simulate_spatial(specification, controller=None, termination=None):
             builders.prepare(actors, time, trace)
         if pets is not None:
             pets.prepare(actors, time, trace)
+        recipe_troops.prepare(time, trace)
         terminal = None
         if termination is not None:
             if damage_receipts is not None:
@@ -2223,7 +2340,7 @@ def simulate_spatial(specification, controller=None, termination=None):
                     reinforcements=reinforcements,
                     pets=pets,
                     hazards=town_halls.hazards if town_halls is not None else None,
-                    hero_providers=(hero_roster,),
+                    hero_providers=(hero_roster, recipe_troops),
                     attack_spells=attack_spells,
                     damage_receipts=damage_receipts,
                 )
@@ -2336,6 +2453,12 @@ def simulate_spatial(specification, controller=None, termination=None):
         if terminal is not None or time >= duration - EPSILON:
             break
         boundaries = [duration, time + step, next_recording]
+        recipe_boundary = recipe_troops.next_boundary(time)
+        if recipe_boundary is not None:
+            boundaries.append(recipe_boundary)
+        titan_boundary = titans.next_boundary(time)
+        if titan_boundary is not None:
+            boundaries.append(titan_boundary)
         if effect_index < len(effects):
             boundaries.append(effects[effect_index]["time_seconds"])
         if controller is not None:
@@ -2410,6 +2533,12 @@ def simulate_spatial(specification, controller=None, termination=None):
                 if isinstance(value, (int, float)) and value > time + EPSILON
             )
         next_time = min(value for value in boundaries if value > time + EPSILON)
+        # Instantaneous tower pulses retain every representable future arrival.
+        # Their clock is a time, not the spatial membership tolerance.
+        if spell_towers is not None:
+            tower_boundary = spell_towers.next_boundary(time)
+            if tower_boundary is not None and time < tower_boundary < next_time:
+                next_time = tower_boundary
         blocked = _blocked(actors, time)
         routes = {}
         motions = {}
@@ -2439,7 +2568,12 @@ def simulate_spatial(specification, controller=None, termination=None):
                     routes[actor["id"]] = route
                     if route and speed > EPSILON:
                         arrival_delay = _route_length(actor, route) / speed
-                        if arrival_delay > EPSILON:
+                        # Range tolerance is a distance, not a duration. A fast
+                        # pursuer can still be outside inclusive weapon range
+                        # when its remaining arrival time is below EPSILON.
+                        # Keep every representable positive arrival so a moving
+                        # primary cannot repeatedly reopen that tiny gap.
+                        if time + arrival_delay > time:
                             next_time = min(next_time, time + arrival_delay)
                 if traps is not None:
                     crossing = traps.first_crossing_delay(
@@ -2613,6 +2747,7 @@ def simulate_spatial(specification, controller=None, termination=None):
         "ruleset": ruleset,
         **({"termination": termination.result()} if termination is not None else {}),
         "combat": combat.result() if combat is not None else None,
+        **({"recipe_troops": recipe_troops.result()} if recipe_troops.models else {}),
         "support": support.result() if support is not None else None,
         "weapon_ramps": ramp.result() if ramp is not None else None,
         "death_effects": deaths.result() if deaths is not None else None,
@@ -2646,8 +2781,12 @@ def simulate_spatial(specification, controller=None, termination=None):
             else {}
         ),
         **({"spell_towers": spell_towers.result()} if spell_towers is not None else {}),
+        **(
+            {"geared_cannons": geared_cannons.result()} if geared_cannons.models else {}
+        ),
         **({"builders": builders.result()} if builders is not None else {}),
         **({"garrisons": garrisons.result()} if garrisons is not None else {}),
+        **({"electro_titans": titans.result()} if titans.models else {}),
         **({"guardians": guardians.result()} if guardians is not None else {}),
         **({"sieges": sieges.result()} if sieges is not None else {}),
         **({"firespitters": firespitters.result()} if firespitters is not None else {}),

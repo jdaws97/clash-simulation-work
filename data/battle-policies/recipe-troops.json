@@ -1,0 +1,91 @@
+{
+  "source": "docs/RECIPE_TROOP_CONTRACTS.md",
+  "status": "explicit_uncalibrated_hypothesis",
+  "parameters": {
+    "balloon": {
+      "source": "docs/RECIPE_TROOP_CONTRACTS.md#balloon-and-rocket-balloon",
+      "status": "explicit_uncalibrated_hypothesis",
+      "stacking": "multiply_independent_shared_factors",
+      "death_radius_tiles": 1.2,
+      "death_delay_seconds": 0,
+      "death_scaling": "catalog_damage_times_scenario_modifier_no_temporary_buffs"
+    },
+    "rocket-balloon": {
+      "source": "docs/RECIPE_TROOP_CONTRACTS.md#balloon-and-rocket-balloon",
+      "status": "explicit_uncalibrated_hypothesis",
+      "stacking": "multiply_independent_shared_factors",
+      "death_radius_tiles": 1.2,
+      "death_delay_seconds": 0,
+      "death_scaling": "catalog_damage_times_scenario_modifier_no_temporary_buffs",
+      "boost_duration_seconds": 4,
+      "boost_movement_multiplier": 4,
+      "boost_clock": "elapsed_since_deployment_including_freeze"
+    },
+    "baby-dragon": {
+      "source": "docs/RECIPE_TROOP_CONTRACTS.md#baby-dragon",
+      "status": "explicit_uncalibrated_hypothesis",
+      "stacking": "multiply_independent_shared_factors",
+      "friendly_air_radius_tiles": 4.5,
+      "sample_interval_seconds": 0.1,
+      "membership": "sampled_center_distance_inclusive_hold_all_lifecycle_changes",
+      "sample_clock": "deployment_anchored_resample_on_reactivation",
+      "friendly_air_classes": ["troop", "hero", "pet", "siege", "guardian"]
+    },
+    "headhunter": {
+      "source": "docs/RECIPE_TROOP_CONTRACTS.md#headhunter",
+      "status": "explicit_uncalibrated_hypothesis",
+      "stacking": "multiply_independent_shared_factors",
+      "targeting": "visible_live_heroes_before_other_targets",
+      "target_layers": ["ground", "air"],
+      "slow_duration_seconds": 1,
+      "protection_policy": "damage_immunity_does_not_block_status",
+      "poison_duration_seconds": 1,
+      "poison_interval_seconds": 0.25,
+      "poison_ramp_seconds": 1,
+      "poison_refresh": "refresh_expiry_preserve_ramp_and_tick_clock",
+      "poison_stacking": "additive_per_source_explicit_hypothesis",
+      "poison_scaling": "catalog_max_dps_times_scenario_modifier_no_temporary_buffs",
+      "poison_targets": "enemy_units_only_including_heroes"
+    },
+    "super-wall-breaker": {
+      "source": "docs/RECIPE_TROOP_CONTRACTS.md#super-wall-breaker",
+      "status": "explicit_uncalibrated_hypothesis",
+      "stacking": "multiply_independent_shared_factors",
+      "death_radius_tiles": 1.6,
+      "death_delay_seconds": 0,
+      "death_scaling": "catalog_damage_times_scenario_modifier_no_temporary_buffs",
+      "wall_damage_multiplier": 40,
+      "targeting": "nearest_reachable_wall_then_structures_hypothesis",
+      "detonation": "attack_packet_then_consume_then_one_death_blast"
+    },
+    "apprentice-warden": {
+      "source": "docs/RECIPE_TROOP_CONTRACTS.md#apprentice-warden",
+      "status": "explicit_uncalibrated_hypothesis",
+      "stacking": "multiply_independent_shared_factors",
+      "sample_interval_seconds": 0.1,
+      "sample_clock": "deployment_anchored_resample_on_reactivation",
+      "aura_membership": "sampled_center_distance_inclusive",
+      "aura_classes": ["troop", "hero", "pet", "siege", "guardian"],
+      "aura_stacking": "strongest_apprentice_percentage_per_recipient",
+      "aura_health_accounting": "preserve_current_hp_fraction_on_entry_and_exit",
+      "aura_source_loss": "remove_immediately_on_death_or_inactivity",
+      "aura_self": "exclude_all_apprentice_wardens",
+      "other_life_aura": "reject_life_gem_or_unknown_life_aura_composition",
+      "following": "largest_housing_cluster_then_distance_then_id_sampled",
+      "follow_classes": ["troop", "hero"],
+      "follow_distance_tiles": 3,
+      "hero_housing_weight": 25,
+      "target_adoption": "leader_target_only_if_already_in_weapon_range_else_follow",
+      "no_follow_target": "shared_ordinary_enemy_selection"
+    },
+    "super-barbarian": {
+      "source": "docs/RECIPE_TROOP_CONTRACTS.md#super-barbarian",
+      "status": "explicit_uncalibrated_hypothesis",
+      "stacking": "multiply_independent_shared_factors",
+      "boost_duration_seconds": 8,
+      "boost_movement_multiplier": 2,
+      "boost_damage_multiplier": 4,
+      "boost_clock": "elapsed_since_deployment_including_freeze"
+    }
+  }
+}

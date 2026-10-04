@@ -23,7 +23,15 @@ GARRISON_MEMBERS = {
     "thrower": ("ground", "single"),
     "wizard": ("ground", "radial"),
     "dragon": ("air", "radial"),
+    "electro-dragon": ("air", "chain"),
+    "dragon-rider": ("air", "single"),
+    "ice-golem": ("ground", "single"),
+    "giant": ("ground", "single"),
+    "hog-rider": ("ground", "single"),
 }
+SHARED_GARRISON_MEMBERS = frozenset(
+    {"electro-dragon", "dragon-rider", "ice-golem", "giant", "hog-rider"}
+)
 GARRISON_RULES = {
     "garrison_statistics": "snapshot_troop_statistics_without_attacking_equipment_or_special_abilities",
     "garrison_capacity": "snapshot_troop_capacity_and_explicit_donor_receiver_level_validation",
@@ -131,10 +139,22 @@ def _receiver_lab_requirement(entity_id, row, catalog):
     This conservative mapping is a named hypothesis, not a claim about donation
     server rules. A missing unlock/laboratory relation fails closed.
     """
+    entity = catalog.entity(entity_id)
+    source_row = row
+    first_level = 1
+    if entity.get("troopType") == "super":
+        # Super rows name their parent level and omit duplicated research data.
+        # Use that exact parent's row, as the existing planning cap already does.
+        source_row = catalog.level(require(entity, "parentTroop"), row["level"])
+        first_level = min(
+            item["level"]
+            for item in entity["levels"]
+            if not item.get("supercharge", False)
+        )
     research_lab = integer(
-        require(row, "laboratoryRequired"), "troop research laboratory", 0
+        require(source_row, "laboratoryRequired"), "troop research laboratory", 0
     )
-    initial_town_hall = catalog.town_hall_requirement(entity_id, 1)
+    initial_town_hall = catalog.town_hall_requirement(entity_id, first_level)
     laboratories = [
         level["level"]
         for level in catalog.entity("laboratory")["levels"]
@@ -235,6 +255,12 @@ def compile_garrison_member(
         entity_id, instance["level"], parameters["donor_town_hall"]
     ):
         raise InputError("Garrison member level is unavailable to its declared donor")
+    if entity_id in SHARED_GARRISON_MEMBERS:
+        from .defending_troop_roles import compile_shared_garrison_member
+
+        return compile_shared_garrison_member(
+            actor, instance, entity, row, catalog, movement_units_per_tile
+        )
     movement, pattern_kind = GARRISON_MEMBERS[entity_id]
     expected_damage_type = "splash" if pattern_kind == "radial" else "single"
     if entity["damageType"] != expected_damage_type or entity["targetType"] not in {
@@ -412,9 +438,16 @@ class GarrisonCombat:
                 movement, pattern_kind = GARRISON_MEMBERS[model["entity"]]
                 layers = (
                     ["ground"]
-                    if model["entity"] in {"barbarian", "pekka"}
+                    if model["entity"]
+                    in {"barbarian", "pekka", "ice-golem", "giant", "hog-rider"}
                     else ["ground", "air"]
                 )
+                if model["entity"] == "dragon-rider":
+                    layers = actor["target_layers"]
+                    if layers not in (["ground"], ["ground", "air"]):
+                        raise InputError(
+                            "Unsupported defending Dragon Rider layer policy"
+                        )
                 if (
                     actor["team"] != "defense"
                     or actor["kind"] != "unit"
@@ -430,7 +463,12 @@ class GarrisonCombat:
                     or actor.get("housing_space") != model["housing_space"]
                     or (
                         movement == "ground"
-                        and actor.get("wall_behavior", {}).get("kind") != "avoid"
+                        and actor.get("wall_behavior", {}).get("kind")
+                        != (
+                            "jump_enemy_walls"
+                            if model["entity"] == "hog-rider"
+                            else "avoid"
+                        )
                     )
                 ):
                     raise InputError("Invalid runtime garrison member role or weapon")

@@ -527,6 +527,52 @@ class BuilderHutCombat:
                     selected.append(worker["id"])
             self.freeze(selected, time, effect["duration_seconds"], trace)
 
+    def lightning_reset(self, worker_ids, actors, time, trace, clock_policy):
+        """Reset affected repair targets after a source-bound Lightning impact.
+
+        Official behavior establishes the reset, not the exact repair-clock
+        outcome. The spell integration supplies affected internal workers and
+        its explicit clock hypothesis. These objects remain untargetable and
+        uncounted; ordinary damage is never reinterpreted as Lightning.
+        """
+        if clock_policy != "restart_declared_first_repair_delay":
+            raise InputError(
+                "Lightning builder reset requires an explicit clock hypothesis"
+            )
+        for worker_id in sorted(set(worker_ids)):
+            if worker_id not in self.workers:
+                raise InputError("Lightning reset requires a known internal worker")
+            worker = self.workers[worker_id]
+            hut_id = (
+                worker["hut_id"]
+                if "hut_id" in worker
+                else next(
+                    key
+                    for key, state in self.states.items()
+                    if state["worker_id"] == worker_id
+                )
+            )
+            state = self.states[hut_id]
+            if state["phase"] == "retired" or not _active(actors[hut_id], time):
+                continue
+            previous = state["target"]
+            state.update(target=None, route=[], phase="idle")
+            worker.pop("_remaining_path", None)
+            worker.pop("_path_signature", None)
+            worker["next_attack"] = max(time, worker["frozen_until"]) + self.models[
+                hut_id
+            ]["first_repair_delay_seconds"] / attack_rate(worker)
+            trace.append(
+                {
+                    "event": "builder_lightning_target_reset",
+                    "time_seconds": time,
+                    "worker": worker_id,
+                    "previous_target": previous,
+                    "clock_policy": clock_policy,
+                    "source": BUILDER_SOURCE,
+                }
+            )
+
     def _eligible_target(self, hut_id, target, actors, time):
         model = self.models[hut_id]
         hut = actors[hut_id]

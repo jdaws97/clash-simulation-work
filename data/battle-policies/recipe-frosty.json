@@ -1,0 +1,77 @@
+{
+  "source": "docs/RECIPE_FROSTY_CONTRACT.md#conditional-parameters",
+  "status": "synthetic_frostmite_parameters_not_game_statistics",
+  "parameters": {
+    "source": "docs/RECIPE_FROSTY_CONTRACT.md#conditional-parameters",
+    "spawn_offset": {
+      "dx": 0,
+      "dy": 0
+    },
+    "first_attack_delay_seconds": 0.2,
+    "follow_distance_tiles": 1,
+    "target_retention": "retain_then_prefer_targets_within_owner_radius",
+    "owner_death_policy": "independent_combat",
+    "pet_death_policy": "stop_future_actions_existing_effects_persist",
+    "ground_wall_policy": "jump_enemy_walls",
+    "incoming_status_policy": "independent_from_owner_ordinary_unit_effects",
+    "projectile": {
+      "timing": "instant",
+      "delay_seconds": 0,
+      "destination": "locked_actor_center_at_impact",
+      "hit_radius": 0
+    },
+    "behavior": {
+      "source": "docs/RECIPE_FROSTY_CONTRACT.md#conditional-parameters",
+      "status": "explicit_uncalibrated_hypothesis",
+      "summon_clock": "deployment_anchored_skip_missed_ticks_no_catchup",
+      "freeze": "skip_due_summons_while_frozen_keep_grid",
+      "cap": "living_children_only_partial_batch_no_replacement",
+      "reserve_exhaustion": "reject_before_partial_spawn",
+      "parent_death": "stop_new_summons_released_children_persist",
+      "child_targeting": "defenses_only_retain_until_ineligible_then_nearest",
+      "child_motion": "ordinary_ground_point_jump_enemy_walls_hypothesis",
+      "child_lifetime": "timed_from_actual_spawn_existing_packets_persist",
+      "child_status_class": "troop_for_healing_buffs_hazards_springs",
+      "slow_membership": "all_successful_impacts_including_defending_units_hypothesis",
+      "child_statistics_scaling": "independent_explicit_totals_before_declared_battle_profile",
+      "on_hit_slow": {
+        "source": "docs/RECIPE_FROSTY_CONTRACT.md#conditional-parameters",
+        "duration_seconds": 3,
+        "attack_rate_multiplier": 0.5,
+        "movement_multiplier": 0.5,
+        "protection_policy": "damage_immunity_also_blocks_status"
+      },
+      "first_summon_delay_seconds": 0,
+      "reserve_count": 48,
+      "frostmite_statistics": {
+        "source": "docs/RECIPE_FROSTY_CONTRACT.md#conditional-parameters-synthetic-statistics",
+        "status": "explicit_uncalibrated_hypothesis",
+        "hitpoints": 75,
+        "damage_per_hit": 20,
+        "attack_interval_seconds": 1,
+        "range_tiles": 0.5,
+        "movement_tiles_per_second": 4,
+        "housing_space": 1
+      },
+      "frostmite_spawn_offset": {
+        "dx": 0,
+        "dy": 0
+      },
+      "frostmite_first_attack_delay_seconds": 0.2,
+      "frostmite_lifetime_seconds": 12,
+      "frostmite_projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0
+      },
+      "frostmite_on_hit_slow": {
+        "source": "docs/RECIPE_FROSTY_CONTRACT.md#conditional-parameters",
+        "duration_seconds": 3,
+        "attack_rate_multiplier": 0.5,
+        "movement_multiplier": 0.5,
+        "protection_policy": "damage_immunity_also_blocks_status"
+      }
+    }
+  }
+}

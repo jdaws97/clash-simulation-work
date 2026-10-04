@@ -14,7 +14,7 @@ from .hero_extensions import (
     source_quantity,
     validate_parameter_provenance,
 )
-from .rates import rescale_remaining_cooldown
+from .rates import rescale_remaining_cooldown, skip_elapsed_pulses
 from .spatial import EPSILON, _active, center, target_distance
 
 
@@ -278,6 +278,16 @@ class BarbarianKingCombat:
             self.heal_next[key] = None
             self.horse_until[key] = None
             for item in actor["hero_model"]["equipment"]:
+                if item["entity"] == "earthquake-boots":
+                    from .recipe_equipment import validate_recipe_equipment
+
+                    validate_recipe_equipment(item)
+                    continue
+                if item["entity"] in {"rage-vial", "vampstache"}:
+                    from .equipment_lifecycles import validate_equipment
+
+                    validate_equipment(item)
+                    continue
                 validate_king_equipment(item)
                 if item["entity"] in self.equipment[key]:
                     raise InputError("King equipment cannot be duplicated")
@@ -602,6 +612,12 @@ class BarbarianKingCombat:
         damage = defaultdict(float)
         healing = defaultdict(float)
         for key, clock in self.heal_next.items():
+            if clock is not None and actors[key].get("_recalled", False):
+                interval = self.equipment[key]["giant-gauntlet"]["parameters"][
+                    "self_heal_interval_seconds"
+                ]
+                self.heal_next[key] = skip_elapsed_pulses(clock, interval, time)
+                continue
             if (
                 clock is None
                 or clock > time + EPSILON

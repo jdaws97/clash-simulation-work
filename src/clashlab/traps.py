@@ -473,6 +473,7 @@ class TrapCombat:
             phase = "effect"
         eligible = (
             _active(actor, time)
+            and "spell_decoy_model" not in actor
             and actor["kind"] == "unit"
             and actor["team"] != trap["team"]
             and actor["layer"] == trap["target_layer"]
@@ -490,13 +491,23 @@ class TrapCombat:
         return True
 
     def update(self, actors, time, trace):
+        # Trigger selection cannot change actor lifecycle state until all traps
+        # have selected and queued their effects. Avoid rescanning structures
+        # and inactive reserves for each trap; preserve actor insertion order.
+        trigger_actors = [
+            actor
+            for actor in actors.values()
+            if actor["kind"] == "unit"
+            and "spell_decoy_model" not in actor
+            and _active(actor, time)
+        ]
         for trap_id, trap in sorted(self.models.items()):
             if trap_id in self.triggered or time + EPSILON < trap["arming_seconds"]:
                 continue
             origin = center(trap)
             candidates = [
                 actor
-                for actor in actors.values()
+                for actor in trigger_actors
                 if self.eligible(trap, actor, time, "trigger")
                 and hypot(center(actor)[0] - origin[0], center(actor)[1] - origin[1])
                 <= trap["trigger_radius"] + EPSILON

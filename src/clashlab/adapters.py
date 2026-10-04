@@ -74,6 +74,12 @@ from .engine_rules import (
 from .teslas import TeslaCombat, compile_hidden_tesla
 from .valkyries import ValkyrieRouting, compile_valkyrie
 from .classic_troops import CLASSIC_TROOPS, compile_classic_troop
+from .recipe_troops import (
+    RECIPE_TROOPS,
+    RECIPE_ADAPTERS,
+    RecipeTroopCombat,
+    compile_recipe_troop,
+)
 from .buffs import BUFF_SPELLS, BuffCombat, compile_buff_spell
 from .buff_rules import (
     RULESET as BUFF_RULESET,
@@ -166,6 +172,11 @@ from .reinforcements import (
     validate_received_entity,
 )
 from .siege_machines import SIEGE_MACHINES, SiegeCombat, compile_siege
+from .siege_extensions import (
+    BOUND_RECIPE_SIEGES,
+    compile_extended_siege,
+    recipe_siege_runtime,
+)
 from .siege_rules import (
     RULESET as SIEGE_RULESET,
     RULES as SIEGE_RULES,
@@ -203,8 +214,21 @@ from .advanced_defenses import (
     compile_super_wizard,
 )
 from .giga_bombs import GigaBombCombat
+from .revenge_towers import compile_revenge_tower
+from .defense_variants import (
+    GearedCannonCombat,
+    attach_explicit_defense_ammunition,
+    compile_geared_cannon,
+)
 from .attack_spell_models import SUPPORTED_ATTACK_SPELLS, compile_attack_spell
 from .attack_spells import AttackSpellCombat
+from .recipe_spells import compile_totem_reserve
+from .recipe_frosty import compile_frostmite_reserves
+from .attacking_extensions import (
+    SCOPE as ATTACKING_EXTENSION_SCOPE,
+    compile_attacking_extension,
+)
+from .electro_titans import ElectroTitanCombat
 from .attack_spell_rules import (
     RULESET as ATTACK_SPELL_RULESET,
     RULES as ATTACK_SPELL_RULES,
@@ -224,6 +248,8 @@ RAMP_SCOPE = "lock_ramp_support_wall_sector_without_heroes_pets_traps_defending_
 DEATH_SCOPE = "death_effects_air_support_wall_sector_without_heroes_pets_traps_defending_troops_or_town_hall"
 TOWN_HALL_SCOPE = "town_hall_hazards_air_support_wall_sector_without_heroes_pets_traps_or_defending_troops"
 UNIT_ADAPTERS = {
+    "electro-titan": ("ground", "single"),
+    **RECIPE_ADAPTERS,
     "archer": ("ground", "single"),
     "barbarian": ("ground", "single"),
     "minion": ("air", "single"),
@@ -240,7 +266,7 @@ UNIT_ADAPTERS = {
 }
 DEFENSE_ADAPTERS = {
     "firespitter": {"normal": "firespitter_ballistic_bullet"},
-    "cannon": {"normal": "single"},
+    "cannon": {"normal": "single", "gearedUpBurst": "single"},
     "archer-tower": {"normal": "single", "gearedUpFastAttack": "single"},
     "air-defense": {"normal": "single"},
     "x-bow": {"normal": "single", "airAndGround": "single"},
@@ -257,6 +283,7 @@ DEFENSE_ADAPTERS = {
         "rage": "reactive_rage_field",
         "poison": "reactive_poison_field",
         "invisibility": "reactive_invisibility_field",
+        "earthquake": "instant_maximum_hp_pulse",
     },
 }
 MISSING_MECHANICS = {
@@ -287,6 +314,35 @@ MODIFIERS = {
 
 def partial_adapter_status(entity, level=None, role=None, mode=None):
     entity_id = entity["id"]
+    if entity_id == "electro-titan":
+        available = role != "defense" and mode in {None, "normal"}
+        return {
+            "available": available,
+            "scope": HERO_ROSTER_SCOPE,
+            "replay_validated": False,
+            "missing": (
+                [] if available else ["Titan aura supports attacking normal mode only"]
+            ),
+            "required": [
+                "Explicit attacking_extension_scope and complete aura_parameters"
+            ],
+        }
+    if entity_id in RECIPE_TROOPS:
+        return {
+            "available": role != "defense" and mode in {None, "normal"},
+            "scope": HERO_ROSTER_SCOPE,
+            "replay_validated": False,
+            "missing": (
+                []
+                if role != "defense" and mode in {None, "normal"}
+                else [
+                    "Recipe troops support explicit attacking normal-mode contracts only"
+                ]
+            ),
+            "required": [
+                "Complete recipe_parameters, splash/death geometry, lifecycle and targeting hypotheses"
+            ],
+        }
     if entity_id in SUPPORTED_ATTACK_SPELLS:
         available = mode in {None, "normal"}
         return {
@@ -304,11 +360,25 @@ def partial_adapter_status(entity, level=None, role=None, mode=None):
         }
     if entity_id == "revenge-tower":
         return {
-            "available": False,
-            "scope": None,
+            "available": mode == "stage1",
+            "scope": ADVANCED_DEFENSE_SCOPE,
             "replay_validated": False,
             "missing": deepcopy(REVENGE_GAPS["missing"]),
             "source_audit": deepcopy(REVENGE_GAPS),
+            "required": [
+                "Explicit experimental revenge_parameters with four-phase mapping and caller-supplied HP transitions"
+            ],
+        }
+    if entity_id == "crafting-station":
+        return {
+            "available": mode == "passive",
+            "scope": "passive_structure_in_declared_sector",
+            "replay_validated": False,
+            "missing": (
+                []
+                if mode == "passive"
+                else ["Selected crafted weapon needs its own adapter"]
+            ),
         }
     if entity_id in {"multi-gear-tower", "super-wizard-tower", "giga-bomb"}:
         modes = (
@@ -371,7 +441,7 @@ def partial_adapter_status(entity, level=None, role=None, mode=None):
                 "Live first-contact projectile simulation is not replay calibrated",
             ],
         }
-    if entity_id in SIEGE_MACHINES:
+    if entity_id in SIEGE_MACHINES | BOUND_RECIPE_SIEGES:
         return {
             "available": mode in {None, "normal"},
             "scope": SIEGE_SCOPE,
@@ -419,7 +489,7 @@ def partial_adapter_status(entity, level=None, role=None, mode=None):
             ],
         }
     if entity_id == "spell-tower":
-        unlocks = {"rage": 1, "poison": 2, "invisibility": 3}
+        unlocks = {"rage": 1, "poison": 2, "invisibility": 3, "earthquake": 4}
         modes = {
             selected: {"available_from_level": minimum}
             for selected, minimum in unlocks.items()
@@ -428,11 +498,11 @@ def partial_adapter_status(entity, level=None, role=None, mode=None):
         available = mode is None or mode in modes
         return {
             "available": available,
-            "scope": SPELL_TOWER_SCOPE,
+            "scope": (
+                ADVANCED_DEFENSE_SCOPE if mode == "earthquake" else SPELL_TOWER_SCOPE
+            ),
             "supported_modes": modes,
-            "unsupported_modes": {
-                "earthquake": "maximum-HP earthquake pulse adapter missing"
-            },
+            "unsupported_modes": {},
             "missing": (
                 []
                 if available
@@ -441,7 +511,7 @@ def partial_adapter_status(entity, level=None, role=None, mode=None):
             "limitations": [
                 "Explicit trigger, cast, recharge, death-release and recipient policies",
                 "Invisibility uses fresh aggregate structure damage without source attribution",
-                "Earthquake is unsupported; other modes are not replay calibrated",
+                "Earthquake requires an explicit maximum-HP pulse hypothesis; no mode is replay calibrated",
             ],
         }
     if role == "defense" and entity_id in DEFENDING_HEROES:
@@ -787,11 +857,42 @@ def compile_actor(
     allow_hero_extensions=False,
 ):
     entity_id = require(instance, "entity")
+    if entity_id == "electro-titan":
+        if (
+            not allow_hero_extensions
+            or instance.get("attacking_extension_scope") != ATTACKING_EXTENSION_SCOPE
+        ):
+            raise InputError(
+                "Electro Titan requires the v27+ scope and explicit attacking extension opt-in"
+            )
+    elif "attacking_extension_scope" in instance or "aura_parameters" in instance:
+        raise InputError(
+            "Attacking extension parameters require a bound lifecycle owner"
+        )
+    if "geared_cannon_parameters" in instance and (
+        entity_id != "cannon" or instance.get("mode") != "gearedUpBurst"
+    ):
+        raise InputError("Geared Cannon parameters require their selected owner")
+    if "defense_ammunition_parameters" in instance and entity_id != "x-bow":
+        raise InputError("Explicit defense ammunition requires X-Bow")
+    if (
+        (entity_id == "cannon" and instance.get("mode") == "gearedUpBurst")
+        or "defense_ammunition_parameters" in instance
+        or (entity_id == "spell-tower" and instance.get("mode") == "earthquake")
+    ) and not allow_advanced_defenses:
+        raise InputError(
+            "Experimental defense variants require their behavior adapter in the v26+ scope"
+        )
+    if entity_id in RECIPE_TROOPS and not allow_hero_extensions:
+        raise InputError("Recipe troops require the explicit v27+ lifecycle scope")
+    if "recipe_parameters" in instance and entity_id not in RECIPE_TROOPS:
+        raise InputError("Recipe parameters require a supported recipe troop")
     if entity_id in SUPPORTED_ATTACK_SPELLS:
         raise InputError("Attacking spells belong in attack_spells, not actor entities")
     advanced_entities = {
         "multi-gear-tower": "multi_gear_parameters",
         "super-wizard-tower": "super_wizard_parameters",
+        "revenge-tower": "revenge_parameters",
     }
     if "duke_parameters" in instance and entity_id != "dragon-duke":
         raise InputError("Duke intrinsic parameters require their owning hero")
@@ -1053,6 +1154,16 @@ def compile_actor(
         },
     }
     if siege:
+        if entity_id in BOUND_RECIPE_SIEGES:
+            return compile_extended_siege(
+                actor,
+                instance,
+                entity,
+                row,
+                modifiers,
+                catalog,
+                movement_units_per_tile,
+            )
         return compile_siege(
             actor, instance, entity, row, modifiers, catalog, movement_units_per_tile
         )
@@ -1082,6 +1193,10 @@ def compile_actor(
         return compile_multi_gear(actor, instance, entity, row, modifiers)
     if entity_id == "super-wizard-tower":
         return compile_super_wizard(actor, instance, entity, row, modifiers)
+    if entity_id == "revenge-tower":
+        return compile_revenge_tower(actor, instance, entity, row, modifiers)
+    if entity_id == "cannon" and selected_mode == "gearedUpBurst":
+        return compile_geared_cannon(actor, instance, entity, row, modifiers)
     if entity_id == "builders-hut":
         return compile_builder_hut(
             actor, instance, entity, row, modifiers, movement_units_per_tile
@@ -1148,6 +1263,7 @@ def compile_actor(
             if entity_id == "root-rider"
             else UNIT_ADAPTERS[entity_id]
         )
+        actor["housing_space"] = require(entity, "housingSpace")
         actor.update(
             {
                 "kind": "unit",
@@ -1240,7 +1356,15 @@ def compile_actor(
             "Selected behavior and statistics modes require an explicit supported mapping"
         )
     stats = require(require(row, "stats"), statistics_mode)
-    target_type = require(entity, "targetType")
+    target_type = (
+        (
+            "both"
+            if entity_id in {"baby-dragon", "headhunter", "apprentice-warden"}
+            else "ground"
+        )
+        if entity_id in RECIPE_TROOPS
+        else require(entity, "targetType")
+    )
     if entity_id == "x-bow" and selected_mode == "normal":
         target_layers = ["ground"]
     elif target_type == "both":
@@ -1331,7 +1455,12 @@ def compile_actor(
         compile_bomb_tower_death(actor, instance, row)
     if entity_id == "ice-golem":
         compile_ice_golem(actor, instance, entity, row)
-    if entity_id == "hog-rider":
+    if entity_id in {
+        "hog-rider",
+        "headhunter",
+        "super-wall-breaker",
+        "apprentice-warden",
+    }:
         # The troop compiler validates and attaches its wall traversal policy.
         pass
     elif allow_walls and actor["movement"] == "ground":
@@ -1344,6 +1473,23 @@ def compile_actor(
         compile_hidden_tesla(actor, instance, entity)
     if entity_id in CLASSIC_TROOPS:
         compile_classic_troop(actor, instance, entity)
+    if entity_id in RECIPE_TROOPS:
+        compile_recipe_troop(actor, instance, entity, row, modifiers)
+    if entity_id == "electro-titan":
+        compile_attacking_extension(
+            actor,
+            instance,
+            entity,
+            row,
+            modifiers,
+            movement_units_per_tile,
+            enabled_scope=instance["attacking_extension_scope"],
+        )
+        actor["entity_adapter"]["attacking_extension_scope"] = ATTACKING_EXTENSION_SCOPE
+    if "defense_ammunition_parameters" in instance:
+        attach_explicit_defense_ammunition(
+            actor, instance["defense_ammunition_parameters"]
+        )
     return actor
 
 
@@ -1593,6 +1739,7 @@ def _compile_healer(actor, instance, entity, row, modifiers, movement_units_per_
     actor.update(
         {
             "kind": "unit",
+            "housing_space": require(entity, "housingSpace"),
             "healing_class": "troop",
             "layer": "air",
             "movement": "air",
@@ -1976,6 +2123,8 @@ def compile_entity_scene(specification, catalog):
                     "Hero pet policy requires exactly its explicit scene assignment"
                 )
         scene["actors"].extend(pets)
+        for pet in pets:
+            scene["actors"].extend(compile_frostmite_reserves(pet))
     elif "pets" in specification:
         raise InputError("Paired pets require the explicit v25 sector scope")
     if allow_traps:
@@ -2046,6 +2195,15 @@ def compile_entity_scene(specification, catalog):
         }
         for actor in scene["actors"]:
             if actor["kind"] == "unit":
+                if (
+                    actor.get("summon_model", {}).get("equipment") == "action-figure"
+                    or actor.get("summon_model", {}).get("kind") == "frostmite"
+                ):
+                    if actor.get("buff_class") != "troop":
+                        raise InputError(
+                            "Action Figure requires its explicit troop buff class"
+                        )
+                    continue
                 if "trap_summon_model" in actor:
                     actor["buff_class"] = "troop"
                     continue
@@ -2093,6 +2251,22 @@ def compile_entity_scene(specification, catalog):
             reserved_ids.add(model["id"])
             number(model["position"][0], "attacking spell x", 0, width)
             number(model["position"][1], "attacking spell y", 0, height)
+            for reserve in compile_totem_reserve(model):
+                if reserve["id"] in reserved_ids:
+                    raise InputError(
+                        "Generated Totem identity collides with a scene object"
+                    )
+                reserved_ids.add(reserve["id"])
+                if "defending_unit_responses" in scene:
+                    response = {"primary": "ignore", "collateral": "ignore"}
+                    scene["defending_unit_responses"]["actors"][
+                        reserve["id"]
+                    ] = response
+                    reserve["defending_unit_response"] = {
+                        "source": scene["defending_unit_responses"]["source"],
+                        **response,
+                    }
+                scene["actors"].append(reserve)
     elif "attack_spells" in specification:
         raise InputError("Attacking spells require the explicit v29 scope")
     if allow_traps:
@@ -2101,7 +2275,19 @@ def compile_entity_scene(specification, catalog):
                 if actor["kind"] != "unit":
                     continue
                 if "summon_model" in actor:
-                    actor["spring_class"] = "other"
+                    if (
+                        actor["summon_model"].get("equipment") == "action-figure"
+                        or actor["summon_model"].get("kind") == "frostmite"
+                    ):
+                        if (
+                            actor.get("spring_class") != "troop"
+                            or "housing_space" not in actor
+                        ):
+                            raise InputError(
+                                "Action Figure requires explicit troop spring weighting"
+                            )
+                    else:
+                        actor["spring_class"] = "other"
                     continue
                 if "siege_model" in actor:
                     actor["spring_class"] = "siege"
@@ -2173,6 +2359,9 @@ def compile_entity_scene(specification, catalog):
     if allow_extended:
         TeslaCombat(actors, None)
     pattern_combat = PatternCombat(actors)
+    GearedCannonCombat(actors, pattern_combat)
+    RecipeTroopCombat(actors)
+    ElectroTitanCombat(actors)
     if allow_hit_status:
         HitStatusCombat(actors)
     if allow_heroes:
@@ -2225,7 +2414,9 @@ def compile_entity_scene(specification, catalog):
     if allow_indirect:
         IndirectDefenseCombat(actors, pattern_combat, wall_routing.select_target, scene)
     if allow_attack_spells:
-        AttackSpellCombat(scene["attack_spell_models"], actors, town_halls.hazards)
+        AttackSpellCombat(
+            scene["attack_spell_models"], actors, town_halls.hazards, width, height
+        )
     if allow_sweepers:
         sweepers = SweeperCombat(actors, width, height)
     if allow_defending_heroes:
@@ -2241,7 +2432,7 @@ def compile_entity_scene(specification, catalog):
     if allow_guardians:
         GuardianCombat(actors, wall_routing.select_target, scene)
     if reinforcement_runtime is not None:
-        SiegeCombat(
+        recipe_siege_runtime(
             actors, wall_routing.select_target, reinforcement_runtime, width, height
         )
     if allow_pets:

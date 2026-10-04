@@ -17,7 +17,7 @@ from .spatial import EPSILON, _active, _eligible, _ground_route, _route_length, 
 from .spatial import target_distance
 
 
-GUARDIANS = {"longshot", "smasher"}
+GUARDIANS = {"longshot", "smasher", "logger"}
 GUARDIAN_RULES = {
     "th18_hall": "weaponless_counted_building_with_exactly_one_selected_guardian",
     "guardian_role": "separate_defending_unit_excluded_from_destruction_and_hero_equipment",
@@ -87,9 +87,7 @@ def validate_binding(binding):
     identifier(binding["source"], "Guardian binding evidence")
     identifier(binding["actor_id"], "Guardian actor ID")
     if binding["entity"] not in GUARDIANS:
-        raise InputError(
-            "TH18 requires a selected supported Guardian; Logger is unavailable"
-        )
+        raise InputError("TH18 requires a selected supported Guardian")
     integer(binding["level"], "Guardian binding level", 1, 5)
 
 
@@ -283,6 +281,12 @@ def compile_guardian(actor, instance, entity, row, modifiers, movement_units_per
         )
     identifier(wall["source"], "Guardian wall evidence")
     attack = require(instance, "attack_parameters")
+    if entity_id == "logger":
+        from .logger_guardian import compile_logger_weapon
+
+        return compile_logger_weapon(
+            actor, instance, entity, row, modifiers, movement_units_per_tile
+        )
     _fields(
         attack,
         {"projectile", "splash_layer_policy", "radius_multiplier"},
@@ -512,7 +516,8 @@ class GuardianCombat:
             or actor["blocking"]
             or actor["target_priorities"] != ["unit"]
             or actor["target_layers"] != ["ground", "air"]
-            or actor["attack_model"]["kind"] != "radial"
+            or actor["attack_model"]["kind"]
+            != ("logger_rolling_log" if model["entity"] == "logger" else "radial")
             or actor["attack_model"]["target_kinds"] != ["unit"]
             or actor["attack_model"]["target_layers"] != ["ground", "air"]
             or actor.get("wall_behavior", {}).get("kind") != "avoid"
@@ -522,9 +527,10 @@ class GuardianCombat:
             or "defending_hero_model" in actor
             or (model["entity"] == "longshot" and "death_model" not in actor)
             or (model["entity"] == "smasher" and "death_model" in actor)
+            or (model["entity"] == "logger" and "logger_model" not in actor)
         ):
             raise InputError(
-                "Invalid Guardian runtime identity, Hall link, role or weapon"
+                "Invalid Guardian runtime identity, Hall link, role or weapon (including Logger binding)"
             )
         if model["entity"] == "smasher":
             number(

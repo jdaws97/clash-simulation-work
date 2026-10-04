@@ -2,8 +2,8 @@
 
 The selected catalog provides primary combat quantities and level caps. Pet AI,
 initial clocks, projectile geometry and unresolved interactions are required
-inputs. Frosty is deliberately unavailable: neither supplied dataset contains
-the Frostmite combat statistics needed to implement his complete lifecycle.
+inputs. Frosty requires a complete explicit Frostmite contract because neither
+supplied dataset resolves the summon statistics or geometry.
 
 Publisher behavior references:
 https://supercell.com/en/games/clashofclans/blog/game-updates/meet-the-hero-pets-1-2/
@@ -16,11 +16,21 @@ from collections import defaultdict
 from copy import deepcopy
 from math import floor, hypot
 
+from .jelly_lifecycle import (
+    JellyLifecycle,
+    validate_behavior as validate_jelly_behavior,
+)
+from .yak_lifecycle import (
+    YakLifecycle,
+    compile_model as compile_yak_model,
+    validate_behavior as validate_yak_behavior,
+)
 from .buffs import healing_multiplier
 from .combat import validate_pattern
 from .common import InputError, identifier, integer, number, require
 from .rates import attack_rate, movement_speed, pause_attack_work
 from .range_events import first_weapon_range_entry_delay
+from .recipe_frosty import FrostyCombat, compile_frosty_model, validate_frosty_behavior
 from .spatial import (
     EPSILON,
     _active,
@@ -35,13 +45,20 @@ from .spatial import (
 
 
 SUPPORTED_PETS = frozenset(
-    {"unicorn", "diggy", "phoenix", "spirit-fox", "lassi", "electro-owl"}
+    {
+        "unicorn",
+        "diggy",
+        "phoenix",
+        "spirit-fox",
+        "lassi",
+        "electro-owl",
+        "frosty",
+        "mighty-yak",
+        "angry-jelly",
+    }
 )
 MISSING_PET_MECHANICS = {
-    "frosty": "Frostmite combat statistics, lifetime and impact behavior need an independent supported source",
     "poison-lizard": "Poison ramp, exposure duration and retarget behavior need a complete adapter",
-    "mighty-yak": "Wall damage and the owner-defeat rage lifecycle need a complete adapter",
-    "angry-jelly": "Temporary owner targeting override and separation need a complete adapter",
     "sneezy": "Booger statistics and summon lifecycle need a complete adapter",
     "greedy-raven": "Resource damage preference and special attack behavior need a complete adapter",
 }
@@ -79,23 +96,29 @@ COMMON_PARAMETERS = {
     "behavior",
 }
 OWNER_DEATH_POLICIES = {
+    "angry-jelly": "separate_then_independent_no_reattachment",
+    "mighty-yak": "independent_combat_one_owner_defeat_rage",
     "unicorn": "nearest_living_hero_then_nearest_living_troop",
     "diggy": "rebond_nearest_living_hero_else_independent",
     "phoenix": "independent_after_temporary_owner_life",
     "spirit-fox": "independent_combat_and_self_cloak",
     "lassi": "independent_combat",
     "electro-owl": "independent_combat",
+    "frosty": "independent_combat",
 }
 TARGET_RETENTION = {
+    "angry-jelly": "prefer_owner_primary_then_nearest",
+    "mighty-yak": "independent_wall_routing_experimental",
     "unicorn": "assigned_owner_then_declared_fallback",
     "diggy": "retain_until_ineligible_then_prefer_owner_primary",
     "phoenix": "prefer_owner_primary_then_nearest",
     "spirit-fox": "retain_then_prefer_targets_within_owner_radius",
     "lassi": "retain_then_prefer_targets_within_owner_radius",
     "electro-owl": "prefer_owner_primary_then_nearest",
+    "frosty": "retain_then_prefer_targets_within_owner_radius",
 }
-OWNER_RADII = {"lassi": 2.5, "spirit-fox": 4.5}
-AIR_PETS = {"phoenix", "electro-owl"}
+OWNER_RADII = {"lassi": 2.5, "spirit-fox": 4.5, "frosty": 4.5}
+AIR_PETS = {"phoenix", "electro-owl", "angry-jelly"}
 MODEL_FIELDS = {
     "entity",
     "level",
@@ -151,6 +174,9 @@ def _validate_parameters(entity_id, parameters):
     elif entity_id in {"lassi", "diggy"}:
         if wall_policy != "jump_enemy_walls":
             raise InputError("L.A.S.S.I and surfaced Diggy require enemy-wall crossing")
+    elif entity_id == "mighty-yak":
+        if wall_policy != "clear_obstructions":
+            raise InputError("Mighty Yak requires its explicit wall weapon")
     elif wall_policy not in {"avoid", "jump_enemy_walls"}:
         raise InputError("Pet ground wall behavior must be explicit")
     behavior = parameters["behavior"]
@@ -293,6 +319,14 @@ def _validate_parameters(entity_id, parameters):
         )
         number(behavior["jump_range_tiles"], "Owl chain distance", EPSILON)
         number(behavior["jump_delay_seconds"], "Owl chain delay", 0)
+    elif entity_id == "angry-jelly":
+        validate_jelly_behavior(behavior)
+    elif entity_id == "mighty-yak":
+        validate_yak_behavior(behavior)
+        if parameters["projectile"].get("timing") != "instant":
+            raise InputError("Yak wall clock requires instant melee impacts")
+    elif entity_id == "frosty":
+        validate_frosty_behavior(behavior)
     else:
         _fields(behavior, set(), "L.A.S.S.I behavior")
 
@@ -462,6 +496,32 @@ def compile_pet(instance, catalog, movement_units_per_tile, heroes):
             "kind": parameters["ground_wall_policy"],
             "source": parameters["source"],
         }
+    if entity_id == "angry-jelly":
+        actor["jelly_model"] = {
+            "source": source,
+            "duration_seconds": number(
+                row["brainwashDuration"], "Jelly attachment duration", 0
+            ),
+        }
+    if entity_id == "mighty-yak":
+        actor["yak_model"] = compile_yak_model(entity, row, source, conversion)
+        actor["wall_behavior"].update(
+            route_cost="travel_seconds_plus_nominal_clearance",
+            weapon={
+                "damage": actor["yak_model"]["wall_damage"],
+                "range": actor["range"],
+                "attack_interval_seconds": cadence,
+                "first_attack_seconds": parameters["first_attack_delay_seconds"],
+                "timing": "instant",
+                "cooldown": "shared_with_main_weapon",
+                "source": source,
+            },
+        )
+    if entity_id == "frosty":
+        actor["frosty_model"] = compile_frosty_model(
+            entity, row, source, parameters["behavior"]
+        )
+        actor["on_hit_status"] = deepcopy(parameters["behavior"]["on_hit_slow"])
     return actor
 
 
@@ -577,6 +637,11 @@ def validate_pet_deployment(effect, actors):
         "pet_model" in actors[actor_id] for actor_id in effect.get("targets", [])
     ):
         raise InputError("Paired pets cannot be independently deployed")
+    if effect.get("kind") == "deploy" and any(
+        actors[actor_id].get("summon_model", {}).get("kind") == "frostmite"
+        for actor_id in effect.get("targets", [])
+    ):
+        raise InputError("Frostmites deploy only through their parent's summon clock")
 
 
 def compile_pet_healing_policy(parameters, ordinary_pulse, hero_pulse):
@@ -612,6 +677,9 @@ class PetCombat:
         self.width = width
         self.height = height
         self.base_selector = base_selector
+        self.frosty = FrostyCombat(actors, width, height)
+        self.yak = YakLifecycle(actors)
+        self.jelly = JellyLifecycle(actors)
         self.models = {}
         self.states = {}
         owners = set()
@@ -830,6 +898,7 @@ class PetCombat:
             if _active(target, time)
             and target["team"] == actor["team"]
             and target["kind"] == "unit"
+            and not target.get("beneficial_field_immunity", False)
             and target.get("healing_class") in {"hero", "troop"}
         ]
         return min(
@@ -858,6 +927,8 @@ class PetCombat:
             return None, (
                 self._route_to(actor, target, time, blocked) if target else None
             )
+        if self.models[actor["id"]]["entity"] == "mighty-yak":
+            return self.base_selector(actor, actors, time, blocked, width, height)
         target, route = self._enemy_target(actor, time, blocked)
         actor["target"] = target["id"] if target else None
         if target is not None:
@@ -900,6 +971,8 @@ class PetCombat:
             state["next_cloak"] = (
                 time + model["parameters"]["behavior"]["initial_cloak_delay_seconds"]
             )
+        if model["entity"] == "angry-jelly":
+            self.jelly.attach(pet_id, self.actors, self.states, time, trace)
         trace.append(
             {
                 "event": "pet_deployed",
@@ -1109,6 +1182,18 @@ class PetCombat:
             actor = actors[pet_id]
             state = self.states[pet_id]
             owner = actors[model["hero_id"]]
+            if actor.get("_recalled", False):
+                state["recall_paused"] = True
+                continue
+            if state.pop("recall_paused", False) and model["entity"] == "spirit-fox":
+                clock = state["next_cloak"]
+                if clock is not None and clock < time - EPSILON:
+                    period = (
+                        model["cloak_duration_seconds"]
+                        + model["parameters"]["behavior"]["visible_interval_seconds"]
+                    )
+                    missed = floor((time - clock) / period) + 1
+                    state["next_cloak"] += missed * period
             if state["phase"] == "waiting_for_owner":
                 if not _active(owner, time):
                     continue
@@ -1162,6 +1247,9 @@ class PetCombat:
                         "expires_at": time + duration,
                     }
                 )
+        self.frosty.prepare(actors, time, trace)
+        self.yak.prepare(actors, time, trace)
+        self.jelly.prepare(actors, self.states, time, trace)
 
     def resolve_healing(self, actors, time, trace):
         healing = defaultdict(float)
@@ -1272,7 +1360,11 @@ class PetCombat:
         end = time + number(duration, "pet internal movement duration", 0)
         for pet_id, state in self.states.items():
             burrow = state["burrow"]
-            if burrow is None or actors[pet_id]["hp"] <= 0:
+            if (
+                burrow is None
+                or actors[pet_id]["hp"] <= 0
+                or actors[pet_id].get("_recalled", False)
+            ):
                 continue
             travel = burrow["arrival_seconds"] - burrow["start_seconds"]
             fraction = (
@@ -1288,6 +1380,15 @@ class PetCombat:
 
     def next_boundary(self, time):
         boundaries = []
+        jelly_boundary = self.jelly.next_boundary(time)
+        if jelly_boundary is not None:
+            boundaries.append(jelly_boundary)
+        yak_boundary = self.yak.next_boundary(time)
+        if yak_boundary is not None:
+            boundaries.append(yak_boundary)
+        frosty_boundary = self.frosty.next_boundary(time)
+        if frosty_boundary is not None:
+            boundaries.append(frosty_boundary)
         for pet_id, state in self.states.items():
             actor = self.actors[pet_id]
             boundaries.extend(
@@ -1315,6 +1416,9 @@ class PetCombat:
             ):
                 boundaries.append(owner["spawn_seconds"])
         future = [value for value in boundaries if value > time + EPSILON]
+        for boundary in (jelly_boundary, yak_boundary):
+            if boundary is not None:
+                future.append(boundary)
         return min(future) if future else None
 
     def range_target(self, actor, time):
@@ -1349,6 +1453,9 @@ class PetCombat:
         )
 
     def frame(self, actor, time):
+        frostmite = self.frosty.frame(actor["id"])
+        if frostmite:
+            return frostmite
         state = self.states.get(actor["id"])
         if state is not None:
             return {"pet_lifecycle": deepcopy(state)}
@@ -1361,9 +1468,14 @@ class PetCombat:
             }
         return {}
 
+    def continuation_reasons(self, time):
+        return self.jelly.continuation_reasons(self.actors)
+
     def result(self):
         return {
             "pets": deepcopy(self.states),
+            "frosty": self.frosty.result(),
+            "angry_jelly": self.jelly.result(),
             "behavior_verification": "explicit_paired_pet_hypotheses_not_replay_validated",
             "unsupported_pet_mechanics": deepcopy(MISSING_PET_MECHANICS),
         }

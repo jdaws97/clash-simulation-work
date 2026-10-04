@@ -94,14 +94,25 @@ def pet_continuation(pets):
     facts = []
     for pet_id, state in pets.states.items():
         actor = pets.actors[pet_id]
+        if actor.get("_recalled", False):
+            continue
         if actor["hp"] <= 0 or state["phase"] in {
             "dead",
             "waiting_for_owner",
             "active",
         }:
             continue
+        if state["phase"] == "attached":
+            facts.extend(
+                fact
+                for fact in pets.jelly.continuation_reasons(pets.actors)
+                if fact["actor_ids"] == [pet_id]
+            )
+            continue
         if state["phase"] == "egg":
             owner = pets.actors[pets.models[pet_id]["hero_id"]]
+            if owner.get("_recalled", False):
+                continue
             if owner["hp"] <= 0 or state["rescue_used"]:
                 continue
         elif state["phase"] != "underground":

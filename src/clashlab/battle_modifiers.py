@@ -317,13 +317,27 @@ def apply_battle_modifiers(compiled_scene, policy, catalog, mode_rules):
             continue
         summon = actor["summon_model"]
         parent = summon.get("parent")
+        if summon.get("kind") == "frostmite":
+            if (
+                parent not in roles
+                or roles[parent][1] != "pet"
+                or by_id[parent].get("pet_model", {}).get("entity") != "frosty"
+                or actor["team"] != "attack"
+            ):
+                raise InputError(
+                    "Frostmite modifiers require their compiled Frosty parent"
+                )
+            roles[actor["id"]] = (roles[parent][0], "pet_summon", None)
+            continue
         if (
             parent not in roles
             or roles[parent][2] != "attacking_hero"
-            or summon.get("equipment") != "magic-mirror"
+            or summon.get("equipment") not in {"magic-mirror", "action-figure"}
             or actor["team"] != by_id[parent]["team"]
         ):
-            raise InputError("Summon modifiers need a compiled attacking Mirror parent")
+            raise InputError(
+                "Summon modifiers need a compiled attacking equipment parent"
+            )
         role = (
             roles[parent][2]
             if policy["hero_summon_statistics_policy"] == "inherit_parent_role"

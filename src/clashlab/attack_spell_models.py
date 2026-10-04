@@ -10,6 +10,11 @@ from .buffs import EXTRACTION_SOURCE
 from .common import InputError, identifier, integer, number, require
 from .hazards import HAZARD_CLASSES, PROTECTION_POLICIES
 from .spatial import EPSILON
+from .recipe_spells import (
+    RECIPE_SPELLS,
+    recipe_spell_quantities,
+    validate_recipe_spell_parameters,
+)
 
 
 SPELL_CLASSES = {
@@ -18,6 +23,8 @@ SPELL_CLASSES = {
     "poison-spell": "damage",
     "invisibility-spell": "support_only",
     "overgrowth-spell": "support_only",
+    "totem-spell": "damage",
+    "recall-spell": "support_only",
 }
 SUPPORTED_ATTACK_SPELLS = frozenset(SPELL_CLASSES)
 COMMON_PARAMETERS = {
@@ -175,6 +182,9 @@ def _unit_factors(values, *, poison=False):
 
 
 def validate_parameters(entity_id, parameters):
+    if entity_id in RECIPE_SPELLS:
+        validate_recipe_spell_parameters(entity_id, parameters)
+        return
     _exact(
         parameters,
         COMMON_PARAMETERS | SPECIFIC_PARAMETERS[entity_id],
@@ -418,7 +428,9 @@ def compile_attack_spell(instance, catalog):
         else require(entity, "radius")
     )
     quantities = {}
-    if entity_id == "lightning-spell":
+    if entity_id in RECIPE_SPELLS:
+        quantities = recipe_spell_quantities(entity, row, parameters)
+    elif entity_id == "lightning-spell":
         quantities = {
             "damage": number(require(row, "damage"), "Lightning total damage", 0)
             * parameters["damage_multiplier"],
@@ -554,6 +566,8 @@ def validate_attack_spell(model):
         },
         "invisibility-spell": {"duration_seconds"},
         "overgrowth-spell": {"duration_seconds"},
+        "totem-spell": {"hitpoints", "decay_per_second", "damage", "stun_seconds"},
+        "recall-spell": {"capacity"},
     }[entity_id]
     _exact(model["quantities"], expected, "Compiled spell quantities")
     for key, value in model["quantities"].items():

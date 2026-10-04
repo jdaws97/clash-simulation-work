@@ -7,6 +7,58 @@ from test_spatial import synthetic_scene, synthetic_structure, synthetic_unit
 
 
 class WeaponRangeIntegrationTests(unittest.TestCase):
+    def test_moving_target_contact_keeps_positive_sub_tolerance_arrival(self):
+        # The remaining distance can exceed the spatial range tolerance while
+        # distance / speed is below that same numeric constant in seconds.
+        # Dropping this arrival lets the moving target pull away repeatedly.
+        death_times = []
+        for step in (0.01, 0.0005):
+            with self.subTest(step=step):
+                result = simulate_spatial(
+                    synthetic_scene(
+                        [
+                            synthetic_unit(
+                                "pursuer",
+                                x=12.288225569887006,
+                                y=13.410715350815897,
+                                layer="air",
+                                movement="air",
+                                speed=4,
+                                range=2.75,
+                                target_priorities=["unit"],
+                            ),
+                            synthetic_unit(
+                                "runner",
+                                team="defense",
+                                x=14.5,
+                                y=15.048861360687344,
+                                speed=3,
+                                range=0.5,
+                                target_priorities=["building"],
+                            ),
+                            synthetic_structure(
+                                "destination",
+                                team="attack",
+                                kind="building",
+                                x=14,
+                                y=20,
+                                target_priorities=[],
+                            ),
+                        ],
+                        width=30,
+                        height=30,
+                        duration_seconds=0.01,
+                        maximum_step_seconds=step,
+                        recording_interval_seconds=1,
+                    )
+                )
+                death = result["actors"]["runner"]["death_time"]
+                self.assertIsNotNone(death)
+                self.assertLess(death, 0.0011)
+                death_times.append(death)
+        if len(death_times) == 2:
+            self.assertAlmostEqual(*death_times, places=6)
+
     def test_stationary_defense_fires_on_exact_incoming_contact(self):
         for step in (1, 0.3, 0.1):
             with self.subTest(step=step):

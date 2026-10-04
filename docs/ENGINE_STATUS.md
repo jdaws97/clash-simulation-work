@@ -26,6 +26,13 @@ previously integrated components. Its ruleset is
 `attack_spells_battle_exhaustion_extended_hero_roster_sector`. Inputs require an
 explicit `attack_spells` list, including `[]` when no such cast is selected.
 
+The conditional recipe integration adds seven selected troops, four equipment
+items, Frosty with explicit Frostmite statistics, paid Totem/Recall, and Log
+Launcher. See [the recipe binding map](RECIPE_BINDING_MAP.md). Complete TH17/18
+scenario assembly and the experimental Revenge Tower contract are documented in
+[higher-TH scenarios](HIGHER_TH_SCENARIOS.md). Compilation does not establish
+complete battle execution or game accuracy.
+
 Behavior remains conditional on explicit geometry, quantity, stacking, visibility,
 projectile, targeting, and timing policies. Unit collisions, Warden following,
 automatic hero activation, and many selectable entities remain unsupported.
@@ -33,9 +40,10 @@ Selected unsupported content must fail explicitly. Catalog presence is not
 equivalent to combat support.
 
 Electro Titan and Druid have standalone components and tests, but v30 integration
-was not completed. The siege-extension module is an unintegrated draft, without
-end-to-end validation. Do not include either in a claimed full-battle coverage
-count. The old v28 coverage count is stale; it is not a completion percentage.
+was not completed. Log Launcher alone is now bound from the siege-extension
+module; its other siege drafts remain unintegrated. Do not include standalone
+components in a claimed full-battle coverage count. The old v28 coverage count
+is stale; it is not a completion percentage.
 
 ## Numerical limits
 
@@ -43,9 +51,6 @@ The full-air development benchmark exposed an attracting Dragon Duke isolation
 boundary: isolated Duke stops at the longer weapon range; a nearby moving ally
 removes isolation; Duke chases faster, exits the radius, and stops again.
 Opposing one-sided motion creates repeated near-zero events.
-The preserved original full-air case reaches genuine contact chatter at
-18.305471759 simulated seconds under strict continuous membership. An explicit
-experimental policy now provides a separate, conditional continuation.
 
 Stabilization rejects immediate reversal of a committed isolation contact with a
 diagnostic identifying actors, time, radius, and the unresolved policy. It does
@@ -63,18 +68,22 @@ tolerances before inspecting results, and retain the first divergent event.
 
 ## Evidence boundaries
 
-The private handoff preserved five replays with 44 scoreboard checkpoints.
-Integrity checks do not establish correct patch, exact layout, equipment,
-defensive modes, trap positions, or battle-clock alignment. Synthetic portable
-fixtures validate evidence schemas and mechanics; they are not observations.
-Private data and raw transcripts remain outside this repository.
+Evidence integrity alone does not establish correct patch, exact layout,
+equipment, defensive modes, trap positions, or battle-clock alignment. Synthetic
+portable fixtures validate evidence schemas and mechanics; they are not
+observations. These contracts have no calibrated full-battle validation.
 
 The previous ground development battle reached three stars under its declared
-parameters. The strict full-air run still rejects; the explicitly sampled
-full-air experiment completes, with sensitivity to its unmeasured cadence.
-Neither supports ranking real armies or recommending a base. Recommendations
-must distinguish current game observations, expert examples, model experiments,
-and unknowns.
+parameters. The full-air benchmark completes only under the explicitly selected
+sampled-isolation policy; strict isolation still rejects the unresolved contact.
+The [consolidated recipe checkpoint](CONSOLIDATED_RECIPE_CHECKPOINT.md) separates
+exact-recipe compilation, bounded execution attempts and remaining blockers.
+One exact-recipe attempt also ended in native process failure `0xC0000005` with
+no outcome. A bounded runner mitigation stopped cooperatively without recurrence;
+the cause and complete-battle reliability remain unresolved.
+Neither benchmark supports ranking real armies or recommending a base.
+Recommendations must distinguish current
+game observations, expert examples, model experiments, and unknowns.
 
 ## Completion criteria
 

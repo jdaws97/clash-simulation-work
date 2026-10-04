@@ -1,0 +1,25 @@
+{
+  "source": "docs/RECIPE_SPELL_CONTRACTS.md#log-launcher",
+  "origin": "own",
+  "donor_town_hall": null,
+  "payload_group_id": "reinforcements",
+  "range_tiles": 1,
+  "minimum_range_tiles": 0,
+  "targeting": {"hall_actor_id": "hall", "arrival_radius_tiles": 3, "hall_loss": "continue_to_captured_anchor"},
+  "termination": {"decay_basis": "snapshot_hpDecayPerSecond", "decay_interval_seconds": 0.1, "lifetime_basis": "snapshot_lifetime"},
+  "spell_response": {"beneficial_fields": "immune_to_healing_rage_and_haste", "hostile_effects": "explicit_shared_status_and_hazard_policies"},
+  "behavior": {
+    "kind": "rolling_log",
+    "travel_tiles": 20,
+    "half_width_tiles": 0.5,
+    "speed_tiles_per_second": 4,
+    "launch_delay_seconds": 0,
+    "maximum_structure_hits": 4,
+    "wall_hit_limit": "walls_do_not_consume_structure_hits",
+    "contact_geometry": "launch_snapshot_axis_aligned_expanded_footprints",
+    "point_blank_range_tiles": 1,
+    "point_blank_composition": "strongest_named_role_per_recipient",
+    "source_loss": "launched_logs_continue",
+    "hit_limit_policy": "eligible_structure_contacts_including_protected"
+  }
+}

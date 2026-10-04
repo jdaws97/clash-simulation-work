@@ -54,6 +54,16 @@ DEATH_STATISTICS = {
 }
 
 
+def siege_time_after(time, delay):
+    """Retain positive representable clocks; reject a non-progressing schedule."""
+    number(time, "siege event time", 0)
+    number(delay, "siege event delay", 0)
+    due = number(time + delay, "siege due time", time)
+    if delay > 0 and due <= time:
+        raise InputError("Siege delay cannot advance the floating-point event clock")
+    return due
+
+
 def _fields(value, expected, label):
     if not isinstance(value, dict) or set(value) != expected:
         raise InputError(f"{label} requires its complete explicit parameters")
@@ -620,10 +630,7 @@ class SiegeCombat:
         if state["phase"] != "undeployed":
             return
         actor = self.actors[actor_id]
-        if (
-            actor["spawn_seconds"] == "controlled"
-            or actor["spawn_seconds"] > time + EPSILON
-        ):
+        if actor["spawn_seconds"] == "controlled" or actor["spawn_seconds"] > time:
             return
         self.reinforcements.validate_deployment_point(
             {"x": actor["x"], "y": actor["y"]}, time
@@ -632,13 +639,17 @@ class SiegeCombat:
         state["phase"] = "active"
         state["deployed_at"] = actor["spawn_seconds"]
         state["next_decay"] = (
-            actor["spawn_seconds"] + termination["decay"]["interval_seconds"]
+            siege_time_after(
+                actor["spawn_seconds"], termination["decay"]["interval_seconds"]
+            )
             if termination["decay"]["maximum_hp_fraction_per_pulse"]
             else None
         )
         lifetime = termination["maximum_lifetime_seconds"]
         state["expires_at"] = (
-            actor["spawn_seconds"] + lifetime if lifetime is not None else None
+            siege_time_after(actor["spawn_seconds"], lifetime)
+            if lifetime is not None
+            else None
         )
         trace.append(
             {"time_seconds": time, "event": "siege_deployed", "source": actor_id}
@@ -712,10 +723,7 @@ class SiegeCombat:
                 changed |= self._terminate(actor_id, time, "hp_death", trace)
                 continue
             decay = model["parameters"]["termination"]["decay"]
-            while (
-                state["next_decay"] is not None
-                and state["next_decay"] <= time + EPSILON
-            ):
+            while state["next_decay"] is not None and state["next_decay"] <= time:
                 amount = actor["maximum_hp"] * decay["maximum_hp_fraction_per_pulse"]
                 actor["hp"] = max(actor["hp"] - amount, 0)
                 trace.append(
@@ -726,16 +734,15 @@ class SiegeCombat:
                         "damage": amount,
                     }
                 )
-                state["next_decay"] += decay["interval_seconds"]
+                state["next_decay"] = siege_time_after(
+                    state["next_decay"], decay["interval_seconds"]
+                )
                 if actor["hp"] <= 0:
                     changed |= self._terminate(actor_id, time, "hp_death", trace)
                     break
             if state["phase"] != "active":
                 continue
-            if (
-                state["expires_at"] is not None
-                and state["expires_at"] <= time + EPSILON
-            ):
+            if state["expires_at"] is not None and state["expires_at"] <= time:
                 changed |= self._terminate(actor_id, time, "lifetime_expired", trace)
                 continue
             if state["anchor"] is not None:
@@ -974,11 +981,9 @@ class SiegeCombat:
             state[field]
             for state in self.states.values()
             for field in ("next_decay", "expires_at", "route_arrival")
-            if state[field] is not None and state[field] > time + EPSILON
+            if state[field] is not None and state[field] > time
         ]
-        pending.extend(
-            arrival for arrival, _, _ in self.pending if arrival > time + EPSILON
-        )
+        pending.extend(arrival for arrival, _, _ in self.pending if arrival > time)
         payload = self.reinforcements.next_boundary(time)
         if payload is not None:
             pending.append(payload)

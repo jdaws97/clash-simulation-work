@@ -7,7 +7,7 @@ import unittest
 
 from clashlab.adapters import compile_actor
 from clashlab.catalog import Catalog
-from clashlab.common import InputError
+from clashlab.common import InputError, read_json
 from clashlab.reinforcements import (
     ReinforcementCombat,
     compile_attacking_reinforcements,
@@ -172,6 +172,23 @@ class ReinforcementTests(unittest.TestCase):
         instance["payload_member_parameters"]["receiver_clan_castle_level"] = 1
         with self.assertRaises(InputError):
             compile_payload(instance, self.catalog)
+
+    def test_received_super_troop_binds_parent_research_and_keeps_receiver_cap(self):
+        parameters = read_json(ROOT / "data/battle-policies/recipe-troops.json")[
+            "parameters"
+        ]["rocket-balloon"]
+        for level in (8, 10):
+            instance = payload_instance(
+                entity="rocket-balloon", level=level, recipe_parameters=parameters
+            )
+            instance.pop("wall_parameters")
+            instance["attack_parameters"]["radius"] = 1.2
+            with self.subTest(level=level):
+                actor = compile_payload(instance, self.catalog)
+                self.assertEqual(actor["entity_adapter"]["level"], level)
+                instance["payload_member_parameters"]["receiver_clan_castle_level"] = 1
+                with self.assertRaisesRegex(InputError, "receiver|laboratory"):
+                    compile_payload(instance, self.catalog)
 
     def test_unsupported_payload_and_predeployed_member_fail_closed(self):
         with self.assertRaises(InputError):

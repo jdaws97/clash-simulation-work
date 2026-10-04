@@ -314,6 +314,8 @@ class BattleTermination:
                 continue
             if not self._living(actor):
                 continue
+            if actor.get("_recalled", False) or "spell_decoy_model" in actor:
+                continue
             spawn = self._spawn_time(actor)
             if spawn != "controlled" and spawn <= time + EPSILON:
                 reasons.append({"kind": "active_attacker", "id": actor_id})

@@ -62,12 +62,15 @@ class SpellTowerIntegrationTests(unittest.TestCase):
     def tank(self, **changes):
         return fixed_tank(x=13.5, y=5.5, **changes)
 
-    def test_registered_modes_are_level_gated_and_earthquake_stays_missing(self):
+    def test_registered_modes_are_level_gated_and_earthquake_needs_new_scope(self):
         entity = self.catalog.entity("spell-tower")
         self.assertTrue(partial_adapter_status(entity, 1, mode="rage")["available"])
         self.assertFalse(partial_adapter_status(entity, 1, mode="poison")["available"])
-        self.assertFalse(
+        self.assertTrue(
             partial_adapter_status(entity, 4, mode="earthquake")["available"]
+        )
+        self.assertFalse(
+            partial_adapter_status(entity, 3, mode="earthquake")["available"]
         )
         for mode in ("rage", "poison", "invisibility"):
             compiled = self.compile([spell_tower_instance(mode), self.tank()])

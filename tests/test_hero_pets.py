@@ -7,7 +7,8 @@ import unittest
 
 from clashlab.catalog import Catalog
 from clashlab.combat import PatternCombat, expand_area_effects
-from clashlab.common import InputError
+from clashlab.common import InputError, read_json
+from clashlab.recipe_frosty import compile_frostmite_reserves
 from clashlab.hazards import PulsedHazards
 from clashlab.hero_pets import (
     OWNER_DEATH_POLICIES,
@@ -52,6 +53,12 @@ def projectile():
 
 
 def pet_parameters(entity, **changes):
+    if entity == "frosty":
+        parameters = read_json(ROOT / "data/battle-policies/recipe-frosty.json")[
+            "parameters"
+        ]
+        parameters.update(changes)
+        return parameters
     behaviors = {
         "unicorn": {
             "healing_basis": "catalog_healingPerPulse_per_catalog_attackSpeed_scaled_by_source_pet_buff",
@@ -222,7 +229,13 @@ class HeroPetTests(unittest.TestCase):
             instance or pet_instance(entity), self.catalog, 8, definitions
         )
         actors = _load_actors(
-            synthetic_scene([hero, *others, pet], width=24, height=16), 24, 16
+            synthetic_scene(
+                [hero, *others, pet, *compile_frostmite_reserves(pet)],
+                width=24,
+                height=16,
+            ),
+            24,
+            16,
         )
         walls = WallRouting(actors)
         return actors, PetCombat(actors, 24, 16, walls.select_target), []
@@ -235,6 +248,7 @@ class HeroPetTests(unittest.TestCase):
             "spirit-fox": (2800, 288, 1.6, 3, 2.5),
             "lassi": (4500, 360, 0.9, 4, 0.6),
             "electro-owl": (3000, 238, 1.4, 2.5, 6),
+            "frosty": (3300, 156, 1.2, 3, 3.5),
         }
         for entity, statistics in expected.items():
             with self.subTest(entity=entity):
@@ -269,16 +283,16 @@ class HeroPetTests(unittest.TestCase):
                 self.assertFalse(actor["counts_for_destruction"])
                 self.assertIn(entity, pets.models["pet"]["statistics_source"])
                 self.assertIn("assignment", pets.models["pet"]["publisher_sources"])
-        self.assertEqual(SUPPORTED_PETS, set(expected))
+        self.assertEqual(SUPPORTED_PETS, set(expected) | {"mighty-yak", "angry-jelly"})
 
     def test_owl_range_disagreement_is_retained_and_frosty_fails_with_source_gap(self):
         actors, pets, _ = self.runtime("electro-owl")
         self.assertEqual(actors["pet"]["range"], 6)
         conflict = pets.models["pet"]["statistic_disagreements"][0]
         self.assertEqual(conflict["extraction_tiles"], 5.5)
-        instance = pet_instance()
-        instance["entity"] = "frosty"
-        with self.assertRaisesRegex(InputError, "Frostmite"):
+        instance = pet_instance("frosty")
+        del instance["parameters"]["behavior"]["frostmite_statistics"]
+        with self.assertRaisesRegex(InputError, "Frosty behavior"):
             compile_pet(instance, self.catalog, 8, {"hero": owner()})
 
     def test_levels_ownership_duplicates_and_missing_hypotheses_fail_closed(self):
@@ -287,7 +301,7 @@ class HeroPetTests(unittest.TestCase):
             instance[field] = value
             with self.subTest(field=field), self.assertRaises(InputError):
                 compile_pet(instance, self.catalog, 8, {"hero": owner()})
-        for entity in SUPPORTED_PETS:
+        for entity in SUPPORTED_PETS - {"mighty-yak", "angry-jelly"}:
             instance = pet_instance(entity)
             del instance["parameters"]["owner_death_policy"]
             with self.subTest(entity=entity), self.assertRaises(InputError):

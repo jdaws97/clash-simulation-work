@@ -298,6 +298,9 @@ class MultiGearCombat:
     """Own only shot order/readiness; shared PatternCombat owns released hits."""
 
     def __init__(self, actors, ordinary_select_target, combat):
+        from .revenge_towers import RevengeTowerCombat
+
+        self.revenge = RevengeTowerCombat(actors, combat)
         self.ordinary_select_target = ordinary_select_target
         self.combat = combat
         self.models = {
@@ -317,6 +320,7 @@ class MultiGearCombat:
         }
 
     def prepare(self, actors, time, trace):
+        self.revenge.prepare(actors, time, trace)
         for key, model in self.models.items():
             state = self.states[key]
             if actors[key]["hp"] > 0 or state["destroyed"]:
@@ -344,6 +348,9 @@ class MultiGearCombat:
         )
 
     def select_target(self, actor, actors, time, blocked, width, height):
+        if self.revenge.dormant(actor):
+            actor["target"] = None
+            return None, None
         if actor["id"] not in self.models:
             return self.ordinary_select_target(
                 actor, actors, time, blocked, width, height
@@ -401,10 +408,14 @@ class MultiGearCombat:
 
     def frame(self, actor):
         state = self.states.get(actor["id"])
-        return {"multi_gear_state": deepcopy(state)} if state is not None else {}
+        result = {"multi_gear_state": deepcopy(state)} if state is not None else {}
+        return {**result, **self.revenge.frame(actor)}
 
     def result(self):
-        return {"states": deepcopy(self.states)}
+        result = {"states": deepcopy(self.states)}
+        if self.revenge.models:
+            result["revenge_towers"] = self.revenge.result()
+        return result
 
 
 def validate_fanout(parameters):

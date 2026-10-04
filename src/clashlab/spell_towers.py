@@ -16,8 +16,8 @@ from .hazards import HAZARD_CLASSES, PROTECTION_POLICIES, validate_hazard
 from .spatial import EPSILON, _active, center, target_distance
 
 
-SUPPORTED_MODES = {"rage": 1, "poison": 2, "invisibility": 3}
-UNSUPPORTED_MODES = {"earthquake": "maximum-HP earthquake pulse adapter missing"}
+SUPPORTED_MODES = {"rage": 1, "poison": 2, "invisibility": 3, "earthquake": 4}
+UNSUPPORTED_MODES = {}
 UNIT_CLASSES = {"troop", "hero", "pet", "siege", "other", "guardian"}
 RAGE_COMPOSITION = {"multiply_with_other_sources", "strongest_with_other_sources"}
 SPELL_TOWER_RULES = {
@@ -100,6 +100,8 @@ EFFECT_FIELDS = {
     },
     "invisibility": COMMON_EFFECT_FIELDS
     | {"acquisition_policy", "stacking_policy", "immunity_policy"},
+    "earthquake": COMMON_EFFECT_FIELDS
+    | {"status", "statistic_basis", "damage_fraction_multiplier", "stacking_policy"},
 }
 
 
@@ -263,7 +265,11 @@ def _validate_parameters(parameters, mode):
         (
             {"pulsed_damage_continuous_status_with_explicit_linger"}
             if mode == "poison"
-            else {"continuous_inside_field_no_linger"}
+            else (
+                {"one_pulse_at_released_payload_arrival"}
+                if mode == "earthquake"
+                else {"continuous_inside_field_no_linger"}
+            )
         ),
         "effect membership",
     )
@@ -292,6 +298,26 @@ def _validate_parameters(parameters, mode):
             {"does_not_grant_damage_immunity"},
             "invisibility damage immunity",
         )
+    elif mode == "earthquake":
+        if effect["status"] != "experimental_not_replay_calibrated":
+            raise InputError(
+                "Earthquake Tower requires explicit experimental HP and geometry hypotheses"
+            )
+        _choice(
+            effect["statistic_basis"],
+            {"snapshot_troopDamagePercent_of_current_maximum_hp"},
+            "Earthquake statistic basis",
+        )
+        _choice(
+            effect["stacking_policy"],
+            {"independent_additive_single_pulses"},
+            "Earthquake stacking",
+        )
+        number(effect["damage_fraction_multiplier"], "Earthquake fraction scale", 0, 1)
+        if effect["duration_multiplier"] != 1 or recipients["target_kinds"] != ["unit"]:
+            raise InputError(
+                "Earthquake Tower is an instantaneous troop pulse without duration scaling"
+            )
     else:
         _choice(
             effect["statistic_basis"],
@@ -355,9 +381,23 @@ def compile_spell_tower(actor, instance, entity, row, modifiers):
     effect["radius"] = number(
         snapshot["spellRadius"], "Spell Tower catalog spell radius", EPSILON
     ) * effect.pop("radius_multiplier")
-    effect["duration_seconds"] = number(
-        snapshot["spellDuration"], "Spell Tower catalog spell duration", EPSILON
-    ) * effect.pop("duration_multiplier")
+    if mode == "earthquake":
+        effect.pop("duration_multiplier")
+        effect["duration_seconds"] = 0
+        effect["damage_fraction"] = (
+            number(
+                snapshot["troopDamagePercent"],
+                "Earthquake troop damage percent",
+                0,
+                100,
+            )
+            / 100
+            * effect.pop("damage_fraction_multiplier")
+        )
+    else:
+        effect["duration_seconds"] = number(
+            snapshot["spellDuration"], "Spell Tower catalog spell duration", EPSILON
+        ) * effect.pop("duration_multiplier")
     if mode == "rage":
         effect["damage_bonus_fraction"] = (
             number(snapshot["damageIncrease"], "Spell Tower Rage bonus percent", 0)
@@ -453,6 +493,9 @@ def _parameter_view(model):
     effect = parameters["effect"]
     effect["radius_multiplier"] = effect.pop("radius")
     effect["duration_multiplier"] = effect.pop("duration_seconds")
+    if model["mode"] == "earthquake":
+        effect["duration_multiplier"] = 1
+        effect["damage_fraction_multiplier"] = effect.pop("damage_fraction")
     if model["mode"] == "rage":
         effect["damage_bonus_multiplier"] = effect.pop("damage_bonus_fraction")
     elif model["mode"] == "poison":
@@ -468,6 +511,8 @@ def validate_spell_tower_model(actor):
     if model["kind"] != "reactive_spell_tower" or model["mode"] not in SUPPORTED_MODES:
         raise InputError("Unsupported Spell Tower runtime mode")
     _validate_parameters(_parameter_view(model), model["mode"])
+    if model["mode"] == "earthquake" and model["effect"]["duration_seconds"] != 0:
+        raise InputError("Earthquake Tower cannot create a persistent field")
     if (
         actor["team"] != "defense"
         or actor["kind"] != "defense"
@@ -512,6 +557,7 @@ class SpellTowerCombat:
         self.hazards = hazards
         self.states = {}
         self.pending = []
+        self.quake_pending = []
         self.fields = {}
         self.sequence = 0
         self.last_time = None
@@ -762,7 +808,9 @@ class SpellTowerCombat:
                     "launch_at": state["launch_at"],
                 }
             )
-        if state["launch_at"] > time + EPSILON:
+        if state["launch_at"] > time + (
+            0 if model["mode"] == "earthquake" else EPSILON
+        ):
             return
         position = (
             center(actors[state["trigger_id"]])
@@ -793,6 +841,8 @@ class SpellTowerCombat:
     def _release_due(self, actors, time, trace):
         released = False
         while self.pending and self.pending[0][0] <= time + EPSILON:
+            if self.pending[0][2]["mode"] == "earthquake" and self.pending[0][0] > time:
+                break
             _, _, packet = heappop(self.pending)
             model = self.models[packet["source"]]
             field = {
@@ -802,6 +852,20 @@ class SpellTowerCombat:
                 "radius": model["effect"]["radius"],
                 "recipients": deepcopy(model["recipients"]),
             }
+            if packet["mode"] == "earthquake":
+                field["effect"] = deepcopy(model["effect"])
+                self.quake_pending.append(field)
+                self.states[packet["source"]]["released_count"] += 1
+                trace.append(
+                    {
+                        "event": "spell_tower_quake_release",
+                        "time_seconds": time,
+                        "source": packet["source"],
+                        "field_id": packet["id"],
+                    }
+                )
+                released = True
+                continue
             if packet["mode"] == "poison":
                 self.hazards.schedule(
                     self._poison_field(
@@ -834,7 +898,7 @@ class SpellTowerCombat:
 
     def _recipient_eligible(self, field, actor, time):
         recipients = field["recipients"]
-        team = "attack" if field["mode"] == "poison" else "defense"
+        team = "attack" if field["mode"] in {"poison", "earthquake"} else "defense"
         return (
             _active(actor, time)
             and actor["team"] == team
@@ -902,6 +966,46 @@ class SpellTowerCombat:
             actor["_spell_tower_rage_composition"] = self.rage_composition
             actor["_spell_tower_fields"] = fields
 
+    def resolve(self, actors, time, trace):
+        """One-shot quake damage enters the same source-attributed health batch.
+
+        Call after prepare has released due tower payloads, before shared health
+        settlement. Source death cannot cancel a released payload; protection
+        is evaluated on its recipients at impact.
+        """
+        from collections import defaultdict
+        from .damage_receipts import record_damage
+
+        damage = defaultdict(float)
+        pending, self.quake_pending = self.quake_pending, []
+        for field in pending:
+            for target in sorted(actors.values(), key=lambda actor: actor["id"]):
+                if not self._recipient_eligible(
+                    field, target, time
+                ) or not self._inside_field(field, target):
+                    continue
+                amount = target["maximum_hp"] * field["effect"]["damage_fraction"]
+                amount = record_damage(
+                    self,
+                    target,
+                    amount,
+                    time,
+                    source_id=field["source"],
+                    source_team="defense",
+                    origin="spell",
+                )
+                damage[target["id"]] += amount
+                trace.append(
+                    {
+                        "event": "spell_tower_quake_impact",
+                        "time_seconds": time,
+                        "source": field["source"],
+                        "target": target["id"],
+                        "nominal_damage": amount,
+                    }
+                )
+        return dict(damage)
+
     def prepare(self, actors, time, trace):
         number(time, "Spell Tower preparation time", 0)
         if self.last_time is not None and time < self.last_time - EPSILON:
@@ -941,6 +1045,21 @@ class SpellTowerCombat:
         future = [
             value for value in values if value is not None and value > time + EPSILON
         ]
+        future.extend(
+            arrival
+            for arrival, _, packet in self.pending
+            if packet["mode"] == "earthquake" and arrival > time
+        )
+        for source, model in self.models.items():
+            if model["mode"] == "earthquake":
+                state = self.states[source]
+                future.extend(
+                    value
+                    for value in (state["ready_at"], state["launch_at"])
+                    if state["phase"] != "destroyed"
+                    and value is not None
+                    and value > time
+                )
         return min(future) if future else None
 
     def first_crossing_delay(self, actor, route, time, horizon, effective_speed):

@@ -486,6 +486,8 @@ def _bind_reinforcements(army, account, scene, catalog, attackers):
             allow_firespitters=True,
             allow_guardians=True,
             allow_reinforcements=True,
+            allow_hero_extensions=scene["scope"]
+            in {HERO_ROSTER_SCOPE, TERMINATION_SCOPE, ATTACK_SPELL_SCOPE},
         )
         for actor_id, instance in instances.items()
     }
@@ -1006,8 +1008,18 @@ def compile_full_battle(specification, account, army, layout, catalog, mode_rule
             and trap_summon.get("trap_id") == trap_owners[actor_id]
             and actor["team"] == "defense"
         )
+        spell_decoy = (
+            actor.get("spell_decoy_model", {}).get("cast_id")
+            in {
+                model["id"]
+                for model in compiled["scene"].get("attack_spell_models", [])
+                if model["entity"] == "totem-spell"
+            }
+            and actor["team"] == "attack"
+            and actor_id == actor["spell_decoy_model"]["cast_id"] + ":totem"
+        )
         if (
-            not (attacking_summon or defending_summon)
+            not (attacking_summon or defending_summon or spell_decoy)
             or actor["counts_for_destruction"]
             or actor["spawn_seconds"] != "controlled"
         ):

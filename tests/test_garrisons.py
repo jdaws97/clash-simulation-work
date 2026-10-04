@@ -8,7 +8,7 @@ from clashlab.adapters import compile_entity_scene
 from clashlab.catalog import Catalog
 from clashlab.common import InputError
 from clashlab.garrison_rules import RULES, RULESET, SCOPE
-from clashlab.garrisons import GARRISON_MEMBERS, GarrisonCombat
+from clashlab.garrisons import GARRISON_MEMBERS, SHARED_GARRISON_MEMBERS, GarrisonCombat
 from clashlab.spatial import _blocked, _load_actors, _select_target, simulate_spatial
 
 from test_adapters import entity_instance, projectile
@@ -116,7 +116,7 @@ class GarrisonTests(unittest.TestCase):
     def test_seven_defending_troops_use_catalog_statistics_and_exclude_destruction(
         self,
     ):
-        for entity in GARRISON_MEMBERS:
+        for entity in set(GARRISON_MEMBERS) - SHARED_GARRISON_MEMBERS:
             with self.subTest(entity=entity):
                 member = member_instance(entity=entity)
                 compiled = self.compile([castle_instance([member]), member])

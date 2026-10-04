@@ -5,6 +5,7 @@ from collections import defaultdict
 from .barbarian_king import BarbarianKingCombat
 from .dragon_duke import DragonDukeCombat
 from .minion_prince import MinionPrinceCombat
+from .recipe_equipment import RecipeEquipmentCombat
 
 
 EXTENDED_HEROES = {"barbarian-king", "minion-prince", "dragon-duke"}
@@ -17,6 +18,7 @@ class HeroRosterCombat:
         self.king = BarbarianKingCombat(actors, combat, select_target)
         self.duke = DragonDukeCombat(actors, combat)
         self.prince = MinionPrinceCombat(actors, combat, hit_status)
+        self.recipe = RecipeEquipmentCombat(actors)
         self.width = width
         self.height = height
         self.select_target = self.king.select_target
@@ -25,10 +27,12 @@ class HeroRosterCombat:
         self.king.prepare(actors, time, trace, self.width, self.height)
         self.duke.prepare(actors, time, trace)
         self.prince.prepare(actors, time, trace)
+        self.recipe.prepare(actors, time, trace)
 
     def activate(self, hero_id, actors, time, trace):
         self.king.activate(hero_id, actors, time, trace)
         self.prince.activate(hero_id, actors, time, trace)
+        self.recipe.activate(hero_id, actors, time, trace)
 
     def weapon_launched(self, hero_id, time, trace):
         self.prince.weapon_launched(hero_id, time, trace)
@@ -36,7 +40,7 @@ class HeroRosterCombat:
     def resolve(self, actors, time, trace, receipts):
         damage = defaultdict(float)
         healing = defaultdict(float)
-        for runtime in (self.king, self.duke):
+        for runtime in (self.king, self.duke, self.recipe):
             extra_damage, extra_healing = runtime.resolve(actors, time, trace, receipts)
             for key, amount in extra_damage.items():
                 damage[key] += amount
@@ -47,11 +51,18 @@ class HeroRosterCombat:
         return damage, healing
 
     def after_health(self, actors, receipts, time, trace):
+        self.recipe.prepare(actors, time, trace)
         return self.duke.after_health(actors, receipts, time, trace)
+
+    def wall_impacts(self, actor, primary, actors, time):
+        impacts = self.recipe.wall_impacts(actor, primary, actors, time)
+        if impacts is not None:
+            return impacts
+        return self.king.wall_impacts(actor, primary, actors, time)
 
     def next_boundary(self, time):
         candidates = []
-        for runtime in (self.king, self.duke, self.prince):
+        for runtime in (self.king, self.duke, self.prince, self.recipe):
             boundary = runtime.next_boundary(time)
             if boundary is not None:
                 candidates.append(boundary)
@@ -61,7 +72,7 @@ class HeroRosterCombat:
         routes = {key: route for key, (route, _) in motions.items()}
         speeds = {key: speed for key, (_, speed) in motions.items()}
         candidates = []
-        for runtime in (self.duke, self.prince):
+        for runtime in (self.duke, self.prince, self.recipe):
             crossing = runtime.first_crossing_delay(
                 actors, routes, speeds, time, horizon
             )
@@ -79,7 +90,7 @@ class HeroRosterCombat:
     def has_due_offense(self, time):
         return any(
             runtime.packets and runtime.packets[0][0] <= time + 1e-10
-            for runtime in (self.king, self.duke)
+            for runtime in (self.king, self.duke, self.recipe)
         )
 
     def continuation_reasons(self, time):
@@ -110,11 +121,12 @@ class HeroRosterCombat:
                     expires_at_seconds=orb["ends_at"],
                 )
             )
-        return reasons
+        return reasons + self.recipe.continuation_reasons()
 
     def result(self):
         return {
             "barbarian_king": self.king.result(),
             "dragon_duke": self.duke.result(),
             "minion_prince": self.prince.result(),
+            "recipe_equipment": self.recipe.result(),
         }

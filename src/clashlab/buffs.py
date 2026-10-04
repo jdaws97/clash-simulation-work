@@ -66,6 +66,7 @@ def damage_multiplier(actor):
         * actor.get("_guardian_self_damage_multiplier", 1)
         * actor.get("_guardian_field_damage_multiplier", 1)
         * actor.get("_hero_damage_multiplier", 1)
+        * actor.get("_recipe_damage_multiplier", 1)
     )
 
 

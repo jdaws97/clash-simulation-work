@@ -48,6 +48,7 @@ PATTERNS = {
     "multi_target",
     "firespitter_ballistic_bullet",
     "siege_area",
+    "siege_extended",
     "primary_centered_fanout",
 }
 AREA_EFFECTS = {
@@ -88,6 +89,7 @@ def validate_pattern(pattern):
     from .splash import LAYER_POLICIES, validate_directional_splash
     from .valkyries import validate_source_radial
     from .siege_machines import validate_siege_pattern
+    from .siege_extensions import validate_extended_siege_pattern
     from .firespitters import (
         PATTERN as FIRESPITTER_PATTERN,
         validate_firespitter_pattern,
@@ -97,6 +99,9 @@ def validate_pattern(pattern):
     if kind not in PATTERNS:
         raise InputError("Unsupported attack pattern")
     identifier(require(pattern, "source"), "attack-pattern evidence")
+    if kind == "siege_extended":
+        validate_extended_siege_pattern(pattern)
+        return
     if kind == FANOUT_PATTERN:
         validate_fanout_pattern(pattern)
         return
@@ -313,7 +318,7 @@ class PatternCombat:
         self, actor, primary, actors, time, trace, flat_damage=None, weapon_state=None
     ):
         pattern = self.patterns[actor["id"]]
-        if pattern["kind"] == "siege_area":
+        if pattern["kind"] in {"siege_area", "siege_extended"}:
             raise InputError("Siege weapons require their dedicated carrier runtime")
         if pattern["kind"] == "firespitter_ballistic_bullet":
             raise InputError(
@@ -387,7 +392,10 @@ class PatternCombat:
             and not actor.get("_tesla_hidden", False)
             and actor["team"] != packet["source_team"]
             and actor["kind"] in pattern["target_kinds"]
-            and actor["layer"] in pattern["target_layers"]
+            and (
+                actor["layer"] in pattern["target_layers"]
+                or "spell_decoy_model" in actor
+            )
             and (
                 pattern.get("splash_layer_policy") != "primary_target_layer_only"
                 or actor["layer"] == packet["primary_layer"]
@@ -519,12 +527,18 @@ class PatternCombat:
                     trace,
                 )
             for impacted, multiplier in impacts:
+                from .recipe_troops import recipe_damage_multiplier
+
                 if status_callback is not None:
                     status_callback(packet, impacted, actors, time, trace)
                 amount = (
-                    packet["flat_damage"]
-                    + impacted["maximum_hp"] * pattern["maximum_hp_fraction"]
-                ) * multiplier
+                    (
+                        packet["flat_damage"]
+                        + impacted["maximum_hp"] * pattern["maximum_hp_fraction"]
+                    )
+                    * multiplier
+                    * recipe_damage_multiplier(actors[packet["source"]], impacted)
+                )
                 protected = impacted["immune_until"] > time + EPSILON
                 resolved = record_damage(
                     self,

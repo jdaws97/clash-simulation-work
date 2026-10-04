@@ -96,14 +96,14 @@ class EngineCoverageTests(unittest.TestCase):
         self.assertIn("Stationary Warden statue", role["implemented"])
         self.assertIn("counted/excluded", role["implemented"])
 
-    def test_spell_tower_modes_require_lifecycle_and_do_not_promote_earthquake(self):
+    def test_spell_tower_modes_require_lifecycle_and_experimental_earthquake(self):
         row = self.rows["spell-tower"]
         modes = {mode["id"]: mode for mode in row["mode_variants"]}
         for mode in ("rage", "poison", "invisibility"):
             self.assertTrue(modes[mode]["conditional_weapon_registered"])
             self.assertTrue(modes[mode]["requires_entity_lifecycle"])
-        self.assertFalse(modes["earthquake"]["conditional_weapon_registered"])
-        self.assertIn("Earthquake remains unsupported", row["behavior"]["implemented"])
+        self.assertTrue(modes["earthquake"]["conditional_weapon_registered"])
+        self.assertIn("experimental Earthquake", row["behavior"]["implemented"])
 
     def test_role_coverage_does_not_infer_calibration_or_complete_battle_readiness(
         self,
@@ -141,7 +141,7 @@ class EngineCoverageTests(unittest.TestCase):
             self.report["summary"][
                 "defending_garrison_troops_with_conditional_mechanics"
             ],
-            7,
+            12,
         )
         self.assertEqual(
             self.report["summary"]["defending_heroes_with_conditional_mechanics"], 5
@@ -155,7 +155,8 @@ class EngineCoverageTests(unittest.TestCase):
                 self.rows[entity_id]["behavior"]["status"], "conditional_mechanics"
             )
         self.assertIn(
-            "seven defending troop", self.rows["clan-castle"]["behavior"]["implemented"]
+            "twelve defending troop",
+            self.rows["clan-castle"]["behavior"]["implemented"],
         )
 
 

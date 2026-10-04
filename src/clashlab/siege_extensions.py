@@ -13,11 +13,34 @@ from math import hypot
 from .common import InputError, identifier, integer, number, require
 from .rates import attack_rate
 from .reinforcements import ReinforcementCombat
-from .siege_machines import SiegeCombat, _along, _range_entry, _segment_rectangle_entry
+from .siege_machines import (
+    SiegeCombat,
+    _along,
+    _range_entry,
+    _segment_rectangle_entry,
+    siege_time_after,
+)
 from .spatial import EPSILON, _active, _eligible, center, target_distance
 
 
 EXTENDED_SIEGES = {"log-launcher", "flame-flinger", "siege-barracks", "battle-drill"}
+BOUND_RECIPE_SIEGES = {"log-launcher"}
+
+
+def recipe_siege_runtime(actors, select_target, reinforcements, width, height):
+    """Select one complete carrier runtime; orphan extensions stay unavailable."""
+    entities = {
+        actor["siege_model"]["entity"]
+        for actor in actors.values()
+        if "siege_model" in actor
+    }
+    if entities & BOUND_RECIPE_SIEGES:
+        if not entities <= BOUND_RECIPE_SIEGES:
+            raise InputError("A recipe battle owns only one selected siege carrier")
+        return ExtendedSiegeCombat(actors, select_target, reinforcements, width, height)
+    return SiegeCombat(actors, select_target, reinforcements, width, height)
+
+
 EXTENDED_SIEGE_RULES = {
     "extended_siege_statistics": "named_catalog_roles_with_explicit_geometry_and_timing",
     "log_contacts": "captured_structure_footprints_distance_ordered_with_explicit_hit_limit",
@@ -311,6 +334,16 @@ def _validate_parameters(parameters, entity_id):
 
 
 def validate_extended_siege_pattern(pattern):
+    if "defending_unit_collateral_policy" in pattern:
+        if pattern["defending_unit_collateral_policy"] != "ignore":
+            raise InputError(
+                "Rolling logs require the explicit structure-only collateral hypothesis"
+            )
+        pattern = {
+            key: value
+            for key, value in pattern.items()
+            if key != "defending_unit_collateral_policy"
+        }
     _fields(
         pattern,
         {
@@ -536,6 +569,8 @@ def compile_extended_siege(
     )
     if not stationary:
         actor["wall_behavior"] = {"kind": "avoid", "source": parameters["source"]}
+    else:
+        actor.pop("target_priority_tiers", None)
     actor["entity_adapter"].update(
         siege_parameters=deepcopy(parameters),
         behavior_verification="explicit_extended_siege_hypotheses_not_replay_validated",
@@ -829,7 +864,7 @@ class ExtendedSiegeCombat(SiegeCombat):
             due = state["deployed_at"] + member["delay_seconds"]
             if (
                 member["phase"] == "unproduced"
-                and due <= time + EPSILON
+                and due <= time
                 and state["phase"] == "active"
             ):
                 member.update(phase="produced", produced_at=due)
@@ -1080,11 +1115,21 @@ class ExtendedSiegeCombat(SiegeCombat):
             and target["layer"] == "ground"
         )
 
-    @staticmethod
-    def _hit(packet, target, amount, time, trace, damage):
+    def _hit(self, packet, target, amount, time, trace, damage):
+        from .damage_receipts import record_damage
+
         protected = target["immune_until"] > time + EPSILON
-        if not protected:
-            damage[target["id"]] += amount
+        actual = record_damage(
+            self,
+            target,
+            amount,
+            time,
+            source_id=packet["source"],
+            source_actor_id=packet["source"],
+            source_team=packet["source_team"],
+            origin="weapon",
+        )
+        damage[target["id"]] += actual
         trace.append(
             {
                 "time_seconds": time,
@@ -1099,7 +1144,7 @@ class ExtendedSiegeCombat(SiegeCombat):
 
     def resolve(self, actors, time, trace):
         damage = defaultdict(float)
-        while self.pending and self.pending[0][0] <= time + EPSILON:
+        while self.pending and self.pending[0][0] <= time:
             due, _, packet = heappop(self.pending)
             source = actors[packet["source"]]
             model = self.models[source["id"]]
@@ -1158,8 +1203,12 @@ class ExtendedSiegeCombat(SiegeCombat):
                         "source_team": packet["source_team"],
                         "position": packet["position"],
                         "created_at": due,
-                        "next_pulse": due + behavior["flame_interval_seconds"],
-                        "expires_at": due + behavior["flame_duration_seconds"],
+                        "next_pulse": siege_time_after(
+                            due, behavior["flame_interval_seconds"]
+                        ),
+                        "expires_at": siege_time_after(
+                            due, behavior["flame_duration_seconds"]
+                        ),
                         "pulse_index": 0,
                     }
                 )
@@ -1182,8 +1231,8 @@ class ExtendedSiegeCombat(SiegeCombat):
         for field in self.fields:
             behavior = self.models[field["source"]]["parameters"]["behavior"]
             while (
-                field["next_pulse"] <= time + EPSILON
-                and field["next_pulse"] <= field["expires_at"] + EPSILON
+                field["next_pulse"] <= time
+                and field["next_pulse"] <= field["expires_at"]
             ):
                 due = field["next_pulse"]
                 fractions = behavior["flame_dps_fractions"]
@@ -1203,10 +1252,16 @@ class ExtendedSiegeCombat(SiegeCombat):
                     key = (due, field["source"], target["id"])
                     pulses[key] = max(pulses.get(key, 0), amount)
                 field["pulse_index"] += 1
-                field["next_pulse"] += behavior["flame_interval_seconds"]
+                field["next_pulse"] = siege_time_after(
+                    field["next_pulse"], behavior["flame_interval_seconds"]
+                )
         for (_, source, target_id), amount in sorted(pulses.items()):
             self._hit(
-                {"source": source, "kind": "flame_pulse"},
+                {
+                    "source": source,
+                    "source_team": self.actors[source]["team"],
+                    "kind": "flame_pulse",
+                },
                 actors[target_id],
                 amount,
                 time,
@@ -1214,9 +1269,7 @@ class ExtendedSiegeCombat(SiegeCombat):
                 damage,
             )
         self.fields = [
-            field
-            for field in self.fields
-            if field["next_pulse"] <= field["expires_at"] + EPSILON
+            field for field in self.fields if field["next_pulse"] <= field["expires_at"]
         ]
 
     def next_boundary(self, time):
@@ -1225,9 +1278,7 @@ class ExtendedSiegeCombat(SiegeCombat):
         if inherited is not None:
             boundaries.append(inherited)
         boundaries.extend(
-            field["next_pulse"]
-            for field in self.fields
-            if field["next_pulse"] > time + EPSILON
+            field["next_pulse"] for field in self.fields if field["next_pulse"] > time
         )
         for carrier_id, group in self.generated.items():
             state = self.states[carrier_id]
@@ -1237,7 +1288,7 @@ class ExtendedSiegeCombat(SiegeCombat):
                 state["deployed_at"] + member["delay_seconds"]
                 for member in group["members"].values()
                 if member["phase"] == "unproduced"
-                and state["deployed_at"] + member["delay_seconds"] > time + EPSILON
+                and state["deployed_at"] + member["delay_seconds"] > time
             )
         return min(boundaries) if boundaries else None
 
@@ -1271,3 +1322,50 @@ class ExtendedSiegeCombat(SiegeCombat):
             },
             "shared_drill_effect_gates_required": True,
         }
+
+    def continuation_reasons(self, time):
+        """Meaningful weapons, fields and generated reserves, never inert reserves."""
+        from .battle_termination import continuation_fact
+
+        facts = []
+        for arrival, serial, packet in self.pending:
+            source = self.actors[packet["source"]]
+            if packet["kind"] == "flinger_shot" and not _active(source, time):
+                continue
+            facts.append(
+                continuation_fact(
+                    "pending_damage",
+                    f"siege:{serial}",
+                    [packet["source"]],
+                    source_team=source["team"],
+                    not_before_seconds=arrival,
+                )
+            )
+        for index, field in enumerate(self.fields):
+            if field["next_pulse"] <= field["expires_at"]:
+                facts.append(
+                    continuation_fact(
+                        "pending_damage",
+                        f"flinger-field:{index}",
+                        [field["source"]],
+                        source_team=field["source_team"],
+                        not_before_seconds=field["next_pulse"],
+                        expires_at_seconds=field["expires_at"],
+                    )
+                )
+        for carrier_id, group in self.generated.items():
+            carrier = self.states[carrier_id]
+            for member_id, state in group["members"].items():
+                if state["phase"] == "produced" or (
+                    state["phase"] == "unproduced" and carrier["phase"] == "active"
+                ):
+                    due = carrier["deployed_at"] + state["delay_seconds"]
+                    facts.append(
+                        continuation_fact(
+                            "pending_release",
+                            f"barracks:{member_id}",
+                            [member_id],
+                            not_before_seconds=due,
+                        )
+                    )
+        return facts

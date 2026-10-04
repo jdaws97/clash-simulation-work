@@ -9,10 +9,23 @@ from collections import defaultdict
 from copy import deepcopy
 from math import isclose
 
+from .equipment_lifecycles import (
+    OWNERS as LOCAL_EQUIPMENT_OWNERS,
+    EquipmentLifecycles,
+    compile_equipment as compile_local_equipment,
+    validate_equipment as validate_local_equipment,
+)
 from .common import InputError, identifier, integer, number, require
 from .combat import validate_pattern
 from .defense_patterns import RULES as AREA_DEFENSE_RULES
+from .rates import skip_elapsed_pulses
 from .spatial import EPSILON, _active, center, target_distance
+from .recipe_equipment import (
+    OWNERS as RECIPE_EQUIPMENT_OWNERS,
+    compile_action_figure_summons,
+    compile_recipe_equipment,
+    validate_recipe_equipment,
+)
 
 
 RULESET = "spatial-hero-equipment-area-kernel-v9"
@@ -30,15 +43,20 @@ EXTENDED_EQUIPMENT_OWNERS = {
     "noble-iron": "minion-prince",
     "dark-orb": "minion-prince",
 }
-EQUIPMENT = {
-    "invisibility-vial",
-    "magic-mirror",
-    "rocket-spear",
-    "electro-boots",
-    "royal-gem",
-    "eternal-tome",
-    "healing-tome",
-} | set(EXTENDED_EQUIPMENT_OWNERS)
+EQUIPMENT = (
+    {
+        "invisibility-vial",
+        "magic-mirror",
+        "rocket-spear",
+        "electro-boots",
+        "royal-gem",
+        "eternal-tome",
+        "healing-tome",
+    }
+    | set(EXTENDED_EQUIPMENT_OWNERS)
+    | set(RECIPE_EQUIPMENT_OWNERS)
+    | set(LOCAL_EQUIPMENT_OWNERS)
+)
 HERO_RULES = {
     **AREA_DEFENSE_RULES,
     "wall_motion": "explicit_clear_penetrate_avoid_or_enemy_wall_jump_hypothesis",
@@ -95,6 +113,12 @@ def _equipment_parameter_fields(entity_id):
 
 def _validate_runtime_equipment(model):
     entity_id = require(model, "entity")
+    if entity_id in LOCAL_EQUIPMENT_OWNERS:
+        validate_local_equipment(model)
+        return
+    if entity_id in RECIPE_EQUIPMENT_OWNERS:
+        validate_recipe_equipment(model)
+        return
     if entity_id in EXTENDED_EQUIPMENT_OWNERS:
         from .barbarian_king import validate_king_equipment
         from .dragon_duke import validate_duke_equipment
@@ -515,7 +539,15 @@ def compile_hero(
     dps_addition = 0
     recovery = number(require(row, "healthRecovery"), "snapshot base recovery", 0)
     for item in equipment:
-        if item["entity"] in EXTENDED_EQUIPMENT_OWNERS:
+        if item["entity"] in LOCAL_EQUIPMENT_OWNERS:
+            model, gear_row = compile_local_equipment(
+                item, instance, catalog, movement_units_per_tile
+            )
+        elif item["entity"] in RECIPE_EQUIPMENT_OWNERS:
+            if not allow_hero_extensions:
+                raise InputError("Recipe equipment requires the explicit v27 scope")
+            model, gear_row = compile_recipe_equipment(item, instance, catalog)
+        elif item["entity"] in EXTENDED_EQUIPMENT_OWNERS:
             if not allow_hero_extensions:
                 raise InputError("Extended hero equipment requires the v27 scope")
             from .barbarian_king import compile_king_equipment
@@ -533,6 +565,8 @@ def compile_hero(
         else:
             model, gear_row = _equipment_model(item, instance, catalog)
         models.append(model)
+        if model.get("on_hit_status") is not None:
+            actor["on_hit_status"] = deepcopy(model["on_hit_status"])
         hp_addition += number(
             gear_row.get("hitpointIncrease", 0), "gear HP addition", 0
         )
@@ -647,7 +681,7 @@ def compile_mirror_clones(actor):
             if clone["wall_behavior"]["kind"] == "clear_obstructions":
                 clone["wall_behavior"]["weapon"]["damage"] = clone["damage"]
             clones.append(clone)
-    return clones
+    return clones + compile_action_figure_summons(actor)
 
 
 def validate_ability_command(command, actors):
@@ -739,7 +773,9 @@ class HeroCombat:
                     "Runtime hero loadout must explicitly select two items or a bare probe"
                 )
             owners = {
+                **LOCAL_EQUIPMENT_OWNERS,
                 **EXTENDED_EQUIPMENT_OWNERS,
+                **RECIPE_EQUIPMENT_OWNERS,
                 "invisibility-vial": "archer-queen",
                 "magic-mirror": "archer-queen",
                 "rocket-spear": "royal-champion",
@@ -749,6 +785,11 @@ class HeroCombat:
                 "healing-tome": "grand-warden",
             }
             for equipment in model["equipment"]:
+                if (
+                    equipment["entity"] in RECIPE_EQUIPMENT_OWNERS
+                    and not allow_hero_extensions
+                ):
+                    raise InputError("Recipe runtime equipment requires the v27 scope")
                 _validate_runtime_equipment(equipment)
                 if (
                     equipment["entity"] == "healing-tome"
@@ -763,6 +804,8 @@ class HeroCombat:
                     raise InputError("Runtime equipment belongs to a different hero")
                 if equipment["entity"] == "electro-boots":
                     self.passive_next[key] = {"aura": None, "self_heal": None}
+
+        self.local_equipment = EquipmentLifecycles(actors)
 
     def _equipment(self, hero_id, entity):
         return next(
@@ -810,6 +853,7 @@ class HeroCombat:
             if status != "activated":
                 continue
             self.used.add(hero_id)
+            self.local_equipment.activate(hero_id, actors, time, trace)
             if self.extensions is not None:
                 self.extensions.activate(hero_id, actors, time, trace)
             expanded.append(
@@ -825,7 +869,7 @@ class HeroCombat:
                 entity = equipment["entity"]
                 if equipment["ability_type"] != "Active":
                     continue
-                if entity in {"invisibility-vial", "magic-mirror"}:
+                if entity in {"invisibility-vial", "magic-mirror", "action-figure"}:
                     hero["_untargetable_until"] = max(
                         hero.get("_untargetable_until", 0),
                         time + equipment["invisibility_seconds"],
@@ -840,7 +884,10 @@ class HeroCombat:
                         positions = {}
                         for key, clone in actors.items():
                             summon = clone.get("summon_model", {})
-                            if summon.get("parent") != hero_id:
+                            if (
+                                summon.get("parent") != hero_id
+                                or summon.get("equipment") != entity
+                            ):
                                 continue
                             targets.append(key)
                             x, y = center(hero)
@@ -848,13 +895,21 @@ class HeroCombat:
                                 "x": x + summon["offset"]["dx"],
                                 "y": y + summon["offset"]["dy"],
                             }
-                            self.clone_expiry[key] = time + summon["duration_seconds"]
+                            if "duration_seconds" in summon:
+                                self.clone_expiry[key] = (
+                                    time + summon["duration_seconds"]
+                                )
                             clone["next_attack"] = (
                                 time + summon["first_attack_delay_seconds"]
                             )
                         expanded.append(
                             {
-                                "id": command["id"] + "-mirror",
+                                "id": command["id"]
+                                + (
+                                    "-mirror"
+                                    if entity == "magic-mirror"
+                                    else "-action-figure"
+                                ),
                                 "kind": "deploy",
                                 "time_seconds": time,
                                 "targets": targets,
@@ -937,6 +992,7 @@ class HeroCombat:
             self.combat.patterns[key] = pattern
             if actor.get("wall_behavior", {}).get("kind") == "clear_obstructions":
                 actor["wall_behavior"]["weapon"]["damage"] = damage
+        self.local_equipment.prepare(actors, time)
         for key, clocks in self.passive_next.items():
             actor = actors[key]
             if not _active(actor, time):
@@ -955,6 +1011,7 @@ class HeroCombat:
             self.extensions.prepare(actors, time, trace)
 
     def weapon_launched(self, hero_id, time, trace):
+        self.local_equipment.weapon_launched(hero_id, time, trace)
         if self.extensions is not None:
             self.extensions.weapon_launched(hero_id, time, trace)
         if self.rocket_remaining.get(hero_id, 0) > 0:
@@ -973,6 +1030,18 @@ class HeroCombat:
         healing = defaultdict(float)
         for key, clocks in self.passive_next.items():
             hero = actors[key]
+            if hero.get("_recalled", False):
+                equipment = self._equipment(key, "electro-boots")
+                intervals = {
+                    "aura": equipment["aura_interval_seconds"],
+                    "self_heal": equipment["parameters"]["self_heal_interval_seconds"],
+                }
+                for field, clock in clocks.items():
+                    if clock is not None:
+                        clocks[field] = skip_elapsed_pulses(
+                            clock, intervals[field], time
+                        )
+                continue
             if not _active(hero, time):
                 continue
             equipment = self._equipment(key, "electro-boots")
@@ -1039,10 +1108,13 @@ class HeroCombat:
             )
             buff["remaining"] -= 1
             buff["next_pulse"] += parameters["pulse_interval_seconds"]
+        for key, amount in self.local_equipment.resolve_healing(actors, time).items():
+            healing[key] += amount
         return damage, healing
 
     def next_boundary(self, time):
         values = list(self.visibility_until.values()) + list(self.clone_expiry.values())
+        local_boundary = self.local_equipment.next_boundary(time)
         values.extend(
             clock
             for clocks in self.passive_next.values()
@@ -1053,6 +1125,8 @@ class HeroCombat:
             buff["next_pulse"] for buff in self.healing_buffs if buff["remaining"] > 0
         )
         values = [value for value in values if value > time + EPSILON]
+        if local_boundary is not None:
+            values.append(local_boundary)
         return min(values) if values else None
 
     def frame(self, actor_id, actor):
@@ -1071,6 +1145,7 @@ class HeroCombat:
             "hero_abilities_used": sorted(self.used),
             "rocket_spear_launches_remaining": dict(self.rocket_remaining),
             "summon_expiry_seconds": dict(self.clone_expiry),
+            "owner_local_equipment": self.local_equipment.result(),
             "automatic_activation_modeled": False,
             "game_calibrated": False,
         }

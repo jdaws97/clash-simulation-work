@@ -165,6 +165,7 @@ class PulsedHazards:
         area = field["area"]
         return (
             _active(actor, time)
+            and "spell_decoy_model" not in actor
             and actor["team"] == area["target_team"]
             and actor["kind"] in area["target_kinds"]
             and actor["layer"] in area["target_layers"]

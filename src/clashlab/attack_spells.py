@@ -52,9 +52,17 @@ def _pause(actor, time, until):
 class AttackSpellCombat:
     """Own five paid-cast lifecycles without assigning an actor to a spell."""
 
-    def __init__(self, models, actors, hazards):
+    def __init__(self, models, actors, hazards, width=None, height=None):
+        from .recipe_spells import RECIPE_SPELLS, RecipeSpellCombat
+
         if not isinstance(models, list):
             raise InputError("Attacking spell models must be an explicit list")
+        for model in models:
+            validate_attack_spell(model)
+        if len({model["id"] for model in models}) != len(models):
+            raise InputError("Attacking spell cast IDs must be unique")
+        self.recipe = RecipeSpellCombat(models, actors, width, height)
+        models = [model for model in models if model["entity"] not in RECIPE_SPELLS]
         self.models = {}
         self.hazards = hazards
         self.launched = set()
@@ -95,6 +103,8 @@ class AttackSpellCombat:
 
     @staticmethod
     def _eligible(model, actor, time):
+        if "spell_decoy_model" in actor:
+            return False
         if not _active(actor, time) or actor.get("_tesla_hidden", False):
             return False
         entity_id = model["entity"]
@@ -200,6 +210,7 @@ class AttackSpellCombat:
         )
 
     def prepare(self, actors, time, trace):
+        self.recipe.prepare(time, trace)
         number(time, "attacking spell time", 0)
         if self.last_time is not None and time < self.last_time - EPSILON:
             raise InputError("Attacking spells cannot move backward in time")
@@ -294,7 +305,8 @@ class AttackSpellCombat:
 
     def resolve(self, actors, time, trace, status_observer=None):
         """Resolve due direct casts after field protection, before shared health."""
-        damage = defaultdict(float)
+        self.recipe.damage_receipts = getattr(self, "damage_receipts", None)
+        damage = self.recipe.resolve(time, trace, status_observer)
         virtual_hp = {key: actor["hp"] for key, actor in actors.items()}
         pending = sorted(
             (model["arrival_seconds"], cast_id)
@@ -389,6 +401,9 @@ class AttackSpellCombat:
 
     def next_boundary(self, time):
         boundaries = []
+        recipe_boundary = self.recipe.next_boundary(time)
+        if recipe_boundary is not None:
+            boundaries.append(recipe_boundary)
         for cast_id, model in self.models.items():
             if cast_id not in self.launched:
                 boundaries.append(model["time_seconds"])
@@ -479,7 +494,7 @@ class AttackSpellCombat:
 
     def continuation_reasons(self, time):
         """Report released direct offense; shared hazards own Poison continuation."""
-        facts = []
+        facts = self.recipe.continuation_reasons(time)
         for cast_id in sorted(self.launched - self.resolved):
             model = self.models[cast_id]
             if (
@@ -512,9 +527,13 @@ class AttackSpellCombat:
 
     def result(self):
         return {
-            "launched": sorted(self.launched),
-            "resolved": sorted(self.resolved),
-            "pending_at_horizon": sorted(self.launched - self.resolved),
+            "launched": sorted(self.launched | self.recipe.launched),
+            "resolved": sorted(self.resolved | self.recipe.resolved),
+            **({"recipe_spells": self.recipe.result()} if self.recipe.models else {}),
+            "pending_at_horizon": sorted(
+                (self.launched | self.recipe.launched)
+                - (self.resolved | self.recipe.resolved)
+            ),
             "quake_hits": dict(self.quake_hits),
             "overgrowth_recipients": deepcopy(self.captured),
             "behavior_verification": "explicit_uncalibrated_spell_contract",

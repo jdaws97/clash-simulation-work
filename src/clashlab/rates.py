@@ -1,11 +1,22 @@
 """Compose independently tracked movement and attack-rate effects."""
 
+from math import floor
+
+
+def skip_elapsed_pulses(clock, interval, time):
+    """Keep an absolute pulse grid while a recalled source emits nothing."""
+    if clock is None:
+        return None
+    ticks = max(floor((time + 1e-10 - clock) / interval) + 1, 0)
+    return clock + ticks * interval
+
 
 def attack_rate(actor):
     return (
         actor.get("_hazard_attack_rate", 1)
         * actor.get("_hit_status_attack_rate", 1)
         * actor.get("_hero_attack_rate", 1)
+        * actor.get("_recipe_attack_rate", 1)
     )
 
 
@@ -20,6 +31,7 @@ def movement_speed(actor):
         )
         * actor.get("_hazard_movement_multiplier", 1)
         * actor.get("_hit_status_movement_multiplier", 1)
+        * actor.get("_recipe_movement_multiplier", 1)
     )
 
 

@@ -1,0 +1,35 @@
+{
+  "status": "explicit_uncalibrated_hypothesis",
+  "description": "Illustrative conditional parameters, not measured game constants. Totem landing damage/stun are missing in the selected catalog and deliberately require separate numeric hypotheses.",
+  "totem-spell": {
+    "source": "docs/RECIPE_SPELL_CONTRACTS.md",
+    "status": "explicit_uncalibrated_hypothesis",
+    "caster_team": "attack",
+    "radius_multiplier": 1,
+    "impact_delay_seconds": 0.5,
+    "geometry": "live_center_distance",
+    "hidden_tesla_policy": "exclude_hidden_teslas",
+    "source_persistence": "released_cast_independent_of_attacker_survival",
+    "landing_damage": 500,
+    "landing_stun_seconds": 1,
+    "landing_statistics_source": "illustrative-uncalibrated-500-damage-1-second-stun-not-catalog-evidence",
+    "decay_interval_seconds": 0.1,
+    "taunt": "live_defenses_in_radius_force_all_new_acquisition_nearest_then_id",
+    "decoy_interactions": "immobile_both_weapon_layers_no_traps_buffs_healing_or_unit_status"
+  },
+  "recall-spell": {
+    "source": "docs/RECIPE_SPELL_CONTRACTS.md",
+    "status": "explicit_uncalibrated_hypothesis",
+    "caster_team": "attack",
+    "radius_multiplier": 1,
+    "impact_delay_seconds": 0,
+    "geometry": "live_center_distance",
+    "hidden_tesla_policy": "exclude_hidden_teslas",
+    "source_persistence": "released_cast_independent_of_attacker_survival",
+    "selection": "highest_housing_then_distance_then_id_skip_nonfitting",
+    "hero_weight": 25,
+    "pet_weight": 20,
+    "state_policy": "preserve_hp_spent_ability_and_absolute_status_clocks_released_packets_continue",
+    "redeployment": null
+  }
+}
