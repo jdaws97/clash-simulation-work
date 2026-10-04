@@ -10,6 +10,8 @@ full-air case encounters unresolved Dragon Duke isolation contact chatter at
 18.305471759 simulated seconds. The baseline rejects this case diagnostically;
 it does not complete the battle. See [publication scope](docs/PUBLICATION.md).
 
+For practical starting layouts and loadouts, see the [TH16 account-matched guide](docs/TH16_USE_NOW_GUIDE.md). It includes the approved recorded game levels, distinguishes creator recipes from untested adaptations, and checks housing against the pinned catalog. These recommendations are not simulator-validated rankings.
+
 Python 3.10 or newer is required. Runtime code uses the standard library; no
 account login, game process, network connection, or private player file is
 required for the portable suite. Run from the source checkout:
