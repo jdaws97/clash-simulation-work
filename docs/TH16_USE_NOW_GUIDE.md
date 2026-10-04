@@ -9,7 +9,32 @@ Prepared 4 October 2026. These are practical creator-backed starting points with
 3. Keep **account-adapted RC Walk Dragons** as the air alternate with Minion Prince. It uses your owned Stone Slammer rather than assuming Sky Wagon ownership, and Dark Orb + Metal Pants rather than assuming Meteor Staff ownership. Preserve a ground and an air plan separately; do not add Minion Prince to Root Riders merely to include him.
 4. Before a serious hit, check heroes are deployable, activate only the required two Super Troop types, inspect donated CC levels, and select the correct mode. No spending or activation was performed for this guide.
 
-These choices prioritize your recorded strengths and stated interests. The RC walk still demands careful Invisibility placement. For a higher-TH opponent, scout for a reachable Town Hall and a finishable route; a creator’s TH16 example is not evidence of a reliable TH18 triple.
+These choices prioritize your recorded strengths and stated interests. Your updated matchup distribution is **TH16 attacking TH18 almost always in ranked**, **TH17+ attackers hitting your ranked defense most often**, and **war opponents largely TH16+**. The immediate ranked priority is an achievable, repeatable Town Hall plan plus destruction, with a triple as an opportunity rather than an assumed result. The RC walk still demands careful Invisibility placement. A creator's TH16 example is not evidence of a reliable TH18 triple.
+
+## Your actual matchups: TH16 through TH18 in both directions
+
+The advice below is **matchup-aware tactical adaptation**, inferred from the creator deployment plans and known differences between the stated matchups. It has not been validated by the simulator or an authentic TH16-versus-TH18 trial set. We do not have a calibrated success rate for any of these plans.
+
+| Direction | Immediate objective | How to use this guide |
+|---|---|---|
+| You TH16 → enemy TH18, usual ranked case | Secure a realistic TH route and build destruction; exploit triple opportunities only when scouting supports them | Choose ground or air by the actual reachable TH path and defense coverage; do not default to the creator's same-TH entry |
+| You TH16 → enemy TH17 | Same route discipline, with an explicit plan for that base's extra defenses | Evaluate separately from TH18; the extra buildings and coverage are not a generic damage multiplier |
+| You TH16 → enemy TH16, including war | Pursue triples where the scouted route is finishable | Closest match to the creator recipes, but substitutions, current patch and execution still prevent a claimed hit rate |
+| Enemy TH18 to your TH16, usual ranked defense | Make the TH/core passage costly and reduce complete clears | Inspect the actual TH18 army, extra capabilities and entry; do not infer anti-triple performance from same-TH tests |
+| Enemy TH17 to your TH16, usual ranked defense | Preserve mutually supporting damage and trap/sweeper relationships | Evaluate separately from TH18 attackers and from TH16 war attacks; no calibrated defensive hit rate is available |
+| Enemy TH16 → your TH16, including war | Resist competent planned triples | Maintain a separate war layout; assess surviving damage anchors and far-side cleanup rather than TH denial alone |
+
+**Before attacking a TH18:** mark the actual Town Hall route, the defense chain RC can reach, the force's likely turn after Overgrowth, and the dangerous core/guardian coverage. If neither ground nor air has a credible route, do not interpret a creator army link as a solution to that base. Choose the option with the clearer attainable TH and destruction plan. We cannot honestly select a universally strongest TH16-versus-TH18 army from the supplied evidence.
+
+**Root Rider adaptation against TH17/18:** use the RC phase to remove defenses that obstruct the main corridor, not to chase an isolated compartment just because it offers easy percentage. Keep the main force concentrated. Overgrowth is useful only if its temporary path change still leaves a reachable TH when the effect ends; a late isolated TH is a serious failure for the ranked objective. With Fireball + Tome equipped, reserve their single combined activation for a moment that both has a useful Fireball target and protects the main force. Do not assume Fireball24 and your Earthquake levels remove a higher-TH cluster. If you repeatedly cannot satisfy both jobs, practice the separately labeled **Tome18 + Rage Gem18** variant; it removes the Fireball setup assumption but has no validated superiority.
+
+**Dragon adaptation against TH17/18:** choose a corridor that keeps the Dragons, air Warden and MP together through the important damage. Your Stone Slammer targets defenses; it is not a guaranteed TH delivery machine. The recipe's ten Invisibility spells leave no main Rage/Freeze reserve, and Metal Pants5 is an untested Meteor Staff substitute, so do not present this as the reliable higher-TH default. Use it when scouting gives a clearer air route than ground, and preserve Tome for the actual dangerous crossing. If the RC phase consumes too much time or fails to shape that route, log that as a failed setup rather than evidence that Dragons cannot work. A different siege/spell recipe would be a new untested army, not the creator original.
+
+**Defense against TH17/18:** use the ranked copy candidates as concrete starting layouts, not certified counters. Avoid moving sweepers, air traps or damage anchors independently of the relationships that support them. Against your reported Dragon/Electro Dragon/Thrower and some Root Rider attack families, inspect whether one protected entry, chain/area attack or setup can remove too many important defenses together. Against ground pushes, inspect remaining defense chains and the finish route. These are inspection questions, not claims that a fixed separation distance or a particular tower mode guarantees survival. Review TH survival, incoming stars/destruction and time remaining independently; higher-TH attackers may still triple either creator candidate.
+
+**War/CWL:** keep the war layout separate from ranked. Against TH16 attackers, prioritize preventing a complete clear with surviving damage across the base and meaningful far-side cleanup. Against TH17/18 attackers, also review whether a safe TH entry buys too much of the core. One selected defense replay or a failed casual attack does not establish resistance to a competent scouted follow-up.
+
+For later evaluation, report **six directional matchup cells separately within each mode (ranked and war/CWL)**: your TH16 attacks versus TH16, TH17 and TH18; your TH16 defense versus TH16, TH17 and TH18 attackers. Report actual mode/modifiers and patch for each. Put the most attention on TH18 offense and TH17/18 ranked defense, matching your stated frequency; do not invent numerical matchup weights. Use stars, destruction, TH survival and timing/path checkpoints before claiming a probability or model-backed winner.
 
 ## Separate ranked and war/CWL layouts
 
@@ -114,19 +139,20 @@ Ranked excludes temporary troops. Permanent Totem Spell is not October’s tempo
 
 ## Simulator evidence and experimental layouts
 
-No actual calibrated full-game comparison establishes an army or defensive-layout ranking. The integration evidence records **two identical synthetic 16-second runs**, 107 events, **one counted building**, zero destroyed buildings and zero stars, ending at a declared time limit. It explicitly says `synthetic=true`, `replay_calibrated=false` and `full_game_prediction=false`. This verifies a reproducible integration fixture, not the practical armies above or actual defensive strength. A separate full-air guard run was rejected at 18.305471759 simulated seconds due to Dragon Duke isolation contact chatter; completion was not demonstrated in this baseline. Do not turn that rejection into a win/loss result.
+No actual calibrated full-game comparison establishes an army or defensive-layout ranking. The integration evidence records **two identical synthetic 16-second runs**, 107 events, **one counted building**, zero destroyed buildings and zero stars, ending at a declared time limit. It explicitly says `synthetic=true`, `replay_calibrated=false` and `full_game_prediction=false`. This verifies a reproducible integration fixture, not the practical armies above or actual defensive strength. The published baseline rejects the strict full-air case at 18.305471759 simulated seconds due to Dragon Duke isolation contact chatter; this baseline does not demonstrate battle completion. Do not turn that rejection into a win/loss result.
 
 Generate the six coordinate candidates with `python -B tools/build_candidate_bundle.py --output reports/candidates`, then open `reports/candidates/index.html`: ranked and war/CWL versions of **offset ring, split core, staggered compartments**, with JSON/CSV declarations. They are **experimental synthetic layouts**, separate from the creator copy links above. The source links have not been converted into those coordinate candidates; neither is a surrogate simulation of the other. No calibrated attack denominator or validated comparative hit rate exists. Use their viewer to inspect hypotheses, not choose a proven strongest defense.
 
 Selected replay outcomes cannot establish a population triple rate without a representative denominator and matching patch, mode, loadout and layout information. No private replay results are included in this guide.
 
-## Smallest missing input
+## Pending account checks
 
-Confirm **your current ranked/CWL league labels, whether Meteor Staff is actually owned, and whether your clan can supply a legal Sky Wagon/Troop Launcher**. None of this prevents practicing the explicitly owned substitutions above. For a genuinely exact account/mode recommendation next, the most useful addition is one current army/hero/equipment screen and one imported ranked/war setup screen showing defensive modes and CC; no login, account credentials or public upload is needed.
+Current ranked/CWL league labels, Meteor Staff ownership and legal donated Sky Wagon/Troop Launcher availability remain checks against the retained account evidence. They do not prevent practicing the explicitly owned substitutions. Use the existing RC/Duke footage and retained account evidence to resolve timing and availability questions before collecting new material.
 
 ## Provenance and limits
 
 Creator army counts and copy-link contents were visually cross-checked during the source research; the source pages were re-opened for publication. RC/Ruin source image filenames were swapped, so filenames were not used to identify recipes. The Root Rider recipe has exactly two main Super Troop types; an earlier third-type concern was corrected. All four inventories sum to **320 / 11 / 50 / 3**, with four heroes and unique pets. Recorded ownership is distinct from unlock eligibility, source screenshot level, effective potion level and donated recipient cap. This guide makes no claim that substitutions preserve the creator’s results. Public sources provide proposed plans and mechanics, not controlled comparative TH16 hit rates.
+
 
 
 ## Publication verification
