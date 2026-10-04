@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clash Lab · Battle replay</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: system-ui, sans-serif;
+        background: #10171d;
+        color: #e8f0ee;
+      }
+      body {
+        margin: 0;
+      }
+      main {
+        max-width: 1160px;
+        margin: auto;
+        padding: 28px;
+      }
+      h1 {
+        font-size: clamp(26px, 4vw, 42px);
+        letter-spacing: -0.04em;
+        margin: 6px 0 12px;
+      }
+      h2 {
+        font-size: 19px;
+        margin-top: 0;
+      }
+      p {
+        line-height: 1.55;
+      }
+      .eyebrow {
+        color: #79d6c3;
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .muted {
+        color: #a8bbb7;
+      }
+      .notice {
+        border-left: 3px solid #e4b65e;
+        padding: 12px 16px;
+        background: #25251f;
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 22px 0 15px;
+      }
+      button,
+      select {
+        font: inherit;
+        color: inherit;
+        border: 1px solid #4a6662;
+        background: #20332f;
+        border-radius: 7px;
+        padding: 9px 13px;
+      }
+      button {
+        cursor: pointer;
+      }
+      select {
+        max-width: 100%;
+        min-width: 0;
+      }
+      button:hover {
+        background: #315149;
+      }
+      input[type="range"] {
+        accent-color: #79d6c3;
+        width: 100%;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 22px;
+      }
+      canvas {
+        width: 100%;
+        height: auto;
+        border: 1px solid #3b554b;
+        border-radius: 12px;
+      }
+      .time {
+        display: flex;
+        justify-content: space-between;
+        margin: 10px 0 5px;
+        font-variant-numeric: tabular-nums;
+      }
+      .panel {
+        background: #182520;
+        padding: 18px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+      }
+      dl {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        margin-bottom: 0;
+      }
+      dt {
+        color: #a8bbb7;
+      }
+      dd {
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+      }
+      .legend,
+      .links {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        font-size: 13px;
+      }
+      .legend {
+        margin-top: 12px;
+        color: #b5c6c1;
+      }
+      .links {
+        margin-top: 22px;
+      }
+      a {
+        color: #86dece;
+      }
+      #events {
+        margin: 0;
+        padding-left: 20px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      #events li {
+        margin: 8px 0;
+        font-size: 13px;
+      }
+      details {
+        margin-top: 22px;
+        line-height: 1.6;
+      }
+      @media (max-width: 850px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        aside {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+        }
+      }
+      @media (max-width: 540px) {
+        main {
+          padding: 18px;
+        }
+        aside {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="eyebrow">Clash Lab / Connected battle milestone</div>
+      <h1 id="report-title">One battle, every declared resource.</h1>
+      <p class="muted">
+        A recorded solver run connects army capacity, scheduled deployment,
+        movement, weapons, spells, the Town Hall lifecycle and final scoring.
+      </p>
+      <p class="notice">
+        <strong>Development benchmark.</strong> <span id="report-notice"></span>
+      </p>
+      <p id="numerical-notice" class="notice" hidden></p>
+      <div class="controls">
+        <label for="mode">Simulation</label>
+        <select id="mode"></select>
+        <button id="play">Play</button><button id="reset">Reset</button>
+        <label for="speed">Playback</label>
+        <select id="speed">
+          <option value="1">1×</option>
+          <option value="2" selected>2×</option>
+          <option value="4">4×</option>
+        </select>
+      </div>
+      <div class="grid">
+        <section>
+          <canvas
+            id="battle"
+            width="880"
+            height="880"
+            aria-label="Battle replay with troops, buildings, walls and spell areas"
+          ></canvas>
+          <div class="time">
+            <strong id="clock">0.00 s</strong><span id="end-time"></span>
+          </div>
+          <input
+            id="timeline"
+            type="range"
+            min="0"
+            max="180"
+            step="any"
+            value="0"
+            aria-label="Battle time"
+          />
+          <div class="legend">
+            <span>Green · attackers</span><span>Red · defenders</span>
+            <span>Grey · walls</span><span>Cross · declared trap</span>
+            <span>Gold · Healing</span><span>Blue · Freeze</span>
+            <span>Pink · Rage</span>
+          </div>
+        </section>
+        <aside>
+          <div class="panel">
+            <h2>At this moment</h2>
+            <dl>
+              <dt>Destruction</dt>
+              <dd id="destruction"></dd>
+              <dt>Stars</dt>
+              <dd id="stars"></dd>
+              <dt>Town Hall</dt>
+              <dd id="hall"></dd>
+              <dt>Active attackers</dt>
+              <dd id="alive"></dd>
+              <dt>Undeployed</dt>
+              <dd id="reserve"></dd>
+              <dt>Active defending units</dt>
+              <dd id="defending-units"></dd>
+            </dl>
+          </div>
+          <div class="panel">
+            <h2>Resource accounting</h2>
+            <dl id="resources"></dl>
+          </div>
+          <div class="panel">
+            <h2>Recent events</h2>
+            <ul id="events"></ul>
+          </div>
+        </aside>
+      </div>
+      <div class="links">
+        <a id="result-link">Complete result JSON</a
+        ><a id="input-link">Battle input</a><a id="army-link">Army</a
+        ><a id="layout-link">Declared layout</a
+        ><a id="account-link" hidden>Planning account</a
+        ><a id="numerical-link" hidden>Numerical comparison</a
+        ><a href="../engine-coverage.html">Whole-roster coverage</a
+        ><a href="../recovered-layouts/memory-layout-preview.html"
+          >Recovered layouts</a
+        >
+      </div>
+      <details>
+        <summary>What this run establishes</summary>
+        <p>
+          Every declared army and layout instance is bound to a runtime object.
+          Capacity checks reject excess troops or spells. Unsupported selected
+          resources fail explicitly. Destroyed counted buildings determine the
+          model's stars; walls and traps are excluded. Future actions after
+          complete destruction remain unspent.
+        </p>
+        <p>
+          Each input declares its termination convention. Older runs continue
+          until complete destruction or the time limit. Newer runs can end when
+          attacking forces and pending offensive effects are exhausted, leaving
+          later support spells unspent. These end rules are explicit hypotheses;
+          displayed durations are simulation results, not measured game timings.
+        </p>
+        <p>
+          The battle input records the selected path, deployment, projectile,
+          area, status and lifecycle assumptions. The modifier audit records
+          each changed statistic. Legend I scales defense weapon damage by 1.2
+          in these examples; ordinary troop statistics and trap damage remain
+          unchanged. The viewer shows the declared layout, including hidden
+          objects, and recorded simulation states. No replay validation or
+          exhaustive army search has occurred.
+        </p>
+      </details>
+    </main>
+    <script type="application/json" id="replay-data">
+      __REPLAY_DATA__
+    </script>
+    <script>
+      const { cases, metadata } = JSON.parse(
+        document.getElementById("replay-data").textContent,
+      );
+      const canvas = document.getElementById("battle");
+      const context = canvas.getContext("2d");
+      const timeline = document.getElementById("timeline");
+      const labels = {
+        giant: "G",
+        "hog-rider": "H",
+        wizard: "W",
+        pekka: "P",
+        cannon: "C",
+        "inferno-tower": "IF",
+        "x-bow": "XB",
+        "town-hall": "TH",
+        "gold-storage": "GS",
+        dragon: "D",
+        "clan-castle": "CC",
+        "air-defense": "AD",
+        "air-sweeper": "AS",
+        "spell-tower": "ST",
+        scattershot: "SC",
+        "eagle-artillery": "EA",
+        "hidden-tesla": "T",
+        "builders-hut": "B",
+        "barbarian-king": "BK",
+        "archer-queen": "AQ",
+        "minion-prince": "MP",
+        "royal-champion": "RC",
+        skeleton: "S",
+        "summoned-unit": "S",
+      };
+      let current;
+      let playing = false;
+      let playbackTime = 0;
+      let lastTimestamp;
+
+      function setText(id, value) {
+        document.getElementById(id).textContent = value;
+      }
+
+      function drawSpellAreas(time, scale) {
+        for (const field of current.fields) {
+          if (time < field.start || time >= field.end) continue;
+          const color =
+            field.kind === "healing"
+              ? "#ebc26e"
+              : field.kind === "rage"
+                ? "#e68ce4"
+                : "#88dafa";
+          context.fillStyle = `${color}25`;
+          context.strokeStyle = color;
+          context.lineWidth = 2;
+          context.beginPath();
+          context.arc(
+            field.x * scale,
+            field.y * scale,
+            field.radius * scale,
+            0,
+            Math.PI * 2,
+          );
+          context.fill();
+          context.stroke();
+        }
+      }
+
+      function draw() {
+        const time = Number(timeline.value);
+        let frame = current.frames[0];
+        for (const candidate of current.frames) {
+          if (candidate.time_seconds > time + 1e-8) break;
+          frame = candidate;
+        }
+        const scale = canvas.width / current.width;
+        context.fillStyle = "#122b25";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.strokeStyle = "#254137";
+        context.lineWidth = 1;
+        for (let position = 0; position <= current.width; position++) {
+          context.beginPath();
+          context.moveTo(position * scale, 0);
+          context.lineTo(position * scale, canvas.height);
+          context.moveTo(0, position * scale);
+          context.lineTo(canvas.width, position * scale);
+          context.stroke();
+        }
+        drawSpellAreas(time, scale);
+        for (const trap of current.traps) {
+          const x = (trap.x + trap.width / 2) * scale;
+          const y = (trap.y + trap.height / 2) * scale;
+          context.strokeStyle = "#dda4ad";
+          context.lineWidth = 1.5;
+          context.beginPath();
+          context.moveTo(x - 4, y - 4);
+          context.lineTo(x + 4, y + 4);
+          context.moveTo(x + 4, y - 4);
+          context.lineTo(x - 4, y + 4);
+          context.stroke();
+        }
+        let alive = 0;
+        let reserve = 0;
+        let defendingUnits = 0;
+        let destroyed = 0;
+        let hallDestroyed = false;
+        for (const [id, state] of Object.entries(frame.actors)) {
+          const actor = current.actors[id];
+          const unit = actor.kind === "unit";
+          if (unit && !state.active && state.hp > 0) {
+            if (current.attacker_ids.includes(id)) reserve++;
+            continue;
+          }
+          if (unit && state.active && actor.team === "attack") alive++;
+          if (unit && state.active && actor.team === "defense")
+            defendingUnits++;
+          if (actor.counted && state.hp <= 0) destroyed++;
+          if (actor.entity === "town-hall") hallDestroyed = state.hp <= 0;
+          const x = (state.x + actor.width / 2) * scale;
+          const y = (state.y + actor.height / 2) * scale;
+          const unitRadius = Math.min(10, Math.max(4, scale * 0.55));
+          const width = unit ? 2 * unitRadius : actor.width * scale - 3;
+          const height = unit ? 2 * unitRadius : actor.height * scale - 3;
+          context.globalAlpha = state.hp > 0 ? 1 : 0.22;
+          context.fillStyle = unit
+            ? actor.team === "attack"
+              ? "#79d6c3"
+              : "#f09595"
+            : actor.kind === "wall"
+              ? "#8797a5"
+              : actor.entity === "town-hall"
+                ? "#cfabe8"
+                : "#dd987a";
+          if (unit) {
+            context.beginPath();
+            context.arc(x, y, unitRadius, 0, Math.PI * 2);
+            context.fill();
+          } else {
+            context.fillRect(x - width / 2, y - height / 2, width, height);
+          }
+          if (actor.kind !== "wall") {
+            context.fillStyle = "#10171d";
+            context.font = "bold 12px system-ui";
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            const label =
+              labels[actor.entity] ||
+              actor.entity
+                .split("-")
+                .map((word) => word[0])
+                .join("")
+                .slice(0, 3)
+                .toUpperCase();
+            context.fillText(label, x, y);
+            if (state.hp > 0) {
+              context.fillStyle = "#10171d";
+              context.fillRect(x - width / 2, y - height / 2 - 7, width, 4);
+              context.fillStyle = "#ecf1c9";
+              context.fillRect(
+                x - width / 2,
+                y - height / 2 - 7,
+                width * Math.min(1, state.hp / actor.hitpoints),
+                4,
+              );
+            }
+          }
+          context.globalAlpha = 1;
+          if (state.hp > 0 && state.frozen_until > time) {
+            context.strokeStyle = "#a7e7ff";
+            context.lineWidth = 3;
+            context.strokeRect(
+              x - width / 2 - 3,
+              y - height / 2 - 3,
+              width + 6,
+              height + 6,
+            );
+          }
+          if (state.builder && state.builder.phase !== "retired") {
+            context.fillStyle = "#f3d481";
+            context.beginPath();
+            context.arc(
+              state.builder.x * scale,
+              state.builder.y * scale,
+              3,
+              0,
+              Math.PI * 2,
+            );
+            context.fill();
+          }
+        }
+        const stars =
+          Number(hallDestroyed) +
+          Number(destroyed * 2 >= current.counted) +
+          Number(destroyed === current.counted);
+        setText("clock", `${time.toFixed(2)} s`);
+        setText(
+          "destruction",
+          `${((100 * destroyed) / current.counted).toFixed(1)}%`,
+        );
+        setText("stars", `${stars} / 3`);
+        setText("hall", hallDestroyed ? "Destroyed" : "Standing");
+        setText("alive", alive);
+        setText("reserve", reserve);
+        setText("defending-units", defendingUnits);
+        const resources = document.getElementById("resources");
+        resources.replaceChildren();
+        const rows = [
+          ["Army housing", current.army_used.army_housing],
+          ["Spell housing", current.army_used.spell_housing],
+          ["Counted structures", current.counted],
+          ["Walls / traps", `${current.walls} / ${current.traps.length}`],
+        ];
+        const spellEntities = [
+          ...new Set(current.spells.map((slot) => slot.entity)),
+        ];
+        for (const entity of spellEntities) {
+          const allowance = current.spells.filter(
+            (slot) => slot.entity === entity,
+          ).length;
+          const spent = current.spells.filter(
+            (slot) =>
+              slot.entity === entity &&
+              slot.cast &&
+              slot.cast.time_seconds <= time + 1e-8,
+          ).length;
+          rows.push([
+            entity.replace("-spell", "").replaceAll("-", " ") + " casts",
+            `${spent} / ${allowance}`,
+          ]);
+        }
+        for (const [label, value] of rows) {
+          const term = document.createElement("dt");
+          const definition = document.createElement("dd");
+          term.textContent = label;
+          definition.textContent = value;
+          resources.append(term, definition);
+        }
+        const eventList = document.getElementById("events");
+        eventList.replaceChildren();
+        const events = current.events
+          .filter((event) => event.time_seconds <= time + 1e-8)
+          .slice(-8);
+        for (const event of events) {
+          const item = document.createElement("li");
+          item.textContent = `${event.time_seconds.toFixed(2)} s · ${event.label}`;
+          eventList.append(item);
+        }
+      }
+
+      function selectCase() {
+        current = cases[document.getElementById("mode").value];
+        playbackTime = 0;
+        timeline.value = 0;
+        timeline.max = current.duration;
+        playing = false;
+        setText("play", "Play");
+        canvas.height = Math.round(
+          (canvas.width * current.height) / current.width,
+        );
+        setText("end-time", `Run ends at ${current.duration.toFixed(3)} s`);
+        document.getElementById("input-link").href = current.input_file;
+        document.getElementById("result-link").href = current.result_file;
+        setText("result-link", current.result_label);
+        document.getElementById("layout-link").href = current.layout_file;
+        document.getElementById("army-link").href = current.army_file;
+        const accountLink = document.getElementById("account-link");
+        accountLink.hidden = !current.account_file;
+        if (current.account_file) accountLink.href = current.account_file;
+        draw();
+      }
+
+      function animate(timestamp) {
+        if (playing && lastTimestamp !== undefined) {
+          playbackTime = Math.min(
+            current.duration,
+            playbackTime +
+              ((timestamp - lastTimestamp) / 1000) *
+                Number(document.getElementById("speed").value),
+          );
+          timeline.value = playbackTime;
+          draw();
+          if (playbackTime >= current.duration) {
+            playing = false;
+            setText("play", "Play");
+          }
+        }
+        lastTimestamp = timestamp;
+        requestAnimationFrame(animate);
+      }
+      document.getElementById("mode").addEventListener("change", selectCase);
+      document.getElementById("play").addEventListener("click", () => {
+        if (playbackTime >= current.duration) playbackTime = 0;
+        playing = !playing;
+        setText("play", playing ? "Pause" : "Play");
+      });
+      document.getElementById("reset").addEventListener("click", selectCase);
+      timeline.addEventListener("input", () => {
+        playbackTime = Number(timeline.value);
+        draw();
+      });
+      setText("report-title", metadata.title);
+      document.title = `${metadata.title} · Clash Lab`;
+      setText("report-notice", metadata.notice);
+      if (metadata.numerical_notice) {
+        setText("numerical-notice", metadata.numerical_notice);
+        document.getElementById("numerical-notice").hidden = false;
+      }
+      for (const [identifier, item] of Object.entries(cases)) {
+        document.getElementById("mode").add(new Option(item.label, identifier));
+      }
+      if (metadata.default_case && cases[metadata.default_case]) {
+        document.getElementById("mode").value = metadata.default_case;
+      }
+      if (metadata.numerical_comparison) {
+        const comparisonLink = document.getElementById("numerical-link");
+        comparisonLink.href = metadata.numerical_comparison;
+        comparisonLink.hidden = false;
+      }
+      selectCase();
+      requestAnimationFrame(animate);
+    </script>
+  </body>
+</html>

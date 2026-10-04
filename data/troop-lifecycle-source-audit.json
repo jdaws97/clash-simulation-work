@@ -1,0 +1,57 @@
+{
+  "audit_date": "2026-10-04",
+  "status": "source_audit_not_replay_calibration",
+  "saved_catalog_commit": "c6967314d7281bb87c362993e2635e58cd77b351",
+  "saved_extraction_commit": "b8f42a707fe92d5293d46088bf536450ae422e7b",
+  "electro-titan": {
+    "saved_fields": ["movementSpeed", "attackSpeed", "range", "auraAttackSpeed", "auraRange", "levels.stats.normal.damagePerShot", "levels.stats.aura.damagePerShot"],
+    "primary_behavior_source": "https://supercell.com/en/games/clashofclans/es/blog/news/nueva-tropa-titanide-el%C3%A9ctrica/",
+    "published": "2022-10-09",
+    "supported_behavior": [
+      "Ground troop with a separate single-target weapon and surrounding damage aura",
+      "Weapon and aura can damage ground and air targets",
+      "Walls are immune to the aura"
+    ],
+    "explicit_unresolved_policies": ["first pulse phase", "membership geometry", "freeze behavior", "invisibility behavior", "buff scaling", "overlapping-source stacking"]
+  },
+  "druid": {
+    "saved_first_form_fields": ["movementSpeed", "attackSpeed", "range", "numberOfTargets", "evolveTime", "levels.hitpoints", "levels.stats.normal.healingPerPulse", "levels.stats.normal.healingPerPulseOnHeroes"],
+    "bear_child_search": {
+      "files": ["data/catalog.json", "data/clashking-static-data.json", "data/secondary-raw.json", "data/extracted-stat-selection.json"],
+      "terms": ["bear", "shapeshifter"],
+      "result": "Only the Druid description and Druid localization identity were found; no Bear child actor or complete Bear statistics were present."
+    },
+    "primary_sources": [
+      {
+        "url": "https://supercell.com/en/games/clashofclans/blog/release-notes/june-update-full-patch-notes/",
+        "published": "2024-06-18",
+        "supports": ["Ground first form jumps walls", "Healing bounces between air and ground allies, up to five recipients, excluding siege machines", "Timeout or first-form defeat creates a ground defense-targeting melee Bear that cannot jump", "Bear defeat is permanent"]
+      },
+      {
+        "url": "https://supercell.com/en/games/clashofclans/blog/news/upcoming-balance-changes-to-druid/",
+        "published": "2024-10-01",
+        "supports": ["Evolution time announced as 25 seconds", "Historical Bear4 HP reduced to 2200"]
+      },
+      {
+        "url": "https://supercell.com/en/games/clashofclans/blog/release-notes/welcome-to-clash-anytime-update/",
+        "published": "2025-03-24",
+        "supports": ["Bear form housing space reduced from 16 to 10"]
+      },
+      {
+        "url": "https://supercell.com/en/games/clashofclans/blog/release-notes/welcome-to-lets-get-crafty-update/",
+        "published": "2025-06-16",
+        "supports": ["A bug that could generate an additional Bear when defeat and transformation coincided was fixed"]
+      },
+      {
+        "url": "https://supercell.com/en/games/clashofclans/blog/news/january-balance-changes-3/",
+        "published": "2026-01-12",
+        "supports": ["Evolution time increased by 20 percent", "Healing and hero-healing increases", "Bear4 HP2300/DPS185 and Bear5 HP2500/DPS205"],
+        "inference": "A 20 percent increase from the previously announced 25 seconds explains the selected catalog's 30-second evolution time; this is chronology reconciliation, not current-client certification."
+      }
+    ],
+    "preserved_conflicts": ["Catalog numberOfTargets=4 may count all recipients or secondary bounces; a caller must select the interpretation", "Druid5 catalog healing100 versus saved extraction DPS -105 remains a source disagreement"],
+    "missing_bear_fields": ["Complete current level table", "Attack cadence", "Attack range", "Movement speed"],
+    "implementation_policy": "Require an explicit Bear child ID, same level, independently supplied statistics with a source and explicit_uncalibrated_hypothesis status. Never substitute Druid healing values or another troop's statistics.",
+    "explicit_unresolved_policies": ["Chain geometry, hop timing, selection and stacking membership", "Freeze interaction with evolution clock", "Form-boundary damage overflow", "Timed status transfer", "Blocked transformation position", "First Bear attack delay"]
+  }
+}

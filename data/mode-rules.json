@@ -1,0 +1,185 @@
+{
+  "retrieved_on": "2026-10-03",
+  "ranked": {
+    "electro31": {
+      "attack_limit_per_week": 18,
+      "defense_limit_per_week": 18,
+      "modifiers": "none",
+      "maximum_trophies_per_attack": 40,
+      "defender_award": "40 minus actual attacker trophies",
+      "snapshot": "ranked defensive layout locks on placement in weekly group",
+      "within_star_exact_formula_verified": false
+    }
+  },
+  "war": {
+    "attacks_per_member": 2,
+    "base_score": "best enemy attack, ordered by stars then destruction",
+    "allocation": "multiple attackers may target one base; model scouting and follow-up adaptation"
+  },
+  "cwl": {
+    "league": "Master II",
+    "attacks_per_member_per_war": 1,
+    "wars": 7,
+    "modifiers": "none",
+    "base_score": "best enemy attack, ordered by stars then destruction",
+    "allocation": "one attack per member does not limit a base to one incoming attack"
+  },
+  "sources": [
+    "https://support.supercell.com/clash-of-clans/en/articles/trophy-matchmaking-and-calculation-in-multiplayer-2.html",
+    "https://ingame.help.supercellsupport.com/clash-of-clans/en/articles/ranked-leagues-4.html?q=1782459466",
+    "https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/",
+    "https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/",
+    "https://support.supercell.com/clash-of-clans/en/articles/clan-war-results.html",
+    "https://support.supercell.com/clash-of-clans/en/articles/about-clan-wars-2.html",
+    "https://support.supercell.com/clash-of-clans/en/articles/cwl-week-of-wars.html",
+    "https://support.supercell.com/clash-of-clans/en/articles/magic-items-and-the-trader.html",
+    "https://supercell.com/en/games/clashofclans/blog/release-notes/the-february-update-has-escaped/",
+    "https://support.supercell.com/clash-of-clans/en/articles/friendly-challenges-3.html"
+  ],
+  "potion_defense_policy": {
+    "hero_potion_applies_to_defense": false,
+    "target_defense_profile": "fully upgraded TH16 by user request, independently of attack potion profile",
+    "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-february-update-has-escaped/"
+  },
+  "battle_modifier_profiles": {
+    "none": {
+      "source": "https://support.supercell.com/clash-of-clans/en/articles/friendly-challenges-3.html",
+      "verification": "published_profile_not_client_session_observation",
+      "roles": {
+        "defense": {
+          "damage_multiplier": 1,
+          "hitpoints_multiplier": 1
+        },
+        "defending_hero": {
+          "damage_multiplier": 1,
+          "hitpoints_multiplier": 1
+        },
+        "guardian": {
+          "damage_multiplier": 1,
+          "hitpoints_multiplier": 1
+        },
+        "attacking_hero": {
+          "damage_multiplier": 1,
+          "hitpoints_multiplier": 1
+        }
+      },
+      "equipment_level_reduction": {
+        "common": 0,
+        "epic": 0
+      }
+    },
+    "legend_iii": {
+      "source": "https://support.supercell.com/clash-of-clans/en/articles/friendly-challenges-3.html",
+      "verification": "published_profile_not_client_session_observation",
+      "roles": {
+        "defense": {
+          "damage_multiplier": 1.1,
+          "hitpoints_multiplier": 1
+        },
+        "defending_hero": {
+          "damage_multiplier": 1.1,
+          "hitpoints_multiplier": 1.1
+        },
+        "guardian": {
+          "damage_multiplier": 1.05,
+          "hitpoints_multiplier": 1.05
+        },
+        "attacking_hero": {
+          "damage_multiplier": 0.95,
+          "hitpoints_multiplier": 0.95
+        }
+      },
+      "equipment_level_reduction": {
+        "common": 0,
+        "epic": 0
+      }
+    },
+    "legend_ii": {
+      "source": "https://support.supercell.com/clash-of-clans/en/articles/friendly-challenges-3.html",
+      "verification": "published_profile_not_client_session_observation",
+      "roles": {
+        "defense": {
+          "damage_multiplier": 1.15,
+          "hitpoints_multiplier": 1
+        },
+        "defending_hero": {
+          "damage_multiplier": 1.15,
+          "hitpoints_multiplier": 1.15
+        },
+        "guardian": {
+          "damage_multiplier": 1.1,
+          "hitpoints_multiplier": 1.1
+        },
+        "attacking_hero": {
+          "damage_multiplier": 0.9,
+          "hitpoints_multiplier": 0.9
+        }
+      },
+      "equipment_level_reduction": {
+        "common": 0,
+        "epic": 0
+      }
+    },
+    "legend_i": {
+      "source": "https://support.supercell.com/clash-of-clans/en/articles/friendly-challenges-3.html",
+      "verification": "published_profile_not_client_session_observation",
+      "roles": {
+        "defense": {
+          "damage_multiplier": 1.2,
+          "hitpoints_multiplier": 1
+        },
+        "defending_hero": {
+          "damage_multiplier": 1.2,
+          "hitpoints_multiplier": 1.2
+        },
+        "guardian": {
+          "damage_multiplier": 1.2,
+          "hitpoints_multiplier": 1.2
+        },
+        "attacking_hero": {
+          "damage_multiplier": 0.8,
+          "hitpoints_multiplier": 0.8
+        }
+      },
+      "equipment_level_reduction": {
+        "common": 0,
+        "epic": 0
+      }
+    },
+    "esport": {
+      "source": "https://support.supercell.com/clash-of-clans/en/articles/friendly-challenges-3.html",
+      "verification": "published_profile_not_client_session_observation",
+      "roles": {
+        "defense": {
+          "damage_multiplier": 1.25,
+          "hitpoints_multiplier": 1
+        },
+        "defending_hero": {
+          "damage_multiplier": 1.25,
+          "hitpoints_multiplier": 1.25
+        },
+        "guardian": {
+          "damage_multiplier": 1.2,
+          "hitpoints_multiplier": 1.2
+        },
+        "attacking_hero": {
+          "damage_multiplier": 0.8,
+          "hitpoints_multiplier": 0.8
+        }
+      },
+      "equipment_level_reduction": {
+        "common": 3,
+        "epic": 6
+      }
+    }
+  },
+  "battle_modifier_policy": {
+    "selection": "Caller supplies the actual battle profile; no TH-based inference",
+    "current_user_scenarios": {
+      "electro31": "none",
+      "master_ii_cwl": "none"
+    },
+    "maximum_hp_damage_scaling": "Caller must supply a separate explicit policy",
+    "equipment": "Reductions reported separately; no unverified minimum-level clamp or full equipment adapter"
+  }
+}

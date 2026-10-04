@@ -1,0 +1,545 @@
+{
+  "source": "declared-full-army-development-hypotheses-not-game-calibration",
+  "status": "INTEGRATION_BENCHMARK_NOT_CURRENT_LOADOUT_OR_RECOMMENDATION",
+  "replay_calibrated": false,
+  "limitations": [
+    "Behavior contracts were explicitly adopted from component fixtures; passing a fixture does not establish real game behavior.",
+    "Equipment levels are owned; selected pairs are benchmark candidates, not the player's confirmed current loadout.",
+    "Troop, hero and pet levels use the separately saved potion planning account; recipient donation caps remain snapshot hypotheses.",
+    "Deployment margin, schedules, target scoring, instantaneous ordinary projectiles and siege geometry are uncalibrated.",
+    "Grand Warden uses independent targeting; army-following behavior is not implemented.",
+    "Mirror clones initially overlap the owner under the explicit point-unit model.",
+    "Ice Golem on-hit slow of 0.25 attack rate for two seconds is an unverified hypothesis.",
+    "Eagle activation uses explicit weights: troop housing, heroes 25, siege 1, pets and clones 0; spell housing times five; hero abilities 0.",
+    "Rage uses troop 1 and hero/pet 0.5 scaling; these class factors require calibration."
+  ],
+  "heroes": {
+    "archer-queen": {
+      "source": "declared-full-army-development-hypotheses-not-game-calibration",
+      "equipment": [
+        {
+          "entity": "invisibility-vial",
+          "level": 7,
+          "parameters": {
+            "source": "declared-full-army-development-hypotheses-not-game-calibration"
+          }
+        },
+        {
+          "entity": "magic-mirror",
+          "level": 20,
+          "parameters": {
+            "source": "declared-full-army-development-hypotheses-not-game-calibration",
+            "clone_offsets": [
+              {
+                "dx": 0,
+                "dy": 0
+              },
+              {
+                "dx": 0,
+                "dy": 0
+              }
+            ],
+            "clone_statistics": "snapshot_clone_totals_without_equipment_hypothesis",
+            "source_death_policy": "released_clones_persist_until_expiry",
+            "first_attack_delay_seconds": 0
+          }
+        }
+      ],
+      "loadout_policy": "exact_two_equipment",
+      "recovery_basis": "snapshot_base_and_equipment_recovery_on_activation_hypothesis",
+      "activation_policy": "manual_only_controlled_probe",
+      "pet_policy": "paired_pet_from_explicit_scene_assignment",
+      "targeting_policy": "retained_building_targeting_hypothesis",
+      "statistics_mapping": "base_and_equipment_additions_before_modifiers"
+    },
+    "grand-warden": {
+      "source": "declared-full-army-development-hypotheses-not-game-calibration",
+      "equipment": [
+        {
+          "entity": "eternal-tome",
+          "level": 18,
+          "parameters": {
+            "source": "declared-full-army-development-hypotheses-not-game-calibration",
+            "radius": 3,
+            "membership": "snapshot_at_activation"
+          }
+        },
+        {
+          "entity": "healing-tome",
+          "level": 15,
+          "parameters": {
+            "source": "declared-full-army-development-hypotheses-not-game-calibration",
+            "radius": 3,
+            "membership": "snapshot_at_activation_buff_follows_recipient",
+            "pulse_interval_seconds": 0.5,
+            "first_pulse_delay_seconds": 0.5,
+            "healing_multipliers_by_class": {
+              "troop": 1,
+              "hero": 1,
+              "pet": 1
+            }
+          }
+        }
+      ],
+      "loadout_policy": "exact_two_equipment",
+      "recovery_basis": "snapshot_base_and_equipment_recovery_on_activation_hypothesis",
+      "activation_policy": "manual_only_controlled_probe",
+      "pet_policy": "paired_pet_from_explicit_scene_assignment",
+      "targeting_policy": "independent_targeting_without_army_following_controlled_probe",
+      "statistics_mapping": "base_and_equipment_additions_before_modifiers"
+    },
+    "royal-champion": {
+      "source": "declared-full-army-development-hypotheses-not-game-calibration",
+      "equipment": [
+        {
+          "entity": "rocket-spear",
+          "level": 21,
+          "parameters": {
+            "source": "declared-full-army-development-hypotheses-not-game-calibration",
+            "splash_layer_policy": "all_declared_target_layers"
+          }
+        },
+        {
+          "entity": "electro-boots",
+          "level": 23,
+          "parameters": {
+            "source": "declared-full-army-development-hypotheses-not-game-calibration",
+            "first_aura_pulse_delay_seconds": 0.4,
+            "self_heal_interval_seconds": 0.5,
+            "first_self_heal_delay_seconds": 0.5,
+            "frozen_passives_policy": "continue_while_frozen_hypothesis",
+            "aura_target_kinds": [
+              "defense",
+              "building",
+              "unit"
+            ],
+            "aura_target_layers": [
+              "ground",
+              "air"
+            ]
+          }
+        }
+      ],
+      "loadout_policy": "exact_two_equipment",
+      "recovery_basis": "snapshot_base_and_equipment_recovery_on_activation_hypothesis",
+      "activation_policy": "manual_only_controlled_probe",
+      "pet_policy": "paired_pet_from_explicit_scene_assignment",
+      "targeting_policy": "retained_building_targeting_hypothesis",
+      "statistics_mapping": "base_and_equipment_additions_before_modifiers"
+    },
+    "dragon-duke": {
+      "source": "declared-full-army-development-hypotheses-not-game-calibration",
+      "equipment": [
+        {
+          "entity": "revenge-deck",
+          "level": 20,
+          "parameters": {
+            "source": "declared-full-army-development-hypotheses-not-game-calibration",
+            "damage_scaling": "equipment_flat_damage_times_hero_profile_only_hypothesis",
+            "projectile": {
+              "timing": "launch_distance_delay",
+              "delay_seconds": 0,
+              "destination": "locked_actor_center_at_impact",
+              "hit_radius": 0,
+              "speed_tiles_per_second": 10
+            },
+            "trigger": "positive_actual_hp_loss_from_live_hostile_actor",
+            "source_origins": [
+              "weapon",
+              "hazard",
+              "death",
+              "ability"
+            ],
+            "counter_timing": "after_same_timestamp_health_if_duke_survives",
+            "cooldown": "shared_across_sources_first_receipt_order_no_catchup",
+            "heal": "on_counter_launch",
+            "freeze": "block_counter_without_retaining_receipts",
+            "ineligible_source": "discard_receipt",
+            "source_death": "released_counter_persists"
+          }
+        },
+        {
+          "entity": "fire-heart",
+          "level": 18,
+          "parameters": {
+            "source": "declared-full-army-development-hypotheses-not-game-calibration",
+            "damage_scaling": "equipment_flat_damage_times_hero_profile_only_hypothesis",
+            "self_heal_interval_seconds": 0.5,
+            "first_self_heal_delay_seconds": 0.5,
+            "freeze": "healing_clock_continues_while_frozen",
+            "death_delay_seconds": 0.2,
+            "death_target_kinds": [
+              "defense",
+              "building",
+              "unit"
+            ],
+            "death_target_layers": [
+              "ground",
+              "air"
+            ],
+            "protection": "respect_invulnerability",
+            "lethal_trigger": "actual_death_after_lethal_interception",
+            "removal_trigger": "exclude_physical_ejection_include_phoenix_final_defeat",
+            "death_position": "capture_center_at_actual_death"
+          }
+        }
+      ],
+      "loadout_policy": "exact_two_equipment",
+      "recovery_basis": "snapshot_base_and_equipment_recovery_on_activation_hypothesis",
+      "activation_policy": "manual_only_controlled_probe",
+      "pet_policy": "paired_pet_from_explicit_scene_assignment",
+      "targeting_policy": "retained_building_targeting_hypothesis",
+      "statistics_mapping": "base_and_equipment_additions_before_modifiers"
+    }
+  },
+  "duke_intrinsic": {
+    "source": "declared-full-army-development-hypotheses-not-game-calibration",
+    "friendly_air_radius_tiles": 3,
+    "friendly_air_classes": [
+      "troop",
+      "hero",
+      "pet",
+      "siege",
+      "guardian"
+    ],
+    "friendly_air_visibility": "include_invisible",
+    "friendly_air_frozen": "include_frozen",
+    "friendly_air_inactive": "exclude_reserves_dead_and_phoenix_eggs",
+    "isolated_range_tiles": 4,
+    "nearby_projectile": {
+      "timing": "instant",
+      "delay_seconds": 0,
+      "destination": "locked_actor_center_at_impact",
+      "hit_radius": 0
+    },
+    "isolated_projectile": {
+      "timing": "launch_distance_delay",
+      "delay_seconds": 0,
+      "destination": "locked_actor_center_at_impact",
+      "hit_radius": 0,
+      "speed_tiles_per_second": 10
+    },
+    "membership": "center_distance_inside_after_motion_hypothesis",
+    "stacking": "multiply_independent_damage_and_attack_rate_factors",
+    "rampage_damage_scope": "ordinary_weapon_only_hypothesis"
+  },
+  "pets": {
+    "unicorn": {
+      "source": "declared-full-army-development-hypotheses-not-game-calibration",
+      "spawn_offset": {
+        "dx": 0,
+        "dy": 0
+      },
+      "first_attack_delay_seconds": 0.2,
+      "follow_distance_tiles": 1,
+      "target_retention": "assigned_owner_then_declared_fallback",
+      "owner_death_policy": "nearest_living_hero_then_nearest_living_troop",
+      "pet_death_policy": "stop_future_actions_existing_effects_persist",
+      "ground_wall_policy": "jump_enemy_walls",
+      "incoming_status_policy": "independent_from_owner_ordinary_unit_effects",
+      "projectile": null,
+      "behavior": {
+        "healing_basis": "catalog_healingPerPulse_per_catalog_attackSpeed_scaled_by_source_pet_buff",
+        "stacking_policy": "independent_additive_without_healer_diminishing_returns",
+        "protection_policy": "healing_ignores_damage_invulnerability",
+        "overheal_policy": "cap_at_maximum_without_resurrection"
+      }
+    },
+    "electro-owl": {
+      "source": "declared-full-army-development-hypotheses-not-game-calibration",
+      "spawn_offset": {
+        "dx": 0,
+        "dy": 0
+      },
+      "first_attack_delay_seconds": 0.2,
+      "follow_distance_tiles": 1,
+      "target_retention": "prefer_owner_primary_then_nearest",
+      "owner_death_policy": "independent_combat",
+      "pet_death_policy": "stop_future_actions_existing_effects_persist",
+      "ground_wall_policy": "not_applicable_air",
+      "incoming_status_policy": "independent_from_owner_ordinary_unit_effects",
+      "projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0
+      },
+      "behavior": {
+        "chain_damage_basis": "catalog_negative_percent_decay_per_jump",
+        "jump_range_tiles": 2,
+        "jump_delay_seconds": 0.1,
+        "jump_metric": "footprint_distance",
+        "tie_break": "distance_then_instance_id",
+        "allow_protected_links": true
+      }
+    },
+    "spirit-fox": {
+      "source": "declared-full-army-development-hypotheses-not-game-calibration",
+      "spawn_offset": {
+        "dx": 0,
+        "dy": 0
+      },
+      "first_attack_delay_seconds": 0.2,
+      "follow_distance_tiles": 1,
+      "target_retention": "retain_then_prefer_targets_within_owner_radius",
+      "owner_death_policy": "independent_combat_and_self_cloak",
+      "pet_death_policy": "stop_future_actions_existing_effects_persist",
+      "ground_wall_policy": "jump_enemy_walls",
+      "incoming_status_policy": "independent_from_owner_ordinary_unit_effects",
+      "projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0
+      },
+      "behavior": {
+        "initial_cloak_delay_seconds": 0.5,
+        "visible_interval_seconds": 2,
+        "duration_basis": "catalog_invisibilityDuration",
+        "recipient_policy": "pet_and_active_owner_regardless_distance",
+        "cloak_policy": "acquisition_only_existing_projectiles_and_splash_still_hit",
+        "freeze_clock_policy": "continue_periodic_clock_while_frozen"
+      }
+    },
+    "phoenix": {
+      "source": "declared-full-army-development-hypotheses-not-game-calibration",
+      "spawn_offset": {
+        "dx": 0,
+        "dy": 0
+      },
+      "first_attack_delay_seconds": 0.2,
+      "follow_distance_tiles": 1,
+      "target_retention": "prefer_owner_primary_then_nearest",
+      "owner_death_policy": "independent_after_temporary_owner_life",
+      "pet_death_policy": "stop_future_actions_existing_effects_persist",
+      "ground_wall_policy": "not_applicable_air",
+      "incoming_status_policy": "independent_from_owner_ordinary_unit_effects",
+      "projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0
+      },
+      "behavior": {
+        "duration_basis": "catalog_reviveDuration",
+        "revival_health_policy": "one_hp_sentinel_unhealable_during_temporary_life",
+        "splash_radius_tiles": 1.25,
+        "shield_recipients": "hero_and_hatched_phoenix",
+        "shield_status_policy": "freeze_and_cloak_remain_independent",
+        "hatch_position_policy": "current_owner_center",
+        "expiry_policy": "owner_defeated_even_if_healed_or_other_protection_remains",
+        "ability_policy": "preserve_used_state_without_reactivation",
+        "egg_policy": "inactive_unhittable_unhealable_nonattacking_owner_follower"
+      }
+    }
+  },
+  "sieges": {
+    "stone-slammer": {
+      "source": "declared-full-army-development-hypotheses-not-game-calibration",
+      "origin": "own",
+      "donor_town_hall": null,
+      "payload_group_id": "reinforcements",
+      "statistics_mapping": "snapshot_damagePerHit_and_entity_attackSpeed",
+      "range_tiles": 3,
+      "targeting": {
+        "kind": "retained_defenses_then_other_structures",
+        "hall_actor_id": null,
+        "arrival_radius_tiles": null,
+        "hall_loss": "not_applicable",
+        "ineligible_blocker": "not_applicable"
+      },
+      "weapon": {
+        "projectile": {
+          "timing": "instant",
+          "delay_seconds": 0,
+          "destination": "fixed_target_center_at_launch",
+          "inactive_primary_policy": "resolve_at_fixed_launch_position"
+        },
+        "zones": [
+          {
+            "inner_radius_tiles": 0,
+            "outer_radius_tiles": 1,
+            "damage_multiplier": 1,
+            "wall_damage_multiplier": 1
+          }
+        ],
+        "zone_composition": "strongest_per_recipient",
+        "zone_membership": "minimum_point_to_footprint_distance",
+        "wall_damage_basis": "explicit_zone_multiplier"
+      },
+      "termination": {
+        "manual_release": "destroy_and_release",
+        "maximum_lifetime_seconds": null,
+        "decay": {
+          "interval_seconds": 1,
+          "maximum_hp_fraction_per_pulse": 0,
+          "protection": "bypass_damage_immunity",
+          "freeze": "clock_continues"
+        }
+      },
+      "death": {
+        "triggers": "all_terminations",
+        "overlap": "sum_explicit_effects",
+        "effects": [
+          {
+            "statistic": "damageWhenDestroyedHitbox1",
+            "delay_seconds": 0,
+            "inner_radius_tiles": 0,
+            "outer_radius_tiles": 2,
+            "damage_multiplier": 1,
+            "target_kinds": [
+              "building",
+              "defense",
+              "wall"
+            ],
+            "target_layers": [
+              "ground"
+            ]
+          },
+          {
+            "statistic": "damageWhenDestroyedHitbox2",
+            "delay_seconds": 0,
+            "inner_radius_tiles": 0,
+            "outer_radius_tiles": 2,
+            "damage_multiplier": 1,
+            "target_kinds": [
+              "building",
+              "defense",
+              "wall"
+            ],
+            "target_layers": [
+              "ground"
+            ]
+          }
+        ]
+      },
+      "spell_response": {
+        "beneficial_fields": "immune_to_healing_rage_and_haste",
+        "hostile_effects": "explicit_shared_status_and_hazard_policies"
+      }
+    },
+    "wall-wrecker": {
+      "source": "declared-full-army-development-hypotheses-not-game-calibration",
+      "origin": "own",
+      "donor_town_hall": null,
+      "payload_group_id": "reinforcements",
+      "statistics_mapping": "snapshot_damagePerHit_and_entity_attackSpeed",
+      "range_tiles": 0.8,
+      "targeting": {
+        "kind": "straight_town_hall_route_clear_first_blocker",
+        "hall_actor_id": "hall",
+        "arrival_radius_tiles": 3,
+        "hall_loss": "continue_to_captured_anchor",
+        "ineligible_blocker": "wait_until_targetable"
+      },
+      "weapon": {
+        "projectile": {
+          "timing": "instant",
+          "delay_seconds": 0,
+          "destination": "fixed_target_center_at_launch",
+          "inactive_primary_policy": "resolve_at_fixed_launch_position"
+        },
+        "zones": [
+          {
+            "inner_radius_tiles": 0,
+            "outer_radius_tiles": 1,
+            "damage_multiplier": 1,
+            "wall_damage_multiplier": 1
+          }
+        ],
+        "zone_composition": "strongest_per_recipient",
+        "zone_membership": "minimum_point_to_footprint_distance",
+        "wall_damage_basis": "snapshot_damageVsWalls_ratio"
+      },
+      "termination": {
+        "manual_release": "destroy_and_release",
+        "maximum_lifetime_seconds": null,
+        "decay": {
+          "interval_seconds": 1,
+          "maximum_hp_fraction_per_pulse": 0,
+          "protection": "bypass_damage_immunity",
+          "freeze": "clock_continues"
+        }
+      },
+      "death": {
+        "triggers": "all_terminations",
+        "overlap": "sum_explicit_effects",
+        "effects": []
+      },
+      "spell_response": {
+        "beneficial_fields": "immune_to_healing_rage_and_haste",
+        "hostile_effects": "explicit_shared_status_and_hazard_policies"
+      }
+    }
+  },
+  "reinforcements": {
+    "id": "reinforcements",
+    "source": "declared-full-army-development-hypotheses-not-game-calibration",
+    "receiver_town_hall": 16,
+    "receiver_clan_castle_level": 12,
+    "member_ids": [],
+    "delivery": {
+      "kind": "siege",
+      "carrier_id": "siege"
+    },
+    "release": {
+      "initial_delay_seconds": 0.1,
+      "interval_seconds": 0.2,
+      "order": "declared_order",
+      "offsets": {},
+      "position_policy": "explicit_offset_then_nearest_clear_ground_cell",
+      "maximum_displacement_tiles": 3,
+      "blocked_position": "hold_member_until_legal_point_exists",
+      "initial_state": "fresh_health_and_release_relative_attack_clock",
+      "clock": "continues_after_carrier_loss"
+    },
+    "deployment_policy": {
+      "source": "declared-full-army-development-hypotheses-not-game-calibration",
+      "kind": "explicit_allowed_regions_hypothesis",
+      "regions": [
+        {
+          "left": 0,
+          "top": 0,
+          "right": 5,
+          "bottom": 20
+        }
+      ],
+      "point_policy": "inside_declared_region_and_clear_of_hostile_footprints"
+    }
+  },
+  "root_rider_walls": {
+    "kind": "clear_obstructions",
+    "route_cost": "travel_seconds_plus_nominal_clearance",
+    "cooldown": "independent_from_main_weapon",
+    "range": 1,
+    "first_attack_seconds": 0,
+    "impact_timing": "instant",
+    "source": "declared-full-army-development-hypotheses-not-game-calibration"
+  },
+  "ice_golem": {
+    "source": "declared-full-army-development-hypotheses-not-game-calibration",
+    "on_hit_slow": {
+      "source": "declared-full-army-development-hypotheses-not-game-calibration",
+      "duration_seconds": 2,
+      "attack_rate_multiplier": 0.25,
+      "movement_multiplier": 1,
+      "protection_policy": "damage_immunity_does_not_block_status"
+    },
+    "death_delay_seconds": 0,
+    "death_radius_multiplier": 1,
+    "death_duration_multiplier": 1,
+    "death_target_kinds": [
+      "defense",
+      "building"
+    ],
+    "death_target_layers": [
+      "ground"
+    ]
+  },
+  "valkyrie": {
+    "source": "declared-full-army-development-hypotheses-not-game-calibration",
+    "neighbor_gap_tiles": 1,
+    "samples_per_tile": 4,
+    "maximum_extra_travel_seconds": 10
+  }
+}

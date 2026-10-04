@@ -1,0 +1,46 @@
+{
+  "id": "synthetic-queen-half-health-response",
+  "control_rules": {
+    "observation_phase": "before_commands_and_hits",
+    "stream_transition": "next_observation_after_command_resolution",
+    "resource_contention": "due_time_then_action_id",
+    "pending_cue": "latched_with_explicit_execution_recheck"
+  },
+  "observation_interval_seconds": 0.1,
+  "failed_action_transition": "advance",
+  "resources": {
+    "queen-ability": 1
+  },
+  "streams": [
+    {
+      "id": "queen",
+      "steps": [
+        {
+          "all_conditions": [
+            {
+              "field": "active",
+              "actor_id": "queen",
+              "operator": "equals",
+              "value": true
+            },
+            {
+              "field": "hp_fraction",
+              "actor_id": "queen",
+              "operator": "at_most",
+              "value": 0.5
+            }
+          ],
+          "action": {
+            "id": "queen-ability",
+            "kind": "hero_ability",
+            "hero_id": "queen",
+            "recheck_conditions_on_execution": true,
+            "cost": {
+              "queen-ability": 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

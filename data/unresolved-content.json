@@ -1,0 +1,35 @@
+{
+  "checked_on": "2026-10-03",
+  "source": "https://supercell.com/en/games/clashofclans/blog/news/cosmic-curse-portal-panic-teleports-in/",
+  "items": [
+    {
+      "id": "totem-thrower",
+      "category": "temporary-troop",
+      "announcement_window": "2026-10-01 through 2026-10-31",
+      "verified_announced_mechanics": {
+        "range_tiles": 6,
+        "target_type": "ground",
+        "totem_attacks": "first attack and every fourth attack thereafter",
+        "summon": "stationary decoy with passive health loss, targetable by ground and air defenses"
+      },
+      "unknown": [
+        "housing space",
+        "current per-level damage and hitpoints",
+        "attack interval and stun duration",
+        "Tiny Totem hitpoints, radius, and passive health loss",
+        "availability on this account and each mode"
+      ],
+      "status": "ANNOUNCED_CONTENT_MISSING_FROM_NUMERIC_SNAPSHOT"
+    },
+    {
+      "id": "portal-pendant",
+      "category": "hero-equipment",
+      "hero": "minion-prince",
+      "announced_acquisition_window": "2026-10-08 through 2026-10-25 medal event",
+      "announced_boost_window": "2026-10-20 through 2026-10-25",
+      "status": "FUTURE_CONTENT_NOT_ASSUMED_OWNED_OR_AVAILABLE",
+      "unknown": ["exact mechanics", "per-level statistics", "owned level"]
+    }
+  ],
+  "coverage_consequence": "The permanent-content snapshot is not a complete current-season roster. Event branches require separate availability and numeric verification."
+}

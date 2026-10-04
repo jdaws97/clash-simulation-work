@@ -1,0 +1,64 @@
+{
+  "id": "synthetic-inferno-protection-plan",
+  "observation_interval_seconds": 0.1,
+  "control_rules": {
+    "observation_phase": "before_commands_and_hits",
+    "stream_transition": "next_observation_after_command_resolution",
+    "resource_contention": "due_time_then_action_id",
+    "pending_cue": "latched_with_explicit_execution_recheck"
+  },
+  "failed_action_transition": "stop_stream",
+  "resources": {
+    "conditional_freeze_casts": 1
+  },
+  "streams": [
+    {
+      "id": "protect-charge",
+      "steps": [
+        {
+          "all_conditions": [
+            {
+              "actor_id": "root",
+              "field": "hp_fraction",
+              "operator": "at_most",
+              "value": 0.8
+            },
+            {
+              "actor_id": "root",
+              "field": "alive",
+              "operator": "equals",
+              "value": true
+            },
+            {
+              "actor_id": "inferno",
+              "field": "alive",
+              "operator": "equals",
+              "value": true
+            }
+          ],
+          "action": {
+            "id": "freeze-inferno",
+            "kind": "area_freeze",
+            "duration_seconds": 2,
+            "area": {
+              "x": 11.5,
+              "y": 5.5,
+              "radius": 3.5,
+              "target_team": "defense",
+              "target_kinds": [
+                "defense"
+              ],
+              "target_layers": [
+                "ground"
+              ]
+            },
+            "recheck_conditions_on_execution": true,
+            "cost": {
+              "conditional_freeze_casts": 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

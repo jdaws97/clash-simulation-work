@@ -1,0 +1,78 @@
+{
+  "id": "synthetic-spatial-contract-fixture",
+  "ruleset": "spatial-single-target-kernel-v1",
+  "model_rules": {
+    "ground_path": "four_neighbor_shortest_reachable_path",
+    "target_retention": "until_dead_or_ineligible",
+    "target_tie": "path_distance_then_instance_id",
+    "range_metric": "source_center_to_target_footprint",
+    "hit_model": "instant_single_target",
+    "phase_order": "commands_then_simultaneous_hits_then_simultaneous_movement",
+    "freeze_model": "pause_movement_and_remaining_attack_cooldown",
+    "unit_collision": "none"
+  },
+  "unsupported_mechanics": [],
+  "width": 9,
+  "height": 7,
+  "duration_seconds": 8,
+  "maximum_step_seconds": 0.25,
+  "recording_interval_seconds": 0.5,
+  "actors": [
+    {
+      "id": "attacker",
+      "source": "synthetic-spatial-contract-fixture",
+      "team": "attack",
+      "kind": "unit",
+      "layer": "ground",
+      "movement": "ground",
+      "hitpoints": 100,
+      "first_attack_seconds": 0,
+      "spawn_seconds": 0,
+      "damage": 100,
+      "attack_interval_seconds": 1,
+      "speed": 2,
+      "range": 0.6,
+      "blocking": false,
+      "counts_for_destruction": false,
+      "target_priorities": [
+        "defense"
+      ],
+      "target_layers": [
+        "ground"
+      ],
+      "x": 0.5,
+      "y": 3.5,
+      "width": 0,
+      "height": 0
+    },
+    {
+      "id": "tower",
+      "source": "synthetic-spatial-contract-fixture",
+      "team": "defense",
+      "kind": "defense",
+      "layer": "ground",
+      "movement": "stationary",
+      "hitpoints": 100,
+      "first_attack_seconds": 0,
+      "spawn_seconds": 0,
+      "damage": 0,
+      "attack_interval_seconds": 1,
+      "speed": 0,
+      "range": 0,
+      "blocking": true,
+      "counts_for_destruction": true,
+      "target_priorities": [
+        "unit"
+      ],
+      "target_layers": [
+        "ground",
+        "air"
+      ],
+      "x": 7,
+      "y": 3,
+      "width": 1,
+      "height": 1
+    }
+  ],
+  "effects": []
+}

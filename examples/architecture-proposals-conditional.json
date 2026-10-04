@@ -1,0 +1,4087 @@
+{
+  "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+  "maximum_candidates": 8,
+  "geometry_probes": {
+    "source": "declared-geometry-probe-not-verified-Fireball-targeting-or-collision",
+    "footprint_disc_radius_tiles": 6,
+    "key_entities": [
+      "town-hall",
+      "monolith",
+      "eagle-artillery",
+      "scattershot",
+      "inferno-tower",
+      "multi-archer-tower",
+      "ricochet-cannon"
+    ],
+    "notes": [
+      "Counts have no invented damage-value weights or triple probabilities.",
+      "Disc centers are declared anchor centers, not validated Fireball target choices."
+    ]
+  },
+  "proposals": [
+    {
+      "id": "ranked-staggered_compartments-declared-th16",
+      "family": "staggered_compartments",
+      "configuration": {
+        "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+        "town_hall": 16,
+        "statistics_policy": {
+          "kind": "conditional_pinned_snapshot",
+          "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+        },
+        "board": {
+          "width": 44,
+          "height": 44,
+          "verification": "declared_hypothesis",
+          "source": "explicit-draft-design-envelope-awaiting-in-game-board-verification"
+        },
+        "wall_segments": [
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 37,
+            "y2": 4
+          },
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 4,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 15,
+            "x2": 37,
+            "y2": 15
+          },
+          {
+            "x1": 15,
+            "y1": 4,
+            "x2": 15,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 26,
+            "x2": 37,
+            "y2": 26
+          },
+          {
+            "x1": 26,
+            "y1": 4,
+            "x2": 26,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 37,
+            "x2": 37,
+            "y2": 37
+          },
+          {
+            "x1": 37,
+            "y1": 4,
+            "x2": 37,
+            "y2": 37
+          }
+        ],
+        "placement_category_order": [
+          "defense",
+          "army",
+          "research",
+          "resource",
+          "other",
+          "trap"
+        ],
+        "placement_rules": {
+          "defense": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                9,
+                8
+              ],
+              [
+                28,
+                8
+              ],
+              [
+                8,
+                25
+              ],
+              [
+                22,
+                22
+              ],
+              [
+                35,
+                25
+              ],
+              [
+                21,
+                36
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 1,
+            "separation_weight": 0.5
+          },
+          "army": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "research": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "resource": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                9,
+                8
+              ],
+              [
+                28,
+                8
+              ],
+              [
+                8,
+                25
+              ],
+              [
+                22,
+                22
+              ],
+              [
+                35,
+                25
+              ],
+              [
+                21,
+                36
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "other": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "trap": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                9,
+                8
+              ],
+              [
+                28,
+                8
+              ],
+              [
+                8,
+                25
+              ],
+              [
+                22,
+                22
+              ],
+              [
+                35,
+                25
+              ],
+              [
+                21,
+                36
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 0
+          }
+        },
+        "additional_wall_policy": {
+          "kind": "extend_connected_walls_toward_declared_points",
+          "preferred_points": [
+            [
+              9,
+              8
+            ],
+            [
+              28,
+              8
+            ],
+            [
+              8,
+              25
+            ],
+            [
+              22,
+              22
+            ],
+            [
+              35,
+              25
+            ],
+            [
+              21,
+              36
+            ]
+          ]
+        },
+        "modes": {
+          "air-defense-0": "normal",
+          "air-defense-1": "normal",
+          "air-defense-2": "normal",
+          "air-defense-3": "normal",
+          "air-sweeper-0": "normal",
+          "air-sweeper-1": "normal",
+          "archer-tower-0": "normal",
+          "archer-tower-1": "normal",
+          "archer-tower-2": "normal",
+          "archer-tower-3": "normal",
+          "bomb-tower-0": "normal",
+          "bomb-tower-1": "normal",
+          "builders-hut-0": "normal",
+          "builders-hut-1": "normal",
+          "builders-hut-2": "normal",
+          "builders-hut-3": "normal",
+          "builders-hut-4": "normal",
+          "cannon-0": "normal",
+          "cannon-1": "normal",
+          "cannon-2": "normal",
+          "eagle-artillery-0": "normal",
+          "hidden-tesla-0": "normal",
+          "hidden-tesla-1": "normal",
+          "hidden-tesla-2": "normal",
+          "hidden-tesla-3": "normal",
+          "hidden-tesla-4": "normal",
+          "inferno-tower-0": "normal",
+          "inferno-tower-1": "normal",
+          "inferno-tower-2": "multiTarget",
+          "monolith-0": "normal",
+          "mortar-0": "normal",
+          "mortar-1": "normal",
+          "mortar-2": "normal",
+          "mortar-3": "normal",
+          "multi-archer-tower-0": "normal",
+          "multi-archer-tower-1": "normal",
+          "ricochet-cannon-0": "normal",
+          "ricochet-cannon-1": "normal",
+          "scattershot-0": "normal",
+          "scattershot-1": "normal",
+          "spell-tower-0": "poison",
+          "spell-tower-1": "poison",
+          "wizard-tower-0": "normal",
+          "wizard-tower-1": "normal",
+          "wizard-tower-2": "normal",
+          "wizard-tower-3": "normal",
+          "wizard-tower-4": "normal",
+          "x-bow-0": "airAndGround",
+          "x-bow-1": "airAndGround",
+          "x-bow-2": "airAndGround",
+          "x-bow-3": "airAndGround"
+        },
+        "instance_settings": {
+          "air-sweeper-0": {
+            "facing_degrees": 315
+          },
+          "air-sweeper-1": {
+            "facing_degrees": 45
+          },
+          "hero-banner-0": {
+            "hero": "barbarian-king",
+            "level": 95
+          },
+          "hero-banner-1": {
+            "hero": "archer-queen",
+            "level": 95
+          },
+          "hero-banner-2": {
+            "hero": "minion-prince",
+            "level": 80
+          },
+          "hero-banner-3": {
+            "hero": "royal-champion",
+            "level": 45
+          },
+          "skeleton-trap-0": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-1": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-2": {
+            "target_layer": "ground"
+          },
+          "skeleton-trap-3": {
+            "target_layer": "ground"
+          }
+        },
+        "direction_convention": "draft_grid_north_zero_degrees_clockwise_not_verified_UI_orientation",
+        "gearing_policy": "explicit_no_geared_defenses_in_this_candidate",
+        "supercharge_policy": "explicit_no_supercharges_in_this_candidate",
+        "defensive_castle": "test separately from examples/defense-castle-experiments.json; contents unselected",
+        "notes": [
+          "This44x44 envelope is explicitly unverified in the game.",
+          "Generic placement preferences and one-tile defense spacing are design proposals, not troop-chain rules.",
+          "All unpinned instances are repacked; this is not a matched wall-only intervention.",
+          "The inherited modes, hero assignments and CC choice remain proposed settings.",
+          "No defense performance score or optimum is claimed."
+        ],
+        "id": "ranked-th16-town-hall-denial-draft",
+        "objective": "Test Town Hall denial and actual defender trophies against ordinary and competent air/Thrower plans",
+        "fixed_placements": {
+          "town-hall-0": [
+            19,
+            19
+          ],
+          "monolith-0": [
+            20,
+            24
+          ]
+        }
+      },
+      "wall_components": [
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            3,
+            3
+          ],
+          "bottom_right": [
+            15,
+            12
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            18,
+            2
+          ],
+          "bottom_right": [
+            38,
+            12
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            2,
+            16
+          ],
+          "bottom_right": [
+            13,
+            35
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            16,
+            16
+          ],
+          "bottom_right": [
+            27,
+            28
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            30,
+            16
+          ],
+          "bottom_right": [
+            40,
+            35
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            15,
+            31
+          ],
+          "bottom_right": [
+            27,
+            40
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ranked-split_core-declared-th16",
+      "family": "split_core",
+      "configuration": {
+        "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+        "town_hall": 16,
+        "statistics_policy": {
+          "kind": "conditional_pinned_snapshot",
+          "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+        },
+        "board": {
+          "width": 44,
+          "height": 44,
+          "verification": "declared_hypothesis",
+          "source": "explicit-draft-design-envelope-awaiting-in-game-board-verification"
+        },
+        "wall_segments": [
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 37,
+            "y2": 4
+          },
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 4,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 15,
+            "x2": 37,
+            "y2": 15
+          },
+          {
+            "x1": 15,
+            "y1": 4,
+            "x2": 15,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 26,
+            "x2": 37,
+            "y2": 26
+          },
+          {
+            "x1": 26,
+            "y1": 4,
+            "x2": 26,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 37,
+            "x2": 37,
+            "y2": 37
+          },
+          {
+            "x1": 37,
+            "y1": 4,
+            "x2": 37,
+            "y2": 37
+          }
+        ],
+        "placement_category_order": [
+          "defense",
+          "army",
+          "research",
+          "resource",
+          "other",
+          "trap"
+        ],
+        "placement_rules": {
+          "defense": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                10,
+                10
+              ],
+              [
+                10,
+                21
+              ],
+              [
+                10,
+                32
+              ],
+              [
+                33,
+                13
+              ],
+              [
+                33,
+                24
+              ],
+              [
+                33,
+                34
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 1,
+            "separation_weight": 0.5
+          },
+          "army": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "research": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "resource": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                10,
+                10
+              ],
+              [
+                10,
+                21
+              ],
+              [
+                10,
+                32
+              ],
+              [
+                33,
+                13
+              ],
+              [
+                33,
+                24
+              ],
+              [
+                33,
+                34
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "other": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "trap": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                10,
+                10
+              ],
+              [
+                10,
+                21
+              ],
+              [
+                10,
+                32
+              ],
+              [
+                33,
+                13
+              ],
+              [
+                33,
+                24
+              ],
+              [
+                33,
+                34
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 0
+          }
+        },
+        "additional_wall_policy": {
+          "kind": "extend_connected_walls_toward_declared_points",
+          "preferred_points": [
+            [
+              10,
+              10
+            ],
+            [
+              10,
+              21
+            ],
+            [
+              10,
+              32
+            ],
+            [
+              33,
+              13
+            ],
+            [
+              33,
+              24
+            ],
+            [
+              33,
+              34
+            ]
+          ]
+        },
+        "modes": {
+          "air-defense-0": "normal",
+          "air-defense-1": "normal",
+          "air-defense-2": "normal",
+          "air-defense-3": "normal",
+          "air-sweeper-0": "normal",
+          "air-sweeper-1": "normal",
+          "archer-tower-0": "normal",
+          "archer-tower-1": "normal",
+          "archer-tower-2": "normal",
+          "archer-tower-3": "normal",
+          "bomb-tower-0": "normal",
+          "bomb-tower-1": "normal",
+          "builders-hut-0": "normal",
+          "builders-hut-1": "normal",
+          "builders-hut-2": "normal",
+          "builders-hut-3": "normal",
+          "builders-hut-4": "normal",
+          "cannon-0": "normal",
+          "cannon-1": "normal",
+          "cannon-2": "normal",
+          "eagle-artillery-0": "normal",
+          "hidden-tesla-0": "normal",
+          "hidden-tesla-1": "normal",
+          "hidden-tesla-2": "normal",
+          "hidden-tesla-3": "normal",
+          "hidden-tesla-4": "normal",
+          "inferno-tower-0": "normal",
+          "inferno-tower-1": "normal",
+          "inferno-tower-2": "multiTarget",
+          "monolith-0": "normal",
+          "mortar-0": "normal",
+          "mortar-1": "normal",
+          "mortar-2": "normal",
+          "mortar-3": "normal",
+          "multi-archer-tower-0": "normal",
+          "multi-archer-tower-1": "normal",
+          "ricochet-cannon-0": "normal",
+          "ricochet-cannon-1": "normal",
+          "scattershot-0": "normal",
+          "scattershot-1": "normal",
+          "spell-tower-0": "poison",
+          "spell-tower-1": "poison",
+          "wizard-tower-0": "normal",
+          "wizard-tower-1": "normal",
+          "wizard-tower-2": "normal",
+          "wizard-tower-3": "normal",
+          "wizard-tower-4": "normal",
+          "x-bow-0": "airAndGround",
+          "x-bow-1": "airAndGround",
+          "x-bow-2": "airAndGround",
+          "x-bow-3": "airAndGround"
+        },
+        "instance_settings": {
+          "air-sweeper-0": {
+            "facing_degrees": 315
+          },
+          "air-sweeper-1": {
+            "facing_degrees": 45
+          },
+          "hero-banner-0": {
+            "hero": "barbarian-king",
+            "level": 95
+          },
+          "hero-banner-1": {
+            "hero": "archer-queen",
+            "level": 95
+          },
+          "hero-banner-2": {
+            "hero": "minion-prince",
+            "level": 80
+          },
+          "hero-banner-3": {
+            "hero": "royal-champion",
+            "level": 45
+          },
+          "skeleton-trap-0": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-1": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-2": {
+            "target_layer": "ground"
+          },
+          "skeleton-trap-3": {
+            "target_layer": "ground"
+          }
+        },
+        "direction_convention": "draft_grid_north_zero_degrees_clockwise_not_verified_UI_orientation",
+        "gearing_policy": "explicit_no_geared_defenses_in_this_candidate",
+        "supercharge_policy": "explicit_no_supercharges_in_this_candidate",
+        "defensive_castle": "test separately from examples/defense-castle-experiments.json; contents unselected",
+        "notes": [
+          "This44x44 envelope is explicitly unverified in the game.",
+          "Generic placement preferences and one-tile defense spacing are design proposals, not troop-chain rules.",
+          "All unpinned instances are repacked; this is not a matched wall-only intervention.",
+          "The inherited modes, hero assignments and CC choice remain proposed settings.",
+          "No defense performance score or optimum is claimed."
+        ],
+        "id": "ranked-th16-town-hall-denial-draft",
+        "objective": "Test Town Hall denial and actual defender trophies against ordinary and competent air/Thrower plans",
+        "fixed_placements": {
+          "town-hall-0": [
+            8,
+            18
+          ],
+          "monolith-0": [
+            30,
+            21
+          ]
+        }
+      },
+      "wall_components": [
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            3,
+            4
+          ],
+          "bottom_right": [
+            18,
+            36
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            25,
+            7
+          ],
+          "bottom_right": [
+            40,
+            38
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            20,
+            16
+          ],
+          "bottom_right": [
+            23,
+            27
+          ]
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              3,
+              15
+            ],
+            [
+              18,
+              15
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              3,
+              27
+            ],
+            [
+              18,
+              27
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              25,
+              19
+            ],
+            [
+              40,
+              19
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              25,
+              29
+            ],
+            [
+              40,
+              29
+            ]
+          ],
+          "closed": false
+        }
+      ]
+    },
+    {
+      "id": "ranked-offset_ring-declared-th16",
+      "family": "offset_ring",
+      "configuration": {
+        "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+        "town_hall": 16,
+        "statistics_policy": {
+          "kind": "conditional_pinned_snapshot",
+          "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+        },
+        "board": {
+          "width": 44,
+          "height": 44,
+          "verification": "declared_hypothesis",
+          "source": "explicit-draft-design-envelope-awaiting-in-game-board-verification"
+        },
+        "wall_segments": [
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 37,
+            "y2": 4
+          },
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 4,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 15,
+            "x2": 37,
+            "y2": 15
+          },
+          {
+            "x1": 15,
+            "y1": 4,
+            "x2": 15,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 26,
+            "x2": 37,
+            "y2": 26
+          },
+          {
+            "x1": 26,
+            "y1": 4,
+            "x2": 26,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 37,
+            "x2": 37,
+            "y2": 37
+          },
+          {
+            "x1": 37,
+            "y1": 4,
+            "x2": 37,
+            "y2": 37
+          }
+        ],
+        "placement_category_order": [
+          "defense",
+          "army",
+          "research",
+          "resource",
+          "other",
+          "trap"
+        ],
+        "placement_rules": {
+          "defense": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                10,
+                12
+              ],
+              [
+                28,
+                10
+              ],
+              [
+                35,
+                18
+              ],
+              [
+                32,
+                32
+              ],
+              [
+                15,
+                34
+              ],
+              [
+                22,
+                22
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 1,
+            "separation_weight": 0.5
+          },
+          "army": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "research": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "resource": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                10,
+                12
+              ],
+              [
+                28,
+                10
+              ],
+              [
+                35,
+                18
+              ],
+              [
+                32,
+                32
+              ],
+              [
+                15,
+                34
+              ],
+              [
+                22,
+                22
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "other": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "trap": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                10,
+                12
+              ],
+              [
+                28,
+                10
+              ],
+              [
+                35,
+                18
+              ],
+              [
+                32,
+                32
+              ],
+              [
+                15,
+                34
+              ],
+              [
+                22,
+                22
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 0
+          }
+        },
+        "additional_wall_policy": {
+          "kind": "extend_connected_walls_toward_declared_points",
+          "preferred_points": [
+            [
+              10,
+              12
+            ],
+            [
+              28,
+              10
+            ],
+            [
+              35,
+              18
+            ],
+            [
+              32,
+              32
+            ],
+            [
+              15,
+              34
+            ],
+            [
+              22,
+              22
+            ]
+          ]
+        },
+        "modes": {
+          "air-defense-0": "normal",
+          "air-defense-1": "normal",
+          "air-defense-2": "normal",
+          "air-defense-3": "normal",
+          "air-sweeper-0": "normal",
+          "air-sweeper-1": "normal",
+          "archer-tower-0": "normal",
+          "archer-tower-1": "normal",
+          "archer-tower-2": "normal",
+          "archer-tower-3": "normal",
+          "bomb-tower-0": "normal",
+          "bomb-tower-1": "normal",
+          "builders-hut-0": "normal",
+          "builders-hut-1": "normal",
+          "builders-hut-2": "normal",
+          "builders-hut-3": "normal",
+          "builders-hut-4": "normal",
+          "cannon-0": "normal",
+          "cannon-1": "normal",
+          "cannon-2": "normal",
+          "eagle-artillery-0": "normal",
+          "hidden-tesla-0": "normal",
+          "hidden-tesla-1": "normal",
+          "hidden-tesla-2": "normal",
+          "hidden-tesla-3": "normal",
+          "hidden-tesla-4": "normal",
+          "inferno-tower-0": "normal",
+          "inferno-tower-1": "normal",
+          "inferno-tower-2": "multiTarget",
+          "monolith-0": "normal",
+          "mortar-0": "normal",
+          "mortar-1": "normal",
+          "mortar-2": "normal",
+          "mortar-3": "normal",
+          "multi-archer-tower-0": "normal",
+          "multi-archer-tower-1": "normal",
+          "ricochet-cannon-0": "normal",
+          "ricochet-cannon-1": "normal",
+          "scattershot-0": "normal",
+          "scattershot-1": "normal",
+          "spell-tower-0": "poison",
+          "spell-tower-1": "poison",
+          "wizard-tower-0": "normal",
+          "wizard-tower-1": "normal",
+          "wizard-tower-2": "normal",
+          "wizard-tower-3": "normal",
+          "wizard-tower-4": "normal",
+          "x-bow-0": "airAndGround",
+          "x-bow-1": "airAndGround",
+          "x-bow-2": "airAndGround",
+          "x-bow-3": "airAndGround"
+        },
+        "instance_settings": {
+          "air-sweeper-0": {
+            "facing_degrees": 315
+          },
+          "air-sweeper-1": {
+            "facing_degrees": 45
+          },
+          "hero-banner-0": {
+            "hero": "barbarian-king",
+            "level": 95
+          },
+          "hero-banner-1": {
+            "hero": "archer-queen",
+            "level": 95
+          },
+          "hero-banner-2": {
+            "hero": "minion-prince",
+            "level": 80
+          },
+          "hero-banner-3": {
+            "hero": "royal-champion",
+            "level": 45
+          },
+          "skeleton-trap-0": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-1": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-2": {
+            "target_layer": "ground"
+          },
+          "skeleton-trap-3": {
+            "target_layer": "ground"
+          }
+        },
+        "direction_convention": "draft_grid_north_zero_degrees_clockwise_not_verified_UI_orientation",
+        "gearing_policy": "explicit_no_geared_defenses_in_this_candidate",
+        "supercharge_policy": "explicit_no_supercharges_in_this_candidate",
+        "defensive_castle": "test separately from examples/defense-castle-experiments.json; contents unselected",
+        "notes": [
+          "This44x44 envelope is explicitly unverified in the game.",
+          "Generic placement preferences and one-tile defense spacing are design proposals, not troop-chain rules.",
+          "All unpinned instances are repacked; this is not a matched wall-only intervention.",
+          "The inherited modes, hero assignments and CC choice remain proposed settings.",
+          "No defense performance score or optimum is claimed."
+        ],
+        "id": "ranked-th16-town-hall-denial-draft",
+        "objective": "Test Town Hall denial and actual defender trophies against ordinary and competent air/Thrower plans",
+        "fixed_placements": {
+          "town-hall-0": [
+            19,
+            19
+          ],
+          "monolith-0": [
+            24,
+            24
+          ]
+        }
+      },
+      "wall_components": [
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            4,
+            4
+          ],
+          "bottom_right": [
+            39,
+            39
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            15,
+            15
+          ],
+          "bottom_right": [
+            29,
+            29
+          ]
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              4,
+              20
+            ],
+            [
+              15,
+              20
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              29,
+              23
+            ],
+            [
+              39,
+              23
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              20,
+              4
+            ],
+            [
+              20,
+              15
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              23,
+              29
+            ],
+            [
+              23,
+              39
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            5,
+            26
+          ],
+          "bottom_right": [
+            13,
+            37
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            31,
+            6
+          ],
+          "bottom_right": [
+            38,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ranked-stepped_diamond-declared-th16",
+      "family": "stepped_diamond",
+      "configuration": {
+        "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+        "town_hall": 16,
+        "statistics_policy": {
+          "kind": "conditional_pinned_snapshot",
+          "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+        },
+        "board": {
+          "width": 44,
+          "height": 44,
+          "verification": "declared_hypothesis",
+          "source": "explicit-draft-design-envelope-awaiting-in-game-board-verification"
+        },
+        "wall_segments": [
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 37,
+            "y2": 4
+          },
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 4,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 15,
+            "x2": 37,
+            "y2": 15
+          },
+          {
+            "x1": 15,
+            "y1": 4,
+            "x2": 15,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 26,
+            "x2": 37,
+            "y2": 26
+          },
+          {
+            "x1": 26,
+            "y1": 4,
+            "x2": 26,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 37,
+            "x2": 37,
+            "y2": 37
+          },
+          {
+            "x1": 37,
+            "y1": 4,
+            "x2": 37,
+            "y2": 37
+          }
+        ],
+        "placement_category_order": [
+          "defense",
+          "army",
+          "research",
+          "resource",
+          "other",
+          "trap"
+        ],
+        "placement_rules": {
+          "defense": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                9,
+                8
+              ],
+              [
+                35,
+                8
+              ],
+              [
+                13,
+                21
+              ],
+              [
+                21,
+                22
+              ],
+              [
+                30,
+                22
+              ],
+              [
+                35,
+                35
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 1,
+            "separation_weight": 0.5
+          },
+          "army": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "research": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "resource": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                9,
+                8
+              ],
+              [
+                35,
+                8
+              ],
+              [
+                13,
+                21
+              ],
+              [
+                21,
+                22
+              ],
+              [
+                30,
+                22
+              ],
+              [
+                35,
+                35
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "other": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "trap": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                9,
+                8
+              ],
+              [
+                35,
+                8
+              ],
+              [
+                13,
+                21
+              ],
+              [
+                21,
+                22
+              ],
+              [
+                30,
+                22
+              ],
+              [
+                35,
+                35
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 0
+          }
+        },
+        "additional_wall_policy": {
+          "kind": "extend_connected_walls_toward_declared_points",
+          "preferred_points": [
+            [
+              9,
+              8
+            ],
+            [
+              35,
+              8
+            ],
+            [
+              13,
+              21
+            ],
+            [
+              21,
+              22
+            ],
+            [
+              30,
+              22
+            ],
+            [
+              35,
+              35
+            ]
+          ]
+        },
+        "modes": {
+          "air-defense-0": "normal",
+          "air-defense-1": "normal",
+          "air-defense-2": "normal",
+          "air-defense-3": "normal",
+          "air-sweeper-0": "normal",
+          "air-sweeper-1": "normal",
+          "archer-tower-0": "normal",
+          "archer-tower-1": "normal",
+          "archer-tower-2": "normal",
+          "archer-tower-3": "normal",
+          "bomb-tower-0": "normal",
+          "bomb-tower-1": "normal",
+          "builders-hut-0": "normal",
+          "builders-hut-1": "normal",
+          "builders-hut-2": "normal",
+          "builders-hut-3": "normal",
+          "builders-hut-4": "normal",
+          "cannon-0": "normal",
+          "cannon-1": "normal",
+          "cannon-2": "normal",
+          "eagle-artillery-0": "normal",
+          "hidden-tesla-0": "normal",
+          "hidden-tesla-1": "normal",
+          "hidden-tesla-2": "normal",
+          "hidden-tesla-3": "normal",
+          "hidden-tesla-4": "normal",
+          "inferno-tower-0": "normal",
+          "inferno-tower-1": "normal",
+          "inferno-tower-2": "multiTarget",
+          "monolith-0": "normal",
+          "mortar-0": "normal",
+          "mortar-1": "normal",
+          "mortar-2": "normal",
+          "mortar-3": "normal",
+          "multi-archer-tower-0": "normal",
+          "multi-archer-tower-1": "normal",
+          "ricochet-cannon-0": "normal",
+          "ricochet-cannon-1": "normal",
+          "scattershot-0": "normal",
+          "scattershot-1": "normal",
+          "spell-tower-0": "poison",
+          "spell-tower-1": "poison",
+          "wizard-tower-0": "normal",
+          "wizard-tower-1": "normal",
+          "wizard-tower-2": "normal",
+          "wizard-tower-3": "normal",
+          "wizard-tower-4": "normal",
+          "x-bow-0": "airAndGround",
+          "x-bow-1": "airAndGround",
+          "x-bow-2": "airAndGround",
+          "x-bow-3": "airAndGround"
+        },
+        "instance_settings": {
+          "air-sweeper-0": {
+            "facing_degrees": 315
+          },
+          "air-sweeper-1": {
+            "facing_degrees": 45
+          },
+          "hero-banner-0": {
+            "hero": "barbarian-king",
+            "level": 95
+          },
+          "hero-banner-1": {
+            "hero": "archer-queen",
+            "level": 95
+          },
+          "hero-banner-2": {
+            "hero": "minion-prince",
+            "level": 80
+          },
+          "hero-banner-3": {
+            "hero": "royal-champion",
+            "level": 45
+          },
+          "skeleton-trap-0": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-1": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-2": {
+            "target_layer": "ground"
+          },
+          "skeleton-trap-3": {
+            "target_layer": "ground"
+          }
+        },
+        "direction_convention": "draft_grid_north_zero_degrees_clockwise_not_verified_UI_orientation",
+        "gearing_policy": "explicit_no_geared_defenses_in_this_candidate",
+        "supercharge_policy": "explicit_no_supercharges_in_this_candidate",
+        "defensive_castle": "test separately from examples/defense-castle-experiments.json; contents unselected",
+        "notes": [
+          "This44x44 envelope is explicitly unverified in the game.",
+          "Generic placement preferences and one-tile defense spacing are design proposals, not troop-chain rules.",
+          "All unpinned instances are repacked; this is not a matched wall-only intervention.",
+          "The inherited modes, hero assignments and CC choice remain proposed settings.",
+          "No defense performance score or optimum is claimed."
+        ],
+        "id": "ranked-th16-town-hall-denial-draft",
+        "objective": "Test Town Hall denial and actual defender trophies against ordinary and competent air/Thrower plans",
+        "fixed_placements": {
+          "town-hall-0": [
+            19,
+            20
+          ],
+          "monolith-0": [
+            20,
+            25
+          ]
+        }
+      },
+      "wall_components": [
+        {
+          "kind": "manhattan_band",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "center": [
+            22,
+            22
+          ],
+          "radius": 18,
+          "thickness": 2
+        },
+        {
+          "kind": "manhattan_band",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "center": [
+            21,
+            22
+          ],
+          "radius": 9,
+          "thickness": 2
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            3,
+            3
+          ],
+          "bottom_right": [
+            14,
+            12
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            30,
+            30
+          ],
+          "bottom_right": [
+            40,
+            40
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            30,
+            3
+          ],
+          "bottom_right": [
+            40,
+            13
+          ]
+        }
+      ]
+    },
+    {
+      "id": "war-cwl-staggered_compartments-declared-th16",
+      "family": "staggered_compartments",
+      "configuration": {
+        "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+        "town_hall": 16,
+        "statistics_policy": {
+          "kind": "conditional_pinned_snapshot",
+          "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+        },
+        "board": {
+          "width": 44,
+          "height": 44,
+          "verification": "declared_hypothesis",
+          "source": "explicit-draft-design-envelope-awaiting-in-game-board-verification"
+        },
+        "wall_segments": [
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 37,
+            "y2": 4
+          },
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 4,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 15,
+            "x2": 37,
+            "y2": 15
+          },
+          {
+            "x1": 15,
+            "y1": 4,
+            "x2": 15,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 26,
+            "x2": 37,
+            "y2": 26
+          },
+          {
+            "x1": 26,
+            "y1": 4,
+            "x2": 26,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 37,
+            "x2": 37,
+            "y2": 37
+          },
+          {
+            "x1": 37,
+            "y1": 4,
+            "x2": 37,
+            "y2": 37
+          }
+        ],
+        "placement_category_order": [
+          "defense",
+          "army",
+          "research",
+          "resource",
+          "other",
+          "trap"
+        ],
+        "placement_rules": {
+          "defense": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                9,
+                8
+              ],
+              [
+                28,
+                8
+              ],
+              [
+                8,
+                25
+              ],
+              [
+                22,
+                22
+              ],
+              [
+                35,
+                25
+              ],
+              [
+                21,
+                36
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 1,
+            "separation_weight": 0.5
+          },
+          "army": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "research": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "resource": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                9,
+                8
+              ],
+              [
+                28,
+                8
+              ],
+              [
+                8,
+                25
+              ],
+              [
+                22,
+                22
+              ],
+              [
+                35,
+                25
+              ],
+              [
+                21,
+                36
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "other": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "trap": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                9,
+                8
+              ],
+              [
+                28,
+                8
+              ],
+              [
+                8,
+                25
+              ],
+              [
+                22,
+                22
+              ],
+              [
+                35,
+                25
+              ],
+              [
+                21,
+                36
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 0
+          }
+        },
+        "additional_wall_policy": {
+          "kind": "extend_connected_walls_toward_declared_points",
+          "preferred_points": [
+            [
+              9,
+              8
+            ],
+            [
+              28,
+              8
+            ],
+            [
+              8,
+              25
+            ],
+            [
+              22,
+              22
+            ],
+            [
+              35,
+              25
+            ],
+            [
+              21,
+              36
+            ]
+          ]
+        },
+        "modes": {
+          "air-defense-0": "normal",
+          "air-defense-1": "normal",
+          "air-defense-2": "normal",
+          "air-defense-3": "normal",
+          "air-sweeper-0": "normal",
+          "air-sweeper-1": "normal",
+          "archer-tower-0": "normal",
+          "archer-tower-1": "normal",
+          "archer-tower-2": "normal",
+          "archer-tower-3": "normal",
+          "bomb-tower-0": "normal",
+          "bomb-tower-1": "normal",
+          "builders-hut-0": "normal",
+          "builders-hut-1": "normal",
+          "builders-hut-2": "normal",
+          "builders-hut-3": "normal",
+          "builders-hut-4": "normal",
+          "cannon-0": "normal",
+          "cannon-1": "normal",
+          "cannon-2": "normal",
+          "eagle-artillery-0": "normal",
+          "hidden-tesla-0": "normal",
+          "hidden-tesla-1": "normal",
+          "hidden-tesla-2": "normal",
+          "hidden-tesla-3": "normal",
+          "hidden-tesla-4": "normal",
+          "inferno-tower-0": "normal",
+          "inferno-tower-1": "multiTarget",
+          "inferno-tower-2": "multiTarget",
+          "monolith-0": "normal",
+          "mortar-0": "normal",
+          "mortar-1": "normal",
+          "mortar-2": "normal",
+          "mortar-3": "normal",
+          "multi-archer-tower-0": "normal",
+          "multi-archer-tower-1": "normal",
+          "ricochet-cannon-0": "normal",
+          "ricochet-cannon-1": "normal",
+          "scattershot-0": "normal",
+          "scattershot-1": "normal",
+          "spell-tower-0": "rage",
+          "spell-tower-1": "poison",
+          "wizard-tower-0": "normal",
+          "wizard-tower-1": "normal",
+          "wizard-tower-2": "normal",
+          "wizard-tower-3": "normal",
+          "wizard-tower-4": "normal",
+          "x-bow-0": "airAndGround",
+          "x-bow-1": "airAndGround",
+          "x-bow-2": "airAndGround",
+          "x-bow-3": "airAndGround"
+        },
+        "instance_settings": {
+          "air-sweeper-0": {
+            "facing_degrees": 315
+          },
+          "air-sweeper-1": {
+            "facing_degrees": 225
+          },
+          "hero-banner-0": {
+            "hero": "barbarian-king",
+            "level": 95
+          },
+          "hero-banner-1": {
+            "hero": "archer-queen",
+            "level": 95
+          },
+          "hero-banner-2": {
+            "hero": "minion-prince",
+            "level": 80
+          },
+          "hero-banner-3": {
+            "hero": "royal-champion",
+            "level": 45
+          },
+          "skeleton-trap-0": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-1": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-2": {
+            "target_layer": "ground"
+          },
+          "skeleton-trap-3": {
+            "target_layer": "ground"
+          }
+        },
+        "direction_convention": "draft_grid_north_zero_degrees_clockwise_not_verified_UI_orientation",
+        "gearing_policy": "explicit_no_geared_defenses_in_this_candidate",
+        "supercharge_policy": "explicit_no_supercharges_in_this_candidate",
+        "defensive_castle": "test separately from examples/defense-castle-experiments.json; contents unselected",
+        "notes": [
+          "This44x44 envelope is explicitly unverified in the game.",
+          "Generic placement preferences and one-tile defense spacing are design proposals, not troop-chain rules.",
+          "All unpinned instances are repacked; this is not a matched wall-only intervention.",
+          "The inherited modes, hero assignments and CC choice remain proposed settings.",
+          "No defense performance score or optimum is claimed."
+        ],
+        "id": "war-cwl-th16-distributed-anchors-draft",
+        "objective": "Test best incoming stars/destruction after competent scouting and adapted follow-ups",
+        "fixed_placements": {
+          "town-hall-0": [
+            33,
+            27
+          ],
+          "monolith-0": [
+            20,
+            21
+          ]
+        }
+      },
+      "wall_components": [
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            3,
+            3
+          ],
+          "bottom_right": [
+            15,
+            12
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            18,
+            2
+          ],
+          "bottom_right": [
+            38,
+            12
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            2,
+            16
+          ],
+          "bottom_right": [
+            13,
+            35
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            16,
+            16
+          ],
+          "bottom_right": [
+            27,
+            28
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            30,
+            16
+          ],
+          "bottom_right": [
+            40,
+            35
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            15,
+            31
+          ],
+          "bottom_right": [
+            27,
+            40
+          ]
+        }
+      ]
+    },
+    {
+      "id": "war-cwl-split_core-declared-th16",
+      "family": "split_core",
+      "configuration": {
+        "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+        "town_hall": 16,
+        "statistics_policy": {
+          "kind": "conditional_pinned_snapshot",
+          "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+        },
+        "board": {
+          "width": 44,
+          "height": 44,
+          "verification": "declared_hypothesis",
+          "source": "explicit-draft-design-envelope-awaiting-in-game-board-verification"
+        },
+        "wall_segments": [
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 37,
+            "y2": 4
+          },
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 4,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 15,
+            "x2": 37,
+            "y2": 15
+          },
+          {
+            "x1": 15,
+            "y1": 4,
+            "x2": 15,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 26,
+            "x2": 37,
+            "y2": 26
+          },
+          {
+            "x1": 26,
+            "y1": 4,
+            "x2": 26,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 37,
+            "x2": 37,
+            "y2": 37
+          },
+          {
+            "x1": 37,
+            "y1": 4,
+            "x2": 37,
+            "y2": 37
+          }
+        ],
+        "placement_category_order": [
+          "defense",
+          "army",
+          "research",
+          "resource",
+          "other",
+          "trap"
+        ],
+        "placement_rules": {
+          "defense": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                10,
+                10
+              ],
+              [
+                10,
+                21
+              ],
+              [
+                10,
+                32
+              ],
+              [
+                33,
+                13
+              ],
+              [
+                33,
+                24
+              ],
+              [
+                33,
+                34
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 1,
+            "separation_weight": 0.5
+          },
+          "army": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "research": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "resource": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                10,
+                10
+              ],
+              [
+                10,
+                21
+              ],
+              [
+                10,
+                32
+              ],
+              [
+                33,
+                13
+              ],
+              [
+                33,
+                24
+              ],
+              [
+                33,
+                34
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "other": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "trap": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                10,
+                10
+              ],
+              [
+                10,
+                21
+              ],
+              [
+                10,
+                32
+              ],
+              [
+                33,
+                13
+              ],
+              [
+                33,
+                24
+              ],
+              [
+                33,
+                34
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 0
+          }
+        },
+        "additional_wall_policy": {
+          "kind": "extend_connected_walls_toward_declared_points",
+          "preferred_points": [
+            [
+              10,
+              10
+            ],
+            [
+              10,
+              21
+            ],
+            [
+              10,
+              32
+            ],
+            [
+              33,
+              13
+            ],
+            [
+              33,
+              24
+            ],
+            [
+              33,
+              34
+            ]
+          ]
+        },
+        "modes": {
+          "air-defense-0": "normal",
+          "air-defense-1": "normal",
+          "air-defense-2": "normal",
+          "air-defense-3": "normal",
+          "air-sweeper-0": "normal",
+          "air-sweeper-1": "normal",
+          "archer-tower-0": "normal",
+          "archer-tower-1": "normal",
+          "archer-tower-2": "normal",
+          "archer-tower-3": "normal",
+          "bomb-tower-0": "normal",
+          "bomb-tower-1": "normal",
+          "builders-hut-0": "normal",
+          "builders-hut-1": "normal",
+          "builders-hut-2": "normal",
+          "builders-hut-3": "normal",
+          "builders-hut-4": "normal",
+          "cannon-0": "normal",
+          "cannon-1": "normal",
+          "cannon-2": "normal",
+          "eagle-artillery-0": "normal",
+          "hidden-tesla-0": "normal",
+          "hidden-tesla-1": "normal",
+          "hidden-tesla-2": "normal",
+          "hidden-tesla-3": "normal",
+          "hidden-tesla-4": "normal",
+          "inferno-tower-0": "normal",
+          "inferno-tower-1": "multiTarget",
+          "inferno-tower-2": "multiTarget",
+          "monolith-0": "normal",
+          "mortar-0": "normal",
+          "mortar-1": "normal",
+          "mortar-2": "normal",
+          "mortar-3": "normal",
+          "multi-archer-tower-0": "normal",
+          "multi-archer-tower-1": "normal",
+          "ricochet-cannon-0": "normal",
+          "ricochet-cannon-1": "normal",
+          "scattershot-0": "normal",
+          "scattershot-1": "normal",
+          "spell-tower-0": "rage",
+          "spell-tower-1": "poison",
+          "wizard-tower-0": "normal",
+          "wizard-tower-1": "normal",
+          "wizard-tower-2": "normal",
+          "wizard-tower-3": "normal",
+          "wizard-tower-4": "normal",
+          "x-bow-0": "airAndGround",
+          "x-bow-1": "airAndGround",
+          "x-bow-2": "airAndGround",
+          "x-bow-3": "airAndGround"
+        },
+        "instance_settings": {
+          "air-sweeper-0": {
+            "facing_degrees": 315
+          },
+          "air-sweeper-1": {
+            "facing_degrees": 225
+          },
+          "hero-banner-0": {
+            "hero": "barbarian-king",
+            "level": 95
+          },
+          "hero-banner-1": {
+            "hero": "archer-queen",
+            "level": 95
+          },
+          "hero-banner-2": {
+            "hero": "minion-prince",
+            "level": 80
+          },
+          "hero-banner-3": {
+            "hero": "royal-champion",
+            "level": 45
+          },
+          "skeleton-trap-0": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-1": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-2": {
+            "target_layer": "ground"
+          },
+          "skeleton-trap-3": {
+            "target_layer": "ground"
+          }
+        },
+        "direction_convention": "draft_grid_north_zero_degrees_clockwise_not_verified_UI_orientation",
+        "gearing_policy": "explicit_no_geared_defenses_in_this_candidate",
+        "supercharge_policy": "explicit_no_supercharges_in_this_candidate",
+        "defensive_castle": "test separately from examples/defense-castle-experiments.json; contents unselected",
+        "notes": [
+          "This44x44 envelope is explicitly unverified in the game.",
+          "Generic placement preferences and one-tile defense spacing are design proposals, not troop-chain rules.",
+          "All unpinned instances are repacked; this is not a matched wall-only intervention.",
+          "The inherited modes, hero assignments and CC choice remain proposed settings.",
+          "No defense performance score or optimum is claimed."
+        ],
+        "id": "war-cwl-th16-distributed-anchors-draft",
+        "objective": "Test best incoming stars/destruction after competent scouting and adapted follow-ups",
+        "fixed_placements": {
+          "town-hall-0": [
+            30,
+            23
+          ],
+          "monolith-0": [
+            9,
+            20
+          ]
+        }
+      },
+      "wall_components": [
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            3,
+            4
+          ],
+          "bottom_right": [
+            18,
+            36
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            25,
+            7
+          ],
+          "bottom_right": [
+            40,
+            38
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            20,
+            16
+          ],
+          "bottom_right": [
+            23,
+            27
+          ]
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              3,
+              15
+            ],
+            [
+              18,
+              15
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              3,
+              27
+            ],
+            [
+              18,
+              27
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              25,
+              19
+            ],
+            [
+              40,
+              19
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              25,
+              29
+            ],
+            [
+              40,
+              29
+            ]
+          ],
+          "closed": false
+        }
+      ]
+    },
+    {
+      "id": "war-cwl-offset_ring-declared-th16",
+      "family": "offset_ring",
+      "configuration": {
+        "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+        "town_hall": 16,
+        "statistics_policy": {
+          "kind": "conditional_pinned_snapshot",
+          "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+        },
+        "board": {
+          "width": 44,
+          "height": 44,
+          "verification": "declared_hypothesis",
+          "source": "explicit-draft-design-envelope-awaiting-in-game-board-verification"
+        },
+        "wall_segments": [
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 37,
+            "y2": 4
+          },
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 4,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 15,
+            "x2": 37,
+            "y2": 15
+          },
+          {
+            "x1": 15,
+            "y1": 4,
+            "x2": 15,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 26,
+            "x2": 37,
+            "y2": 26
+          },
+          {
+            "x1": 26,
+            "y1": 4,
+            "x2": 26,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 37,
+            "x2": 37,
+            "y2": 37
+          },
+          {
+            "x1": 37,
+            "y1": 4,
+            "x2": 37,
+            "y2": 37
+          }
+        ],
+        "placement_category_order": [
+          "defense",
+          "army",
+          "research",
+          "resource",
+          "other",
+          "trap"
+        ],
+        "placement_rules": {
+          "defense": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                10,
+                12
+              ],
+              [
+                28,
+                10
+              ],
+              [
+                35,
+                18
+              ],
+              [
+                32,
+                32
+              ],
+              [
+                15,
+                34
+              ],
+              [
+                22,
+                22
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 1,
+            "separation_weight": 0.5
+          },
+          "army": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "research": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "resource": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                10,
+                12
+              ],
+              [
+                28,
+                10
+              ],
+              [
+                35,
+                18
+              ],
+              [
+                32,
+                32
+              ],
+              [
+                15,
+                34
+              ],
+              [
+                22,
+                22
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "other": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "trap": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                10,
+                12
+              ],
+              [
+                28,
+                10
+              ],
+              [
+                35,
+                18
+              ],
+              [
+                32,
+                32
+              ],
+              [
+                15,
+                34
+              ],
+              [
+                22,
+                22
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 0
+          }
+        },
+        "additional_wall_policy": {
+          "kind": "extend_connected_walls_toward_declared_points",
+          "preferred_points": [
+            [
+              10,
+              12
+            ],
+            [
+              28,
+              10
+            ],
+            [
+              35,
+              18
+            ],
+            [
+              32,
+              32
+            ],
+            [
+              15,
+              34
+            ],
+            [
+              22,
+              22
+            ]
+          ]
+        },
+        "modes": {
+          "air-defense-0": "normal",
+          "air-defense-1": "normal",
+          "air-defense-2": "normal",
+          "air-defense-3": "normal",
+          "air-sweeper-0": "normal",
+          "air-sweeper-1": "normal",
+          "archer-tower-0": "normal",
+          "archer-tower-1": "normal",
+          "archer-tower-2": "normal",
+          "archer-tower-3": "normal",
+          "bomb-tower-0": "normal",
+          "bomb-tower-1": "normal",
+          "builders-hut-0": "normal",
+          "builders-hut-1": "normal",
+          "builders-hut-2": "normal",
+          "builders-hut-3": "normal",
+          "builders-hut-4": "normal",
+          "cannon-0": "normal",
+          "cannon-1": "normal",
+          "cannon-2": "normal",
+          "eagle-artillery-0": "normal",
+          "hidden-tesla-0": "normal",
+          "hidden-tesla-1": "normal",
+          "hidden-tesla-2": "normal",
+          "hidden-tesla-3": "normal",
+          "hidden-tesla-4": "normal",
+          "inferno-tower-0": "normal",
+          "inferno-tower-1": "multiTarget",
+          "inferno-tower-2": "multiTarget",
+          "monolith-0": "normal",
+          "mortar-0": "normal",
+          "mortar-1": "normal",
+          "mortar-2": "normal",
+          "mortar-3": "normal",
+          "multi-archer-tower-0": "normal",
+          "multi-archer-tower-1": "normal",
+          "ricochet-cannon-0": "normal",
+          "ricochet-cannon-1": "normal",
+          "scattershot-0": "normal",
+          "scattershot-1": "normal",
+          "spell-tower-0": "rage",
+          "spell-tower-1": "poison",
+          "wizard-tower-0": "normal",
+          "wizard-tower-1": "normal",
+          "wizard-tower-2": "normal",
+          "wizard-tower-3": "normal",
+          "wizard-tower-4": "normal",
+          "x-bow-0": "airAndGround",
+          "x-bow-1": "airAndGround",
+          "x-bow-2": "airAndGround",
+          "x-bow-3": "airAndGround"
+        },
+        "instance_settings": {
+          "air-sweeper-0": {
+            "facing_degrees": 315
+          },
+          "air-sweeper-1": {
+            "facing_degrees": 225
+          },
+          "hero-banner-0": {
+            "hero": "barbarian-king",
+            "level": 95
+          },
+          "hero-banner-1": {
+            "hero": "archer-queen",
+            "level": 95
+          },
+          "hero-banner-2": {
+            "hero": "minion-prince",
+            "level": 80
+          },
+          "hero-banner-3": {
+            "hero": "royal-champion",
+            "level": 45
+          },
+          "skeleton-trap-0": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-1": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-2": {
+            "target_layer": "ground"
+          },
+          "skeleton-trap-3": {
+            "target_layer": "ground"
+          }
+        },
+        "direction_convention": "draft_grid_north_zero_degrees_clockwise_not_verified_UI_orientation",
+        "gearing_policy": "explicit_no_geared_defenses_in_this_candidate",
+        "supercharge_policy": "explicit_no_supercharges_in_this_candidate",
+        "defensive_castle": "test separately from examples/defense-castle-experiments.json; contents unselected",
+        "notes": [
+          "This44x44 envelope is explicitly unverified in the game.",
+          "Generic placement preferences and one-tile defense spacing are design proposals, not troop-chain rules.",
+          "All unpinned instances are repacked; this is not a matched wall-only intervention.",
+          "The inherited modes, hero assignments and CC choice remain proposed settings.",
+          "No defense performance score or optimum is claimed."
+        ],
+        "id": "war-cwl-th16-distributed-anchors-draft",
+        "objective": "Test best incoming stars/destruction after competent scouting and adapted follow-ups",
+        "fixed_placements": {
+          "town-hall-0": [
+            8,
+            30
+          ],
+          "monolith-0": [
+            20,
+            18
+          ]
+        }
+      },
+      "wall_components": [
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            4,
+            4
+          ],
+          "bottom_right": [
+            39,
+            39
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            15,
+            15
+          ],
+          "bottom_right": [
+            29,
+            29
+          ]
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              4,
+              20
+            ],
+            [
+              15,
+              20
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              29,
+              23
+            ],
+            [
+              39,
+              23
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              20,
+              4
+            ],
+            [
+              20,
+              15
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "orthogonal_polyline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "points": [
+            [
+              23,
+              29
+            ],
+            [
+              23,
+              39
+            ]
+          ],
+          "closed": false
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            5,
+            26
+          ],
+          "bottom_right": [
+            13,
+            37
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            31,
+            6
+          ],
+          "bottom_right": [
+            38,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "id": "war-cwl-stepped_diamond-declared-th16",
+      "family": "stepped_diamond",
+      "configuration": {
+        "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+        "town_hall": 16,
+        "statistics_policy": {
+          "kind": "conditional_pinned_snapshot",
+          "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+        },
+        "board": {
+          "width": 44,
+          "height": 44,
+          "verification": "declared_hypothesis",
+          "source": "explicit-draft-design-envelope-awaiting-in-game-board-verification"
+        },
+        "wall_segments": [
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 37,
+            "y2": 4
+          },
+          {
+            "x1": 4,
+            "y1": 4,
+            "x2": 4,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 15,
+            "x2": 37,
+            "y2": 15
+          },
+          {
+            "x1": 15,
+            "y1": 4,
+            "x2": 15,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 26,
+            "x2": 37,
+            "y2": 26
+          },
+          {
+            "x1": 26,
+            "y1": 4,
+            "x2": 26,
+            "y2": 37
+          },
+          {
+            "x1": 4,
+            "y1": 37,
+            "x2": 37,
+            "y2": 37
+          },
+          {
+            "x1": 37,
+            "y1": 4,
+            "x2": 37,
+            "y2": 37
+          }
+        ],
+        "placement_category_order": [
+          "defense",
+          "army",
+          "research",
+          "resource",
+          "other",
+          "trap"
+        ],
+        "placement_rules": {
+          "defense": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                9,
+                8
+              ],
+              [
+                35,
+                8
+              ],
+              [
+                13,
+                21
+              ],
+              [
+                21,
+                22
+              ],
+              [
+                30,
+                22
+              ],
+              [
+                35,
+                35
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 1,
+            "separation_weight": 0.5
+          },
+          "army": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "research": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "resource": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                9,
+                8
+              ],
+              [
+                35,
+                8
+              ],
+              [
+                13,
+                21
+              ],
+              [
+                21,
+                22
+              ],
+              [
+                30,
+                22
+              ],
+              [
+                35,
+                35
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "other": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                2,
+                22
+              ],
+              [
+                42,
+                22
+              ],
+              [
+                22,
+                2
+              ],
+              [
+                22,
+                42
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 1
+          },
+          "trap": {
+            "zones": [
+              [
+                0,
+                0,
+                44,
+                44
+              ]
+            ],
+            "preferred_points": [
+              [
+                9,
+                8
+              ],
+              [
+                35,
+                8
+              ],
+              [
+                13,
+                21
+              ],
+              [
+                21,
+                22
+              ],
+              [
+                30,
+                22
+              ],
+              [
+                35,
+                35
+              ]
+            ],
+            "minimum_footprint_gap_tiles": 0,
+            "separation_weight": 0
+          }
+        },
+        "additional_wall_policy": {
+          "kind": "extend_connected_walls_toward_declared_points",
+          "preferred_points": [
+            [
+              9,
+              8
+            ],
+            [
+              35,
+              8
+            ],
+            [
+              13,
+              21
+            ],
+            [
+              21,
+              22
+            ],
+            [
+              30,
+              22
+            ],
+            [
+              35,
+              35
+            ]
+          ]
+        },
+        "modes": {
+          "air-defense-0": "normal",
+          "air-defense-1": "normal",
+          "air-defense-2": "normal",
+          "air-defense-3": "normal",
+          "air-sweeper-0": "normal",
+          "air-sweeper-1": "normal",
+          "archer-tower-0": "normal",
+          "archer-tower-1": "normal",
+          "archer-tower-2": "normal",
+          "archer-tower-3": "normal",
+          "bomb-tower-0": "normal",
+          "bomb-tower-1": "normal",
+          "builders-hut-0": "normal",
+          "builders-hut-1": "normal",
+          "builders-hut-2": "normal",
+          "builders-hut-3": "normal",
+          "builders-hut-4": "normal",
+          "cannon-0": "normal",
+          "cannon-1": "normal",
+          "cannon-2": "normal",
+          "eagle-artillery-0": "normal",
+          "hidden-tesla-0": "normal",
+          "hidden-tesla-1": "normal",
+          "hidden-tesla-2": "normal",
+          "hidden-tesla-3": "normal",
+          "hidden-tesla-4": "normal",
+          "inferno-tower-0": "normal",
+          "inferno-tower-1": "multiTarget",
+          "inferno-tower-2": "multiTarget",
+          "monolith-0": "normal",
+          "mortar-0": "normal",
+          "mortar-1": "normal",
+          "mortar-2": "normal",
+          "mortar-3": "normal",
+          "multi-archer-tower-0": "normal",
+          "multi-archer-tower-1": "normal",
+          "ricochet-cannon-0": "normal",
+          "ricochet-cannon-1": "normal",
+          "scattershot-0": "normal",
+          "scattershot-1": "normal",
+          "spell-tower-0": "rage",
+          "spell-tower-1": "poison",
+          "wizard-tower-0": "normal",
+          "wizard-tower-1": "normal",
+          "wizard-tower-2": "normal",
+          "wizard-tower-3": "normal",
+          "wizard-tower-4": "normal",
+          "x-bow-0": "airAndGround",
+          "x-bow-1": "airAndGround",
+          "x-bow-2": "airAndGround",
+          "x-bow-3": "airAndGround"
+        },
+        "instance_settings": {
+          "air-sweeper-0": {
+            "facing_degrees": 315
+          },
+          "air-sweeper-1": {
+            "facing_degrees": 225
+          },
+          "hero-banner-0": {
+            "hero": "barbarian-king",
+            "level": 95
+          },
+          "hero-banner-1": {
+            "hero": "archer-queen",
+            "level": 95
+          },
+          "hero-banner-2": {
+            "hero": "minion-prince",
+            "level": 80
+          },
+          "hero-banner-3": {
+            "hero": "royal-champion",
+            "level": 45
+          },
+          "skeleton-trap-0": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-1": {
+            "target_layer": "air"
+          },
+          "skeleton-trap-2": {
+            "target_layer": "ground"
+          },
+          "skeleton-trap-3": {
+            "target_layer": "ground"
+          }
+        },
+        "direction_convention": "draft_grid_north_zero_degrees_clockwise_not_verified_UI_orientation",
+        "gearing_policy": "explicit_no_geared_defenses_in_this_candidate",
+        "supercharge_policy": "explicit_no_supercharges_in_this_candidate",
+        "defensive_castle": "test separately from examples/defense-castle-experiments.json; contents unselected",
+        "notes": [
+          "This44x44 envelope is explicitly unverified in the game.",
+          "Generic placement preferences and one-tile defense spacing are design proposals, not troop-chain rules.",
+          "All unpinned instances are repacked; this is not a matched wall-only intervention.",
+          "The inherited modes, hero assignments and CC choice remain proposed settings.",
+          "No defense performance score or optimum is claimed."
+        ],
+        "id": "war-cwl-th16-distributed-anchors-draft",
+        "objective": "Test best incoming stars/destruction after competent scouting and adapted follow-ups",
+        "fixed_placements": {
+          "town-hall-0": [
+            33,
+            6
+          ],
+          "monolith-0": [
+            19,
+            21
+          ]
+        }
+      },
+      "wall_components": [
+        {
+          "kind": "manhattan_band",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "center": [
+            22,
+            22
+          ],
+          "radius": 18,
+          "thickness": 2
+        },
+        {
+          "kind": "manhattan_band",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "center": [
+            21,
+            22
+          ],
+          "radius": 9,
+          "thickness": 2
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            3,
+            3
+          ],
+          "bottom_right": [
+            14,
+            12
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            30,
+            30
+          ],
+          "bottom_right": [
+            40,
+            40
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            30,
+            3
+          ],
+          "bottom_right": [
+            40,
+            13
+          ]
+        }
+      ]
+    }
+  ]
+}

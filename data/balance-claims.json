@@ -1,0 +1,302 @@
+[
+  {
+    "entity": "giant-arrow",
+    "level": 18,
+    "path": [
+      "stats",
+      "projectileDamage"
+    ],
+    "value": 1500,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "detail": "May2026 level18 projectile damage decrease"
+  },
+  {
+    "entity": "giant-arrow",
+    "value": null,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "detail": "Air Defense specific damage multiplier2x must be modeled separately"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 15,
+    "path": [
+      "stats",
+      "selfHealingPerSecond"
+    ],
+    "value": 140,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "detail": "Verify exact field semantics against level15 FireHeart regeneration nerf"
+  },
+  {
+    "entity": "thrower",
+    "value": null,
+    "source": "https://www.reddit.com/r/ClashOfClans/comments/1whswwt/thrower_balance_changes_september_2026/",
+    "detail": "Reported impending September balance; announcement is not proof of deployment or current numeric stats"
+  },
+  {
+    "entity": "electro-dragon",
+    "value": null,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/july-balance-update/",
+    "detail": "July buff highest two levels; precise current values and game patch must be checked"
+  },
+  {
+    "entity": "dragon-rider",
+    "value": null,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/july-balance-update/",
+    "detail": "July highest-level HP/DPS nerf; numeric snapshot needs reconciliation"
+  },
+  {
+    "entity": "logger",
+    "value": null,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/july-balance-update/",
+    "detail": "Rolling range reduced2tiles; guardian path/knockback adapter needed"
+  },
+  {
+    "entity": "spell-tower",
+    "level": 4,
+    "path": [
+      "townHallRequired"
+    ],
+    "value": 18,
+    "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-february-update-has-escaped/",
+    "detail": "Official February announcement lists Spell Tower4 as TH18 content; snapshot instead lists TH17"
+  },
+  {
+    "entity": "giant-arrow",
+    "level": 9,
+    "path": [
+      "stats",
+      "projectileDamage"
+    ],
+    "value": 1100,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "giant-arrow",
+    "level": 12,
+    "path": [
+      "stats",
+      "projectileDamage"
+    ],
+    "value": 1200,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "giant-arrow",
+    "level": 15,
+    "path": [
+      "stats",
+      "projectileDamage"
+    ],
+    "value": 1350,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 18,
+    "path": [
+      "stats",
+      "selfHealingPerSecond"
+    ],
+    "value": 150,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 1,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 10,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 2,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 10,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 3,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 12,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 4,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 12,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 5,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 12,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 6,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 14,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 7,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 14,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 8,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 14,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 9,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 16,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 10,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 16,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 11,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 16,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 12,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 18,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 13,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 18,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 14,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 18,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 15,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 20,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 16,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 20,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 17,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 20,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "fire-heart",
+    "level": 18,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "value": 23,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/"
+  },
+  {
+    "entity": "ruin-witch",
+    "value": null,
+    "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-anime-fury-update-is-here/",
+    "detail": "Primary June release describes no attacks and timed rubble summons; snapshot normal DPS/damage must not become a real weapon. Ruin Knight stats and full summons require their own adapter."
+  },
+  {
+    "entity": "druid",
+    "value": null,
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/july-balance-update/",
+    "detail": "July top-level healing adjustment has no exact numbers in this primary post; current numeric reconciliation remains required."
+  },
+  {
+    "entity": "totem-spell",
+    "value": null,
+    "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-february-update-has-escaped/",
+    "detail": "February release changes Totem radius to five tiles and direct damage to zero; historical launch damage must not be assumed current. Aura exclusions also need an adapter."
+  }
+]

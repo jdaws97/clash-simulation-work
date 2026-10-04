@@ -1,0 +1,34 @@
+[
+  {
+    "time_seconds": 0,
+    "source": "synthetic-frame-0",
+    "state": {
+      "target_matches": false,
+      "route_cleared": false
+    }
+  },
+  {
+    "time_seconds": 5,
+    "source": "synthetic-frame-5",
+    "state": {
+      "target_matches": true,
+      "route_cleared": false
+    }
+  },
+  {
+    "time_seconds": 10,
+    "source": "synthetic-frame-10",
+    "state": {
+      "target_matches": true,
+      "route_cleared": true
+    }
+  },
+  {
+    "time_seconds": 15,
+    "source": "synthetic-frame-15",
+    "state": {
+      "target_matches": true,
+      "route_cleared": true
+    }
+  }
+]

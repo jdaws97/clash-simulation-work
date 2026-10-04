@@ -1,0 +1,10 @@
+{
+  "id": "declared-support-resolution-study",
+  "maximum_step_seconds": [0.1, 0.05, 0.025],
+  "acceptance_tolerance_seconds": null,
+  "source": "explicit-solver-study-not-replay-validation",
+  "notes": [
+    "The step sizes are selected software sensitivity cases, not measured game ticks.",
+    "No acceptance tolerance or game fidelity is inferred from consistent terminal outcomes."
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "id": "synthetic-air-rear-threat-separated",
+  "observation_interval_seconds": 0.1,
+  "control_rules": {
+    "observation_phase": "before_commands_and_hits",
+    "stream_transition": "next_observation_after_command_resolution",
+    "resource_contention": "due_time_then_action_id",
+    "pending_cue": "latched_with_explicit_execution_recheck"
+  },
+  "failed_action_transition": "stop_stream",
+  "resources": {
+    "conditional_freeze_casts": 1
+  },
+  "streams": [
+    {
+      "id": "protect-rider",
+      "steps": [
+        {
+          "all_conditions": [
+            {
+              "actor_id": "rider",
+              "field": "hp_fraction",
+              "operator": "at_most",
+              "value": 0.6
+            },
+            {
+              "actor_id": "rider",
+              "field": "alive",
+              "operator": "equals",
+              "value": true
+            },
+            {
+              "actor_id": "ad-rear",
+              "field": "target_actor",
+              "operator": "equals",
+              "value": "rider"
+            }
+          ],
+          "action": {
+            "id": "protect-rear-threat",
+            "kind": "area_freeze",
+            "duration_seconds": 2,
+            "area": {
+              "x": 23.5,
+              "y": 9.5,
+              "radius": 3.5,
+              "target_team": "defense",
+              "target_kinds": [
+                "defense"
+              ],
+              "target_layers": [
+                "ground"
+              ]
+            },
+            "recheck_conditions_on_execution": true,
+            "cost": {
+              "conditional_freeze_casts": 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

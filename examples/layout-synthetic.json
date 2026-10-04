@@ -1,0 +1,28 @@
+{
+  "width": 16,
+  "height": 16,
+  "town_hall": 16,
+  "inventory": {
+    "town-hall": 1,
+    "gold-storage": 1
+  },
+  "buildings": [
+    {
+      "instance": "town-hall",
+      "id": "town-hall",
+      "level": 16,
+      "x": 0,
+      "y": 0,
+      "counts_for_destruction": true
+    },
+    {
+      "instance": "storage",
+      "id": "gold-storage",
+      "level": 16,
+      "x": 8,
+      "y": 8,
+      "counts_for_destruction": true
+    }
+  ],
+  "data_status": "SYNTHETIC_GEOMETRY_EXAMPLE_NOT_A_COMPLETE_GAME_BASE"
+}

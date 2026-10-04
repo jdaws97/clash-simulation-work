@@ -1,0 +1,20 @@
+{
+  "plan_id": "synthetic-area-protection-plan",
+  "observed_latency_traces": [
+    {
+      "source_replay": "synthetic-displaced-placement-not-player-evidence",
+      "responses": {
+        "protect": {
+          "latency_seconds": 0.25,
+          "missed": false,
+          "placement_errors": {
+            "area": {
+              "dx": 1,
+              "dy": 0
+            }
+          }
+        }
+      }
+    }
+  ]
+}

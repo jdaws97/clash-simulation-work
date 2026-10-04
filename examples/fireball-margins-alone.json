@@ -1,0 +1,228 @@
+{
+  "id": "fireball24-alone-conditional",
+  "purpose": "Independent fully covered unprotected Fireball-only cases; no other damage, repair, or HP modifier.",
+  "model_rules": {
+    "arithmetic": "unrounded_real_number_sensitivity",
+    "event_order": "explicit_sequence",
+    "earthquake_basis": "modified_maximum_hp",
+    "earthquake_repetition": "explicit_effective_multiplier_per_target_per_hit",
+    "repair": "explicit_delivered_hp_capped_at_maximum",
+    "death": "permanent_no_later_repair_or_damage",
+    "coverage_and_protection": "explicit_per_target_per_event",
+    "targets": "independent_damage_cases"
+  },
+  "fireball_level": 24,
+  "earthquake_level": 7,
+  "targets": [
+    {
+      "id": "th16-monolith",
+      "entity": "monolith",
+      "level": 3,
+      "town_hall": 16,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th16-scattershot",
+      "entity": "scattershot",
+      "level": 5,
+      "town_hall": 16,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th16-ricochet-cannon",
+      "entity": "ricochet-cannon",
+      "level": 2,
+      "town_hall": 16,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th16-multi-archer-tower",
+      "entity": "multi-archer-tower",
+      "level": 2,
+      "town_hall": 16,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th16-inferno-tower",
+      "entity": "inferno-tower",
+      "level": 10,
+      "town_hall": 16,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th16-town-hall",
+      "entity": "town-hall",
+      "level": 16,
+      "town_hall": 16,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th17-monolith",
+      "entity": "monolith",
+      "level": 4,
+      "town_hall": 17,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th17-scattershot",
+      "entity": "scattershot",
+      "level": 6,
+      "town_hall": 17,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th17-ricochet-cannon",
+      "entity": "ricochet-cannon",
+      "level": 3,
+      "town_hall": 17,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th17-multi-archer-tower",
+      "entity": "multi-archer-tower",
+      "level": 3,
+      "town_hall": 17,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th17-inferno-tower",
+      "entity": "inferno-tower",
+      "level": 11,
+      "town_hall": 17,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th17-town-hall",
+      "entity": "town-hall",
+      "level": 17,
+      "town_hall": 17,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th18-monolith",
+      "entity": "monolith",
+      "level": 5,
+      "town_hall": 18,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th18-scattershot",
+      "entity": "scattershot",
+      "level": 7,
+      "town_hall": 18,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th18-ricochet-cannon",
+      "entity": "ricochet-cannon",
+      "level": 4,
+      "town_hall": 18,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th18-multi-archer-tower",
+      "entity": "multi-archer-tower",
+      "level": 4,
+      "town_hall": 18,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th18-inferno-tower",
+      "entity": "inferno-tower",
+      "level": 12,
+      "town_hall": 18,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    },
+    {
+      "id": "th18-town-hall",
+      "entity": "town-hall",
+      "level": 18,
+      "town_hall": 18,
+      "supercharge": false,
+      "maximum_hp_multiplier": 1,
+      "initial_hp_fraction": 1
+    }
+  ],
+  "hit_sequence": [
+    {
+      "id": "fireball",
+      "kind": "fireball",
+      "source": "declared-fully-covered-unprotected-case-not-targeting-proof",
+      "covered": {
+        "th16-monolith": true,
+        "th16-scattershot": true,
+        "th16-ricochet-cannon": true,
+        "th16-multi-archer-tower": true,
+        "th16-inferno-tower": true,
+        "th16-town-hall": true,
+        "th17-monolith": true,
+        "th17-scattershot": true,
+        "th17-ricochet-cannon": true,
+        "th17-multi-archer-tower": true,
+        "th17-inferno-tower": true,
+        "th17-town-hall": true,
+        "th18-monolith": true,
+        "th18-scattershot": true,
+        "th18-ricochet-cannon": true,
+        "th18-multi-archer-tower": true,
+        "th18-inferno-tower": true,
+        "th18-town-hall": true
+      },
+      "blocked_by_protection": {
+        "th16-monolith": false,
+        "th16-scattershot": false,
+        "th16-ricochet-cannon": false,
+        "th16-multi-archer-tower": false,
+        "th16-inferno-tower": false,
+        "th16-town-hall": false,
+        "th17-monolith": false,
+        "th17-scattershot": false,
+        "th17-ricochet-cannon": false,
+        "th17-multi-archer-tower": false,
+        "th17-inferno-tower": false,
+        "th17-town-hall": false,
+        "th18-monolith": false,
+        "th18-scattershot": false,
+        "th18-ricochet-cannon": false,
+        "th18-multi-archer-tower": false,
+        "th18-inferno-tower": false,
+        "th18-town-hall": false
+      },
+      "damage_multiplier": 1
+    }
+  ]
+}

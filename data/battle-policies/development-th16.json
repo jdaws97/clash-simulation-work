@@ -1,0 +1,761 @@
+{
+  "id": "development-whole-village-hypotheses-v1",
+  "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+  "status": "DEVELOPMENT_POLICY_SET_NOT_CALIBRATED_GAME_DEFAULTS",
+  "origin": "Parameter structures copied from exercised compiler fixtures; retained values are explicit hypotheses, not evidence inferred from tests.",
+  "limitations": [
+    "Ordinary direct weapons use instantaneous impacts; indirect weapons retain their declared travel speed.",
+    "Ground routes use the shared four-neighbor model and explicit wall behavior.",
+    "Defending hero recovery is disabled until independent recovery evidence is available.",
+    "Area geometry, first-shot readiness, Freeze interactions and trigger policies need calibration.",
+    "Source-specific statistic disagreements remain in the catalog/audit and are not resolved by this policy file.",
+    "A padded simulation board provides deployment space outside the 44-tile design board; it is not a verified deployment-zone model.",
+    "Force exhaustion is a declared model hypothesis; exact live-game handling of pending effects and unspent spell types is not verified."
+  ],
+  "ordinary_projectile": {
+    "timing": "instant",
+    "delay_seconds": 0,
+    "destination": "locked_actor_center_at_impact",
+    "hit_radius": 0
+  },
+  "area_attack": {
+    "projectile": {
+      "timing": "instant",
+      "delay_seconds": 0,
+      "destination": "locked_actor_center_at_impact",
+      "hit_radius": 0,
+      "inactive_primary_policy": "fizzle"
+    },
+    "splash_layer_policy": "primary_target_layer_only",
+    "radius_multiplier": 1,
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior"
+  },
+  "scattershot": {
+    "attack_parameters": {
+      "projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0,
+        "inactive_primary_policy": "fizzle"
+      },
+      "splash_layer_policy": "primary_target_layer_only",
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+      "cone_parameters": {
+        "statistic_basis": "two_linear_distance_bands_from_snapshot_hypothesis",
+        "axis": "launch_source_to_impact_point",
+        "half_angle_degrees": 45,
+        "near_band_end": 1,
+        "far_band_end": 5,
+        "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior"
+      }
+    },
+    "ammunition_parameters": {
+      "initial_rounds": 90,
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior"
+    }
+  },
+  "bomb_tower": {
+    "attack_parameters": {
+      "projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0,
+        "inactive_primary_policy": "fizzle"
+      },
+      "splash_layer_policy": "primary_target_layer_only",
+      "radius_multiplier": 1,
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior"
+    },
+    "bomb_death_parameters": {
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+      "delay_seconds": 0.5,
+      "radius": 3.5,
+      "damage_multiplier": 1,
+      "target_layers": [
+        "ground"
+      ]
+    }
+  },
+  "single_inferno": {
+    "attack_parameters": {
+      "projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0
+      }
+    },
+    "ramp_parameters": {
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+      "clock_start": "first_weapon_launch",
+      "freeze_policy": "reset",
+      "protected_target_policy": "continue",
+      "middle_stage_after_seconds": 1.5,
+      "maximum_stage_after_seconds": 5.25,
+      "timing_source": "development-whole-village-hypotheses-v1-not-observed-game-behavior"
+    }
+  },
+  "multi_inferno": {
+    "cadence": "synchronized_volley_hypothesis",
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior"
+  },
+  "town_hall_16": {
+    "attack_parameters": {
+      "projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0
+      },
+      "allocation": "distinct_targets_only"
+    },
+    "town_hall_parameters": {
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+      "weapon_level": 1,
+      "activation": {
+        "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+        "initial_state": "dormant",
+        "destruction_threshold_fraction": 0.51,
+        "activation_delay_seconds": 0
+      },
+      "death": {
+        "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+        "blast_delay_seconds": 1,
+        "blast_damage_multiplier": 1,
+        "blast_radius_multiplier": 1,
+        "poison_delay_seconds": 1,
+        "poison_radius_tiles": 4.5,
+        "poison_max_dps_multiplier": 1,
+        "poison_duration_multiplier": 1,
+        "pulse_interval_seconds": 0.5,
+        "first_pulse_offset_seconds": 0,
+        "growth_by_field_age": [
+          {
+            "after_seconds": 0,
+            "dps_multiplier": 1
+          }
+        ],
+        "exit_linger_seconds": 0,
+        "protection_policy": "damage_immunity_does_not_block_status",
+        "excluded_classes": [
+          "siege"
+        ]
+      }
+    }
+  },
+  "mortar": {
+    "attack_parameters": {
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+      "projectile": {
+        "timing": "launch_distance_delay",
+        "speed_tiles_per_second": 8,
+        "destination": "fixed_target_center_at_launch",
+        "hit_radius": 0,
+        "inactive_primary_policy": "resolve_at_fixed_launch_position"
+      },
+      "radius_multiplier": 1,
+      "splash_layer_policy": "all_declared_target_layers"
+    },
+    "indirect_parameters": {
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+      "damage_basis": "snapshot_damagePerShot_is_one_shell",
+      "minimum_range": {
+        "basis": "explicit_tiles_hypothesis",
+        "value": 4
+      },
+      "burst_timing": "snapshot_attackSpeed_single_shot_interval",
+      "targeting": {
+        "policy": "nearest_eligible_retained",
+        "burst_policy": "retain_primary_until_invalid_then_reacquire"
+      },
+      "readiness_policy": {
+        "no_target": "hold_due_shell_until_eligible",
+        "freeze": "pause_remaining_shared_attack_clock",
+        "source_death": "cancel_unlaunched_shells_keep_released_projectiles"
+      },
+      "activation": null,
+      "shockwave": null
+    }
+  },
+  "eagle_artillery": {
+    "attack_parameters": {
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+      "projectile": {
+        "timing": "launch_distance_delay",
+        "speed_tiles_per_second": 8,
+        "destination": "fixed_target_center_at_launch",
+        "hit_radius": 0,
+        "inactive_primary_policy": "resolve_at_fixed_launch_position"
+      },
+      "radius_multiplier": 1,
+      "splash_layer_policy": "all_declared_target_layers"
+    },
+    "indirect_parameters": {
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+      "damage_basis": "snapshot_damagePerShot_is_one_shell",
+      "minimum_range": {
+        "basis": "snapshot_minRange",
+        "multiplier": 1
+      },
+      "burst_timing": "snapshot_attackSpeed_inter_shot_and_timeBetweenBursts_start_to_start_hypothesis",
+      "targeting": {
+        "policy": "maximum_neighborhood_hitpoints",
+        "burst_policy": "retain_primary_until_invalid_then_reacquire",
+        "radius_tiles": 2,
+        "hitpoint_basis": "current",
+        "population": "eligible_in_acquisition_annulus"
+      },
+      "readiness_policy": {
+        "no_target": "hold_due_shell_until_eligible",
+        "freeze": "pause_remaining_shared_attack_clock",
+        "source_death": "cancel_unlaunched_shells_keep_released_projectiles"
+      },
+      "activation": {
+        "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+        "threshold_basis": "snapshot_activationHousingSpace",
+        "threshold_multiplier": 1,
+        "delay_seconds": 0,
+        "actor_weights": {},
+        "command_weights": {}
+      },
+      "shockwave": {
+        "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+        "damage_basis": "snapshot_shockwaveDamagePerHit_is_additional_per_shell",
+        "radius_tiles": 2,
+        "overlap_policy": "additive_with_shell"
+      }
+    }
+  },
+  "air_sweeper": {
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+    "orientation_degrees": 0,
+    "orientation_basis": "clockwise_from_positive_x_in_screen_coordinates",
+    "geometry_basis": "pinned_extraction_degrees_and_hundredths_of_a_tile",
+    "blast_cone_degrees": 45,
+    "blast_aim": "toward_primary",
+    "recipient_policy": "capture_launch_candidates_recheck_fixed_cone_at_impact",
+    "excluded_entities": [],
+    "launch_delay_seconds": 0,
+    "gust_speed_tiles_per_second": 3,
+    "push_statistic_basis": "snapshot_push_strength_is_tiles",
+    "push_distance_multiplier": 1,
+    "push_direction": "away_from_captured_source",
+    "push_speed_tiles_per_second": 4,
+    "recovery_seconds": 0.5,
+    "recipient_freeze_policy": "forced_motion_continues_while_frozen",
+    "damage_immunity_policy": "damage_immunity_does_not_block_push",
+    "released_gust_policy": "released_gust_independent_of_source_state",
+    "overlap_policy": "replace_remaining_motion_keep_longest_pause",
+    "board_policy": "clip_distance_along_ray_keep_nominal_speed",
+    "collision_policy": "air_ignores_ground_footprints"
+  },
+  "hidden_tesla": {
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+    "initial_state": "dormant",
+    "trigger_radius_multiplier": 1,
+    "trigger_layers": [
+      "ground",
+      "air"
+    ],
+    "excluded_trigger_entities": [],
+    "destruction_threshold_fraction": 0.51,
+    "reveal_delay_seconds": 0,
+    "first_attack_delay_seconds": 0,
+    "footprint_policy": "always_blocking_hypothesis",
+    "dormant_damage_policy": "immune_until_revealed",
+    "reveal_clock_policy": "continues_while_frozen",
+    "readiness_policy": "attack_work_after_reveal_and_current_freeze"
+  },
+  "builder_hut": {
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+    "acquisition_range_basis": "catalog_builder_range_is_home_hut_acquisition_radius",
+    "acquisition_range_multiplier": 1,
+    "contact_repair_range_tiles": 0.5,
+    "repair_amount_multiplier": 1,
+    "repair_interval_multiplier": 1,
+    "movement_speed_multiplier": 1,
+    "first_repair_delay_seconds": 0.75,
+    "target_kinds": [
+      "defense",
+      "building"
+    ],
+    "excluded_entities": [],
+    "selection": "nearest_path_then_instance_id",
+    "retention": "until_full_destroyed_or_ineligible",
+    "self_hut_policy": "exclude_self_hut",
+    "path_policy": "four_neighbor_avoid_structures",
+    "idle_policy": "wait_at_current_position",
+    "hut_freeze_linkage": "worker_independent_of_hut_freeze",
+    "worker_freeze_policy": "pause_movement_and_unfinished_repair_work",
+    "stacking_policy": "additive_independent_workers",
+    "repair_boost_policy": "ignore_troop_hero_and_hut_damage_healing_bonuses",
+    "hut_death_policy": "retire_worker_immediately",
+    "lethal_damage_policy": "incoming_lethal_damage_prevents_source_and_target_repair"
+  },
+  "spell_tower": {
+    "rage": {
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+      "arming_seconds": 0,
+      "trigger": {
+        "policy": "continuous_enemy_presence",
+        "radius_multiplier": 1,
+        "unit_classes": [
+          "troop",
+          "hero",
+          "pet",
+          "siege",
+          "other"
+        ],
+        "target_layers": [
+          "ground",
+          "air"
+        ],
+        "excluded_entities": [],
+        "damage_scope": "not_applicable",
+        "visibility_policy": "exclude_untargetable_enemies"
+      },
+      "cast": {
+        "delay_seconds": 1.2,
+        "targeting_policy": "nearest_enemy_center_then_id",
+        "aim_policy": "source_center",
+        "projectile_speed_tiles_per_second": null,
+        "impact_delay_seconds": 0,
+        "freeze_policy": "cancel_cast_and_retain_charge",
+        "pending_trigger_policy": "same_enemy_alive_visible_in_range"
+      },
+      "recharge": {
+        "clock": "launch",
+        "duration_multiplier": 1
+      },
+      "death": {
+        "policy": "release_if_ready_at_death",
+        "delay_seconds": 0,
+        "frozen_policy": "release",
+        "aim_policy": "source_center",
+        "pending_cast_policy": "cancel_unlaunched_cast",
+        "released_payload_policy": "persist_independent_of_source"
+      },
+      "recipients": {
+        "target_kinds": [
+          "defense",
+          "building",
+          "unit"
+        ],
+        "target_layers": [
+          "ground",
+          "air"
+        ],
+        "unit_classes": [
+          "troop",
+          "hero",
+          "pet",
+          "siege",
+          "other"
+        ],
+        "excluded_entities": [],
+        "geometry": "footprint_intersects_radius",
+        "include_source": true
+      },
+      "effect": {
+        "radius_multiplier": 1,
+        "duration_multiplier": 1,
+        "membership_policy": "continuous_inside_field_no_linger",
+        "damage_bonus_multiplier": 1,
+        "stacking_policy": "strongest_tower_bonus",
+        "other_rage_policy": "multiply_with_other_sources",
+        "statistic_basis": "snapshot_damageIncrease_is_bonus_percent_flat_weapons_only"
+      }
+    },
+    "poison": {
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+      "arming_seconds": 0,
+      "trigger": {
+        "policy": "continuous_enemy_presence",
+        "radius_multiplier": 1,
+        "unit_classes": [
+          "troop",
+          "hero",
+          "pet",
+          "siege",
+          "other"
+        ],
+        "target_layers": [
+          "ground",
+          "air"
+        ],
+        "excluded_entities": [],
+        "damage_scope": "not_applicable",
+        "visibility_policy": "exclude_untargetable_enemies"
+      },
+      "cast": {
+        "delay_seconds": 1.2,
+        "targeting_policy": "nearest_enemy_center_then_id",
+        "aim_policy": "trigger_center_at_launch",
+        "projectile_speed_tiles_per_second": null,
+        "impact_delay_seconds": 0,
+        "freeze_policy": "cancel_cast_and_retain_charge",
+        "pending_trigger_policy": "same_enemy_alive_visible_in_range"
+      },
+      "recharge": {
+        "clock": "launch",
+        "duration_multiplier": 1
+      },
+      "death": {
+        "policy": "release_if_ready_at_death",
+        "delay_seconds": 0,
+        "frozen_policy": "release",
+        "aim_policy": "source_center",
+        "pending_cast_policy": "cancel_unlaunched_cast",
+        "released_payload_policy": "persist_independent_of_source"
+      },
+      "recipients": {
+        "target_kinds": [
+          "unit"
+        ],
+        "target_layers": [
+          "ground",
+          "air"
+        ],
+        "unit_classes": [
+          "troop",
+          "hero",
+          "pet",
+          "siege",
+          "other"
+        ],
+        "excluded_entities": [],
+        "geometry": "footprint_intersects_radius",
+        "include_source": true
+      },
+      "effect": {
+        "radius_multiplier": 1,
+        "duration_multiplier": 1,
+        "membership_policy": "pulsed_damage_continuous_status_with_explicit_linger",
+        "statistic_basis": "snapshot_maxDps_and_slow_percentages",
+        "damage_multiplier": 1,
+        "pulse_interval_seconds": 0.5,
+        "first_pulse_offset_seconds": 0,
+        "growth_by_field_age": [
+          {
+            "after_seconds": 0,
+            "dps_multiplier": 1
+          }
+        ],
+        "exit_linger_seconds": 0.25,
+        "protection_policy": "damage_immunity_does_not_block_status",
+        "excluded_classes": [
+          "siege"
+        ],
+        "stacking_policy": "additive_damage_strongest_slow"
+      }
+    },
+    "invisibility": {
+      "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+      "arming_seconds": 0,
+      "trigger": {
+        "policy": "new_positive_allied_structure_damage",
+        "radius_multiplier": 1,
+        "unit_classes": [
+          "troop",
+          "hero",
+          "pet",
+          "siege",
+          "other"
+        ],
+        "target_layers": [
+          "ground",
+          "air"
+        ],
+        "excluded_entities": [],
+        "damage_scope": "aggregate_actual_damage_without_source_attribution",
+        "visibility_policy": "exclude_untargetable_enemies"
+      },
+      "cast": {
+        "delay_seconds": 1.2,
+        "targeting_policy": "nearest_damaged_structure_then_id",
+        "aim_policy": "source_center",
+        "projectile_speed_tiles_per_second": null,
+        "impact_delay_seconds": 0,
+        "freeze_policy": "cancel_cast_and_retain_charge",
+        "pending_trigger_policy": "latched_damage_event"
+      },
+      "recharge": {
+        "clock": "launch",
+        "duration_multiplier": 1
+      },
+      "death": {
+        "policy": "release_if_ready_at_death",
+        "delay_seconds": 0,
+        "frozen_policy": "release",
+        "aim_policy": "source_center",
+        "pending_cast_policy": "cancel_unlaunched_cast",
+        "released_payload_policy": "persist_independent_of_source"
+      },
+      "recipients": {
+        "target_kinds": [
+          "defense",
+          "building",
+          "unit"
+        ],
+        "target_layers": [
+          "ground",
+          "air"
+        ],
+        "unit_classes": [
+          "troop",
+          "hero",
+          "pet",
+          "siege",
+          "other"
+        ],
+        "excluded_entities": [],
+        "geometry": "footprint_intersects_radius",
+        "include_source": true
+      },
+      "effect": {
+        "radius_multiplier": 1,
+        "duration_multiplier": 1,
+        "membership_policy": "continuous_inside_field_no_linger",
+        "acquisition_policy": "block_primary_and_chain_acquisition_released_damage_continues",
+        "stacking_policy": "union_of_live_fields",
+        "immunity_policy": "does_not_grant_damage_immunity"
+      }
+    }
+  },
+  "defending_hero": {
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+    "statistics_mapping": "snapshot_base_defending_no_equipment_hypothesis",
+    "equipment_policy": "none_on_defense",
+    "pet_policy": "none_on_defense",
+    "ability_policy": "no_active_defending_ability",
+    "destruction_policy": "hero_excluded_hypothesis",
+    "banner": {
+      "id": "replace-with-layout-banner",
+      "x": 20,
+      "y": 10,
+      "footprint_policy": "nonblocking_indestructible_anchor"
+    },
+    "aggro": {
+      "radius_basis": "snapshot_searchRadius",
+      "radius_multiplier": 1,
+      "trigger": "altar_radius_or_received_damage",
+      "retaliation": "nearest_eligible_within_leash"
+    },
+    "leash": {
+      "radius_tiles": 14,
+      "loss_policy": "return_when_primary_dead_ineligible_outside_leash_or_unreachable"
+    },
+    "patrol": {
+      "waypoints": [],
+      "selection": "ordered_loop"
+    },
+    "return": {
+      "reacquire": "only_after_arrival",
+      "attack_clock": "preserve_shared_cooldown"
+    },
+    "healing": {
+      "amount_per_pulse": 0,
+      "interval_seconds": 0.5,
+      "delay_after_combat_seconds": 1,
+      "location": "at_banner_only",
+      "freeze": "pulse_clock_continues_skip_while_frozen",
+      "first_pulse": "one_interval_after_home_and_combat_delay"
+    },
+    "death": "permanent_for_battle"
+  },
+  "spring_trap": {
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+    "arming_seconds": 0,
+    "delay_seconds": 0,
+    "trigger_radius_multiplier": 1,
+    "effect_radius_tiles": 1,
+    "allocation_policy": "highest_housing_single",
+    "protection_policy": "damage_immunity_does_not_block_removal",
+    "oversized_policy": "damage_and_push",
+    "damage_multiplier": 1,
+    "non_troop_policies": {
+      "hero": null,
+      "siege": null,
+      "pet": null,
+      "other": null
+    },
+    "push": {
+      "distance_tiles": 1,
+      "pause_seconds": 1,
+      "direction": "away_from_trap",
+      "coincident_direction": [
+        -1,
+        0
+      ],
+      "collision_policy": "cancel_if_segment_blocked_or_outside",
+      "protection_policy": "damage_immunity_blocks_push"
+    },
+    "damage_lockout_seconds": 0.5,
+    "lethal_damage_policy": "eject_without_death_effects",
+    "excluded_trigger_entities": [],
+    "excluded_effect_entities": []
+  },
+  "damage_trap": {
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+    "arming_seconds": 0,
+    "delay_seconds": 0,
+    "projectile_speed_tiles_per_second": null,
+    "damage_multiplier": 1,
+    "trigger_radius_multiplier": 1,
+    "damage_radius_multiplier": 1,
+    "excluded_trigger_entities": [],
+    "excluded_damage_entities": [],
+    "dead_trigger_policy": "fizzle"
+  },
+  "rage_spell": {
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+    "caster_team": "attack",
+    "radius_multiplier": 1,
+    "duration_basis": "snapshot_pulse_count_times_interval",
+    "duration_multiplier": 1,
+    "damage_statistic_basis": "snapshot_damage_increase_is_bonus_percent",
+    "damage_bonus_multiplier": 1,
+    "movement_statistic_basis": "snapshot_speed_increase_is_additive_catalog_units",
+    "movement_bonus_multiplier": 1,
+    "healing_scaling_basis": "damage_bonus_scales_source_healing",
+    "membership_policy": "continuous_exact_crossings",
+    "exit_linger_seconds": 0.25,
+    "field_end_policy": "clear_immediately",
+    "class_scaling": {
+      "siege": null,
+      "hero": null,
+      "pet": null,
+      "other": null,
+      "troop": {
+        "damage_bonus_multiplier": 1,
+        "movement_bonus_multiplier": 1,
+        "healing_bonus_multiplier": 1
+      }
+    },
+    "stacking_policy": "strongest_bonus_per_axis",
+    "protection_policy": "beneficial_effects_ignore_damage_immunity",
+    "source_persistence": "fixed_field_independent_of_caster"
+  },
+  "garrison": {
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+    "member_ids": [],
+    "capacity_basis": "snapshot_troopCapacity",
+    "trigger_radius_multiplier": 1,
+    "trigger_layers": [
+      "ground",
+      "air"
+    ],
+    "release": {
+      "initial_delay_seconds": 0.2,
+      "interval_seconds": 0.3,
+      "order": "declared_order_among_eligible_members",
+      "trigger_loss": "hold_until_current_eligible_enemy",
+      "freeze": "pause_remaining_shared_release_clock",
+      "positions": {},
+      "position_policy": "explicit_exterior_points"
+    },
+    "castle_death": "cancel_unreleased_keep_released",
+    "released_targeting": "nearest_retained_hostile_units_anywhere",
+    "released_idle": "hold_position",
+    "death": "permanent_for_battle"
+  },
+  "skeleton_trap": {
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+    "arming_seconds": 0,
+    "trigger_radius_multiplier": 1,
+    "excluded_trigger_entities": [],
+    "release_delay_seconds": 0.3,
+    "release_interval_seconds": 0.1,
+    "spawn_offsets": [
+      {
+        "dx": 0,
+        "dy": 0
+      },
+      {
+        "dx": 0,
+        "dy": 0
+      },
+      {
+        "dx": 0,
+        "dy": 0
+      },
+      {
+        "dx": 0,
+        "dy": 0
+      },
+      {
+        "dx": 0,
+        "dy": 0
+      }
+    ],
+    "first_attack_delay_seconds": 0.2,
+    "statistics_basis": "unarmored_level_one_skeleton_spell_reference_hypothesis",
+    "unit_lifetime_policy": "persist_until_killed_or_battle_end",
+    "trigger_loss_policy": "complete_release_after_trigger_even_if_enemy_leaves_or_dies",
+    "trap_freeze_policy": "release_clock_independent_of_unit_freeze",
+    "spawn_policy": "declared_offsets_must_be_clear",
+    "ground_wall_policy": "avoid_all_blocking_walls_and_structures",
+    "released_targeting_policy": "nearest_retained_hostile_units_anywhere"
+  },
+  "tornado_trap": {
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+    "arming_seconds": 0,
+    "delay_seconds": 0,
+    "duration_multiplier": 1,
+    "trigger_radius_multiplier": 1,
+    "effect_radius_multiplier": 1,
+    "damage_multiplier": 1,
+    "damage_quantity": "catalog_damage_is_total_over_duration",
+    "pulse_interval_seconds": 1,
+    "excluded_trigger_entities": [],
+    "excluded_effect_entities": [],
+    "pull_speed_tiles_per_second": 2,
+    "orbit_radius_tiles": 1,
+    "orbit_vertices": 8,
+    "orbit_period_seconds": 2,
+    "orbit_direction": "clockwise",
+    "recovery_seconds": 0,
+    "recipient_speed_policy": "same_declared_pull_speed_for_all_included_units",
+    "motion_policy": "finite_inward_pull_then_regular_polygon_orbit",
+    "attack_policy": "pause_unfinished_attack_work_until_release",
+    "freeze_policy": "forced_motion_continues_while_frozen",
+    "damage_immunity_policy": "blocks_damage_only",
+    "effect_visibility_policy": "affect_invisible_units_after_visible_trigger",
+    "sweeper_overlap_policy": "tornado_priority_cancel_existing_and_reject_new_gusts",
+    "tornado_overlap_policy": "earliest_active_tornado_then_instance_id",
+    "collision_policy": "clip_before_ground_obstacles_or_board_edge_then_hold"
+  },
+  "battle_termination": {
+    "source": "development-whole-village-hypotheses-v1-not-observed-game-behavior",
+    "mode": "all_counted_destroyed_or_attack_force_exhausted",
+    "assumptions": {
+      "active_attackers": "every_living_deployed_attacking_unit_including_support",
+      "undeployed_army": "every_unspent_bound_user_deployable_unit",
+      "pending_payloads": "continue_including_blocked_ground_release",
+      "latent_lifecycles": "continue_while_reported_by_runtime_owner",
+      "released_offense": "continue_until_resolved_or_expired",
+      "reachability": "do_not_infer_eventual_target_reachability_or_damage"
+    },
+    "spell_inventory": []
+  },
+  "spell_termination_classifications": {
+    "healing-spell": {
+      "classification": "support_only",
+      "continuation": "ignore"
+    },
+    "freeze-spell": {
+      "classification": "support_only",
+      "continuation": "ignore"
+    },
+    "rage-spell": {
+      "classification": "support_only",
+      "continuation": "ignore"
+    },
+    "haste-spell": {
+      "classification": "support_only",
+      "continuation": "ignore"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "plan_id": "synthetic-air-rear-threat-separated",
+  "status": "SYNTHETIC_TRACE_NOT_PLAYER_CALIBRATION",
+  "observed_latency_traces": [
+    {
+      "source_replay": "synthetic-air-timely-0.2",
+      "responses": {
+        "protect-rear-threat": {
+          "latency_seconds": 0.2,
+          "missed": false,
+          "placement_errors": {
+            "area": {
+              "dx": 0,
+              "dy": 0
+            }
+          }
+        }
+      }
+    }
+  ]
+}

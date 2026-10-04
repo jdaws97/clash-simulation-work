@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clash Lab · Recovered layouts</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #0b1322;
+        color: #dfe9f5;
+      }
+      main {
+        max-width: 1500px;
+        margin: auto;
+        padding: 32px;
+      }
+      h1 {
+        font-size: 30px;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 18px;
+        margin: 0 0 10px;
+      }
+      p {
+        margin: 8px 0 16px;
+      }
+      .eyebrow {
+        color: #71d8dc;
+        font-size: 13px;
+        letter-spacing: 2px;
+      }
+      .notice {
+        border-left: 3px solid #f3bd65;
+        padding: 12px 18px;
+        background: #302818;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin: 24px 0;
+        align-items: center;
+      }
+      select {
+        background: #152238;
+        color: inherit;
+        border: 1px solid #48617b;
+        border-radius: 6px;
+        padding: 8px;
+        margin-left: 8px;
+      }
+      .columns {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 310px;
+        gap: 20px;
+      }
+      .panel {
+        background: #101e31;
+        border: 1px solid #263b55;
+        border-radius: 12px;
+        padding: 20px;
+      }
+      svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      svg .piece {
+        cursor: pointer;
+      }
+      svg .piece:hover polygon,
+      svg .piece:focus polygon {
+        stroke: #fff;
+        stroke-width: 2;
+      }
+      svg text {
+        pointer-events: none;
+        font-size: 8px;
+        font-weight: 700;
+        fill: #071321;
+      }
+      .muted {
+        color: #9bafc7;
+        font-size: 14px;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        font-size: 13px;
+      }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin-right: 5px;
+        border-radius: 2px;
+      }
+      pre {
+        white-space: pre-wrap;
+        font:
+          13px/1.6 ui-monospace,
+          monospace;
+      }
+      ul {
+        padding-left: 20px;
+      }
+      .stats {
+        font-size: 20px;
+        margin-bottom: 16px;
+      }
+      @media (max-width: 850px) {
+        .columns {
+          grid-template-columns: 1fr;
+        }
+        main {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">CLASH LAB / MEMORY OBSERVATIONS</p>
+      <h1>Recovered layout comparison</h1>
+      <p class="muted">
+        Inspect saved coordinate sets and catalog footprints. Select a building
+        for its observed fields.
+      </p>
+      <div class="notice">
+        <strong>Unverified preview.</strong> Slot labels, encoding, freshness
+        and catalog sizes need validation. Missing objects stay missing. These
+        layouts are not battle predictions or recommended bases.
+      </div>
+      <div class="toolbar">
+        <label>Coordinate set<select id="slot"></select></label>
+        <label
+          >View<select id="view">
+            <option value="iso">Isometric</option>
+            <option value="top">Top down</option>
+          </select></label
+        >
+        <label
+          ><input id="labels" type="checkbox" checked /> Building labels</label
+        >
+        <label><input id="traps" type="checkbox" checked /> Traps</label>
+      </div>
+      <div class="columns">
+        <div class="panel">
+          <svg id="map" role="img" aria-label="Recovered layout geometry"></svg>
+          <div class="legend" id="legend"></div>
+          <p id="encoding" class="muted"></p>
+        </div>
+        <aside>
+          <div class="panel">
+            <h2>Coverage</h2>
+            <div id="stats" class="stats"></div>
+            <div id="gaps"></div>
+            <p id="extras" class="muted"></p>
+            <p id="geometry" class="muted"></p>
+          </div>
+          <div class="panel" style="margin-top: 20px">
+            <h2>Selected object</h2>
+            <pre id="detail">Select a building in the map.</pre>
+          </div>
+        </aside>
+      </div>
+      <p id="source" class="muted"></p>
+    </main>
+    <script id="data" type="application/json">
+      __LAYOUT_DATA__
+    </script>
+    <script>
+      const report = JSON.parse(document.getElementById("data").textContent);
+      const colors = {
+        "town-hall": "#f4bd5a",
+        defense: "#68c8d0",
+        trap: "#ee906a",
+        wall: "#74889f",
+        resource: "#b49add",
+        other: "#77ac84",
+      };
+      const slot = document.getElementById("slot");
+      const map = document.getElementById("map");
+      const svgNamespace = "http://www.w3.org/2000/svg";
+      for (const layout of report.layouts) {
+        const option = document.createElement("option");
+        option.value = layout.slot;
+        option.textContent =
+          layout.slot === "home_xy" ? "Home x/y (candidate)" : layout.slot;
+        slot.append(option);
+      }
+      for (const [category, color] of Object.entries(colors)) {
+        const item = document.createElement("span");
+        const dot = document.createElement("i");
+        dot.className = "dot";
+        dot.style.background = color;
+        item.append(dot, document.createTextNode(category));
+        document.getElementById("legend").append(item);
+      }
+      function element(tag, attributes) {
+        const node = document.createElementNS(svgNamespace, tag);
+        for (const [key, value] of Object.entries(attributes))
+          node.setAttribute(key, value);
+        return node;
+      }
+      function draw() {
+        const layout = report.layouts.find((item) => item.slot === slot.value);
+        const size = layout.transform_assumptions.board_size;
+        const iso = document.getElementById("view").value === "iso";
+        const project = (x, y) =>
+          iso
+            ? [size * 12 + 20 + (x - y) * 12, 20 + (x + y) * 6]
+            : [20 + x * 12, 20 + y * 12];
+        const points = (x, y, width, height) =>
+          [
+            [x, y],
+            [x + width, y],
+            [x + width, y + height],
+            [x, y + height],
+          ]
+            .map(([px, py]) => project(px, py).join(","))
+            .join(" ");
+        map.setAttribute(
+          "viewBox",
+          `0 0 ${size * (iso ? 24 : 12) + 40} ${size * 12 + 40}`,
+        );
+        map.replaceChildren(
+          element("polygon", {
+            points: points(0, 0, size, size),
+            fill: "#162c32",
+            stroke: "#426266",
+          }),
+        );
+        const showTraps = document.getElementById("traps").checked;
+        for (const record of layout.records) {
+          if (!showTraps && record.category === "trap") continue;
+          const color = colors[record.category] || colors.other;
+          const group = element("g", {
+            class: "piece",
+            tabindex: "0",
+            role: "button",
+            "aria-label": `${record.name}, raw level ${record.raw_level}`,
+          });
+          group.append(
+            element("polygon", {
+              points: points(
+                record.x + 0.04,
+                record.y + 0.04,
+                record.width - 0.08,
+                record.height - 0.08,
+              ),
+              fill: color,
+              stroke: "#0d1929",
+              "stroke-width": "0.6",
+            }),
+          );
+          const title = element("title", {});
+          title.textContent = `${record.name} · raw level ${record.raw_level} · ${record.raw_position.join(", ")}`;
+          group.append(title);
+          if (document.getElementById("labels").checked && record.width >= 2) {
+            const [x, y] = project(
+              record.x + record.width / 2,
+              record.y + record.height / 2,
+            );
+            const label = element("text", {
+              x,
+              y: y + 3,
+              "text-anchor": "middle",
+            });
+            label.textContent = record.id
+              .split("-")
+              .map((word) => word[0].toUpperCase())
+              .join("");
+            group.append(label);
+          }
+          const select = () => {
+            document.getElementById("detail").textContent = JSON.stringify(
+              record,
+              null,
+              2,
+            );
+          };
+          group.addEventListener("click", select);
+          group.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") select();
+          });
+          map.append(group);
+        }
+        document.getElementById("stats").textContent =
+          `${layout.records.length} placed observations`;
+        document.getElementById("gaps").textContent =
+          "Missing versus target TH16 inventory: " +
+          Object.entries(layout.missing_inventory)
+            .map(([id, count]) => `${count} ${id}`)
+            .join(", ");
+        document.getElementById("geometry").textContent =
+          `${layout.catalog_footprint_overlaps.length} overlapping footprint groups; ${layout.out_of_bounds.length} outside the assumed board. These diagnose coordinate or catalog issues.`;
+        const extras = Object.entries(layout.excess_inventory)
+          .map(([id, count]) => `${count} ${id}`)
+          .join(", ");
+        document.getElementById("extras").textContent =
+          `Observed beyond the target inventory: ${extras || "none"}. ${layout.rejected_records.length} records lack usable coordinates or fields for this slot.`;
+        const transform = layout.transform_assumptions;
+        document.getElementById("encoding").textContent =
+          `Assumptions: ${size} × ${size} board; raw coordinates minus ${transform.coordinate_offset}; display level = raw level + ${transform.level_offset}.`;
+      }
+      for (const id of ["slot", "view", "labels", "traps"])
+        document.getElementById(id).addEventListener("change", draw);
+      document.getElementById("source").textContent =
+        `${report.unique_object_ids} unique home object IDs across ${report.observations_at_utc.length} read-only scans. ${report.objects_with_field_conflicts} objects contain field conflicts. ${report.excluded_unmapped_or_other_village_observations} unmapped or other-village observations excluded. No process writes or raw memory dumps. Created ${report.created_at_utc}.`;
+      draw();
+    </script>
+  </body>
+</html>
