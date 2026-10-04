@@ -44,13 +44,17 @@ boundary: isolated Duke stops at the longer weapon range; a nearby moving ally
 removes isolation; Duke chases faster, exits the radius, and stops again.
 Opposing one-sided motion creates repeated near-zero events.
 The preserved original full-air case reaches genuine contact chatter at
-18.305471759 simulated seconds. This publication baseline does not include the
-separate investigation's numerical fix or claim that the case completes.
+18.305471759 simulated seconds under strict continuous membership. An explicit
+experimental policy now provides a separate, conditional continuation.
 
 Stabilization rejects immediate reversal of a committed isolation contact with a
 diagnostic identifying actors, time, radius, and the unresolved policy. It does
 not invent hysteresis, sampled updates, or sliding/contact dynamics. Completing
 that battle requires evidence or an explicit experimental policy for this case.
+An opt-in [sampled-isolation policy](DUKE_CONTACT_EXPERIMENT.md) now provides a
+finite experimental continuation, with explicit timing/provenance and separate
+sensitivity checks. Strict rejection remains the default. Its cadence is not a
+measured game mechanic.
 
 An older full-village step comparison agreed on stars, destruction, and end time
 but diverged in late event positions/timing. Outcome agreement alone is not
@@ -66,9 +70,11 @@ fixtures validate evidence schemas and mechanics; they are not observations.
 Private data and raw transcripts remain outside this repository.
 
 The previous ground development battle reached three stars under its declared
-parameters. The full-air run did not finish. Neither supports ranking real
-armies or recommending a base. Recommendations must distinguish current
-game observations, expert examples, model experiments, and unknowns.
+parameters. The strict full-air run still rejects; the explicitly sampled
+full-air experiment completes, with sensitivity to its unmeasured cadence.
+Neither supports ranking real armies or recommending a base. Recommendations
+must distinguish current game observations, expert examples, model experiments,
+and unknowns.
 
 ## Completion criteria
 

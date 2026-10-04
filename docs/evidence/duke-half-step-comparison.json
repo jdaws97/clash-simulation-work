@@ -1,0 +1,21 @@
+{
+  "absolute_tolerance": 1e-07,
+  "compared_fields": [
+    "outcome",
+    "resource_use",
+    "actors",
+    "trace"
+  ],
+  "trace_lengths": [
+    4941,
+    4941
+  ],
+  "frames_recorded_or_compared": false,
+  "replay_calibrated": false,
+  "outcome_difference": null,
+  "resource_use_difference": null,
+  "actors_difference": null,
+  "trace_difference": null,
+  "equal_trace_prefix_length": 4941,
+  "status": "AGREES_ON_RECORDED_OUTPUTS"
+}

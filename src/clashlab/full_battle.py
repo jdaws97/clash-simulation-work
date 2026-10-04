@@ -27,7 +27,11 @@ from .garrison_rules import RULES as GARRISON_RULES, SCOPE as GARRISON_SCOPE
 from .guardian_rules import RULES as GUARDIAN_RULES, SCOPE as GUARDIAN_SCOPE
 from .siege_rules import RULES as SIEGE_RULES, SCOPE as SIEGE_SCOPE
 from .pet_rules import RULES as PET_RULES, SCOPE as PET_SCOPE
-from .hero_roster_rules import RULES as HERO_ROSTER_RULES, SCOPE as HERO_ROSTER_SCOPE
+from .hero_roster_rules import (
+    RULES as HERO_ROSTER_RULES,
+    SCOPE as HERO_ROSTER_SCOPE,
+    select_duke_isolation_rules,
+)
 from .termination_rules import RULES as TERMINATION_RULES, SCOPE as TERMINATION_SCOPE
 from .attack_spell_rules import RULES as ATTACK_SPELL_RULES, SCOPE as ATTACK_SPELL_SCOPE
 from .attack_spell_models import SUPPORTED_ATTACK_SPELLS, validate_spell_classifications
@@ -841,9 +845,11 @@ def validate_battle_bindings(specification, account, army, layout, catalog):
         ATTACK_SPELL_SCOPE,
     } and ("pets" in scene or any(hero["pet"] is not None for hero in army["heroes"])):
         raise InputError("Declared hero pets require the explicit v25 adapter scope")
-    if (
-        selected_scope not in scope_rules
-        or require(scene, "model_rules") != scope_rules[selected_scope]
+    if selected_scope not in scope_rules or require(
+        scene, "model_rules"
+    ) != select_duke_isolation_rules(
+        scope_rules[selected_scope],
+        [instance.get("duke_parameters") for instance in require(scene, "entities")],
     ):
         raise InputError(
             "Full battle must explicitly select the current combined engine rules"

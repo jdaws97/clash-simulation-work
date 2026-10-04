@@ -503,12 +503,23 @@ class TrapCombat:
             ]
             if not candidates:
                 continue
+            distances = {
+                actor["id"]: hypot(
+                    center(actor)[0] - origin[0], center(actor)[1] - origin[1]
+                )
+                for actor in candidates
+            }
+            nearest = min(distances.values())
+            # Coincident entrants may differ by a few ulps after movement.
+            # Apply the declared instance-id tie break within the same spatial
+            # tolerance used for trigger membership, not raw float ordering.
             target = min(
-                candidates,
-                key=lambda actor: (
-                    hypot(center(actor)[0] - origin[0], center(actor)[1] - origin[1]),
-                    actor["id"],
+                (
+                    actor
+                    for actor in candidates
+                    if distances[actor["id"]] <= nearest + EPSILON
                 ),
+                key=lambda actor: actor["id"],
             )
             arrival = time + trap["delay_seconds"]
             speed = trap["projectile_speed_tiles_per_second"]

@@ -1,10 +1,27 @@
 """Declared extended-hero mechanics on the advanced defense and pet kernel."""
 
 from .advanced_defense_rules import RULES as ADVANCED_DEFENSE_RULES
+from .common import InputError
 
 
 RULESET = "spatial-extended-hero-roster-kernel-v27"
 SCOPE = "extended_hero_roster_advanced_defenses_pets_siege_sector"
+SAMPLED_DUKE_ISOLATION = (
+    "explicit_friendly_air_membership_with_experimental_sampled_updates"
+)
+
+
+def select_duke_isolation_rules(rules, parameters):
+    """Require a separate scene declaration when any Duke opts into sampling."""
+    if not any(
+        isinstance(value, dict) and "isolation_update" in value for value in parameters
+    ):
+        return rules
+    if "duke_isolation" not in rules:
+        raise InputError("Sampled Duke isolation requires an extended-hero ruleset")
+    return {**rules, "duke_isolation": SAMPLED_DUKE_ISOLATION}
+
+
 RULES = {
     **ADVANCED_DEFENSE_RULES,
     "extended_hero_activation": "one_common_manual_charge_and_recovery_per_hero",

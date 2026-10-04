@@ -97,6 +97,34 @@ class DamageTrapTests(unittest.TestCase):
             sum(event.get("event") == "trap_trigger" for event in result["trace"]), 1
         )
 
+    def test_trigger_distance_roundoff_uses_declared_id_tie_break(self):
+        for offset in (-1e-14, 0, 1e-14, 1e-6):
+            with self.subTest(offset=offset):
+                actors = [
+                    synthetic_unit(
+                        "b", x=3.5, movement="air", layer="air", target_priorities=[]
+                    ),
+                    synthetic_unit(
+                        "a",
+                        x=3.5 - offset,
+                        movement="air",
+                        layer="air",
+                        target_priorities=[],
+                    ),
+                    synthetic_structure(),
+                ]
+                result = simulate_spatial(
+                    trap_scene(
+                        self.model("seeking-air-mine", trigger_radius=2),
+                        actors,
+                        duration_seconds=0.01,
+                    )
+                )
+                self.assertEqual(
+                    result["traps"]["triggered"]["trap"]["trigger_id"],
+                    "b" if offset == 1e-6 else "a",
+                )
+
     def test_ground_bomb_ignores_air_unit_and_friendly_unit(self):
         actors = [
             synthetic_unit(x=4.5, target_priorities=[]),

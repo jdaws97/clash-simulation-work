@@ -83,6 +83,21 @@ def _ground_route(actor, target, blocked, width, height):
     start = floor(position[0]), floor(position[1])
     if start in blocked:
         raise InputError(f"Ground unit occupies a blocking footprint: {actor['id']}")
+    # Equivalent motion partitions can leave a unit a few ulps on either
+    # side of an integer grid seam. Replanning from floor(9.999999999999998)
+    # then sends it toward 9.5 instead of the exact-contact cell's 10.5.
+    # Canonicalize only free interior cells within the existing tolerance;
+    # do not change obstacle occupancy or move a start outside the board.
+    canonical = tuple(
+        floor(round(value) if abs(value - round(value)) <= EPSILON else value)
+        for value in position
+    )
+    if (
+        0 <= canonical[0] < width
+        and 0 <= canonical[1] < height
+        and canonical not in blocked
+    ):
+        start = canonical
     pending = deque([start])
     previous = {start: None}
     destination = None
@@ -714,6 +729,7 @@ def simulate_spatial(specification, controller=None, termination=None):
     from .hero_roster_rules import (
         RULESET as HERO_ROSTER_RULESET,
         RULES as HERO_ROSTER_RULES,
+        select_duke_isolation_rules,
     )
     from .hero_roster import EXTENDED_HEROES, HeroRosterCombat
     from .termination_rules import (
@@ -807,6 +823,13 @@ def simulate_spatial(specification, controller=None, termination=None):
         TERMINATION_RULESET: TERMINATION_RULES,
         ATTACK_SPELL_RULESET: ATTACK_SPELL_RULES,
     }[ruleset]
+    selected_rules = select_duke_isolation_rules(
+        selected_rules,
+        [
+            actor.get("duke_model", {}).get("parameters")
+            for actor in require(specification, "actors")
+        ],
+    )
     if require(specification, "model_rules") != selected_rules:
         raise InputError("All spatial model conventions must be explicitly selected")
     unsupported = require(specification, "unsupported_mechanics")

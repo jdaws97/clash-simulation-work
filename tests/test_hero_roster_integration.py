@@ -9,7 +9,7 @@ from clashlab.advanced_defense_rules import RULES as OLD_RULES, SCOPE as OLD_SCO
 from clashlab.catalog import Catalog
 from clashlab.common import InputError, read_json
 from clashlab.full_battle import compile_full_battle
-from clashlab.hero_roster_rules import RULES, RULESET, SCOPE
+from clashlab.hero_roster_rules import RULES, RULESET, SCOPE, SAMPLED_DUKE_ISOLATION
 from clashlab.spatial import simulate_spatial
 
 from test_adapters import entity_instance
@@ -66,6 +66,52 @@ class HeroRosterIntegrationTests(unittest.TestCase):
         return compile_entity_scene(
             roster_sector(self.catalog, entities, **changes), self.catalog
         )["scene"]
+
+    def test_sampled_duke_advances_attracting_contact_independent_of_maximum_step(self):
+        duke = extended_hero(x=10, y=5.5)
+        ally = entity_instance("ally", "minion", 12, "attack", x=6.999, y=5.5)
+        ally["modifiers"]["movement_speed_multiplier"] = 0.5
+        specification = roster_sector(
+            self.catalog, [duke, ally, building("storage", 14)], duration_seconds=3
+        )
+        with self.assertRaisesRegex(InputError, "boundary chatter"):
+            simulate_spatial(compile_entity_scene(specification, self.catalog)["scene"])
+        policy = read_json(
+            ROOT / "data/battle-policies/experimental-duke-isolation.json"
+        )
+        duke["duke_parameters"].update(policy)
+        # Both the actor policy and scene convention must opt in explicitly.
+        with self.assertRaisesRegex(InputError, "conventions"):
+            compile_entity_scene(specification, self.catalog)
+        specification["model_rules"]["duke_isolation"] = SAMPLED_DUKE_ISOLATION
+        results = []
+        for step in (0.017, 0.8):
+            specification["maximum_step_seconds"] = step
+            result = simulate_spatial(
+                compile_entity_scene(specification, self.catalog)["scene"]
+            )
+            changes = events(result, "dragon_duke_isolation_changed")
+            self.assertGreater(len(changes), 2)
+            self.assertLessEqual(len(changes), 31)
+            for change in changes:
+                ticks = change["time_seconds"] / 0.1
+                self.assertAlmostEqual(ticks, round(ticks), delta=1e-8)
+            summary = result["extended_heroes"]["dragon_duke"][
+                "experimental_isolation_updates"
+            ]["hero"]
+            self.assertEqual(summary["sample_count"], 31)
+            self.assertEqual(summary["status"], "explicit_uncalibrated_hypothesis")
+            results.append(result)
+        self.assertAlmostEqual(
+            results[0]["actors"]["hero"]["x"],
+            results[1]["actors"]["hero"]["x"],
+            delta=1e-8,
+        )
+        self.assertAlmostEqual(
+            results[0]["actors"]["storage"]["hp"],
+            results[1]["actors"]["storage"]["hp"],
+            delta=1e-8,
+        )
 
     def test_catalog_heroes_and_equipment_enter_only_their_explicit_scope(self):
         definitions = [

@@ -1,0 +1,119 @@
+{
+  "source_data_sha256": "b6a0b2a48e47701aa78693b8b6f30e5161de735326d6701f4283be3d03099075",
+  "python": "CPython 3.12.14",
+  "tests": {
+    "passed": 1196,
+    "seconds": 32.576,
+    "command": "python -B verify.py"
+  },
+  "black": {
+    "version": "24.10.0",
+    "touched_python_files": 11,
+    "status": "passed"
+  },
+  "runs": [
+    {
+      "file": "period-0.05-step-0.25.json",
+      "period_seconds": 0.05,
+      "maximum_step_seconds": 0.25,
+      "status": "completed",
+      "completion_proven": true,
+      "source_data_sha256": "b6a0b2a48e47701aa78693b8b6f30e5161de735326d6701f4283be3d03099075",
+      "elapsed_seconds": 62.95056814014792,
+      "end_reason": "all_counted_buildings_destroyed",
+      "stars": 3,
+      "destruction": 100.0,
+      "trace_count": 4915,
+      "sample_count": 1162,
+      "isolation_changes": 24,
+      "wall_seconds": 194.96349169989116,
+      "effective_specification_sha256": "77f0b73496583f39f2bbef471ec4ab09e2e9f8b75fbefcfdcc9ff7ac25ddac0a"
+    },
+    {
+      "file": "period-0.1-step-0.25.json",
+      "period_seconds": 0.1,
+      "maximum_step_seconds": 0.25,
+      "status": "completed",
+      "completion_proven": true,
+      "source_data_sha256": "b6a0b2a48e47701aa78693b8b6f30e5161de735326d6701f4283be3d03099075",
+      "elapsed_seconds": 62.47988879864028,
+      "end_reason": "all_counted_buildings_destroyed",
+      "stars": 3,
+      "destruction": 100.0,
+      "trace_count": 4941,
+      "sample_count": 419,
+      "isolation_changes": 13,
+      "wall_seconds": 308.51849279995076,
+      "effective_specification_sha256": "07b76f568a2db725212c02d2183b9b566ba71aa29a87041e217421a5161f01f7"
+    },
+    {
+      "file": "period-0.1-step-0.125.json",
+      "period_seconds": 0.1,
+      "maximum_step_seconds": 0.125,
+      "status": "completed",
+      "completion_proven": true,
+      "source_data_sha256": "b6a0b2a48e47701aa78693b8b6f30e5161de735326d6701f4283be3d03099075",
+      "elapsed_seconds": 62.47988879864034,
+      "end_reason": "all_counted_buildings_destroyed",
+      "stars": 3,
+      "destruction": 100.0,
+      "trace_count": 4941,
+      "sample_count": 419,
+      "isolation_changes": 13,
+      "wall_seconds": 306.5076959000435,
+      "effective_specification_sha256": "26a31ceb473e05be85bc5c41993fe6a3c2518d6fdb386ca2aace2adbc44265d1"
+    },
+    {
+      "file": "period-0.2-step-0.25.json",
+      "period_seconds": 0.2,
+      "maximum_step_seconds": 0.25,
+      "status": "completed",
+      "completion_proven": true,
+      "source_data_sha256": "b6a0b2a48e47701aa78693b8b6f30e5161de735326d6701f4283be3d03099075",
+      "elapsed_seconds": 67.62470384125994,
+      "end_reason": "all_counted_buildings_destroyed",
+      "stars": 3,
+      "destruction": 100.0,
+      "trace_count": 4983,
+      "sample_count": 314,
+      "isolation_changes": 17,
+      "wall_seconds": 127.8085270000156,
+      "effective_specification_sha256": "123e42c68b0822c72312f775d226ad9fbbaa0ebab97dda3eda5b70522efbcc2a"
+    }
+  ],
+  "strict": {
+    "source_data_sha256": "b6a0b2a48e47701aa78693b8b6f30e5161de735326d6701f4283be3d03099075",
+    "completion_proven": false,
+    "status": "rejected",
+    "diagnostic": "Unsupported Dragon Duke isolation boundary chatter: duke='dragon-duke', friendly_air='army-dragon-15', time_seconds=18.305471758783995, radius_tiles=3, membership=center_distance_inside_after_motion_hypothesis; new motion immediately reverses a committed crossing. A declared contact dynamics policy is required.",
+    "total_wall_seconds": 70.26707629999146,
+    "last_simulated_seconds": 18.305471758783995
+  },
+  "comparison": {
+    "absolute_tolerance": 1e-07,
+    "compared_fields": [
+      "outcome",
+      "resource_use",
+      "actors",
+      "trace"
+    ],
+    "trace_lengths": [
+      4941,
+      4941
+    ],
+    "frames_recorded_or_compared": false,
+    "replay_calibrated": false,
+    "outcome_difference": null,
+    "resource_use_difference": null,
+    "actors_difference": null,
+    "trace_difference": null,
+    "equal_trace_prefix_length": 4941,
+    "status": "AGREES_ON_RECORDED_OUTPUTS"
+  },
+  "input_sha256": {
+    "input": "b49d055eade4154ce90a3cf29162be504e9e7ae8434e8e86615c7a4725e3ac1b",
+    "account": "f24180d053061bd17c5e26ac6c59abd24ab6c0cccdced46f93500aaf1daf4d9a",
+    "army": "197a008b07a9137791471188ea3b651dec06496a3dbbd195ca71c29137093eaa",
+    "layout": "414bf54f4224a54effaa892d3f5189843f4b25d7af231f5cbe1cf6a42ad43ed9"
+  }
+}

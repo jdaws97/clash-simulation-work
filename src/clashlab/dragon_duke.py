@@ -7,7 +7,7 @@ membership rules remain explicit hypotheses, rather than implied game facts.
 from collections import defaultdict
 from copy import deepcopy
 from heapq import heappop, heappush
-from math import hypot, sqrt
+from math import floor, hypot, sqrt
 
 from .common import InputError, identifier, integer, number, require
 from .hero_extensions import (
@@ -25,6 +25,32 @@ from .spatial import EPSILON, _active, center, target_distance
 
 EQUIPMENT = {"revenge-deck", "fire-heart"}
 AIR_CLASSES = {"troop", "hero", "pet", "siege", "guardian"}
+SAMPLED_MEMBERSHIP = "center_distance_sampled_inclusive_experimental"
+
+
+def validate_isolation_update(parameters):
+    policy = parameters.get("isolation_update")
+    if policy is None and "isolation_update" not in parameters:
+        if parameters["membership"] != "center_distance_inside_after_motion_hypothesis":
+            raise InputError("Unsupported Duke intrinsic membership policy")
+        return
+    _exact(
+        policy,
+        {"mode", "source", "status", "interval_seconds", "clock", "between_samples"},
+        "Experimental Duke isolation update",
+    )
+    identifier(policy["source"], "Duke isolation-update source")
+    number(policy["interval_seconds"], "Duke isolation-update interval", 0.001)
+    expected = {
+        "mode": "fixed_cadence_experimental",
+        "status": "explicit_uncalibrated_hypothesis",
+        "clock": "deployment_anchored_resample_on_reactivation",
+        "between_samples": "hold_all_membership_including_lifecycle_changes",
+    }
+    if any(policy[key] != value for key, value in expected.items()) or (
+        parameters["membership"] != SAMPLED_MEMBERSHIP
+    ):
+        raise InputError("Unsupported experimental Duke isolation-update contract")
 
 
 def compile_duke_intrinsic(instance, entity, catalog):
@@ -76,6 +102,11 @@ def validate_duke_intrinsic(model):
                 "Duke intrinsic multipliers must match the source description"
             )
     parameters = model["parameters"]
+    optional = (
+        {"isolation_update"}
+        if isinstance(parameters, dict) and "isolation_update" in parameters
+        else set()
+    )
     _exact(
         parameters,
         {
@@ -91,7 +122,8 @@ def validate_duke_intrinsic(model):
             "membership",
             "stacking",
             "rampage_damage_scope",
-        },
+        }
+        | optional,
         "Duke intrinsic parameters",
     )
     identifier(parameters["source"], "Duke behavior source")
@@ -104,12 +136,12 @@ def validate_duke_intrinsic(model):
         ("friendly_air_visibility", "include_invisible"),
         ("friendly_air_frozen", "include_frozen"),
         ("friendly_air_inactive", "exclude_reserves_dead_and_phoenix_eggs"),
-        ("membership", "center_distance_inside_after_motion_hypothesis"),
         ("stacking", "multiply_independent_damage_and_attack_rate_factors"),
         ("rampage_damage_scope", "ordinary_weapon_only_hypothesis"),
     ):
         if parameters[field] != expected:
             raise InputError("Unsupported Duke intrinsic policy")
+    validate_isolation_update(parameters)
     _projectile(parameters["nearby_projectile"])
     _projectile(parameters["isolated_projectile"])
     validate_parameter_provenance(model)
@@ -371,6 +403,9 @@ class DragonDukeCombat:
         self.membership = {}
         self.crossing_hints = {}
         self.boundary_sides = {}
+        self.sample_next = {}
+        self.sample_nearby = {}
+        self.sample_counts = defaultdict(int)
         self.heal_next = {}
         self.counter_ready = {}
         self.dead = set()
@@ -451,17 +486,39 @@ class DragonDukeCombat:
         for key, model in self.models.items():
             duke = actors[key]
             if not _active(duke, time):
+                self.sample_next.pop(key, None)
                 continue
             parameters = model["parameters"]
-            nearby = []
-            for other_id, other in actors.items():
-                pair = (key, other_id)
-                inside = self._friendly(duke, other, time, parameters) and self._inside(
-                    pair, duke, other, parameters["friendly_air_radius_tiles"]
-                )
-                self.membership[pair] = inside
-                if inside:
-                    nearby.append(other_id)
+            policy = parameters.get("isolation_update")
+            sample_due = (
+                policy is None
+                or key not in self.sample_next
+                or time >= self.sample_next[key] - EPSILON
+            )
+            if sample_due:
+                nearby = []
+                for other_id, other in actors.items():
+                    pair = (key, other_id)
+                    inside = self._friendly(
+                        duke, other, time, parameters
+                    ) and self._inside(
+                        pair, duke, other, parameters["friendly_air_radius_tiles"]
+                    )
+                    self.membership[pair] = inside
+                    if inside:
+                        nearby.append(other_id)
+                if policy is not None:
+                    self.sample_nearby[key] = nearby
+                    self.sample_counts[key] += 1
+                    interval = policy["interval_seconds"]
+                    # Integer ticks prevent accumulated clock drift. Missed
+                    # inactive ticks are skipped, never replayed as combat.
+                    tick = floor((time - duke["spawn_seconds"] + EPSILON) / interval)
+                    self.sample_next[key] = (
+                        duke["spawn_seconds"] + (tick + 1) * interval
+                    )
+            else:
+                nearby = self.sample_nearby[key]
             isolated = not nearby
             previous = duke.get("_duke_isolated")
             new_rate = model["isolated_attack_rate_multiplier"] if isolated else 1
@@ -497,6 +554,9 @@ class DragonDukeCombat:
                     "isolated": isolated,
                     "nearby_friendly_air": sorted(nearby),
                 }
+                if policy is not None:
+                    entry["isolation_update_mode"] = policy["mode"]
+                    entry["isolation_sample_count"] = self.sample_counts[key]
                 trace.append(entry)
                 self.log.append(deepcopy(entry))
             heart = self.equipment[key].get("fire-heart")
@@ -513,6 +573,10 @@ class DragonDukeCombat:
             if not _active(duke, time):
                 continue
             parameters = model["parameters"]
+            if "isolation_update" in parameters:
+                # This explicitly selected model changes membership only at
+                # sample boundaries, scheduled through next_boundary().
+                continue
             for other_id, other in actors.items():
                 pair = (key, other_id)
                 self.crossing_hints.pop(pair, None)
@@ -742,6 +806,7 @@ class DragonDukeCombat:
 
     def next_boundary(self, time):
         values = [clock for clock in self.heal_next.values() if clock is not None]
+        values.extend(self.sample_next.values())
         if self.packets:
             values.append(self.packets[0][0])
         future = [value for value in values if value > time + EPSILON]
@@ -757,9 +822,20 @@ class DragonDukeCombat:
         }
 
     def result(self):
-        return {
+        result = {
             "isolation_changes": deepcopy(self.log),
             "death_effects_released_for": sorted(self.heart_released),
             "pending_packets": len(self.packets),
             "game_calibrated": False,
         }
+        sampled = {
+            key: {
+                **deepcopy(model["parameters"]["isolation_update"]),
+                "sample_count": self.sample_counts[key],
+            }
+            for key, model in self.models.items()
+            if "isolation_update" in model["parameters"]
+        }
+        if sampled:
+            result["experimental_isolation_updates"] = sampled
+        return result

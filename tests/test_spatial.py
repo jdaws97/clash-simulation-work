@@ -4,7 +4,7 @@ import unittest
 from copy import deepcopy
 
 from clashlab.common import InputError
-from clashlab.spatial import MODEL_RULES, RULESET, simulate_spatial
+from clashlab.spatial import MODEL_RULES, RULESET, _ground_route, simulate_spatial
 
 
 def synthetic_unit(actor_id="attacker", **changes):
@@ -91,6 +91,21 @@ def barrier(opening=False):
 
 
 class SpatialTests(unittest.TestCase):
+    def test_ground_replanning_is_stable_at_free_grid_seams(self):
+        target = synthetic_structure(x=14, y=33)
+        for offset in (-1e-14, 0, 1e-14):
+            actor = synthetic_unit(x=10 + offset, y=31.5, range=3)
+            route = _ground_route(actor, target, set(), 56, 56)
+            self.assertEqual(route[0], (10.5, 31.5))
+        # Positions outside the numeric tolerance and occupied neighboring
+        # cells must not be reassigned to the canonical cell.
+        actor = synthetic_unit(x=10 - 1e-6, y=31.5, range=3)
+        self.assertEqual(_ground_route(actor, target, set(), 56, 56)[0], (9.5, 31.5))
+        actor["x"] = 10 - 1e-14
+        self.assertEqual(
+            _ground_route(actor, target, {(10, 31)}, 56, 56)[0], (9.5, 31.5)
+        )
+
     def test_air_route_completion_attack_is_independent_of_coarse_step(self):
         for step in (0.3, 0.1):
             with self.subTest(step=step):

@@ -10,7 +10,8 @@ Included: engine source, development tools, conditional examples, pinned public
 data snapshots with separate notices, a synthetic TH16 account, compact neutral
 blueprint and execution fixtures, and synthetic replay schema/hash cases. The
 legacy observed-counts army example is excluded; the demo uses an experiment
-recipe instead. No new numerical behavior is introduced by publication.
+recipe instead. Subsequent reviewed updates add an approved account-matched
+guide and the explicit experimental numerical policy described below.
 
 Excluded: real player profiles, replay observations and media, raw memory
 captures, session transcripts, credentials, environments, caches, generated
@@ -46,10 +47,18 @@ rejection. Candidate output checks inventory and geometry, not game performance.
 ## Known limitation
 
 The preserved original full-air case encounters genuine Dragon Duke isolation
-contact chatter at **18.305471759 simulated seconds**. The baseline reports an
-explicit unsupported-contact diagnostic; battle completion is unproven. A
-separate isolated investigation owns that numerical behavior and is not included
-in this publication.
+contact chatter at **18.305471759 simulated seconds** in default strict mode.
+The imported numerical patch preserves that rejection and adds an explicit,
+opt-in sampled-isolation experiment, plus grid-seam routing and trap-distance
+tie corrections. Only its reviewed net changes are imported, never its ancestry.
+
+At an experimental 0.10-second period, the original and half-step runs agree
+over all 4,941 recorded events, final actors, resources and outcomes at absolute
+tolerance 1e-7. Periods 0.05, 0.10 and 0.20 produce materially different completion
+times. The game cadence is unverified; conditional completion does not establish
+accuracy. See [the experiment](DUKE_CONTACT_EXPERIMENT.md) and its
+[compact evidence](evidence/duke-contact-summary.json). Raw input profiles and
+full private traces remain excluded.
 
 Passing software checks establish portable execution and declared contracts.
 They do not establish live-game calibration, trajectory convergence, a reliable

@@ -1,0 +1,75 @@
+{
+  "status": "INDEPENDENT_CLEAN_CHECKOUT_REPRODUCED_RECORDED_EXPERIMENT",
+  "replay_calibrated": false,
+  "experimental_cadence_is_measured_game_behavior": false,
+  "sample_period_seconds": 0.1,
+  "maximum_step_seconds": 0.25,
+  "completion_proven": true,
+  "elapsed_seconds": 62.47988879864028,
+  "end_reason": "all_counted_buildings_destroyed",
+  "trace_count": 4941,
+  "absolute_tolerance": 1e-07,
+  "differences": {
+    "outcome": null,
+    "resource_use": null,
+    "actors": null,
+    "trace": null
+  },
+  "input_sha256": {
+    "input": "b49d055eade4154ce90a3cf29162be504e9e7ae8434e8e86615c7a4725e3ac1b",
+    "account": "f24180d053061bd17c5e26ac6c59abd24ab6c0cccdced46f93500aaf1daf4d9a",
+    "army": "197a008b07a9137791471188ea3b651dec06496a3dbbd195ca71c29137093eaa",
+    "layout": "414bf54f4224a54effaa892d3f5189843f4b25d7af231f5cbe1cf6a42ad43ed9"
+  },
+  "effective_specification_sha256": "07b76f568a2db725212c02d2183b9b566ba71aa29a87041e217421a5161f01f7",
+  "raw_checkout_source_data_sha256": "3e6b7a442c7679b7b7906c79fb711b695f9772a72056204b8f3382cb5dba1cb0",
+  "source_equivalence": {
+    "normalized_source_data_equal": true,
+    "files": 125,
+    "normalized_sha256": "4eb0836c104cc56a5ed66450ddabed82ffa999f6ad4d84e2329544ccd724d944",
+    "note": "Raw source/data hashes differ because Windows checkout line endings differ; normalized code/data content is identical."
+  },
+  "total_wall_seconds": 421.0788562002126,
+  "wall_limit_seconds": 480.0,
+  "clean_checkout_checks": [
+    {
+      "check": "portable-suite",
+      "exit_code": 0,
+      "wall_seconds": 46.485,
+      "limit_seconds": 180
+    },
+    {
+      "check": "catalog-cli",
+      "exit_code": 0,
+      "wall_seconds": 0.437,
+      "limit_seconds": 60
+    },
+    {
+      "check": "army-repeatability",
+      "exit_code": 0,
+      "wall_seconds": 8.813,
+      "limit_seconds": 90
+    },
+    {
+      "check": "candidate-export",
+      "exit_code": 0,
+      "wall_seconds": 57.406,
+      "limit_seconds": 90
+    },
+    {
+      "check": "formatting",
+      "exit_code": 0,
+      "wall_seconds": 20.391,
+      "limit_seconds": 90
+    },
+    {
+      "check": "tracked-cleanliness",
+      "exit_code": 0,
+      "wall_seconds": 0.062,
+      "limit_seconds": 20
+    }
+  ],
+  "portable_test_count": 1196,
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "raw_private_inputs_and_results_published": false
+}

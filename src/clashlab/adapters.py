@@ -182,6 +182,7 @@ from .hero_roster_rules import (
     RULESET as HERO_ROSTER_RULESET,
     RULES as HERO_ROSTER_RULES,
     SCOPE as HERO_ROSTER_SCOPE,
+    select_duke_isolation_rules,
 )
 from .hero_roster import HeroRosterCombat
 from .termination_rules import (
@@ -1847,6 +1848,13 @@ def compile_entity_scene(specification, catalog):
     allow_advanced_defenses = version >= 26
     allow_hero_extensions = version >= 27
     allow_attack_spells = version >= 29
+    rules = select_duke_isolation_rules(
+        rules,
+        [
+            instance.get("duke_parameters")
+            for instance in require(specification, "entities")
+        ],
+    )
     if require(specification, "model_rules") != rules:
         raise InputError("Sector combat conventions must be explicitly selected")
     statistics = require(specification, "statistics_policy")

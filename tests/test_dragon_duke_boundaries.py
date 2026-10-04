@@ -1,10 +1,13 @@
 """Synthetic boundary evidence only; these fixtures are not game calibration."""
 
+from copy import deepcopy
+import json
 import unittest
 
 from clashlab.catalog import Catalog
 from clashlab.common import InputError
-from clashlab.dragon_duke import first_relative_circle_crossing
+from clashlab.dragon_duke import DragonDukeCombat, first_relative_circle_crossing
+from clashlab.hero_extensions import parameter_provenance
 from test_dragon_duke import ROOT, air_ally, runtime
 
 
@@ -12,6 +15,73 @@ class DukeBoundaryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.catalog = Catalog.load(ROOT / "data")
+
+    def sampled_runtime(self):
+        actors, combat, _ = runtime(self.catalog, [air_ally(x=6.999)], items=[])
+        model = actors["duke"]["duke_model"]
+        model["parameters"].update(
+            json.loads(
+                (
+                    ROOT / "data/battle-policies/experimental-duke-isolation.json"
+                ).read_text()
+            )
+        )
+        model["parameter_provenance"] = parameter_provenance(model["parameters"])
+        return actors, combat, DragonDukeCombat(actors, combat)
+
+    def test_sampled_policy_requires_complete_experimental_contract(self):
+        actors, combat, _ = self.sampled_runtime()
+        for field, value in (
+            ("interval_seconds", 0),
+            ("interval_seconds", float("nan")),
+            ("status", "game_calibrated"),
+            ("source", ""),
+        ):
+            with self.subTest(field=field, value=value):
+                altered = deepcopy(actors)
+                model = altered["duke"]["duke_model"]
+                model["parameters"]["isolation_update"][field] = value
+                model["parameter_provenance"] = parameter_provenance(
+                    model["parameters"]
+                )
+                with self.assertRaises(InputError):
+                    DragonDukeCombat(altered, combat)
+
+    def test_sample_clock_holds_state_and_applies_lifecycle_and_cooldown_once(self):
+        actors, _, duke = self.sampled_runtime()
+        actors["duke"]["spawn_seconds"] = 1.3
+        actors["duke"]["next_attack"] = 3.0
+        trace = []
+        duke.prepare(actors, 1.3, trace)
+        self.assertAlmostEqual(duke.next_boundary(1.3), 1.4)
+        self.assertTrue(actors["duke"]["_duke_isolated"])
+        cooldown = actors["duke"]["next_attack"]
+        actors["ally"]["x"] = 7.1
+        for _ in range(2):
+            duke.prepare(actors, 1.35, trace)
+            self.assertTrue(actors["duke"]["_duke_isolated"])
+            self.assertEqual(actors["duke"]["next_attack"], cooldown)
+        duke.prepare(actors, 1.4, trace)
+        self.assertFalse(actors["duke"]["_duke_isolated"])
+        self.assertAlmostEqual(
+            actors["duke"]["next_attack"], 1.4 + (cooldown - 1.4) * 1.5
+        )
+        cooldown = actors["duke"]["next_attack"]
+        actors["ally"]["hp"] = 0
+        duke.prepare(actors, 1.4, trace)
+        duke.prepare(actors, 1.45, trace)
+        self.assertFalse(actors["duke"]["_duke_isolated"])
+        self.assertEqual(actors["duke"]["next_attack"], cooldown)
+        duke.prepare(actors, 1.5, trace)
+        self.assertTrue(actors["duke"]["_duke_isolated"])
+        self.assertEqual(duke.sample_counts["duke"], 3)
+        actors["duke"]["hp"] = 0
+        duke.prepare(actors, 1.55, trace)
+        self.assertIsNone(duke.next_boundary(1.55))
+        actors["duke"]["hp"] = 1
+        duke.prepare(actors, 1.67, trace)
+        self.assertAlmostEqual(duke.next_boundary(1.67), 1.7)
+        self.assertEqual(duke.sample_counts["duke"], 4)
 
     def relay(self, horizon):
         actors, _, duke = runtime(self.catalog, [air_ally(x=6.999)])
