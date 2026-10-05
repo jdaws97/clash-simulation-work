@@ -1,0 +1,20 @@
+{
+  "plan_id": "synthetic-royal-artillery-freeze-response-0.9",
+  "observed_latency_traces": [
+    {
+      "source_replay": "synthetic-timely-not-measured-player-evidence",
+      "responses": {
+        "hall-freeze": {
+          "latency_seconds": 0.2,
+          "missed": false,
+          "placement_errors": {
+            "area": {
+              "dx": 0,
+              "dy": 0
+            }
+          }
+        }
+      }
+    }
+  ]
+}

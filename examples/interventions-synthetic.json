@@ -1,0 +1,10 @@
+[
+  {
+    "label": "protect-before-hit",
+    "event_updates": {
+      "freeze": {
+        "time_seconds": 1
+      }
+    }
+  }
+]

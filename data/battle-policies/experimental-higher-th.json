@@ -1,0 +1,309 @@
+{
+  "source": "synthetic-higher-th-experimental-policy-not-replay-calibrated",
+  "status": "EXPERIMENTAL_PARAMETER_FIXTURE_NOT_CURRENT_GAME_FACTS",
+  "town_hall_17": {
+    "mode": "infernoArtillery",
+    "statistics_mode": "weapon",
+    "counts_for_destruction": true,
+    "spawn_seconds": 0,
+    "attack_parameters": {
+      "projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0,
+        "inactive_primary_policy": "fizzle"
+      },
+      "allocation": "cycle_distinct_targets_to_fill_volley"
+    },
+    "town_hall_parameters": {
+      "source": "declared-artillery-contract-fixture-not-current-game-calibration",
+      "weapon_level": 5,
+      "flame": {
+        "source": "declared-artillery-contract-fixture-not-current-game-calibration",
+        "radius": 1,
+        "duration_multiplier": 1,
+        "maximum_dps_multiplier": 1,
+        "growth_by_field_age": [
+          {
+            "after_seconds": 0,
+            "dps_multiplier": 1
+          }
+        ],
+        "pulse_interval_seconds": 0.5,
+        "first_pulse_offset_seconds": 0,
+        "excluded_classes": [
+          "siege"
+        ],
+        "overlap_policy": "maximum_active_pool_dps_at_source_clock",
+        "pulse_clock_policy": "first_pool_then_continuous_while_any_pool_alive",
+        "trigger_policy": "resolved_projectile_including_protected_primary",
+        "pool_on_projectile_miss": true,
+        "fizzle_policy": "no_pool_when_primary_fizzles",
+        "source_freeze_policy": "released_pools_keep_pulsing_hypothesis"
+      },
+      "source_death_policy": "released_projectiles_and_pools_persist_hypothesis"
+    }
+  },
+  "town_hall_18": {
+    "mode": "guardian",
+    "statistics_mode": "none",
+    "counts_for_destruction": true,
+    "spawn_seconds": 0,
+    "attack_parameters": {}
+  },
+  "longshot": {
+    "mode": "normal",
+    "statistics_mode": "normal",
+    "counts_for_destruction": false,
+    "spawn_seconds": "controlled",
+    "attack_parameters": {
+      "projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0,
+        "inactive_primary_policy": "fizzle"
+      },
+      "splash_layer_policy": "all_declared_target_layers",
+      "radius_multiplier": 1
+    },
+    "wall_parameters": {
+      "kind": "avoid",
+      "source": "explicit-guardian-fixture-not-replay-calibration"
+    },
+    "guardian_parameters": {
+      "source": "explicit-guardian-fixture-not-replay-calibration",
+      "hall_id": "hall",
+      "statistics_mapping": "snapshot_guardian_without_hero_equipment",
+      "activation": {
+        "trigger_radius_multiplier": 1,
+        "trigger_layers": [
+          "ground",
+          "air"
+        ],
+        "delay_seconds": 0.2,
+        "trigger_loss": "latched",
+        "freeze": "pause_activation_clock_at_hall_center",
+        "hall_death": "activate"
+      },
+      "acquisition_radius_tiles": 12,
+      "leash_radius_tiles": 22,
+      "home": {
+        "x": 19.5,
+        "y": 11.5
+      },
+      "patrol": {
+        "selection": "ordered_loop",
+        "waypoints": []
+      },
+      "targeting": "nearest_reachable_retained_primary_or_received_damage_within_leash",
+      "return": "home_before_reacquisition_preserve_attack_clock",
+      "healing": "none",
+      "death": "permanent_for_battle"
+    },
+    "death_parameters": {
+      "source": "explicit-guardian-fixture-not-replay-calibration",
+      "delay_seconds": 0.3,
+      "damage_multiplier": 1,
+      "radius_multiplier": 1,
+      "target_layers": [
+        "ground",
+        "air"
+      ]
+    }
+  },
+  "firespitter": {
+    "mode": "normal",
+    "statistics_mode": "normal",
+    "counts_for_destruction": true,
+    "spawn_seconds": 0,
+    "attack_parameters": {},
+    "firespitter_parameters": {
+      "source": "explicit-firespitter-fixture-not-replay-calibrated",
+      "geometry_basis": "pinned_extraction_degrees_and_hundredths_of_a_tile",
+      "orientation_basis": "clockwise_from_positive_x_in_screen_coordinates",
+      "orientation_degrees": 0,
+      "damage_basis": "snapshot_damagePerShot_is_one_bullet",
+      "burst_timing": "snapshot_attackSpeed_between_shots_timeBetweenBursts_after_last_shot",
+      "targeting": {
+        "selection": "retain_primary_else_nearest_center_then_instance_id",
+        "aim": "live_primary_center_each_shot",
+        "loss": "preserve_unfired_burst_until_eligible_primary",
+        "exclusion_scope": "acquisition_and_projectile_collision",
+        "excluded_entities": []
+      },
+      "spread": {
+        "kind": "explicit_per_burst_angle_sequence",
+        "angle_offsets_degrees": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "sequence_policy": "restart_after_completed_burst"
+      },
+      "projectile": {
+        "origin": "source_center_at_launch",
+        "collision": "first_live_enemy_unit_point_contact_then_instance_id",
+        "damage_immunity": "consume_bullet_without_damage",
+        "invisibility": "released_bullets_ignore_acquisition_visibility",
+        "buildings": "ignore_structure_footprints",
+        "released": "persist_independent_of_source_and_primary",
+        "speed_tiles_per_second": 10,
+        "hit_radius_tiles": 0.25,
+        "maximum_travel_range_multiplier": 1
+      },
+      "readiness_policy": "shared_attack_work_pauses_during_freeze_or_displacement_no_target_preserves_burst_source_death_cancels_unfired"
+    }
+  },
+  "multi_gear_tower": {
+    "mode": "normal",
+    "statistics_mode": "normal",
+    "counts_for_destruction": true,
+    "spawn_seconds": 0,
+    "attack_parameters": {
+      "projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0,
+        "inactive_primary_policy": "fizzle"
+      }
+    },
+    "multi_gear_parameters": {
+      "source": "declared-advanced-defense-fixture-not-replay-calibrated",
+      "damage_basis": "snapshot_damagePerShot_is_one_projectile",
+      "burst_timing": "snapshot_attackSpeed_is_one_shot_interval",
+      "targeting": "retain_primary_else_nearest_footprint_then_instance_id",
+      "readiness_policy": "shared_attack_work_freeze_and_rate_changes_preserve_unreleased_burst"
+    }
+  },
+  "super_wizard_tower": {
+    "mode": "normal",
+    "statistics_mode": "normal",
+    "counts_for_destruction": true,
+    "spawn_seconds": 0,
+    "attack_parameters": {
+      "projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0,
+        "inactive_primary_policy": "fizzle"
+      }
+    },
+    "super_wizard_parameters": {
+      "source": "declared-advanced-defense-fixture-not-replay-calibrated",
+      "damage_basis": "snapshot_primary_and_each_secondary_damagePerShot",
+      "fanout": {
+        "anchor": "primary_center_at_primary_impact",
+        "radius_tiles": 2,
+        "distance_metric": "center_distance",
+        "target_count_basis": "snapshot_count_is_secondary_count",
+        "selection": "nearest_then_instance_id",
+        "target_layer_policy": "both_declared_layers",
+        "primary_protection": "continue_fanout",
+        "secondary_protection": "protected_targets_consume_slots",
+        "visibility": "exclude_currently_untargetable",
+        "delay_seconds": 0,
+        "selection_time": "live_candidates_at_primary_impact",
+        "released_links": "independent_of_source_and_primary_after_selection",
+        "secondary_destination": "locked_actor_center_at_impact",
+        "inactive_secondary_policy": "fizzle"
+      }
+    }
+  },
+  "giga_bomb": {
+    "trigger_geometry": "inclusive_unit_centers",
+    "trigger_weight_basis": "explicit_per_actor_housing_weight_hypothesis",
+    "released_blast": "independent_of_trigger_survival_and_position",
+    "blast_geometry": "point_to_live_target_footprint",
+    "blast_visibility": "all_live_recipients_ignore_acquisition_visibility",
+    "blast_resolution": "capture_all_recipients_then_simultaneous_damage",
+    "trap_status": "freeze_and_overgrowth_do_not_pause_or_disarm_trap",
+    "motion_policy": "finite_linear_radial_push_continues_during_freeze",
+    "collision_policy": "clip_before_ground_obstacles_and_board_edge",
+    "sweeper_overlap": "replace_existing_motion_preserve_longest_pause",
+    "tornado_overlap": "tornado_blocks_push_but_not_blast_damage",
+    "simultaneous_push_order": "arrival_then_trap_id_latest_push_replaces",
+    "source": "declared-giga-bomb-fixture-not-replay-calibrated",
+    "arming_seconds": 0,
+    "delay_seconds": 0,
+    "trigger_radius_multiplier": 1,
+    "damage_radius_multiplier": 1,
+    "damage_multiplier": 1,
+    "trigger_visibility": "ignore_acquisition_visibility",
+    "trigger_protection": "protected_units_contribute",
+    "push_protection": "damage_immunity_does_not_block_push",
+    "push_distance_tiles": 2,
+    "push_speed_tiles_per_second": 4,
+    "recovery_seconds": 0.2,
+    "coincident_direction": [
+      1,
+      0
+    ]
+  },
+  "revenge_tower": {
+    "mode": "stage1",
+    "statistics_mode": "stage1",
+    "attack_parameters": {
+      "projectile": {
+        "timing": "instant",
+        "delay_seconds": 0,
+        "destination": "locked_actor_center_at_impact",
+        "hit_radius": 0,
+        "inactive_primary_policy": "fizzle"
+      }
+    },
+    "revenge_parameters": {
+      "verification": "experimental_four_phase_mapping_not_replay_verified",
+      "thresholds": [
+        5,
+        25,
+        50
+      ],
+      "eligibility": "counted_same_team_structures_excluding_self",
+      "transition": "after_settled_health_before_next_weapon_phase",
+      "health_transition": "preserve_fraction_no_revive",
+      "attack_work": "preserve_fraction_excluding_freeze",
+      "activation_readiness": "one_full_selected_interval_after_current_freeze",
+      "released_projectiles": "retain_launch_phase_independent_of_source",
+      "source": "synthetic-dormant-initial-phase-and-15pct-hp-increments-sensitivity-fixture",
+      "phase_modes": [
+        null,
+        "stage1",
+        "stage2",
+        "stage3"
+      ],
+      "hp_multipliers": [
+        1,
+        1.15,
+        1.3,
+        1.45
+      ],
+      "chain": {
+        "jump_metric": "footprint_distance",
+        "jump_delay_seconds": 0,
+        "tie_break": "distance_then_instance_id",
+        "allow_protected_links": true
+      }
+    }
+  }
+}

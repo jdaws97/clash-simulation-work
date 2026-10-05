@@ -1,0 +1,6188 @@
+{
+  "id": "ranked-staggered_compartments-declared-th16",
+  "width": 44,
+  "height": 44,
+  "town_hall": 16,
+  "inventory": {
+    "army-camp": 4,
+    "barracks": 1,
+    "blacksmith": 1,
+    "dark-barracks": 1,
+    "dark-spell-factory": 1,
+    "hero-banner": 4,
+    "hero-hall": 1,
+    "laboratory": 1,
+    "pet-house": 1,
+    "spell-factory": 1,
+    "workshop": 1,
+    "air-defense": 4,
+    "air-sweeper": 2,
+    "archer-tower": 4,
+    "bomb-tower": 2,
+    "builders-hut": 5,
+    "cannon": 3,
+    "eagle-artillery": 1,
+    "hidden-tesla": 5,
+    "inferno-tower": 3,
+    "monolith": 1,
+    "mortar": 4,
+    "multi-archer-tower": 2,
+    "ricochet-cannon": 2,
+    "scattershot": 2,
+    "spell-tower": 2,
+    "wizard-tower": 5,
+    "x-bow": 4,
+    "bobs-hut": 1,
+    "helper-hut": 1,
+    "clan-castle": 1,
+    "dark-elixir-drill": 3,
+    "dark-elixir-storage": 1,
+    "elixir-collector": 7,
+    "elixir-storage": 4,
+    "gold-mine": 7,
+    "gold-storage": 4,
+    "town-hall": 1,
+    "air-bomb": 7,
+    "bomb": 8,
+    "giant-bomb": 7,
+    "seeking-air-mine": 8,
+    "skeleton-trap": 4,
+    "spring-trap": 9,
+    "tornado-trap": 1,
+    "wall": 325
+  },
+  "buildings": [
+    {
+      "instance": "monolith-0",
+      "id": "monolith",
+      "level": 3,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 20,
+      "y": 24
+    },
+    {
+      "instance": "town-hall-0",
+      "id": "town-hall",
+      "level": 16,
+      "counts_for_destruction": true,
+      "x": 19,
+      "y": 19
+    },
+    {
+      "instance": "eagle-artillery-0",
+      "id": "eagle-artillery",
+      "level": 7,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 7,
+      "y": 6
+    },
+    {
+      "instance": "x-bow-0",
+      "id": "x-bow",
+      "level": 11,
+      "counts_for_destruction": null,
+      "mode": "airAndGround",
+      "x": 26,
+      "y": 6
+    },
+    {
+      "instance": "x-bow-1",
+      "id": "x-bow",
+      "level": 11,
+      "counts_for_destruction": null,
+      "mode": "airAndGround",
+      "x": 6,
+      "y": 23
+    },
+    {
+      "instance": "x-bow-2",
+      "id": "x-bow",
+      "level": 11,
+      "counts_for_destruction": null,
+      "mode": "airAndGround",
+      "x": 33,
+      "y": 23
+    },
+    {
+      "instance": "x-bow-3",
+      "id": "x-bow",
+      "level": 11,
+      "counts_for_destruction": null,
+      "mode": "airAndGround",
+      "x": 19,
+      "y": 34
+    },
+    {
+      "instance": "air-defense-0",
+      "id": "air-defense",
+      "level": 14,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 24,
+      "y": 21
+    },
+    {
+      "instance": "air-defense-1",
+      "id": "air-defense",
+      "level": 14,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 12,
+      "y": 6
+    },
+    {
+      "instance": "air-defense-2",
+      "id": "air-defense",
+      "level": 14,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 22,
+      "y": 6
+    },
+    {
+      "instance": "air-defense-3",
+      "id": "air-defense",
+      "level": 14,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 31,
+      "y": 6
+    },
+    {
+      "instance": "archer-tower-0",
+      "id": "archer-tower",
+      "level": 21,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 6,
+      "y": 19
+    },
+    {
+      "instance": "archer-tower-1",
+      "id": "archer-tower",
+      "level": 21,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 33,
+      "y": 19
+    },
+    {
+      "instance": "archer-tower-2",
+      "id": "archer-tower",
+      "level": 21,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 6,
+      "y": 28
+    },
+    {
+      "instance": "archer-tower-3",
+      "id": "archer-tower",
+      "level": 21,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 33,
+      "y": 28
+    },
+    {
+      "instance": "bomb-tower-0",
+      "id": "bomb-tower",
+      "level": 11,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 24,
+      "y": 34
+    },
+    {
+      "instance": "bomb-tower-1",
+      "id": "bomb-tower",
+      "level": 11,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 24,
+      "y": 17
+    },
+    {
+      "instance": "cannon-0",
+      "id": "cannon",
+      "level": 21,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 7,
+      "y": 0
+    },
+    {
+      "instance": "cannon-1",
+      "id": "cannon",
+      "level": 21,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 19,
+      "y": 41
+    },
+    {
+      "instance": "cannon-2",
+      "id": "cannon",
+      "level": 21,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 9,
+      "y": 13
+    },
+    {
+      "instance": "mortar-0",
+      "id": "mortar",
+      "level": 16,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 10,
+      "y": 19
+    },
+    {
+      "instance": "mortar-1",
+      "id": "mortar",
+      "level": 16,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 37,
+      "y": 19
+    },
+    {
+      "instance": "mortar-2",
+      "id": "mortar",
+      "level": 16,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 24,
+      "y": 25
+    },
+    {
+      "instance": "mortar-3",
+      "id": "mortar",
+      "level": 16,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 10,
+      "y": 28
+    },
+    {
+      "instance": "multi-archer-tower-0",
+      "id": "multi-archer-tower",
+      "level": 2,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 37,
+      "y": 28
+    },
+    {
+      "instance": "multi-archer-tower-1",
+      "id": "multi-archer-tower",
+      "level": 2,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 0,
+      "y": 6
+    },
+    {
+      "instance": "ricochet-cannon-0",
+      "id": "ricochet-cannon",
+      "level": 2,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 29,
+      "y": 13
+    },
+    {
+      "instance": "ricochet-cannon-1",
+      "id": "ricochet-cannon",
+      "level": 2,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 12,
+      "y": 36
+    },
+    {
+      "instance": "scattershot-0",
+      "id": "scattershot",
+      "level": 5,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 19,
+      "y": 13
+    },
+    {
+      "instance": "scattershot-1",
+      "id": "scattershot",
+      "level": 5,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 25,
+      "y": 13
+    },
+    {
+      "instance": "wizard-tower-0",
+      "id": "wizard-tower",
+      "level": 16,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 41,
+      "y": 23
+    },
+    {
+      "instance": "wizard-tower-1",
+      "id": "wizard-tower",
+      "level": 16,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 4,
+      "y": 13
+    },
+    {
+      "instance": "wizard-tower-2",
+      "id": "wizard-tower",
+      "level": 16,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 11,
+      "y": 0
+    },
+    {
+      "instance": "wizard-tower-3",
+      "id": "wizard-tower",
+      "level": 16,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 23,
+      "y": 41
+    },
+    {
+      "instance": "wizard-tower-4",
+      "id": "wizard-tower",
+      "level": 16,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "instance": "air-sweeper-0",
+      "id": "air-sweeper",
+      "level": 7,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "settings": {
+        "facing_degrees": 315
+      },
+      "x": 27,
+      "y": 3
+    },
+    {
+      "instance": "air-sweeper-1",
+      "id": "air-sweeper",
+      "level": 7,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "settings": {
+        "facing_degrees": 45
+      },
+      "x": 3,
+      "y": 24
+    },
+    {
+      "instance": "builders-hut-0",
+      "id": "builders-hut",
+      "level": 6,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 11,
+      "y": 24
+    },
+    {
+      "instance": "builders-hut-1",
+      "id": "builders-hut",
+      "level": 6,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 16,
+      "y": 34
+    },
+    {
+      "instance": "builders-hut-2",
+      "id": "builders-hut",
+      "level": 6,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 4,
+      "y": 8
+    },
+    {
+      "instance": "builders-hut-3",
+      "id": "builders-hut",
+      "level": 6,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 38,
+      "y": 24
+    },
+    {
+      "instance": "builders-hut-4",
+      "id": "builders-hut",
+      "level": 6,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 4,
+      "y": 5
+    },
+    {
+      "instance": "hidden-tesla-0",
+      "id": "hidden-tesla",
+      "level": 15,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 16,
+      "y": 37
+    },
+    {
+      "instance": "hidden-tesla-1",
+      "id": "hidden-tesla",
+      "level": 15,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 12,
+      "y": 10
+    },
+    {
+      "instance": "hidden-tesla-2",
+      "id": "hidden-tesla",
+      "level": 15,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 23,
+      "y": 10
+    },
+    {
+      "instance": "hidden-tesla-3",
+      "id": "hidden-tesla",
+      "level": 15,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 31,
+      "y": 10
+    },
+    {
+      "instance": "hidden-tesla-4",
+      "id": "hidden-tesla",
+      "level": 15,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 17,
+      "y": 24
+    },
+    {
+      "instance": "inferno-tower-0",
+      "id": "inferno-tower",
+      "level": 10,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 24,
+      "y": 38
+    },
+    {
+      "instance": "inferno-tower-1",
+      "id": "inferno-tower",
+      "level": 10,
+      "counts_for_destruction": null,
+      "mode": "normal",
+      "x": 24,
+      "y": 3
+    },
+    {
+      "instance": "inferno-tower-2",
+      "id": "inferno-tower",
+      "level": 10,
+      "counts_for_destruction": null,
+      "mode": "multiTarget",
+      "x": 30,
+      "y": 3
+    },
+    {
+      "instance": "spell-tower-0",
+      "id": "spell-tower",
+      "level": 3,
+      "counts_for_destruction": null,
+      "mode": "poison",
+      "x": 3,
+      "y": 21
+    },
+    {
+      "instance": "spell-tower-1",
+      "id": "spell-tower",
+      "level": 3,
+      "counts_for_destruction": null,
+      "mode": "poison",
+      "x": 3,
+      "y": 27
+    },
+    {
+      "instance": "army-camp-0",
+      "id": "army-camp",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 40,
+      "y": 12
+    },
+    {
+      "instance": "army-camp-1",
+      "id": "army-camp",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 28,
+      "y": 40
+    },
+    {
+      "instance": "army-camp-2",
+      "id": "army-camp",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 11,
+      "y": 40
+    },
+    {
+      "instance": "army-camp-3",
+      "id": "army-camp",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 28,
+      "y": 36
+    },
+    {
+      "instance": "hero-hall-0",
+      "id": "hero-hall",
+      "level": 10,
+      "counts_for_destruction": null,
+      "x": 0,
+      "y": 36
+    },
+    {
+      "instance": "workshop-0",
+      "id": "workshop",
+      "level": 8,
+      "counts_for_destruction": null,
+      "x": 40,
+      "y": 36
+    },
+    {
+      "instance": "barracks-0",
+      "id": "barracks",
+      "level": 18,
+      "counts_for_destruction": null,
+      "x": 41,
+      "y": 19
+    },
+    {
+      "instance": "blacksmith-0",
+      "id": "blacksmith",
+      "level": 9,
+      "counts_for_destruction": null,
+      "x": 19,
+      "y": 3
+    },
+    {
+      "instance": "dark-barracks-0",
+      "id": "dark-barracks",
+      "level": 13,
+      "counts_for_destruction": null,
+      "x": 3,
+      "y": 17
+    },
+    {
+      "instance": "dark-spell-factory-0",
+      "id": "dark-spell-factory",
+      "level": 8,
+      "counts_for_destruction": null,
+      "x": 15,
+      "y": 0
+    },
+    {
+      "instance": "pet-house-0",
+      "id": "pet-house",
+      "level": 10,
+      "counts_for_destruction": null,
+      "x": 41,
+      "y": 16
+    },
+    {
+      "instance": "spell-factory-0",
+      "id": "spell-factory",
+      "level": 9,
+      "counts_for_destruction": null,
+      "x": 16,
+      "y": 41
+    },
+    {
+      "instance": "laboratory-0",
+      "id": "laboratory",
+      "level": 14,
+      "counts_for_destruction": null,
+      "x": 41,
+      "y": 27
+    },
+    {
+      "instance": "clan-castle-0",
+      "id": "clan-castle",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 33,
+      "y": 3
+    },
+    {
+      "instance": "dark-elixir-drill-0",
+      "id": "dark-elixir-drill",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 3,
+      "y": 30
+    },
+    {
+      "instance": "dark-elixir-drill-1",
+      "id": "dark-elixir-drill",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 19,
+      "y": 8
+    },
+    {
+      "instance": "dark-elixir-drill-2",
+      "id": "dark-elixir-drill",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 34,
+      "y": 8
+    },
+    {
+      "instance": "dark-elixir-storage-0",
+      "id": "dark-elixir-storage",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 8,
+      "y": 31
+    },
+    {
+      "instance": "elixir-collector-0",
+      "id": "elixir-collector",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 35,
+      "y": 31
+    },
+    {
+      "instance": "elixir-collector-1",
+      "id": "elixir-collector",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 0,
+      "y": 11
+    },
+    {
+      "instance": "elixir-collector-2",
+      "id": "elixir-collector",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 31,
+      "y": 31
+    },
+    {
+      "instance": "elixir-collector-3",
+      "id": "elixir-collector",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 22,
+      "y": 13
+    },
+    {
+      "instance": "elixir-collector-4",
+      "id": "elixir-collector",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 13,
+      "y": 13
+    },
+    {
+      "instance": "elixir-collector-5",
+      "id": "elixir-collector",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 34,
+      "y": 13
+    },
+    {
+      "instance": "elixir-collector-6",
+      "id": "elixir-collector",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 0,
+      "y": 2
+    },
+    {
+      "instance": "elixir-storage-0",
+      "id": "elixir-storage",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 16,
+      "y": 13
+    },
+    {
+      "instance": "elixir-storage-1",
+      "id": "elixir-storage",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 41,
+      "y": 31
+    },
+    {
+      "instance": "elixir-storage-2",
+      "id": "elixir-storage",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 41,
+      "y": 4
+    },
+    {
+      "instance": "elixir-storage-3",
+      "id": "elixir-storage",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 6,
+      "y": 36
+    },
+    {
+      "instance": "gold-mine-0",
+      "id": "gold-mine",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 34,
+      "y": 36
+    },
+    {
+      "instance": "gold-mine-1",
+      "id": "gold-mine",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 9,
+      "y": 36
+    },
+    {
+      "instance": "gold-mine-2",
+      "id": "gold-mine",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 37,
+      "y": 13
+    },
+    {
+      "instance": "gold-mine-3",
+      "id": "gold-mine",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 39,
+      "y": 8
+    },
+    {
+      "instance": "gold-mine-4",
+      "id": "gold-mine",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 8,
+      "y": 39
+    },
+    {
+      "instance": "gold-mine-5",
+      "id": "gold-mine",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 39,
+      "y": 0
+    },
+    {
+      "instance": "gold-mine-6",
+      "id": "gold-mine",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 32,
+      "y": 39
+    },
+    {
+      "instance": "gold-storage-0",
+      "id": "gold-storage",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 37,
+      "y": 36
+    },
+    {
+      "instance": "gold-storage-1",
+      "id": "gold-storage",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 4,
+      "y": 39
+    },
+    {
+      "instance": "gold-storage-2",
+      "id": "gold-storage",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 36,
+      "y": 39
+    },
+    {
+      "instance": "gold-storage-3",
+      "id": "gold-storage",
+      "level": 17,
+      "counts_for_destruction": null,
+      "x": 0,
+      "y": 41
+    },
+    {
+      "instance": "helper-hut-0",
+      "id": "helper-hut",
+      "level": 1,
+      "counts_for_destruction": null,
+      "x": 39,
+      "y": 41
+    },
+    {
+      "instance": "bobs-hut-0",
+      "id": "bobs-hut",
+      "level": 1,
+      "counts_for_destruction": null,
+      "x": 21,
+      "y": 0
+    },
+    {
+      "instance": "hero-banner-0",
+      "id": "hero-banner",
+      "level": null,
+      "counts_for_destruction": null,
+      "settings": {
+        "hero": "barbarian-king",
+        "level": 95
+      },
+      "x": 0,
+      "y": 21
+    },
+    {
+      "instance": "hero-banner-1",
+      "id": "hero-banner",
+      "level": null,
+      "counts_for_destruction": null,
+      "settings": {
+        "hero": "archer-queen",
+        "level": 95
+      },
+      "x": 21,
+      "y": 38
+    },
+    {
+      "instance": "hero-banner-2",
+      "id": "hero-banner",
+      "level": null,
+      "counts_for_destruction": null,
+      "settings": {
+        "hero": "minion-prince",
+        "level": 80
+      },
+      "x": 24,
+      "y": 0
+    },
+    {
+      "instance": "hero-banner-3",
+      "id": "hero-banner",
+      "level": null,
+      "counts_for_destruction": null,
+      "settings": {
+        "hero": "royal-champion",
+        "level": 45
+      },
+      "x": 0,
+      "y": 18
+    },
+    {
+      "instance": "giant-bomb-0",
+      "id": "giant-bomb",
+      "level": 10,
+      "counts_for_destruction": null,
+      "x": 8,
+      "y": 4
+    },
+    {
+      "instance": "giant-bomb-1",
+      "id": "giant-bomb",
+      "level": 10,
+      "counts_for_destruction": null,
+      "x": 8,
+      "y": 10
+    },
+    {
+      "instance": "giant-bomb-2",
+      "id": "giant-bomb",
+      "level": 10,
+      "counts_for_destruction": null,
+      "x": 27,
+      "y": 10
+    },
+    {
+      "instance": "giant-bomb-3",
+      "id": "giant-bomb",
+      "level": 10,
+      "counts_for_destruction": null,
+      "x": 31,
+      "y": 24
+    },
+    {
+      "instance": "giant-bomb-4",
+      "id": "giant-bomb",
+      "level": 10,
+      "counts_for_destruction": null,
+      "x": 20,
+      "y": 32
+    },
+    {
+      "instance": "giant-bomb-5",
+      "id": "giant-bomb",
+      "level": 10,
+      "counts_for_destruction": null,
+      "x": 19,
+      "y": 38
+    },
+    {
+      "instance": "giant-bomb-6",
+      "id": "giant-bomb",
+      "level": 10,
+      "counts_for_destruction": null,
+      "x": 6,
+      "y": 4
+    },
+    {
+      "instance": "air-bomb-0",
+      "id": "air-bomb",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 23,
+      "y": 21
+    },
+    {
+      "instance": "air-bomb-1",
+      "id": "air-bomb",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 23,
+      "y": 22
+    },
+    {
+      "instance": "air-bomb-2",
+      "id": "air-bomb",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 21,
+      "y": 23
+    },
+    {
+      "instance": "air-bomb-3",
+      "id": "air-bomb",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 22,
+      "y": 23
+    },
+    {
+      "instance": "air-bomb-4",
+      "id": "air-bomb",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 23,
+      "y": 20
+    },
+    {
+      "instance": "air-bomb-5",
+      "id": "air-bomb",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 20,
+      "y": 23
+    },
+    {
+      "instance": "air-bomb-6",
+      "id": "air-bomb",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 23,
+      "y": 23
+    },
+    {
+      "instance": "bomb-0",
+      "id": "bomb",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 27,
+      "y": 5
+    },
+    {
+      "instance": "bomb-1",
+      "id": "bomb",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 28,
+      "y": 5
+    },
+    {
+      "instance": "bomb-2",
+      "id": "bomb",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 6,
+      "y": 7
+    },
+    {
+      "instance": "bomb-3",
+      "id": "bomb",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 11,
+      "y": 7
+    },
+    {
+      "instance": "bomb-4",
+      "id": "bomb",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 25,
+      "y": 7
+    },
+    {
+      "instance": "bomb-5",
+      "id": "bomb",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 30,
+      "y": 7
+    },
+    {
+      "instance": "bomb-6",
+      "id": "bomb",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 6,
+      "y": 8
+    },
+    {
+      "instance": "bomb-7",
+      "id": "bomb",
+      "level": 12,
+      "counts_for_destruction": null,
+      "x": 11,
+      "y": 8
+    },
+    {
+      "instance": "seeking-air-mine-0",
+      "id": "seeking-air-mine",
+      "level": 6,
+      "counts_for_destruction": null,
+      "x": 25,
+      "y": 8
+    },
+    {
+      "instance": "seeking-air-mine-1",
+      "id": "seeking-air-mine",
+      "level": 6,
+      "counts_for_destruction": null,
+      "x": 30,
+      "y": 8
+    },
+    {
+      "instance": "seeking-air-mine-2",
+      "id": "seeking-air-mine",
+      "level": 6,
+      "counts_for_destruction": null,
+      "x": 7,
+      "y": 22
+    },
+    {
+      "instance": "seeking-air-mine-3",
+      "id": "seeking-air-mine",
+      "level": 6,
+      "counts_for_destruction": null,
+      "x": 8,
+      "y": 22
+    },
+    {
+      "instance": "seeking-air-mine-4",
+      "id": "seeking-air-mine",
+      "level": 6,
+      "counts_for_destruction": null,
+      "x": 34,
+      "y": 22
+    },
+    {
+      "instance": "seeking-air-mine-5",
+      "id": "seeking-air-mine",
+      "level": 6,
+      "counts_for_destruction": null,
+      "x": 35,
+      "y": 22
+    },
+    {
+      "instance": "seeking-air-mine-6",
+      "id": "seeking-air-mine",
+      "level": 6,
+      "counts_for_destruction": null,
+      "x": 5,
+      "y": 24
+    },
+    {
+      "instance": "seeking-air-mine-7",
+      "id": "seeking-air-mine",
+      "level": 6,
+      "counts_for_destruction": null,
+      "x": 10,
+      "y": 24
+    },
+    {
+      "instance": "skeleton-trap-0",
+      "id": "skeleton-trap",
+      "level": 4,
+      "counts_for_destruction": null,
+      "settings": {
+        "target_layer": "air"
+      },
+      "x": 37,
+      "y": 24
+    },
+    {
+      "instance": "skeleton-trap-1",
+      "id": "skeleton-trap",
+      "level": 4,
+      "counts_for_destruction": null,
+      "settings": {
+        "target_layer": "air"
+      },
+      "x": 5,
+      "y": 25
+    },
+    {
+      "instance": "skeleton-trap-2",
+      "id": "skeleton-trap",
+      "level": 4,
+      "counts_for_destruction": null,
+      "settings": {
+        "target_layer": "ground"
+      },
+      "x": 10,
+      "y": 25
+    },
+    {
+      "instance": "skeleton-trap-3",
+      "id": "skeleton-trap",
+      "level": 4,
+      "counts_for_destruction": null,
+      "settings": {
+        "target_layer": "ground"
+      },
+      "x": 37,
+      "y": 25
+    },
+    {
+      "instance": "spring-trap-0",
+      "id": "spring-trap",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 7,
+      "y": 27
+    },
+    {
+      "instance": "spring-trap-1",
+      "id": "spring-trap",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 8,
+      "y": 27
+    },
+    {
+      "instance": "spring-trap-2",
+      "id": "spring-trap",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 34,
+      "y": 27
+    },
+    {
+      "instance": "spring-trap-3",
+      "id": "spring-trap",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 35,
+      "y": 27
+    },
+    {
+      "instance": "spring-trap-4",
+      "id": "spring-trap",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 18,
+      "y": 35
+    },
+    {
+      "instance": "spring-trap-5",
+      "id": "spring-trap",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 23,
+      "y": 35
+    },
+    {
+      "instance": "spring-trap-6",
+      "id": "spring-trap",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 18,
+      "y": 36
+    },
+    {
+      "instance": "spring-trap-7",
+      "id": "spring-trap",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 23,
+      "y": 36
+    },
+    {
+      "instance": "spring-trap-8",
+      "id": "spring-trap",
+      "level": 11,
+      "counts_for_destruction": null,
+      "x": 10,
+      "y": 5
+    },
+    {
+      "instance": "tornado-trap-0",
+      "id": "tornado-trap",
+      "level": 3,
+      "counts_for_destruction": null,
+      "x": 26,
+      "y": 5
+    },
+    {
+      "instance": "wall-0",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-1",
+      "id": "wall",
+      "level": 17,
+      "x": 19,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-2",
+      "id": "wall",
+      "level": 17,
+      "x": 20,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-3",
+      "id": "wall",
+      "level": 17,
+      "x": 21,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-4",
+      "id": "wall",
+      "level": 17,
+      "x": 22,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-5",
+      "id": "wall",
+      "level": 17,
+      "x": 23,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-6",
+      "id": "wall",
+      "level": 17,
+      "x": 24,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-7",
+      "id": "wall",
+      "level": 17,
+      "x": 25,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-8",
+      "id": "wall",
+      "level": 17,
+      "x": 26,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-9",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-10",
+      "id": "wall",
+      "level": 17,
+      "x": 28,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-11",
+      "id": "wall",
+      "level": 17,
+      "x": 29,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-12",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-13",
+      "id": "wall",
+      "level": 17,
+      "x": 31,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-14",
+      "id": "wall",
+      "level": 17,
+      "x": 32,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-15",
+      "id": "wall",
+      "level": 17,
+      "x": 33,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-16",
+      "id": "wall",
+      "level": 17,
+      "x": 34,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-17",
+      "id": "wall",
+      "level": 17,
+      "x": 35,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-18",
+      "id": "wall",
+      "level": 17,
+      "x": 36,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-19",
+      "id": "wall",
+      "level": 17,
+      "x": 37,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-20",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 2,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-21",
+      "id": "wall",
+      "level": 17,
+      "x": 3,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-22",
+      "id": "wall",
+      "level": 17,
+      "x": 4,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-23",
+      "id": "wall",
+      "level": 17,
+      "x": 5,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-24",
+      "id": "wall",
+      "level": 17,
+      "x": 6,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-25",
+      "id": "wall",
+      "level": 17,
+      "x": 7,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-26",
+      "id": "wall",
+      "level": 17,
+      "x": 8,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-27",
+      "id": "wall",
+      "level": 17,
+      "x": 9,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-28",
+      "id": "wall",
+      "level": 17,
+      "x": 10,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-29",
+      "id": "wall",
+      "level": 17,
+      "x": 11,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-30",
+      "id": "wall",
+      "level": 17,
+      "x": 12,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-31",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-32",
+      "id": "wall",
+      "level": 17,
+      "x": 14,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-33",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-34",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-35",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 3,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-36",
+      "id": "wall",
+      "level": 17,
+      "x": 3,
+      "y": 4,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-37",
+      "id": "wall",
+      "level": 17,
+      "x": 10,
+      "y": 4,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-38",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 4,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-39",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 4,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-40",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 4,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-41",
+      "id": "wall",
+      "level": 17,
+      "x": 3,
+      "y": 5,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-42",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 5,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-43",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 5,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-44",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 5,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-45",
+      "id": "wall",
+      "level": 17,
+      "x": 3,
+      "y": 6,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-46",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 6,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-47",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 6,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-48",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 6,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-49",
+      "id": "wall",
+      "level": 17,
+      "x": 3,
+      "y": 7,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-50",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 7,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-51",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 7,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-52",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 7,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-53",
+      "id": "wall",
+      "level": 17,
+      "x": 3,
+      "y": 8,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-54",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 8,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-55",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 8,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-56",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 8,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-57",
+      "id": "wall",
+      "level": 17,
+      "x": 3,
+      "y": 9,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-58",
+      "id": "wall",
+      "level": 17,
+      "x": 6,
+      "y": 9,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-59",
+      "id": "wall",
+      "level": 17,
+      "x": 11,
+      "y": 9,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-60",
+      "id": "wall",
+      "level": 17,
+      "x": 12,
+      "y": 9,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-61",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 9,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-62",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 9,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-63",
+      "id": "wall",
+      "level": 17,
+      "x": 24,
+      "y": 9,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-64",
+      "id": "wall",
+      "level": 17,
+      "x": 25,
+      "y": 9,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-65",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 9,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-66",
+      "id": "wall",
+      "level": 17,
+      "x": 3,
+      "y": 10,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-67",
+      "id": "wall",
+      "level": 17,
+      "x": 6,
+      "y": 10,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-68",
+      "id": "wall",
+      "level": 17,
+      "x": 7,
+      "y": 10,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-69",
+      "id": "wall",
+      "level": 17,
+      "x": 10,
+      "y": 10,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-70",
+      "id": "wall",
+      "level": 17,
+      "x": 11,
+      "y": 10,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-71",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 10,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-72",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 10,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-73",
+      "id": "wall",
+      "level": 17,
+      "x": 25,
+      "y": 10,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-74",
+      "id": "wall",
+      "level": 17,
+      "x": 26,
+      "y": 10,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-75",
+      "id": "wall",
+      "level": 17,
+      "x": 29,
+      "y": 10,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-76",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 10,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-77",
+      "id": "wall",
+      "level": 17,
+      "x": 3,
+      "y": 11,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-78",
+      "id": "wall",
+      "level": 17,
+      "x": 7,
+      "y": 11,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-79",
+      "id": "wall",
+      "level": 17,
+      "x": 10,
+      "y": 11,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-80",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 11,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-81",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 11,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-82",
+      "id": "wall",
+      "level": 17,
+      "x": 26,
+      "y": 11,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-83",
+      "id": "wall",
+      "level": 17,
+      "x": 29,
+      "y": 11,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-84",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 11,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-85",
+      "id": "wall",
+      "level": 17,
+      "x": 3,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-86",
+      "id": "wall",
+      "level": 17,
+      "x": 4,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-87",
+      "id": "wall",
+      "level": 17,
+      "x": 5,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-88",
+      "id": "wall",
+      "level": 17,
+      "x": 6,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-89",
+      "id": "wall",
+      "level": 17,
+      "x": 7,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-90",
+      "id": "wall",
+      "level": 17,
+      "x": 8,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-91",
+      "id": "wall",
+      "level": 17,
+      "x": 9,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-92",
+      "id": "wall",
+      "level": 17,
+      "x": 10,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-93",
+      "id": "wall",
+      "level": 17,
+      "x": 11,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-94",
+      "id": "wall",
+      "level": 17,
+      "x": 12,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-95",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-96",
+      "id": "wall",
+      "level": 17,
+      "x": 14,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-97",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-98",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-99",
+      "id": "wall",
+      "level": 17,
+      "x": 19,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-100",
+      "id": "wall",
+      "level": 17,
+      "x": 20,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-101",
+      "id": "wall",
+      "level": 17,
+      "x": 21,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-102",
+      "id": "wall",
+      "level": 17,
+      "x": 22,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-103",
+      "id": "wall",
+      "level": 17,
+      "x": 23,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-104",
+      "id": "wall",
+      "level": 17,
+      "x": 24,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-105",
+      "id": "wall",
+      "level": 17,
+      "x": 25,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-106",
+      "id": "wall",
+      "level": 17,
+      "x": 26,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-107",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-108",
+      "id": "wall",
+      "level": 17,
+      "x": 28,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-109",
+      "id": "wall",
+      "level": 17,
+      "x": 29,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-110",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-111",
+      "id": "wall",
+      "level": 17,
+      "x": 31,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-112",
+      "id": "wall",
+      "level": 17,
+      "x": 32,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-113",
+      "id": "wall",
+      "level": 17,
+      "x": 33,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-114",
+      "id": "wall",
+      "level": 17,
+      "x": 34,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-115",
+      "id": "wall",
+      "level": 17,
+      "x": 35,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-116",
+      "id": "wall",
+      "level": 17,
+      "x": 36,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-117",
+      "id": "wall",
+      "level": 17,
+      "x": 37,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-118",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 12,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-119",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-120",
+      "id": "wall",
+      "level": 17,
+      "x": 3,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-121",
+      "id": "wall",
+      "level": 17,
+      "x": 4,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-122",
+      "id": "wall",
+      "level": 17,
+      "x": 5,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-123",
+      "id": "wall",
+      "level": 17,
+      "x": 6,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-124",
+      "id": "wall",
+      "level": 17,
+      "x": 7,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-125",
+      "id": "wall",
+      "level": 17,
+      "x": 8,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-126",
+      "id": "wall",
+      "level": 17,
+      "x": 9,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-127",
+      "id": "wall",
+      "level": 17,
+      "x": 10,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-128",
+      "id": "wall",
+      "level": 17,
+      "x": 11,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-129",
+      "id": "wall",
+      "level": 17,
+      "x": 12,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-130",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-131",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-132",
+      "id": "wall",
+      "level": 17,
+      "x": 17,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-133",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-134",
+      "id": "wall",
+      "level": 17,
+      "x": 19,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-135",
+      "id": "wall",
+      "level": 17,
+      "x": 20,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-136",
+      "id": "wall",
+      "level": 17,
+      "x": 21,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-137",
+      "id": "wall",
+      "level": 17,
+      "x": 22,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-138",
+      "id": "wall",
+      "level": 17,
+      "x": 23,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-139",
+      "id": "wall",
+      "level": 17,
+      "x": 24,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-140",
+      "id": "wall",
+      "level": 17,
+      "x": 25,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-141",
+      "id": "wall",
+      "level": 17,
+      "x": 26,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-142",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-143",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-144",
+      "id": "wall",
+      "level": 17,
+      "x": 31,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-145",
+      "id": "wall",
+      "level": 17,
+      "x": 32,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-146",
+      "id": "wall",
+      "level": 17,
+      "x": 33,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-147",
+      "id": "wall",
+      "level": 17,
+      "x": 34,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-148",
+      "id": "wall",
+      "level": 17,
+      "x": 35,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-149",
+      "id": "wall",
+      "level": 17,
+      "x": 36,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-150",
+      "id": "wall",
+      "level": 17,
+      "x": 37,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-151",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-152",
+      "id": "wall",
+      "level": 17,
+      "x": 39,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-153",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 16,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-154",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 17,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-155",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 17,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-156",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 17,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-157",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 17,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-158",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 17,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-159",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 17,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-160",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 18,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-161",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 18,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-162",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 18,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-163",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 18,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-164",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 18,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-165",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 18,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-166",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 19,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-167",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 19,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-168",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 19,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-169",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 19,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-170",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 19,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-171",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 19,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-172",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 20,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-173",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 20,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-174",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 20,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-175",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 20,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-176",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 20,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-177",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 20,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-178",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 21,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-179",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 21,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-180",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 21,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-181",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 21,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-182",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 21,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-183",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 21,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-184",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 22,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-185",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 22,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-186",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 22,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-187",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 22,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-188",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 22,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-189",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 22,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-190",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 23,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-191",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 23,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-192",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 23,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-193",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 23,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-194",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 23,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-195",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 23,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-196",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 24,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-197",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 24,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-198",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 24,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-199",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 24,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-200",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 24,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-201",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 24,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-202",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 25,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-203",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 25,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-204",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 25,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-205",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 25,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-206",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 25,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-207",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 25,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-208",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 26,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-209",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 26,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-210",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 26,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-211",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 26,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-212",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 26,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-213",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 26,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-214",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 27,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-215",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 27,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-216",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 27,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-217",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 27,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-218",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 27,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-219",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 27,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-220",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-221",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-222",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-223",
+      "id": "wall",
+      "level": 17,
+      "x": 17,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-224",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-225",
+      "id": "wall",
+      "level": 17,
+      "x": 19,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-226",
+      "id": "wall",
+      "level": 17,
+      "x": 20,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-227",
+      "id": "wall",
+      "level": 17,
+      "x": 21,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-228",
+      "id": "wall",
+      "level": 17,
+      "x": 22,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-229",
+      "id": "wall",
+      "level": 17,
+      "x": 23,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-230",
+      "id": "wall",
+      "level": 17,
+      "x": 24,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-231",
+      "id": "wall",
+      "level": 17,
+      "x": 25,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-232",
+      "id": "wall",
+      "level": 17,
+      "x": 26,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-233",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-234",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-235",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 28,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-236",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 29,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-237",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 29,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-238",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 29,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-239",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 29,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-240",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 30,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-241",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 30,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-242",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 30,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-243",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 30,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-244",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-245",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-246",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-247",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-248",
+      "id": "wall",
+      "level": 17,
+      "x": 17,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-249",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-250",
+      "id": "wall",
+      "level": 17,
+      "x": 19,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-251",
+      "id": "wall",
+      "level": 17,
+      "x": 20,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-252",
+      "id": "wall",
+      "level": 17,
+      "x": 21,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-253",
+      "id": "wall",
+      "level": 17,
+      "x": 22,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-254",
+      "id": "wall",
+      "level": 17,
+      "x": 23,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-255",
+      "id": "wall",
+      "level": 17,
+      "x": 24,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-256",
+      "id": "wall",
+      "level": 17,
+      "x": 25,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-257",
+      "id": "wall",
+      "level": 17,
+      "x": 26,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-258",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-259",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-260",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 31,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-261",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 32,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-262",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 32,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-263",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 32,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-264",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 32,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-265",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 32,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-266",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 32,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-267",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 33,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-268",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 33,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-269",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 33,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-270",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 33,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-271",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 33,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-272",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 33,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-273",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 34,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-274",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 34,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-275",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 34,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-276",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 34,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-277",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 34,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-278",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 34,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-279",
+      "id": "wall",
+      "level": 17,
+      "x": 2,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-280",
+      "id": "wall",
+      "level": 17,
+      "x": 3,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-281",
+      "id": "wall",
+      "level": 17,
+      "x": 4,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-282",
+      "id": "wall",
+      "level": 17,
+      "x": 5,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-283",
+      "id": "wall",
+      "level": 17,
+      "x": 6,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-284",
+      "id": "wall",
+      "level": 17,
+      "x": 7,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-285",
+      "id": "wall",
+      "level": 17,
+      "x": 8,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-286",
+      "id": "wall",
+      "level": 17,
+      "x": 9,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-287",
+      "id": "wall",
+      "level": 17,
+      "x": 10,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-288",
+      "id": "wall",
+      "level": 17,
+      "x": 11,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-289",
+      "id": "wall",
+      "level": 17,
+      "x": 12,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-290",
+      "id": "wall",
+      "level": 17,
+      "x": 13,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-291",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-292",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-293",
+      "id": "wall",
+      "level": 17,
+      "x": 30,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-294",
+      "id": "wall",
+      "level": 17,
+      "x": 31,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-295",
+      "id": "wall",
+      "level": 17,
+      "x": 32,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-296",
+      "id": "wall",
+      "level": 17,
+      "x": 33,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-297",
+      "id": "wall",
+      "level": 17,
+      "x": 34,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-298",
+      "id": "wall",
+      "level": 17,
+      "x": 35,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-299",
+      "id": "wall",
+      "level": 17,
+      "x": 36,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-300",
+      "id": "wall",
+      "level": 17,
+      "x": 37,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-301",
+      "id": "wall",
+      "level": 17,
+      "x": 38,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-302",
+      "id": "wall",
+      "level": 17,
+      "x": 39,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-303",
+      "id": "wall",
+      "level": 17,
+      "x": 40,
+      "y": 35,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-304",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 36,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-305",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 36,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-306",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 37,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-307",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 37,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-308",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 38,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-309",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 38,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-310",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 39,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-311",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 39,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-312",
+      "id": "wall",
+      "level": 17,
+      "x": 15,
+      "y": 40,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-313",
+      "id": "wall",
+      "level": 17,
+      "x": 16,
+      "y": 40,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-314",
+      "id": "wall",
+      "level": 17,
+      "x": 17,
+      "y": 40,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-315",
+      "id": "wall",
+      "level": 17,
+      "x": 18,
+      "y": 40,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-316",
+      "id": "wall",
+      "level": 17,
+      "x": 19,
+      "y": 40,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-317",
+      "id": "wall",
+      "level": 17,
+      "x": 20,
+      "y": 40,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-318",
+      "id": "wall",
+      "level": 17,
+      "x": 21,
+      "y": 40,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-319",
+      "id": "wall",
+      "level": 17,
+      "x": 22,
+      "y": 40,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-320",
+      "id": "wall",
+      "level": 17,
+      "x": 23,
+      "y": 40,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-321",
+      "id": "wall",
+      "level": 17,
+      "x": 24,
+      "y": 40,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-322",
+      "id": "wall",
+      "level": 17,
+      "x": 25,
+      "y": 40,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-323",
+      "id": "wall",
+      "level": 17,
+      "x": 26,
+      "y": 40,
+      "counts_for_destruction": false
+    },
+    {
+      "instance": "wall-324",
+      "id": "wall",
+      "level": 17,
+      "x": 27,
+      "y": 40,
+      "counts_for_destruction": false
+    }
+  ],
+  "data_status": "COMPLETE_DECLARED_INVENTORY_GEOMETRY_NOT_GAME_VALIDATED_BASE",
+  "board_evidence": {
+    "width": 44,
+    "height": 44,
+    "verification": "declared_hypothesis",
+    "source": "explicit-draft-design-envelope-awaiting-in-game-board-verification"
+  },
+  "design_configuration": {
+    "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+    "town_hall": 16,
+    "statistics_policy": {
+      "kind": "conditional_pinned_snapshot",
+      "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+    },
+    "board": {
+      "width": 44,
+      "height": 44,
+      "verification": "declared_hypothesis",
+      "source": "explicit-draft-design-envelope-awaiting-in-game-board-verification"
+    },
+    "wall_segments": [
+      {
+        "x1": 18,
+        "y1": 2,
+        "x2": 18,
+        "y2": 2
+      },
+      {
+        "x1": 19,
+        "y1": 2,
+        "x2": 19,
+        "y2": 2
+      },
+      {
+        "x1": 20,
+        "y1": 2,
+        "x2": 20,
+        "y2": 2
+      },
+      {
+        "x1": 21,
+        "y1": 2,
+        "x2": 21,
+        "y2": 2
+      },
+      {
+        "x1": 22,
+        "y1": 2,
+        "x2": 22,
+        "y2": 2
+      },
+      {
+        "x1": 23,
+        "y1": 2,
+        "x2": 23,
+        "y2": 2
+      },
+      {
+        "x1": 24,
+        "y1": 2,
+        "x2": 24,
+        "y2": 2
+      },
+      {
+        "x1": 25,
+        "y1": 2,
+        "x2": 25,
+        "y2": 2
+      },
+      {
+        "x1": 26,
+        "y1": 2,
+        "x2": 26,
+        "y2": 2
+      },
+      {
+        "x1": 27,
+        "y1": 2,
+        "x2": 27,
+        "y2": 2
+      },
+      {
+        "x1": 28,
+        "y1": 2,
+        "x2": 28,
+        "y2": 2
+      },
+      {
+        "x1": 29,
+        "y1": 2,
+        "x2": 29,
+        "y2": 2
+      },
+      {
+        "x1": 30,
+        "y1": 2,
+        "x2": 30,
+        "y2": 2
+      },
+      {
+        "x1": 31,
+        "y1": 2,
+        "x2": 31,
+        "y2": 2
+      },
+      {
+        "x1": 32,
+        "y1": 2,
+        "x2": 32,
+        "y2": 2
+      },
+      {
+        "x1": 33,
+        "y1": 2,
+        "x2": 33,
+        "y2": 2
+      },
+      {
+        "x1": 34,
+        "y1": 2,
+        "x2": 34,
+        "y2": 2
+      },
+      {
+        "x1": 35,
+        "y1": 2,
+        "x2": 35,
+        "y2": 2
+      },
+      {
+        "x1": 36,
+        "y1": 2,
+        "x2": 36,
+        "y2": 2
+      },
+      {
+        "x1": 37,
+        "y1": 2,
+        "x2": 37,
+        "y2": 2
+      },
+      {
+        "x1": 38,
+        "y1": 2,
+        "x2": 38,
+        "y2": 2
+      },
+      {
+        "x1": 3,
+        "y1": 3,
+        "x2": 3,
+        "y2": 3
+      },
+      {
+        "x1": 4,
+        "y1": 3,
+        "x2": 4,
+        "y2": 3
+      },
+      {
+        "x1": 5,
+        "y1": 3,
+        "x2": 5,
+        "y2": 3
+      },
+      {
+        "x1": 6,
+        "y1": 3,
+        "x2": 6,
+        "y2": 3
+      },
+      {
+        "x1": 7,
+        "y1": 3,
+        "x2": 7,
+        "y2": 3
+      },
+      {
+        "x1": 8,
+        "y1": 3,
+        "x2": 8,
+        "y2": 3
+      },
+      {
+        "x1": 9,
+        "y1": 3,
+        "x2": 9,
+        "y2": 3
+      },
+      {
+        "x1": 10,
+        "y1": 3,
+        "x2": 10,
+        "y2": 3
+      },
+      {
+        "x1": 11,
+        "y1": 3,
+        "x2": 11,
+        "y2": 3
+      },
+      {
+        "x1": 12,
+        "y1": 3,
+        "x2": 12,
+        "y2": 3
+      },
+      {
+        "x1": 13,
+        "y1": 3,
+        "x2": 13,
+        "y2": 3
+      },
+      {
+        "x1": 14,
+        "y1": 3,
+        "x2": 14,
+        "y2": 3
+      },
+      {
+        "x1": 15,
+        "y1": 3,
+        "x2": 15,
+        "y2": 3
+      },
+      {
+        "x1": 18,
+        "y1": 3,
+        "x2": 18,
+        "y2": 3
+      },
+      {
+        "x1": 38,
+        "y1": 3,
+        "x2": 38,
+        "y2": 3
+      },
+      {
+        "x1": 3,
+        "y1": 4,
+        "x2": 3,
+        "y2": 4
+      },
+      {
+        "x1": 15,
+        "y1": 4,
+        "x2": 15,
+        "y2": 4
+      },
+      {
+        "x1": 18,
+        "y1": 4,
+        "x2": 18,
+        "y2": 4
+      },
+      {
+        "x1": 38,
+        "y1": 4,
+        "x2": 38,
+        "y2": 4
+      },
+      {
+        "x1": 3,
+        "y1": 5,
+        "x2": 3,
+        "y2": 5
+      },
+      {
+        "x1": 15,
+        "y1": 5,
+        "x2": 15,
+        "y2": 5
+      },
+      {
+        "x1": 18,
+        "y1": 5,
+        "x2": 18,
+        "y2": 5
+      },
+      {
+        "x1": 38,
+        "y1": 5,
+        "x2": 38,
+        "y2": 5
+      },
+      {
+        "x1": 3,
+        "y1": 6,
+        "x2": 3,
+        "y2": 6
+      },
+      {
+        "x1": 15,
+        "y1": 6,
+        "x2": 15,
+        "y2": 6
+      },
+      {
+        "x1": 18,
+        "y1": 6,
+        "x2": 18,
+        "y2": 6
+      },
+      {
+        "x1": 38,
+        "y1": 6,
+        "x2": 38,
+        "y2": 6
+      },
+      {
+        "x1": 3,
+        "y1": 7,
+        "x2": 3,
+        "y2": 7
+      },
+      {
+        "x1": 15,
+        "y1": 7,
+        "x2": 15,
+        "y2": 7
+      },
+      {
+        "x1": 18,
+        "y1": 7,
+        "x2": 18,
+        "y2": 7
+      },
+      {
+        "x1": 38,
+        "y1": 7,
+        "x2": 38,
+        "y2": 7
+      },
+      {
+        "x1": 3,
+        "y1": 8,
+        "x2": 3,
+        "y2": 8
+      },
+      {
+        "x1": 15,
+        "y1": 8,
+        "x2": 15,
+        "y2": 8
+      },
+      {
+        "x1": 18,
+        "y1": 8,
+        "x2": 18,
+        "y2": 8
+      },
+      {
+        "x1": 38,
+        "y1": 8,
+        "x2": 38,
+        "y2": 8
+      },
+      {
+        "x1": 3,
+        "y1": 9,
+        "x2": 3,
+        "y2": 9
+      },
+      {
+        "x1": 15,
+        "y1": 9,
+        "x2": 15,
+        "y2": 9
+      },
+      {
+        "x1": 18,
+        "y1": 9,
+        "x2": 18,
+        "y2": 9
+      },
+      {
+        "x1": 38,
+        "y1": 9,
+        "x2": 38,
+        "y2": 9
+      },
+      {
+        "x1": 3,
+        "y1": 10,
+        "x2": 3,
+        "y2": 10
+      },
+      {
+        "x1": 15,
+        "y1": 10,
+        "x2": 15,
+        "y2": 10
+      },
+      {
+        "x1": 18,
+        "y1": 10,
+        "x2": 18,
+        "y2": 10
+      },
+      {
+        "x1": 38,
+        "y1": 10,
+        "x2": 38,
+        "y2": 10
+      },
+      {
+        "x1": 3,
+        "y1": 11,
+        "x2": 3,
+        "y2": 11
+      },
+      {
+        "x1": 15,
+        "y1": 11,
+        "x2": 15,
+        "y2": 11
+      },
+      {
+        "x1": 18,
+        "y1": 11,
+        "x2": 18,
+        "y2": 11
+      },
+      {
+        "x1": 38,
+        "y1": 11,
+        "x2": 38,
+        "y2": 11
+      },
+      {
+        "x1": 3,
+        "y1": 12,
+        "x2": 3,
+        "y2": 12
+      },
+      {
+        "x1": 4,
+        "y1": 12,
+        "x2": 4,
+        "y2": 12
+      },
+      {
+        "x1": 5,
+        "y1": 12,
+        "x2": 5,
+        "y2": 12
+      },
+      {
+        "x1": 6,
+        "y1": 12,
+        "x2": 6,
+        "y2": 12
+      },
+      {
+        "x1": 7,
+        "y1": 12,
+        "x2": 7,
+        "y2": 12
+      },
+      {
+        "x1": 8,
+        "y1": 12,
+        "x2": 8,
+        "y2": 12
+      },
+      {
+        "x1": 9,
+        "y1": 12,
+        "x2": 9,
+        "y2": 12
+      },
+      {
+        "x1": 10,
+        "y1": 12,
+        "x2": 10,
+        "y2": 12
+      },
+      {
+        "x1": 11,
+        "y1": 12,
+        "x2": 11,
+        "y2": 12
+      },
+      {
+        "x1": 12,
+        "y1": 12,
+        "x2": 12,
+        "y2": 12
+      },
+      {
+        "x1": 13,
+        "y1": 12,
+        "x2": 13,
+        "y2": 12
+      },
+      {
+        "x1": 14,
+        "y1": 12,
+        "x2": 14,
+        "y2": 12
+      },
+      {
+        "x1": 15,
+        "y1": 12,
+        "x2": 15,
+        "y2": 12
+      },
+      {
+        "x1": 18,
+        "y1": 12,
+        "x2": 18,
+        "y2": 12
+      },
+      {
+        "x1": 19,
+        "y1": 12,
+        "x2": 19,
+        "y2": 12
+      },
+      {
+        "x1": 20,
+        "y1": 12,
+        "x2": 20,
+        "y2": 12
+      },
+      {
+        "x1": 21,
+        "y1": 12,
+        "x2": 21,
+        "y2": 12
+      },
+      {
+        "x1": 22,
+        "y1": 12,
+        "x2": 22,
+        "y2": 12
+      },
+      {
+        "x1": 23,
+        "y1": 12,
+        "x2": 23,
+        "y2": 12
+      },
+      {
+        "x1": 24,
+        "y1": 12,
+        "x2": 24,
+        "y2": 12
+      },
+      {
+        "x1": 25,
+        "y1": 12,
+        "x2": 25,
+        "y2": 12
+      },
+      {
+        "x1": 26,
+        "y1": 12,
+        "x2": 26,
+        "y2": 12
+      },
+      {
+        "x1": 27,
+        "y1": 12,
+        "x2": 27,
+        "y2": 12
+      },
+      {
+        "x1": 28,
+        "y1": 12,
+        "x2": 28,
+        "y2": 12
+      },
+      {
+        "x1": 29,
+        "y1": 12,
+        "x2": 29,
+        "y2": 12
+      },
+      {
+        "x1": 30,
+        "y1": 12,
+        "x2": 30,
+        "y2": 12
+      },
+      {
+        "x1": 31,
+        "y1": 12,
+        "x2": 31,
+        "y2": 12
+      },
+      {
+        "x1": 32,
+        "y1": 12,
+        "x2": 32,
+        "y2": 12
+      },
+      {
+        "x1": 33,
+        "y1": 12,
+        "x2": 33,
+        "y2": 12
+      },
+      {
+        "x1": 34,
+        "y1": 12,
+        "x2": 34,
+        "y2": 12
+      },
+      {
+        "x1": 35,
+        "y1": 12,
+        "x2": 35,
+        "y2": 12
+      },
+      {
+        "x1": 36,
+        "y1": 12,
+        "x2": 36,
+        "y2": 12
+      },
+      {
+        "x1": 37,
+        "y1": 12,
+        "x2": 37,
+        "y2": 12
+      },
+      {
+        "x1": 38,
+        "y1": 12,
+        "x2": 38,
+        "y2": 12
+      },
+      {
+        "x1": 2,
+        "y1": 16,
+        "x2": 2,
+        "y2": 16
+      },
+      {
+        "x1": 3,
+        "y1": 16,
+        "x2": 3,
+        "y2": 16
+      },
+      {
+        "x1": 4,
+        "y1": 16,
+        "x2": 4,
+        "y2": 16
+      },
+      {
+        "x1": 5,
+        "y1": 16,
+        "x2": 5,
+        "y2": 16
+      },
+      {
+        "x1": 6,
+        "y1": 16,
+        "x2": 6,
+        "y2": 16
+      },
+      {
+        "x1": 7,
+        "y1": 16,
+        "x2": 7,
+        "y2": 16
+      },
+      {
+        "x1": 8,
+        "y1": 16,
+        "x2": 8,
+        "y2": 16
+      },
+      {
+        "x1": 9,
+        "y1": 16,
+        "x2": 9,
+        "y2": 16
+      },
+      {
+        "x1": 10,
+        "y1": 16,
+        "x2": 10,
+        "y2": 16
+      },
+      {
+        "x1": 11,
+        "y1": 16,
+        "x2": 11,
+        "y2": 16
+      },
+      {
+        "x1": 12,
+        "y1": 16,
+        "x2": 12,
+        "y2": 16
+      },
+      {
+        "x1": 13,
+        "y1": 16,
+        "x2": 13,
+        "y2": 16
+      },
+      {
+        "x1": 16,
+        "y1": 16,
+        "x2": 16,
+        "y2": 16
+      },
+      {
+        "x1": 17,
+        "y1": 16,
+        "x2": 17,
+        "y2": 16
+      },
+      {
+        "x1": 18,
+        "y1": 16,
+        "x2": 18,
+        "y2": 16
+      },
+      {
+        "x1": 19,
+        "y1": 16,
+        "x2": 19,
+        "y2": 16
+      },
+      {
+        "x1": 20,
+        "y1": 16,
+        "x2": 20,
+        "y2": 16
+      },
+      {
+        "x1": 21,
+        "y1": 16,
+        "x2": 21,
+        "y2": 16
+      },
+      {
+        "x1": 22,
+        "y1": 16,
+        "x2": 22,
+        "y2": 16
+      },
+      {
+        "x1": 23,
+        "y1": 16,
+        "x2": 23,
+        "y2": 16
+      },
+      {
+        "x1": 24,
+        "y1": 16,
+        "x2": 24,
+        "y2": 16
+      },
+      {
+        "x1": 25,
+        "y1": 16,
+        "x2": 25,
+        "y2": 16
+      },
+      {
+        "x1": 26,
+        "y1": 16,
+        "x2": 26,
+        "y2": 16
+      },
+      {
+        "x1": 27,
+        "y1": 16,
+        "x2": 27,
+        "y2": 16
+      },
+      {
+        "x1": 30,
+        "y1": 16,
+        "x2": 30,
+        "y2": 16
+      },
+      {
+        "x1": 31,
+        "y1": 16,
+        "x2": 31,
+        "y2": 16
+      },
+      {
+        "x1": 32,
+        "y1": 16,
+        "x2": 32,
+        "y2": 16
+      },
+      {
+        "x1": 33,
+        "y1": 16,
+        "x2": 33,
+        "y2": 16
+      },
+      {
+        "x1": 34,
+        "y1": 16,
+        "x2": 34,
+        "y2": 16
+      },
+      {
+        "x1": 35,
+        "y1": 16,
+        "x2": 35,
+        "y2": 16
+      },
+      {
+        "x1": 36,
+        "y1": 16,
+        "x2": 36,
+        "y2": 16
+      },
+      {
+        "x1": 37,
+        "y1": 16,
+        "x2": 37,
+        "y2": 16
+      },
+      {
+        "x1": 38,
+        "y1": 16,
+        "x2": 38,
+        "y2": 16
+      },
+      {
+        "x1": 39,
+        "y1": 16,
+        "x2": 39,
+        "y2": 16
+      },
+      {
+        "x1": 40,
+        "y1": 16,
+        "x2": 40,
+        "y2": 16
+      },
+      {
+        "x1": 2,
+        "y1": 17,
+        "x2": 2,
+        "y2": 17
+      },
+      {
+        "x1": 13,
+        "y1": 17,
+        "x2": 13,
+        "y2": 17
+      },
+      {
+        "x1": 16,
+        "y1": 17,
+        "x2": 16,
+        "y2": 17
+      },
+      {
+        "x1": 27,
+        "y1": 17,
+        "x2": 27,
+        "y2": 17
+      },
+      {
+        "x1": 30,
+        "y1": 17,
+        "x2": 30,
+        "y2": 17
+      },
+      {
+        "x1": 40,
+        "y1": 17,
+        "x2": 40,
+        "y2": 17
+      },
+      {
+        "x1": 2,
+        "y1": 18,
+        "x2": 2,
+        "y2": 18
+      },
+      {
+        "x1": 13,
+        "y1": 18,
+        "x2": 13,
+        "y2": 18
+      },
+      {
+        "x1": 16,
+        "y1": 18,
+        "x2": 16,
+        "y2": 18
+      },
+      {
+        "x1": 27,
+        "y1": 18,
+        "x2": 27,
+        "y2": 18
+      },
+      {
+        "x1": 30,
+        "y1": 18,
+        "x2": 30,
+        "y2": 18
+      },
+      {
+        "x1": 40,
+        "y1": 18,
+        "x2": 40,
+        "y2": 18
+      },
+      {
+        "x1": 2,
+        "y1": 19,
+        "x2": 2,
+        "y2": 19
+      },
+      {
+        "x1": 13,
+        "y1": 19,
+        "x2": 13,
+        "y2": 19
+      },
+      {
+        "x1": 16,
+        "y1": 19,
+        "x2": 16,
+        "y2": 19
+      },
+      {
+        "x1": 27,
+        "y1": 19,
+        "x2": 27,
+        "y2": 19
+      },
+      {
+        "x1": 30,
+        "y1": 19,
+        "x2": 30,
+        "y2": 19
+      },
+      {
+        "x1": 40,
+        "y1": 19,
+        "x2": 40,
+        "y2": 19
+      },
+      {
+        "x1": 2,
+        "y1": 20,
+        "x2": 2,
+        "y2": 20
+      },
+      {
+        "x1": 13,
+        "y1": 20,
+        "x2": 13,
+        "y2": 20
+      },
+      {
+        "x1": 16,
+        "y1": 20,
+        "x2": 16,
+        "y2": 20
+      },
+      {
+        "x1": 27,
+        "y1": 20,
+        "x2": 27,
+        "y2": 20
+      },
+      {
+        "x1": 30,
+        "y1": 20,
+        "x2": 30,
+        "y2": 20
+      },
+      {
+        "x1": 40,
+        "y1": 20,
+        "x2": 40,
+        "y2": 20
+      },
+      {
+        "x1": 2,
+        "y1": 21,
+        "x2": 2,
+        "y2": 21
+      },
+      {
+        "x1": 13,
+        "y1": 21,
+        "x2": 13,
+        "y2": 21
+      },
+      {
+        "x1": 16,
+        "y1": 21,
+        "x2": 16,
+        "y2": 21
+      },
+      {
+        "x1": 27,
+        "y1": 21,
+        "x2": 27,
+        "y2": 21
+      },
+      {
+        "x1": 30,
+        "y1": 21,
+        "x2": 30,
+        "y2": 21
+      },
+      {
+        "x1": 40,
+        "y1": 21,
+        "x2": 40,
+        "y2": 21
+      },
+      {
+        "x1": 2,
+        "y1": 22,
+        "x2": 2,
+        "y2": 22
+      },
+      {
+        "x1": 13,
+        "y1": 22,
+        "x2": 13,
+        "y2": 22
+      },
+      {
+        "x1": 16,
+        "y1": 22,
+        "x2": 16,
+        "y2": 22
+      },
+      {
+        "x1": 27,
+        "y1": 22,
+        "x2": 27,
+        "y2": 22
+      },
+      {
+        "x1": 30,
+        "y1": 22,
+        "x2": 30,
+        "y2": 22
+      },
+      {
+        "x1": 40,
+        "y1": 22,
+        "x2": 40,
+        "y2": 22
+      },
+      {
+        "x1": 2,
+        "y1": 23,
+        "x2": 2,
+        "y2": 23
+      },
+      {
+        "x1": 13,
+        "y1": 23,
+        "x2": 13,
+        "y2": 23
+      },
+      {
+        "x1": 16,
+        "y1": 23,
+        "x2": 16,
+        "y2": 23
+      },
+      {
+        "x1": 27,
+        "y1": 23,
+        "x2": 27,
+        "y2": 23
+      },
+      {
+        "x1": 30,
+        "y1": 23,
+        "x2": 30,
+        "y2": 23
+      },
+      {
+        "x1": 40,
+        "y1": 23,
+        "x2": 40,
+        "y2": 23
+      },
+      {
+        "x1": 2,
+        "y1": 24,
+        "x2": 2,
+        "y2": 24
+      },
+      {
+        "x1": 13,
+        "y1": 24,
+        "x2": 13,
+        "y2": 24
+      },
+      {
+        "x1": 16,
+        "y1": 24,
+        "x2": 16,
+        "y2": 24
+      },
+      {
+        "x1": 27,
+        "y1": 24,
+        "x2": 27,
+        "y2": 24
+      },
+      {
+        "x1": 30,
+        "y1": 24,
+        "x2": 30,
+        "y2": 24
+      },
+      {
+        "x1": 40,
+        "y1": 24,
+        "x2": 40,
+        "y2": 24
+      },
+      {
+        "x1": 2,
+        "y1": 25,
+        "x2": 2,
+        "y2": 25
+      },
+      {
+        "x1": 13,
+        "y1": 25,
+        "x2": 13,
+        "y2": 25
+      },
+      {
+        "x1": 16,
+        "y1": 25,
+        "x2": 16,
+        "y2": 25
+      },
+      {
+        "x1": 27,
+        "y1": 25,
+        "x2": 27,
+        "y2": 25
+      },
+      {
+        "x1": 30,
+        "y1": 25,
+        "x2": 30,
+        "y2": 25
+      },
+      {
+        "x1": 40,
+        "y1": 25,
+        "x2": 40,
+        "y2": 25
+      },
+      {
+        "x1": 2,
+        "y1": 26,
+        "x2": 2,
+        "y2": 26
+      },
+      {
+        "x1": 13,
+        "y1": 26,
+        "x2": 13,
+        "y2": 26
+      },
+      {
+        "x1": 16,
+        "y1": 26,
+        "x2": 16,
+        "y2": 26
+      },
+      {
+        "x1": 27,
+        "y1": 26,
+        "x2": 27,
+        "y2": 26
+      },
+      {
+        "x1": 30,
+        "y1": 26,
+        "x2": 30,
+        "y2": 26
+      },
+      {
+        "x1": 40,
+        "y1": 26,
+        "x2": 40,
+        "y2": 26
+      },
+      {
+        "x1": 2,
+        "y1": 27,
+        "x2": 2,
+        "y2": 27
+      },
+      {
+        "x1": 13,
+        "y1": 27,
+        "x2": 13,
+        "y2": 27
+      },
+      {
+        "x1": 16,
+        "y1": 27,
+        "x2": 16,
+        "y2": 27
+      },
+      {
+        "x1": 27,
+        "y1": 27,
+        "x2": 27,
+        "y2": 27
+      },
+      {
+        "x1": 30,
+        "y1": 27,
+        "x2": 30,
+        "y2": 27
+      },
+      {
+        "x1": 40,
+        "y1": 27,
+        "x2": 40,
+        "y2": 27
+      },
+      {
+        "x1": 2,
+        "y1": 28,
+        "x2": 2,
+        "y2": 28
+      },
+      {
+        "x1": 13,
+        "y1": 28,
+        "x2": 13,
+        "y2": 28
+      },
+      {
+        "x1": 16,
+        "y1": 28,
+        "x2": 16,
+        "y2": 28
+      },
+      {
+        "x1": 17,
+        "y1": 28,
+        "x2": 17,
+        "y2": 28
+      },
+      {
+        "x1": 18,
+        "y1": 28,
+        "x2": 18,
+        "y2": 28
+      },
+      {
+        "x1": 19,
+        "y1": 28,
+        "x2": 19,
+        "y2": 28
+      },
+      {
+        "x1": 20,
+        "y1": 28,
+        "x2": 20,
+        "y2": 28
+      },
+      {
+        "x1": 21,
+        "y1": 28,
+        "x2": 21,
+        "y2": 28
+      },
+      {
+        "x1": 22,
+        "y1": 28,
+        "x2": 22,
+        "y2": 28
+      },
+      {
+        "x1": 23,
+        "y1": 28,
+        "x2": 23,
+        "y2": 28
+      },
+      {
+        "x1": 24,
+        "y1": 28,
+        "x2": 24,
+        "y2": 28
+      },
+      {
+        "x1": 25,
+        "y1": 28,
+        "x2": 25,
+        "y2": 28
+      },
+      {
+        "x1": 26,
+        "y1": 28,
+        "x2": 26,
+        "y2": 28
+      },
+      {
+        "x1": 27,
+        "y1": 28,
+        "x2": 27,
+        "y2": 28
+      },
+      {
+        "x1": 30,
+        "y1": 28,
+        "x2": 30,
+        "y2": 28
+      },
+      {
+        "x1": 40,
+        "y1": 28,
+        "x2": 40,
+        "y2": 28
+      },
+      {
+        "x1": 2,
+        "y1": 29,
+        "x2": 2,
+        "y2": 29
+      },
+      {
+        "x1": 13,
+        "y1": 29,
+        "x2": 13,
+        "y2": 29
+      },
+      {
+        "x1": 30,
+        "y1": 29,
+        "x2": 30,
+        "y2": 29
+      },
+      {
+        "x1": 40,
+        "y1": 29,
+        "x2": 40,
+        "y2": 29
+      },
+      {
+        "x1": 2,
+        "y1": 30,
+        "x2": 2,
+        "y2": 30
+      },
+      {
+        "x1": 13,
+        "y1": 30,
+        "x2": 13,
+        "y2": 30
+      },
+      {
+        "x1": 30,
+        "y1": 30,
+        "x2": 30,
+        "y2": 30
+      },
+      {
+        "x1": 40,
+        "y1": 30,
+        "x2": 40,
+        "y2": 30
+      },
+      {
+        "x1": 2,
+        "y1": 31,
+        "x2": 2,
+        "y2": 31
+      },
+      {
+        "x1": 13,
+        "y1": 31,
+        "x2": 13,
+        "y2": 31
+      },
+      {
+        "x1": 15,
+        "y1": 31,
+        "x2": 15,
+        "y2": 31
+      },
+      {
+        "x1": 16,
+        "y1": 31,
+        "x2": 16,
+        "y2": 31
+      },
+      {
+        "x1": 17,
+        "y1": 31,
+        "x2": 17,
+        "y2": 31
+      },
+      {
+        "x1": 18,
+        "y1": 31,
+        "x2": 18,
+        "y2": 31
+      },
+      {
+        "x1": 19,
+        "y1": 31,
+        "x2": 19,
+        "y2": 31
+      },
+      {
+        "x1": 20,
+        "y1": 31,
+        "x2": 20,
+        "y2": 31
+      },
+      {
+        "x1": 21,
+        "y1": 31,
+        "x2": 21,
+        "y2": 31
+      },
+      {
+        "x1": 22,
+        "y1": 31,
+        "x2": 22,
+        "y2": 31
+      },
+      {
+        "x1": 23,
+        "y1": 31,
+        "x2": 23,
+        "y2": 31
+      },
+      {
+        "x1": 24,
+        "y1": 31,
+        "x2": 24,
+        "y2": 31
+      },
+      {
+        "x1": 25,
+        "y1": 31,
+        "x2": 25,
+        "y2": 31
+      },
+      {
+        "x1": 26,
+        "y1": 31,
+        "x2": 26,
+        "y2": 31
+      },
+      {
+        "x1": 27,
+        "y1": 31,
+        "x2": 27,
+        "y2": 31
+      },
+      {
+        "x1": 30,
+        "y1": 31,
+        "x2": 30,
+        "y2": 31
+      },
+      {
+        "x1": 40,
+        "y1": 31,
+        "x2": 40,
+        "y2": 31
+      },
+      {
+        "x1": 2,
+        "y1": 32,
+        "x2": 2,
+        "y2": 32
+      },
+      {
+        "x1": 13,
+        "y1": 32,
+        "x2": 13,
+        "y2": 32
+      },
+      {
+        "x1": 15,
+        "y1": 32,
+        "x2": 15,
+        "y2": 32
+      },
+      {
+        "x1": 27,
+        "y1": 32,
+        "x2": 27,
+        "y2": 32
+      },
+      {
+        "x1": 30,
+        "y1": 32,
+        "x2": 30,
+        "y2": 32
+      },
+      {
+        "x1": 40,
+        "y1": 32,
+        "x2": 40,
+        "y2": 32
+      },
+      {
+        "x1": 2,
+        "y1": 33,
+        "x2": 2,
+        "y2": 33
+      },
+      {
+        "x1": 13,
+        "y1": 33,
+        "x2": 13,
+        "y2": 33
+      },
+      {
+        "x1": 15,
+        "y1": 33,
+        "x2": 15,
+        "y2": 33
+      },
+      {
+        "x1": 27,
+        "y1": 33,
+        "x2": 27,
+        "y2": 33
+      },
+      {
+        "x1": 30,
+        "y1": 33,
+        "x2": 30,
+        "y2": 33
+      },
+      {
+        "x1": 40,
+        "y1": 33,
+        "x2": 40,
+        "y2": 33
+      },
+      {
+        "x1": 2,
+        "y1": 34,
+        "x2": 2,
+        "y2": 34
+      },
+      {
+        "x1": 13,
+        "y1": 34,
+        "x2": 13,
+        "y2": 34
+      },
+      {
+        "x1": 15,
+        "y1": 34,
+        "x2": 15,
+        "y2": 34
+      },
+      {
+        "x1": 27,
+        "y1": 34,
+        "x2": 27,
+        "y2": 34
+      },
+      {
+        "x1": 30,
+        "y1": 34,
+        "x2": 30,
+        "y2": 34
+      },
+      {
+        "x1": 40,
+        "y1": 34,
+        "x2": 40,
+        "y2": 34
+      },
+      {
+        "x1": 2,
+        "y1": 35,
+        "x2": 2,
+        "y2": 35
+      },
+      {
+        "x1": 3,
+        "y1": 35,
+        "x2": 3,
+        "y2": 35
+      },
+      {
+        "x1": 4,
+        "y1": 35,
+        "x2": 4,
+        "y2": 35
+      },
+      {
+        "x1": 5,
+        "y1": 35,
+        "x2": 5,
+        "y2": 35
+      },
+      {
+        "x1": 6,
+        "y1": 35,
+        "x2": 6,
+        "y2": 35
+      },
+      {
+        "x1": 7,
+        "y1": 35,
+        "x2": 7,
+        "y2": 35
+      },
+      {
+        "x1": 8,
+        "y1": 35,
+        "x2": 8,
+        "y2": 35
+      },
+      {
+        "x1": 9,
+        "y1": 35,
+        "x2": 9,
+        "y2": 35
+      },
+      {
+        "x1": 10,
+        "y1": 35,
+        "x2": 10,
+        "y2": 35
+      },
+      {
+        "x1": 11,
+        "y1": 35,
+        "x2": 11,
+        "y2": 35
+      },
+      {
+        "x1": 12,
+        "y1": 35,
+        "x2": 12,
+        "y2": 35
+      },
+      {
+        "x1": 13,
+        "y1": 35,
+        "x2": 13,
+        "y2": 35
+      },
+      {
+        "x1": 15,
+        "y1": 35,
+        "x2": 15,
+        "y2": 35
+      },
+      {
+        "x1": 27,
+        "y1": 35,
+        "x2": 27,
+        "y2": 35
+      },
+      {
+        "x1": 30,
+        "y1": 35,
+        "x2": 30,
+        "y2": 35
+      },
+      {
+        "x1": 31,
+        "y1": 35,
+        "x2": 31,
+        "y2": 35
+      },
+      {
+        "x1": 32,
+        "y1": 35,
+        "x2": 32,
+        "y2": 35
+      },
+      {
+        "x1": 33,
+        "y1": 35,
+        "x2": 33,
+        "y2": 35
+      },
+      {
+        "x1": 34,
+        "y1": 35,
+        "x2": 34,
+        "y2": 35
+      },
+      {
+        "x1": 35,
+        "y1": 35,
+        "x2": 35,
+        "y2": 35
+      },
+      {
+        "x1": 36,
+        "y1": 35,
+        "x2": 36,
+        "y2": 35
+      },
+      {
+        "x1": 37,
+        "y1": 35,
+        "x2": 37,
+        "y2": 35
+      },
+      {
+        "x1": 38,
+        "y1": 35,
+        "x2": 38,
+        "y2": 35
+      },
+      {
+        "x1": 39,
+        "y1": 35,
+        "x2": 39,
+        "y2": 35
+      },
+      {
+        "x1": 40,
+        "y1": 35,
+        "x2": 40,
+        "y2": 35
+      },
+      {
+        "x1": 15,
+        "y1": 36,
+        "x2": 15,
+        "y2": 36
+      },
+      {
+        "x1": 27,
+        "y1": 36,
+        "x2": 27,
+        "y2": 36
+      },
+      {
+        "x1": 15,
+        "y1": 37,
+        "x2": 15,
+        "y2": 37
+      },
+      {
+        "x1": 27,
+        "y1": 37,
+        "x2": 27,
+        "y2": 37
+      },
+      {
+        "x1": 15,
+        "y1": 38,
+        "x2": 15,
+        "y2": 38
+      },
+      {
+        "x1": 27,
+        "y1": 38,
+        "x2": 27,
+        "y2": 38
+      },
+      {
+        "x1": 15,
+        "y1": 39,
+        "x2": 15,
+        "y2": 39
+      },
+      {
+        "x1": 27,
+        "y1": 39,
+        "x2": 27,
+        "y2": 39
+      },
+      {
+        "x1": 15,
+        "y1": 40,
+        "x2": 15,
+        "y2": 40
+      },
+      {
+        "x1": 16,
+        "y1": 40,
+        "x2": 16,
+        "y2": 40
+      },
+      {
+        "x1": 17,
+        "y1": 40,
+        "x2": 17,
+        "y2": 40
+      },
+      {
+        "x1": 18,
+        "y1": 40,
+        "x2": 18,
+        "y2": 40
+      },
+      {
+        "x1": 19,
+        "y1": 40,
+        "x2": 19,
+        "y2": 40
+      },
+      {
+        "x1": 20,
+        "y1": 40,
+        "x2": 20,
+        "y2": 40
+      },
+      {
+        "x1": 21,
+        "y1": 40,
+        "x2": 21,
+        "y2": 40
+      },
+      {
+        "x1": 22,
+        "y1": 40,
+        "x2": 22,
+        "y2": 40
+      },
+      {
+        "x1": 23,
+        "y1": 40,
+        "x2": 23,
+        "y2": 40
+      },
+      {
+        "x1": 24,
+        "y1": 40,
+        "x2": 24,
+        "y2": 40
+      },
+      {
+        "x1": 25,
+        "y1": 40,
+        "x2": 25,
+        "y2": 40
+      },
+      {
+        "x1": 26,
+        "y1": 40,
+        "x2": 26,
+        "y2": 40
+      },
+      {
+        "x1": 27,
+        "y1": 40,
+        "x2": 27,
+        "y2": 40
+      }
+    ],
+    "placement_category_order": [
+      "defense",
+      "army",
+      "research",
+      "resource",
+      "other",
+      "trap"
+    ],
+    "placement_rules": {
+      "defense": {
+        "zones": [
+          [
+            0,
+            0,
+            44,
+            44
+          ]
+        ],
+        "preferred_points": [
+          [
+            9,
+            8
+          ],
+          [
+            28,
+            8
+          ],
+          [
+            8,
+            25
+          ],
+          [
+            22,
+            22
+          ],
+          [
+            35,
+            25
+          ],
+          [
+            21,
+            36
+          ]
+        ],
+        "minimum_footprint_gap_tiles": 1,
+        "separation_weight": 0.5
+      },
+      "army": {
+        "zones": [
+          [
+            0,
+            0,
+            44,
+            44
+          ]
+        ],
+        "preferred_points": [
+          [
+            2,
+            22
+          ],
+          [
+            42,
+            22
+          ],
+          [
+            22,
+            2
+          ],
+          [
+            22,
+            42
+          ]
+        ],
+        "minimum_footprint_gap_tiles": 0,
+        "separation_weight": 1
+      },
+      "research": {
+        "zones": [
+          [
+            0,
+            0,
+            44,
+            44
+          ]
+        ],
+        "preferred_points": [
+          [
+            2,
+            22
+          ],
+          [
+            42,
+            22
+          ],
+          [
+            22,
+            2
+          ],
+          [
+            22,
+            42
+          ]
+        ],
+        "minimum_footprint_gap_tiles": 0,
+        "separation_weight": 1
+      },
+      "resource": {
+        "zones": [
+          [
+            0,
+            0,
+            44,
+            44
+          ]
+        ],
+        "preferred_points": [
+          [
+            9,
+            8
+          ],
+          [
+            28,
+            8
+          ],
+          [
+            8,
+            25
+          ],
+          [
+            22,
+            22
+          ],
+          [
+            35,
+            25
+          ],
+          [
+            21,
+            36
+          ]
+        ],
+        "minimum_footprint_gap_tiles": 0,
+        "separation_weight": 1
+      },
+      "other": {
+        "zones": [
+          [
+            0,
+            0,
+            44,
+            44
+          ]
+        ],
+        "preferred_points": [
+          [
+            2,
+            22
+          ],
+          [
+            42,
+            22
+          ],
+          [
+            22,
+            2
+          ],
+          [
+            22,
+            42
+          ]
+        ],
+        "minimum_footprint_gap_tiles": 0,
+        "separation_weight": 1
+      },
+      "trap": {
+        "zones": [
+          [
+            0,
+            0,
+            44,
+            44
+          ]
+        ],
+        "preferred_points": [
+          [
+            9,
+            8
+          ],
+          [
+            28,
+            8
+          ],
+          [
+            8,
+            25
+          ],
+          [
+            22,
+            22
+          ],
+          [
+            35,
+            25
+          ],
+          [
+            21,
+            36
+          ]
+        ],
+        "minimum_footprint_gap_tiles": 0,
+        "separation_weight": 0
+      }
+    },
+    "additional_wall_policy": {
+      "kind": "extend_connected_walls_toward_declared_points",
+      "preferred_points": [
+        [
+          9,
+          8
+        ],
+        [
+          28,
+          8
+        ],
+        [
+          8,
+          25
+        ],
+        [
+          22,
+          22
+        ],
+        [
+          35,
+          25
+        ],
+        [
+          21,
+          36
+        ]
+      ]
+    },
+    "modes": {
+      "air-defense-0": "normal",
+      "air-defense-1": "normal",
+      "air-defense-2": "normal",
+      "air-defense-3": "normal",
+      "air-sweeper-0": "normal",
+      "air-sweeper-1": "normal",
+      "archer-tower-0": "normal",
+      "archer-tower-1": "normal",
+      "archer-tower-2": "normal",
+      "archer-tower-3": "normal",
+      "bomb-tower-0": "normal",
+      "bomb-tower-1": "normal",
+      "builders-hut-0": "normal",
+      "builders-hut-1": "normal",
+      "builders-hut-2": "normal",
+      "builders-hut-3": "normal",
+      "builders-hut-4": "normal",
+      "cannon-0": "normal",
+      "cannon-1": "normal",
+      "cannon-2": "normal",
+      "eagle-artillery-0": "normal",
+      "hidden-tesla-0": "normal",
+      "hidden-tesla-1": "normal",
+      "hidden-tesla-2": "normal",
+      "hidden-tesla-3": "normal",
+      "hidden-tesla-4": "normal",
+      "inferno-tower-0": "normal",
+      "inferno-tower-1": "normal",
+      "inferno-tower-2": "multiTarget",
+      "monolith-0": "normal",
+      "mortar-0": "normal",
+      "mortar-1": "normal",
+      "mortar-2": "normal",
+      "mortar-3": "normal",
+      "multi-archer-tower-0": "normal",
+      "multi-archer-tower-1": "normal",
+      "ricochet-cannon-0": "normal",
+      "ricochet-cannon-1": "normal",
+      "scattershot-0": "normal",
+      "scattershot-1": "normal",
+      "spell-tower-0": "poison",
+      "spell-tower-1": "poison",
+      "wizard-tower-0": "normal",
+      "wizard-tower-1": "normal",
+      "wizard-tower-2": "normal",
+      "wizard-tower-3": "normal",
+      "wizard-tower-4": "normal",
+      "x-bow-0": "airAndGround",
+      "x-bow-1": "airAndGround",
+      "x-bow-2": "airAndGround",
+      "x-bow-3": "airAndGround"
+    },
+    "instance_settings": {
+      "air-sweeper-0": {
+        "facing_degrees": 315
+      },
+      "air-sweeper-1": {
+        "facing_degrees": 45
+      },
+      "hero-banner-0": {
+        "hero": "barbarian-king",
+        "level": 95
+      },
+      "hero-banner-1": {
+        "hero": "archer-queen",
+        "level": 95
+      },
+      "hero-banner-2": {
+        "hero": "minion-prince",
+        "level": 80
+      },
+      "hero-banner-3": {
+        "hero": "royal-champion",
+        "level": 45
+      },
+      "skeleton-trap-0": {
+        "target_layer": "air"
+      },
+      "skeleton-trap-1": {
+        "target_layer": "air"
+      },
+      "skeleton-trap-2": {
+        "target_layer": "ground"
+      },
+      "skeleton-trap-3": {
+        "target_layer": "ground"
+      }
+    },
+    "direction_convention": "draft_grid_north_zero_degrees_clockwise_not_verified_UI_orientation",
+    "gearing_policy": "explicit_no_geared_defenses_in_this_candidate",
+    "supercharge_policy": "explicit_no_supercharges_in_this_candidate",
+    "defensive_castle": "test separately from examples/defense-castle-experiments.json; contents unselected",
+    "notes": [
+      "This44x44 envelope is explicitly unverified in the game.",
+      "Generic placement preferences and one-tile defense spacing are design proposals, not troop-chain rules.",
+      "All unpinned instances are repacked; this is not a matched wall-only intervention.",
+      "The inherited modes, hero assignments and CC choice remain proposed settings.",
+      "No defense performance score or optimum is claimed."
+    ],
+    "id": "ranked-staggered_compartments-declared-th16",
+    "objective": "Test Town Hall denial and actual defender trophies against ordinary and competent air/Thrower plans",
+    "fixed_placements": {
+      "town-hall-0": [
+        19,
+        19
+      ],
+      "monolith-0": [
+        20,
+        24
+      ]
+    },
+    "architecture_provenance": {
+      "family": "staggered_compartments",
+      "wall_components": [
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            3,
+            3
+          ],
+          "bottom_right": [
+            15,
+            12
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            18,
+            2
+          ],
+          "bottom_right": [
+            38,
+            12
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            2,
+            16
+          ],
+          "bottom_right": [
+            13,
+            35
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            16,
+            16
+          ],
+          "bottom_right": [
+            27,
+            28
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            30,
+            16
+          ],
+          "bottom_right": [
+            40,
+            35
+          ]
+        },
+        {
+          "kind": "rectangle_outline",
+          "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+          "top_left": [
+            15,
+            31
+          ],
+          "bottom_right": [
+            27,
+            40
+          ]
+        }
+      ],
+      "proposal_source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+      "geometry_is_not_defense_optimization": true
+    }
+  },
+  "full_game_prediction": false,
+  "fixture_provenance": {
+    "synthetic": true,
+    "source": "declared-architecture-design-hypothesis-not-game-or-defense-validation",
+    "description": "Deterministic generated development layout; no game-memory coordinates or real-player base."
+  }
+}

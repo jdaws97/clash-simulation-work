@@ -1,0 +1,68 @@
+[
+  {
+    "entity": "thrower",
+    "level": null,
+    "field": "movementSpeed",
+    "expected_catalog_value": 18
+  },
+  {
+    "entity": "thrower",
+    "level": 3,
+    "field": "hitpoints",
+    "expected_catalog_value": 2600
+  },
+  {
+    "entity": "thrower",
+    "level": 3,
+    "field": "dps",
+    "expected_catalog_value": 230
+  },
+  {
+    "entity": "thrower",
+    "level": 4,
+    "field": "hitpoints",
+    "expected_catalog_value": 2800
+  },
+  {
+    "entity": "thrower",
+    "level": 4,
+    "field": "dps",
+    "expected_catalog_value": 240
+  },
+  {
+    "entity": "electro-dragon",
+    "level": 8,
+    "field": "hitpoints",
+    "expected_catalog_value": 6200
+  },
+  {
+    "entity": "electro-dragon",
+    "level": 8,
+    "field": "dps",
+    "expected_catalog_value": 460
+  },
+  {
+    "entity": "electro-dragon",
+    "level": 9,
+    "field": "hitpoints",
+    "expected_catalog_value": 6700
+  },
+  {
+    "entity": "electro-dragon",
+    "level": 9,
+    "field": "dps",
+    "expected_catalog_value": 500
+  },
+  {
+    "entity": "dragon-rider",
+    "level": 6,
+    "field": "hitpoints",
+    "expected_catalog_value": 6200
+  },
+  {
+    "entity": "dragon-rider",
+    "level": 6,
+    "field": "dps",
+    "expected_catalog_value": 520
+  }
+]

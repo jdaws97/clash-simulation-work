@@ -1,0 +1,12 @@
+{
+  "source": "docs/DUKE_CONTACT_EXPERIMENT.md#experimental-contract",
+  "membership": "center_distance_sampled_inclusive_experimental",
+  "isolation_update": {
+    "mode": "fixed_cadence_experimental",
+    "source": "docs/DUKE_CONTACT_EXPERIMENT.md#experimental-contract",
+    "status": "explicit_uncalibrated_hypothesis",
+    "interval_seconds": 0.1,
+    "clock": "deployment_anchored_resample_on_reactivation",
+    "between_samples": "hold_all_membership_including_lifecycle_changes"
+  }
+}

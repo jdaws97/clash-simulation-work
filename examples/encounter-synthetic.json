@@ -1,0 +1,39 @@
+{
+  "id": "synthetic-protection-demo",
+  "duration_seconds": 10,
+  "unsupported_mechanics": [],
+  "same_time_policy": "simultaneous_damage_then_heal",
+  "actors": [
+    {
+      "id": "damage-dealer",
+      "team": "attack",
+      "hitpoints": 100
+    },
+    {
+      "id": "defense",
+      "team": "defense",
+      "hitpoints": 100
+    }
+  ],
+  "events": [
+    {
+      "id": "defense-shot",
+      "time_seconds": 2,
+      "effect": "damage",
+      "amount": 100,
+      "target": "damage-dealer",
+      "source": "defense",
+      "requires_source_alive": true
+    },
+    {
+      "id": "freeze",
+      "time_seconds": 3,
+      "effect": "freeze",
+      "duration_seconds": 2,
+      "target": "defense",
+      "source": "external",
+      "requires_source_alive": false
+    }
+  ],
+  "data_status": "SYNTHETIC_SOFTWARE_DEMO_NOT_CLASH_STATISTICS_OR_USER_SKILL"
+}

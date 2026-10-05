@@ -1,0 +1,21 @@
+{
+  "source": "declared-three-wall-relocation-probe-not-defense-recommendation",
+  "base_id": "6558032b8e147728a3bb",
+  "moves": [
+    {
+      "instance": "wall-211",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "instance": "wall-212",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "instance": "wall-213",
+      "x": 3,
+      "y": 0
+    }
+  ]
+}

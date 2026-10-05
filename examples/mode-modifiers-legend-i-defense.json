@@ -1,0 +1,6 @@
+{
+  "profile_id": "legend_i",
+  "entity_role": "defense",
+  "maximum_hp_damage_policy": "unchanged",
+  "policy_source": "explicit-sensitivity-case-percent-weapon-scaling-unverified"
+}

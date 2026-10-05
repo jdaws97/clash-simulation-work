@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.black-cache/
+.pytest_cache/
+reports/
+work/
+private/
+.env
+.env.*
+*.log
+*.zip
+*.gz

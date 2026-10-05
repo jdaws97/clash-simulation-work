@@ -1,0 +1,635 @@
+{
+  "id": "synthetic-th16-account",
+  "source": "synthetic-fixture-not-a-real-player",
+  "provenance": {
+    "synthetic": true,
+    "catalog_snapshot": "c6967314d7281bb87c362993e2635e58cd77b351",
+    "design": "Minimum owned unlocks plus explicit nonmax benchmark equipment; potion and donation caps are independently derived."
+  },
+  "town_hall": 16,
+  "laboratory_level": 14,
+  "capacities": {
+    "army_housing": 320,
+    "spell_housing": 11,
+    "clan_castle_troops": 50,
+    "clan_castle_spells": 3,
+    "hero_slots": 4,
+    "siege_deployments": 1,
+    "own_siege_storage": 3,
+    "clan_castle_siege_storage": 2,
+    "max_active_super_troops": 2
+  },
+  "levels": {
+    "action-figure": 1,
+    "archer-puppet": 1,
+    "barbarian-puppet": 1,
+    "dark-crown": 1,
+    "dark-orb": 1,
+    "earthquake-boots": 1,
+    "electro-boots": 23,
+    "eternal-tome": 18,
+    "fire-heart": 18,
+    "fireball": 24,
+    "flame-blower": 1,
+    "frost-flake": 1,
+    "frozen-arrow": 1,
+    "giant-arrow": 1,
+    "giant-gauntlet": 1,
+    "haste-vial": 1,
+    "healer-puppet": 1,
+    "healing-tome": 15,
+    "henchmen-puppet": 1,
+    "heroic-torch": 1,
+    "hog-rider-puppet": 1,
+    "invisibility-vial": 7,
+    "lavaloon-puppet": 1,
+    "life-gem": 1,
+    "magic-mirror": 20,
+    "metal-pants": 1,
+    "meteor-staff": 1,
+    "monolith-arrow": 1,
+    "noble-iron": 1,
+    "rage-gem": 18,
+    "rage-vial": 1,
+    "revenge-deck": 20,
+    "rocket-backpack": 1,
+    "rocket-spear": 21,
+    "royal-gem": 1,
+    "seeking-shield": 1,
+    "snake-bracelet": 12,
+    "spiky-ball": 20,
+    "stick-horse": 1,
+    "stun-blaster": 1,
+    "vampstache": 1,
+    "archer-queen": 95,
+    "barbarian-king": 95,
+    "dragon-duke": 15,
+    "grand-warden": 70,
+    "minion-prince": 80,
+    "royal-champion": 45,
+    "angry-jelly": 10,
+    "diggy": 10,
+    "electro-owl": 15,
+    "frosty": 10,
+    "lassi": 15,
+    "mighty-yak": 15,
+    "phoenix": 10,
+    "poison-lizard": 10,
+    "spirit-fox": 10,
+    "unicorn": 10,
+    "battle-blimp": 5,
+    "battle-drill": 4,
+    "flame-flinger": 5,
+    "log-launcher": 5,
+    "siege-barracks": 5,
+    "stone-slammer": 5,
+    "wall-wrecker": 5,
+    "angry-spell": 2,
+    "bat-spell": 6,
+    "clone-spell": 8,
+    "earthquake-spell": 7,
+    "freeze-spell": 7,
+    "haste-spell": 5,
+    "healing-spell": 10,
+    "ice-block-spell": 4,
+    "invisibility-spell": 4,
+    "jump-spell": 5,
+    "lightning-spell": 11,
+    "overgrowth-spell": 4,
+    "poison-spell": 10,
+    "rage-spell": 6,
+    "recall-spell": 5,
+    "revive-spell": 3,
+    "skeleton-spell": 8,
+    "totem-spell": 2,
+    "apprentice-warden": 4,
+    "archer": 12,
+    "super-archer": 12,
+    "baby-dragon": 10,
+    "inferno-dragon": 10,
+    "balloon": 11,
+    "rocket-balloon": 11,
+    "barbarian": 12,
+    "super-barbarian": 12,
+    "bowler": 8,
+    "super-bowler": 8,
+    "dragon-rider": 4,
+    "dragon": 11,
+    "super-dragon": 11,
+    "druid": 4,
+    "electro-dragon": 7,
+    "electro-titan": 4,
+    "furnace": 3,
+    "giant": 12,
+    "super-giant": 12,
+    "goblin": 9,
+    "sneaky-goblin": 9,
+    "golem": 13,
+    "headhunter": 3,
+    "healer": 9,
+    "hog-rider": 13,
+    "super-hog-rider": 13,
+    "ice-golem": 8,
+    "lava-hound": 7,
+    "ice-hound": 7,
+    "miner": 10,
+    "super-miner": 10,
+    "minion": 12,
+    "super-minion": 12,
+    "pekka": 11,
+    "root-rider": 3,
+    "ruin-witch": 2,
+    "thrower": 2,
+    "valkyrie": 11,
+    "super-valkyrie": 11,
+    "wall-breaker": 12,
+    "super-wall-breaker": 12,
+    "witch": 7,
+    "super-witch": 7,
+    "wizard": 12,
+    "super-wizard": 12,
+    "yeti": 6,
+    "super-yeti": 6
+  },
+  "hero_availability": {
+    "archer-queen": true,
+    "barbarian-king": true,
+    "dragon-duke": true,
+    "grand-warden": true,
+    "minion-prince": true,
+    "royal-champion": true
+  },
+  "active_super_troops": [
+    "super-wall-breaker"
+  ],
+  "donation_levels": {
+    "battle-blimp": 6,
+    "battle-drill": 6,
+    "flame-flinger": 5,
+    "log-launcher": 6,
+    "siege-barracks": 6,
+    "sky-wagon": 4,
+    "stone-slammer": 6,
+    "troop-launcher": 4,
+    "wall-wrecker": 6,
+    "angry-spell": 4,
+    "bat-spell": 8,
+    "clone-spell": 9,
+    "earthquake-spell": 8,
+    "freeze-spell": 8,
+    "haste-spell": 7,
+    "healing-spell": 12,
+    "ice-block-spell": 6,
+    "invisibility-spell": 4,
+    "jump-spell": 5,
+    "lightning-spell": 13,
+    "overgrowth-spell": 5,
+    "poison-spell": 12,
+    "rage-spell": 7,
+    "recall-spell": 7,
+    "revive-spell": 5,
+    "skeleton-spell": 8,
+    "totem-spell": 4,
+    "apprentice-warden": 4,
+    "archer": 14,
+    "super-archer": 14,
+    "baby-dragon": 12,
+    "inferno-dragon": 12,
+    "balloon": 13,
+    "rocket-balloon": 12,
+    "barbarian": 13,
+    "super-barbarian": 12,
+    "bowler": 10,
+    "super-bowler": 10,
+    "dragon-rider": 6,
+    "dragon": 13,
+    "super-dragon": 12,
+    "druid": 6,
+    "electro-dragon": 9,
+    "electro-titan": 5,
+    "furnace": 4,
+    "giant": 14,
+    "super-giant": 14,
+    "goblin": 10,
+    "sneaky-goblin": 9,
+    "golem": 15,
+    "headhunter": 4,
+    "healer": 11,
+    "hog-rider": 15,
+    "super-hog-rider": 15,
+    "ice-golem": 9,
+    "lava-hound": 8,
+    "ice-hound": 8,
+    "meteor-golem": 3,
+    "miner": 12,
+    "super-miner": 12,
+    "minion": 14,
+    "super-minion": 14,
+    "pekka": 13,
+    "root-rider": 4,
+    "ruin-witch": 4,
+    "thrower": 4,
+    "valkyrie": 12,
+    "super-valkyrie": 11,
+    "wall-breaker": 14,
+    "super-wall-breaker": 14,
+    "witch": 8,
+    "super-witch": 8,
+    "wizard": 14,
+    "super-wizard": 14,
+    "yeti": 8,
+    "super-yeti": 7
+  },
+  "potions_by_mode": {
+    "ranked": {
+      "power": true,
+      "hero": true
+    },
+    "cwl": {
+      "power": true,
+      "hero": true
+    },
+    "friendly": {
+      "power": true,
+      "hero": true
+    },
+    "war": {
+      "power": true,
+      "hero": true
+    }
+  },
+  "planning_permissions": {
+    "any_legal_reinforcement": true,
+    "any_legal_super_activation": true,
+    "basis": "Declared synthetic test policy"
+  },
+  "effective_mode": "ranked",
+  "potion_changes": {
+    "archer-queen": {
+      "owned": 1,
+      "effective": 95
+    },
+    "barbarian-king": {
+      "owned": 1,
+      "effective": 95
+    },
+    "dragon-duke": {
+      "owned": 1,
+      "effective": 15
+    },
+    "grand-warden": {
+      "owned": 1,
+      "effective": 70
+    },
+    "minion-prince": {
+      "owned": 1,
+      "effective": 80
+    },
+    "royal-champion": {
+      "owned": 1,
+      "effective": 45
+    },
+    "angry-jelly": {
+      "owned": 1,
+      "effective": 10
+    },
+    "diggy": {
+      "owned": 1,
+      "effective": 10
+    },
+    "electro-owl": {
+      "owned": 1,
+      "effective": 15
+    },
+    "frosty": {
+      "owned": 1,
+      "effective": 10
+    },
+    "lassi": {
+      "owned": 1,
+      "effective": 15
+    },
+    "mighty-yak": {
+      "owned": 1,
+      "effective": 15
+    },
+    "phoenix": {
+      "owned": 1,
+      "effective": 10
+    },
+    "poison-lizard": {
+      "owned": 1,
+      "effective": 10
+    },
+    "spirit-fox": {
+      "owned": 1,
+      "effective": 10
+    },
+    "unicorn": {
+      "owned": 1,
+      "effective": 10
+    },
+    "battle-blimp": {
+      "owned": 1,
+      "effective": 5
+    },
+    "battle-drill": {
+      "owned": 1,
+      "effective": 4
+    },
+    "flame-flinger": {
+      "owned": 1,
+      "effective": 5
+    },
+    "log-launcher": {
+      "owned": 1,
+      "effective": 5
+    },
+    "siege-barracks": {
+      "owned": 1,
+      "effective": 5
+    },
+    "stone-slammer": {
+      "owned": 1,
+      "effective": 5
+    },
+    "wall-wrecker": {
+      "owned": 1,
+      "effective": 5
+    },
+    "angry-spell": {
+      "owned": 1,
+      "effective": 2
+    },
+    "bat-spell": {
+      "owned": 1,
+      "effective": 6
+    },
+    "clone-spell": {
+      "owned": 1,
+      "effective": 8
+    },
+    "earthquake-spell": {
+      "owned": 1,
+      "effective": 7
+    },
+    "freeze-spell": {
+      "owned": 1,
+      "effective": 7
+    },
+    "haste-spell": {
+      "owned": 1,
+      "effective": 5
+    },
+    "healing-spell": {
+      "owned": 1,
+      "effective": 10
+    },
+    "ice-block-spell": {
+      "owned": 1,
+      "effective": 4
+    },
+    "invisibility-spell": {
+      "owned": 1,
+      "effective": 4
+    },
+    "jump-spell": {
+      "owned": 1,
+      "effective": 5
+    },
+    "lightning-spell": {
+      "owned": 1,
+      "effective": 11
+    },
+    "overgrowth-spell": {
+      "owned": 1,
+      "effective": 4
+    },
+    "poison-spell": {
+      "owned": 1,
+      "effective": 10
+    },
+    "rage-spell": {
+      "owned": 1,
+      "effective": 6
+    },
+    "recall-spell": {
+      "owned": 1,
+      "effective": 5
+    },
+    "revive-spell": {
+      "owned": 1,
+      "effective": 3
+    },
+    "skeleton-spell": {
+      "owned": 1,
+      "effective": 8
+    },
+    "totem-spell": {
+      "owned": 1,
+      "effective": 2
+    },
+    "apprentice-warden": {
+      "owned": 1,
+      "effective": 4
+    },
+    "archer": {
+      "owned": 1,
+      "effective": 12
+    },
+    "super-archer": {
+      "owned": 8,
+      "effective": 12
+    },
+    "baby-dragon": {
+      "owned": 1,
+      "effective": 10
+    },
+    "inferno-dragon": {
+      "owned": 6,
+      "effective": 10
+    },
+    "balloon": {
+      "owned": 1,
+      "effective": 11
+    },
+    "rocket-balloon": {
+      "owned": 8,
+      "effective": 11
+    },
+    "barbarian": {
+      "owned": 1,
+      "effective": 12
+    },
+    "super-barbarian": {
+      "owned": 8,
+      "effective": 12
+    },
+    "bowler": {
+      "owned": 1,
+      "effective": 8
+    },
+    "super-bowler": {
+      "owned": 4,
+      "effective": 8
+    },
+    "dragon-rider": {
+      "owned": 1,
+      "effective": 4
+    },
+    "dragon": {
+      "owned": 1,
+      "effective": 11
+    },
+    "super-dragon": {
+      "owned": 3,
+      "effective": 11
+    },
+    "druid": {
+      "owned": 1,
+      "effective": 4
+    },
+    "electro-dragon": {
+      "owned": 1,
+      "effective": 7
+    },
+    "electro-titan": {
+      "owned": 1,
+      "effective": 4
+    },
+    "furnace": {
+      "owned": 1,
+      "effective": 3
+    },
+    "giant": {
+      "owned": 1,
+      "effective": 12
+    },
+    "super-giant": {
+      "owned": 9,
+      "effective": 12
+    },
+    "goblin": {
+      "owned": 1,
+      "effective": 9
+    },
+    "sneaky-goblin": {
+      "owned": 7,
+      "effective": 9
+    },
+    "golem": {
+      "owned": 1,
+      "effective": 13
+    },
+    "headhunter": {
+      "owned": 1,
+      "effective": 3
+    },
+    "healer": {
+      "owned": 1,
+      "effective": 9
+    },
+    "hog-rider": {
+      "owned": 1,
+      "effective": 13
+    },
+    "super-hog-rider": {
+      "owned": 10,
+      "effective": 13
+    },
+    "ice-golem": {
+      "owned": 1,
+      "effective": 8
+    },
+    "lava-hound": {
+      "owned": 1,
+      "effective": 7
+    },
+    "ice-hound": {
+      "owned": 1,
+      "effective": 7
+    },
+    "miner": {
+      "owned": 1,
+      "effective": 10
+    },
+    "super-miner": {
+      "owned": 7,
+      "effective": 10
+    },
+    "minion": {
+      "owned": 1,
+      "effective": 12
+    },
+    "super-minion": {
+      "owned": 8,
+      "effective": 12
+    },
+    "pekka": {
+      "owned": 1,
+      "effective": 11
+    },
+    "root-rider": {
+      "owned": 1,
+      "effective": 3
+    },
+    "ruin-witch": {
+      "owned": 1,
+      "effective": 2
+    },
+    "thrower": {
+      "owned": 1,
+      "effective": 2
+    },
+    "valkyrie": {
+      "owned": 1,
+      "effective": 11
+    },
+    "super-valkyrie": {
+      "owned": 7,
+      "effective": 11
+    },
+    "wall-breaker": {
+      "owned": 11,
+      "effective": 12
+    },
+    "super-wall-breaker": {
+      "owned": 11,
+      "effective": 12
+    },
+    "witch": {
+      "owned": 1,
+      "effective": 7
+    },
+    "super-witch": {
+      "owned": 5,
+      "effective": 7
+    },
+    "wizard": {
+      "owned": 1,
+      "effective": 12
+    },
+    "super-wizard": {
+      "owned": 9,
+      "effective": 12
+    },
+    "yeti": {
+      "owned": 1,
+      "effective": 6
+    },
+    "super-yeti": {
+      "owned": 3,
+      "effective": 6
+    }
+  },
+  "potion_cap_status": "CATALOG_CAPS_REQUIRE_PATCH_VERIFICATION",
+  "planning_evidence": {
+    "recipient_clan_castle_level": 12,
+    "recipient_level_basis": "Unique snapshot match of entered troop/spell/siege storage capacities 50/3/2 at TH16",
+    "recipient_lab_cap": 16,
+    "source": "https://github.com/chiefpansancolt/clash-of-clans-data/blob/c6967314d7281bb87c362993e2635e58cd77b351/data/home/resource-buildings/clan-castle.json",
+    "unverified_donation_lab_fields": [],
+    "status": "EXPLICIT_PLANNING_POLICY_WITH_UNVERIFIED_SNAPSHOT_CAPS",
+    "current_activations_or_purchases_performed": false
+  }
+}

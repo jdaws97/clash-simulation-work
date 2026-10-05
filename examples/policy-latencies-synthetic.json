@@ -1,0 +1,18 @@
+{
+  "plan_id": "synthetic-cue-plan",
+  "observed_latency_traces": [
+    {
+      "source_replay": "synthetic-latency-fixture",
+      "responses": {
+        "setup": {
+          "latency_seconds": 1,
+          "missed": false
+        },
+        "entry": {
+          "latency_seconds": 2,
+          "missed": false
+        }
+      }
+    }
+  ]
+}

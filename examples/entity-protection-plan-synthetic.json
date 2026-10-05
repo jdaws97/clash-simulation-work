@@ -1,0 +1,43 @@
+{
+  "id": "synthetic-source-linked-protection-plan",
+  "observation_interval_seconds": 0.05,
+  "control_rules": {
+    "observation_phase": "before_commands_and_hits",
+    "stream_transition": "next_observation_after_command_resolution",
+    "resource_contention": "due_time_then_action_id",
+    "pending_cue": "latched_with_explicit_execution_recheck"
+  },
+  "failed_action_transition": "stop_stream",
+  "resources": {
+    "freeze": 1
+  },
+  "streams": [
+    {
+      "id": "protect",
+      "steps": [
+        {
+          "all_conditions": [
+            {
+              "actor_id": "archer",
+              "field": "active",
+              "operator": "equals",
+              "value": true
+            }
+          ],
+          "action": {
+            "id": "freeze",
+            "kind": "freeze",
+            "targets": [
+              "monolith"
+            ],
+            "duration_seconds": 2,
+            "recheck_conditions_on_execution": true,
+            "cost": {
+              "freeze": 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

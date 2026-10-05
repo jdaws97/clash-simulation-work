@@ -1,0 +1,23 @@
+{
+  "project": "ClashKing Assets",
+  "credit": "Game data extracted and published by ClashKing; Clash of Clans belongs to Supercell.",
+  "repository": "https://github.com/ClashKingInc/ClashKingAssets",
+  "commit": "b8f42a707fe92d5293d46088bf536450ae422e7b",
+  "committed_at_utc": "2026-09-28T02:14:33Z",
+  "path": "assets/static_data.json",
+  "url": "https://raw.githubusercontent.com/ClashKingInc/ClashKingAssets/b8f42a707fe92d5293d46088bf536450ae422e7b/assets/static_data.json",
+  "sha256": "ff2b72ec8a71b403d247b061c5d0edb0c59dfe0dbea8f199f3451de2ece26cb8",
+  "verification": "community_extraction_with_selected_user_observed_cross_checks",
+  "cross_checks": [
+    {"entity": "root-rider", "level": 3, "hitpoints": 6500, "dps": 115},
+    {"entity": "rocket-balloon", "level": 11, "hitpoints": 1140, "dps": 290},
+    {"entity": "healer", "level": 9, "hitpoints": 1900, "healing_per_second": 80},
+    {"entity": "ice-golem", "level": 8, "hitpoints": 4200, "dps": 52}
+  ],
+  "notes": [
+    "This file is evidence, not an automatic replacement for catalog statistics.",
+    "Only the X-Bow footprint has been corrected in the main catalog so far.",
+    "Healer hero healing of 75 is not represented in the checked extraction row.",
+    "Placement width and combat hitbox_width are separate fields and need separate simulator geometry."
+  ]
+}

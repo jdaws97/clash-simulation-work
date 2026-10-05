@@ -1,0 +1,83 @@
+{
+  "source": "docs/RECIPE_EQUIPMENT_CONTRACTS.md#conditional-contracts",
+  "status": "conditional_examples_not_game_calibration",
+  "action_figure_example_equipment_level": 27,
+  "parameters": {
+    "action-figure": {
+      "source": "docs/RECIPE_EQUIPMENT_CONTRACTS.md#conditional-contracts",
+      "summon_lifetime": "until_death_independent_of_queen",
+      "statistics_mapping": "explicit_summon_totals_before_parent_modifiers",
+      "rage_trigger": "latch_once_at_or_below_half_maximum_hp_while_alive",
+      "freeze": "regeneration_and_rage_clock_continue",
+      "summon_class": "troop_for_buffs_healing_hazards_and_spring",
+      "summon_statistics": {
+        "source": "https://raw.githubusercontent.com/ClashKingInc/ClashKingAssets/b8f42a707fe92d5293d46088bf536450ae422e7b/assets/static_data.json#troops-4000156-level-10-CONDITIONAL-IDENTITY-MAPPING",
+        "status": "explicit_uncalibrated_hypothesis",
+        "identity_mapping": "caller_declared_equipment_summon_not_verified_seasonal_identity",
+        "level": 10,
+        "hitpoints": 18500,
+        "damage_per_hit": 1400,
+        "attack_interval_seconds": 2,
+        "range_tiles": 1,
+        "movement_tiles_per_second": 1.65,
+        "housing_space": 50
+      },
+      "summon_offset": {
+        "dx": 0,
+        "dy": 0
+      },
+      "first_attack_delay_seconds": 0,
+      "self_heal_interval_seconds": 1,
+      "first_self_heal_delay_seconds": 1,
+      "splash_radius_tiles": 1.5,
+      "rage_damage_multiplier": 1.5,
+      "rage_movement_multiplier": 1.5,
+      "rage_attack_rate_multiplier": 1.5,
+      "summon_targeting": "retained_defense_then_building_ground_only",
+      "summon_attack": "source_center_splash_including_walls_shared_wall_clock",
+      "summon_walls": "clear_before_crossing_nominal_clearance_route_cost",
+      "regeneration": "queen_while_active_from_deployment_independent_of_activation",
+      "spawn": "one_at_activation_at_explicit_offset_no_expiry"
+    },
+    "giant-arrow": {
+      "source": "docs/RECIPE_EQUIPMENT_CONTRACTS.md#conditional-contracts",
+      "source_death": "activation_captures_effect_persisting_through_delay_and_death",
+      "protection": "shared_damage_receipts",
+      "direction": "current_live_target_center_else_explicit_unit_vector",
+      "contact": "moving_disk_vs_live_footprint_once_per_actor",
+      "visibility": "collateral_ignores_invisibility_excludes_hidden_tesla",
+      "damage_scaling": "equipment_flat_damage_times_hero_profile_only",
+      "release_delay_seconds": 0.1,
+      "projectile_speed_tiles_per_second": 12,
+      "travel_distance_tiles": 80,
+      "fallback_unit_vector": {
+        "x": 1,
+        "y": 0
+      },
+      "targets": "enemy_buildings_defenses_walls_and_units_both_layers"
+    },
+    "fireball": {
+      "source": "docs/RECIPE_EQUIPMENT_CONTRACTS.md#conditional-contracts",
+      "source_death": "activation_captures_effect_persisting_through_delay_and_death",
+      "protection": "shared_damage_receipts",
+      "selection": "nearest_visible_defense_footprint_then_instance_id",
+      "no_target": "consume_shared_charge_without_projectile",
+      "destination": "captured_target_center_even_if_target_dies",
+      "membership": "live_footprints_at_impact",
+      "visibility": "collateral_ignores_invisibility_excludes_hidden_tesla",
+      "damage_scaling": "equipment_flat_damage_times_hero_profile_only",
+      "release_delay_seconds": 0.1,
+      "projectile_speed_tiles_per_second": 8,
+      "targets": "enemy_buildings_defenses_walls_and_units_both_layers"
+    },
+    "earthquake-boots": {
+      "source": "docs/RECIPE_EQUIPMENT_CONTRACTS.md#conditional-contracts",
+      "source_death": "activation_captures_effect_persisting_through_delay_and_death",
+      "protection": "shared_damage_receipts",
+      "membership": "activation_center_vs_live_ground_footprints",
+      "damage_basis": "maximum_hp_fraction_allow_lethal_without_hero_scaling",
+      "walls": "maximum_hp_damage_subject_to_shared_protection",
+      "visibility": "collateral_ignores_invisibility_excludes_hidden_tesla"
+    }
+  }
+}

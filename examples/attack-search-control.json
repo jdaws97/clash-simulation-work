@@ -1,0 +1,2042 @@
+{
+  "schema": "joint-attack-search-v1",
+  "id": "small-paid-search-control",
+  "context": {
+    "mode": "ranked",
+    "league": "Legend I",
+    "profile_id": "legend_i",
+    "scenario_id": "synthetic-underfilled-inventory"
+  },
+  "account": {
+    "id": "resolved-fixture-account",
+    "town_hall": 16,
+    "capacities": {
+      "army_housing": 320,
+      "spell_housing": 11,
+      "clan_castle_troops": 50,
+      "clan_castle_spells": 3,
+      "hero_slots": 4,
+      "siege_deployments": 1,
+      "max_active_super_troops": 2
+    },
+    "levels": {
+      "pekka": 11,
+      "archer": 1,
+      "freeze-spell": 1
+    },
+    "donation_levels": {
+      "archer": 1
+    },
+    "hero_availability": {},
+    "active_super_troops": []
+  },
+  "layout": {
+    "id": "complete-declared-underfilled-layout",
+    "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration",
+    "town_hall": 16,
+    "width": 20,
+    "height": 16,
+    "inventory": {
+      "town-hall": 1
+    },
+    "statistics_policy": {
+      "kind": "conditional_pinned_snapshot",
+      "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+    },
+    "buildings": [
+      {
+        "instance": "hall",
+        "id": "town-hall",
+        "level": 16,
+        "x": 10,
+        "y": 4,
+        "mode": "gigaInferno",
+        "counts_for_destruction": true
+      }
+    ]
+  },
+  "battle": {
+    "id": "complete-declared-battle-fixture",
+    "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration",
+    "time_limit_seconds": 5,
+    "battle_modifier_policy": {
+      "profile_id": "legend_i",
+      "policy_source": "explicit-battle-modifier-fixture-not-game-calibration",
+      "maximum_hp_damage_policy": "unchanged",
+      "trap_damage_policy": "scale_with_defense",
+      "death_damage_policy": "scale_with_source_role",
+      "impact_hazard_damage_policy": "scale_with_source_role",
+      "equipment_aura_damage_policy": "scale_with_source_role",
+      "hero_summon_statistics_policy": "inherit_parent_role",
+      "healing_and_status_policy": "unchanged"
+    }
+  },
+  "opponent_inventory": {
+    "kind": "synthetic_declared",
+    "crafted_status": "synthetic_omitted",
+    "source": "original-synthetic-search-control-no-guide-no-game-calibration"
+  },
+  "mechanics": {
+    "allow_experimental": true,
+    "assumptions": [
+      "Pinned unverified snapshot; explicit kernel geometry, targeting, launch and deployment conventions",
+      "Role modifier policies are explicit hypotheses, not current-client calibration"
+    ],
+    "evidence_gaps": [
+      "No held-out whole-battle calibration",
+      "Synthetic partial inventory is not a representative TH16/17/18 opponent; current crafted rotation unverified"
+    ]
+  },
+  "budget": {
+    "maximum_candidates": 4,
+    "timeout_seconds": 10
+  },
+  "army_options": [
+    {
+      "id": "roster-control",
+      "army": {
+        "troops": [
+          {
+            "id": "pekka",
+            "level": 1,
+            "count": 12
+          }
+        ],
+        "spells": [],
+        "heroes": [],
+        "siege": null,
+        "clan_castle": {
+          "troops": [],
+          "spells": []
+        }
+      },
+      "entity_scene": {
+        "id": "conditional-catalog-sector-fixture",
+        "scope": "valkyrie_tesla_hit_status_traps_heroes_sector_without_pets_or_defending_troops",
+        "model_rules": {
+          "ground_path": "declared_four_neighbor_routes_with_live_wall_state",
+          "target_retention": "until_dead_or_ineligible",
+          "target_tie": "declared_route_cost_then_instance_id_within_priority",
+          "range_metric": "source_center_to_target_footprint",
+          "hit_model": "explicit_actor_patterns_and_projectiles",
+          "phase_order": "commands_then_launches_and_simultaneous_impacts_then_movement",
+          "freeze_model": "pause_movement_and_remaining_attack_cooldown",
+          "unit_collision": "none",
+          "projectile_travel": "arrival_delay_computed_from_launch_distance",
+          "projectile_freeze": "already_launched_projectiles_continue",
+          "inactive_primary_at_impact": "explicit_pattern_policy_or_legacy_fizzle",
+          "area_range_metric": "point_to_target_footprint",
+          "chain_health_state": "all_same_time_impacts_use_pre_damage_state",
+          "command_resolution": "deploy_then_areas_then_status_then_damage_and_heal",
+          "wall_target": "first_enemy_wall_on_retained_primary_route",
+          "wall_weapon": "explicit_instant_hits_in_the_simultaneous_damage_phase",
+          "wall_motion": "explicit_clear_penetrate_avoid_or_enemy_wall_jump_hypothesis",
+          "wall_clearance_cost": "ceil_current_hp_over_hit_damage_times_hit_interval",
+          "wall_replanning": "live_hp_and_destroyed_footprints_at_every_solver_boundary",
+          "ground_terminal_approach": "nearest_attack_point_within_a_reachable_cell",
+          "healing_targeting": "explicit_allied_target_filter_selection_and_retention",
+          "healing_stacking": "assigned_in_range_unfrozen_and_due_packets_per_recipient",
+          "healing_flight": "launched_healing_survives_source_loss_or_freeze",
+          "healing_primary_loss": "inactive_primary_fizzles_the_packet",
+          "healing_health_phase": "damage_then_healing_without_resurrection",
+          "healing_fields": "fixed_area_membership_recomputed_at_each_declared_pulse",
+          "weapon_ramp": "explicit_piecewise_lock_time_damage_at_launch",
+          "ramp_target_loss": "reset_on_target_change_or_loss_of_eligible_range",
+          "ramp_interruptions": "explicit_freeze_and_target_protection_policies",
+          "ramp_health_phase": "launched_damage_fixed_before_simultaneous_impacts",
+          "death_trigger": "actual_hp_death_once_per_instance",
+          "death_anchor": "source_center_captured_at_death",
+          "death_geometry": "explicit_fixed_offsets_and_live_impact_membership",
+          "death_phase": "settle_generations_after_commands_and_after_weapon_health",
+          "death_sequence": "released_events_survive_source_loss_or_freeze",
+          "town_hall_activation": "explicit_initial_state_damage_or_declared_destruction_fraction",
+          "town_hall_classification": "building_until_activation_then_defense",
+          "town_hall_readiness": "activation_delay_after_current_freeze_end",
+          "town_hall_death_poison": "released_once_from_actual_death_with_explicit_delay",
+          "hazard_damage_growth": "piecewise_constant_explicit_field_age_curve",
+          "hazard_membership": "live_unit_positions_at_solver_boundaries",
+          "hazard_pulses": "start_inclusive_end_exclusive_full_declared_pulse_amounts",
+          "hazard_overlap": "additive_damage_strongest_movement_and_attack_slow",
+          "hazard_clock_changes": "rescale_remaining_unfrozen_cooldown_on_rate_change",
+          "hazard_route_cost": "current_movement_and_attack_rates_in_nominal_clearance_cost",
+          "hazard_phase": "settle_after_commands_and_after_weapon_health_before_movement",
+          "hazard_linger": "explicit_duration_after_observed_exit_or_field_expiry",
+          "target_scoring": "explicit_scene_policy_legacy_route_distance_or_arrival_time_then_distance",
+          "directional_splash_axis": "captured_launch_source_to_live_or_fixed_impact_point",
+          "directional_splash_geometry": "explicit_center_based_angle_and_linear_distance_bands",
+          "splash_layer_filtering": "explicit_primary_layer_or_all_declared_layers",
+          "finite_weapon_ammunition": "explicit_initial_rounds_spent_once_per_launched_volley",
+          "hero_activation": "one_shared_manual_charge_executes_all_selected_active_equipment",
+          "hero_auto_activation": "disabled_for_controlled_probe_not_current_game_behavior",
+          "invisibility": "blocks_weapon_acquisition_but_not_area_or_released_packets",
+          "equipment_statistics": "base_and_gear_additions_before_explicit_modifiers",
+          "hero_buffs": "cast_time_membership_with_explicit_recipient_pulse_clocks",
+          "hero_summons": "predeclared_clones_with_explicit_offsets_and_expiry",
+          "same_time_hero_membership": "after_plain_deployments_before_same_time_summons",
+          "rocket_spear": "finite_boosted_launches_with_captured_pattern_and_damage",
+          "th17_weapon": "always_active_four_projectiles_without_death_blast",
+          "impact_flames": "explicit_resolved_projectile_trigger_at_resolved_impact_position",
+          "flame_overlap": "explicit_independent_pool_clocks_or_maximum_dps_at_source_clock",
+          "flame_pulses": "start_inclusive_end_exclusive_full_declared_pulse_amounts",
+          "flame_phase": "existing_pulses_after_commands_new_impact_pulses_after_weapon_health",
+          "flame_source_death": "released_projectiles_and_existing_pools_continue_hypothesis",
+          "flame_source_freeze": "released_pools_keep_pulsing_hypothesis",
+          "trap_trigger": "first_eligible_center_entry_in_explicit_radius_once",
+          "trap_path_entry": "split_time_at_first_circle_entry_along_declared_polyline",
+          "trap_trigger_tie": "distance_then_instance_id",
+          "trap_phase": "commands_then_trap_damage_then_weapon_launches",
+          "trap_projectile": "explicit_delay_plus_launch_distance_travel_time",
+          "trap_protection": "invulnerability_blocks_damage_but_not_trigger",
+          "trap_membership": "eligible_live_units_at_impact",
+          "trap_geometry": "nonblocking_untargetable_excluded_from_destruction",
+          "hit_status_phase": "successful_impact_after_same_time_weapon_launches",
+          "hit_status_stack": "strongest_per_axis_with_independent_source_expiry",
+          "hit_status_refresh": "same_source_refreshes_expiry_without_multiplying_strength",
+          "hit_status_clock": "preserve_remaining_attack_work_including_frozen_work",
+          "hit_status_hazards": "multiply_hit_status_and_hazard_rates",
+          "hit_status_source_death": "released_packets_and_existing_statuses_persist",
+          "tesla_trigger": "eligible_enemy_center_entry_or_declared_destruction_fraction",
+          "tesla_trigger_tie": "proximity_before_threshold_distance_then_instance_id",
+          "tesla_reveal": "once_after_explicit_delay_even_if_trigger_leaves_or_dies",
+          "tesla_hidden": "alive_counted_untargetable_no_weapon_and_damage_immune",
+          "tesla_status": "explicit_status_commands_follow_ordinary_kernel_rules",
+          "tesla_footprint": "explicit_always_blocking_or_reveal_blocking_reject_overlap",
+          "tesla_readiness": "declared_attack_work_after_reveal_and_current_freeze",
+          "tesla_phase": "after_health_settlement_before_targeting_and_movement",
+          "tesla_path_entry": "split_at_first_circle_entry_along_declared_polyline",
+          "tesla_destruction_denominator": "initial_counted_friendly_structures_excluding_walls_and_traps",
+          "valkyrie_primary": "retain_the_shared_selector_primary",
+          "valkyrie_placement": "sample_reachable_points_within_primary_range",
+          "valkyrie_pair_membership": "eligible_stationary_buildings_within_declared_footprint_gap",
+          "valkyrie_placement_score": "most_buildings_then_smallest_pair_distance_imbalance_then_route_cost_then_xy",
+          "valkyrie_detour": "declared_extra_route_seconds_over_ordinary_primary_approach",
+          "valkyrie_retention": "retain_placement_until_primary_neighbor_geometry_or_blocking_cells_change",
+          "valkyrie_swing": "instant_source_center_at_launch_with_footprint_distance",
+          "valkyrie_walls": "shared_wall_routing_and_single_obstruction_weapon"
+        },
+        "statistics_policy": {
+          "kind": "conditional_pinned_snapshot",
+          "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+        },
+        "unit_conventions": {
+          "movement_units_per_tile": 8,
+          "catalog_attack_speed_unit": "seconds_per_hit",
+          "source": "declared-fixture-conversion-not-current-game-verification"
+        },
+        "unsupported_mechanics": [],
+        "width": 20,
+        "height": 16,
+        "duration_seconds": 5,
+        "maximum_step_seconds": 0.25,
+        "recording_interval_seconds": 1,
+        "entities": [
+          {
+            "id": "hall",
+            "entity": "town-hall",
+            "level": 16,
+            "town_hall": 16,
+            "mode": "gigaInferno",
+            "statistics_mode": "weapon",
+            "supercharge": false,
+            "team": "defense",
+            "counts_for_destruction": true,
+            "x": 10,
+            "y": 4,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              },
+              "allocation": "distinct_targets_only"
+            },
+            "town_hall_parameters": {
+              "source": "explicit-synthetic-Town-Hall-lifecycle-not-current-client-validation",
+              "weapon_level": 1,
+              "activation": {
+                "source": "explicit-synthetic-Town-Hall-lifecycle-not-current-client-validation",
+                "initial_state": "dormant",
+                "destruction_threshold_fraction": 0.51,
+                "activation_delay_seconds": 0
+              },
+              "death": {
+                "source": "explicit-synthetic-Town-Hall-lifecycle-not-current-client-validation",
+                "blast_delay_seconds": 1,
+                "blast_damage_multiplier": 1,
+                "blast_radius_multiplier": 1,
+                "poison_delay_seconds": 1,
+                "poison_radius_tiles": 4.5,
+                "poison_max_dps_multiplier": 1,
+                "poison_duration_multiplier": 1,
+                "pulse_interval_seconds": 0.5,
+                "first_pulse_offset_seconds": 0,
+                "growth_by_field_age": [
+                  {
+                    "after_seconds": 0,
+                    "dps_multiplier": 1
+                  }
+                ],
+                "exit_linger_seconds": 0,
+                "protection_policy": "damage_immunity_does_not_block_status",
+                "excluded_classes": [
+                  "siege"
+                ]
+              }
+            }
+          },
+          {
+            "id": "pekka-0",
+            "entity": "pekka",
+            "level": 1,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-1",
+            "entity": "pekka",
+            "level": 1,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-2",
+            "entity": "pekka",
+            "level": 1,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-3",
+            "entity": "pekka",
+            "level": 1,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-4",
+            "entity": "pekka",
+            "level": 1,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-5",
+            "entity": "pekka",
+            "level": 1,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-6",
+            "entity": "pekka",
+            "level": 1,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-7",
+            "entity": "pekka",
+            "level": 1,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-8",
+            "entity": "pekka",
+            "level": 1,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-9",
+            "entity": "pekka",
+            "level": 1,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-10",
+            "entity": "pekka",
+            "level": 1,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-11",
+            "entity": "pekka",
+            "level": 1,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          }
+        ],
+        "effects": [],
+        "persistent_hazards": [],
+        "healing_spells": [],
+        "freeze_spells": [],
+        "healing_stacking": {
+          "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration",
+          "groups": {}
+        },
+        "target_scoring": {
+          "selection": "arrival_time_then_footprint_distance",
+          "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+        },
+        "traps": []
+      },
+      "provenance": {
+        "kind": "original_generated",
+        "source": "original-synthetic-search-control-no-guide-no-game-calibration"
+      }
+    },
+    {
+      "id": "upgraded-roster-control",
+      "army": {
+        "troops": [
+          {
+            "id": "pekka",
+            "level": 11,
+            "count": 12
+          }
+        ],
+        "spells": [],
+        "heroes": [],
+        "siege": null,
+        "clan_castle": {
+          "troops": [],
+          "spells": []
+        }
+      },
+      "entity_scene": {
+        "id": "conditional-catalog-sector-fixture",
+        "scope": "valkyrie_tesla_hit_status_traps_heroes_sector_without_pets_or_defending_troops",
+        "model_rules": {
+          "ground_path": "declared_four_neighbor_routes_with_live_wall_state",
+          "target_retention": "until_dead_or_ineligible",
+          "target_tie": "declared_route_cost_then_instance_id_within_priority",
+          "range_metric": "source_center_to_target_footprint",
+          "hit_model": "explicit_actor_patterns_and_projectiles",
+          "phase_order": "commands_then_launches_and_simultaneous_impacts_then_movement",
+          "freeze_model": "pause_movement_and_remaining_attack_cooldown",
+          "unit_collision": "none",
+          "projectile_travel": "arrival_delay_computed_from_launch_distance",
+          "projectile_freeze": "already_launched_projectiles_continue",
+          "inactive_primary_at_impact": "explicit_pattern_policy_or_legacy_fizzle",
+          "area_range_metric": "point_to_target_footprint",
+          "chain_health_state": "all_same_time_impacts_use_pre_damage_state",
+          "command_resolution": "deploy_then_areas_then_status_then_damage_and_heal",
+          "wall_target": "first_enemy_wall_on_retained_primary_route",
+          "wall_weapon": "explicit_instant_hits_in_the_simultaneous_damage_phase",
+          "wall_motion": "explicit_clear_penetrate_avoid_or_enemy_wall_jump_hypothesis",
+          "wall_clearance_cost": "ceil_current_hp_over_hit_damage_times_hit_interval",
+          "wall_replanning": "live_hp_and_destroyed_footprints_at_every_solver_boundary",
+          "ground_terminal_approach": "nearest_attack_point_within_a_reachable_cell",
+          "healing_targeting": "explicit_allied_target_filter_selection_and_retention",
+          "healing_stacking": "assigned_in_range_unfrozen_and_due_packets_per_recipient",
+          "healing_flight": "launched_healing_survives_source_loss_or_freeze",
+          "healing_primary_loss": "inactive_primary_fizzles_the_packet",
+          "healing_health_phase": "damage_then_healing_without_resurrection",
+          "healing_fields": "fixed_area_membership_recomputed_at_each_declared_pulse",
+          "weapon_ramp": "explicit_piecewise_lock_time_damage_at_launch",
+          "ramp_target_loss": "reset_on_target_change_or_loss_of_eligible_range",
+          "ramp_interruptions": "explicit_freeze_and_target_protection_policies",
+          "ramp_health_phase": "launched_damage_fixed_before_simultaneous_impacts",
+          "death_trigger": "actual_hp_death_once_per_instance",
+          "death_anchor": "source_center_captured_at_death",
+          "death_geometry": "explicit_fixed_offsets_and_live_impact_membership",
+          "death_phase": "settle_generations_after_commands_and_after_weapon_health",
+          "death_sequence": "released_events_survive_source_loss_or_freeze",
+          "town_hall_activation": "explicit_initial_state_damage_or_declared_destruction_fraction",
+          "town_hall_classification": "building_until_activation_then_defense",
+          "town_hall_readiness": "activation_delay_after_current_freeze_end",
+          "town_hall_death_poison": "released_once_from_actual_death_with_explicit_delay",
+          "hazard_damage_growth": "piecewise_constant_explicit_field_age_curve",
+          "hazard_membership": "live_unit_positions_at_solver_boundaries",
+          "hazard_pulses": "start_inclusive_end_exclusive_full_declared_pulse_amounts",
+          "hazard_overlap": "additive_damage_strongest_movement_and_attack_slow",
+          "hazard_clock_changes": "rescale_remaining_unfrozen_cooldown_on_rate_change",
+          "hazard_route_cost": "current_movement_and_attack_rates_in_nominal_clearance_cost",
+          "hazard_phase": "settle_after_commands_and_after_weapon_health_before_movement",
+          "hazard_linger": "explicit_duration_after_observed_exit_or_field_expiry",
+          "target_scoring": "explicit_scene_policy_legacy_route_distance_or_arrival_time_then_distance",
+          "directional_splash_axis": "captured_launch_source_to_live_or_fixed_impact_point",
+          "directional_splash_geometry": "explicit_center_based_angle_and_linear_distance_bands",
+          "splash_layer_filtering": "explicit_primary_layer_or_all_declared_layers",
+          "finite_weapon_ammunition": "explicit_initial_rounds_spent_once_per_launched_volley",
+          "hero_activation": "one_shared_manual_charge_executes_all_selected_active_equipment",
+          "hero_auto_activation": "disabled_for_controlled_probe_not_current_game_behavior",
+          "invisibility": "blocks_weapon_acquisition_but_not_area_or_released_packets",
+          "equipment_statistics": "base_and_gear_additions_before_explicit_modifiers",
+          "hero_buffs": "cast_time_membership_with_explicit_recipient_pulse_clocks",
+          "hero_summons": "predeclared_clones_with_explicit_offsets_and_expiry",
+          "same_time_hero_membership": "after_plain_deployments_before_same_time_summons",
+          "rocket_spear": "finite_boosted_launches_with_captured_pattern_and_damage",
+          "th17_weapon": "always_active_four_projectiles_without_death_blast",
+          "impact_flames": "explicit_resolved_projectile_trigger_at_resolved_impact_position",
+          "flame_overlap": "explicit_independent_pool_clocks_or_maximum_dps_at_source_clock",
+          "flame_pulses": "start_inclusive_end_exclusive_full_declared_pulse_amounts",
+          "flame_phase": "existing_pulses_after_commands_new_impact_pulses_after_weapon_health",
+          "flame_source_death": "released_projectiles_and_existing_pools_continue_hypothesis",
+          "flame_source_freeze": "released_pools_keep_pulsing_hypothesis",
+          "trap_trigger": "first_eligible_center_entry_in_explicit_radius_once",
+          "trap_path_entry": "split_time_at_first_circle_entry_along_declared_polyline",
+          "trap_trigger_tie": "distance_then_instance_id",
+          "trap_phase": "commands_then_trap_damage_then_weapon_launches",
+          "trap_projectile": "explicit_delay_plus_launch_distance_travel_time",
+          "trap_protection": "invulnerability_blocks_damage_but_not_trigger",
+          "trap_membership": "eligible_live_units_at_impact",
+          "trap_geometry": "nonblocking_untargetable_excluded_from_destruction",
+          "hit_status_phase": "successful_impact_after_same_time_weapon_launches",
+          "hit_status_stack": "strongest_per_axis_with_independent_source_expiry",
+          "hit_status_refresh": "same_source_refreshes_expiry_without_multiplying_strength",
+          "hit_status_clock": "preserve_remaining_attack_work_including_frozen_work",
+          "hit_status_hazards": "multiply_hit_status_and_hazard_rates",
+          "hit_status_source_death": "released_packets_and_existing_statuses_persist",
+          "tesla_trigger": "eligible_enemy_center_entry_or_declared_destruction_fraction",
+          "tesla_trigger_tie": "proximity_before_threshold_distance_then_instance_id",
+          "tesla_reveal": "once_after_explicit_delay_even_if_trigger_leaves_or_dies",
+          "tesla_hidden": "alive_counted_untargetable_no_weapon_and_damage_immune",
+          "tesla_status": "explicit_status_commands_follow_ordinary_kernel_rules",
+          "tesla_footprint": "explicit_always_blocking_or_reveal_blocking_reject_overlap",
+          "tesla_readiness": "declared_attack_work_after_reveal_and_current_freeze",
+          "tesla_phase": "after_health_settlement_before_targeting_and_movement",
+          "tesla_path_entry": "split_at_first_circle_entry_along_declared_polyline",
+          "tesla_destruction_denominator": "initial_counted_friendly_structures_excluding_walls_and_traps",
+          "valkyrie_primary": "retain_the_shared_selector_primary",
+          "valkyrie_placement": "sample_reachable_points_within_primary_range",
+          "valkyrie_pair_membership": "eligible_stationary_buildings_within_declared_footprint_gap",
+          "valkyrie_placement_score": "most_buildings_then_smallest_pair_distance_imbalance_then_route_cost_then_xy",
+          "valkyrie_detour": "declared_extra_route_seconds_over_ordinary_primary_approach",
+          "valkyrie_retention": "retain_placement_until_primary_neighbor_geometry_or_blocking_cells_change",
+          "valkyrie_swing": "instant_source_center_at_launch_with_footprint_distance",
+          "valkyrie_walls": "shared_wall_routing_and_single_obstruction_weapon"
+        },
+        "statistics_policy": {
+          "kind": "conditional_pinned_snapshot",
+          "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+        },
+        "unit_conventions": {
+          "movement_units_per_tile": 8,
+          "catalog_attack_speed_unit": "seconds_per_hit",
+          "source": "declared-fixture-conversion-not-current-game-verification"
+        },
+        "unsupported_mechanics": [],
+        "width": 20,
+        "height": 16,
+        "duration_seconds": 5,
+        "maximum_step_seconds": 0.25,
+        "recording_interval_seconds": 1,
+        "entities": [
+          {
+            "id": "hall",
+            "entity": "town-hall",
+            "level": 16,
+            "town_hall": 16,
+            "mode": "gigaInferno",
+            "statistics_mode": "weapon",
+            "supercharge": false,
+            "team": "defense",
+            "counts_for_destruction": true,
+            "x": 10,
+            "y": 4,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              },
+              "allocation": "distinct_targets_only"
+            },
+            "town_hall_parameters": {
+              "source": "explicit-synthetic-Town-Hall-lifecycle-not-current-client-validation",
+              "weapon_level": 1,
+              "activation": {
+                "source": "explicit-synthetic-Town-Hall-lifecycle-not-current-client-validation",
+                "initial_state": "dormant",
+                "destruction_threshold_fraction": 0.51,
+                "activation_delay_seconds": 0
+              },
+              "death": {
+                "source": "explicit-synthetic-Town-Hall-lifecycle-not-current-client-validation",
+                "blast_delay_seconds": 1,
+                "blast_damage_multiplier": 1,
+                "blast_radius_multiplier": 1,
+                "poison_delay_seconds": 1,
+                "poison_radius_tiles": 4.5,
+                "poison_max_dps_multiplier": 1,
+                "poison_duration_multiplier": 1,
+                "pulse_interval_seconds": 0.5,
+                "first_pulse_offset_seconds": 0,
+                "growth_by_field_age": [
+                  {
+                    "after_seconds": 0,
+                    "dps_multiplier": 1
+                  }
+                ],
+                "exit_linger_seconds": 0,
+                "protection_policy": "damage_immunity_does_not_block_status",
+                "excluded_classes": [
+                  "siege"
+                ]
+              }
+            }
+          },
+          {
+            "id": "pekka-0",
+            "entity": "pekka",
+            "level": 11,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-1",
+            "entity": "pekka",
+            "level": 11,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-2",
+            "entity": "pekka",
+            "level": 11,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-3",
+            "entity": "pekka",
+            "level": 11,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-4",
+            "entity": "pekka",
+            "level": 11,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-5",
+            "entity": "pekka",
+            "level": 11,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-6",
+            "entity": "pekka",
+            "level": 11,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-7",
+            "entity": "pekka",
+            "level": 11,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-8",
+            "entity": "pekka",
+            "level": 11,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-9",
+            "entity": "pekka",
+            "level": 11,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-10",
+            "entity": "pekka",
+            "level": 11,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          },
+          {
+            "id": "pekka-11",
+            "entity": "pekka",
+            "level": 11,
+            "town_hall": 16,
+            "mode": "normal",
+            "statistics_mode": "normal",
+            "supercharge": false,
+            "team": "attack",
+            "counts_for_destruction": false,
+            "x": 9.5,
+            "y": 5.5,
+            "spawn_seconds": 0,
+            "first_attack_seconds": 0,
+            "modifiers": {
+              "hitpoints_multiplier": 1,
+              "damage_multiplier": 1,
+              "maximum_hp_damage_multiplier": 1,
+              "attack_interval_multiplier": 1,
+              "range_multiplier": 1,
+              "movement_speed_multiplier": 1,
+              "source": "declared-no-modifier-conditional-fixture"
+            },
+            "attack_parameters": {
+              "projectile": {
+                "timing": "instant",
+                "delay_seconds": 0,
+                "destination": "locked_actor_center_at_impact",
+                "hit_radius": 0
+              }
+            },
+            "wall_parameters": {
+              "kind": "avoid",
+              "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+            }
+          }
+        ],
+        "effects": [],
+        "persistent_hazards": [],
+        "healing_spells": [],
+        "freeze_spells": [],
+        "healing_stacking": {
+          "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration",
+          "groups": {}
+        },
+        "target_scoring": {
+          "selection": "arrival_time_then_footprint_distance",
+          "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+        },
+        "traps": []
+      },
+      "provenance": {
+        "kind": "original_generated",
+        "source": "original-synthetic-search-control-no-guide-no-game-calibration"
+      }
+    }
+  ],
+  "plan_options": [
+    {
+      "id": "immediate",
+      "events": [
+        {
+          "id": "entities:pekka-0",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-0"
+          },
+          "at_seconds": 0,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "entities:pekka-1",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-1"
+          },
+          "at_seconds": 0,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "entities:pekka-2",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-2"
+          },
+          "at_seconds": 0,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "entities:pekka-3",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-3"
+          },
+          "at_seconds": 0,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "entities:pekka-4",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-4"
+          },
+          "at_seconds": 0,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "entities:pekka-5",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-5"
+          },
+          "at_seconds": 0,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "entities:pekka-6",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-6"
+          },
+          "at_seconds": 0,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "entities:pekka-7",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-7"
+          },
+          "at_seconds": 0,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "entities:pekka-8",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-8"
+          },
+          "at_seconds": 0,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "entities:pekka-9",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-9"
+          },
+          "at_seconds": 0,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "entities:pekka-10",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-10"
+          },
+          "at_seconds": 0,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "entities:pekka-11",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-11"
+          },
+          "at_seconds": 0,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 0
+            }
+          ]
+        }
+      ],
+      "funnel": {
+        "required": false,
+        "reason": "Synthetic single contact control; no funnel conclusion"
+      },
+      "provenance": {
+        "kind": "original_generated",
+        "source": "original-synthetic-search-control-no-guide-no-game-calibration"
+      }
+    },
+    {
+      "id": "delayed-control",
+      "events": [
+        {
+          "id": "entities:pekka-0",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-0"
+          },
+          "at_seconds": 4,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 4
+            }
+          ],
+          "position": {
+            "x": 9.5,
+            "y": 6.5
+          }
+        },
+        {
+          "id": "entities:pekka-1",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-1"
+          },
+          "at_seconds": 4,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 4
+            }
+          ],
+          "position": {
+            "x": 9.5,
+            "y": 6.5
+          }
+        },
+        {
+          "id": "entities:pekka-2",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-2"
+          },
+          "at_seconds": 4,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 4
+            }
+          ],
+          "position": {
+            "x": 9.5,
+            "y": 6.5
+          }
+        },
+        {
+          "id": "entities:pekka-3",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-3"
+          },
+          "at_seconds": 4,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 4
+            }
+          ],
+          "position": {
+            "x": 9.5,
+            "y": 6.5
+          }
+        },
+        {
+          "id": "entities:pekka-4",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-4"
+          },
+          "at_seconds": 4,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 4
+            }
+          ],
+          "position": {
+            "x": 9.5,
+            "y": 6.5
+          }
+        },
+        {
+          "id": "entities:pekka-5",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-5"
+          },
+          "at_seconds": 4,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 4
+            }
+          ],
+          "position": {
+            "x": 9.5,
+            "y": 6.5
+          }
+        },
+        {
+          "id": "entities:pekka-6",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-6"
+          },
+          "at_seconds": 4,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 4
+            }
+          ],
+          "position": {
+            "x": 9.5,
+            "y": 6.5
+          }
+        },
+        {
+          "id": "entities:pekka-7",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-7"
+          },
+          "at_seconds": 4,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 4
+            }
+          ],
+          "position": {
+            "x": 9.5,
+            "y": 6.5
+          }
+        },
+        {
+          "id": "entities:pekka-8",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-8"
+          },
+          "at_seconds": 4,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 4
+            }
+          ],
+          "position": {
+            "x": 9.5,
+            "y": 6.5
+          }
+        },
+        {
+          "id": "entities:pekka-9",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-9"
+          },
+          "at_seconds": 4,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 4
+            }
+          ],
+          "position": {
+            "x": 9.5,
+            "y": 6.5
+          }
+        },
+        {
+          "id": "entities:pekka-10",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-10"
+          },
+          "at_seconds": 4,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 4
+            }
+          ],
+          "position": {
+            "x": 9.5,
+            "y": 6.5
+          }
+        },
+        {
+          "id": "entities:pekka-11",
+          "selector": {
+            "collection": "entities",
+            "id": "pekka-11"
+          },
+          "at_seconds": 4,
+          "all_conditions": [
+            {
+              "field": "time_seconds",
+              "operator": "at_least",
+              "value": 4
+            }
+          ],
+          "position": {
+            "x": 9.5,
+            "y": 6.5
+          }
+        }
+      ],
+      "funnel": {
+        "required": false,
+        "reason": "Synthetic single contact control; no funnel conclusion"
+      },
+      "provenance": {
+        "kind": "original_generated",
+        "source": "original-synthetic-search-control-no-guide-no-game-calibration"
+      }
+    }
+  ],
+  "scenario_environment": {
+    "id": "conditional-catalog-sector-fixture",
+    "scope": "valkyrie_tesla_hit_status_traps_heroes_sector_without_pets_or_defending_troops",
+    "model_rules": {
+      "ground_path": "declared_four_neighbor_routes_with_live_wall_state",
+      "target_retention": "until_dead_or_ineligible",
+      "target_tie": "declared_route_cost_then_instance_id_within_priority",
+      "range_metric": "source_center_to_target_footprint",
+      "hit_model": "explicit_actor_patterns_and_projectiles",
+      "phase_order": "commands_then_launches_and_simultaneous_impacts_then_movement",
+      "freeze_model": "pause_movement_and_remaining_attack_cooldown",
+      "unit_collision": "none",
+      "projectile_travel": "arrival_delay_computed_from_launch_distance",
+      "projectile_freeze": "already_launched_projectiles_continue",
+      "inactive_primary_at_impact": "explicit_pattern_policy_or_legacy_fizzle",
+      "area_range_metric": "point_to_target_footprint",
+      "chain_health_state": "all_same_time_impacts_use_pre_damage_state",
+      "command_resolution": "deploy_then_areas_then_status_then_damage_and_heal",
+      "wall_target": "first_enemy_wall_on_retained_primary_route",
+      "wall_weapon": "explicit_instant_hits_in_the_simultaneous_damage_phase",
+      "wall_motion": "explicit_clear_penetrate_avoid_or_enemy_wall_jump_hypothesis",
+      "wall_clearance_cost": "ceil_current_hp_over_hit_damage_times_hit_interval",
+      "wall_replanning": "live_hp_and_destroyed_footprints_at_every_solver_boundary",
+      "ground_terminal_approach": "nearest_attack_point_within_a_reachable_cell",
+      "healing_targeting": "explicit_allied_target_filter_selection_and_retention",
+      "healing_stacking": "assigned_in_range_unfrozen_and_due_packets_per_recipient",
+      "healing_flight": "launched_healing_survives_source_loss_or_freeze",
+      "healing_primary_loss": "inactive_primary_fizzles_the_packet",
+      "healing_health_phase": "damage_then_healing_without_resurrection",
+      "healing_fields": "fixed_area_membership_recomputed_at_each_declared_pulse",
+      "weapon_ramp": "explicit_piecewise_lock_time_damage_at_launch",
+      "ramp_target_loss": "reset_on_target_change_or_loss_of_eligible_range",
+      "ramp_interruptions": "explicit_freeze_and_target_protection_policies",
+      "ramp_health_phase": "launched_damage_fixed_before_simultaneous_impacts",
+      "death_trigger": "actual_hp_death_once_per_instance",
+      "death_anchor": "source_center_captured_at_death",
+      "death_geometry": "explicit_fixed_offsets_and_live_impact_membership",
+      "death_phase": "settle_generations_after_commands_and_after_weapon_health",
+      "death_sequence": "released_events_survive_source_loss_or_freeze",
+      "town_hall_activation": "explicit_initial_state_damage_or_declared_destruction_fraction",
+      "town_hall_classification": "building_until_activation_then_defense",
+      "town_hall_readiness": "activation_delay_after_current_freeze_end",
+      "town_hall_death_poison": "released_once_from_actual_death_with_explicit_delay",
+      "hazard_damage_growth": "piecewise_constant_explicit_field_age_curve",
+      "hazard_membership": "live_unit_positions_at_solver_boundaries",
+      "hazard_pulses": "start_inclusive_end_exclusive_full_declared_pulse_amounts",
+      "hazard_overlap": "additive_damage_strongest_movement_and_attack_slow",
+      "hazard_clock_changes": "rescale_remaining_unfrozen_cooldown_on_rate_change",
+      "hazard_route_cost": "current_movement_and_attack_rates_in_nominal_clearance_cost",
+      "hazard_phase": "settle_after_commands_and_after_weapon_health_before_movement",
+      "hazard_linger": "explicit_duration_after_observed_exit_or_field_expiry",
+      "target_scoring": "explicit_scene_policy_legacy_route_distance_or_arrival_time_then_distance",
+      "directional_splash_axis": "captured_launch_source_to_live_or_fixed_impact_point",
+      "directional_splash_geometry": "explicit_center_based_angle_and_linear_distance_bands",
+      "splash_layer_filtering": "explicit_primary_layer_or_all_declared_layers",
+      "finite_weapon_ammunition": "explicit_initial_rounds_spent_once_per_launched_volley",
+      "hero_activation": "one_shared_manual_charge_executes_all_selected_active_equipment",
+      "hero_auto_activation": "disabled_for_controlled_probe_not_current_game_behavior",
+      "invisibility": "blocks_weapon_acquisition_but_not_area_or_released_packets",
+      "equipment_statistics": "base_and_gear_additions_before_explicit_modifiers",
+      "hero_buffs": "cast_time_membership_with_explicit_recipient_pulse_clocks",
+      "hero_summons": "predeclared_clones_with_explicit_offsets_and_expiry",
+      "same_time_hero_membership": "after_plain_deployments_before_same_time_summons",
+      "rocket_spear": "finite_boosted_launches_with_captured_pattern_and_damage",
+      "th17_weapon": "always_active_four_projectiles_without_death_blast",
+      "impact_flames": "explicit_resolved_projectile_trigger_at_resolved_impact_position",
+      "flame_overlap": "explicit_independent_pool_clocks_or_maximum_dps_at_source_clock",
+      "flame_pulses": "start_inclusive_end_exclusive_full_declared_pulse_amounts",
+      "flame_phase": "existing_pulses_after_commands_new_impact_pulses_after_weapon_health",
+      "flame_source_death": "released_projectiles_and_existing_pools_continue_hypothesis",
+      "flame_source_freeze": "released_pools_keep_pulsing_hypothesis",
+      "trap_trigger": "first_eligible_center_entry_in_explicit_radius_once",
+      "trap_path_entry": "split_time_at_first_circle_entry_along_declared_polyline",
+      "trap_trigger_tie": "distance_then_instance_id",
+      "trap_phase": "commands_then_trap_damage_then_weapon_launches",
+      "trap_projectile": "explicit_delay_plus_launch_distance_travel_time",
+      "trap_protection": "invulnerability_blocks_damage_but_not_trigger",
+      "trap_membership": "eligible_live_units_at_impact",
+      "trap_geometry": "nonblocking_untargetable_excluded_from_destruction",
+      "hit_status_phase": "successful_impact_after_same_time_weapon_launches",
+      "hit_status_stack": "strongest_per_axis_with_independent_source_expiry",
+      "hit_status_refresh": "same_source_refreshes_expiry_without_multiplying_strength",
+      "hit_status_clock": "preserve_remaining_attack_work_including_frozen_work",
+      "hit_status_hazards": "multiply_hit_status_and_hazard_rates",
+      "hit_status_source_death": "released_packets_and_existing_statuses_persist",
+      "tesla_trigger": "eligible_enemy_center_entry_or_declared_destruction_fraction",
+      "tesla_trigger_tie": "proximity_before_threshold_distance_then_instance_id",
+      "tesla_reveal": "once_after_explicit_delay_even_if_trigger_leaves_or_dies",
+      "tesla_hidden": "alive_counted_untargetable_no_weapon_and_damage_immune",
+      "tesla_status": "explicit_status_commands_follow_ordinary_kernel_rules",
+      "tesla_footprint": "explicit_always_blocking_or_reveal_blocking_reject_overlap",
+      "tesla_readiness": "declared_attack_work_after_reveal_and_current_freeze",
+      "tesla_phase": "after_health_settlement_before_targeting_and_movement",
+      "tesla_path_entry": "split_at_first_circle_entry_along_declared_polyline",
+      "tesla_destruction_denominator": "initial_counted_friendly_structures_excluding_walls_and_traps",
+      "valkyrie_primary": "retain_the_shared_selector_primary",
+      "valkyrie_placement": "sample_reachable_points_within_primary_range",
+      "valkyrie_pair_membership": "eligible_stationary_buildings_within_declared_footprint_gap",
+      "valkyrie_placement_score": "most_buildings_then_smallest_pair_distance_imbalance_then_route_cost_then_xy",
+      "valkyrie_detour": "declared_extra_route_seconds_over_ordinary_primary_approach",
+      "valkyrie_retention": "retain_placement_until_primary_neighbor_geometry_or_blocking_cells_change",
+      "valkyrie_swing": "instant_source_center_at_launch_with_footprint_distance",
+      "valkyrie_walls": "shared_wall_routing_and_single_obstruction_weapon"
+    },
+    "statistics_policy": {
+      "kind": "conditional_pinned_snapshot",
+      "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+    },
+    "unit_conventions": {
+      "movement_units_per_tile": 8,
+      "catalog_attack_speed_unit": "seconds_per_hit",
+      "source": "declared-fixture-conversion-not-current-game-verification"
+    },
+    "unsupported_mechanics": [],
+    "width": 20,
+    "height": 16,
+    "duration_seconds": 5,
+    "maximum_step_seconds": 0.25,
+    "recording_interval_seconds": 1,
+    "entities": [
+      {
+        "id": "hall",
+        "entity": "town-hall",
+        "level": 16,
+        "town_hall": 16,
+        "mode": "gigaInferno",
+        "statistics_mode": "weapon",
+        "supercharge": false,
+        "team": "defense",
+        "counts_for_destruction": true,
+        "x": 10,
+        "y": 4,
+        "spawn_seconds": 0,
+        "first_attack_seconds": 0,
+        "modifiers": {
+          "hitpoints_multiplier": 1,
+          "damage_multiplier": 1,
+          "maximum_hp_damage_multiplier": 1,
+          "attack_interval_multiplier": 1,
+          "range_multiplier": 1,
+          "movement_speed_multiplier": 1,
+          "source": "declared-no-modifier-conditional-fixture"
+        },
+        "attack_parameters": {
+          "projectile": {
+            "timing": "instant",
+            "delay_seconds": 0,
+            "destination": "locked_actor_center_at_impact",
+            "hit_radius": 0
+          },
+          "allocation": "distinct_targets_only"
+        },
+        "town_hall_parameters": {
+          "source": "explicit-synthetic-Town-Hall-lifecycle-not-current-client-validation",
+          "weapon_level": 1,
+          "activation": {
+            "source": "explicit-synthetic-Town-Hall-lifecycle-not-current-client-validation",
+            "initial_state": "dormant",
+            "destruction_threshold_fraction": 0.51,
+            "activation_delay_seconds": 0
+          },
+          "death": {
+            "source": "explicit-synthetic-Town-Hall-lifecycle-not-current-client-validation",
+            "blast_delay_seconds": 1,
+            "blast_damage_multiplier": 1,
+            "blast_radius_multiplier": 1,
+            "poison_delay_seconds": 1,
+            "poison_radius_tiles": 4.5,
+            "poison_max_dps_multiplier": 1,
+            "poison_duration_multiplier": 1,
+            "pulse_interval_seconds": 0.5,
+            "first_pulse_offset_seconds": 0,
+            "growth_by_field_age": [
+              {
+                "after_seconds": 0,
+                "dps_multiplier": 1
+              }
+            ],
+            "exit_linger_seconds": 0,
+            "protection_policy": "damage_immunity_does_not_block_status",
+            "excluded_classes": [
+              "siege"
+            ]
+          }
+        }
+      }
+    ],
+    "persistent_hazards": [],
+    "healing_stacking": {
+      "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration",
+      "groups": {}
+    },
+    "target_scoring": {
+      "selection": "arrival_time_then_footprint_distance",
+      "source": "complete-underfilled-declaration-fixture-not-modern-village-calibration"
+    },
+    "traps": []
+  }
+}

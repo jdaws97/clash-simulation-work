@@ -1,0 +1,466 @@
+[
+  {
+    "id": "may-2026-giant-arrow-9-projectileDamage",
+    "kind": "primary_published_numeric_field",
+    "entity": "giant-arrow",
+    "level": 9,
+    "path": [
+      "stats",
+      "projectileDamage"
+    ],
+    "previous_value": 1200,
+    "value": 1100,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Base projectile damage before Air Defense-specific multiplier"
+  },
+  {
+    "id": "may-2026-giant-arrow-12-projectileDamage",
+    "kind": "primary_published_numeric_field",
+    "entity": "giant-arrow",
+    "level": 12,
+    "path": [
+      "stats",
+      "projectileDamage"
+    ],
+    "previous_value": 1500,
+    "value": 1200,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Base projectile damage before Air Defense-specific multiplier"
+  },
+  {
+    "id": "may-2026-giant-arrow-15-projectileDamage",
+    "kind": "primary_published_numeric_field",
+    "entity": "giant-arrow",
+    "level": 15,
+    "path": [
+      "stats",
+      "projectileDamage"
+    ],
+    "previous_value": 1750,
+    "value": 1350,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Base projectile damage before Air Defense-specific multiplier"
+  },
+  {
+    "id": "may-2026-giant-arrow-18-projectileDamage",
+    "kind": "primary_published_numeric_field",
+    "entity": "giant-arrow",
+    "level": 18,
+    "path": [
+      "stats",
+      "projectileDamage"
+    ],
+    "previous_value": 2000,
+    "value": 1500,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Base projectile damage before Air Defense-specific multiplier"
+  },
+  {
+    "id": "may-2026-fire-heart-15-selfHealingPerSecond",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 15,
+    "path": [
+      "stats",
+      "selfHealingPerSecond"
+    ],
+    "previous_value": 155,
+    "value": 140,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Self-regeneration HP per second"
+  },
+  {
+    "id": "may-2026-fire-heart-18-selfHealingPerSecond",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 18,
+    "path": [
+      "stats",
+      "selfHealingPerSecond"
+    ],
+    "previous_value": 175,
+    "value": 150,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Self-regeneration HP per second"
+  },
+  {
+    "id": "may-2026-fire-heart-1-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 1,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 10,
+    "value": 10,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-2-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 2,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 12,
+    "value": 10,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-3-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 3,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 14,
+    "value": 12,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-4-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 4,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 16,
+    "value": 12,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-5-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 5,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 18,
+    "value": 12,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-6-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 6,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 20,
+    "value": 14,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-7-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 7,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 22,
+    "value": 14,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-8-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 8,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 24,
+    "value": 14,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-9-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 9,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 26,
+    "value": 16,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-10-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 10,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 28,
+    "value": 16,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-11-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 11,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 30,
+    "value": 16,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-12-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 12,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 32,
+    "value": 18,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-13-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 13,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 34,
+    "value": 18,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-14-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 14,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 36,
+    "value": 18,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-15-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 15,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 38,
+    "value": 20,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-16-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 16,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 40,
+    "value": 20,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-17-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 17,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 42,
+    "value": 20,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "may-2026-fire-heart-18-dpsIncrease",
+    "kind": "primary_published_numeric_field",
+    "entity": "fire-heart",
+    "level": 18,
+    "path": [
+      "stats",
+      "dpsIncrease"
+    ],
+    "previous_value": 45,
+    "value": 23,
+    "published_on": "2026-05-22",
+    "source": "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+    "field_semantics": "Equipment-provided DPS increase"
+  },
+  {
+    "id": "feb-2026-spell-tower-4-th-unlock",
+    "kind": "primary_published_numeric_field",
+    "entity": "spell-tower",
+    "level": 4,
+    "path": [
+      "townHallRequired"
+    ],
+    "previous_value": 17,
+    "value": 18,
+    "published_on": "2026-02-23",
+    "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-february-update-has-escaped/",
+    "field_semantics": "Town Hall unlock requirement for level four Spell Tower"
+  },
+  {
+    "id": "june-2024-root-rider-1-normal-dps",
+    "kind": "primary_published_numeric_field",
+    "entity": "root-rider",
+    "level": 1,
+    "path": [
+      "stats",
+      "normal",
+      "dps"
+    ],
+    "previous_value": 190,
+    "value": 95,
+    "published_on": "2024-06-03",
+    "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/june-balance-changes/",
+    "field_semantics": "Ordinary defense/building DPS; does not establish per-hit interval or wall DPS"
+  },
+  {
+    "id": "june-2024-root-rider-1-hitpoints",
+    "kind": "primary_published_numeric_field",
+    "entity": "root-rider",
+    "level": 1,
+    "path": [
+      "hitpoints"
+    ],
+    "previous_value": 6300,
+    "value": 6200,
+    "published_on": "2024-06-03",
+    "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/june-balance-changes/",
+    "field_semantics": "Base troop maximum HP"
+  },
+  {
+    "id": "june-2024-root-rider-2-normal-dps",
+    "kind": "primary_published_numeric_field",
+    "entity": "root-rider",
+    "level": 2,
+    "path": [
+      "stats",
+      "normal",
+      "dps"
+    ],
+    "previous_value": 210,
+    "value": 105,
+    "published_on": "2024-06-03",
+    "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/june-balance-changes/",
+    "field_semantics": "Ordinary defense/building DPS; does not establish per-hit interval or wall DPS"
+  },
+  {
+    "id": "june-2024-root-rider-2-hitpoints",
+    "kind": "primary_published_numeric_field",
+    "entity": "root-rider",
+    "level": 2,
+    "path": [
+      "hitpoints"
+    ],
+    "previous_value": 6650,
+    "value": 6350,
+    "published_on": "2024-06-03",
+    "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/june-balance-changes/",
+    "field_semantics": "Base troop maximum HP"
+  },
+  {
+    "id": "june-2024-root-rider-3-normal-dps",
+    "kind": "primary_published_numeric_field",
+    "entity": "root-rider",
+    "level": 3,
+    "path": [
+      "stats",
+      "normal",
+      "dps"
+    ],
+    "previous_value": 230,
+    "value": 115,
+    "published_on": "2024-06-03",
+    "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/june-balance-changes/",
+    "field_semantics": "Ordinary defense/building DPS; does not establish per-hit interval or wall DPS"
+  },
+  {
+    "id": "june-2024-root-rider-3-hitpoints",
+    "kind": "primary_published_numeric_field",
+    "entity": "root-rider",
+    "level": 3,
+    "path": [
+      "hitpoints"
+    ],
+    "previous_value": 7000,
+    "value": 6500,
+    "published_on": "2024-06-03",
+    "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/june-balance-changes/",
+    "field_semantics": "Base troop maximum HP"
+  }
+]

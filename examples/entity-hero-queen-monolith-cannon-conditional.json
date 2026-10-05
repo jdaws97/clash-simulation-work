@@ -1,0 +1,232 @@
+{
+  "id": "queen-monolith-cannon-conditional",
+  "scope": "attacking_hero_equipment_area_sector_without_pets_traps_or_defending_troops",
+  "model_rules": {
+    "ground_path": "declared_four_neighbor_routes_with_live_wall_state",
+    "target_retention": "until_dead_or_ineligible",
+    "target_tie": "declared_route_cost_then_instance_id_within_priority",
+    "range_metric": "source_center_to_target_footprint",
+    "hit_model": "explicit_actor_patterns_and_projectiles",
+    "phase_order": "commands_then_launches_and_simultaneous_impacts_then_movement",
+    "freeze_model": "pause_movement_and_remaining_attack_cooldown",
+    "unit_collision": "none",
+    "projectile_travel": "arrival_delay_computed_from_launch_distance",
+    "projectile_freeze": "already_launched_projectiles_continue",
+    "inactive_primary_at_impact": "explicit_pattern_policy_or_legacy_fizzle",
+    "area_range_metric": "point_to_target_footprint",
+    "chain_health_state": "all_same_time_impacts_use_pre_damage_state",
+    "command_resolution": "deploy_then_areas_then_status_then_damage_and_heal",
+    "wall_target": "first_enemy_wall_on_retained_primary_route",
+    "wall_weapon": "explicit_instant_hits_in_the_simultaneous_damage_phase",
+    "wall_motion": "explicit_clear_penetrate_avoid_or_enemy_wall_jump_hypothesis",
+    "wall_clearance_cost": "ceil_current_hp_over_hit_damage_times_hit_interval",
+    "wall_replanning": "live_hp_and_destroyed_footprints_at_every_solver_boundary",
+    "ground_terminal_approach": "nearest_attack_point_within_a_reachable_cell",
+    "healing_targeting": "explicit_allied_target_filter_selection_and_retention",
+    "healing_stacking": "assigned_in_range_unfrozen_and_due_packets_per_recipient",
+    "healing_flight": "launched_healing_survives_source_loss_or_freeze",
+    "healing_primary_loss": "inactive_primary_fizzles_the_packet",
+    "healing_health_phase": "damage_then_healing_without_resurrection",
+    "healing_fields": "fixed_area_membership_recomputed_at_each_declared_pulse",
+    "weapon_ramp": "explicit_piecewise_lock_time_damage_at_launch",
+    "ramp_target_loss": "reset_on_target_change_or_loss_of_eligible_range",
+    "ramp_interruptions": "explicit_freeze_and_target_protection_policies",
+    "ramp_health_phase": "launched_damage_fixed_before_simultaneous_impacts",
+    "death_trigger": "actual_hp_death_once_per_instance",
+    "death_anchor": "source_center_captured_at_death",
+    "death_geometry": "explicit_fixed_offsets_and_live_impact_membership",
+    "death_phase": "settle_generations_after_commands_and_after_weapon_health",
+    "death_sequence": "released_events_survive_source_loss_or_freeze",
+    "town_hall_activation": "explicit_initial_state_damage_or_declared_destruction_fraction",
+    "town_hall_classification": "building_until_activation_then_defense",
+    "town_hall_readiness": "activation_delay_after_current_freeze_end",
+    "town_hall_death_poison": "released_once_from_actual_death_with_explicit_delay",
+    "hazard_damage_growth": "piecewise_constant_explicit_field_age_curve",
+    "hazard_membership": "live_unit_positions_at_solver_boundaries",
+    "hazard_pulses": "start_inclusive_end_exclusive_full_declared_pulse_amounts",
+    "hazard_overlap": "additive_damage_strongest_movement_and_attack_slow",
+    "hazard_clock_changes": "rescale_remaining_unfrozen_cooldown_on_rate_change",
+    "hazard_route_cost": "current_movement_and_attack_rates_in_nominal_clearance_cost",
+    "hazard_phase": "settle_after_commands_and_after_weapon_health_before_movement",
+    "hazard_linger": "explicit_duration_after_observed_exit_or_field_expiry",
+    "target_scoring": "explicit_scene_policy_legacy_route_distance_or_arrival_time_then_distance",
+    "directional_splash_axis": "captured_launch_source_to_live_or_fixed_impact_point",
+    "directional_splash_geometry": "explicit_center_based_angle_and_linear_distance_bands",
+    "splash_layer_filtering": "explicit_primary_layer_or_all_declared_layers",
+    "finite_weapon_ammunition": "explicit_initial_rounds_spent_once_per_launched_volley",
+    "hero_activation": "one_shared_manual_charge_executes_all_selected_active_equipment",
+    "hero_auto_activation": "disabled_for_controlled_probe_not_current_game_behavior",
+    "invisibility": "blocks_weapon_acquisition_but_not_area_or_released_packets",
+    "equipment_statistics": "base_and_gear_additions_before_explicit_modifiers",
+    "hero_buffs": "cast_time_membership_with_explicit_recipient_pulse_clocks",
+    "hero_summons": "predeclared_clones_with_explicit_offsets_and_expiry",
+    "same_time_hero_membership": "after_plain_deployments_before_same_time_summons",
+    "rocket_spear": "finite_boosted_launches_with_captured_pattern_and_damage"
+  },
+  "statistics_policy": {
+    "kind": "conditional_pinned_snapshot",
+    "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+  },
+  "unit_conventions": {
+    "movement_units_per_tile": 8,
+    "catalog_attack_speed_unit": "seconds_per_hit",
+    "source": "declared-hero-study-not-current-game-or-player-calibration"
+  },
+  "unsupported_mechanics": [],
+  "width": 14,
+  "height": 12,
+  "duration_seconds": 12,
+  "maximum_step_seconds": 0.05,
+  "recording_interval_seconds": 0.1,
+  "entities": [
+    {
+      "id": "queen",
+      "entity": "archer-queen",
+      "level": 95,
+      "town_hall": 16,
+      "supercharge": false,
+      "mode": "ground",
+      "statistics_mode": "normal",
+      "team": "attack",
+      "counts_for_destruction": false,
+      "x": 7.5,
+      "y": 5.5,
+      "spawn_seconds": 0,
+      "first_attack_seconds": 0,
+      "modifiers": {
+        "hitpoints_multiplier": 1,
+        "damage_multiplier": 1,
+        "maximum_hp_damage_multiplier": 1,
+        "attack_interval_multiplier": 1,
+        "range_multiplier": 1,
+        "movement_speed_multiplier": 1,
+        "source": "declared-unmodified-sector-case-not-opponent-data"
+      },
+      "attack_parameters": {
+        "projectile": {
+          "timing": "instant",
+          "delay_seconds": 0,
+          "destination": "locked_actor_center_at_impact",
+          "hit_radius": 0
+        }
+      },
+      "hero_parameters": {
+        "source": "declared-hero-study-not-current-game-or-player-calibration",
+        "equipment": [
+          {
+            "entity": "invisibility-vial",
+            "level": 7,
+            "parameters": {
+              "source": "declared-hero-study-not-current-game-or-player-calibration"
+            }
+          },
+          {
+            "entity": "magic-mirror",
+            "level": 20,
+            "parameters": {
+              "source": "declared-hero-study-not-current-game-or-player-calibration",
+              "clone_offsets": [
+                {
+                  "dx": 0,
+                  "dy": -0.5
+                },
+                {
+                  "dx": 0,
+                  "dy": 0.5
+                }
+              ],
+              "clone_statistics": "snapshot_clone_totals_without_equipment_hypothesis",
+              "source_death_policy": "released_clones_persist_until_expiry",
+              "first_attack_delay_seconds": 0
+            }
+          }
+        ],
+        "loadout_policy": "exact_two_equipment",
+        "recovery_basis": "snapshot_base_and_equipment_recovery_on_activation_hypothesis",
+        "activation_policy": "manual_only_controlled_probe",
+        "pet_policy": "omitted_for_controlled_probe",
+        "targeting_policy": "retained_building_targeting_hypothesis",
+        "statistics_mapping": "base_and_equipment_additions_before_modifiers"
+      },
+      "wall_parameters": {
+        "kind": "avoid",
+        "source": "declared-hero-study-not-current-game-or-player-calibration"
+      }
+    },
+    {
+      "id": "mono",
+      "entity": "monolith",
+      "level": 3,
+      "town_hall": 16,
+      "supercharge": false,
+      "mode": "normal",
+      "statistics_mode": "normal",
+      "team": "defense",
+      "counts_for_destruction": true,
+      "x": 8,
+      "y": 4,
+      "spawn_seconds": 0,
+      "first_attack_seconds": 0,
+      "modifiers": {
+        "hitpoints_multiplier": 1,
+        "damage_multiplier": 1,
+        "maximum_hp_damage_multiplier": 1,
+        "attack_interval_multiplier": 1,
+        "range_multiplier": 1,
+        "movement_speed_multiplier": 1,
+        "source": "declared-unmodified-sector-case-not-opponent-data"
+      },
+      "attack_parameters": {
+        "projectile": {
+          "timing": "instant",
+          "delay_seconds": 0,
+          "destination": "locked_actor_center_at_impact",
+          "hit_radius": 0
+        }
+      }
+    },
+    {
+      "id": "cannon",
+      "entity": "cannon",
+      "level": 21,
+      "town_hall": 16,
+      "supercharge": false,
+      "mode": "normal",
+      "statistics_mode": "normal",
+      "team": "defense",
+      "counts_for_destruction": true,
+      "x": 8,
+      "y": 8,
+      "spawn_seconds": 0,
+      "first_attack_seconds": 0,
+      "modifiers": {
+        "hitpoints_multiplier": 1,
+        "damage_multiplier": 1,
+        "maximum_hp_damage_multiplier": 1,
+        "attack_interval_multiplier": 1,
+        "range_multiplier": 1,
+        "movement_speed_multiplier": 1,
+        "source": "declared-unmodified-sector-case-not-opponent-data"
+      },
+      "attack_parameters": {
+        "projectile": {
+          "timing": "instant",
+          "delay_seconds": 0,
+          "destination": "locked_actor_center_at_impact",
+          "hit_radius": 0
+        }
+      }
+    }
+  ],
+  "effects": [],
+  "healing_stacking": {
+    "source": "declared-hero-study-not-current-game-or-player-calibration",
+    "groups": {}
+  },
+  "healing_spells": [],
+  "persistent_hazards": [],
+  "target_scoring": {
+    "selection": "arrival_time_then_footprint_distance",
+    "source": "declared-hero-study-not-current-game-or-player-calibration"
+  }
+}

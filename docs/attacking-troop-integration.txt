@@ -1,0 +1,153 @@
+ATTACKING TROOP DOMAIN HANDOFF — experimental capabilities, not full-battle coverage
+
+Ownership: attacking_extensions.py, troop_behaviors.py, troop_projectiles.py,
+troop_summons.py, test_attacking_extensions.py and this integration map. No edits
+to adapters.py, spatial.py, combat.py, full_battle.py, trap dispatch, resources,
+termination, defending CC, spells, siege, heroes, equipment or pets.
+
+Base: stable applied recipe snapshot, catalog snapshot
+c6967314d7281bb87c362993e2635e58cd77b351. This change is a net domain patch.
+No private history, game media, profiles or credentials belong in the handoff.
+
+WHAT IS IMPLEMENTED
+Reusable finite precompiled child reserves; live caps count living and pending
+children; partial batches use remaining live/reserve capacity; dead identities
+are never recycled; exhausted reserve sets stop production. Periodic production
+skips frozen due batches while its absolute clock continues. Effective settled
+HP loss, rather than requested damage or net healing, drives Yeti thresholds.
+Actual-death splitting is once per parent. Queued batches survive source loss.
+Blocked releases retain their captured position and continuation ownership.
+Generated children launch ordinary PatternCombat weapons independently.
+
+Witch batch, living cap and cadence map skeletonsPerSummon, maxSkeletons and
+summonCooldown. Golem uses golemitesSpawned; Hounds use pupsOnOffense, never the
+defending quantity; Furnace uses firemitesSpawned and lifetime. Super Witch owns
+one live/pending Big Boy. Super Hog has an explicit experimental HP split trigger.
+Every child needs a complete synthetic/experimental actor and provenance; current
+child numbers are not invented or inferred from a catalog description.
+
+Reusable resource preference with reachable ordinary fallback; deployment cloak;
+Super Giant wall-weapon bonus; Wall Breaker preference/one-time attack retirement;
+Miner surface/burrow transitions with separate immunity and trap-response flags;
+finite Super Minion long shots consumed on release including later fizzles;
+moving three-stage Inferno Dragon/Super Miner ramps with target/range reset,
+explicit Freeze/protection behavior and unchanged ordinary weapon cooldown.
+
+Bowler/Super Bowler have two/three finite packets along captured launch direction,
+live membership and a once-per-recipient launch ledger. Source and primary loss
+do not cancel released bounces. Super Archer has a declared segment-footprint
+piercing helper. IMPORTANT: piercing membership resolves for the full segment at
+terminal travel arrival; continuous first-contact arrow motion is not implemented.
+Shared damage receipts capture source identity/team and launch damage/buffs.
+
+Super Wizard compiles to the existing shared chain pattern with catalog
+chainDamagePerShot / damagePerShot secondary ratio. Super Dragon compiles to an
+explicit shared radial pattern. Geometry/link counts/travel remain experimental.
+Existing Titan/Druid compilers are reachable through the domain binding function;
+their existing runtimes are unchanged and still require shared battle hooks.
+
+REQUIRED SHARED BINDINGS (integration owner)
+1. Use enabled_scope == attacking_extensions.SCOPE, explicit attacking normal
+   role and mode, and EXTENSION_ADAPTERS to select the ordinary compilation branch.
+   This map is NOT an availability registry. Super entries often omit targetType;
+   require caller-sourced target-layer policy rather than silently inheriting one.
+   Inferno Dragon/Super Miner initially compile normal.dps * attackSpeed because
+   damagePerShot is absent. Do not send them through the stationary RampCombat.
+   Druid/Furnace need a non-attacking branch before generic damagePerShot checks.
+   Furnace movement is stationary, speed 0, damage 0, attack_model.kind none;
+   controlled stationary deployment needs a narrowly validated loader exception.
+2. After ordinary actor/wall/pattern compilation call compile_attacking_extension.
+   Druid calls compile_druid before generic weapon checks; Titan retains its whip.
+   Explicit complete death_model is mandatory for Golem/Hounds/Super Miner/Wall
+   Breaker. Shared DeathCombat validates its geometry; the domain validates the
+   selected catalog death damage or attacking Ice Hound freeze duration.
+   Wall Breaker successful launch sets _troop_suicide_attack: suppress its ordinary
+   death blast then, while an actual pre-launch death may emit the configured blast.
+   Super Hog _troop_form_retired suppresses normal death/payload effects on split.
+3. Append compile_troop_reserves(raw_actors) and compile_druid_forms(raw_actors)
+   before _load_actors and ALL runtime construction. Preserve owned summon_model,
+   troop_child_statistics and troop_* model fields. Full-battle inventory must
+   reject independent deploy commands for generated children. Supply complete
+   Giga/Spring/Tornado/defending-unit response maps, healing/hazard/buff classes,
+   wall behavior and housing/weight semantics for every child. No paid housing or
+   extra CC payload is created. No reserve may be admitted by raw-scene bypass.
+4. Construct TroopSummonCombat(actors, can_release). can_release validates map
+   bounds and live obstacles for ground children; no nearest-cell fallback exists.
+   prepare(time, trace) settles idempotent releases/production/splits; call after
+   actual settled health and command/deployment changes. Pass each settled damage
+   receipt actual_health_loss to record_damage exactly once before prepare.
+   Attach release revision/cache invalidation when children become active.
+5. Construct AttackingTroopCombat(actors). Its prepare(time, select_target, trace)
+   selector takes one actor and returns an actor or None. select_target(actor,
+   actors, time, blocked, width, height, ordinary_selector) returns the shared
+   (actor, route) pair, filtering preferred candidates before delegation.
+   Use launch_damage(actor_id) before release, on_launch(actor_id,time,trace) once
+   after release; never reset main next_attack at ammo expiry/ramp stage transitions.
+   Apply troop_damage_multiplier(source,recipient) at shared ordinary impact.
+   Defense and wall preference remain ordinary targeting for spawned tank/hound
+   families: Hound air-defense preference still needs explicit identity filtering.
+6. Call troop_damage_immune(target) from shared damage receipts AND damage paths
+   without receipts; underground existing projectiles are immune under the chosen
+   experimental policy. Trap trigger eligibility consults _troop_trap_eligible.
+   Burrow routing uses existing enemy-wall traversal, preserving other blockers.
+   Enemy acquisition must reject burrowed recipients separately from invisibility.
+7. Construct TroopLineCombat(actors) and assign shared damage_receipts to it. At a
+   modeled weapon launch route only the line model through launch(actor,target,
+   time,trace,flat_damage=None), consuming the existing weapon cooldown once.
+   resolve(time,trace) returns a damage mapping for shared simultaneous settlement;
+   it does not subtract health. Do not also launch an ordinary duplicate projectile.
+8. Register runtime next_boundary(time), continuation_reasons(time) where present,
+   result() and runtime damage ownership. next boundaries are strictly future;
+   pending spawn/damage survives owner death. Inert finite reserves do not keep
+   a battle alive. Pending releases retry at existing meaningful solver boundaries.
+9. Titan: ElectroTitanCombat.prepare(time), resolve(time,trace), next_boundary(time),
+   result(); attach shared damage_receipts. Resolve returned aura damage through
+   ordinary health, independently of whip readiness. No aura target wall/friendly.
+10. Druid: use DruidSupportCombat in place of SupportCombat (it includes ordinary
+    healers); DruidCombat.prepare before commands for its timeout ordering;
+    intercept_lethal at actual death settlement; next_boundary and continuation;
+    validate_druid_deployment and frame/result. Shared range entry must call
+    DruidSupportCombat.first_crossing_delay. Generated Bear needs response maps and
+    no inventory entitlement. Bear statistics remain explicit_uncalibrated_hypothesis.
+
+HONEST GAPS / DO NOT PROMOTE TO FULL SUPPORT
+All new models are UNBOUND until the above hooks and complete-battle fixtures pass.
+The modules are capability building blocks, not 24 newly supported troop identities.
+Meteor Golem, Ruin Witch and Super Valkyrie reject in the binding surface with
+specific missing state/statistic contracts. Furnace Firemite persistent fire pools,
+Super Yeti electrical child chain reactions, Ice Hound hit slow, Hound air-defense
+preference and exact Super Dragon multi-shot release semantics remain incomplete.
+Require those bindings before marking the respective identity available. Generated
+child weapon/state models may only select existing validated runtime families.
+Missing real child stats keep all summon families experimental. Defending versions
+are explicitly rejected; the defense worker should consume capabilities with
+separate team/role/statistic contracts rather than copy these attack quantities.
+Recall/revival of new production/split/finite-ammo families is not certified; reject
+such combinations pending explicit clock/state-transfer/identity semantics.
+Builder-base and seasonal content are outside this workstream.
+
+SOURCE EVIDENCE
+Public pinned per-identity catalog records are already present in data/catalog.json.
+Each record retains its exact blob URL and normal/stage/summon quantity fields.
+Canonical root:
+https://github.com/chiefpansancolt/clash-of-clans-data/tree/c6967314d7281bb87c362993e2635e58cd77b351/data/home/troops
+This is a community statistics snapshot, not authoritative current game fidelity.
+Descriptions support qualitative behavior only; all missing quantities/timing are
+explicit experiment inputs. Druid source/gaps remain in druids.py (official June
+release notes and historical January balance note, incomplete Bear child stats).
+Attempted live primary-source search produced no relevant evidence; no new verified
+current roster/statistics claim is made from those results.
+
+BOUNDED CHECK EVIDENCE
+Seven new lifecycle checks plus 31 existing Titan/Druid component checks passed,
+38 total, 0.051 seconds unittest runtime, fresh process exit 0. Covered source loss,
+blocked release/continuation, once-only death splitting, child PatternCombat attack,
+finite reserves/live cap, Freeze skip clock, effective-damage thresholds, burrow
+emergence, finite shots, moving-ramp Freeze reset/base-DPS mapping without cooldown
+reset, boulder primary/source death and positive 1e-12 release.
+Synthetic fixtures are not game calibration. Black 24.10.0 used, one worker.
+No complete simulation or suspect battle runner was invoked. No full-battle result
+exists for this domain patch. The integration owner must add bounded complete-battle
+crossings after shared binding: Titan aura + lethal Bear + owned summon release,
+and boulder/finite-ammo versus a counted structure, including two justified solver
+steps and fresh zero-exit result evidence. No change to native crash diagnosis.

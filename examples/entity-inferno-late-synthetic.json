@@ -1,0 +1,21 @@
+{
+  "plan_id": "synthetic-inferno-protection-plan",
+  "status": "SYNTHETIC_RESPONSE_NOT_PLAYER_CALIBRATION",
+  "observed_latency_traces": [
+    {
+      "source_replay": "synthetic-inferno-late-latency-3.5",
+      "responses": {
+        "freeze-inferno": {
+          "latency_seconds": 3.5,
+          "missed": false,
+          "placement_errors": {
+            "area": {
+              "dx": 0,
+              "dy": 0
+            }
+          }
+        }
+      }
+    }
+  ]
+}

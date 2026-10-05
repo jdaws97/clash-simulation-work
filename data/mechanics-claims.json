@@ -1,0 +1,434 @@
+{
+  "checked_on": "2026-10-03",
+  "status": "PRIMARY_BEHAVIOR_CLAIMS_WITH_CURRENT_NUMERIC_AND_ADAPTER_GAPS",
+  "claims": [
+    {
+      "entities": [
+        "builders-hut"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/battle-builders-2/",
+      "published": "2021-04-09",
+      "supported_behavior": [
+        "A defensive builder attempts to repair nearby defenses",
+        "Freeze halts repair and Poison slows the builder",
+        "Lightning resets the builder's repair target",
+        "A builder stops repairing when its own hut is destroyed"
+      ],
+      "current_numeric_gaps": [
+        "Current repair amount and interval at every level",
+        "Travel and repair target selection",
+        "Effect of multiple builders on the same target",
+        "Repair phase relative to incoming hits and protection"
+      ],
+      "implemented_scope": "Only explicit delivered repair in conditional margins; no builder AI adapter"
+    },
+    {
+      "entities": [
+        "multi-archer-tower",
+        "ricochet-cannon"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/building-merging-th16/",
+      "published": "2023-12-07",
+      "supported_behavior": [
+        "Multi-Archer Tower fires at up to three different enemies",
+        "With one enemy all three arrows concentrate on it; with two, one receives an extra arrow",
+        "Ricochet Cannon hits a ground target and can bounce to another"
+      ],
+      "current_numeric_gaps": [
+        "Current damage, ranges, HP and attack intervals",
+        "Volley timing, extra-arrow choice and target retention",
+        "Ricochet jump geometry, tie rules and secondary-hit timing"
+      ],
+      "implemented_scope": "Declared generic multi-target and chain patterns; no validated entity adapters"
+    },
+    {
+      "entities": [
+        "electro-dragon"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/news/the-electro-dragon-is-here-to-wreak-devastation/",
+      "published": "2018-06-08",
+      "supported_behavior": [
+        "Chain lightning can reach up to five targets with declining damage",
+        "An Electro Dragon releases lightning when it dies"
+      ],
+      "current_numeric_gaps": [
+        "Current jump distance, multiplier sequence, target selection and jump timing",
+        "Attack wind-up, flight behavior, death-lightning targeting and damage",
+        "Chain behavior through protected or hidden structures"
+      ],
+      "implemented_scope": "Conditional chain with explicit caller multipliers/geometry/readiness and finite fixed death impacts; no verified lightning pattern or current wind-up model"
+    },
+    {
+      "entities": [
+        "super-wizard-tower",
+        "revenge-tower",
+        "totem-spell"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/town-hall-18-crash-lands-update/",
+      "temporal_scope": "Launch documentation; Totem direct damage was changed in the February 2026 release",
+      "supported_behavior": [
+        "Super Wizard Tower chains attacks to up to fifteen enemies",
+        "Revenge Tower gains power and HP after specified building-destruction thresholds",
+        "At launch, Totem Spell distracted enemies and damaged/stunned buildings on landing"
+      ],
+      "current_numeric_gaps": [
+        "Current per-level values and complete target/chain/trigger semantics",
+        "Revenge Tower state and HP transitions",
+        "Totem placement, duration, collision, targeting and stun semantics"
+      ],
+      "implemented_scope": "No full entity adapters; a generic chain is insufficient for a validated TH18 base"
+    },
+    {
+      "entities": [
+        "ruin-witch"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-anime-fury-update-is-here/",
+      "published": "2026-06-15",
+      "supported_behavior": [
+        "Ruin Witch does not attack and remains idle when no suitable rubble is available",
+        "She works on building rubble for four seconds; walls do not provide rubble",
+        "After consuming the rubble, a Ruin Knight appears two seconds later, even if the Witch dies during that pending summon",
+        "She resumes movement after a further two seconds and can summon eight knights before despawning",
+        "Blocked or invisible rubble is ineligible; new destruction can change her rubble target"
+      ],
+      "snapshot_conflict": "Ordinary normal DPS and damagePerShot fields must not be used as a Ruin Witch weapon",
+      "current_numeric_gaps": [
+        "Complete per-level Ruin Knight HP, damage, movement and wall interaction",
+        "Exact rubble coordinates, reachability metric and spawn placement",
+        "Timing under Freeze, haste, other protection and transformation interactions"
+      ],
+      "implemented_scope": "Ordinary weapon compilation is rejected; rubble/summon lifecycle still requires implementation and replay validation"
+    },
+    {
+      "entities": [
+        "totem-spell",
+        "longshot"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-february-update-has-escaped/",
+      "published": "2026-02-23",
+      "supported_behavior": [
+        "Totem radius changed to five tiles and direct damage to zero",
+        "Apprentice and Life Gem auras do not affect Totems",
+        "Longshot splash affects the target's ground or air layer rather than both"
+      ],
+      "current_numeric_gaps": [
+        "Subsequent current-patch changes and complete per-level values",
+        "Layer-specific splash, Totem targeting, stun, duration and aura exclusions"
+      ],
+      "implemented_scope": "No full guardian/Totem adapters; historical launch behavior does not establish current rules"
+    },
+    {
+      "entities": [
+        "root-rider",
+        "wall"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/news/root-rider-new-troop/",
+      "published": "2023-12-09",
+      "temporal_scope": "Introduction behavior and historical wall DPS; later troop HP/DPS are sourced separately",
+      "supported_behavior": [
+        "Root Rider chooses defenses preferentially and can break walls",
+        "The introduction lists wall DPS of 10000 for levels one through three"
+      ],
+      "current_numeric_gaps": [
+        "Exact current wall pulse spacing, initial readiness and range",
+        "Whether wall and ordinary weapons share any attack clock",
+        "Movement while wall HP remains, contact selection and multi-wall interactions",
+        "Actual target access, route choice and ordinary troop wall fallback"
+      ],
+      "implemented_scope": "Conditional separate-wall weapon and live follower routing; clear-before-crossing and penetration are explicit unvalidated hypotheses"
+    },
+    {
+      "entities": [
+        "poison-spell",
+        "guardian",
+        "hero",
+        "pet",
+        "siege-machine",
+        "totem-spell"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/",
+      "published": "2026-04-27",
+      "temporal_scope": "April changes supersede conflicting February guardian poison behavior; later changes still need checking",
+      "supported_behavior": [
+        "Guardian poison damage is reduced to 30 percent",
+        "Upgrading heroes and pets can participate in friendly challenges and friendly wars",
+        "Sieges ignore TH14-16 poison, Life Gem and Apprentice Warden auras",
+        "Totems ignore Heroic Torch, and frozen guardians do not activate"
+      ],
+      "current_numeric_gaps": [
+        "Complete current guardian, poison and activation interactions",
+        "Friendly mode potion application still needs a recorded client check"
+      ],
+      "implemented_scope": "Source precedence, friendly-test planning and an explicit TH14–16 poison siege-class exemption branch; complete siege and guardian combat remain missing"
+    },
+    {
+      "entities": [
+        "druid"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/june-update-full-patch-notes/",
+      "published": "2024-06-18",
+      "supported_behavior": [
+        "The initial Druid is a ground healer that can jump walls",
+        "Healing projectiles can bounce among air and ground allies; the launch description permits up to five recipients and excludes siege machines from bounces",
+        "Timeout or loss of the first form changes the Druid into a Bear rather than permanently killing it",
+        "The Bear is a slower ground melee defense-targeting unit that cannot jump walls; permanent death follows loss of Bear HP"
+      ],
+      "snapshot_conflict": "numberOfTargets=4 may count secondary links or reflect a later patch; no interpretation is silently selected",
+      "current_numeric_gaps": [
+        "Current Bear HP, damage, range, cadence and speed are absent from the catalog",
+        "Current evolve time, chain target count, selection, geometry, timing and transformation state reset",
+        "Interactions with Freeze, damage overflow, healing, spells and equipment across forms"
+      ],
+      "implemented_scope": "Druid compilation remains rejected; shared ally healing is not a replacement for the ground-jump/chain/Bear lifecycle"
+    },
+    {
+      "entities": [
+        "druid"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/news/upcoming-balance-changes-to-druid/",
+      "published": "2024-10-01",
+      "temporal_scope": "Announced future maintenance in October 2024; not current-client certification",
+      "supported_behavior": [
+        "The announced level-four healing change was 140 to 80 per second",
+        "The announced evolution time changed from 30 to 25 seconds at levels one through four",
+        "The announced level-four Bear HP changed from 4400 to 2200"
+      ],
+      "snapshot_conflict": "Selected snapshot Druid4 heal95 and evolve30 require intervening-patch reconciliation; historic80/25 cannot overwrite them as current truth",
+      "current_numeric_gaps": [
+        "Complete intervening numerical history and current Bear levels"
+      ],
+      "implemented_scope": "Historical evidence retained; no numeric branch or current Bear adapter inferred"
+    },
+    {
+      "entities": [
+        "inferno-tower"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/news/march-update-home-village-balancing/",
+      "published": "2018-03-01",
+      "temporal_scope": "Historical warm-up publication; not current-client certification",
+      "supported_behavior": [
+        "Single-mode time to maximum damage changed from4.25 to5.25seconds"
+      ],
+      "snapshot_observation": "Selected Inferno10 row supplies initial120, intermediate260, maximum2600 DPS and a0.128second pulse interval",
+      "current_numeric_gaps": [
+        "Current stage times, lock origin, target loss, Freeze/stun and protected-target reset policies",
+        "Current beam pulse/retarget scheduling and multi-target per-beam retention"
+      ],
+      "implemented_scope": "Explicit conditional single-lock stages and multi-beam volley hypothesis; fixed maximum starting damage is rejected"
+    },
+    {
+      "entities": [
+        "dragon-rider"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/dragon-rider/",
+      "published": "2021-06-13",
+      "temporal_scope": "Introduction behavior, not current-client certification",
+      "supported_behavior": [
+        "Dragon Rider favors defenses, attacks a single target, and crashes with damage after defeat",
+        "Introduction lists ground and air targets"
+      ],
+      "snapshot_conflict": "Snapshot targetType=ground differs from the introduction's ground-and-air listing; an explicit conditional layer branch is required",
+      "current_numeric_gaps": [
+        "Current target-layer/fallback rule, crash footprint, delay, target filters and damage modifiers"
+      ],
+      "implemented_scope": "Conditional defense-preferred aerial single target and one explicit delayed crash area; no silently selected layer rule"
+    },
+    {
+      "entities": [
+        "electro-dragon",
+        "dragon-rider"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/december-2023-town-hall-16",
+      "published": "2023-12-06",
+      "temporal_scope": "Historical TH16 table; intervening balances still require reconciliation",
+      "supported_behavior": [
+        "TH16 introduction lists Electro Dragon7 destruction damage750 and Dragon Rider4 destruction damage1000"
+      ],
+      "snapshot_conflict": "Electro Dragon7 snapshot deathDamage=125 may be a per-bolt quantity; the publication does not establish bolt count, equal shares or current numeric equivalence",
+      "current_numeric_gaps": [
+        "Per-bolt versus total statistic semantics and actual count, geometry, timing and overlaps",
+        "Current numerical patch history"
+      ],
+      "implemented_scope": "Both Electro Dragon quantity hypotheses require supplied finite impact patterns; no125-to750 scalar override or inferred six-bolt count"
+    },
+    {
+      "entities": [
+        "town-hall"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/december-2023-town-hall-16/",
+      "published": "2023-12-06",
+      "temporal_scope": "Historical TH16 announcement; matching fields do not certify the current client",
+      "supported_behavior": [
+        "TH16 uses a multi-target Giga Inferno against ground and air",
+        "Destruction releases a poison effect"
+      ],
+      "published_numeric_fields": {
+        "hitpoints": 10000,
+        "dps": 300,
+        "targets": 4,
+        "deathDamage": 1100,
+        "deathPoisonMaxDps": 180,
+        "speedDecreasePercent": 50
+      },
+      "current_numeric_gaps": [
+        "Current weapon/HP confirmation",
+        "Activation destruction threshold, target classification and readiness",
+        "Blast and poison timing, pulse interval, damage-growth clock, radius and exit linger",
+        "Protection, status, stacking and complete-entity interactions"
+      ],
+      "implemented_scope": "Conditional TH14–16 weapon-level selection, activation, blast and persistent poison; TH14/15 numeric inputs remain pinned snapshot values"
+    },
+    {
+      "entities": [
+        "town-hall"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/news/town-hall-12-patch-notes/",
+      "published": "2018-06-11",
+      "temporal_scope": "Historical TH12 introduction; does not establish the complete current TH16 activation rule",
+      "supported_behavior": [
+        "Incoming Town Hall damage can cause the embedded weapon to emerge"
+      ],
+      "current_numeric_gaps": [
+        "Current TH16 destruction threshold and activation delay",
+        "Activation on blocked damage, simultaneous damage/healing and classification changes"
+      ],
+      "implemented_scope": "Actual received-damage history drives the explicit conditional activation branch; unsupported threshold/readiness are required caller inputs"
+    },
+    {
+      "entities": [
+        "town-hall"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/the-town-hall-17-update-is-here-2/",
+      "published": "2024-11-25",
+      "supported_behavior": [
+        "TH17 artillery is always active",
+        "Four shots seek distinct targets and repeat targets when fewer are available",
+        "Direct projectile damage has no splash; impacts leave damage areas affecting ground and air",
+        "TH17 lacks the Town Hall death bomb"
+      ],
+      "current_numeric_gaps": [
+        "Current damage, weapon levels, cadence, range, projectile timing and flare growth/overlap",
+        "Current TH18 guardian behavior needs a separate adapter"
+      ],
+      "implemented_scope": "Explicitly rejected by the Giga Inferno compiler; artillery and guardians remain separate required mechanisms"
+    },
+    {
+      "entities": [
+        "scattershot"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/news/december-update-patch-notes/",
+      "published": "2019-12-09",
+      "supported_behavior": [
+        "Scattershot targets ground or air units, with a published range of 3 to 10 tiles at launch",
+        "Its projectile breaks apart on impact and damages units behind the initial target in a cone"
+      ],
+      "current_numeric_gaps": [
+        "Current per-level HP, direct damage, splash values, ammunition and cadence",
+        "Current cone angle, distance bands, layer filtering and projectile behavior when the primary target dies",
+        "Current ammunition state, loading and consumption semantics"
+      ],
+      "implemented_scope": "Conditional area-defense v8: explicit captured firing axis, two source-mapped linear distance bands, minimum range, finite initialized ammunition and live impact membership; no current-client calibration"
+    },
+    {
+      "entities": [
+        "eternal-tome",
+        "healing-tome",
+        "invisibility-vial",
+        "royal-gem"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/news/introducing-hero-equipment/",
+      "published": "2023-12-12",
+      "supported_behavior": [
+        "Heroes select two equipment items, with active and passive behavior.",
+        "Queen invisibility, Royal Gem recovery and Warden immunity/healing have distinct effects."
+      ],
+      "current_numeric_gaps": [
+        "Current values, stat ordering, recovery mapping and exact pulse/range timing.",
+        "Automatic activation, pets, Warden following and recipient membership semantics."
+      ],
+      "implemented_scope": "Conditional v9 attacking hero probes with explicit policies; no current-client certification"
+    },
+    {
+      "entities": [
+        "rocket-spear"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/news/super-wall-breaker-spotlight-new-hero-equipment/",
+      "published": "2024-06-10",
+      "supported_behavior": [
+        "Activation boosts a limited number of subsequent spear attacks and extends their range."
+      ],
+      "current_numeric_gaps": [
+        "Current counts/damage/range, travel, splash layers and launch consumption semantics."
+      ],
+      "implemented_scope": "Finite boosted launches with captured packets and normal range restored; parameters remain conditional"
+    },
+    {
+      "entities": [
+        "magic-mirror"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/news/anime-medal-event-new-hero-equipment/",
+      "published": "2024-08-09",
+      "supported_behavior": [
+        "Queen becomes briefly invisible and summons temporary clones with their own combat statistics."
+      ],
+      "current_numeric_gaps": [
+        "Current clone totals, offsets, launch readiness and source-death persistence."
+      ],
+      "implemented_scope": "Predeclared clones and finite expiry with explicit snapshot mapping"
+    },
+    {
+      "entities": [
+        "magic-mirror",
+        "invisibility-vial"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/september-update-full-patch-notes/",
+      "published": "2024-09-09",
+      "supported_behavior": [
+        "The published fix removed clone damage boosts from equipment, including Invisibility Vial and passive equipment DPS."
+      ],
+      "current_numeric_gaps": [
+        "Current clone totals and confirmation that the historic behavior remains unchanged."
+      ],
+      "implemented_scope": "Clone snapshot totals exclude copied equipment additions and cloak buffs"
+    },
+    {
+      "entities": [
+        "electro-boots",
+        "invisibility-vial"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/news/hero-equipment-balance-changes/",
+      "published": "2025-01-22",
+      "supported_behavior": [
+        "The publication announces changes to Boots aura damage and Vial duration."
+      ],
+      "current_numeric_gaps": [
+        "Current per-level values, aura layers, pulse phases, freeze behavior and self-healing clocks."
+      ],
+      "implemented_scope": "Conditional moving aura and self-healing, with all unresolved policies supplied explicitly"
+    },
+    {
+      "entities": [
+        "town-hall"
+      ],
+      "source": "https://supercell.com/en/games/clashofclans/blog/game-updates/the-town-hall-17-update-is-here-2/",
+      "published": "2024-11-25",
+      "supported_behavior": [
+        "TH17 weapon is always active and fires four projectiles, repeating targets when needed.",
+        "Direct hits have no splash; separate flames affect ground and flying troops.",
+        "TH17 has no built-in Town Hall destruction bomb."
+      ],
+      "current_numeric_gaps": [
+        "Pinned direct-hit, range, cadence and flame values need current-client validation.",
+        "Flame overlap, growth, geometry, pulse cadence and released-effect persistence are explicit hypotheses."
+      ],
+      "implemented_scope": "spatial-artillery-hero-area-kernel-v10"
+    }
+  ],
+  "conditional_damage_notes": [
+    "Fireball24 damage 3900, Earthquake7 first-hit building percentage 29, and builder repair pulses are unverified community snapshot values",
+    "The margin calculator reports independent declared cases and preserves source provenance",
+    "Repeated Earthquake multipliers are explicit inputs; no diminishing law is treated as verified",
+    "Repair pulses do not imply that a builder can reach, select, and repair that defense before Fireball impact",
+    "Generic spatial patterns are implementation tools, not proof of exact Clash geometry or scheduling"
+  ]
+}

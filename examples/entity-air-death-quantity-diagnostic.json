@@ -1,0 +1,209 @@
+{
+  "id": "forced-Electro-Dragon-death-quantity-diagnostic-not-game-attack",
+  "scope": "death_effects_air_support_wall_sector_without_heroes_pets_traps_defending_troops_or_town_hall",
+  "model_rules": {
+    "ground_path": "declared_four_neighbor_routes_with_live_wall_state",
+    "target_retention": "until_dead_or_ineligible",
+    "target_tie": "declared_route_cost_then_instance_id_within_priority",
+    "range_metric": "source_center_to_target_footprint",
+    "hit_model": "explicit_actor_patterns_and_projectiles",
+    "phase_order": "commands_then_launches_and_simultaneous_impacts_then_movement",
+    "freeze_model": "pause_movement_and_remaining_attack_cooldown",
+    "unit_collision": "none",
+    "projectile_travel": "arrival_delay_computed_from_launch_distance",
+    "projectile_freeze": "already_launched_projectiles_continue",
+    "inactive_primary_at_impact": "fizzle",
+    "area_range_metric": "point_to_target_footprint",
+    "chain_health_state": "all_same_time_impacts_use_pre_damage_state",
+    "command_resolution": "deploy_then_areas_then_status_then_damage_and_heal",
+    "wall_target": "first_enemy_wall_on_retained_primary_route",
+    "wall_weapon": "explicit_instant_hits_in_the_simultaneous_damage_phase",
+    "wall_motion": "per_actor_clear_before_crossing_or_penetrate_hypothesis",
+    "wall_clearance_cost": "ceil_current_hp_over_hit_damage_times_hit_interval",
+    "wall_replanning": "live_hp_and_destroyed_footprints_at_every_solver_boundary",
+    "ground_terminal_approach": "nearest_attack_point_within_a_reachable_cell",
+    "healing_targeting": "explicit_allied_target_filter_selection_and_retention",
+    "healing_stacking": "assigned_in_range_unfrozen_and_due_packets_per_recipient",
+    "healing_flight": "launched_healing_survives_source_loss_or_freeze",
+    "healing_primary_loss": "inactive_primary_fizzles_the_packet",
+    "healing_health_phase": "damage_then_healing_without_resurrection",
+    "healing_fields": "fixed_area_membership_recomputed_at_each_declared_pulse",
+    "weapon_ramp": "explicit_piecewise_lock_time_damage_at_launch",
+    "ramp_target_loss": "reset_on_target_change_or_loss_of_eligible_range",
+    "ramp_interruptions": "explicit_freeze_and_target_protection_policies",
+    "ramp_health_phase": "launched_damage_fixed_before_simultaneous_impacts",
+    "death_trigger": "actual_hp_death_once_per_instance",
+    "death_anchor": "source_center_captured_at_death",
+    "death_geometry": "explicit_fixed_offsets_and_live_impact_membership",
+    "death_phase": "settle_generations_after_commands_and_after_weapon_health",
+    "death_sequence": "released_events_survive_source_loss_or_freeze"
+  },
+  "statistics_policy": {
+    "kind": "conditional_pinned_snapshot",
+    "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351"
+  },
+  "unit_conventions": {
+    "movement_units_per_tile": 8,
+    "catalog_attack_speed_unit": "seconds_per_hit",
+    "source": "declared-air-diagnostic-fixture-not-game-or-human-calibration"
+  },
+  "unsupported_mechanics": [],
+  "width": 14,
+  "height": 12,
+  "duration_seconds": 2,
+  "maximum_step_seconds": 0.05,
+  "recording_interval_seconds": 0.1,
+  "entities": [
+    {
+      "id": "electro",
+      "entity": "electro-dragon",
+      "level": 7,
+      "town_hall": 16,
+      "mode": "normal",
+      "statistics_mode": "normal",
+      "supercharge": false,
+      "team": "attack",
+      "counts_for_destruction": false,
+      "x": 6.5,
+      "y": 9.5,
+      "spawn_seconds": 0,
+      "first_attack_seconds": 3.5,
+      "modifiers": {
+        "hitpoints_multiplier": 1,
+        "damage_multiplier": 1,
+        "maximum_hp_damage_multiplier": 1,
+        "attack_interval_multiplier": 1,
+        "range_multiplier": 1,
+        "movement_speed_multiplier": 1,
+        "source": "declared-air-diagnostic-fixture-not-game-or-human-calibration"
+      },
+      "attack_parameters": {
+        "projectile": {
+          "timing": "instant",
+          "delay_seconds": 0,
+          "destination": "locked_actor_center_at_impact",
+          "hit_radius": 0
+        },
+        "damage_multipliers": [
+          1,
+          0.8,
+          0.6,
+          0.4,
+          0.2
+        ],
+        "jump_range": 1,
+        "jump_metric": "footprint_distance",
+        "jump_delay_seconds": 0,
+        "tie_break": "distance_then_instance_id",
+        "allow_protected_links": true
+      },
+      "readiness_policy": {
+        "selection": "absolute_first_attack_seconds_hypothesis",
+        "source": "declared-air-diagnostic-fixture-not-game-or-human-calibration"
+      },
+      "death_parameters": {
+        "source": "declared-air-diagnostic-fixture-not-game-or-human-calibration",
+        "statistic_basis": "snapshot_deathDamage_is_per_impact_hypothesis",
+        "damage_multiplier": 1,
+        "impacts": [
+          {
+            "id": "diagnostic-impact-0",
+            "source": "declared-air-diagnostic-fixture-not-game-or-human-calibration",
+            "delay_seconds": 0.2,
+            "offset_x": -1,
+            "offset_y": -0.5,
+            "radius": 0.5,
+            "target_kinds": [
+              "defense",
+              "building"
+            ],
+            "target_layers": [
+              "ground"
+            ],
+            "damage_fraction": 1
+          },
+          {
+            "id": "diagnostic-impact-1",
+            "source": "declared-air-diagnostic-fixture-not-game-or-human-calibration",
+            "delay_seconds": 0.4,
+            "offset_x": 0,
+            "offset_y": 0,
+            "radius": 0.5,
+            "target_kinds": [
+              "defense",
+              "building"
+            ],
+            "target_layers": [
+              "ground"
+            ],
+            "damage_fraction": 1
+          },
+          {
+            "id": "diagnostic-impact-2",
+            "source": "declared-air-diagnostic-fixture-not-game-or-human-calibration",
+            "delay_seconds": 0.6000000000000001,
+            "offset_x": 1,
+            "offset_y": 0.5,
+            "radius": 0.5,
+            "target_kinds": [
+              "defense",
+              "building"
+            ],
+            "target_layers": [
+              "ground"
+            ],
+            "damage_fraction": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "entry-storage",
+      "entity": "elixir-storage",
+      "level": 17,
+      "town_hall": 16,
+      "mode": "passive",
+      "statistics_mode": "none",
+      "supercharge": false,
+      "team": "defense",
+      "counts_for_destruction": true,
+      "x": 6,
+      "y": 8,
+      "spawn_seconds": 0,
+      "first_attack_seconds": 0,
+      "modifiers": {
+        "hitpoints_multiplier": 1,
+        "damage_multiplier": 1,
+        "maximum_hp_damage_multiplier": 1,
+        "attack_interval_multiplier": 1,
+        "range_multiplier": 1,
+        "movement_speed_multiplier": 1,
+        "source": "declared-air-diagnostic-fixture-not-game-or-human-calibration"
+      },
+      "attack_parameters": {},
+      "inactive_attack_interval_seconds": 1
+    }
+  ],
+  "effects": [
+    {
+      "id": "diagnostic-defeat",
+      "time_seconds": 0,
+      "kind": "damage",
+      "targets": [
+        "electro"
+      ],
+      "amount": 100000
+    }
+  ],
+  "healing_stacking": {
+    "source": "declared-air-diagnostic-fixture-not-game-or-human-calibration",
+    "groups": {}
+  },
+  "healing_spells": [],
+  "study_notes": [
+    "Artificial immediate defeat is an adapter diagnostic, not a legal attack plan or outcome prediction",
+    "Three fixed toy bolts overlap one Storage17 footprint; their number, timing and positions are not actual Clash behavior",
+    "The per-impact branch requests375 damage; the total-quantity branch allocates125 by three explicitly declared equal shares",
+    "This diagnoses the mapping's consequence without resolving which mapping is correct or inferring a six-bolt pattern"
+  ]
+}

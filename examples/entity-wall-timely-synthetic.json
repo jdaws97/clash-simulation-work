@@ -1,0 +1,38 @@
+{
+  "plan_id": "synthetic-protect-breacher-then-follow-opening",
+  "observed_latency_traces": [
+    {
+      "source_replay": "synthetic-timely-wall-response-not-measured-player-evidence",
+      "responses": {
+        "protect-breacher": {
+          "latency_seconds": 0.15,
+          "missed": false,
+          "placement_errors": {
+            "area": {
+              "dx": 0,
+              "dy": 0
+            }
+          }
+        },
+        "deploy-followers": {
+          "latency_seconds": 0.2,
+          "missed": false,
+          "placement_errors": {
+            "follower-0": {
+              "dx": 0,
+              "dy": 0
+            },
+            "follower-1": {
+              "dx": 0,
+              "dy": 0
+            },
+            "follower-2": {
+              "dx": 0,
+              "dy": 0
+            }
+          }
+        }
+      }
+    }
+  ]
+}

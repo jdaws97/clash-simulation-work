@@ -1,0 +1,52 @@
+{
+  "status": "SOURCE_BACKED_LIFECYCLES_WITH_EXPLICIT_EXPERIMENTAL_STATISTIC_GAPS",
+  "catalog_commit": "c6967314d7281bb87c362993e2635e58cd77b351",
+  "extraction_commit": "b8f42a707fe92d5293d46088bf536450ae422e7b",
+  "ruin_witch": {
+    "june_source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-anime-fury-update-is-here/",
+    "june_published": "2026-06-15",
+    "august_source": "https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/",
+    "august_published": "2026-08-30",
+    "implemented_claims": ["No attacking weapon", "Destroyed walls provide no rubble", "Closest accessible visible rubble", "Four-second work before consumption", "Two-second delayed Knight survives Witch death", "Two further seconds before movement", "August cap ten", "August no Knight HP decay"],
+    "preserved_snapshot_conflicts": {"catalog_maximumRuinKnightsSummoned": 8, "current_official_cap": 10, "catalog_normal_damagePerShot_level4": 56, "official_weapon": "none"},
+    "known_parent_keys": ["catalog.entries[entity.id=ruin-witch].entity.levels[].ruinKnightLevel", "static.troops[_id=4000109].levels[].hitpoints"],
+    "missing_child_lookup": "No standalone Ruin Knight record in saved catalog, static troops, secondary export or selected extraction",
+    "missing_exact_fields": ["Knight level1-4 hitpoints", "damagePerShot or DPS plus base attack cadence", "attack range", "movement speed and unit conversion", "damage/target layers and acquisition preferences", "wall damage multiplier", "housing/warden/spring/tornado/defender response weights", "first attack delay"],
+    "experimental_behavior_fields": ["work interaction range", "front spawn distance/facing fallback", "exclusive work reservation among multiple Witches", "Freeze pauses work", "lock rubble target during committed work", "blocked release waits at captured front point"]
+  },
+  "meteor_golem": {
+    "introduction_source": "https://supercell.com/en/games/clashofclans/blog/release-notes/town-hall-18-crash-lands-update/",
+    "introduction_published": "2025-11-17",
+    "status_transfer_source": "https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/",
+    "implemented_claims": ["Permanent TH17 troop distinct from seasonal incarnation", "Thrown Meteormites bypass walls", "Meteormites may recombine", "Angry effect and targeting preserved by required external status receipt hooks"],
+    "permanent_static_key": "troops[_id=4000177]",
+    "excluded_seasonal_static_key": "troops[_id=4000167,is_seasonal=true]",
+    "preserved_level3_conflict": {"catalog_hitpoints": 16000, "catalog_dps": 550, "static_hitpoints": 17500, "static_dps": 580},
+    "missing_child_lookup": "No standalone Meteormite record in saved catalog, static troops, secondary export or selected extraction",
+    "missing_exact_fields": ["per-level Meteormite hitpoints", "damage per hit and cadence", "melee range", "movement speed", "target layers and preferences", "throw projectile speed/release delay/landing damage relationship", "split and merge HP rules", "partner search radius, distance and merge time", "child housing/warden/spring/tornado/defender response weights", "first attack delay"],
+    "experimental_policies": ["Split once at successful adult weapon launch", "One local child and one thrown child", "Fixed launch target-center landing", "Parent HP fraction transferred to both explicit child max HP values", "Merge HP fraction weighted by child max HP", "Midpoint merge release", "Nearest same-level cohort partner if no local enemy and no shared targeting override", "Finite unique generations; reject reserve exhaustion"]
+  },
+  "super_valkyrie": {
+    "parent_key": "troops[_id=4000064] and catalog.entries[entity.id=super-valkyrie]",
+    "catalog_qualitative_key": "specialAbility=Farewell Gift",
+    "status": "Experimental generated death-Rage contract; current primary numeric release source was not located",
+    "missing_exact_fields": ["death Rage radius", "release delay", "duration", "damage bonus", "movement bonus/unit conversion", "healing and hero/pet/siege class scaling", "linger duration", "stacking with paid Rage and other fields"],
+    "implementation": "Reuses validated existing source-radial Valkyrie placement and BuffCombat; creates no paid spell entitlement"
+  },
+  "other_generated_children": {
+    "searched_names": ["Ruin Knight", "Meteormite", "Firemite", "Yetimite", "Golemite", "Lava Pup", "Ice Pup", "Big Boy", "Bear"],
+    "result": "Saved exports contain parent descriptions and quantity fields, not complete standalone child combat tables",
+    "firemite_pool_missing_fields": ["radius", "DPS", "cadence", "first pulse", "lifetime", "target-layer/recipient membership", "damage buff scaling"],
+    "electrical_yetimite_missing_fields": ["child health/movement/contact weapon", "chain recipient count", "chain radius", "secondary damage", "jump delay", "source persistence and consumption"],
+    "known_quantity_keys": ["witch.levels[].skeletonsPerSummon", "witch.levels[].maxSkeletons", "witch.summonCooldown", "golem.levels[].golemitesSpawned", "lava-hound.levels[].pupsOnOffense", "ice-hound.levels[].pupsOnOffense", "furnace.levels[].firemitesSpawned", "furnace.lifetime"]
+  },
+  "possible_static_resolution": {
+    "collection_authorized": false,
+    "new_collection_performed": false,
+    "could_resolve": "A versioned complete logic-table export including generated-character rows, projectile/effect references and typed schema may resolve numeric child stats, pool fields, wall bonuses and some form timers. The current curated static export is insufficient.",
+    "known_decoder_schema_keys": ["Name", "Hitpoints or HitPoints", "DamagePerSecond", "HousingSpace", "Speed"],
+    "unknown_column_names_policy": "Do not guess internal generated-unit names, numeric data IDs, special ability columns or projectile references. Retain complete typed headers and resolve actual parent-child references before assigning semantics.",
+    "still_needs_behavior_evidence": ["HP allocation at split/merge", "Freeze and Recall interactions", "exact targeting/contact geometry", "simultaneous rubble contention", "status overlap transfer"],
+    "version_provenance_required": ["client/build identifier", "asset source and hash", "typed schema and all per-level continuation rows", "server balance/version context if known"]
+  }
+}

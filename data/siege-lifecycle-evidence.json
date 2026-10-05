@@ -1,0 +1,42 @@
+{
+  "checked_on": "2026-10-04",
+  "scope": "permanent_home_village_TH16_to_TH18_relevant_siege_lifecycles",
+  "statistics_snapshot": "c6967314d7281bb87c362993e2635e58cd77b351",
+  "statistics_verification": "unverified_snapshot",
+  "behavior_verification": "source_grounded_capabilities_with_explicit_uncalibrated_hypotheses",
+  "complete_battle_integration": "pending_shared_adapter_kernel_resource_and_child_binding",
+  "flinger_damage_clock": "explicit_uncalibrated_single_source_clock_integrates_strongest_overlapping_field_DPS_and_final_partial_interval",
+  "sources": [
+    {
+      "url": "https://support.supercell.com/clash-of-clans/en/articles/siege-machines-3.html",
+      "supports": ["one_selected_own_or_donated_siege_per_attack", "manual_and_destruction_CC_release", "spell_immunity", "named_nine_home_village_siege_capabilities"],
+      "does_not_establish": ["exact_release_geometry", "barrel_flight_timing", "barrel_cancellation_or_exhaustion_order"]
+    },
+    {
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/december-update-patch-notes/",
+      "supports": ["stationary_Barracks", "generated_troops_disembark_during_HP_decay", "manual_or_HP_death_releases_CC"]
+    },
+    {
+      "url": "https://supercell.com/en/games/clashofclans/blog/release-notes/clashofclans-december-2021/",
+      "supports": ["Flinger_defense_preference", "ground_splash_incendiary_capability", "finite_lifetime"],
+      "does_not_establish": ["current_exact_flame_ramp", "burst_offsets", "flame_overlap"]
+    },
+    {
+      "url": "https://supercell.com/en/games/clashofclans/blog/release-notes/full-release-notes-2/",
+      "supports": ["Drill_burrow_avoids_defense_detection", "surface_nearest_defense", "target_stun_two_seconds", "single_target_ground_weapon"],
+      "does_not_establish": ["blanket_underground_trap_hazard_immunity", "area_stun_radius"]
+    },
+    {
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/get-geared-up-for-the-latest-update--3/",
+      "supports": ["immobile_Launcher_targets_allies", "finite_level_dependent_barrels", "at_most_one_CC_troop_per_barrel"],
+      "conflicts": ["publisher_unlock_TH16_but_pinned_catalog_TH17"]
+    },
+    {
+      "url": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/",
+      "supports": ["Wagon_airborne_independent_movement", "CC_plus_Minions_Balloon_Baby_Dragon_barrels", "Firemite_fire_damages_sieges", "TH14_to_TH16_poison_Life_Gem_Apprentice_Warden_exclusions"],
+      "conflicts": ["publisher_max_six_barrels_but_pinned_catalog_max_five", "publisher_max_children_levels_14_13_12_but_pinned_catalog_13_12_11"]
+    }
+  ],
+  "uncalibrated_policies": ["production_schedule_and_release_offsets", "Flinger_burst_flight_field_geometry_and_ramp", "Drill_wide_stun_and_underground_hazard_exclusion", "Launcher_nearest_ally_selection_and_range", "barrel_fixed_target_center_flight", "death_before_launch_and_generation", "cancel_unlaunched_generated_preserve_in_flight", "exhaustion_terminates_and_releases_remaining_CC", "Launcher_unknown_HP_decay_curve_not_invented", "Wagon_explicit_optional_lifetime"],
+  "excluded": ["seasonal_crafted_siege_extras", "Builder_Base", "game_automation", "live_game_calibration"]
+}

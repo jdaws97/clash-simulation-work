@@ -1,0 +1,182 @@
+{
+  "troops": [
+    {
+      "id": "thrower",
+      "count": 8,
+      "level": 2
+    },
+    {
+      "id": "healer",
+      "count": 5,
+      "level": 9
+    },
+    {
+      "id": "root-rider",
+      "count": 2,
+      "level": 3
+    },
+    {
+      "id": "ice-golem",
+      "count": 2,
+      "level": 8
+    },
+    {
+      "id": "apprentice-warden",
+      "count": 1,
+      "level": 4
+    },
+    {
+      "id": "super-wall-breaker",
+      "count": 2,
+      "level": 12
+    },
+    {
+      "id": "baby-dragon",
+      "count": 1,
+      "level": 10
+    },
+    {
+      "id": "minion",
+      "count": 3,
+      "level": 12
+    }
+  ],
+  "spells": [
+    {
+      "id": "rage-spell",
+      "count": 2,
+      "level": 6
+    },
+    {
+      "id": "freeze-spell",
+      "count": 3,
+      "level": 7
+    },
+    {
+      "id": "overgrowth-spell",
+      "count": 1,
+      "level": 4
+    },
+    {
+      "id": "earthquake-spell",
+      "count": 2,
+      "level": 7
+    }
+  ],
+  "heroes": [
+    {
+      "id": "barbarian-king",
+      "level": 95,
+      "mode": "ground",
+      "equipment": [
+        {
+          "id": "spiky-ball",
+          "level": 20
+        },
+        {
+          "id": "snake-bracelet",
+          "level": 12
+        }
+      ],
+      "pet": {
+        "id": "phoenix",
+        "level": 10
+      }
+    },
+    {
+      "id": "grand-warden",
+      "level": 70,
+      "mode": "ground",
+      "equipment": [
+        {
+          "id": "fireball",
+          "level": 24
+        },
+        {
+          "id": "rage-gem",
+          "level": 18
+        }
+      ],
+      "pet": {
+        "id": "angry-jelly",
+        "level": 10
+      }
+    },
+    {
+      "id": "royal-champion",
+      "level": 45,
+      "mode": "ground",
+      "equipment": [
+        {
+          "id": "electro-boots",
+          "level": 23
+        },
+        {
+          "id": "rocket-spear",
+          "level": 21
+        }
+      ],
+      "pet": {
+        "id": "spirit-fox",
+        "level": 10
+      }
+    },
+    {
+      "id": "dragon-duke",
+      "level": 15,
+      "mode": "air",
+      "equipment": [
+        {
+          "id": "fire-heart",
+          "level": 18
+        },
+        {
+          "id": "revenge-deck",
+          "level": 20
+        }
+      ],
+      "pet": {
+        "id": "frosty",
+        "level": 10
+      }
+    }
+  ],
+  "siege": {
+    "id": "log-launcher",
+    "level": 5,
+    "origin": "own"
+  },
+  "clan_castle": {
+    "troops": [
+      {
+        "id": "ice-golem",
+        "count": 3,
+        "level": 9
+      },
+      {
+        "id": "archer",
+        "count": 5,
+        "level": 14
+      }
+    ],
+    "spells": [
+      {
+        "id": "revive-spell",
+        "count": 1,
+        "level": 5
+      },
+      {
+        "id": "freeze-spell",
+        "count": 1,
+        "level": 8
+      }
+    ]
+  },
+  "status": "COMPLETE_EXPERIMENT_RECIPE_UNDER_UNVERIFIED_SNAPSHOT_NOT_OPTIMIZED",
+  "notes": [
+    "Equipment and pets are proposed experiments, not a transcription of replay loadouts",
+    "Spell counts are a starting experiment, not a universally best plan",
+    "Super Wall Breaker activation is an explicit planned step",
+    "CC is a proposed experiment using the approved any-legal-max policy; current caps/statistics remain audited"
+  ]
+}

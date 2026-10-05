@@ -1,0 +1,202 @@
+{
+  "maximum_candidates": 20,
+  "exact_fill": true,
+  "troop_pool": [
+    {
+      "id": "root-rider",
+      "level": 3,
+      "minimum": 4,
+      "maximum": 4
+    },
+    {
+      "id": "healer",
+      "level": 9,
+      "minimum": 5,
+      "maximum": 5
+    },
+    {
+      "id": "valkyrie",
+      "level": 11,
+      "minimum": 8,
+      "maximum": 8
+    },
+    {
+      "id": "super-wall-breaker",
+      "level": 12,
+      "minimum": 4,
+      "maximum": 4
+    },
+    {
+      "id": "ice-golem",
+      "level": 8,
+      "minimum": 2,
+      "maximum": 2
+    },
+    {
+      "id": "apprentice-warden",
+      "level": 4,
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "id": "minion",
+      "level": 12,
+      "minimum": 6,
+      "maximum": 6
+    },
+    {
+      "id": "balloon",
+      "level": 11,
+      "minimum": 2,
+      "maximum": 2
+    },
+    {
+      "id": "archer",
+      "level": 12,
+      "minimum": 2,
+      "maximum": 2
+    }
+  ],
+  "spell_pool": [
+    {
+      "id": "rage-spell",
+      "level": 6,
+      "minimum": 2,
+      "maximum": 2
+    },
+    {
+      "id": "freeze-spell",
+      "level": 7,
+      "minimum": 3,
+      "maximum": 3
+    },
+    {
+      "id": "overgrowth-spell",
+      "level": 4,
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "id": "earthquake-spell",
+      "level": 7,
+      "minimum": 2,
+      "maximum": 2
+    }
+  ],
+  "loadout_options": [
+    {
+      "heroes": [
+        {
+          "id": "barbarian-king",
+          "level": 95,
+          "mode": "ground",
+          "equipment": [
+            {
+              "id": "spiky-ball",
+              "level": 20
+            },
+            {
+              "id": "snake-bracelet",
+              "level": 12
+            }
+          ],
+          "pet": {
+            "id": "phoenix",
+            "level": 10
+          }
+        },
+        {
+          "id": "grand-warden",
+          "level": 70,
+          "mode": "ground",
+          "equipment": [
+            {
+              "id": "fireball",
+              "level": 24
+            },
+            {
+              "id": "rage-gem",
+              "level": 18
+            }
+          ],
+          "pet": {
+            "id": "angry-jelly",
+            "level": 10
+          }
+        },
+        {
+          "id": "royal-champion",
+          "level": 45,
+          "mode": "ground",
+          "equipment": [
+            {
+              "id": "electro-boots",
+              "level": 23
+            },
+            {
+              "id": "rocket-spear",
+              "level": 21
+            }
+          ],
+          "pet": {
+            "id": "spirit-fox",
+            "level": 10
+          }
+        },
+        {
+          "id": "dragon-duke",
+          "level": 15,
+          "mode": "air",
+          "equipment": [
+            {
+              "id": "fire-heart",
+              "level": 18
+            },
+            {
+              "id": "revenge-deck",
+              "level": 20
+            }
+          ],
+          "pet": {
+            "id": "frosty",
+            "level": 10
+          }
+        }
+      ],
+      "siege": {
+        "id": "log-launcher",
+        "level": 5,
+        "origin": "own"
+      }
+    }
+  ],
+  "clan_castle_options": [
+    {
+      "troops": [
+        {
+          "id": "ice-golem",
+          "count": 3,
+          "level": 9
+        },
+        {
+          "id": "archer",
+          "count": 5,
+          "level": 14
+        }
+      ],
+      "spells": [
+        {
+          "id": "revive-spell",
+          "count": 1,
+          "level": 5
+        },
+        {
+          "id": "freeze-spell",
+          "count": 1,
+          "level": 8
+        }
+      ]
+    }
+  ],
+  "status": "REFERENCE_ENUMERATION_DEMO_NOT_A_SEARCH_BUDGET"
+}
