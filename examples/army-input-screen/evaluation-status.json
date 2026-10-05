@@ -74,10 +74,10 @@
       "result_sha256": null,
       "reason": "No completed result accepted; see worker.log",
       "worker_log_tail": [
-        "  File \"C:\\Users\\jarod\\Documents\\Codex\\2026-10-04\\task-23\\army-screen-work\\src\\clashlab\\hero_roster.py\", line 101, in first_crossing_delay",
+        "  File \"src/clashlab/hero_roster.py\", line 101, in first_crossing_delay",
         "    crossing = runtime.first_crossing_delay(",
         "               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        "  File \"C:\\Users\\jarod\\Documents\\Codex\\2026-10-04\\task-23\\army-screen-work\\src\\clashlab\\dragon_duke.py\", line 627, in first_crossing_delay",
+        "  File \"src/clashlab/dragon_duke.py\", line 627, in first_crossing_delay",
         "    raise InputError(",
         "clashlab.common.InputError: Unsupported Dragon Duke isolation boundary chatter: duke='dragon-duke', friendly_air='siege', time_seconds=25.839675625595948, radius_tiles=3, membership=center_distance_inside_after_motion_hypothesis; new motion immediately reverses a committed crossing. A declared contact dynamics policy is required."
       ]
