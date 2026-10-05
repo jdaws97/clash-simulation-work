@@ -1,0 +1,290 @@
+{
+  "source": "task23-independent-review-corrections-v2",
+  "operation": "compile_only_no_outcome",
+  "engine_commit": "fc9d0b8a921dbc261f95be0418f8b7618b50a714",
+  "cases": [
+    {
+      "bundle": "cases/ranked-defense-0-hot-candle-A-funnel-cleanup-west-v2.json",
+      "case": {
+        "id": "ranked-defense-0-hot-candle-A-funnel-cleanup-west-v2",
+        "candidate_id": "defense-0-hot-candle",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "family": "A-funnel-cleanup-v2",
+        "entry_policy": "west",
+        "ability_policy": "fixed-core-and-warden27s-queen-champion-hp-gates-observed-cleanup",
+        "mode": "ranked",
+        "attacker_town_hall": 16,
+        "defender_town_hall": 18,
+        "split": "search"
+      },
+      "input_sha256": "ee4cda61948b8ea67747b8fa7acdbb9deefc6fe49a97dc6c94c660640dc82e6e",
+      "file_sha256": "3617e50b77606a38bcc8bb9fb28ded252b9d37f57f270873d027d5b63c00d1b4",
+      "prior_input_sha256": "af780093d71a8d9e505fe0e476173ac5e01990f30fbc049cac6d4dafd2fb7c43",
+      "admission": {
+        "input_sha256": "ee4cda61948b8ea67747b8fa7acdbb9deefc6fe49a97dc6c94c660640dc82e6e",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      },
+      "environment_sha256": "84ddf5f87b9c8a8a7ce4cac19fe4466c052187dd9244974995232b8cecdaad3d",
+      "changes": [
+        {
+          "id": "rage-0",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "rage-1",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "rage-2",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "donated-rage-spell",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "ability-grand-warden",
+          "change": "Warden active at/after27s; no single-Dragon health or survival gate"
+        },
+        {
+          "id": "freeze-1",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "freeze-2",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "freeze-3",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "freeze-4",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        }
+      ]
+    },
+    {
+      "bundle": "cases/ranked-defense-0-hot-candle-B-funnel-balloon-west-v2.json",
+      "case": {
+        "id": "ranked-defense-0-hot-candle-B-funnel-balloon-west-v2",
+        "candidate_id": "defense-0-hot-candle",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "family": "B-funnel-balloon-v2",
+        "entry_policy": "west",
+        "ability_policy": "fixed-core-and-warden27s-queen-champion-hp-gates-observed-cleanup",
+        "mode": "ranked",
+        "attacker_town_hall": 16,
+        "defender_town_hall": 18,
+        "split": "search"
+      },
+      "input_sha256": "6465af880a2e0037d652cb671279ecbc46dcda99302f527765c71316ff05e9e0",
+      "file_sha256": "ed35ac8555e4e493b0281fabd9680735746a6cb560a79e3b81c6060f8a558a40",
+      "prior_input_sha256": "c077effb23dd5db0e99aec25ed56954174508a68e2fafc8b17cc38364f99b925",
+      "admission": {
+        "input_sha256": "6465af880a2e0037d652cb671279ecbc46dcda99302f527765c71316ff05e9e0",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      },
+      "environment_sha256": "84ddf5f87b9c8a8a7ce4cac19fe4466c052187dd9244974995232b8cecdaad3d",
+      "changes": [
+        {
+          "id": "rage-0",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "rage-1",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "rage-2",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "donated-rage-spell",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "ability-grand-warden",
+          "change": "Warden active at/after27s; no single-Dragon health or survival gate"
+        },
+        {
+          "id": "freeze-1",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "freeze-2",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "freeze-3",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "freeze-4",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        }
+      ]
+    },
+    {
+      "bundle": "cases/ranked-defense-1-hero-hunter-A-funnel-cleanup-east-v2.json",
+      "case": {
+        "id": "ranked-defense-1-hero-hunter-A-funnel-cleanup-east-v2",
+        "candidate_id": "defense-1-hero-hunter",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "family": "A-funnel-cleanup-v2",
+        "entry_policy": "east",
+        "ability_policy": "fixed-core-and-warden27s-queen-champion-hp-gates-observed-cleanup",
+        "mode": "ranked",
+        "attacker_town_hall": 16,
+        "defender_town_hall": 18,
+        "split": "search"
+      },
+      "input_sha256": "56880c7e45792792f34afeb40e060168423618d109ada14ad7ebb3001f1a5f8e",
+      "file_sha256": "7fda3b906f1a8f666672eae6b996e4a847effc456aef9bb92563fea47017ca44",
+      "prior_input_sha256": "4dc4eafbd66fa6914d223480ddcb93971f7c28e52274195aefcd81007c140ae7",
+      "admission": {
+        "input_sha256": "56880c7e45792792f34afeb40e060168423618d109ada14ad7ebb3001f1a5f8e",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      },
+      "environment_sha256": "d3132e735c7b64d43e8d7120dc85ae6132639735f52f357510859921edc69796",
+      "changes": [
+        {
+          "id": "rage-0",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "rage-1",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "rage-2",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "donated-rage-spell",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "ability-grand-warden",
+          "change": "Warden active at/after27s; no single-Dragon health or survival gate"
+        },
+        {
+          "id": "freeze-1",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "freeze-2",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "freeze-3",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "freeze-4",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "east-upper-shoulder",
+          "change": "Keep paid coordinate(54.5,13.5); declare Air Defense3-first route as closest footprint, not drill-first"
+        }
+      ]
+    },
+    {
+      "bundle": "cases/ranked-defense-1-hero-hunter-B-funnel-balloon-east-v2.json",
+      "case": {
+        "id": "ranked-defense-1-hero-hunter-B-funnel-balloon-east-v2",
+        "candidate_id": "defense-1-hero-hunter",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "family": "B-funnel-balloon-v2",
+        "entry_policy": "east",
+        "ability_policy": "fixed-core-and-warden27s-queen-champion-hp-gates-observed-cleanup",
+        "mode": "ranked",
+        "attacker_town_hall": 16,
+        "defender_town_hall": 18,
+        "split": "search"
+      },
+      "input_sha256": "034150945328686362c94e430f3a4af3890d6913c0b3a79eab36248bb73b5be7",
+      "file_sha256": "1a3fe7254e1e28c82e15816e10e0137a6891892ea11ce8fda474f3a76c429cf2",
+      "prior_input_sha256": "67ae64914833f388dc3182233c751fb055e5edcdd07c8222f0818bf8a2eacdf5",
+      "admission": {
+        "input_sha256": "034150945328686362c94e430f3a4af3890d6913c0b3a79eab36248bb73b5be7",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      },
+      "environment_sha256": "d3132e735c7b64d43e8d7120dc85ae6132639735f52f357510859921edc69796",
+      "changes": [
+        {
+          "id": "rage-0",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "rage-1",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "rage-2",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "donated-rage-spell",
+          "change": "Declared fixed core schedule; no lead-Dragon survival condition"
+        },
+        {
+          "id": "ability-grand-warden",
+          "change": "Warden active at/after27s; no single-Dragon health or survival gate"
+        },
+        {
+          "id": "freeze-1",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "freeze-2",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "freeze-3",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "freeze-4",
+          "change": "Retain named target alive cue; remove lead-Dragon survival condition"
+        },
+        {
+          "id": "east-upper-shoulder",
+          "change": "Keep paid coordinate(54.5,13.5); declare Air Defense3-first route as closest footprint, not drill-first"
+        }
+      ]
+    }
+  ],
+  "runs": 0,
+  "run_gate": "Select reviewed engine after Duke guard owner resolution; preserve all v1 outcomes/failures. Recompile on selected engine; fresh matched control if engine changes. No automatic rerun or transfer.",
+  "scope": "Two authorized input corrections only; no mechanics changes, added army family or broad sweep"
+}

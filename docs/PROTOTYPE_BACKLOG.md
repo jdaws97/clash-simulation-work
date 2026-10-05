@@ -43,3 +43,29 @@ No additional optional family is required to run the packaged demonstration.
 The withdrawn Root/Druid recommendation is not restored by synthetic results.
 Private GitHub publication remains a separate reviewed net-patch operation;
 the source archive contains no Git ancestry and performs no publication.
+
+## Deferred single-entitlement alternative deployments
+
+The paid scheduler admits disjoint alternate actions, not mutually exclusive
+main/salvage deployments of the same paid actor. The full-battle binding rejects
+duplicate actor deployment commands before branch selection. Choosing a separate
+reserve branch suppresses the held main commitment and does not deploy that force.
+
+A future owner-reviewed contract would need to bind one actor entitlement to
+multiple coordinate/time options, select and spend exactly one, suppress the
+others, preserve deployment legality and expose actual resource receipts. This
+feature is deferred; no implementation or acceptance is claimed here. The bounded
+candidate shortlist uses one paid deployment schedule with a funnel preparation
+window and disclosed failed-funnel risk. It does not require this new feature.
+
+## Unresolved slower-pursuer contact with a faster forced target
+
+One separate King/core-four air timeout reduces to four Skeleton Trap skeletons
+and two Tornado-moved Dragons. Speed-3 skeletons can repeatedly enter range of
+a target moving about 3.06147 because its radial component is smaller. In the
+bounded captured reduction, 512 frontiers advance only about 19.8 microseconds;
+retained-target-only queries reproduce the same frontiers. No safe production
+fix is proposed. Copying the faster velocity violates the pursuer's speed, and
+EPS changes or skipped events alter semantics. A new reviewed contact rule is
+needed. The accepted Duke correction is unchanged, and the other three stress
+timeouts retain their own unresolved causes. These failures remain unscored.

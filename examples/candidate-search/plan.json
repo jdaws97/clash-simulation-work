@@ -1,0 +1,97 @@
+{
+  "kind": "candidate_search_proposal_not_runner_manifest",
+  "execution_enabled": false,
+  "objective": "Two useful original army/action candidates with funnel, deployment, gear and explicit strengths/risks; robust evidence before manual defense build",
+  "owners": {
+    "attack_candidate_inputs_and_small_screen": "task23",
+    "defense_stress_matrix_and_receipts": "task24",
+    "duke_mechanics_fix": "task26",
+    "independent_audit": "task20_or_parent_assigned_reviewer",
+    "integration_and_final_candidate_plan": "task21"
+  },
+  "comparison_engine": "One explicitly selected frozen version; never pool scores across policy/version changes",
+  "screen": {
+    "source_pool": "admitted_existing_air_families_only",
+    "cases": [
+      {
+        "id": "C0",
+        "role": "fresh_version_control",
+        "roster": "14 Dragons +20 Minions",
+        "actions": "existing delayed cleanup, no declared funnel"
+      },
+      {
+        "id": "A",
+        "role": "proposed_funnel_cleanup",
+        "roster": "14 Dragons +20 Minions",
+        "actions": "two paid shoulder Dragons; one scheduled main commitment after preparation window; scheduled later Minions; failed-funnel risk disclosed",
+        "exact_input_status": "task23_to_design_and_admit"
+      },
+      {
+        "id": "B",
+        "role": "proposed_funnel_balloon_screen",
+        "roster": "15 Dragons +4 Balloons",
+        "actions": "same paid shoulder preparation and single scheduled commitment; scheduled four-Balloon screen; failed-funnel risk disclosed",
+        "exact_input_status": "task23_to_design_and_admit"
+      }
+    ],
+    "defense": "full TH18 forward Hot Candle",
+    "mode": "Legend I",
+    "entry": "west",
+    "per_case_wall_seconds": 240,
+    "total_wall_seconds": 730,
+    "maximum_new_full_battles": 3,
+    "control_reuse": "Only exact input and unchanged engine policy; if Duke correction changes engine, rerun C0",
+    "automatic_retries": 0,
+    "deployment_contract": {
+      "kind": "single_scheduled_deployment_per_paid_actor",
+      "funnel_required": false,
+      "clearance_observation": "diagnostic_at_scheduled_commit_not_release_gate",
+      "same_actor_alternative_deployment_supported": false,
+      "automatic_salvage": false,
+      "separate_reserve_branch_limitation": "Suppresses main commitment and leaves held main actors undeployed; not a rescue of that force"
+    }
+  },
+  "promotion": {
+    "maximum_finalists": 2,
+    "maximum_new_full_battles": 2,
+    "defense": "full TH18 central Hero Hunter",
+    "entry": "east with explicitly reselected paid funnel placements and deployment schedule",
+    "purpose": "whole-plan transfer; expose reversals, do not infer probability"
+  },
+  "initial_equipment_policy": "Keep exact declared seed loadouts fixed; verify user ownership before final card; one targeted matched substitution only after observed failure and feedback",
+  "feedback": [
+    "Preferred execution complexity and current reliable funnel",
+    "Typical failure: Hall miss, split army, core loss or cleanup timeout",
+    "Actual equipment/pet levels and realistic Castle donations"
+  ],
+  "defense_first_screen": {
+    "owner": "task24",
+    "candidate_layouts": 2,
+    "materially_different_attacking_styles_minimum": 3,
+    "entry_directions_minimum": 2,
+    "paired_cells_minimum": 12,
+    "requires_ground_style": true,
+    "threats": "TH17/18; same attacker profile within each layout pair",
+    "prepared": false,
+    "manual_build_recommendation_ready": false,
+    "inference": "conditional robustness and explicit weaknesses, no calibrated win probability"
+  },
+  "no_new_mechanics_breadth": true,
+  "pure_sixteen_dragon_role": "engine_control_not_final_recommendation",
+  "new_simulations_by_integrator": 0,
+  "readiness": "readiness.json",
+  "complete_held_out_game_calibrations": 0,
+  "backlog": [
+    {
+      "capability": "single_entitlement_mutually_exclusive_deployment_options",
+      "status": "deferred_not_implemented_not_required_for_screen",
+      "acceptance": "One owned actor debited once; select one coordinate/time option, suppress others, preserve legal deployment and actual resource receipts"
+    }
+  ],
+  "review_correction": {
+    "reviewer": "task25",
+    "checklist_sha256": "d54aa6064abe0302ab204222fd9f2fc2bc9a0824b33791368d789c2abda4fe0c",
+    "finding": "Existing alternate events cannot redirect the same held main force",
+    "resolution": "Use honest scheduled commitment for current candidate screen; keep alternative-entitlement deployment on backlog"
+  }
+}

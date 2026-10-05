@@ -231,12 +231,15 @@ def run(manifest_path, output, selected, *, experimental_air_contact=False):
             "full_game_prediction": False,
             "held_out_game_calibrations": 0,
             "recommendations": [],
-            "limits": [
-                "Original synthetic full TH18 inventory; no screenshot template or opponent weighting",
-                "Compare only within exact defense/mode; modes and crafted design packages are separate",
-                "Sampled engine-state controller has no human-latency or visibility model",
-                "All experimental policies retained in each bundle; TH16 stalled fixture excluded",
-            ],
+            "limits": manifest.get(
+                "comparison_limits",
+                [
+                    "Original synthetic full TH18 inventory; no screenshot template or opponent weighting",
+                    "Compare only within exact defense/mode; modes and crafted design packages are separate",
+                    "Sampled engine-state controller has no human-latency or visibility model",
+                    "All experimental policies retained in each bundle; TH16 stalled fixture excluded",
+                ],
+            ),
         }
         write_json(output / "comparison.json", report)
         print(

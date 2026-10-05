@@ -1,0 +1,266 @@
+{
+  "schema": "selected-preserved-account-availability-v1",
+  "checked_date_utc": "2026-10-05",
+  "evidence_scope": "Existing preserved account record; no fresh game/account query; selected facts only, no raw profile or identifiers.",
+  "candidate_input_sha256": "6465af880a2e0037d652cb671279ecbc46dcda99302f527765c71316ff05e9e0",
+  "candidate_file_sha256": "19be2cb17416746494c2a7e1e3ca62fa95f2d93d6f5cdb63a19068a550f261e8",
+  "town_hall": 16,
+  "laboratory_level": 14,
+  "recorded_capacities": {
+    "army_housing": 320,
+    "spell_housing": 11,
+    "clan_castle_troops": 50,
+    "clan_castle_spells": 3,
+    "hero_slots": 4,
+    "siege_deployments": 1
+  },
+  "recorded_ranked_potion_selection": {
+    "power": true,
+    "hero": true
+  },
+  "owned_requirements": [
+    {
+      "category": "troop",
+      "entity": "dragon",
+      "candidate_level": 11,
+      "recorded_owned_level": 10,
+      "modeled_ranked_effective_level": 11,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": true
+    },
+    {
+      "category": "troop",
+      "entity": "balloon",
+      "candidate_level": 11,
+      "recorded_owned_level": 11,
+      "modeled_ranked_effective_level": 11,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": false
+    },
+    {
+      "category": "spell",
+      "entity": "rage-spell",
+      "candidate_level": 6,
+      "recorded_owned_level": 6,
+      "modeled_ranked_effective_level": 6,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": false
+    },
+    {
+      "category": "spell",
+      "entity": "freeze-spell",
+      "candidate_level": 7,
+      "recorded_owned_level": 7,
+      "modeled_ranked_effective_level": 7,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": false
+    },
+    {
+      "category": "siege",
+      "entity": "stone-slammer",
+      "candidate_level": 5,
+      "recorded_owned_level": 4,
+      "modeled_ranked_effective_level": 5,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": true
+    },
+    {
+      "category": "hero",
+      "entity": "archer-queen",
+      "candidate_level": 95,
+      "recorded_owned_level": 92,
+      "modeled_ranked_effective_level": 95,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": true
+    },
+    {
+      "category": "hero",
+      "entity": "grand-warden",
+      "candidate_level": 70,
+      "recorded_owned_level": 67,
+      "modeled_ranked_effective_level": 70,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": true
+    },
+    {
+      "category": "hero",
+      "entity": "royal-champion",
+      "candidate_level": 45,
+      "recorded_owned_level": 41,
+      "modeled_ranked_effective_level": 45,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": true
+    },
+    {
+      "category": "hero",
+      "entity": "dragon-duke",
+      "candidate_level": 15,
+      "recorded_owned_level": 12,
+      "modeled_ranked_effective_level": 15,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": true
+    },
+    {
+      "category": "equipment",
+      "entity": "invisibility-vial",
+      "candidate_level": 7,
+      "recorded_owned_level": 7,
+      "modeled_ranked_effective_level": 7,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": false
+    },
+    {
+      "category": "equipment",
+      "entity": "magic-mirror",
+      "candidate_level": 20,
+      "recorded_owned_level": 20,
+      "modeled_ranked_effective_level": 20,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": false
+    },
+    {
+      "category": "equipment",
+      "entity": "eternal-tome",
+      "candidate_level": 18,
+      "recorded_owned_level": 18,
+      "modeled_ranked_effective_level": 18,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": false
+    },
+    {
+      "category": "equipment",
+      "entity": "healing-tome",
+      "candidate_level": 15,
+      "recorded_owned_level": 15,
+      "modeled_ranked_effective_level": 15,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": false
+    },
+    {
+      "category": "equipment",
+      "entity": "rocket-spear",
+      "candidate_level": 21,
+      "recorded_owned_level": 21,
+      "modeled_ranked_effective_level": 21,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": false
+    },
+    {
+      "category": "equipment",
+      "entity": "electro-boots",
+      "candidate_level": 23,
+      "recorded_owned_level": 23,
+      "modeled_ranked_effective_level": 23,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": false
+    },
+    {
+      "category": "equipment",
+      "entity": "revenge-deck",
+      "candidate_level": 20,
+      "recorded_owned_level": 20,
+      "modeled_ranked_effective_level": 20,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": false
+    },
+    {
+      "category": "equipment",
+      "entity": "fire-heart",
+      "candidate_level": 18,
+      "recorded_owned_level": 18,
+      "modeled_ranked_effective_level": 18,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": false
+    },
+    {
+      "category": "pet",
+      "entity": "unicorn",
+      "candidate_level": 10,
+      "recorded_owned_level": 10,
+      "modeled_ranked_effective_level": 10,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": false
+    },
+    {
+      "category": "pet",
+      "entity": "electro-owl",
+      "candidate_level": 15,
+      "recorded_owned_level": 6,
+      "modeled_ranked_effective_level": 15,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": true
+    },
+    {
+      "category": "pet",
+      "entity": "spirit-fox",
+      "candidate_level": 10,
+      "recorded_owned_level": 6,
+      "modeled_ranked_effective_level": 10,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": true
+    },
+    {
+      "category": "pet",
+      "entity": "phoenix",
+      "candidate_level": 10,
+      "recorded_owned_level": 7,
+      "modeled_ranked_effective_level": 10,
+      "snapshot_requirement_met": true,
+      "depends_on_declared_potion": true
+    }
+  ],
+  "donation_requirements": [
+    {
+      "entity": "dragon",
+      "count": 2,
+      "candidate_level": 13,
+      "modeled_recipient_cap": 13,
+      "within_snapshot_cap": true
+    },
+    {
+      "entity": "wizard",
+      "count": 2,
+      "candidate_level": 14,
+      "modeled_recipient_cap": 14,
+      "within_snapshot_cap": true
+    },
+    {
+      "entity": "archer",
+      "count": 2,
+      "candidate_level": 14,
+      "modeled_recipient_cap": 14,
+      "within_snapshot_cap": true
+    },
+    {
+      "entity": "rage-spell",
+      "count": 1,
+      "candidate_level": 7,
+      "modeled_recipient_cap": 7,
+      "within_snapshot_cap": true
+    },
+    {
+      "entity": "freeze-spell",
+      "count": 1,
+      "candidate_level": 8,
+      "modeled_recipient_cap": 8,
+      "within_snapshot_cap": true
+    }
+  ],
+  "all_owned_requirements_met_under_recorded_model": true,
+  "all_donation_requirements_within_snapshot_caps": true,
+  "hero_selection": {
+    "archer-queen": true,
+    "grand-warden": true,
+    "royal-champion": true,
+    "dragon-duke": true
+  },
+  "hero_selection_limit": "Planning permission includes owned heroes despite upgrades; current deployability is unverified.",
+  "limitations": [
+    "Power/Hero potions are recorded planning choices; actual inventory, active boosts and current upgrades are unverified.",
+    "Equipment is never potion-boosted; all eight required gear items are present at candidate levels in the preserved record.",
+    "Hero Potion also raises pet levels in the existing declared simulator model; live caps/mechanics require patch verification.",
+    "Legal maximum donations are a planning permission, not evidence that those donations are currently available.",
+    "Legend I is the requested synthetic scenario; this check does not establish the account's present league.",
+    "No purchase, potion activation, donation or other account action was performed."
+  ]
+}

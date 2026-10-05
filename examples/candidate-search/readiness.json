@@ -1,0 +1,150 @@
+{
+  "status": "seed_compilation_only_no_new_combat",
+  "engine_base_commit": "fd52f6cfeb4c65acafde8ec797bafdb1bb1ccbe0",
+  "engine_identity": {
+    "code_sha256": "cb29676510c6ea39b19f9358ec9f5caa695b1cc0abc9055249099a929058761c",
+    "data_sha256": "a5cb33c781fbe49ce30a5425dd3946b9471d2d460d642f9fa6a34b877a510441",
+    "runtime": {
+      "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+      "platform": "Windows-11-10.0.26200-SP0"
+    }
+  },
+  "cases": [
+    {
+      "case": {
+        "id": "ranked-defense-0-hot-candle-fourteen-dragons-twenty-minions",
+        "candidate_id": "defense-0-hot-candle",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "family": "fourteen-dragons-twenty-minions",
+        "entry_policy": "west",
+        "ability_policy": "queen-health-gated",
+        "mode": "ranked",
+        "attacker_town_hall": 16,
+        "defender_town_hall": 18,
+        "split": "search"
+      },
+      "input_sha256": "37b6304271652bafca7483880f235e7bac212de876400e9c6c68e7fc0a89116f",
+      "input_file_sha256": "7b302a5889682c2c336762a4f04d2b7003b3ae07cbf9ce857d76274ce98c19d9",
+      "seed_commit": "fc9d0b8a921dbc261f95be0418f8b7618b50a714",
+      "seed_path": "examples/full-comparison/cases/ranked-defense-0-hot-candle-fourteen-dragons-twenty-minions.json",
+      "admission": {
+        "input_sha256": "37b6304271652bafca7483880f235e7bac212de876400e9c6c68e7fc0a89116f",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      },
+      "paid_funnel_required": false,
+      "role": "seed_only_new_funnel_plan_not_prepared",
+      "simulation_executed_now": false
+    },
+    {
+      "case": {
+        "id": "ranked-defense-1-hero-hunter-fourteen-dragons-twenty-minions",
+        "candidate_id": "defense-1-hero-hunter",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "family": "fourteen-dragons-twenty-minions",
+        "entry_policy": "west",
+        "ability_policy": "queen-health-gated",
+        "mode": "ranked",
+        "attacker_town_hall": 16,
+        "defender_town_hall": 18,
+        "split": "search"
+      },
+      "input_sha256": "742e5bc4824ec314e54cbcf00391d218356af9e1eac585c718ef7a48b62ce942",
+      "input_file_sha256": "deac04fb8614d5715eb58a975849ce87b7e0250c574e0b3fdb21481f1e9fef0a",
+      "seed_commit": "fc9d0b8a921dbc261f95be0418f8b7618b50a714",
+      "seed_path": "examples/full-comparison/cases/ranked-defense-1-hero-hunter-fourteen-dragons-twenty-minions.json",
+      "admission": {
+        "input_sha256": "742e5bc4824ec314e54cbcf00391d218356af9e1eac585c718ef7a48b62ce942",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      },
+      "paid_funnel_required": false,
+      "role": "seed_only_new_funnel_plan_not_prepared",
+      "simulation_executed_now": false
+    },
+    {
+      "case": {
+        "id": "ranked-defense-0-hot-candle-fifteen-dragons-four-balloons",
+        "candidate_id": "defense-0-hot-candle",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "family": "fifteen-dragons-four-balloons",
+        "entry_policy": "west",
+        "ability_policy": "scheduled-with-balloon-screen-and-dragon-delay",
+        "mode": "ranked",
+        "attacker_town_hall": 16,
+        "defender_town_hall": 18,
+        "split": "search"
+      },
+      "input_sha256": "279b111efb02992722a84d67bb3ad22bc5f21a88c79180f6eb8d50a741f18e51",
+      "input_file_sha256": "5ded997ff5d33f3e1b85fd66487afc78e4437ff7cb738418f63864029dc5a63f",
+      "seed_commit": "3da2c3234986371eab8a8b7b9b1b853d1fd4e4d1",
+      "seed_path": "examples/full-comparison-balloon/cases/ranked-defense-0-hot-candle-fifteen-dragons-four-balloons.json",
+      "admission": {
+        "input_sha256": "279b111efb02992722a84d67bb3ad22bc5f21a88c79180f6eb8d50a741f18e51",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      },
+      "paid_funnel_required": false,
+      "role": "seed_only_new_funnel_plan_not_prepared",
+      "simulation_executed_now": false
+    },
+    {
+      "case": {
+        "id": "ranked-defense-1-hero-hunter-fifteen-dragons-four-balloons",
+        "candidate_id": "defense-1-hero-hunter",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "family": "fifteen-dragons-four-balloons",
+        "entry_policy": "west",
+        "ability_policy": "scheduled-with-balloon-screen-and-dragon-delay",
+        "mode": "ranked",
+        "attacker_town_hall": 16,
+        "defender_town_hall": 18,
+        "split": "search"
+      },
+      "input_sha256": "39ebdcd8410d17fd853f862e3eeff9af39e63c293eac20f2b250deaa871124bf",
+      "input_file_sha256": "91934ee936c8eb70bb5e21b2624bbdae8d88b4da799e7e01c0b50a4be74c165c",
+      "seed_commit": "3da2c3234986371eab8a8b7b9b1b853d1fd4e4d1",
+      "seed_path": "examples/full-comparison-balloon/cases/ranked-defense-1-hero-hunter-fifteen-dragons-four-balloons.json",
+      "admission": {
+        "input_sha256": "39ebdcd8410d17fd853f862e3eeff9af39e63c293eac20f2b250deaa871124bf",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      },
+      "paid_funnel_required": false,
+      "role": "seed_only_new_funnel_plan_not_prepared",
+      "simulation_executed_now": false
+    }
+  ],
+  "funnel_packages_ready": false,
+  "new_full_battles": 0,
+  "limitations": [
+    "Exact A/B paid funnel placements and single-deployment schedules still require task23 preparation/admission; conditional same-actor salvage is unsupported",
+    "Task26 Duke correction is separate and needs reviewed version selection before any results are combined"
+  ],
+  "alternative_entitlement_deployment_supported": false,
+  "planned_commitment": "scheduled_not_funnel_gated"
+}

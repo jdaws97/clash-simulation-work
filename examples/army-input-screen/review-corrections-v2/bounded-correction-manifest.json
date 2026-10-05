@@ -1,0 +1,67 @@
+{
+  "source": "task23-two-remaining-slots-review-correction-then-transfer",
+  "operation": "simulate",
+  "timeout_seconds": 240,
+  "maximum_total_wall_seconds": 490,
+  "cases": [
+    {
+      "bundle": "cases/ranked-defense-0-hot-candle-B-funnel-balloon-west-v2.json",
+      "case": {
+        "id": "ranked-defense-0-hot-candle-B-funnel-balloon-west-v2",
+        "candidate_id": "defense-0-hot-candle",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "family": "B-funnel-balloon-v2",
+        "entry_policy": "west",
+        "ability_policy": "fixed-core-and-warden27s-queen-champion-hp-gates-observed-cleanup",
+        "mode": "ranked",
+        "attacker_town_hall": 16,
+        "defender_town_hall": 18,
+        "split": "search"
+      },
+      "input_sha256": "6465af880a2e0037d652cb671279ecbc46dcda99302f527765c71316ff05e9e0",
+      "admission": {
+        "input_sha256": "6465af880a2e0037d652cb671279ecbc46dcda99302f527765c71316ff05e9e0",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "bundle": "cases/ranked-defense-1-hero-hunter-B-funnel-balloon-east-v2.json",
+      "case": {
+        "id": "ranked-defense-1-hero-hunter-B-funnel-balloon-east-v2",
+        "candidate_id": "defense-1-hero-hunter",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "family": "B-funnel-balloon-v2",
+        "entry_policy": "east",
+        "ability_policy": "fixed-core-and-warden27s-queen-champion-hp-gates-observed-cleanup",
+        "mode": "ranked",
+        "attacker_town_hall": 16,
+        "defender_town_hall": 18,
+        "split": "search"
+      },
+      "input_sha256": "034150945328686362c94e430f3a4af3890d6913c0b3a79eab36248bb73b5be7",
+      "admission": {
+        "input_sha256": "034150945328686362c94e430f3a4af3890d6913c0b3a79eab36248bb73b5be7",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    }
+  ],
+  "automatic_retries": 0,
+  "selection_gate": "Run west Bv2 first, then east Bv2 only after a terminal west receipt. Owner enforces via --case. These replace the original two transfer slots; at most five total attempts across v1 and v2.",
+  "revision_reason": "Bv1 main Dragon died42.345s; later two Rages withheld. Independent review correction already compiled.",
+  "full_game_prediction": false,
+  "held_out_game_calibrations": 0
+}

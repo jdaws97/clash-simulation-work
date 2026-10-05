@@ -5,6 +5,12 @@ experiment toolkit. This private repository preserves the v29 engine and adds
 portable fixtures, bounded regression checks, and reproducible development
 benchmarks. It does not establish live-game accuracy or predict win rates.
 
+The [reviewed candidate screen and defense pair](docs/REVIEWED_CANDIDATES_AND_DEFENSES.md)
+retains one promising west-matchup army package with a severe east-transfer failure,
+and two generated TH16 defenses both tripled by the same attack. Its manifest keeps
+the older army results separate from the accepted experimental Duke-policy engine.
+It establishes neither a broad army winner nor a manual-build base recommendation.
+
 The current draft includes a [runnable full-village prototype](docs/FULL_COMPARISON_QUICKSTART.md)
 and an [independently checked publication summary](docs/PROTOTYPE_PUBLICATION.md).
 Two complete synthetic TH18 battles compare declared TH16 attack plans against

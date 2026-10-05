@@ -1,0 +1,374 @@
+{
+  "target_sha256": "941adb12445095786cdc763abd8b11f0c461c5e991c96c4e75da28bb681ac8ca",
+  "proposals_sha256": "e0fb7c4d3122ca725033904046d645bad027c01dd8fca0cfdbb8b90f949ed51f",
+  "catalog_snapshot": "c6967314d7281bb87c362993e2635e58cd77b351",
+  "cases": [
+    {
+      "case_id": "ranked-staggered_compartments-declared-th16-th17-air-west",
+      "inventory": {
+        "id": "758f6ed5890bab2f891e",
+        "building_count": 468,
+        "occupied_tiles": 1227,
+        "seasonal_stations": {
+          "crafting-station-0": {
+            "policy": "official_august_2026_phase4_th11_plus_not_current_date_certified",
+            "source": "https://supercell.com/en/games/clashofclans/blog/news/the-awesome-quest-is-here/",
+            "source_publication_date": "2026-07-31",
+            "season_start_date": "2026-08-01",
+            "minimum_town_hall": 11,
+            "selected_town_hall": 16,
+            "current_date_rotation_verified": false
+          }
+        },
+        "destruction_eligibility_complete": true,
+        "status": "GEOMETRY_AND_SNAPSHOT_CONSTRAINTS_ONLY",
+        "limitations": "Higher-TH merge rules, gearing and destruction flags require independent validation; explicit phase4 Station access does not certify current rotation or combat",
+        "inventory_complete_under_selection": true,
+        "merge_conservation": true,
+        "game_legality_proven": false,
+        "current_season_verified": false,
+        "selection": {
+          "town_hall": 16,
+          "merges": {
+            "ricochet-cannon": 2,
+            "multi-archer-tower": 2,
+            "multi-gear-tower": 0,
+            "super-wizard-tower": 0
+          },
+          "crafted": {
+            "variant": "hot-candle",
+            "phase": 4,
+            "as_of_date": "2026-10-04",
+            "rotation_policy": "explicit_phase4_selection_not_current_date_certified",
+            "module_levels": {
+              "Hitpoints": 1,
+              "Damage": 1,
+              "Seconds Active": 1
+            },
+            "availability_policy": "official_august_2026_phase4_th11_plus_not_current_date_certified"
+          }
+        }
+      },
+      "attack_projection_sha256": "e8b107a08ba09d220b2b72a8e0e2e1274f23c94182422a9d32cb7bb9a3a328b1",
+      "nongeometry_defense_sha256": "d782d13929effd2b56416ad5dbec57aaa7b52daa2627bc601410251a994932eb",
+      "capacities": {
+        "army_housing": 340,
+        "spell_housing": 11,
+        "clan_castle_troops": 55,
+        "clan_castle_spells": 3,
+        "hero_slots": 4,
+        "siege_deployments": 1,
+        "own_siege_storage": 3,
+        "clan_castle_siege_storage": 2,
+        "max_active_super_troops": 2
+      },
+      "troops": [
+        {
+          "id": "dragon",
+          "level": 12,
+          "count": 17
+        }
+      ],
+      "heroes": [
+        {
+          "id": "archer-queen",
+          "level": 100,
+          "mode": "ground",
+          "equipment": [
+            {
+              "id": "invisibility-vial",
+              "level": 7
+            },
+            {
+              "id": "magic-mirror",
+              "level": 20
+            }
+          ],
+          "pet": {
+            "id": "unicorn",
+            "level": 15
+          }
+        },
+        {
+          "id": "grand-warden",
+          "level": 75,
+          "mode": "air",
+          "equipment": [
+            {
+              "id": "eternal-tome",
+              "level": 18
+            },
+            {
+              "id": "healing-tome",
+              "level": 15
+            }
+          ],
+          "pet": {
+            "id": "electro-owl",
+            "level": 15
+          }
+        },
+        {
+          "id": "royal-champion",
+          "level": 50,
+          "mode": "ground",
+          "equipment": [
+            {
+              "id": "rocket-spear",
+              "level": 21
+            },
+            {
+              "id": "electro-boots",
+              "level": 23
+            }
+          ],
+          "pet": {
+            "id": "spirit-fox",
+            "level": 10
+          }
+        },
+        {
+          "id": "dragon-duke",
+          "level": 20,
+          "mode": "air",
+          "equipment": [
+            {
+              "id": "revenge-deck",
+              "level": 20
+            },
+            {
+              "id": "fire-heart",
+              "level": 18
+            }
+          ],
+          "pet": {
+            "id": "phoenix",
+            "level": 10
+          }
+        }
+      ],
+      "castle": {
+        "troops": [
+          {
+            "id": "dragon",
+            "level": 13,
+            "count": 2
+          },
+          {
+            "id": "wizard",
+            "level": 14,
+            "count": 2
+          },
+          {
+            "id": "archer",
+            "level": 14,
+            "count": 7
+          }
+        ],
+        "spells": [
+          {
+            "id": "rage-spell",
+            "level": 7,
+            "count": 1
+          },
+          {
+            "id": "freeze-spell",
+            "level": 8,
+            "count": 1
+          }
+        ]
+      },
+      "laboratory_level": 15,
+      "th16_dragon_cap": 11,
+      "th17_dragon_cap": 12
+    },
+    {
+      "case_id": "ranked-split_core-declared-th16-th17-air-west",
+      "inventory": {
+        "id": "848a971ea33d08f49e8e",
+        "building_count": 468,
+        "occupied_tiles": 1227,
+        "seasonal_stations": {
+          "crafting-station-0": {
+            "policy": "official_august_2026_phase4_th11_plus_not_current_date_certified",
+            "source": "https://supercell.com/en/games/clashofclans/blog/news/the-awesome-quest-is-here/",
+            "source_publication_date": "2026-07-31",
+            "season_start_date": "2026-08-01",
+            "minimum_town_hall": 11,
+            "selected_town_hall": 16,
+            "current_date_rotation_verified": false
+          }
+        },
+        "destruction_eligibility_complete": true,
+        "status": "GEOMETRY_AND_SNAPSHOT_CONSTRAINTS_ONLY",
+        "limitations": "Higher-TH merge rules, gearing and destruction flags require independent validation; explicit phase4 Station access does not certify current rotation or combat",
+        "inventory_complete_under_selection": true,
+        "merge_conservation": true,
+        "game_legality_proven": false,
+        "current_season_verified": false,
+        "selection": {
+          "town_hall": 16,
+          "merges": {
+            "ricochet-cannon": 2,
+            "multi-archer-tower": 2,
+            "multi-gear-tower": 0,
+            "super-wizard-tower": 0
+          },
+          "crafted": {
+            "variant": "hot-candle",
+            "phase": 4,
+            "as_of_date": "2026-10-04",
+            "rotation_policy": "explicit_phase4_selection_not_current_date_certified",
+            "module_levels": {
+              "Hitpoints": 1,
+              "Damage": 1,
+              "Seconds Active": 1
+            },
+            "availability_policy": "official_august_2026_phase4_th11_plus_not_current_date_certified"
+          }
+        }
+      },
+      "attack_projection_sha256": "e8b107a08ba09d220b2b72a8e0e2e1274f23c94182422a9d32cb7bb9a3a328b1",
+      "nongeometry_defense_sha256": "d782d13929effd2b56416ad5dbec57aaa7b52daa2627bc601410251a994932eb",
+      "capacities": {
+        "army_housing": 340,
+        "spell_housing": 11,
+        "clan_castle_troops": 55,
+        "clan_castle_spells": 3,
+        "hero_slots": 4,
+        "siege_deployments": 1,
+        "own_siege_storage": 3,
+        "clan_castle_siege_storage": 2,
+        "max_active_super_troops": 2
+      },
+      "troops": [
+        {
+          "id": "dragon",
+          "level": 12,
+          "count": 17
+        }
+      ],
+      "heroes": [
+        {
+          "id": "archer-queen",
+          "level": 100,
+          "mode": "ground",
+          "equipment": [
+            {
+              "id": "invisibility-vial",
+              "level": 7
+            },
+            {
+              "id": "magic-mirror",
+              "level": 20
+            }
+          ],
+          "pet": {
+            "id": "unicorn",
+            "level": 15
+          }
+        },
+        {
+          "id": "grand-warden",
+          "level": 75,
+          "mode": "air",
+          "equipment": [
+            {
+              "id": "eternal-tome",
+              "level": 18
+            },
+            {
+              "id": "healing-tome",
+              "level": 15
+            }
+          ],
+          "pet": {
+            "id": "electro-owl",
+            "level": 15
+          }
+        },
+        {
+          "id": "royal-champion",
+          "level": 50,
+          "mode": "ground",
+          "equipment": [
+            {
+              "id": "rocket-spear",
+              "level": 21
+            },
+            {
+              "id": "electro-boots",
+              "level": 23
+            }
+          ],
+          "pet": {
+            "id": "spirit-fox",
+            "level": 10
+          }
+        },
+        {
+          "id": "dragon-duke",
+          "level": 20,
+          "mode": "air",
+          "equipment": [
+            {
+              "id": "revenge-deck",
+              "level": 20
+            },
+            {
+              "id": "fire-heart",
+              "level": 18
+            }
+          ],
+          "pet": {
+            "id": "phoenix",
+            "level": 10
+          }
+        }
+      ],
+      "castle": {
+        "troops": [
+          {
+            "id": "dragon",
+            "level": 13,
+            "count": 2
+          },
+          {
+            "id": "wizard",
+            "level": 14,
+            "count": 2
+          },
+          {
+            "id": "archer",
+            "level": 14,
+            "count": 7
+          }
+        ],
+        "spells": [
+          {
+            "id": "rage-spell",
+            "level": 7,
+            "count": 1
+          },
+          {
+            "id": "freeze-spell",
+            "level": 8,
+            "count": 1
+          }
+        ]
+      },
+      "laboratory_level": 15,
+      "th16_dragon_cap": 11,
+      "th17_dragon_cap": 12
+    }
+  ],
+  "same_attack_and_nongeometry_defense": true,
+  "limits": [
+    "Original generated full TH16 inventories versus one identical genuine TH17 synthetic attack; fixed west entry and schedule",
+    "Only geometry differs; full nongeometry defense content and attack projection hashes are identical",
+    "Legend I profile and conditional phase4 level1 Hot Candle active in both",
+    "Pinned catalog legality and conditional footprint admission do not establish live-game placement or current-season availability",
+    "Experimental airborne contact movement explicitly accepted; no complete held-out game calibration",
+    "One paired attack cannot establish a generally best base or a game recommendation"
+  ]
+}
