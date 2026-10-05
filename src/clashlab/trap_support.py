@@ -44,6 +44,7 @@ def validate_trap_footprints(traps, actors, width, height):
 def eligible_trap_unit(actor, team, layers, excluded_entities, time):
     return (
         _active(actor, time)
+        and not actor.get("_spell_trap_trigger_exempt", False)
         and actor["kind"] == "unit"
         and actor["team"] != team
         and actor["layer"] in layers

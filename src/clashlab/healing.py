@@ -12,6 +12,7 @@ from math import hypot
 
 from .combat import validate_pattern
 from .common import InputError, identifier, integer, number, require
+from .range_events import first_weapon_range_entry_delay
 from .spatial import EPSILON, _active, _remember_route, _route, center, target_distance
 from .walls import WALL_RULES
 
@@ -228,7 +229,7 @@ class SupportCombat:
             route = _route(actor, retained, blocked, width, height)
             if route is not None:
                 _remember_route(actor, retained, route, blocked)
-                return retained, route
+                return retained, self._pursuit_route(actor, retained, route)
         choices = []
         for target in actors.values():
             if not self._eligible_primary(model, actor, target, time):
@@ -256,7 +257,53 @@ class SupportCombat:
         _, _, _, target, route = min(choices, key=lambda item: item[:3])
         actor["healing_target"] = target["id"]
         _remember_route(actor, target, route, blocked)
-        return target, route
+        return target, self._pursuit_route(actor, target, route)
+
+    @staticmethod
+    def _pursuit_route(actor, target, route):
+        if (
+            not route
+            or actor["movement"] != "air"
+            or target["movement"] == "stationary"
+        ):
+            return route
+        # Continue the existing straight pursuit ray beyond the old range edge.
+        # The shared motion phase clips it at relative healing-range contact.
+        # Stopping at the moving primary's OLD range edge instead creates a
+        # geometric series of false arrivals and repeated whole-battle solves.
+        x, y = center(actor)
+        return [
+            (
+                min(max(x, target["x"]), target["x"] + target["width"]),
+                min(max(y, target["y"]), target["y"] + target["height"]),
+            )
+        ]
+
+    def first_crossing_delay(self, actors, motions, time, horizon):
+        earliest = None
+        for actor_id, model in self.models.items():
+            actor = actors[actor_id]
+            target = actors.get(actor.get("healing_target"))
+            if (
+                not _active(actor, time)
+                or target is None
+                or not self._eligible_primary(model, actor, target, time)
+            ):
+                continue
+            route, speed = motions.get(actor_id, ((), 0))
+            target_route, target_speed = motions.get(target["id"], ((), 0))
+            delay = first_weapon_range_entry_delay(
+                actor,
+                target,
+                route,
+                target_route,
+                speed,
+                target_speed,
+                horizon if earliest is None else earliest,
+            )
+            if delay is not None:
+                earliest = delay if earliest is None else min(earliest, delay)
+        return earliest
 
     def prepare_targets(self, actors, time, blocked, width, height):
         for actor_id in sorted(self.models):

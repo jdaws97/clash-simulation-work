@@ -111,7 +111,16 @@ def pack_case(result, profile):
                     key: {
                         name: value
                         for name, value in state.items()
-                        if name in {"x", "y", "hp", "active", "frozen_until", "builder"}
+                        if name
+                        in {
+                            "x",
+                            "y",
+                            "hp",
+                            "maximum_hp",
+                            "active",
+                            "frozen_until",
+                            "builder",
+                        }
                     }
                     for key, state in frame["actors"].items()
                 },

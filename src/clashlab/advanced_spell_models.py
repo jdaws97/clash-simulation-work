@@ -1,8 +1,22 @@
 """Seven permanent home spell contracts; catalog statistics are not calibration."""
 
 from copy import deepcopy
+from math import inf, nextafter
 
 from .common import InputError, identifier, integer, number, require
+
+# Shared acceptance is narrower than the independently testable domain compiler.
+SHARED_BOUND_SPELLS = frozenset(
+    {
+        "bat-spell",
+        "skeleton-spell",
+        "jump-spell",
+        "ice-block-spell",
+        "clone-spell",
+        "revive-spell",
+        "angry-spell",
+    }
+)
 
 
 SPELL_CLASSES = {
@@ -29,6 +43,8 @@ POLICIES = {
     "jump_expiry": "finish_current_wall_exit_then_replan",
     "skeleton_armor": "one_hit_shield_discards_breaking_hit_overflow",
     "summon_garrison_trigger": "do_not_trigger_defending_castle_still_attackable",
+    "same_time_settlement": "all_due_releases_and_revivals_then_clone_closure_then_field_membership",
+    "clock_rounding": "positive_delay_rounds_up_when_sum_does_not_advance",
 }
 PARAMETERS = {
     "source",
@@ -72,6 +88,16 @@ QUANTITY_FIELDS = {
 }
 
 
+def spell_clock_after(time, delay):
+    """Keep positive spell delays observable even below the clock's current ULP."""
+    number(time, "spell clock", 0)
+    number(delay, "spell clock delay", 0)
+    result = time + delay
+    if delay > 0 and result <= time:
+        result = nextafter(time, inf)
+    return number(result, "representable future spell clock", time)
+
+
 def validate_advanced_spell(model):
     fields = {
         "id",
@@ -97,7 +123,7 @@ def validate_advanced_spell(model):
         identifier(model[key], "spell identity/evidence")
     time = number(model["time_seconds"], "cast time", 0)
     arrival = number(model["arrival_seconds"], "arrival time", time)
-    if arrival != time + model["parameters"]["impact_delay_seconds"]:
+    if arrival != spell_clock_after(time, model["parameters"]["impact_delay_seconds"]):
         raise InputError("Permanent spell arrival disagrees with cast delay")
     number(model["radius"], "spell radius", 0)
     if not isinstance(model["position"], (list, tuple)) or len(model["position"]) != 2:
@@ -265,7 +291,7 @@ def compile_advanced_spell(instance, catalog):
         "source": parameters["source"],
         "statistics_source": catalog.records[entity_id]["source"],
         "time_seconds": time,
-        "arrival_seconds": time + parameters["impact_delay_seconds"],
+        "arrival_seconds": spell_clock_after(time, parameters["impact_delay_seconds"]),
         "position": [
             number(require(instance, "x"), "cast x", 0),
             number(require(instance, "y"), "cast y", 0),

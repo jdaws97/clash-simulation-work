@@ -278,6 +278,14 @@ class BarbarianKingCombat:
             self.heal_next[key] = None
             self.horse_until[key] = None
             for item in actor["hero_model"]["equipment"]:
+                from .equipment_summons import (
+                    OWNERS as SUMMON_OWNERS,
+                    validate_equipment as validate_summon,
+                )
+
+                if item["entity"] in SUMMON_OWNERS:
+                    validate_summon(item)
+                    continue
                 if item["entity"] == "earthquake-boots":
                     from .recipe_equipment import validate_recipe_equipment
 

@@ -15,6 +15,11 @@ https://support.supercell.com/clash-of-clans/en/articles/about-heroes-pets-9.htm
 from collections import defaultdict
 from copy import deepcopy
 from math import floor, hypot
+from .raven_lifecycle import (
+    compile_model as compile_raven_model,
+    validate_behavior as validate_raven_behavior,
+    select_target as select_raven_target,
+)
 
 from .jelly_lifecycle import (
     JellyLifecycle,
@@ -55,12 +60,12 @@ SUPPORTED_PETS = frozenset(
         "frosty",
         "mighty-yak",
         "angry-jelly",
+        "greedy-raven",
     }
 )
 MISSING_PET_MECHANICS = {
     "poison-lizard": "Poison ramp, exposure duration and retarget behavior need a complete adapter",
     "sneezy": "Booger statistics and summon lifecycle need a complete adapter",
-    "greedy-raven": "Resource damage preference and special attack behavior need a complete adapter",
 }
 PUBLISHER_SOURCES = {
     "original_pets": "https://supercell.com/en/games/clashofclans/blog/game-updates/meet-the-hero-pets-1-2/",
@@ -96,6 +101,7 @@ COMMON_PARAMETERS = {
     "behavior",
 }
 OWNER_DEATH_POLICIES = {
+    "greedy-raven": "independent_combat",
     "angry-jelly": "separate_then_independent_no_reattachment",
     "mighty-yak": "independent_combat_one_owner_defeat_rage",
     "unicorn": "nearest_living_hero_then_nearest_living_troop",
@@ -107,6 +113,7 @@ OWNER_DEATH_POLICIES = {
     "frosty": "independent_combat",
 }
 TARGET_RETENTION = {
+    "greedy-raven": "resource_tier_retain_within_tier",
     "angry-jelly": "prefer_owner_primary_then_nearest",
     "mighty-yak": "independent_wall_routing_experimental",
     "unicorn": "assigned_owner_then_declared_fallback",
@@ -118,7 +125,7 @@ TARGET_RETENTION = {
     "frosty": "retain_then_prefer_targets_within_owner_radius",
 }
 OWNER_RADII = {"lassi": 2.5, "spirit-fox": 4.5, "frosty": 4.5}
-AIR_PETS = {"phoenix", "electro-owl", "angry-jelly"}
+AIR_PETS = {"phoenix", "electro-owl", "angry-jelly", "greedy-raven"}
 MODEL_FIELDS = {
     "entity",
     "level",
@@ -319,6 +326,8 @@ def _validate_parameters(entity_id, parameters):
         )
         number(behavior["jump_range_tiles"], "Owl chain distance", EPSILON)
         number(behavior["jump_delay_seconds"], "Owl chain delay", 0)
+    elif entity_id == "greedy-raven":
+        validate_raven_behavior(behavior)
     elif entity_id == "angry-jelly":
         validate_jelly_behavior(behavior)
     elif entity_id == "mighty-yak":
@@ -496,6 +505,11 @@ def compile_pet(instance, catalog, movement_units_per_tile, heroes):
             "kind": parameters["ground_wall_policy"],
             "source": parameters["source"],
         }
+    if entity_id == "greedy-raven":
+        actor["raven_model"] = compile_raven_model(
+            parameters["behavior"], row, entity, catalog
+        )
+        actor["raven_model"]["source"] = source
     if entity_id == "angry-jelly":
         actor["jelly_model"] = {
             "source": source,
@@ -711,6 +725,19 @@ class PetCombat:
                     "Pet owner preference radius does not match its entity"
                 )
             expected_layer = "air" if entity_id in AIR_PETS else "ground"
+            if entity_id == "greedy-raven":
+                raven = actor.get("raven_model", {})
+                if (
+                    set(raven)
+                    != {"source", "resource_multiplier", "behavior", "experimental"}
+                    or raven["behavior"] != model["parameters"]["behavior"]
+                    or raven["experimental"] is not True
+                ):
+                    raise InputError(
+                        "Raven requires its compiled complete resource weapon contract"
+                    )
+                identifier(raven["source"], "Raven statistic source")
+                number(raven["resource_multiplier"], "Raven resource multiplier", 0)
             expected_pattern = {
                 "unicorn": "none",
                 "phoenix": "radial",
@@ -834,6 +861,8 @@ class PetCombat:
         return _eligible(actor, target, time) and not target.get("_tesla_hidden", False)
 
     def _enemy_target(self, actor, time, blocked, underground=False):
+        if self.models[actor["id"]]["entity"] == "greedy-raven":
+            return select_raven_target(self, actor, time, blocked)
         state = self.states[actor["id"]]
         model = self.models[actor["id"]]
         owner = self.actors[state["bonded_hero_id"]]

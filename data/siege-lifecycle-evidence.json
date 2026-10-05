@@ -5,6 +5,7 @@
   "statistics_verification": "unverified_snapshot",
   "behavior_verification": "source_grounded_capabilities_with_explicit_uncalibrated_hypotheses",
   "complete_battle_integration": "pending_shared_adapter_kernel_resource_and_child_binding",
+  "flinger_damage_clock": "explicit_uncalibrated_single_source_clock_integrates_strongest_overlapping_field_DPS_and_final_partial_interval",
   "sources": [
     {
       "url": "https://support.supercell.com/clash-of-clans/en/articles/siege-machines-3.html",

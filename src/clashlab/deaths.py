@@ -106,6 +106,8 @@ class DeathCombat:
             if actor_id in self.emitted or actor["death_time"] is None:
                 continue
             self.emitted.add(actor_id)
+            if actor.get("wall_breaker_model") and actor.get("_troop_suicide_attack"):
+                continue
             position = center(actor)
             for template in self.models[actor_id]["effects"]:
                 effect = deepcopy(template)

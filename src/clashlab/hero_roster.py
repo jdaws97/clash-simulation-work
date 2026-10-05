@@ -6,6 +6,8 @@ from .barbarian_king import BarbarianKingCombat
 from .dragon_duke import DragonDukeCombat
 from .minion_prince import MinionPrinceCombat
 from .recipe_equipment import RecipeEquipmentCombat
+from .equipment_weapons import EquipmentWeaponCombat
+from .equipment_summons import EquipmentSummonCombat
 
 
 EXTENDED_HEROES = {"barbarian-king", "minion-prince", "dragon-duke"}
@@ -19,6 +21,10 @@ class HeroRosterCombat:
         self.duke = DragonDukeCombat(actors, combat)
         self.prince = MinionPrinceCombat(actors, combat, hit_status)
         self.recipe = RecipeEquipmentCombat(actors)
+        self.equipment_weapons = EquipmentWeaponCombat(
+            actors, select_target, width, height
+        )
+        self.equipment_summons = EquipmentSummonCombat(actors, width, height)
         self.width = width
         self.height = height
         self.select_target = self.king.select_target
@@ -28,19 +34,30 @@ class HeroRosterCombat:
         self.duke.prepare(actors, time, trace)
         self.prince.prepare(actors, time, trace)
         self.recipe.prepare(actors, time, trace)
+        self.equipment_weapons.prepare(actors, time, trace)
+        self.equipment_summons.prepare(actors, time, trace)
 
     def activate(self, hero_id, actors, time, trace):
         self.king.activate(hero_id, actors, time, trace)
         self.prince.activate(hero_id, actors, time, trace)
         self.recipe.activate(hero_id, actors, time, trace)
+        self.equipment_weapons.activate(hero_id, actors, time, trace)
+        self.equipment_summons.activate(hero_id, actors, time, trace)
 
     def weapon_launched(self, hero_id, time, trace):
         self.prince.weapon_launched(hero_id, time, trace)
+        self.equipment_weapons.weapon_launched(hero_id, time, trace)
 
     def resolve(self, actors, time, trace, receipts):
         damage = defaultdict(float)
         healing = defaultdict(float)
-        for runtime in (self.king, self.duke, self.recipe):
+        for runtime in (
+            self.king,
+            self.duke,
+            self.recipe,
+            self.equipment_weapons,
+            self.equipment_summons,
+        ):
             extra_damage, extra_healing = runtime.resolve(actors, time, trace, receipts)
             for key, amount in extra_damage.items():
                 damage[key] += amount
@@ -51,6 +68,7 @@ class HeroRosterCombat:
         return damage, healing
 
     def after_health(self, actors, receipts, time, trace):
+        self.equipment_summons.after_health(actors, receipts, time, trace)
         self.recipe.prepare(actors, time, trace)
         return self.duke.after_health(actors, receipts, time, trace)
 
@@ -62,7 +80,14 @@ class HeroRosterCombat:
 
     def next_boundary(self, time):
         candidates = []
-        for runtime in (self.king, self.duke, self.prince, self.recipe):
+        for runtime in (
+            self.king,
+            self.duke,
+            self.prince,
+            self.recipe,
+            self.equipment_weapons,
+            self.equipment_summons,
+        ):
             boundary = runtime.next_boundary(time)
             if boundary is not None:
                 candidates.append(boundary)
@@ -88,7 +113,10 @@ class HeroRosterCombat:
         }
 
     def has_due_offense(self, time):
-        return any(
+        return (
+            bool(self.equipment_weapons.packets)
+            and self.equipment_weapons.packets[0][0] <= time
+        ) or any(
             runtime.packets and runtime.packets[0][0] <= time + 1e-10
             for runtime in (self.king, self.duke, self.recipe)
         )
@@ -121,7 +149,11 @@ class HeroRosterCombat:
                     expires_at_seconds=orb["ends_at"],
                 )
             )
-        return reasons + self.recipe.continuation_reasons()
+        return (
+            reasons
+            + self.recipe.continuation_reasons()
+            + self.equipment_weapons.continuation_reasons(time)
+        )
 
     def result(self):
         return {
@@ -129,4 +161,6 @@ class HeroRosterCombat:
             "dragon_duke": self.duke.result(),
             "minion_prince": self.prince.result(),
             "recipe_equipment": self.recipe.result(),
+            "equipment_weapons": self.equipment_weapons.result(),
+            "equipment_summons": self.equipment_summons.result(),
         }

@@ -441,7 +441,7 @@
               context.fillRect(
                 x - width / 2,
                 y - height / 2 - 7,
-                width * Math.min(1, state.hp / actor.hitpoints),
+                width * Math.min(1, state.hp / (state.maximum_hp ?? actor.hitpoints)),
                 4,
               );
             }

@@ -601,6 +601,8 @@ class RecipeTroopCombat:
         return hypot(a[0] - b[0], a[1] - b[1])
 
     def _prepare_apprentices(self, time, trace):
+        from .siege_lifecycle import siege_effect_eligible
+
         for key, state in self.apprentices.items():
             source = self.actors[key]
             model = self.models[key]
@@ -619,6 +621,7 @@ class RecipeTroopCombat:
                 if self._apprentice_eligible(
                     source, target, parameters["aura_classes"], time
                 )
+                and siege_effect_eligible(target, "apprentice_warden_aura")
                 and self._distance(source, target) <= radius + EPSILON
             )
             followers = [

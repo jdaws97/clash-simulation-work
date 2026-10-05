@@ -10,6 +10,12 @@ from .buffs import EXTRACTION_SOURCE
 from .common import InputError, identifier, integer, number, require
 from .hazards import HAZARD_CLASSES, PROTECTION_POLICIES
 from .spatial import EPSILON
+from .advanced_spell_models import (
+    SPELL_CLASSES as ADVANCED_SPELL_CLASSES,
+    SHARED_BOUND_SPELLS,
+    compile_advanced_spell,
+    validate_advanced_spell,
+)
 from .recipe_spells import (
     RECIPE_SPELLS,
     recipe_spell_quantities,
@@ -26,7 +32,8 @@ SPELL_CLASSES = {
     "totem-spell": "damage",
     "recall-spell": "support_only",
 }
-SUPPORTED_ATTACK_SPELLS = frozenset(SPELL_CLASSES)
+ALL_SPELL_CLASSES = {**SPELL_CLASSES, **ADVANCED_SPELL_CLASSES}
+SUPPORTED_ATTACK_SPELLS = frozenset(SPELL_CLASSES) | SHARED_BOUND_SPELLS
 COMMON_PARAMETERS = {
     "source",
     "caster_team",
@@ -404,6 +411,8 @@ def validate_parameters(entity_id, parameters):
 
 def compile_attack_spell(instance, catalog):
     entity_id = require(instance, "entity")
+    if entity_id in ADVANCED_SPELL_CLASSES:
+        return compile_advanced_spell(instance, catalog)
     if entity_id not in SUPPORTED_ATTACK_SPELLS:
         raise InputError("Unsupported attacking spell family")
     level = integer(require(instance, "level"), "attacking spell level", 1)
@@ -539,6 +548,8 @@ def compile_attack_spell(instance, catalog):
 
 
 def validate_attack_spell(model):
+    if model.get("entity") in ADVANCED_SPELL_CLASSES:
+        return validate_advanced_spell(model)
     _exact(model, MODEL_FIELDS, "Compiled attacking spell")
     entity_id = model["entity"]
     if entity_id not in SUPPORTED_ATTACK_SPELLS:
@@ -641,7 +652,7 @@ def poison_fields(model):
 def validate_spell_classifications(policy):
     """Bind the user's termination choices to the implemented spell mechanisms."""
     for entry in policy["spell_inventory"]:
-        expected = SPELL_CLASSES.get(entry["entity"])
+        expected = ALL_SPELL_CLASSES.get(entry["entity"])
         if expected is not None and entry["classification"] != expected:
             raise InputError(
                 "Termination classification disagrees with implemented spell mechanics"

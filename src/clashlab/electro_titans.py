@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from copy import deepcopy
-from math import hypot
+from math import ceil, hypot, isfinite
 
 from .buffs import damage_multiplier
 from .common import InputError, identifier, number, require
@@ -91,6 +91,7 @@ class ElectroTitanCombat:
         self.actors = actors
         self.models = {}
         self.states = {}
+        self.recalled = set()
         for key, actor in actors.items():
             if "aura_model" not in actor:
                 continue
@@ -118,9 +119,35 @@ class ElectroTitanCombat:
     def prepare(self, time):
         for key, state in self.states.items():
             actor = self.actors[key]
-            if state["next_pulse"] is None and _active(actor, time):
+            recalled = actor.get("_recalled", False)
+            if recalled:
+                self.recalled.add(key)
+            # Recall preserves absolute clocks, including a first pulse that
+            # has not yet fired. It does not create a new deployment epoch.
+            spawn = actor["spawn_seconds"]
+            deployed = isinstance(spawn, (int, float)) and spawn <= time
+            if state["next_pulse"] is None and deployed:
                 delay = self.models[key]["parameters"]["first_pulse_delay_seconds"]
-                state["next_pulse"] = actor["spawn_seconds"] + delay
+                state["next_pulse"] = spawn + delay
+                if not isfinite(state["next_pulse"]) or (
+                    delay > 0 and state["next_pulse"] <= spawn
+                ):
+                    raise InputError(
+                        "Positive aura delay cannot advance a finite spawn clock"
+                    )
+            if key in self.recalled and not recalled and _active(actor, time):
+                # Only withdrawn pulses are discarded. A pulse coincident
+                # with return remains due; active-source skipped clocks still
+                # fail in resolve rather than being silently caught up.
+                clock = state["next_pulse"]
+                interval = self.models[key]["interval_seconds"]
+                missed = max(ceil((time - clock) / interval), 0)
+                state["next_pulse"] = clock + missed * interval
+                if state["next_pulse"] < time:
+                    state["next_pulse"] += interval
+                if not isfinite(state["next_pulse"]) or state["next_pulse"] < time:
+                    raise InputError("Aura return cannot advance a finite pulse clock")
+                self.recalled.remove(key)
 
     def _members(self, actor, model, time):
         point = center(actor)
@@ -154,15 +181,16 @@ class ElectroTitanCombat:
             actor = self.actors[key]
             state = self.states[key]
             scheduled = state["next_pulse"]
-            if (
-                not _active(actor, time)
-                or scheduled is None
-                or scheduled > time + EPSILON
-            ):
+            if not _active(actor, time) or scheduled is None or scheduled > time:
                 continue
-            if scheduled < time - EPSILON:
+            if scheduled < time:
                 raise InputError("Electro Titan aura pulse boundary was skipped")
-            state["next_pulse"] = scheduled + model["interval_seconds"]
+            next_pulse = scheduled + model["interval_seconds"]
+            if not isfinite(next_pulse) or next_pulse <= scheduled:
+                raise InputError(
+                    "Positive aura cadence cannot advance a finite pulse clock"
+                )
+            state["next_pulse"] = next_pulse
             state["pulses"] += 1
             parameters = model["parameters"]
             frozen = actor["frozen_until"] > time + EPSILON
@@ -213,7 +241,7 @@ class ElectroTitanCombat:
             for key, state in self.states.items()
             if _active(self.actors[key], time)
             and state["next_pulse"] is not None
-            and state["next_pulse"] > time + EPSILON
+            and state["next_pulse"] > time
         ]
         return min(pending, default=None)
 

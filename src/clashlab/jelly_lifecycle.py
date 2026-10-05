@@ -19,6 +19,8 @@ POLICIES = {
     "owner_recall": "absolute_expiry_separation_deferred_until_owner_returns",
 }
 
+PRIORITY_FIELDS = ("target_priorities", "target_priority_tiers", "_target_ranks")
+
 
 def validate_behavior(behavior):
     if behavior != POLICIES:
@@ -55,21 +57,33 @@ class JellyLifecycle:
     def attach(self, pet_id, actors, states, time, trace):
         actor = actors[pet_id]
         owner = actors[actor["pet_model"]["hero_id"]]
-        if set(owner["target_priorities"]) != {"defense", "building"}:
+        response = owner.get("defending_unit_response", {}).get("primary", "ignore")
+        classes = {"defense", "building"}
+        tiers = [["defense"], ["building"]]
+        if response == "same_tier_as_buildings":
+            classes.add("unit")
+            tiers[1].append("unit")
+        elif response == "after_buildings":
+            classes.add("unit")
+            tiers.append(["unit"])
+        elif response != "ignore":
+            raise InputError("Jelly override requires a bound defending-unit response")
+        if set(owner["target_priorities"]) != classes:
             raise InputError(
                 "Jelly override requires ordinary attacking hero target classes"
             )
         saved = {
-            field: deepcopy(owner[field])
-            for field in ("target_priority_tiers", "_target_ranks")
-            if field in owner
+            field: deepcopy(owner[field]) for field in PRIORITY_FIELDS if field in owner
         }
         self.attached[pet_id] = {
             "expires_at": time + self.models[pet_id]["duration_seconds"],
             "saved": saved,
         }
-        owner["target_priority_tiers"] = [["defense"], ["building"]]
-        owner["_target_ranks"] = {"defense": 0, "building": 1}
+        owner["target_priority_tiers"] = tiers
+        owner["target_priorities"] = [kind for tier in tiers for kind in tier]
+        owner["_target_ranks"] = {
+            kind: rank for rank, tier in enumerate(tiers) for kind in tier
+        }
         self._invalidate(owner)
         actor["spawn_seconds"] = "controlled"
         states[pet_id]["phase"] = "attached"
@@ -93,8 +107,9 @@ class JellyLifecycle:
             if time < attachment["expires_at"] and owner["hp"] > 0:
                 continue
             owner.update(attachment["saved"])
-            if "target_priority_tiers" not in attachment["saved"]:
-                owner.pop("target_priority_tiers", None)
+            for field in PRIORITY_FIELDS:
+                if field not in attachment["saved"]:
+                    owner.pop(field, None)
             self._invalidate(owner)
             actor["spawn_seconds"] = time
             actor["next_attack"] = time + actor["first_attack_seconds"]

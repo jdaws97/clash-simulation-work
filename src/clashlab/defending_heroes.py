@@ -31,6 +31,7 @@ DEFENDING_HEROES = {
     "royal-champion",
     "grand-warden",
     "minion-prince",
+    "dragon-duke",
 }
 DEFENDING_HERO_RULES = {
     "defending_hero_statistics": "explicit_snapshot_base_without_attacking_equipment_or_pets",
@@ -174,13 +175,29 @@ def compile_defending_hero(
     from .combat import validate_pattern
 
     entity_id = entity["id"]
+    if entity_id == "dragon-duke":
+        duke_role = require(instance, "defending_duke_parameters")
+        _fields(
+            duke_role, {"source", "status", "intrinsic_policy"}, "Defending Duke role"
+        )
+        identifier(duke_role["source"], "Defending Duke evidence")
+        if (
+            duke_role["status"] != "explicit_uncalibrated_hypothesis"
+            or duke_role["intrinsic_policy"]
+            != "suppressed_pending_defensive_eligibility_evidence"
+        ):
+            raise InputError(
+                "Defending Duke isolation and equipment need a separately sourced role binding"
+            )
     if entity_id not in DEFENDING_HEROES or entity["category"] != "hero":
         raise InputError(
             "This defending hero needs an entity-specific behavior adapter"
         )
     statue = entity_id == "grand-warden"
     expected_mode = (
-        "statue" if statue else "air" if entity_id == "minion-prince" else "ground"
+        "statue"
+        if statue
+        else "air" if entity_id in {"minion-prince", "dragon-duke"} else "ground"
     )
     if (
         instance["entity"] != entity_id
@@ -287,6 +304,8 @@ def compile_defending_hero(
         },
     )
     validate_pattern(actor["attack_model"])
+    if entity_id == "dragon-duke":
+        actor["entity_adapter"]["defending_duke_parameters"] = deepcopy(duke_role)
     actor["entity_adapter"].update(
         defending_hero_parameters=deepcopy(parameters),
         behavior_verification="explicit_defending_hero_hypotheses_not_replay_validated",
@@ -436,6 +455,18 @@ def validate_defending_unit_responses(actors, specification):
 
 def _validate_model(actor):
     model = require(actor, "defending_hero_model")
+    if model.get("entity") == "dragon-duke":
+        role = require(require(actor, "entity_adapter"), "defending_duke_parameters")
+        _fields(role, {"source", "status", "intrinsic_policy"}, "Defending Duke role")
+        identifier(role["source"], "Defending Duke evidence")
+        if (
+            role["status"] != "explicit_uncalibrated_hypothesis"
+            or role["intrinsic_policy"]
+            != "suppressed_pending_defensive_eligibility_evidence"
+        ):
+            raise InputError(
+                "Defending Duke runtime requires explicit intrinsic suppression"
+            )
     _fields(
         model,
         {
@@ -489,7 +520,7 @@ def _validate_model(actor):
     expected_movement = (
         "stationary"
         if model["statue"]
-        else "air" if model["entity"] == "minion-prince" else "ground"
+        else "air" if model["entity"] in {"minion-prince", "dragon-duke"} else "ground"
     )
     expected_layers = (
         ["ground"] if model["entity"] == "barbarian-king" else ["ground", "air"]

@@ -1,9 +1,16 @@
 # Permanent spell domain handoff
 
-This patch supplies seven spell-domain compilers and lifecycle contracts for
-declared TH16–18 battles. It does not promote their full-battle coverage: the
-stable kernel still rejects these identities. Integration requires the shared
-owner's changes below. Seasonal and Builder Base content is outside this patch.
+This supplies seven spell-domain compilers and lifecycle contracts for declared
+TH16-18 battles. Stage4 binds Bat, Skeleton and Jump to paid v29 battles under an
+additional explicit `advanced_spell_binding` contract. Those three integrations
+have focused full-battle regressions; Bat/Skeleton have conditional independent
+acceptance. Ice Block's ordinary troop path and the Jump/Tornado correction are
+now implemented and await recheck; see [clock scope](SPELL_CLOCK_CHECKPOINT.md).
+Clone, Revive and Angry now bind within the explicit ordinary/core-hero limits
+in [the lifecycle checkpoint](SPELL_LIFECYCLE_CHECKPOINT.md). Secondary lifecycles
+continue to reject; no complete coverage claim follows. The remaining sections
+describe the domain contract; callback presence alone is not shared acceptance.
+Seasonal and Builder Base content is outside this work.
 
 ## Source and fidelity
 
@@ -31,6 +38,12 @@ unlock are caller hypotheses. The pinned catalog omits Bat's Town Hall damage
 exception; `bat_town_hall_damage_multiplier` must be supplied explicitly as an
 experimental hypothesis. Tests deliberately use 0.123, which is not a game value.
 Missing or different policies reject.
+
+The interaction correction adds two required policies:
+`same_time_settlement=all_due_releases_and_revivals_then_clone_closure_then_field_membership`
+and `clock_rounding=positive_delay_rounds_up_when_sum_does_not_advance`.
+Previously saved policy dictionaries need these fields before validation; the
+compiler does not silently supply them.
 
 Unknown hero recovery/Phoenix interactions, complex troop clone lifecycle,
 spawn legality, landing geometry and cross-family target overrides must be checked
@@ -114,13 +127,27 @@ writes its new pause clock. Extend `rates.attack_resume_time` to include
 `_spell_pause_until`; pause union is max(Freeze, displacement, Ice Block). Invoke
 the callback idempotently only on changed pause clocks. Ice Block never resets
 weapon cooldowns. Ordinary field clocks expire absolutely while frozen or held.
+Angry retains its established absolute expiry through Recall and death; inactive
+actors receive neither its movement bonus nor its target override. Returning
+before expiry restores those effects; returning after expiry does not extend or
+recreate the clock. Ordinary live field entry can still apply a new effect.
 
 Required scheduling hooks:
 
 - `prepare(time,trace)` after deployment/Recall membership settles and before
   acquisition/weapon launches; idempotent cast/release/revive/expiry transitions.
+  Every due Bat/Skeleton release and Revive settles first, then Clone considers
+  all resulting non-clone sources, then Ice captures and Angry refreshes membership.
+  Cast IDs break ties within phases, not source availability between families.
+  Clone reserves cannot source more clones, so a finite dependency sweep reaches
+  the domain's fixed point without zero-time retries. Shared external child
+  producers must also settle before this hook; clone descendants need clone
+  lineage metadata and cannot become independently clonable sources.
 - `next_boundary(time)` among solver boundaries, including positive sub-epsilon
   cast delays; returns strictly future representable times.
+  If a positive delay is below the current clock's ULP, `spell_clock_after` advances
+  to `nextafter(time,+inf)`. The same rule applies to cast arrival, finite release,
+  field end, clone life, linger and continuation clocks; overflow rejects.
 - `first_crossing_delay(actor,route,time,horizon,effective_speed,forced_motion)`
   for exact Clone/Angry motion entry/exit; consume hint by calling prepare at the
   resulting boundary. Do not approximate contacts with the recording interval.
@@ -158,13 +185,18 @@ remains a declared kernel contract.
 
 ## Validation and remaining acceptance
 
-Seven bounded unittest cases pass against the sanitized snapshot. They cover
+Nine bounded unittest cases pass against the sanitized snapshot. They cover
 pause-work preservation through overlap/expiry, two step sizes for Angry linger,
 finite Bat/Skeleton release and existing resource receipts, finite Clone housing
 and Recall-held expiry after source death, one-hero Revive with spent ability and
 attack work retained, Jump wall eligibility, exact positive sub-epsilon arrival,
 and full-battle compilation rejecting all seven unbound families. Kernel callbacks
 in lifecycle tests are explicit synthetic surrogates, not battle integration.
+The two interaction regressions compose Angry with the real Recall owner and
+check return before/after the retained expiry, plus simultaneous Bat/Clone under
+both cross-family cast-ID orders and repeated same-time prepare calls. The existing
+Jump timing case also checks a positive sub-ULP delay at time 100. The two material
+interaction cases failed on the frozen domain before correction.
 
 The lead still needs two bounded complete-battle acceptance fixtures after atomic
 binding: (1) Bat/Skeleton + Clone crossing, source loss, trap trigger exclusion,

@@ -109,7 +109,12 @@ Production timing and member offsets remain experimental caller inputs.
 Flinger uses named per-spirit hit damage, burst cadence/count, maximum flame
 DPS, source decay and lifetime. Captured launched impacts and flame fields
 survive carrier loss. Unlaunched spirits cancel on death or declared Freeze.
-Fields compose as strongest pulse per source/recipient, sum between sources.
+Fields compose by integrating strongest overlapping DPS per source/recipient,
+sum between sources. One damage clock belongs to each source, anchored at its
+first active impact. Absolute field age determines ramp stage. A new field
+does not mint a second pulse budget; final expiry settles only the remaining
+partial source interval. Target membership is sampled at the shared settlement
+boundary. This is an explicit uncalibrated damage-clock policy.
 Burst offsets, flight, field geometry, duration and ramp remain experimental.
 The prior field-hit packet omitted source-team attribution; this patch fixes it.
 
@@ -148,8 +153,10 @@ same-time releases. Non-progressing positive event clocks reject explicitly.
 
 Barracks requires ordinary PEKKA and Wizard support. Launcher requires
 Barbarian, Archer, Giant and Wall Breaker. Wagon requires Minion, Balloon and
-Baby Dragon. The troop worker owns missing Wall Breaker, Balloon and Baby Dragon
-capabilities. Include Giga/Spring/Tornado and defending-unit response maps for
+Baby Dragon. Ordinary Wall Breaker needs the troop worker's missing capability.
+Balloon and Baby Dragon already have recipe implementations; their real recipe
+policies and generated-child binding must be supplied rather than replacing
+them with inert fixtures. Include Giga/Spring/Tornado and defending-unit response maps for
 all generated members, using their ordinary troop classes and explicit layer
 policies. No attacking CC troop gets a second siege-generated origin. Siege
 carriers acquire structures, never defending CC troops; released children

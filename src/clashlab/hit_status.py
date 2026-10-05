@@ -133,7 +133,7 @@ class HitStatusCombat:
         self.exposures = {
             key: exposure
             for key, exposure in self.exposures.items()
-            if exposure["expires_at"] > time + EPSILON and _active(actors[key[0]], time)
+            if exposure["expires_at"] > time and _active(actors[key[0]], time)
         }
         grouped = {}
         for (target, source), exposure in self.exposures.items():

@@ -53,7 +53,27 @@ def record_damage(
     protected = target.get("_tesla_hidden", False) or (
         target["immune_until"] > time + EPSILON
     )
-    return 0 if protected else amount
+    flat = number(
+        target.get("_equipment_owner_flat_reduction", 0), "equipment flat reduction", 0
+    )
+    factor = number(
+        target.get("_equipment_field_incoming_multiplier", 1),
+        "equipment incoming multiplier",
+        0,
+        1,
+    )
+    factor *= number(
+        target.get("_spell_incoming_damage_multiplier", 1),
+        "spell incoming multiplier",
+        0,
+        1,
+    )
+    final = 0 if protected else max(amount - flat, 0) * factor
+    if target.get("_spell_armor_hp", 0) > 0:
+        from .advanced_spells import armor_damage
+
+        final = armor_damage(target, final)
+    return final
 
 
 class DamageReceipts:
@@ -112,6 +132,23 @@ class DamageReceipts:
             0,
             1,
         )
+        multiplier *= number(
+            target.get("_equipment_field_incoming_multiplier", 1),
+            "equipment incoming multiplier",
+            0,
+            1,
+        )
+        multiplier *= number(
+            target.get("_spell_incoming_damage_multiplier", 1),
+            "spell incoming multiplier",
+            0,
+            1,
+        )
+        flat = number(
+            target.get("_equipment_owner_flat_reduction", 0),
+            "equipment flat reduction",
+            0,
+        )
         if origin == "trap":
             multiplier *= number(
                 target.get("_hero_trap_damage_multiplier", 1),
@@ -119,7 +156,13 @@ class DamageReceipts:
                 0,
                 1,
             )
-        final = 0 if protected else amount * multiplier
+        final = 0 if protected else max(amount - flat, 0) * multiplier
+        armor_before = target.get("_spell_armor_hp", 0)
+        before_armor = final
+        if armor_before > 0:
+            from .advanced_spells import armor_damage
+
+            final = armor_damage(target, final)
         if self.target_ids is not None and target["id"] not in self.target_ids:
             return final
         receipt = {
@@ -135,6 +178,15 @@ class DamageReceipts:
             "damage_multiplier": multiplier,
             "final_damage": final,
             "actual_health_loss": None,
+            **(
+                {
+                    "armor_before": armor_before,
+                    "armor_after": target["_spell_armor_hp"],
+                    "armor_absorbed_packet_damage": before_armor - final,
+                }
+                if armor_before > 0
+                else {}
+            ),
         }
         self.sequence += 1
         if apply_immediately:

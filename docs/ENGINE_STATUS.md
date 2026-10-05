@@ -39,11 +39,36 @@ automatic hero activation, and many selectable entities remain unsupported.
 Selected unsupported content must fail explicitly. Catalog presence is not
 equivalent to combat support.
 
-Electro Titan and Druid have standalone components and tests, but v30 integration
-was not completed. Log Launcher alone is now bound from the siege-extension
-module; its other siege drafts remain unintegrated. Do not include standalone
-components in a claimed full-battle coverage count. The old v28 coverage count
-is stale; it is not a completion percentage.
+Electro Titan is connected through explicit opt-in to the paid troop adapter,
+shared aura clock, health settlement and short synthetic full-battle contracts.
+Recall composition and positive pulse timing have corrective integration checks;
+independent acceptance is tracked per frozen checkpoint, not inferred from tests.
+Druid and the other attacking extension runtimes remain unbound at the general
+entry point. Raw unbound lifecycle models now reject before execution.
+
+Flame Flinger and Siege Barracks join Log Launcher and the three original siege
+carriers in conditional shared dispatch. Their short synthetic battle contracts
+cover released damage, finite payload ownership and generated Barracks resources;
+the Flinger overlap and positive final-tail corrections have independent bounded
+conditional acceptance at `da093e6eeacc677d056bbfce85642e92bbed8cf8`.
+Drill, Troop Launcher and Sky Wagon remain unbound. Logger discovery explicitly
+reports unavailable until projectile, pushback and continuation are connected.
+Optional Inferno fuel now gates the shared weapon rather than being discarded.
+
+Ice Block's ordinary troop weapon/movement path is now bound and tested through
+paid battles, including defensive Ice Golem death-Freeze overlap in both orders.
+Secondary lifecycle recipients fail closed; selected core hero loadouts now bind
+under the subsequent [spell lifecycle checkpoint](SPELL_LIFECYCLE_CHECKPOINT.md).
+The Jump/Tornado expiry correction uses a legal shared ground exit after capture.
+See [the clock checkpoint](SPELL_CLOCK_CHECKPOINT.md) for exact scope and limits.
+
+Bat, Skeleton and Jump now have explicit v29 shared bindings and paid battle
+regressions. They require `advanced_spell_binding` as well as the complete spell
+policy dictionary. Bat/Skeleton have conditional independent acceptance; the
+Jump correction and later Ice/Clone/Revive/Angry bindings await recheck. Clone
+supports ordinary fresh troop/spell-unit lifecycles; Revive and Angry enforce
+the documented core hero and targeting limits. No
+updated coverage percentage or full-game fidelity claim follows from this work.
 
 ## Numerical limits
 

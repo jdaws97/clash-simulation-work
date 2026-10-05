@@ -80,6 +80,15 @@ class BattleModifierIntegrationTests(unittest.TestCase):
         specification["entity_scene"]["effects"] = [ability(royal["id"])]
         result = simulate_full_battle(*inputs, self.catalog, mode_rules=self.rules)
         self.assertEqual(result["battle_modifier_audit"]["profile_id"], "legend_i")
+        for role in result["battle_modifier_audit"]["application"][
+            "resolved_roles"
+        ].values():
+            self.assertTrue(role["source"].endswith("the-sound-of-clash-update/"))
+            self.assertEqual(role["checked_on"], "2026-10-04")
+            self.assertEqual(role["source_published_on"], "2026-04-27")
+            self.assertEqual(
+                role["verification"], "published_profile_not_client_session_observation"
+            )
         self.assertEqual(result["resource_use"]["used_hero_ability_ids"], ["royal"])
         compiled = next(
             actor

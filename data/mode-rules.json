@@ -9,6 +9,16 @@
       "defender_award": "40 minus actual attacker trophies",
       "snapshot": "ranked defensive layout locks on placement in weekly group",
       "within_star_exact_formula_verified": false
+    },
+    "legend_i": {
+      "tournament_weeks": 4,
+      "battles_per_day": 8,
+      "modifiers": "legend_i",
+      "snapshot": "Changes after a League Day begins apply to the following League Day",
+      "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/",
+      "source_published_on": "2026-04-27",
+      "checked_on": "2026-10-04",
+      "verification": "published_profile_not_client_session_observation"
     }
   },
   "war": {
@@ -38,7 +48,7 @@
   ],
   "potion_defense_policy": {
     "hero_potion_applies_to_defense": false,
-    "target_defense_profile": "fully upgraded TH16 by user request, independently of attack potion profile",
+    "target_defense_profile": "Defensive levels and opponent Town Hall are independently declared per scenario; no attack potion or historical TH16 fixture supplies a current target profile",
     "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-february-update-has-escaped/"
   },
   "battle_modifier_profiles": {
@@ -69,7 +79,7 @@
       }
     },
     "legend_iii": {
-      "source": "https://support.supercell.com/clash-of-clans/en/articles/friendly-challenges-3.html",
+      "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/",
       "verification": "published_profile_not_client_session_observation",
       "roles": {
         "defense": {
@@ -92,10 +102,12 @@
       "equipment_level_reduction": {
         "common": 0,
         "epic": 0
-      }
+      },
+      "source_published_on": "2026-04-27",
+      "checked_on": "2026-10-04"
     },
     "legend_ii": {
-      "source": "https://support.supercell.com/clash-of-clans/en/articles/friendly-challenges-3.html",
+      "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/",
       "verification": "published_profile_not_client_session_observation",
       "roles": {
         "defense": {
@@ -118,10 +130,12 @@
       "equipment_level_reduction": {
         "common": 0,
         "epic": 0
-      }
+      },
+      "source_published_on": "2026-04-27",
+      "checked_on": "2026-10-04"
     },
     "legend_i": {
-      "source": "https://support.supercell.com/clash-of-clans/en/articles/friendly-challenges-3.html",
+      "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/",
       "verification": "published_profile_not_client_session_observation",
       "roles": {
         "defense": {
@@ -144,10 +158,12 @@
       "equipment_level_reduction": {
         "common": 0,
         "epic": 0
-      }
+      },
+      "source_published_on": "2026-04-27",
+      "checked_on": "2026-10-04"
     },
     "esport": {
-      "source": "https://support.supercell.com/clash-of-clans/en/articles/friendly-challenges-3.html",
+      "source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/",
       "verification": "published_profile_not_client_session_observation",
       "roles": {
         "defense": {
@@ -170,16 +186,22 @@
       "equipment_level_reduction": {
         "common": 3,
         "epic": 6
-      }
+      },
+      "source_published_on": "2026-04-27",
+      "checked_on": "2026-10-04"
     }
   },
   "battle_modifier_policy": {
     "selection": "Caller supplies the actual battle profile; no TH-based inference",
     "current_user_scenarios": {
-      "electro31": "none",
+      "legend_i": "legend_i",
       "master_ii_cwl": "none"
     },
     "maximum_hp_damage_scaling": "Caller must supply a separate explicit policy",
-    "equipment": "Reductions reported separately; no unverified minimum-level clamp or full equipment adapter"
+    "equipment": "Reductions reported separately; no unverified minimum-level clamp or full equipment adapter",
+    "historical_scenario_profiles": {
+      "electro31": "none"
+    },
+    "benchmark_applicability": "A declared profile-none or same-level engineering fixture does not validate a Legend I or higher-TH strategy; the actual scenario must select its profile explicitly"
   }
 }

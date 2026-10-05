@@ -430,12 +430,30 @@ class GarrisonCombat:
                     "Garrison member runtime model",
                 )
                 _validate_member_parameters(model["parameters"], 18)
-                if model["entity"] not in GARRISON_MEMBERS:
+                extended = actor.get("defending_extension_model")
+                roles = dict(GARRISON_MEMBERS)
+                if extended is not None:
+                    from .defending_cc_extensions import (
+                        EXTENSION_ADAPTERS,
+                        SCOPE,
+                        _validate_role,
+                    )
+
+                    if (
+                        extended.get("entity") != model["entity"]
+                        or extended.get("scope") != SCOPE
+                    ):
+                        raise InputError("Defending extension role or scope mismatch")
+                    _validate_role(extended["parameters"], model["entity"])
+                    roles.update(EXTENSION_ADAPTERS)
+                if model["entity"] not in roles:
                     raise InputError("Unsupported runtime garrison member")
                 for field in ("level", "town_hall", "housing_space"):
                     integer(model[field], field, 1)
                 integer(model["laboratory_required"], "received laboratory", 0)
-                movement, pattern_kind = GARRISON_MEMBERS[model["entity"]]
+                movement, pattern_kind = roles[model["entity"]]
+                if model["entity"] == "furnace":
+                    movement = "stationary"
                 layers = (
                     ["ground"]
                     if model["entity"]
@@ -448,27 +466,40 @@ class GarrisonCombat:
                         raise InputError(
                             "Unsupported defending Dragon Rider layer policy"
                         )
+                if extended is not None:
+                    layers = list(extended["parameters"]["target_layers"])
+                wall_kind = (
+                    extended["parameters"]["wall_policy"]
+                    if extended is not None
+                    else (
+                        "jump_enemy_walls"
+                        if model["entity"] == "hog-rider"
+                        else "avoid"
+                    )
+                )
                 if (
                     actor["team"] != "defense"
                     or actor["kind"] != "unit"
                     or actor["movement"] != movement
-                    or actor["layer"] != movement
+                    or actor["layer"]
+                    != ("ground" if movement == "stationary" else movement)
                     or actor["counts_for_destruction"]
                     or actor["spawn_seconds"] != "controlled"
                     or actor["target_priorities"] != ["unit"]
                     or actor["target_layers"] != layers
                     or actor["attack_model"]["kind"] != pattern_kind
-                    or actor["attack_model"]["target_kinds"] != ["unit"]
-                    or actor["attack_model"]["target_layers"] != layers
+                    or (
+                        pattern_kind != "none"
+                        and actor["attack_model"]["target_kinds"] != ["unit"]
+                    )
+                    or (
+                        pattern_kind != "none"
+                        and actor["attack_model"]["target_layers"] != layers
+                    )
                     or actor.get("housing_space") != model["housing_space"]
                     or (
                         movement == "ground"
-                        and actor.get("wall_behavior", {}).get("kind")
-                        != (
-                            "jump_enemy_walls"
-                            if model["entity"] == "hog-rider"
-                            else "avoid"
-                        )
+                        and actor.get("wall_behavior", {}).get("kind") != wall_kind
                     )
                 ):
                     raise InputError("Invalid runtime garrison member role or weapon")
@@ -528,7 +559,8 @@ class GarrisonCombat:
         choices = []
         for target in self.actors.values():
             if (
-                not _eligible(member, target, time)
+                target.get("_spell_garrison_trigger_exempt", False)
+                or not _eligible(member, target, time)
                 or target["layer"] not in model["parameters"]["trigger_layers"]
             ):
                 continue

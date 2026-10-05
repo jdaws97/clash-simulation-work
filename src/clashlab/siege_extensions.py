@@ -357,7 +357,8 @@ def validate_extended_siege_pattern(pattern):
         "Extended siege weapon marker",
     )
     if (
-        pattern["kind"] != "siege_extended"
+        pattern["kind"]
+        != ("none" if pattern["entity"] == "siege-barracks" else "siege_extended")
         or pattern["entity"] not in EXTENDED_SIEGES
         or pattern["target_kinds"] != ["defense", "building", "wall"]
         or pattern["target_layers"] != ["ground"]
@@ -538,7 +539,7 @@ def compile_extended_siege(
         spring_class="siege",
         beneficial_field_immunity=True,
         attack_model={
-            "kind": "siege_extended",
+            "kind": "none" if stationary else "siege_extended",
             "source": actor["source"],
             "entity": entity_id,
             "target_kinds": ["defense", "building", "wall"],
@@ -626,7 +627,7 @@ def validate_barracks_inventory(actors, account):
         member = actor.get("barracks_member_model")
         if member is None:
             continue
-        owned = account.get("troop_levels", {}).get(member["entity"])
+        owned = account.get("levels", {}).get(member["entity"])
         if owned != member["level"]:
             raise InputError(
                 "Barracks generated troop level differs from confirmed attacker research"
@@ -666,6 +667,7 @@ class ExtendedSiegeCombat(SiegeCombat):
         self.pending = []
         self.serial = 0
         self.fields = []
+        self.flame_clocks = {}
         self.logs = {}
         self.generated = {}
         for actor_id, actor in actors.items():
@@ -1139,6 +1141,11 @@ class ExtendedSiegeCombat(SiegeCombat):
                 "packet_kind": packet["kind"],
                 "damage": amount,
                 "protected": protected,
+                **(
+                    {"flame_interval": deepcopy(packet["flame_interval"])}
+                    if "flame_interval" in packet
+                    else {}
+                ),
             }
         )
 
@@ -1203,15 +1210,18 @@ class ExtendedSiegeCombat(SiegeCombat):
                         "source_team": packet["source_team"],
                         "position": packet["position"],
                         "created_at": due,
-                        "next_pulse": siege_time_after(
-                            due, behavior["flame_interval_seconds"]
-                        ),
                         "expires_at": siege_time_after(
                             due, behavior["flame_duration_seconds"]
                         ),
-                        "pulse_index": 0,
                     }
                 )
+                if source["id"] not in self.flame_clocks:
+                    self.flame_clocks[source["id"]] = {
+                        "settled_at": due,
+                        "next_pulse": siege_time_after(
+                            due, behavior["flame_interval_seconds"]
+                        ),
+                    }
                 continue
             target = actors[packet["target"]]
             if not self._recipient(packet, target, time):
@@ -1227,59 +1237,114 @@ class ExtendedSiegeCombat(SiegeCombat):
         return damage
 
     def _resolve_flames(self, actors, time, trace, damage):
-        pulses = {}
-        for field in self.fields:
-            behavior = self.models[field["source"]]["parameters"]["behavior"]
-            while (
-                field["next_pulse"] <= time
-                and field["next_pulse"] <= field["expires_at"]
-            ):
-                due = field["next_pulse"]
-                fractions = behavior["flame_dps_fractions"]
-                fraction = fractions[min(field["pulse_index"], len(fractions) - 1)]
-                amount = (
-                    self.models[field["source"]]["statistics"]["flame_max_dps"]
-                    * fraction
-                    * behavior["flame_interval_seconds"]
-                )
-                for target in actors.values():
-                    if (
-                        not self._recipient(field, target, time)
-                        or target_distance(field["position"], target)
-                        > behavior["flame_radius_tiles"] + EPSILON
-                    ):
+        # Fields carry absolute ramp ages, but only their source owns a damage
+        # clock. Independent staggered field clocks would multiply source DPS.
+        for source in sorted(list(self.flame_clocks)):
+            clock = self.flame_clocks[source]
+            behavior = self.models[source]["parameters"]["behavior"]
+            while source in self.flame_clocks:
+                due = self._flame_boundary(source)
+                if due is None or due > time:
+                    break
+                start = clock["settled_at"]
+                if due <= start:
+                    raise InputError(
+                        "Flame damage clock must advance before settlement"
+                    )
+                fields = [field for field in self.fields if field["source"] == source]
+                for target in sorted(actors.values(), key=lambda actor: actor["id"]):
+                    matching = [
+                        field
+                        for field in fields
+                        if self._recipient(field, target, time)
+                        and target_distance(field["position"], target)
+                        <= behavior["flame_radius_tiles"] + EPSILON
+                    ]
+                    amount = self._flame_integral(source, matching, start, due)
+                    if amount <= 0:
                         continue
-                    key = (due, field["source"], target["id"])
-                    pulses[key] = max(pulses.get(key, 0), amount)
-                field["pulse_index"] += 1
-                field["next_pulse"] = siege_time_after(
-                    field["next_pulse"], behavior["flame_interval_seconds"]
+                    self._hit(
+                        {
+                            "source": source,
+                            "source_team": self.actors[source]["team"],
+                            "kind": "flame_pulse",
+                            "flame_interval": {"start": start, "end": due},
+                        },
+                        target,
+                        amount,
+                        time,
+                        trace,
+                        damage,
+                    )
+                clock["settled_at"] = due
+                self.fields = [
+                    field
+                    for field in self.fields
+                    if field["source"] != source or field["expires_at"] > due
+                ]
+                if not any(field["source"] == source for field in self.fields):
+                    del self.flame_clocks[source]
+                    break
+                clock["next_pulse"] = siege_time_after(
+                    due, behavior["flame_interval_seconds"]
                 )
-        for (_, source, target_id), amount in sorted(pulses.items()):
-            self._hit(
-                {
-                    "source": source,
-                    "source_team": self.actors[source]["team"],
-                    "kind": "flame_pulse",
-                },
-                actors[target_id],
-                amount,
-                time,
-                trace,
-                damage,
+
+    def _flame_boundary(self, source):
+        fields = [field for field in self.fields if field["source"] == source]
+        if not fields:
+            return None
+        # The last partial interval settles at final field expiry rather than
+        # paying a full pulse after the source no longer has a damage field.
+        return min(
+            self.flame_clocks[source]["next_pulse"],
+            max(field["expires_at"] for field in fields),
+        )
+
+    def _flame_integral(self, source, fields, start, end):
+        """Integrate the strongest matching field's DPS over one source interval."""
+        if not fields:
+            return 0
+        behavior = self.models[source]["parameters"]["behavior"]
+        interval = behavior["flame_interval_seconds"]
+        fractions = behavior["flame_dps_fractions"]
+        boundaries = {start, end}
+        profiles = []
+        for field in fields:
+            ramp_times = [
+                siege_time_after(field["created_at"], index * interval)
+                for index in range(1, len(fractions))
+            ]
+            profiles.append((field, ramp_times))
+            boundaries.update(
+                boundary
+                for boundary in (field["created_at"], field["expires_at"], *ramp_times)
+                if start < boundary < end
             )
-        self.fields = [
-            field for field in self.fields if field["next_pulse"] <= field["expires_at"]
-        ]
+        boundaries = sorted(boundaries)
+        weighted_duration = 0
+        for left, right in zip(boundaries, boundaries[1:]):
+            # Every discontinuity is a boundary: the rate is constant on
+            # [left, right). A midpoint may round to right for a one-ULP tail.
+            strongest = max(
+                (
+                    fractions[sum(boundary <= left for boundary in ramp_times)]
+                    for field, ramp_times in profiles
+                    if field["created_at"] <= left < field["expires_at"]
+                ),
+                default=0,
+            )
+            weighted_duration += (right - left) * strongest
+        return self.models[source]["statistics"]["flame_max_dps"] * weighted_duration
 
     def next_boundary(self, time):
         boundaries = []
         inherited = super().next_boundary(time)
         if inherited is not None:
             boundaries.append(inherited)
-        boundaries.extend(
-            field["next_pulse"] for field in self.fields if field["next_pulse"] > time
-        )
+        for source in self.flame_clocks:
+            boundary = self._flame_boundary(source)
+            if boundary is not None and boundary > time:
+                boundaries.append(boundary)
         for carrier_id, group in self.generated.items():
             state = self.states[carrier_id]
             if state["phase"] != "active":
@@ -1316,6 +1381,7 @@ class ExtendedSiegeCombat(SiegeCombat):
         return {
             **super().result(),
             "active_flame_fields": len(self.fields),
+            "flame_damage_clocks": deepcopy(self.flame_clocks),
             "generated": {
                 carrier: deepcopy(group["members"])
                 for carrier, group in self.generated.items()
@@ -1324,7 +1390,12 @@ class ExtendedSiegeCombat(SiegeCombat):
         }
 
     def continuation_reasons(self, time):
-        """Meaningful weapons, fields and generated reserves, never inert reserves."""
+        """Opaque pending intents become typed facts, not generic damage packets.
+
+        A flinger_shot is cancellable future launch work; it has neither a
+        released projectile's damage receipt nor its source-loss persistence.
+        Shared consumers must use this provider instead of indexing pending.
+        """
         from .battle_termination import continuation_fact
 
         facts = []
@@ -1341,16 +1412,21 @@ class ExtendedSiegeCombat(SiegeCombat):
                     not_before_seconds=arrival,
                 )
             )
-        for index, field in enumerate(self.fields):
-            if field["next_pulse"] <= field["expires_at"]:
+        for source in sorted(self.flame_clocks):
+            boundary = self._flame_boundary(source)
+            if boundary is not None:
                 facts.append(
                     continuation_fact(
                         "pending_damage",
-                        f"flinger-field:{index}",
-                        [field["source"]],
-                        source_team=field["source_team"],
-                        not_before_seconds=field["next_pulse"],
-                        expires_at_seconds=field["expires_at"],
+                        f"flinger-source:{source}",
+                        [source],
+                        source_team=self.actors[source]["team"],
+                        not_before_seconds=boundary,
+                        expires_at_seconds=max(
+                            field["expires_at"]
+                            for field in self.fields
+                            if field["source"] == source
+                        ),
                     )
                 )
         for carrier_id, group in self.generated.items():

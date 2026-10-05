@@ -18,6 +18,7 @@ from .siege_machines import SIEGE_MACHINES, SiegeCombat, compile_siege
 
 BARREL_SIEGES = {"troop-launcher", "sky-wagon"}
 PERMANENT_SIEGES = SIEGE_MACHINES | EXTENDED_SIEGES | BARREL_SIEGES
+BOUND_PERMANENT_SIEGES = {"flame-flinger", "siege-barracks", "sky-wagon"}
 
 
 def validate_siege_choices(choices, selected, catalog):
@@ -81,6 +82,17 @@ def permanent_siege_runtime(actors, select_target, reinforcements, width, height
     if len(carriers) > 1:
         raise InputError("Stored choices cannot become multiple deployed siege actors")
     entity = carriers[0]["siege_model"]["entity"] if carriers else None
+    for actor in actors.values():
+        barrel_pattern = actor.get("attack_model", {}).get("kind") == "siege_barrel"
+        barrel_owner = actor.get("siege_model", {}).get("entity") in BARREL_SIEGES
+        if barrel_pattern != barrel_owner:
+            raise InputError("Barrel weapons require their selected carrier owner")
+        if barrel_owner and (
+            actor["attack_model"]["entity"] != actor["siege_model"]["entity"]
+            or actor.get("entity_adapter", {}).get("entity")
+            != actor["siege_model"]["entity"]
+        ):
+            raise InputError("Barrel weapon, carrier and catalog identity disagree")
     if entity not in BARREL_SIEGES and any(
         "barrel_member_model" in actor for actor in actors.values()
     ):

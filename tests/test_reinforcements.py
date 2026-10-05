@@ -351,12 +351,22 @@ class ReinforcementTests(unittest.TestCase):
 
     def test_unused_unsupported_and_duplicate_spell_inventory_are_rejected(self):
         for inventory in (
-            [{"id": "clone-spell", "level": 1, "count": 1}],
+            [{"id": "unsupported-spell", "level": 1, "count": 1}],
             [{"id": "freeze-spell", "level": 1, "count": 1}] * 2,
         ):
             army = {"spells": inventory, "clan_castle": {"spells": []}}
             with self.assertRaises(InputError):
                 validate_spell_origin_counts(army, [])
+        self.assertEqual(
+            validate_spell_origin_counts(
+                {
+                    "spells": [{"id": "clone-spell", "level": 1, "count": 1}],
+                    "clan_castle": {"spells": []},
+                },
+                [],
+            ),
+            {},
+        )
 
     def test_received_spell_uses_donor_level_with_separate_receiver_cap(self):
         instance = freeze_cast(town_hall=10)

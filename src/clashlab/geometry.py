@@ -7,6 +7,7 @@ from math import hypot
 from random import Random
 
 from .common import InputError, identifier, integer, number, require, stable_id
+from .crafted_selection import layout_selection
 
 
 def footprint(building, catalog):
@@ -44,6 +45,7 @@ def validate_layout(layout, catalog, require_destruction_flags=True):
     seen = set()
     occupied = {}
     counts = Counter()
+    seasonal_stations = {}
     for building in buildings:
         instance = identifier(building["instance"], "building instance")
         if instance in seen:
@@ -63,8 +65,17 @@ def validate_layout(layout, catalog, require_destruction_flags=True):
         size_x, size_y = footprint(building, catalog)
         if x + size_x > width or y + size_y > height:
             raise InputError(f"Building outside board: {instance}")
+        season = (
+            layout_selection(building, town_hall, catalog)
+            if entity_id == "crafting-station"
+            else None
+        )
+        if season is not None:
+            seasonal_stations[instance] = season
         if entity_id != "hero-banner":
-            if not catalog.available(entity_id, building["level"], town_hall):
+            if season is None and not catalog.available(
+                entity_id, building["level"], town_hall
+            ):
                 raise InputError(f"Unavailable building level: {instance}")
         destruction = building.get("counts_for_destruction")
         if "counts_for_destruction" not in building:
@@ -119,6 +130,8 @@ def validate_layout(layout, catalog, require_destruction_flags=True):
     for entity_id, count in counts.items():
         limits = catalog.entity(entity_id).get("availablePerTownHall", [])
         matches = [row["count"] for row in limits if row["townHallLevel"] == town_hall]
+        if entity_id == "crafting-station" and seasonal_stations:
+            matches = [1]
         if matches and count > matches[0]:
             raise InputError(f"Town Hall inventory limit exceeded: {entity_id}")
     if town_hall == 16:
@@ -139,12 +152,13 @@ def validate_layout(layout, catalog, require_destruction_flags=True):
         "id": stable_id(layout),
         "building_count": len(buildings),
         "occupied_tiles": len(occupied),
+        "seasonal_stations": seasonal_stations,
         "destruction_eligibility_complete": all(
             isinstance(building["counts_for_destruction"], bool)
             for building in buildings
         ),
         "status": "GEOMETRY_AND_SNAPSHOT_CONSTRAINTS_ONLY",
-        "limitations": "Higher-TH merge rules, gearing, seasonal defenses, and destruction flags require independent validation",
+        "limitations": "Higher-TH merge rules, gearing and destruction flags require independent validation; explicit phase4 Station access does not certify current rotation or combat",
     }
 
 

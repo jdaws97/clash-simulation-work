@@ -554,6 +554,13 @@ class BarrelSiegeCombat(SiegeCombat):
                         "payload_member_model",
                         "garrison_member_model",
                         "siege_model",
+                        "barracks_member_model",
+                        "hero_model",
+                        "pet_model",
+                        "summon_model",
+                        "trap_summon_model",
+                        "spell_generated_model",
+                        "spell_clone_model",
                     )
                 )
             ):

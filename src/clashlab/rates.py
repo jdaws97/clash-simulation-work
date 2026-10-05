@@ -17,6 +17,8 @@ def attack_rate(actor):
         * actor.get("_hit_status_attack_rate", 1)
         * actor.get("_hero_attack_rate", 1)
         * actor.get("_recipe_attack_rate", 1)
+        * actor.get("_equipment_summon_attack_rate", 1)
+        * actor.get("_equipment_field_attack_rate", 1)
     )
 
 
@@ -28,6 +30,9 @@ def movement_speed(actor):
             + actor.get("_guardian_self_movement_bonus", 0)
             + actor.get("_guardian_field_movement_bonus", 0)
             + actor.get("_hero_movement_bonus", 0)
+            + actor.get("_equipment_child_movement_bonus", 0)
+            + actor.get("_equipment_field_movement_bonus", 0)
+            + actor.get("_spell_movement_bonus", 0)
         )
         * actor.get("_hazard_movement_multiplier", 1)
         * actor.get("_hit_status_movement_multiplier", 1)
@@ -36,11 +41,12 @@ def movement_speed(actor):
 
 
 def attack_resume_time(actor, time):
-    """Attack work resumes after the union of Freeze and displacement pauses."""
+    """Attack work resumes after the union of Freeze, displacement and Ice."""
     return max(
         time,
         actor["frozen_until"],
         actor.get("_displacement_pause_until", 0),
+        actor.get("_spell_pause_until", 0),
     )
 
 

@@ -50,9 +50,13 @@ def death_continuation(deaths, actors):
     ]
 
 
-def siege_continuation(siege):
+def siege_continuation(siege, time=None):
     if siege is None:
         return []
+    if hasattr(siege, "continuation_reasons"):
+        if time is None:
+            raise InputError("Siege continuation requires the actual settled time")
+        return siege.continuation_reasons(time)
     return [
         continuation_fact(
             "pending_damage",
@@ -200,7 +204,7 @@ def runtime_continuation_reasons(
     facts = [
         *pattern_continuation(patterns),
         *death_continuation(deaths, actors),
-        *siege_continuation(siege),
+        *siege_continuation(siege, time),
         *reinforcement_continuation(reinforcements),
         *pet_continuation(pets),
         *hazard_continuation(hazards, time, actors),

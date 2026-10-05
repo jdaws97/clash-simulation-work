@@ -3,6 +3,7 @@
 import unittest
 from copy import deepcopy
 from pathlib import Path
+from unittest.mock import patch
 
 from clashlab.adapters import (
     SUPPORT_SCOPE,
@@ -11,7 +12,7 @@ from clashlab.adapters import (
 )
 from clashlab.catalog import Catalog
 from clashlab.common import InputError
-from clashlab.healing import RULESET, SUPPORT_RULES
+from clashlab.healing import RULESET, SUPPORT_RULES, SupportCombat
 from clashlab.spatial import simulate_spatial
 
 from test_adapters import entity_instance, projectile, sector
@@ -128,6 +129,53 @@ def healing_field(**changes):
 
 
 class SupportCombatTests(unittest.TestCase):
+    def test_moving_ally_contact_is_one_relative_arrival_with_freeze_control(self):
+        for step in (2, 0.31, 0.017):
+            for freeze in (False, True):
+                with self.subTest(step=step, freeze=freeze):
+                    effects = [injured()]
+                    if freeze:
+                        effects.append(
+                            {
+                                "id": "pause-healer",
+                                "kind": "freeze",
+                                "time_seconds": 0.2,
+                                "duration_seconds": 0.5,
+                                "targets": ["healer"],
+                            }
+                        )
+                    expected = 2 if freeze else 1
+                    scene = support_scene(
+                        actors=[
+                            synthetic_unit(x=6.5, speed=1, range=0.5, damage=1),
+                            healer(x=0.5, speed=2),
+                            synthetic_structure(x=18, hitpoints=10000),
+                        ],
+                        effects=effects,
+                        width=22,
+                        duration_seconds=expected + 0.05,
+                        recording_interval_seconds=10,
+                        maximum_step_seconds=step,
+                    )
+                    boundaries = []
+                    prepare = SupportCombat.prepare_targets
+
+                    def counted(runtime, actors, now, *args):
+                        boundaries.append(now)
+                        return prepare(runtime, actors, now, *args)
+
+                    with patch.object(SupportCombat, "prepare_targets", counted):
+                        result = simulate_spatial(scene)
+                    heals = [
+                        e for e in result["trace"] if e.get("event") == "healing_launch"
+                    ]
+                    self.assertEqual(len(heals), 1)
+                    self.assertAlmostEqual(heals[0]["time_seconds"], expected)
+                    self.assertEqual(heals[0]["target"], "attacker")
+                    self.assertEqual(result["actors"]["attacker"]["hp"], 60)
+                    if step == 2:
+                        self.assertLess(len(boundaries), 12)
+
     def test_class_specific_pulse_and_health_cap(self):
         for healing_class, expected in (("troop", 60), ("hero", 50)):
             with self.subTest(healing_class=healing_class):

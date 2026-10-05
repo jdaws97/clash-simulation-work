@@ -9,6 +9,7 @@ generated actor's controlled spawn flag is not an inventory entitlement.
 from copy import deepcopy
 
 from .common import InputError, identifier, integer, number, require
+from .advanced_spell_models import SUPPORTED_SPELLS as ADVANCED_SPELLS
 
 
 EPSILON = 1e-10
@@ -22,7 +23,7 @@ POLICY_ASSUMPTIONS = {
     "reachability": "do_not_infer_eventual_target_reachability_or_damage",
 }
 USER_DEPLOYABLE_ORIGINS = {"army_troops", "army_heroes", "siege"}
-GENERATED_ORIGINS = {"clan_castle_troops", "assigned_hero_pet"}
+GENERATED_ORIGINS = {"clan_castle_troops", "assigned_hero_pet", "siege_generated"}
 SPELL_CLASSES = {"support_only", "damage", "summon", "recall", "revive"}
 SPELL_CONTINUATION = {"ignore", "while_unspent", "while_runtime_eligible"}
 RUNTIME_KINDS = {
@@ -205,6 +206,10 @@ class BattleTermination:
                     "trap_summon_model",
                     "payload_member_model",
                     "pet_model",
+                    "barracks_member_model",
+                    "barrel_member_model",
+                    "spell_generated_model",
+                    "spell_clone_model",
                 )
             ):
                 raise InputError(
@@ -249,9 +254,9 @@ class BattleTermination:
                     raise InputError("Continuation expiry precedes its earliest time")
             if fact["source_team"] == "defense":
                 continue
-            if kind == "pending_damage" and (start is None or start <= time + EPSILON):
+            if kind == "pending_damage" and (start is None or start <= time):
                 raise InputError("Due attacking damage must settle before termination")
-            if end is not None and end <= time + EPSILON:
+            if end is not None and end <= time:
                 continue
             reasons.append(deepcopy(fact))
         return reasons
@@ -276,7 +281,9 @@ class BattleTermination:
         reasons = []
         for binding in self.spell_bindings:
             cast = binding["cast"]
-            if cast is not None and cast["time_seconds"] <= time + EPSILON:
+            if cast is not None and cast["time_seconds"] <= time + (
+                0 if binding["entity"] in ADVANCED_SPELLS else EPSILON
+            ):
                 continue
             policy = self.spell_policies[_spell_key(binding)]
             continuation = policy["continuation"]
@@ -362,7 +369,9 @@ class BattleTermination:
             )
             if not self.last_reasons:
                 reason = "attack_force_exhausted"
-            elif time >= self.limit - EPSILON:
+            elif time >= self.limit - (
+                0 if getattr(self, "exact_time_limit", False) else EPSILON
+            ):
                 reason = "declared_time_limit"
             else:
                 return None

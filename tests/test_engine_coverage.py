@@ -5,9 +5,8 @@ import unittest
 
 from clashlab.catalog import Catalog
 from clashlab.common import read_json
-from clashlab.defending_heroes import DEFENDING_HEROES
 from clashlab.garrisons import GARRISON_MEMBERS
-from clashlab.engine_coverage import build_engine_coverage
+from clashlab.engine_coverage import AUDITED_DEFENDING_HEROES, build_engine_coverage
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,7 +24,7 @@ class EngineCoverageTests(unittest.TestCase):
         cls.rows = {row["id"]: row for row in cls.report["entities"]}
 
     def test_five_supported_defenders_are_conditional_in_all_opponent_roles(self):
-        for entity_id in DEFENDING_HEROES:
+        for entity_id in AUDITED_DEFENDING_HEROES:
             row = self.rows[entity_id]
             for town_hall in ("16", "17", "18"):
                 with self.subTest(entity=entity_id, town_hall=town_hall):

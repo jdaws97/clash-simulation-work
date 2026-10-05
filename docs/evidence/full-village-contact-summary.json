@@ -1,0 +1,105 @@
+{
+  "source_commit": "fc9d0b8a921dbc261f95be0418f8b7618b50a714",
+  "source_tree": "6f3adbac8ceba95f95d71e39206cc2aa06c510da",
+  "status": "scoped_conditional_army_comparison_accepted",
+  "rows": [
+    {
+      "case_id": "ranked-defense-0-hot-candle-sixteen-dragons",
+      "input_sha256": "1b5e2970d9642e1022cd7c0267b0c0ff7d3fd05376f5aaf1d740077ea913b6c8",
+      "result_sha256": "a7b24cc0bfb8e99d9dc64b1f10301c5451ab77410b55b108c024659e6b202ec5",
+      "outcome": {
+        "stars": 1,
+        "destruction": 86.17021276595744,
+        "counted_building_count": 94,
+        "destroyed_building_count": 81,
+        "town_hall_destroyed": false,
+        "elapsed_seconds": 180,
+        "end_reason": "declared_time_limit"
+      },
+      "wall_seconds": 199.875,
+      "legal_budget": {
+        "army_housing": 320,
+        "spell_housing": 11,
+        "clan_castle_troops": 50,
+        "clan_castle_spells": 3
+      },
+      "deployed_attackers": 31,
+      "undeployed_attackers": 0,
+      "spent_spell_slots": 10,
+      "spent_spell_housing": 14,
+      "used_hero_abilities": 3,
+      "paid_actions": 34,
+      "crafted_events": {
+        "crafted_launch": 4,
+        "crafted_shot_impact": 17
+      },
+      "trace_count": 5001,
+      "terminal_decision": {
+        "time_seconds": 180,
+        "end_reason": "declared_time_limit",
+        "continuation_reasons": [
+          {
+            "kind": "active_attacker",
+            "id": "pet-unicorn"
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "ranked-defense-0-hot-candle-fourteen-dragons-twenty-minions",
+      "input_sha256": "37b6304271652bafca7483880f235e7bac212de876400e9c6c68e7fc0a89116f",
+      "result_sha256": "3672e2ffedcd8d92d7fb2321ad7e880cabc8b35a0a96d9e2653e5ab839c4a83d",
+      "outcome": {
+        "stars": 2,
+        "destruction": 89.36170212765957,
+        "counted_building_count": 94,
+        "destroyed_building_count": 84,
+        "town_hall_destroyed": true,
+        "elapsed_seconds": 180,
+        "end_reason": "declared_time_limit"
+      },
+      "wall_seconds": 215.4220000000205,
+      "legal_budget": {
+        "army_housing": 320,
+        "spell_housing": 11,
+        "clan_castle_troops": 50,
+        "clan_castle_spells": 3
+      },
+      "deployed_attackers": 49,
+      "undeployed_attackers": 0,
+      "spent_spell_slots": 10,
+      "spent_spell_housing": 14,
+      "used_hero_abilities": 3,
+      "paid_actions": 52,
+      "crafted_events": {
+        "crafted_launch": 4,
+        "crafted_shot_impact": 17
+      },
+      "trace_count": 5591,
+      "terminal_decision": {
+        "time_seconds": 180,
+        "end_reason": "declared_time_limit",
+        "continuation_reasons": [
+          {
+            "kind": "active_attacker",
+            "id": "pet-unicorn"
+          }
+        ]
+      }
+    }
+  ],
+  "same_defense_account_mode": true,
+  "source_only_extraction_identity_matches_receipts": true,
+  "fresh_compile_and_paid_resources_reproduced": true,
+  "actual_terminal_decisions_recomputed": true,
+  "parent_and_worker_consent_rejection_verified": true,
+  "long_battles_rerun": false,
+  "full_game_prediction": false,
+  "held_out_game_calibrations": 0,
+  "limits": [
+    "Both plans also change deployment and ability timing; not an isolated troop-substitution effect.",
+    "Single synthetic defense and declared rules; not base optimization or a gameplay recommendation.",
+    "Air contact follows an explicitly accepted uncalibrated convention that may change outcomes.",
+    "Separate TH16 and old-policy receipts retain their original identities."
+  ]
+}

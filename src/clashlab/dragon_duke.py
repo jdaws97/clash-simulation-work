@@ -431,6 +431,11 @@ class DragonDukeCombat:
             self.base_patterns[key] = deepcopy(actor["attack_model"])
             self.equipment[key] = {}
             for item in actor["hero_model"]["equipment"]:
+                from .equipment_weapons import OWNERS, validate_equipment
+
+                if item["entity"] in OWNERS:
+                    validate_equipment(item)
+                    continue
                 validate_duke_equipment(item)
                 if item["entity"] in self.equipment[key]:
                     raise InputError("Duke equipment cannot be duplicated")

@@ -468,6 +468,8 @@ class TrapCombat:
 
     @staticmethod
     def eligible(trap, actor, time, phase):
+        if phase == "trigger" and actor.get("_spell_trap_trigger_exempt", False):
+            return False
         entity_id = actor.get("entity_adapter", {}).get("entity")
         if trap["entity"] == "spring-trap" and phase != "trigger":
             phase = "effect"

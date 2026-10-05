@@ -4,6 +4,7 @@ from copy import deepcopy
 
 from .battle_termination import EPSILON, USER_DEPLOYABLE_ORIGINS
 from .common import InputError, number, require
+from .advanced_spell_models import SUPPORTED_SPELLS as ADVANCED_SPELLS
 
 
 def battle_resource_use(bindings, combat, elapsed):
@@ -14,6 +15,7 @@ def battle_resource_use(bindings, combat, elapsed):
     reinforcements = combat.get("sieges", {}).get("reinforcements")
     payload_members = reinforcements["members"] if reinforcements is not None else {}
     deployment_times = {}
+    generated_times = {}
     for actor_id, binding in bindings["attacker_bindings"].items():
         if actor_id not in actors:
             raise InputError("Resource accounting is missing its bound attacker")
@@ -32,6 +34,30 @@ def battle_resource_use(bindings, combat, elapsed):
                     "Payload resource accounting needs its release lifecycle"
                 )
             deployed_at = payload_members[actor_id]["released_at"]
+        elif origin == "siege_generated":
+            generated = combat.get("sieges", {}).get("generated", {})
+            members = (
+                generated
+                if binding.get("generation_kind") == "barrel"
+                else generated.get(binding["carrier_id"], {})
+            )
+            if actor_id not in members:
+                raise InputError(
+                    "Generated siege resource needs its carrier release history"
+                )
+            deployed_at = members[actor_id]["released_at"]
+            if deployed_at is not None:
+                number(deployed_at, "generated siege release time", 0)
+            generated_times[actor_id] = {
+                "carrier_id": binding["carrier_id"],
+                "released_at": (
+                    deployed_at
+                    if deployed_at is not None and deployed_at <= elapsed + EPSILON
+                    else None
+                ),
+                "phase": members[actor_id]["phase"],
+            }
+            continue
         else:
             raise InputError("Resource accounting requires a supported bound origin")
         if deployed_at is not None:
@@ -53,7 +79,8 @@ def battle_resource_use(bindings, combat, elapsed):
             {
                 **deepcopy(binding),
                 "spent": binding["cast"] is not None
-                and binding["cast"]["time_seconds"] <= elapsed + EPSILON,
+                and binding["cast"]["time_seconds"]
+                <= elapsed + (0 if binding["entity"] in ADVANCED_SPELLS else EPSILON),
             }
             for binding in bindings["spell_bindings"]
         ],
@@ -76,5 +103,19 @@ def battle_resource_use(bindings, combat, elapsed):
             "time_seconds": delivered_at if spent else None,
             "reason": group["delivery_reason"] if spent else None,
             "pending_member_ids": sorted(group["remaining"]),
+        }
+    if generated_times:
+        result["generated_siege_units"] = generated_times
+    advanced = combat.get("attack_spells", {}).get("advanced_spells")
+    if advanced is not None:
+        result["generated_spell_units"] = deepcopy(advanced["reserves"])
+    if "troop_death_buffs" in combat:
+        result["generated_troop_effects"] = {
+            field_id: {
+                "owner_actor_id": owner,
+                "origin": "generated_troop_effect_not_paid_spell",
+                "released_at": combat["buffs"]["fields"][field_id]["start_seconds"],
+            }
+            for owner, field_id in combat["troop_death_buffs"]["fields"].items()
         }
     return result

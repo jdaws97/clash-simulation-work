@@ -8,6 +8,7 @@ from collections import defaultdict, deque
 from copy import deepcopy
 from functools import lru_cache
 from math import floor, hypot
+from types import MappingProxyType
 
 from .spell_visibility import untargetable_until
 from .common import InputError, identifier, integer, number, require
@@ -27,6 +28,9 @@ MODEL_RULES = {
     "freeze_model": "pause_movement_and_remaining_attack_cooldown",
     "unit_collision": "none",
 }
+AIR_CONTACT_POLICY = (
+    "declared_air_weapon_follows_departing_retained_target_at_target_speed"
+)
 
 
 def center(actor):
@@ -50,6 +54,52 @@ def ground_attack_point(cell, target, attack_range):
         target["height"],
         attack_range,
     )
+
+
+def ground_attack_points(target, attack_range, width, height, *, terminal=True):
+    """Bounded pure geometry index; live walls and search ordering remain local."""
+    return _ground_attack_points(
+        target["x"],
+        target["y"],
+        target["width"],
+        target["height"],
+        attack_range,
+        width,
+        height,
+        terminal,
+    )
+
+
+@lru_cache(maxsize=256)
+def _ground_attack_points(
+    x, y, target_width, target_height, attack_range, width, height, terminal
+):
+    # Include an extra cell at each edge to preserve exact inclusive tolerance
+    # and in-cell terminal geometry. Cells outside this box cannot reach.
+    left = max(0, floor(x - attack_range - EPSILON) - 1)
+    right = min(width - 1, floor(x + target_width + attack_range + EPSILON) + 1)
+    bottom = max(0, floor(y - attack_range - EPSILON) - 1)
+    top = min(height - 1, floor(y + target_height + attack_range + EPSILON) + 1)
+    # Avoid materializing unusually large declared boards/ranges. The existing
+    # cell-by-cell calculation remains an equivalent bounded-memory fallback.
+    if (right - left + 1) * (top - bottom + 1) > 4096:
+        return None
+    target = {"x": x, "y": y, "width": target_width, "height": target_height}
+    result = {}
+    for cx in range(left, right + 1):
+        for cy in range(bottom, top + 1):
+            cell = cx, cy
+            if terminal:
+                point = _ground_attack_point(
+                    cell, x, y, target_width, target_height, attack_range
+                )
+            else:
+                point = cx + 0.5, cy + 0.5
+                if target_distance(point, target) > attack_range + EPSILON:
+                    point = None
+            if point is not None:
+                result[cell] = point
+    return result
 
 
 @lru_cache(maxsize=65536)
@@ -95,7 +145,36 @@ def _active(actor, time):
     )
 
 
-def _ground_route(actor, target, blocked, width, height):
+@lru_cache(maxsize=128)
+def _ground_navigation(start, blocked, width, height):
+    """The target-independent BFS order and parents for one exact free grid.
+
+    Goal checks do not affect the queue or predecessor choice in _ground_route.
+    Reusing its complete traversal therefore also handles moving and unreachable
+    targets without caching eligibility, goal geometry, or an actor's position.
+    The caller bounds board size; all obstruction cells are in the immutable key.
+    """
+    pending = deque([start])
+    previous = {start: None}
+    order = {}
+    while pending:
+        cell = pending.popleft()
+        order[cell] = len(order)
+        x, y = cell
+        for neighbor in ((x - 1, y), (x, y - 1), (x, y + 1), (x + 1, y)):
+            nx, ny = neighbor
+            if (
+                0 <= nx < width
+                and 0 <= ny < height
+                and neighbor not in blocked
+                and neighbor not in previous
+            ):
+                previous[neighbor] = cell
+                pending.append(neighbor)
+    return MappingProxyType(order), MappingProxyType(previous)
+
+
+def _ground_route(actor, target, blocked, width, height, *, exit_cells=None):
     position = center(actor)
     start = floor(position[0]), floor(position[1])
     if start in blocked:
@@ -119,10 +198,40 @@ def _ground_route(actor, target, blocked, width, height):
     previous = {start: None}
     destination = None
     endpoint = None
+    attack_points = (
+        None
+        if exit_cells is not None
+        else ground_attack_points(
+            target,
+            actor["range"],
+            width,
+            height,
+            terminal=bool(actor.get("_terminal_ground_approach")),
+        )
+    )
+    if width * height <= 4096 and (exit_cells is not None or attack_points is not None):
+        order, previous = _ground_navigation(start, frozenset(blocked), width, height)
+        if exit_cells is not None:
+            destination = next((cell for cell in order if cell not in exit_cells), None)
+            if destination is not None:
+                endpoint = destination[0] + 0.5, destination[1] + 0.5
+        else:
+            destination = min(
+                (cell for cell in attack_points if cell in order),
+                key=order.__getitem__,
+                default=None,
+            )
+            if destination is not None:
+                endpoint = attack_points[destination]
+        pending.clear()
     while pending:
         cell = pending.popleft()
         point = cell[0] + 0.5, cell[1] + 0.5
-        if actor.get("_terminal_ground_approach"):
+        if exit_cells is not None:
+            endpoint = point if cell not in exit_cells else None
+        elif attack_points is not None:
+            endpoint = attack_points.get(cell)
+        elif actor.get("_terminal_ground_approach"):
             endpoint = ground_attack_point(cell, target, actor["range"])
         elif target_distance(point, target) <= actor["range"] + EPSILON:
             endpoint = point
@@ -178,7 +287,7 @@ def _route(actor, target, blocked, width, height):
             target["y"],
             target["width"],
             target["height"],
-            sorted(blocked),
+            frozenset(blocked),
         )
         if actor.get("_path_signature") == signature:
             return list(actor["_remaining_path"])
@@ -210,6 +319,15 @@ def _route(actor, target, blocked, width, height):
         return _ground_route(actor, target, blocked, width, height)
     nearest_x = min(max(position[0], target["x"]), target["x"] + target["width"])
     nearest_y = min(max(position[1], target["y"]), target["y"] + target["height"])
+    if (
+        actor["damage"] > 0
+        and actor["team"] != target["team"]
+        and target["movement"] != "stationary"
+    ):
+        # Do not stop an airborne weapon at a moving enemy's old range edge.
+        # The shared relative-motion contact solver clips this same pursuit ray
+        # at actual range entry. Stale endpoints create false arrival cascades.
+        return [(nearest_x, nearest_y)]
     distance = hypot(nearest_x - position[0], nearest_y - position[1])
     fraction = max(distance - actor["range"], 0) / distance
     return [
@@ -229,6 +347,29 @@ def _route_length(actor, route):
     return distance
 
 
+def _retained_primary_stays_in_range(source, actors, motions, time, horizon):
+    """An ordinary retained weapon cannot change at an unrelated range entry.
+
+    Bound distance by total possible travel, without predicting a changed route.
+    Secondary selectors and weapons keep their existing contact behavior.
+    """
+    if source.get("attack_model", {}).get("kind") != "single" or any(
+        key.endswith("_model") and key != "attack_model" for key in source
+    ):
+        return False
+    target = actors.get(source.get("target"))
+    if target is None or not _eligible(source, target, time):
+        return False
+    source_speed = motions.get(source["id"], ([], 0))[1]
+    target_speed = motions.get(target["id"], ([], 0))[1]
+    travel = (source_speed + target_speed) * horizon
+    distance = target_distance(center(source), target)
+    return (
+        distance + travel <= source["range"] + EPSILON
+        and distance - travel >= source.get("_minimum_range", 0) - EPSILON
+    )
+
+
 def _weapon_range_boundary(actors, motions, time, next_time, excluded_sources):
     """Resolve positive range entries without mutating routes or target locks."""
     active = [actor for actor in actors.values() if _active(actor, time)]
@@ -238,10 +379,14 @@ def _weapon_range_boundary(actors, motions, time, next_time, excluded_sources):
     candidate_pools = {}
     for source in active:
         if (
-            source["damage"] <= 0
+            (source["damage"] <= 0 and "crafted_defense_model" not in source)
             or source["id"] in excluded_sources
             or source.get("_tesla_hidden", False)
             or source.get("attack_model", {}).get("kind") == "none"
+        ):
+            continue
+        if _retained_primary_stays_in_range(
+            source, actors, motions, time, next_time - time
         ):
             continue
         source_route, source_speed = motions.get(source["id"], ([], 0))
@@ -314,6 +459,9 @@ def target_priority(actor, kind):
 
 
 def _select_target(actor, actors, time, blocked, width, height):
+    if actor.get("_inferno_fuel_depleted", False):
+        actor["target"] = None
+        return None, None
     if actor["damage"] == 0 or not _active(actor, time):
         return None, None
     retained = actors.get(actor["target"])
@@ -358,14 +506,81 @@ def _remember_route(actor, target, route, blocked):
             target["y"],
             target["width"],
             target["height"],
-            sorted(blocked),
+            frozenset(blocked),
         )
         actor["_remaining_path"] = list(route)
 
 
-def _move(actor, route, duration):
+def _air_contact_motions(actors, motions, time, width, height, excluded_sources=()):
+    """Keep established airborne weapon contact with a departing retained target.
+
+    This is a declared movement convention, not a range tolerance or event filter.
+    Follow only the target's first straight segment, at its speed, when the source
+    can keep up. Translation preserves the current relative footprint and lets
+    the unchanged weapon clocks fire at inclusive contact. All crossing queries
+    must use these resolved motions, including those for fields and traps.
+    """
+    resolved = set()
+    resolving = set()
+
+    def resolve(actor_id):
+        if actor_id in resolved or actor_id in resolving:
+            return
+        resolving.add(actor_id)
+        actor = actors[actor_id]
+        target = actors.get(actor.get("target"))
+        route, _ = motions[actor_id]
+        if (
+            not route
+            and actor_id not in excluded_sources
+            and actor["movement"] == "air"
+            and actor["damage"] > 0
+            and actor.get("attack_model", {}).get("kind", "single") != "none"
+            and target is not None
+            and _eligible(actor, target, time)
+            and target["movement"] != "stationary"
+            and target["id"] in motions
+            and max(actor.get("_minimum_range", 0), actor["range"]) - EPSILON
+            <= target_distance(center(actor), target)
+            <= actor["range"] + EPSILON
+        ):
+            resolve(target["id"])
+            target_route, target_speed = motions[target["id"]]
+            position = center(actor)
+            target_position = center(target)
+            point = next(
+                (
+                    p
+                    for p in target_route
+                    if hypot(p[0] - target_position[0], p[1] - target_position[1])
+                    > EPSILON
+                ),
+                None,
+            )
+            if point is not None and 0 < target_speed <= movement_speed(actor):
+                delta = (point[0] - target_position[0], point[1] - target_position[1])
+                nearest = (
+                    min(max(position[0], target["x"]), target["x"] + target["width"]),
+                    min(max(position[1], target["y"]), target["y"] + target["height"]),
+                )
+                departing = sum((nearest[i] - position[i]) * delta[i] for i in (0, 1))
+                endpoint = (position[0] + delta[0], position[1] + delta[1])
+                if (
+                    departing >= 0
+                    and 0 <= endpoint[0] < width
+                    and 0 <= endpoint[1] < height
+                ):
+                    motions[actor_id] = ([endpoint], target_speed)
+        resolving.remove(actor_id)
+        resolved.add(actor_id)
+
+    for actor_id in motions:
+        resolve(actor_id)
+
+
+def _move(actor, route, duration, *, speed=None):
     position = center(actor)
-    remaining = movement_speed(actor) * duration
+    remaining = (movement_speed(actor) if speed is None else speed) * duration
     consumed = 0
     for point in route:
         distance = hypot(point[0] - position[0], point[1] - position[1])
@@ -435,7 +650,11 @@ def _load_actors(specification, width, height):
         spawn = require(actor, "spawn_seconds")
         if spawn != "controlled":
             number(spawn, "spawn time", 0)
-        elif actor["movement"] == "stationary" and "spell_decoy_model" not in actor:
+        elif (
+            actor["movement"] == "stationary"
+            and "spell_decoy_model" not in actor
+            and actor.get("siege_model", {}).get("entity") != "siege-barracks"
+        ):
             raise InputError("Only moving units can await a controlled deployment")
         number(require(actor, "damage"), "damage per hit", 0)
         number(require(actor, "attack_interval_seconds"), "attack interval", EPSILON)
@@ -479,13 +698,16 @@ def _load_actors(specification, width, height):
         if actor["movement"] == "stationary":
             if actor["speed"] != 0:
                 raise InputError("Stationary actors need zero movement speed")
-            if "spell_decoy_model" in actor:
+            if (
+                "spell_decoy_model" in actor
+                or actor.get("siege_model", {}).get("entity") == "siege-barracks"
+            ):
                 if actor["width"] != 0 or actor["height"] != 0 or actor["blocking"]:
                     raise InputError(
-                        "Totem reserves must be nonblocking stationary points"
+                        "Controlled stationary reserves must be nonblocking points"
                     )
-                number(actor["x"], "Totem x", 0, width - EPSILON)
-                number(actor["y"], "Totem y", 0, height - EPSILON)
+                number(actor["x"], "stationary point x", 0, width - EPSILON)
+                number(actor["y"], "stationary point y", 0, height - EPSILON)
             else:
                 for field, maximum in (("x", width), ("y", height)):
                     integer(require(actor, field), field, 0, maximum - 1)
@@ -584,6 +806,16 @@ def _load_effects(
             raise InputError("Effects require unique known target instances")
         if effect["kind"] == "deploy":
             if any(
+                any(
+                    key in actors[target]
+                    for key in ("spell_generated_model", "spell_clone_model")
+                )
+                for target in targets
+            ):
+                raise InputError(
+                    "Generated spell reserves cannot be player deployments"
+                )
+            if any(
                 actors[target]["spawn_seconds"] != "controlled" for target in targets
             ):
                 raise InputError(
@@ -602,6 +834,19 @@ def _load_effects(
     return sorted(effects, key=lambda effect: (effect["time_seconds"], effect["id"]))
 
 
+def _validate_health_batch(actors, damage, healing):
+    """Sparse batches omit unaffected actors, never name unknown recipients."""
+    for label, amounts in (("damage", damage), ("healing", healing)):
+        if not isinstance(amounts, dict):
+            raise InputError(f"Health {label} requires an actor-to-amount mapping")
+        for actor_id, amount in amounts.items():
+            if actor_id not in actors:
+                raise InputError(
+                    f"Health {label} names an unknown recipient: {actor_id}"
+                )
+            number(amount, f"Health {label} for {actor_id}", 0)
+
+
 def _apply_health(
     actors,
     damage,
@@ -611,13 +856,14 @@ def _apply_health(
     healing_filter=None,
     trace=None,
 ):
+    _validate_health_batch(actors, damage, healing)
     for actor_id, actor in actors.items():
         if not _active(actor, time):
             continue
         protected = (
             actor.get("_tesla_hidden", False) or actor["immune_until"] > time + EPSILON
         )
-        received_damage = 0 if protected else damage[actor_id]
+        received_damage = 0 if protected else damage.get(actor_id, 0)
         actor["_received_damage"] = actor.get("_received_damage", 0) + min(
             actor["hp"], received_damage
         )
@@ -635,7 +881,9 @@ def _apply_health(
             and not actor.get("beneficial_field_immunity", False)
             and (healing_filter is None or healing_filter(actor, time))
         ):
-            actor["hp"] = min(actor["maximum_hp"], actor["hp"] + healing[actor_id])
+            actor["hp"] = min(
+                actor["maximum_hp"], actor["hp"] + healing.get(actor_id, 0)
+            )
 
 
 def _apply_effects(
@@ -770,7 +1018,9 @@ def simulate_spatial(specification, controller=None, termination=None):
     from .guardians import GuardianCombat, validate_guardian_deployment
     from .guardian_rules import RULESET as GUARDIAN_RULESET, RULES as GUARDIAN_RULES
     from .reinforcements import ReinforcementCombat
-    from .siege_extensions import recipe_siege_runtime
+    from .siege_lifecycle import permanent_siege_runtime, BOUND_PERMANENT_SIEGES
+    from .siege_extensions import BOUND_RECIPE_SIEGES
+    from .siege_machines import SIEGE_MACHINES
     from .siege_rules import RULESET as SIEGE_RULESET, RULES as SIEGE_RULES
     from .pet_rules import RULESET as PET_RULESET, RULES as PET_RULES
     from .advanced_defense_rules import (
@@ -914,6 +1164,72 @@ def simulate_spatial(specification, controller=None, termination=None):
         EPSILON,
     )
     actors = _load_actors(specification, width, height)
+    from .troop_line_bindings import validate_line_owners
+
+    validate_line_owners(
+        actors,
+        ruleset in {HERO_ROSTER_RULESET, TERMINATION_RULESET, ATTACK_SPELL_RULESET},
+    )
+    from .crafted_bindings import validate_crafted_owners
+
+    validate_crafted_owners(
+        actors,
+        ruleset in {HERO_ROSTER_RULESET, TERMINATION_RULESET, ATTACK_SPELL_RULESET},
+    )
+    from .wall_breakers import validate_wall_breaker_owners
+
+    validate_wall_breaker_owners(
+        actors,
+        ruleset in {HERO_ROSTER_RULESET, TERMINATION_RULESET, ATTACK_SPELL_RULESET},
+    )
+    unbound_troop_models = {
+        "troop_summon_model",
+        "troop_behavior_model",
+        "troop_identity_target_model",
+        "troop_fire_pool_model",
+        "meteor_parameters",
+        "meteor_adult_model",
+        "meteor_mite_model",
+        "ruin_witch_model",
+        "druid_model",
+        "druid_form_model",
+    }
+    for actor in actors.values():
+        unbound = sorted(unbound_troop_models.intersection(actor))
+        if "wall_breaker_model" in actor:
+            unbound = [name for name in unbound if name != "troop_behavior_model"]
+        if unbound:
+            raise InputError(
+                f"Unbound troop lifecycle at shared kernel entry: {actor['id']}: {', '.join(unbound)}"
+            )
+        adapter = actor.get("entity_adapter", {})
+        if (
+            "troop_death_buff_model" in actor
+            or adapter.get("entity") == "super-valkyrie"
+        ):
+            if (
+                ruleset
+                not in {HERO_ROSTER_RULESET, TERMINATION_RULESET, ATTACK_SPELL_RULESET}
+                or adapter.get("entity") != "super-valkyrie"
+                or actor["team"] != "attack"
+                or adapter.get("attacking_extension_scope")
+                != "explicit_experimental_attacking_troop_extensions"
+                or not actor.get("troop_death_buff_model")
+                or actor.get("troop_death_buff_model")
+                != adapter.get("death_buff_parameters")
+                or "valkyrie_model" not in actor
+                or actor.get("attack_model", {}).get("kind") != "source_radial"
+            ):
+                raise InputError(
+                    "Death Rage requires its complete compiled Super Valkyrie owner and v27+ scope"
+                )
+    if any(
+        "siege_model" in actor
+        and actor["siege_model"].get("entity")
+        not in SIEGE_MACHINES | BOUND_RECIPE_SIEGES | BOUND_PERMANENT_SIEGES
+        for actor in actors.values()
+    ):
+        raise InputError("Siege lifecycle is not yet bound to the shared kernel")
     for actor in actors.values():
         if "aura_model" in actor and (
             ruleset
@@ -946,6 +1262,7 @@ def simulate_spatial(specification, controller=None, termination=None):
             "multi_gear_model" in actor
             or "revenge_model" in actor
             or "geared_cannon_model" in actor
+            or "inferno_ammunition_model" in actor
             or (
                 actor.get("entity_adapter", {}).get("entity") == "x-bow"
                 and "weapon_ammunition" in actor
@@ -977,8 +1294,10 @@ def simulate_spatial(specification, controller=None, termination=None):
         or any(
             "siege_model" in actor
             or "payload_member_model" in actor
+            or "barracks_member_model" in actor
+            or "barrel_member_model" in actor
             or actor.get("attack_model", {}).get("kind")
-            in {"siege_area", "siege_extended"}
+            in {"siege_area", "siege_extended", "siege_barrel"}
             for actor in actors.values()
         )
     ):
@@ -1791,14 +2110,18 @@ def simulate_spatial(specification, controller=None, termination=None):
         reinforcements = ReinforcementCombat(
             actors, specification["attacking_reinforcements"], width, height
         )
-        sieges = recipe_siege_runtime(
+        sieges = permanent_siege_runtime(
             actors, select_target, reinforcements, width, height
         )
+        reinforcements = sieges.reinforcements
         select_target = sieges.select_target
     elif any(
         "siege_model" in actor
         or "payload_member_model" in actor
-        or actor.get("attack_model", {}).get("kind") in {"siege_area", "siege_extended"}
+        or "barracks_member_model" in actor
+        or "barrel_member_model" in actor
+        or actor.get("attack_model", {}).get("kind")
+        in {"siege_area", "siege_extended", "siege_barrel"}
         for actor in actors.values()
     ):
         raise InputError(
@@ -1842,7 +2165,17 @@ def simulate_spatial(specification, controller=None, termination=None):
         )
     elif "attack_spell_models" in specification:
         raise InputError("Attacking spell models require the explicit v29 ruleset")
-    elif any("spell_decoy_model" in actor for actor in actors.values()):
+    elif any(
+        any(
+            key in actor
+            for key in (
+                "spell_decoy_model",
+                "spell_generated_model",
+                "spell_clone_model",
+            )
+        )
+        for actor in actors.values()
+    ):
         raise InputError(
             "Generated Totem actors require the explicit v29 spell runtime"
         )
@@ -1860,6 +2193,16 @@ def simulate_spatial(specification, controller=None, termination=None):
                 key
                 for key, actor in actors.items()
                 if actor.get("hero_model", {}).get("entity") in EXTENDED_HEROES
+                or "spell_generated_model" in actor
+                or "spell_clone_model" in actor
+                or (
+                    actor["team"] == "attack"
+                    and actor["kind"] == "unit"
+                    and any(
+                        model["entity"] == "ice-block-spell"
+                        for model in specification.get("attack_spell_models", [])
+                    )
+                )
             }
         )
         for runtime in (
@@ -1881,7 +2224,25 @@ def simulate_spatial(specification, controller=None, termination=None):
     elif any("duke_model" in actor for actor in actors.values()):
         raise InputError("Duke runtime behavior requires the explicit v27 ruleset")
 
+    from .defending_troop_runtime import DefendingTroopLineCombat
+
+    troop_lines = DefendingTroopLineCombat(actors)
+    troop_lines.damage_receipts = damage_receipts
+    troop_lines.damage_eligible = (
+        combat._damage_eligible if combat is not None else None
+    )
+    from .crafted_defenses import CraftedDefenseCombat
+
+    crafted = CraftedDefenseCombat(
+        actors, town_halls.hazards if town_halls is not None else None
+    )
+    crafted.damage_receipts = damage_receipts
     recipe_troops = RecipeTroopCombat(actors)
+    from .troop_death_buffs import TroopDeathBuffCombat
+
+    troop_death_buffs = (
+        TroopDeathBuffCombat(actors, buffs) if buffs is not None else None
+    )
     geared_cannons = GearedCannonCombat(actors, combat)
     titans = ElectroTitanCombat(actors)
     titans.damage_receipts = damage_receipts
@@ -1890,8 +2251,57 @@ def simulate_spatial(specification, controller=None, termination=None):
     recipe_troops.damage_receipts = damage_receipts
     recipe_troops.base_selector = select_target
     select_target = recipe_troops.select_target
+    from .troop_behaviors import AttackingTroopCombat
+
+    troop_behaviors = AttackingTroopCombat(actors)
+    behavior_base_selector = select_target
+
+    def select_behavior_target(actor, actors, time, blocked, width, height):
+        return troop_behaviors.select_target(
+            actor, actors, time, blocked, width, height, behavior_base_selector
+        )
+
+    if troop_behaviors.models:
+        select_target = select_behavior_target
+    from .advanced_spell_models import SUPPORTED_SPELLS as ADVANCED_SPELLS
+    from .advanced_spell_bindings import SharedAdvancedSpells
+
+    advanced_models = [
+        m
+        for m in specification.get("attack_spell_models", [])
+        if m["entity"] in ADVANCED_SPELLS
+    ]
+    if advanced_models:
+        attack_spells.advanced = SharedAdvancedSpells(
+            advanced_models,
+            actors,
+            require(specification, "advanced_spell_binding"),
+            width,
+            height,
+            select_target,
+            pets,
+        )
+        select_target = attack_spells.advanced.select_target
+    elif "advanced_spell_binding" in specification or any(
+        any(
+            key in a
+            for key in (
+                "spell_generated_model",
+                "spell_clone_model",
+                "spell_unit_effects",
+            )
+        )
+        for a in actors.values()
+    ):
+        raise InputError("Generated spell actors require their owning advanced spell")
+    for actor in actors.values():
+        if any(key.startswith("_spell_") for key in actor) and not any(
+            key in actor for key in ("spell_generated_model", "spell_clone_model")
+        ):
+            raise InputError("Private spell state requires its generated owner")
 
     def apply_health(health_actors, damage, healing, at_time):
+        _validate_health_batch(health_actors, damage, healing)
         settled_receipts = (
             damage_receipts.settle(health_actors, damage, at_time)
             if damage_receipts is not None
@@ -1908,7 +2318,14 @@ def simulate_spatial(specification, controller=None, termination=None):
         )
         if hero_roster is not None:
             trace.extend(
-                {"event": "hero_received_damage", **receipt}
+                {
+                    "event": (
+                        "hero_received_damage"
+                        if "hero_model" in health_actors[receipt["target_id"]]
+                        else "damage_received"
+                    ),
+                    **receipt,
+                }
                 for receipt in settled_receipts
             )
             counter_healing = hero_roster.after_health(
@@ -1975,12 +2392,26 @@ def simulate_spatial(specification, controller=None, termination=None):
                 )
             elif deaths is not None:
                 deaths.settle(actors, time, trace, effect_observer, apply_health)
+            if troop_death_buffs is not None:
+                emitted_fields = len(troop_death_buffs.fields)
+                troop_death_buffs.prepare(time, trace)
+                if len(troop_death_buffs.fields) != emitted_fields:
+                    buffs.prepare(actors, time, trace)
             if sieges is not None:
                 changed |= sieges.prepare(
                     actors, time, trace, allow_release=allow_release
                 )
             if attack_spells is not None:
                 attack_spells.prepare(actors, time, trace)
+            if giga_bombs is not None:
+                # Newly released finite children participate at this timestamp.
+                # A zero-delay blast can cause more source-death releases, so
+                # settle it inside this loop and retain the trap's one-shot latch.
+                resolved_before = len(giga_bombs.resolved)
+                giga_damage = giga_bombs.update(actors, time, trace)
+                if giga_damage:
+                    apply_health(actors, giga_damage, defaultdict(float), time)
+                changed |= len(giga_bombs.resolved) != resolved_before
             if spell_towers is not None:
                 changed |= bool(spell_towers.prepare(actors, time, trace))
             if hero_roster is not None:
@@ -1998,11 +2429,22 @@ def simulate_spatial(specification, controller=None, termination=None):
         sieges.validate_command if sieges is not None else None,
     )
     trace = []
+    if controller is not None and getattr(controller, "paid_observation", False):
+        effects = controller.bind_runtime(
+            actors, effects, buffs, attack_spells, heroes, reinforcements, sieges
+        )
     frames = []
     time = 0.0
     next_recording = 0.0
     effect_index = 0
+    deadline_tolerance = (
+        0 if getattr(controller, "paid_observation", False) else EPSILON
+    )
     revisit_time = False
+    if town_halls is not None:
+        # Declared initial defenses must be eligible for time-zero abilities.
+        # Damage/threshold activation and hazards retain their settling phase.
+        town_halls.prepare(actors, time, trace, initial_state_only=True)
     while time <= duration + EPSILON:
         observe_controller = not revisit_time
         revisit_time = False
@@ -2025,6 +2467,8 @@ def simulate_spatial(specification, controller=None, termination=None):
             effect_index += 1
         if controller is not None and observe_controller:
             due.extend(controller.commands(time, actors))
+            if getattr(controller, "paid_observation", False) and buffs is not None:
+                buffs.prepare(actors, time, trace)
         if reinforcements is not None:
             due = reinforcements.apply_commands(due, time, trace)
         if garrisons is not None:
@@ -2095,10 +2539,6 @@ def simulate_spatial(specification, controller=None, termination=None):
                 defaultdict(float),
                 time,
             )
-        if giga_bombs is not None:
-            apply_health(
-                actors, giga_bombs.update(actors, time, trace), defaultdict(float), time
-            )
         if artillery is not None:
             apply_health(
                 actors, artillery.resolve(actors, time, trace), defaultdict(float), time
@@ -2143,17 +2583,29 @@ def simulate_spatial(specification, controller=None, termination=None):
         if support is not None:
             support.prepare_targets(actors, time, blocked, width, height)
         recipe_troops.prepare(time, trace)
+        troop_behaviors.prepare(
+            time,
+            lambda actor: select_target(actor, actors, time, blocked, width, height)[0],
+            trace,
+        )
         if ramp is not None:
             ramp.prepare(actors, time, select_target, blocked, width, height, trace)
         damage = defaultdict(float)
         for actor in sorted(actors.values(), key=lambda item: item["id"]):
-            if not _active(actor, time) or actor["frozen_until"] > time + EPSILON:
+            if (
+                not _active(actor, time)
+                or actor["frozen_until"] > time + EPSILON
+                or actor.get("_spell_pause_until", 0) > time
+            ):
                 continue
             if spell_towers is not None and actor["id"] in spell_towers.models:
                 continue
             if sweepers is not None and (
                 actor["id"] in sweepers.models or sweepers.attack_locked(actor, time)
             ):
+                continue
+            if actor["id"] in crafted.models:
+                crafted.launch(actor["id"], time, trace)
                 continue
             target, _ = select_target(actor, actors, time, blocked, width, height)
             if support is not None and actor["id"] in support.models:
@@ -2194,7 +2646,9 @@ def simulate_spatial(specification, controller=None, termination=None):
                 if indirect is not None and actor["id"] in indirect.models:
                     indirect.launch(actor, target, actors, time, trace)
                     continue
-                if ramp is not None and actor["id"] in ramp.models:
+                if actor["id"] in troop_lines.models:
+                    troop_lines.launch(actor, target, time, trace)
+                elif ramp is not None and actor["id"] in ramp.models:
                     flat_damage, weapon_state = ramp.launch_damage(actor["id"])
                     combat.launch(
                         actor, target, actors, time, trace, flat_damage, weapon_state
@@ -2202,6 +2656,8 @@ def simulate_spatial(specification, controller=None, termination=None):
                 else:
                     combat.launch(actor, target, actors, time, trace)
                     recipe_troops.launched(actor["id"], time, trace)
+                    if actor["id"] in troop_behaviors.models:
+                        troop_behaviors.on_launch(actor["id"], time, trace)
                     if heroes is not None:
                         heroes.weapon_launched(actor["id"], time, trace)
             elif target["immune_until"] <= time + EPSILON:
@@ -2224,6 +2680,16 @@ def simulate_spatial(specification, controller=None, termination=None):
                         "protected": target["immune_until"] > time + EPSILON,
                     }
                 )
+        for target_id, amount in crafted.resolve(time, trace).items():
+            damage[target_id] += amount
+        if crafted.models and town_halls is not None:
+            town_halls.hazards.prepare_status(actors, time, trace)
+            for target_id, amount in town_halls.hazards.resolve(
+                actors, time, trace
+            ).items():
+                damage[target_id] += amount
+        for target_id, amount in troop_lines.resolve(time, trace).items():
+            damage[target_id] += amount
         if combat is not None:
             impact_callback = artillery.impact if artillery is not None else None
             for target_id, amount in combat.resolve(
@@ -2278,7 +2744,13 @@ def simulate_spatial(specification, controller=None, termination=None):
                 actors, artillery.resolve(actors, time, trace), defaultdict(float), time
             )
         settle_lifecycles(time, trace, allow_release=False)
-        if reinforcements is not None and reinforcements.release_ready(time):
+        if reinforcements is not None and (
+            reinforcements.release_ready(time)
+            or (
+                sieges is not None
+                and getattr(sieges, "release_ready", lambda _: False)(time)
+            )
+        ):
             revisit_time = True
             continue
         if indirect is not None:
@@ -2340,7 +2812,13 @@ def simulate_spatial(specification, controller=None, termination=None):
                     reinforcements=reinforcements,
                     pets=pets,
                     hazards=town_halls.hazards if town_halls is not None else None,
-                    hero_providers=(hero_roster, recipe_troops),
+                    hero_providers=(
+                        hero_roster,
+                        recipe_troops,
+                        troop_death_buffs,
+                        troop_lines,
+                        crafted,
+                    ),
                     attack_spells=attack_spells,
                     damage_receipts=damage_receipts,
                 )
@@ -2348,7 +2826,7 @@ def simulate_spatial(specification, controller=None, termination=None):
         if (
             terminal is not None
             or time >= next_recording - EPSILON
-            or time >= duration - EPSILON
+            or time >= duration - deadline_tolerance
         ):
             frames.append(
                 {
@@ -2358,6 +2836,7 @@ def simulate_spatial(specification, controller=None, termination=None):
                             "x": actor["x"],
                             "y": actor["y"],
                             "hp": actor["hp"],
+                            "maximum_hp": actor["maximum_hp"],
                             "active": _active(actor, time),
                             "target": actor["target"],
                             **(
@@ -2450,7 +2929,7 @@ def simulate_spatial(specification, controller=None, termination=None):
             )
             while next_recording <= time + EPSILON:
                 next_recording += recording
-        if terminal is not None or time >= duration - EPSILON:
+        if terminal is not None or time >= duration - deadline_tolerance:
             break
         boundaries = [duration, time + step, next_recording]
         recipe_boundary = recipe_troops.next_boundary(time)
@@ -2533,15 +3012,53 @@ def simulate_spatial(specification, controller=None, termination=None):
                 if isinstance(value, (int, float)) and value > time + EPSILON
             )
         next_time = min(value for value in boundaries if value > time + EPSILON)
+        if controller is not None and getattr(controller, "paid_observation", False):
+            control_boundary = controller.next_boundary()
+            if time < control_boundary < next_time:
+                next_time = control_boundary
+        if hit_status is not None:
+            status_boundary = hit_status.next_boundary()
+            if status_boundary is not None and time < status_boundary < next_time:
+                next_time = status_boundary
+        mirror_boundary = heroes.mirror_boundary(time) if heroes is not None else None
+        if mirror_boundary is not None and time < mirror_boundary < next_time:
+            next_time = mirror_boundary
+        crafted_boundary = crafted.next_boundary(time)
+        if crafted_boundary is not None and time < crafted_boundary < next_time:
+            next_time = crafted_boundary
+        line_boundary = troop_lines.next_boundary(time)
+        if line_boundary is not None and time < line_boundary < next_time:
+            next_time = line_boundary
+        if troop_death_buffs is not None:
+            death_buff_boundary = troop_death_buffs.next_boundary(time)
+            if (
+                death_buff_boundary is not None
+                and time < death_buff_boundary < next_time
+            ):
+                next_time = death_buff_boundary
+        if attack_spells is not None:
+            exact_spell_boundary = attack_spells.next_boundary(time)
+            if (
+                exact_spell_boundary is not None
+                and time < exact_spell_boundary < next_time
+            ):
+                next_time = exact_spell_boundary
+        if titan_boundary is not None and time < titan_boundary < next_time:
+            next_time = titan_boundary
         # Instantaneous tower pulses retain every representable future arrival.
         # Their clock is a time, not the spatial membership tolerance.
         if spell_towers is not None:
             tower_boundary = spell_towers.next_boundary(time)
             if tower_boundary is not None and time < tower_boundary < next_time:
                 next_time = tower_boundary
+        if sieges is not None:
+            siege_boundary = sieges.next_boundary(time)
+            if siege_boundary is not None and time < siege_boundary < next_time:
+                next_time = siege_boundary
         blocked = _blocked(actors, time)
         routes = {}
         motions = {}
+        forced_actors = set()
         for actor in actors.values():
             if not _active(actor, time) or actor["movement"] == "stationary":
                 continue
@@ -2553,11 +3070,14 @@ def simulate_spatial(specification, controller=None, termination=None):
             if forced is None and sweepers is not None:
                 forced = sweepers.forced_motion(actor, time)
             if forced is not None:
+                forced_actors.add(actor["id"])
                 route = forced["route"]
                 speed = forced["speed_tiles_per_second"]
             else:
-                if actor["frozen_until"] > time + EPSILON or (
-                    sweepers is not None and sweepers.attack_locked(actor, time)
+                if (
+                    actor.get("_spell_pause_until", 0) > time
+                    or actor["frozen_until"] > time + EPSILON
+                    or (sweepers is not None and sweepers.attack_locked(actor, time))
                 ):
                     continue
                 _, route = select_target(actor, actors, time, blocked, width, height)
@@ -2566,113 +3086,118 @@ def simulate_spatial(specification, controller=None, termination=None):
                 motions[actor["id"]] = (route, speed if route else 0)
                 if forced is None:
                     routes[actor["id"]] = route
-                    if route and speed > EPSILON:
-                        arrival_delay = _route_length(actor, route) / speed
-                        # Range tolerance is a distance, not a duration. A fast
-                        # pursuer can still be outside inclusive weapon range
-                        # when its remaining arrival time is below EPSILON.
-                        # Keep every representable positive arrival so a moving
-                        # primary cannot repeatedly reopen that tiny gap.
-                        if time + arrival_delay > time:
-                            next_time = min(next_time, time + arrival_delay)
-                if traps is not None:
-                    crossing = traps.first_crossing_delay(
+        _air_contact_motions(actors, motions, time, width, height, forced_actors)
+        for actor_id, (route, speed) in motions.items():
+            actor = actors[actor_id]
+            if actor_id not in forced_actors:
+                routes[actor_id] = route
+                if route and speed > EPSILON:
+                    arrival_delay = _route_length(actor, route) / speed
+                    # Range tolerance is a distance, not a duration. A fast
+                    # pursuer can still be outside inclusive weapon range
+                    # when its remaining arrival time is below EPSILON.
+                    # Keep every representable positive arrival so a moving
+                    # primary cannot repeatedly reopen that tiny gap.
+                    if time + arrival_delay > time:
+                        next_time = min(next_time, time + arrival_delay)
+            if traps is not None:
+                crossing = traps.first_crossing_delay(
+                    actor, route, time, next_time - time, speed
+                )
+                if crossing is not None:
+                    next_time = min(next_time, time + crossing)
+            for trap_runtime in (skeleton_traps, tornado_traps, giga_bombs):
+                if trap_runtime is not None:
+                    crossing = trap_runtime.first_crossing_delay(
                         actor, route, time, next_time - time, speed
                     )
                     if crossing is not None:
                         next_time = min(next_time, time + crossing)
-                for trap_runtime in (skeleton_traps, tornado_traps, giga_bombs):
-                    if trap_runtime is not None:
-                        crossing = trap_runtime.first_crossing_delay(
-                            actor, route, time, next_time - time, speed
-                        )
-                        if crossing is not None:
-                            next_time = min(next_time, time + crossing)
-                if teslas is not None:
-                    crossing = teslas.first_crossing_delay(
-                        actor, route, time, next_time - time, speed
-                    )
-                    if crossing is not None:
-                        next_time = min(next_time, time + crossing)
-                if buffs is not None:
-                    crossing = buffs.first_crossing_delay(
-                        actor,
-                        route,
-                        time,
-                        next_time - time,
-                        speed,
-                        forced_motion=forced is not None,
-                    )
-                    if crossing is not None:
-                        next_time = min(next_time, time + crossing)
-                if sweepers is not None:
-                    crossing = sweepers.first_crossing_delay(
-                        actor, route, time, next_time - time, speed
-                    )
-                    if crossing is not None:
-                        next_time = min(next_time, time + crossing)
-                if spell_towers is not None:
-                    crossing = spell_towers.first_crossing_delay(
-                        actor, route, time, next_time - time, speed
-                    )
-                    if crossing is not None:
-                        next_time = min(next_time, time + crossing)
-                if attack_spells is not None:
-                    crossing = attack_spells.first_crossing_delay(
-                        actor, route, time, next_time - time, speed
-                    )
-                    if crossing is not None:
-                        next_time = min(next_time, time + crossing)
-                if defending_heroes is not None:
-                    crossing = defending_heroes.first_crossing_delay(
-                        actor,
-                        route,
-                        time,
-                        next_time - time,
-                        speed,
-                        forced_motion=forced is not None,
-                    )
-                    if crossing is not None:
-                        next_time = min(next_time, time + crossing)
-                if garrisons is not None:
-                    crossing = garrisons.first_crossing_delay(
-                        actor,
-                        route,
-                        time,
-                        next_time - time,
-                        speed,
-                        forced_motion=forced is not None,
-                    )
-                    if crossing is not None:
-                        next_time = min(next_time, time + crossing)
-                if firespitters is not None:
-                    crossing = firespitters.first_crossing_delay(
-                        actor, route, time, next_time - time, speed
-                    )
-                    if crossing is not None:
-                        next_time = min(next_time, time + crossing)
-                if guardians is not None:
-                    crossing = guardians.first_crossing_delay(
-                        actor,
-                        route,
-                        time,
-                        next_time - time,
-                        speed,
-                        forced_motion=forced is not None,
-                    )
-                    if crossing is not None:
-                        next_time = min(next_time, time + crossing)
-                if sieges is not None:
-                    crossing = sieges.first_crossing_delay(
-                        actor,
-                        route,
-                        time,
-                        next_time - time,
-                        speed,
-                        forced_motion=forced is not None,
-                    )
-                    if crossing is not None:
-                        next_time = min(next_time, time + crossing)
+            if teslas is not None:
+                crossing = teslas.first_crossing_delay(
+                    actor, route, time, next_time - time, speed
+                )
+                if crossing is not None:
+                    next_time = min(next_time, time + crossing)
+            if buffs is not None:
+                crossing = buffs.first_crossing_delay(
+                    actor,
+                    route,
+                    time,
+                    next_time - time,
+                    speed,
+                    forced_motion=actor_id in forced_actors,
+                )
+                if crossing is not None:
+                    next_time = min(next_time, time + crossing)
+            if sweepers is not None:
+                crossing = sweepers.first_crossing_delay(
+                    actor, route, time, next_time - time, speed
+                )
+                if crossing is not None:
+                    next_time = min(next_time, time + crossing)
+            if spell_towers is not None:
+                crossing = spell_towers.first_crossing_delay(
+                    actor, route, time, next_time - time, speed
+                )
+                if crossing is not None:
+                    next_time = min(next_time, time + crossing)
+            if attack_spells is not None:
+                crossing = attack_spells.first_crossing_delay(
+                    actor, route, time, next_time - time, speed
+                )
+                if crossing is not None:
+                    next_time = min(next_time, time + crossing)
+            if defending_heroes is not None:
+                crossing = defending_heroes.first_crossing_delay(
+                    actor,
+                    route,
+                    time,
+                    next_time - time,
+                    speed,
+                    forced_motion=actor_id in forced_actors,
+                )
+                if crossing is not None:
+                    next_time = min(next_time, time + crossing)
+            if garrisons is not None:
+                crossing = garrisons.first_crossing_delay(
+                    actor,
+                    route,
+                    time,
+                    next_time - time,
+                    speed,
+                    forced_motion=actor_id in forced_actors,
+                )
+                if crossing is not None:
+                    next_time = min(next_time, time + crossing)
+            if firespitters is not None:
+                crossing = firespitters.first_crossing_delay(
+                    actor, route, time, next_time - time, speed
+                )
+                if crossing is not None:
+                    next_time = min(next_time, time + crossing)
+            if guardians is not None:
+                crossing = guardians.first_crossing_delay(
+                    actor,
+                    route,
+                    time,
+                    next_time - time,
+                    speed,
+                    forced_motion=actor_id in forced_actors,
+                )
+                if crossing is not None:
+                    next_time = min(next_time, time + crossing)
+            if sieges is not None:
+                crossing = sieges.first_crossing_delay(
+                    actor,
+                    route,
+                    time,
+                    next_time - time,
+                    speed,
+                    forced_motion=actor_id in forced_actors,
+                )
+                if crossing is not None:
+                    next_time = min(next_time, time + crossing)
         # The selectors above can update retained targets and route caches.
         # Use their completed trajectories here rather than selecting again.
         excluded_range_sources = set()
@@ -2694,6 +3219,22 @@ def simulate_spatial(specification, controller=None, termination=None):
         next_time = _weapon_range_boundary(
             actors, motions, time, next_time, excluded_range_sources
         )
+        if support is not None:
+            crossing = support.first_crossing_delay(
+                actors, motions, time, next_time - time
+            )
+            if crossing is not None:
+                next_time = min(next_time, time + crossing)
+        if heroes is not None:
+            crossing = heroes.first_crossing_delay(
+                actors,
+                {key: route for key, (route, _) in motions.items()},
+                {key: speed for key, (_, speed) in motions.items()},
+                time,
+                next_time - time,
+            )
+            if crossing is not None:
+                next_time = min(next_time, time + crossing)
         if hero_roster is not None:
             crossing = hero_roster.first_crossing_delay(
                 actors, motions, time, next_time - time
@@ -2722,7 +3263,9 @@ def simulate_spatial(specification, controller=None, termination=None):
                 if crossing is not None:
                     next_time = min(next_time, time + crossing)
         positions = {
-            actor_id: _move(actors[actor_id], route, next_time - time)
+            actor_id: _move(
+                actors[actor_id], route, next_time - time, speed=motions[actor_id][1]
+            )
             for actor_id, route in routes.items()
         }
         for actor_id, ((x, y), remaining_path) in positions.items():
@@ -2744,10 +3287,16 @@ def simulate_spatial(specification, controller=None, termination=None):
     return {
         "id": require(specification, "id"),
         "status": "SPATIAL_KERNEL_EXPERIMENT_NOT_VALIDATED_CLASH_BATTLE",
+        "air_contact_policy": AIR_CONTACT_POLICY,
         "ruleset": ruleset,
         **({"termination": termination.result()} if termination is not None else {}),
         "combat": combat.result() if combat is not None else None,
         **({"recipe_troops": recipe_troops.result()} if recipe_troops.models else {}),
+        **(
+            {"troop_behaviors": troop_behaviors.result()}
+            if troop_behaviors.models
+            else {}
+        ),
         "support": support.result() if support is not None else None,
         "weapon_ramps": ramp.result() if ramp is not None else None,
         "death_effects": deaths.result() if deaths is not None else None,
@@ -2787,6 +3336,13 @@ def simulate_spatial(specification, controller=None, termination=None):
         **({"builders": builders.result()} if builders is not None else {}),
         **({"garrisons": garrisons.result()} if garrisons is not None else {}),
         **({"electro_titans": titans.result()} if titans.models else {}),
+        **({"troop_lines": troop_lines.result()} if troop_lines.models else {}),
+        **({"crafted_defenses": crafted.result()} if crafted.models else {}),
+        **(
+            {"troop_death_buffs": troop_death_buffs.result()}
+            if troop_death_buffs is not None and troop_death_buffs.models
+            else {}
+        ),
         **({"guardians": guardians.result()} if guardians is not None else {}),
         **({"sieges": sieges.result()} if sieges is not None else {}),
         **({"firespitters": firespitters.result()} if firespitters is not None else {}),

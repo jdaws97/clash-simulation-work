@@ -1,0 +1,129 @@
+SEPARATE REMAINING-TROOP DELTA over frozen attacking-domain commit 11fdd4d
+
+All delivered APIs/files from that commit are unchanged. This delta adds five
+domain modules, one component test file, a source-audit JSON and this map. Shared
+adapters/spatial/combat/full_battle/resources/spells/traps remain integrator-owned.
+No registry count or module presence is a claim of complete-battle coverage.
+
+Ruin Witch
+- remaining_troop_bindings.compile_remaining_troop delegates to compile_ruin_witch.
+  Use the non-attacking compile branch before damagePerShot checks. The June
+  official no-weapon claim overrides catalog normal weapon values. Require
+  explicit august_2026_no_decay revision, cap ten, four/two/two clocks. Saved cap
+  eight is recorded as a conflict; catalog is not silently rewritten.
+- compile_ruin_knights(raw_actors) returns ten separately owned generated reserves
+  per Witch, matched to row.ruinKnightLevel. Child HP/weapon/movement/wall stats
+  require complete explicit experimental actors. Ordinary shared wall routing
+  handles Knight bonus weapons and Witch avoidance. No Knight HP decay is added.
+- RuinWitchCombat(actors,width,height,can_release): prepare(time,trace),
+  select_target(actor,actors,time,blocked,width,height), next_boundary,
+  validate_command, continuation_reasons and result. Integrate selector as movement
+  even though the Witch has no weapon; it returns destroyed building proxies and
+  ordinary shared ground routes. Respect _ruin_movement_locked; never launch attacks
+  at rubble. Dead walls are excluded. Visible/unconsumed rubble is reserved at work
+  start, consumed at completion; tie ownership is deterministic by Witch ID.
+- Geometry, work range, Freeze-paused work and committed-target locking remain
+  explicit experimental conventions. Approach reevaluates nearer rubble each call.
+  Pending Knight releases survive actual Witch death, preserve captured front
+  position and wait if blocked. Cap exhaustion sets _ruin_despawned and controls
+  spawn state without forging an HP death. validate_command rejects redeployment.
+- Add all Knight response maps/classes to shared validation; do not create paid
+  housing or a second Clan Castle entitlement. Generated reserves require scope
+  validation and cannot be imported through raw-actor bypass.
+
+Meteor Golem — permanent data ID 4000177 only
+- compile_meteor_golem and compile_meteor_reserves predeclare root children,
+  finite recombined adults and each adult's own two children. Seasonal 4000167 is
+  explicitly rejected. Same-level cohorts allow nearest partner selection.
+- MeteorGolemCombat(actors,combat,can_release,transfer_statuses,
+  capture_statuses=...,apply_status_receipt=...,has_target_override=...) requires
+  every hook callable; actor fields alone do not capture external spell ledgers.
+- At launch(actor,target,time,trace,flat_damage=None), shared PatternCombat emits
+  the declared ordinary radial landing weapon once; child throw arrival uses the
+  exact same speed/delay/fixed target-center clock. Consume the normal weapon
+  cooldown once and do not also launch a duplicate parent attack. Parent retirement
+  controls its spawn state, preserving HP rather than pretending it died.
+- select_target delegates ordinary enemy selection first. An eligible enemy under
+  shared Angry/other targeting override always wins over partner movement. Otherwise
+  the declared local-enemy radius/nearest reachable same-cohort partner policy
+  applies. A _meteor_partner destination is MOVE ONLY; never fire a weapon at it.
+  Add exact relative partner-distance entry to shared range boundaries using the
+  existing range_events helpers; stale sample-only merge arrival is not full support.
+- prepare resolves mutually selected close partners into one unique finite form,
+  keeps weighted living HP fraction and delays blocked midpoint release. No dead or
+  zero-HP identity can be released. Generated forms never reuse paid actor IDs.
+  Reserve exhaustion raises InputError. next_boundary and continuation report throws,
+  blocked arrivals and pending merges. result includes public transition receipts.
+- Source/paid-origin continuity: each receipt contains id, kind, time_seconds,
+  source_actor_ids, target_actor_ids, paid_origin_actor_ids and hp_fraction. Root
+  paid ownership flows through children and cross-root merges via _meteor_paid_owners.
+  Do not issue new troop/ability/spell charges from generated entity_adapter metadata.
+- IMPORTANT STATUS CONTRACT: capture_statuses(source_actor_ids,time) runs BEFORE
+  retirement and returns a dictionary of external actor-keyed status assignments.
+  Immutable actor snapshots and external_status_snapshot stay on the receipt until
+  each recipient is released. transfer_statuses(actor_snapshots,recipient,time)
+  handles actor fields; apply_status_receipt(receipt,recipient,time) handles spell
+  runtime ledgers. Preserve cast IDs, original absolute expiry, target override and
+  once-per-cast membership without buying another cast or refreshing duration.
+  has_target_override(actor,time) asks the spell owner; no Angry field names are
+  guessed. The old spell module still lacks these hooks, so the integration owner
+  must add them. Missing hooks explicitly reject construction.
+- Numeric child stats, split/merge HP arithmetic, throw/split trigger, partner
+  geometry and clocks are experimental. Official notes establish the qualitative
+  lifecycle and Angry continuity, not these exact values. Catalog3 16000HP/550DPS
+  conflicts with extraction3 17500HP/580DPS; neither is silently substituted.
+
+Super Valkyrie
+- compile_super_valkyrie uses an explicit capability view of compile_valkyrie,
+  retaining actual entity_adapter=super-valkyrie and selected catalog statistics.
+  Existing ValkyrieRouting and source_radial weapon are reused, not copied.
+- TroopDeathBuffCombat(actors,buffs) schedules an explicit generated Rage template
+  once at actual HP death. Fixed field center is captured at death. Positive release
+  delay stays pending in the domain until its exact deadline; next_boundary reports
+  that deadline. Then shared BuffCombat owns continuous entry/exit/stacking/expiry.
+  Invoke BuffCombat.prepare after scheduling at the settled boundary.
+- field.entity=rage-spell selects the existing mathematical buff implementation;
+  generated_effect_origin explicitly marks a troop effect, never a paid cast. No
+  spell_adapter or army_binding is permitted. Radius/duration/bonuses/class scaling
+  remain complete explicit experimental inputs. Actor/form removal is not death.
+- Shared BuffCombat uses spatial epsilon in field start/end checks. The domain
+  guards its positive release clock; integrator owns any broader exact-time cleanup.
+
+Child behavior completion
+- complete_summon_family is an ADDITIVE opt-in stronger contract over the delivered
+  compile_summon_model. Existing calls/behavior remain unchanged. Call it before
+  reserve expansion when promoting the relevant family.
+- Furnace requires Firemite fire_pool_parameters. TroopChildEffectCombat consumes
+  on_launch(child_id,launch_id,time) and on_impact(child_id,launch_id,point,time,trace).
+  Point is the actual resolved projectile point; calls are deduplicated per child.
+  Launch damage scaling is captured before source loss; pool persists after child
+  or Furnace death. No paid resources are created. Schedule pool before same-time
+  health settlement and collect resolve(time,trace) into that health batch. Attach
+  shared damage_receipts. next_boundary/continuation cover meaningful pool damage.
+  Pools support buildings/defenses using live footprint membership; generic shared
+  PulsedHazards currently supports units only, so it cannot substitute for this.
+  Missing pulses reject instead of compressing past work into one health batch.
+- Super Yeti children require the shared validated chain weapon rather than a
+  generic single weapon. Current child values/link count/timing remain explicit
+  experimental stats; integration registers those raw actors with PatternCombat.
+- Ice Hound requires parent hound_on_hit_status and child on_hit_status validated
+  by existing HitStatusCombat; attacking death Freeze still uses the earlier death
+  quantity guard and ordinary DeathCombat. TroopIdentityTargeting selects actual
+  entity_adapter air-defense preference, then delegates reachable fallback.
+- Child/family completeness still depends on full response/class/weapon contracts.
+  Yetimite contact/consumption specifics, Super Hog mounted child stats and exact
+  Super Dragon multi-release semantics need source reconciliation. No invented
+  current values or calibrated support claim is attached to these experiments.
+
+Evidence and blockers
+See data/remaining-troop-source-audit.json for exact known lookup keys, preserved
+source conflicts and missing per-level child fields. A complete versioned typed
+logic-table export may resolve numeric fields and parent-child references. Saved
+curated exports omit the complete child records. No new capture/memory collection
+was performed or authorized. Do not guess internal child IDs/column names.
+
+Tests are synthetic component crossings only: Ruin death/blocked release and
+Freeze/cap/nondeath despawn; Meteor immutable actor/external status receipts and
+paid-origin continuity; Super Valkyrie generated field release/expiry; Firemite
+source loss/protected building damage. They do not constitute full-battle outcomes
+or validate experimental game geometry, numeric child stats or status overlap.

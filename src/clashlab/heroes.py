@@ -15,6 +15,24 @@ from .equipment_lifecycles import (
     compile_equipment as compile_local_equipment,
     validate_equipment as validate_local_equipment,
 )
+from .equipment_auras import (
+    OWNERS as AURA_EQUIPMENT_OWNERS,
+    EquipmentAuraCombat,
+    compile_equipment as compile_aura_equipment,
+    validate_equipment as validate_aura_equipment,
+)
+from .equipment_weapons import (
+    OWNERS as WEAPON_EQUIPMENT_OWNERS,
+    compile_equipment as compile_weapon_equipment,
+    validate_equipment as validate_weapon_equipment,
+)
+from .equipment_summons import (
+    OWNERS as SUMMON_EQUIPMENT_OWNERS,
+    compile_equipment as compile_summon_equipment,
+    compile_reserves as compile_equipment_reserves,
+    validate_equipment as validate_summon_equipment,
+    validate_independent_deployment,
+)
 from .common import InputError, identifier, integer, number, require
 from .combat import validate_pattern
 from .defense_patterns import RULES as AREA_DEFENSE_RULES
@@ -56,6 +74,9 @@ EQUIPMENT = (
     | set(EXTENDED_EQUIPMENT_OWNERS)
     | set(RECIPE_EQUIPMENT_OWNERS)
     | set(LOCAL_EQUIPMENT_OWNERS)
+    | set(AURA_EQUIPMENT_OWNERS)
+    | set(WEAPON_EQUIPMENT_OWNERS)
+    | set(SUMMON_EQUIPMENT_OWNERS)
 )
 HERO_RULES = {
     **AREA_DEFENSE_RULES,
@@ -113,6 +134,15 @@ def _equipment_parameter_fields(entity_id):
 
 def _validate_runtime_equipment(model):
     entity_id = require(model, "entity")
+    if entity_id in SUMMON_EQUIPMENT_OWNERS:
+        validate_summon_equipment(model)
+        return
+    if entity_id in WEAPON_EQUIPMENT_OWNERS:
+        validate_weapon_equipment(model)
+        return
+    if entity_id in AURA_EQUIPMENT_OWNERS:
+        validate_aura_equipment(model)
+        return
     if entity_id in LOCAL_EQUIPMENT_OWNERS:
         validate_local_equipment(model)
         return
@@ -539,7 +569,29 @@ def compile_hero(
     dps_addition = 0
     recovery = number(require(row, "healthRecovery"), "snapshot base recovery", 0)
     for item in equipment:
-        if item["entity"] in LOCAL_EQUIPMENT_OWNERS:
+        if item["entity"] in SUMMON_EQUIPMENT_OWNERS:
+            if not allow_hero_extensions:
+                raise InputError(
+                    "Finite equipment children require the explicit v27+ scope"
+                )
+            model, gear_row = compile_summon_equipment(
+                item, instance, catalog, movement_units_per_tile
+            )
+        elif item["entity"] in WEAPON_EQUIPMENT_OWNERS:
+            if not allow_hero_extensions:
+                raise InputError(
+                    "Equipment release queues require the explicit v27+ scope"
+                )
+            model, gear_row = compile_weapon_equipment(item, instance, catalog)
+        elif item["entity"] in AURA_EQUIPMENT_OWNERS:
+            if not allow_pets and not allow_hero_extensions:
+                raise InputError(
+                    "Warden equipment fields require the explicit v25+ recipient-class scope"
+                )
+            model, gear_row = compile_aura_equipment(
+                item, instance, catalog, movement_units_per_tile
+            )
+        elif item["entity"] in LOCAL_EQUIPMENT_OWNERS:
             model, gear_row = compile_local_equipment(
                 item, instance, catalog, movement_units_per_tile
             )
@@ -681,7 +733,11 @@ def compile_mirror_clones(actor):
             if clone["wall_behavior"]["kind"] == "clear_obstructions":
                 clone["wall_behavior"]["weapon"]["damage"] = clone["damage"]
             clones.append(clone)
-    return clones + compile_action_figure_summons(actor)
+    return (
+        clones
+        + compile_action_figure_summons(actor)
+        + compile_equipment_reserves(actor)
+    )
 
 
 def validate_ability_command(command, actors):
@@ -718,6 +774,11 @@ class HeroCombat:
         self.passive_next = {}
         self.healing_buffs = []
         self.clone_expiry = {}
+        self.mirror_ids = {
+            key
+            for key, actor in actors.items()
+            if actor.get("summon_model", {}).get("equipment") == "magic-mirror"
+        }
         self.combat = combat
         self.log = []
         for key, model in self.models.items():
@@ -773,6 +834,9 @@ class HeroCombat:
                     "Runtime hero loadout must explicitly select two items or a bare probe"
                 )
             owners = {
+                **SUMMON_EQUIPMENT_OWNERS,
+                **WEAPON_EQUIPMENT_OWNERS,
+                **AURA_EQUIPMENT_OWNERS,
                 **LOCAL_EQUIPMENT_OWNERS,
                 **EXTENDED_EQUIPMENT_OWNERS,
                 **RECIPE_EQUIPMENT_OWNERS,
@@ -785,6 +849,29 @@ class HeroCombat:
                 "healing-tome": "grand-warden",
             }
             for equipment in model["equipment"]:
+                if (
+                    equipment["entity"] in SUMMON_EQUIPMENT_OWNERS
+                    and not allow_hero_extensions
+                ):
+                    raise InputError(
+                        "Equipment children require the explicit v27+ runtime"
+                    )
+                if (
+                    equipment["entity"] in WEAPON_EQUIPMENT_OWNERS
+                    and not allow_hero_extensions
+                ):
+                    raise InputError(
+                        "Equipment release queues require the explicit v27+ runtime"
+                    )
+                if equipment["entity"] in AURA_EQUIPMENT_OWNERS and any(
+                    actor["team"] == "attack"
+                    and actor["kind"] == "unit"
+                    and actor.get("buff_class") is None
+                    for actor in actors.values()
+                ):
+                    raise InputError(
+                        "Warden field recipients require explicit shared buff classes"
+                    )
                 if (
                     equipment["entity"] in RECIPE_EQUIPMENT_OWNERS
                     and not allow_hero_extensions
@@ -806,6 +893,7 @@ class HeroCombat:
                     self.passive_next[key] = {"aura": None, "self_heal": None}
 
         self.local_equipment = EquipmentLifecycles(actors)
+        self.equipment_auras = EquipmentAuraCombat(actors)
 
     def _equipment(self, hero_id, entity):
         return next(
@@ -832,6 +920,7 @@ class HeroCombat:
         expanded = []
         for command in commands:
             if command["kind"] != "hero_ability":
+                validate_independent_deployment(command, actors)
                 expanded.append(command)
                 continue
             validate_ability_command(command, actors)
@@ -854,6 +943,7 @@ class HeroCombat:
                 continue
             self.used.add(hero_id)
             self.local_equipment.activate(hero_id, actors, time, trace)
+            self.equipment_auras.activate(hero_id, actors, time, trace)
             if self.extensions is not None:
                 self.extensions.activate(hero_id, actors, time, trace)
             expanded.append(
@@ -955,9 +1045,14 @@ class HeroCombat:
 
     def prepare(self, actors, time, trace):
         for key, expiry in list(self.clone_expiry.items()):
-            if time >= expiry - EPSILON and _active(actors[key], time):
+            mirror = key in self.mirror_ids
+            expired = time >= expiry if mirror else time >= expiry - EPSILON
+            eligible = actors[key]["hp"] > 0 if mirror else _active(actors[key], time)
+            if expired and eligible:
+                # Absolute Mirror lifetime also expires while Recall-held. Keep
+                # Recall ownership for its later return and earlier real deaths.
                 actors[key]["hp"] = 0
-                actors[key]["death_time"] = time
+                actors[key]["death_time"] = expiry if mirror else time
                 trace.append(
                     {"time_seconds": time, "event": "summon_expired", "source": key}
                 )
@@ -1010,6 +1105,8 @@ class HeroCombat:
         if self.extensions is not None:
             self.extensions.prepare(actors, time, trace)
 
+        self.equipment_auras.prepare(actors, time, trace)
+
     def weapon_launched(self, hero_id, time, trace):
         self.local_equipment.weapon_launched(hero_id, time, trace)
         if self.extensions is not None:
@@ -1030,7 +1127,9 @@ class HeroCombat:
         healing = defaultdict(float)
         for key, clocks in self.passive_next.items():
             hero = actors[key]
-            if hero.get("_recalled", False):
+            if not _active(hero, time):
+                # Death/Recall suppress emission while preserving the absolute
+                # pulse grid. Revive must not replay the missed pulses.
                 equipment = self._equipment(key, "electro-boots")
                 intervals = {
                     "aura": equipment["aura_interval_seconds"],
@@ -1112,6 +1211,14 @@ class HeroCombat:
             healing[key] += amount
         return damage, healing
 
+    def mirror_boundary(self, time):
+        values = [
+            expiry
+            for key, expiry in self.clone_expiry.items()
+            if key in self.mirror_ids and expiry > time
+        ]
+        return min(values) if values else None
+
     def next_boundary(self, time):
         values = list(self.visibility_until.values()) + list(self.clone_expiry.values())
         local_boundary = self.local_equipment.next_boundary(time)
@@ -1127,7 +1234,15 @@ class HeroCombat:
         values = [value for value in values if value > time + EPSILON]
         if local_boundary is not None:
             values.append(local_boundary)
+        aura_boundary = self.equipment_auras.next_boundary(time)
+        if aura_boundary is not None:
+            values.append(aura_boundary)
         return min(values) if values else None
+
+    def first_crossing_delay(self, actors, routes, speeds, time, horizon):
+        return self.equipment_auras.first_crossing_delay(
+            actors, routes, speeds, time, horizon
+        )
 
     def frame(self, actor_id, actor):
         if actor_id not in self.models and actor_id not in self.clone_expiry:
@@ -1146,6 +1261,7 @@ class HeroCombat:
             "rocket_spear_launches_remaining": dict(self.rocket_remaining),
             "summon_expiry_seconds": dict(self.clone_expiry),
             "owner_local_equipment": self.local_equipment.result(),
+            "equipment_auras": self.equipment_auras.result(),
             "automatic_activation_modeled": False,
             "game_calibrated": False,
         }

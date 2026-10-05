@@ -215,6 +215,74 @@ class CompleteBattleTests(unittest.TestCase):
     def setUpClass(cls):
         cls.catalog = Catalog.load(ROOT / "data")
 
+    def test_paid_healers_reach_moving_ally_and_keep_finite_army_ownership(self):
+        from test_healing import healing_model, support_scene
+
+        for step in (0.017, 0.25):
+            inputs = fixture(self.catalog, time_limit=1.1)
+            spec, account, army, layout = inputs
+            scene = spec["entity_scene"]
+            scene["maximum_step_seconds"] = step
+            scene["entities"] = scene["entities"][:2]
+            scene["entities"][0]["town_hall_parameters"]["activation"][
+                "initial_state"
+            ] = "active"
+            scene["entities"][1].update(x=6.5, first_attack_seconds=100)
+            scene["entities"][1]["modifiers"]["movement_speed_multiplier"] = 0.5
+            account["levels"]["healer"] = 1
+            army["troops"] = [
+                {"id": "pekka", "level": 1, "count": 1},
+                {"id": "healer", "level": 1, "count": 5},
+            ]
+            model = healing_model(kind="radial", radius=1)
+            parameters = {
+                key: model[key]
+                for key in (
+                    "kind",
+                    "radius",
+                    "projectile",
+                    "selector",
+                    "stacking_group",
+                    "source",
+                )
+            }
+            parameters["amount_multiplier"] = 1
+            scene["healing_stacking"] = support_scene()["healing_stacking"]
+            for table in scene["healing_stacking"]["groups"]["test-healers"][
+                "tables"
+            ].values():
+                table.extend([0.1, 0.1])
+            for index in range(5):
+                scene["entities"].append(
+                    entity_instance(
+                        f"healer-{index}",
+                        "healer",
+                        1,
+                        "attack",
+                        town_hall=16,
+                        x=0.5,
+                        y=5.5,
+                        first_attack_seconds=0,
+                        attack_parameters={},
+                        healing_parameters=deepcopy(parameters),
+                    )
+                )
+            result = simulate_full_battle(*inputs, self.catalog)
+            heals = [
+                e
+                for e in result["combat"]["trace"]
+                if e.get("event") == "healing_launch"
+            ]
+            self.assertEqual(len(heals), 5)
+            for event in heals:
+                self.assertAlmostEqual(event["time_seconds"], 1)
+                self.assertEqual(event["target"], "pekka-0")
+            self.assertEqual(result["validation"]["army"]["used"]["army_housing"], 95)
+            self.assertEqual(len(result["resource_use"]["deployed_attacker_ids"]), 6)
+            self.assertEqual(result["resource_use"]["undeployed_attacker_ids"], [])
+            self.assertEqual(result["outcome"]["stars"], 0)
+            self.assertEqual(result["outcome"]["end_reason"], "declared_time_limit")
+
     def test_supported_complete_declarations_run_at_th14_th15_and_th16(self):
         for town_hall in (14, 15, 16):
             with self.subTest(town_hall=town_hall):

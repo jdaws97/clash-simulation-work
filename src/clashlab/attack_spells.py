@@ -22,6 +22,7 @@ from .hazards import HAZARD_CLASSES, validate_hazard
 from .rates import pause_attack_work
 from .spatial import EPSILON, _active, center, target_distance
 from .spell_visibility import untargetable_until
+from .advanced_spell_models import SUPPORTED_SPELLS as ADVANCED_SPELLS
 
 
 def _unit_class(actor):
@@ -62,7 +63,13 @@ class AttackSpellCombat:
         if len({model["id"] for model in models}) != len(models):
             raise InputError("Attacking spell cast IDs must be unique")
         self.recipe = RecipeSpellCombat(models, actors, width, height)
-        models = [model for model in models if model["entity"] not in RECIPE_SPELLS]
+        self.advanced = None
+        self._advanced_required = any(m["entity"] in ADVANCED_SPELLS for m in models)
+        models = [
+            model
+            for model in models
+            if model["entity"] not in RECIPE_SPELLS | ADVANCED_SPELLS
+        ]
         self.models = {}
         self.hazards = hazards
         self.launched = set()
@@ -210,7 +217,13 @@ class AttackSpellCombat:
         )
 
     def prepare(self, actors, time, trace):
+        if self._advanced_required and self.advanced is None:
+            raise InputError(
+                "Advanced spell preparation requires its shared lifecycle owner"
+            )
         self.recipe.prepare(time, trace)
+        if self.advanced is not None:
+            self.advanced.prepare(time, trace)
         number(time, "attacking spell time", 0)
         if self.last_time is not None and time < self.last_time - EPSILON:
             raise InputError("Attacking spells cannot move backward in time")
@@ -414,18 +427,29 @@ class AttackSpellCombat:
                     model["arrival_seconds"] + model["quantities"]["duration_seconds"]
                 )
         future = [value for value in boundaries if value > time + EPSILON]
+        if self.advanced is not None:
+            advanced_boundary = self.advanced.next_boundary(time)
+            if advanced_boundary is not None:
+                future.append(advanced_boundary)
         return min(future) if future else None
 
     def first_crossing_delay(self, actor, route, time, horizon, effective_speed):
         """Continuous point-unit field crossings, including forced movement."""
         speed = number(effective_speed, "spell-field crossing speed", 0)
+        advanced_crossing = (
+            self.advanced.runtime.first_crossing_delay(
+                actor, route, time, horizon, speed
+            )
+            if self.advanced is not None
+            else None
+        )
         if speed <= EPSILON or horizon <= EPSILON:
-            return None
+            return advanced_crossing
         if actor["width"] != 0 or actor["height"] != 0:
             raise InputError(
                 "Spell-field movement requires the shared point-unit convention"
             )
-        earliest = None
+        earliest = advanced_crossing
         for cast_id in sorted(self.launched):
             model = self.models[cast_id]
             if (
@@ -495,6 +519,8 @@ class AttackSpellCombat:
     def continuation_reasons(self, time):
         """Report released direct offense; shared hazards own Poison continuation."""
         facts = self.recipe.continuation_reasons(time)
+        if self.advanced is not None:
+            facts.extend(self.advanced.runtime.continuation_reasons(time))
         for cast_id in sorted(self.launched - self.resolved):
             model = self.models[cast_id]
             if (
@@ -519,6 +545,17 @@ class AttackSpellCombat:
 
     def frame(self, actor):
         return {
+            "spell_pause_until": actor.get("_spell_pause_until", 0),
+            "spell_incoming_damage_multiplier": actor.get(
+                "_spell_incoming_damage_multiplier", 1
+            ),
+            "spell_movement_bonus": actor.get("_spell_movement_bonus", 0),
+            "spell_defense_priority": actor.get("_spell_defense_priority", False),
+            **(
+                {"spell_armor_hp": actor["_spell_armor_hp"]}
+                if "_spell_armor_hp" in actor
+                else {}
+            ),
             "attack_spell_fields": list(actor.get("_attack_spell_fields", [])),
             "attack_spell_untargetable_until": actor.get(
                 "_attack_spell_untargetable_until", 0
@@ -526,14 +563,23 @@ class AttackSpellCombat:
         }
 
     def result(self):
+        advanced = self.advanced.runtime if self.advanced is not None else None
+        launched = (
+            self.launched
+            | self.recipe.launched
+            | (advanced.launched if advanced else set())
+        )
+        resolved = (
+            self.resolved
+            | self.recipe.resolved
+            | (advanced.resolved if advanced else set())
+        )
         return {
-            "launched": sorted(self.launched | self.recipe.launched),
-            "resolved": sorted(self.resolved | self.recipe.resolved),
+            "launched": sorted(launched),
+            "resolved": sorted(resolved),
+            **({"advanced_spells": self.advanced.result()} if advanced else {}),
             **({"recipe_spells": self.recipe.result()} if self.recipe.models else {}),
-            "pending_at_horizon": sorted(
-                (self.launched | self.recipe.launched)
-                - (self.resolved | self.recipe.resolved)
-            ),
+            "pending_at_horizon": sorted(launched - resolved),
             "quake_hits": dict(self.quake_hits),
             "overgrowth_recipients": deepcopy(self.captured),
             "behavior_verification": "explicit_uncalibrated_spell_contract",

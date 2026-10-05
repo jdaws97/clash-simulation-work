@@ -4,6 +4,7 @@ The two breach motion profiles are hypotheses to compare with recordings. They
 are not assertions about the game's exact Root Rider movement or hit cadence.
 """
 
+from functools import lru_cache
 from heapq import heappop, heappush
 from math import ceil, floor, hypot
 
@@ -18,6 +19,7 @@ from .spatial import (
     _select_target,
     center,
     ground_attack_point,
+    ground_attack_points,
     target_distance,
     target_priority,
 )
@@ -38,6 +40,92 @@ WALL_RULES = {
 BREACH_KINDS = {"clear_obstructions", "penetrate_obstructions"}
 ROUTE_COSTS = {"travel_seconds_only", "travel_seconds_plus_nominal_clearance"}
 COOLDOWNS = {"shared_with_main_weapon", "independent_from_main_weapon"}
+
+
+@lru_cache(maxsize=256)
+def _weighted_route(
+    position,
+    footprint,
+    attack_range,
+    speed,
+    wall_hit,
+    wall_interval,
+    current_attack_rate,
+    wall_hps,
+    solid,
+    width,
+    height,
+):
+    """Pure original Dijkstra query; every geometric and live cost input is keyed."""
+    target = dict(zip(("x", "y", "width", "height"), footprint))
+    walls = dict(wall_hps)
+    start = floor(position[0]), floor(position[1])
+    pending = [(0.0, start)]
+    costs = {start: 0.0}
+    previous = {start: None}
+    destination = None
+    endpoint = None
+    attack_points = ground_attack_points(target, attack_range, width, height)
+    while pending:
+        cost, cell = heappop(pending)
+        if cost > costs[cell] + EPSILON:
+            continue
+        # A planned destination may occupy a wall cell: clearing makes it
+        # traversable before arrival. _approach prevents premature crossing.
+        endpoint = (
+            attack_points.get(cell)
+            if attack_points is not None
+            else ground_attack_point(cell, target, attack_range)
+        )
+        if endpoint is not None:
+            destination = cell
+            break
+        x, y = cell
+        for neighbor in ((x - 1, y), (x, y - 1), (x, y + 1), (x + 1, y)):
+            nx, ny = neighbor
+            if not (0 <= nx < width and 0 <= ny < height) or neighbor in solid:
+                continue
+            edge_cost = 1 / speed
+            if cell == start:
+                edge_cost = (
+                    hypot(nx + 0.5 - position[0], ny + 0.5 - position[1]) / speed
+                )
+            if neighbor in walls:
+                edge_cost += (
+                    ceil(walls[neighbor] / wall_hit)
+                    * wall_interval
+                    / current_attack_rate
+                )
+            candidate = cost + edge_cost
+            if candidate < costs.get(neighbor, float("inf")) - EPSILON:
+                costs[neighbor] = candidate
+                previous[neighbor] = cell
+                heappush(pending, (candidate, neighbor))
+    if destination is None:
+        return None, None
+    final_cost = costs[destination]
+    cells = []
+    while destination != start:
+        cells.append(destination)
+        destination = previous[destination]
+    cells.reverse()
+    route = [(x + 0.5, y + 0.5) for x, y in cells]
+    if not route:
+        final_cost += (
+            hypot(endpoint[0] - position[0], endpoint[1] - position[1]) / speed
+        )
+        return (endpoint,), final_cost
+    destination_center = route[-1]
+    if endpoint != destination_center:
+        route.append(endpoint)
+        final_cost += (
+            hypot(
+                endpoint[0] - destination_center[0],
+                endpoint[1] - destination_center[1],
+            )
+            / speed
+        )
+    return tuple(route), final_cost
 
 
 class WallRouting:
@@ -125,14 +213,16 @@ class WallRouting:
 
     @staticmethod
     def _maps(actor, actors, time, blocked):
+        exempt = set(map(tuple, actor.get("_spell_jump_cells", [])))
         enemy_walls = {
             (wall["x"], wall["y"]): wall
             for wall in actors.values()
             if wall["kind"] == "wall"
             and wall["team"] != actor["team"]
             and _active(wall, time)
+            and (wall["x"], wall["y"]) not in exempt
         }
-        return enemy_walls, blocked - set(enemy_walls)
+        return enemy_walls, blocked - set(enemy_walls) - exempt
 
     def validate_positions(self, actors, blocked, time):
         for actor in actors.values():
@@ -140,6 +230,8 @@ class WallRouting:
                 continue
             cell = floor(actor["x"]), floor(actor["y"])
             if cell not in blocked:
+                continue
+            if cell in set(map(tuple, actor.get("_spell_jump_cells", []))):
                 continue
             walls, solid = self._maps(actor, actors, time, blocked)
             profile = actor["wall_behavior"]
@@ -166,73 +258,31 @@ class WallRouting:
             return None, None
         profile = actor["wall_behavior"]
         weapon = profile["weapon"]
-        pending = [(0.0, start)]
-        costs = {start: 0.0}
-        previous = {start: None}
-        destination = None
-        endpoint = None
-        while pending:
-            cost, cell = heappop(pending)
-            if cost > costs[cell] + EPSILON:
-                continue
-            # A planned destination may occupy a wall cell: clearing makes it
-            # traversable before arrival. _approach prevents premature crossing.
-            endpoint = ground_attack_point(cell, target, actor["range"])
-            if endpoint is not None:
-                destination = cell
-                break
-            x, y = cell
-            for neighbor in ((x - 1, y), (x, y - 1), (x, y + 1), (x + 1, y)):
-                nx, ny = neighbor
-                if not (0 <= nx < width and 0 <= ny < height) or neighbor in solid:
-                    continue
-                edge_cost = 1 / speed
-                if cell == start:
-                    edge_cost = (
-                        hypot(nx + 0.5 - position[0], ny + 0.5 - position[1]) / speed
-                    )
-                if (
-                    neighbor in walls
-                    and profile["route_cost"] == "travel_seconds_plus_nominal_clearance"
-                ):
-                    edge_cost += (
-                        ceil(
-                            walls[neighbor]["hp"]
-                            / (weapon["damage"] * damage_multiplier(actor))
-                        )
-                        * weapon["attack_interval_seconds"]
-                        / current_attack_rate
-                    )
-                candidate = cost + edge_cost
-                if candidate < costs.get(neighbor, float("inf")) - EPSILON:
-                    costs[neighbor] = candidate
-                    previous[neighbor] = cell
-                    heappush(pending, (candidate, neighbor))
-        if destination is None:
-            return None, None
-        final_cost = costs[destination]
-        cells = []
-        while destination != start:
-            cells.append(destination)
-            destination = previous[destination]
-        cells.reverse()
-        route = [(x + 0.5, y + 0.5) for x, y in cells]
-        if not route:
-            final_cost += (
-                hypot(endpoint[0] - position[0], endpoint[1] - position[1]) / speed
-            )
-            return [endpoint], final_cost
-        destination_center = route[-1]
-        if endpoint != destination_center:
-            route.append(endpoint)
-            final_cost += (
-                hypot(
-                    endpoint[0] - destination_center[0],
-                    endpoint[1] - destination_center[1],
-                )
-                / speed
-            )
-        return route, final_cost
+        weighted = profile["route_cost"] == "travel_seconds_plus_nominal_clearance"
+        # Cache the exact query, including fractional departure, nominal wall HP,
+        # effective movement/attack/damage rates and all live obstruction cells.
+        # Movement, damage and Freeze clocks themselves remain owned by callers.
+        query = (
+            _weighted_route if width * height <= 4096 else _weighted_route.__wrapped__
+        )
+        route, cost = query(
+            position,
+            tuple(target[key] for key in ("x", "y", "width", "height")),
+            actor["range"],
+            speed,
+            weapon["damage"] * damage_multiplier(actor) if weighted else 0,
+            weapon["attack_interval_seconds"] if weighted else 0,
+            current_attack_rate if weighted else 1,
+            (
+                frozenset((cell, wall["hp"]) for cell, wall in walls.items())
+                if weighted
+                else frozenset()
+            ),
+            frozenset(solid),
+            width,
+            height,
+        )
+        return (list(route) if route is not None else None), cost
 
     @staticmethod
     def _obstruction(actor, route, walls):
@@ -263,6 +313,7 @@ class WallRouting:
         return approach
 
     def select_target(self, actor, actors, time, blocked, width, height):
+        blocked = blocked - set(map(tuple, actor.get("_spell_jump_cells", [])))
         if actor["movement"] != "ground" or actor["wall_behavior"]["kind"] == "avoid":
             return _select_target(actor, actors, time, blocked, width, height)
         if actor["wall_behavior"]["kind"] == "jump_enemy_walls":

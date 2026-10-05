@@ -7,11 +7,26 @@ alone does not register weapons, reset death observers, or resume hero combat.
 from copy import deepcopy
 from math import hypot, inf, nextafter
 
-from .advanced_spell_models import SPELL_CLASSES, validate_advanced_spell
+from .advanced_spell_models import (
+    SPELL_CLASSES,
+    spell_clock_after,
+    validate_advanced_spell,
+)
 from .battle_termination import continuation_fact
 from .buffs import _circle_events
 from .common import InputError, integer, number
 from .spatial import EPSILON, _active, center
+
+
+PREPARE_PHASE = {
+    "bat-spell": 0,
+    "skeleton-spell": 0,
+    "revive-spell": 1,
+    "clone-spell": 2,
+    "ice-block-spell": 3,
+    "angry-spell": 3,
+    "jump-spell": 3,
+}
 
 
 def troop_or_hero(actor):
@@ -34,6 +49,7 @@ def generated_template(model, index):
     source = model["statistics_source"]
     result = {
         "id": f"{model['id']}:spawn:{index}",
+        "source": source,
         "team": "attack",
         "kind": "unit",
         "layer": "air" if bat else "ground",
@@ -324,8 +340,8 @@ class AdvancedSpellCombat:
                     raise InputError("Clone reserve exhausted or already released")
                 clone = self.register_actor(reserve, time, key)
                 self._registered(clone, clone_id)
-                self.clone_expiry[clone_id] = (
-                    time + model["quantities"]["lifespan_seconds"]
+                self.clone_expiry[clone_id] = spell_clock_after(
+                    time, model["quantities"]["lifespan_seconds"]
                 )
                 remaining -= weight
                 self.clone_counts[model["id"], key] = index + 1
@@ -374,8 +390,17 @@ class AdvancedSpellCombat:
                         "actor": clone_id,
                     }
                 )
+        # Finite dependency closure: primary releases/revivals cannot depend on
+        # Clone; Clone excludes every clone reserve as a source. One ordered sweep
+        # therefore reaches a fixed point before statuses capture membership.
+        # Cast IDs only break ties within a phase, never decide source availability.
         for key, model in sorted(
-            self.models.items(), key=lambda item: (item[1]["time_seconds"], item[0])
+            self.models.items(),
+            key=lambda item: (
+                PREPARE_PHASE[item[1]["entity"]],
+                item[1]["time_seconds"],
+                item[0],
+            ),
         ):
             if model["time_seconds"] > time:
                 continue
@@ -452,7 +477,10 @@ class AdvancedSpellCombat:
             if entity in {"bat-spell", "skeleton-spell"}:
                 index = self.spawned.get(key, 0)
                 interval = model["parameters"]["spawn_interval_seconds"]
-                while index < q["count"] and arrival + index * interval <= time:
+                while (
+                    index < q["count"]
+                    and spell_clock_after(arrival, index * interval) <= time
+                ):
                     reserve = self.actors[f"{key}:spawn:{index}"]
                     actor = self.register_actor(reserve, time, None)
                     self._registered(actor, reserve["id"])
@@ -466,27 +494,35 @@ class AdvancedSpellCombat:
                             "actor": actor["id"],
                         }
                     )
-            elif entity == "clone-spell" and time < arrival + q["duration_seconds"]:
+            elif entity == "clone-spell" and time < spell_clock_after(
+                arrival, q["duration_seconds"]
+            ):
                 self._clone(model, time, trace)
             elif entity == "angry-spell":
-                live = time < arrival + q["duration_seconds"]
+                live = time < spell_clock_after(arrival, q["duration_seconds"])
                 for actor in self.actors.values():
                     member = key, actor["id"]
                     eligible = troop_or_hero(actor) and _active(actor, time)
                     inside = live and eligible and self._inside(model, actor)
                     if inside:
-                        self.anger_until[member] = time + q["anger_seconds"]
-                    elif self.anger_inside.get(member, False) and eligible:
-                        self.anger_until[member] = (
-                            min(time, arrival + q["duration_seconds"])
-                            + q["anger_seconds"]
+                        self.anger_until[member] = spell_clock_after(
+                            time, q["anger_seconds"]
                         )
-                    elif not eligible:
+                    elif self.anger_inside.get(member, False) and eligible:
+                        self.anger_until[member] = spell_clock_after(
+                            min(
+                                time, spell_clock_after(arrival, q["duration_seconds"])
+                            ),
+                            q["anger_seconds"],
+                        )
+                    elif not troop_or_hero(actor):
+                        # Recall/death/undeployment suppress membership, not the
+                        # absolute status clock retained for return or revival.
                         self.anger_until.pop(member, None)
                     self.anger_inside[member] = inside
             if (
                 "duration_seconds" in q
-                and time >= arrival + q["duration_seconds"]
+                and time >= spell_clock_after(arrival, q["duration_seconds"])
                 and key not in self.expired
             ):
                 self.expired.add(key)
@@ -504,7 +540,9 @@ class AdvancedSpellCombat:
             pauses, reductions, bonuses = [], [], []
             for key, members in self.ice_members.items():
                 model = self.models[key]
-                end = model["arrival_seconds"] + model["quantities"]["duration_seconds"]
+                end = spell_clock_after(
+                    model["arrival_seconds"], model["quantities"]["duration_seconds"]
+                )
                 if actor["id"] in members and end > time:
                     pauses.append(end)
                     reductions.append(model["quantities"]["incoming_damage_multiplier"])
@@ -531,7 +569,7 @@ class AdvancedSpellCombat:
                 self.status_callback(actor, time, old_pause, new_pause)
             actor["_spell_pause_until"] = new_pause
             actor["_spell_incoming_damage_multiplier"] = min(reductions, default=1)
-            actor["_spell_movement_bonus"] = max(bonuses, default=0)
+            actor["_spell_movement_bonus"] = max(bonuses, default=0) if angry else 0
             actor["_spell_defense_priority"] = angry
         for key, end in list(self.anger_until.items()):
             if end <= time:
@@ -582,10 +620,8 @@ class AdvancedSpellCombat:
         cells = set()
         for key in self.resolved:
             model = self.models[key]
-            if (
-                model["entity"] != "jump-spell"
-                or time
-                >= model["arrival_seconds"] + model["quantities"]["duration_seconds"]
+            if model["entity"] != "jump-spell" or time >= spell_clock_after(
+                model["arrival_seconds"], model["quantities"]["duration_seconds"]
             ):
                 continue
             for wall in self.actors.values():
@@ -604,15 +640,19 @@ class AdvancedSpellCombat:
             boundaries.extend([model["time_seconds"], model["arrival_seconds"]])
             q = model["quantities"]
             if "duration_seconds" in q:
-                boundaries.append(model["arrival_seconds"] + q["duration_seconds"])
+                boundaries.append(
+                    spell_clock_after(model["arrival_seconds"], q["duration_seconds"])
+                )
             if (
                 model["entity"] in {"bat-spell", "skeleton-spell"}
                 and self.spawned.get(key, 0) < q["count"]
             ):
                 boundaries.append(
-                    model["arrival_seconds"]
-                    + self.spawned.get(key, 0)
-                    * model["parameters"]["spawn_interval_seconds"]
+                    spell_clock_after(
+                        model["arrival_seconds"],
+                        self.spawned.get(key, 0)
+                        * model["parameters"]["spawn_interval_seconds"],
+                    )
                 )
         return min((value for value in boundaries if value > time), default=None)
 
@@ -679,9 +719,11 @@ class AdvancedSpellCombat:
                     continuation_fact(
                         "pending_release",
                         "spell:" + key,
-                        not_before_seconds=model["arrival_seconds"]
-                        + self.spawned.get(key, 0)
-                        * model["parameters"]["spawn_interval_seconds"],
+                        not_before_seconds=spell_clock_after(
+                            model["arrival_seconds"],
+                            self.spawned.get(key, 0)
+                            * model["parameters"]["spawn_interval_seconds"],
+                        ),
                     )
                 )
             elif model["entity"] == "revive-spell" and key not in self.resolved:

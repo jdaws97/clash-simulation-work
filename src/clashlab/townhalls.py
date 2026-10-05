@@ -287,11 +287,13 @@ class TownHallCombat:
         self.hazards = PulsedHazards(actors, fields)
         self.ordinary_select_target = select_target
 
-    def prepare(self, actors, time, trace):
+    def prepare(self, actors, time, trace, *, initial_state_only=False):
         for actor_id, model in self.models.items():
             actor = actors[actor_id]
             state = self.states[actor_id]
             if not _active(actor, time) or state["activated_at"] is not None:
+                continue
+            if initial_state_only and model["activation"]["initial_state"] != "active":
                 continue
             counted = [
                 item
@@ -327,7 +329,8 @@ class TownHallCombat:
                     "weapon_ready_seconds": actor["next_attack"],
                 }
             )
-        self.hazards.prepare_status(actors, time, trace)
+        if not initial_state_only:
+            self.hazards.prepare_status(actors, time, trace)
 
     def select_target(self, actor, actors, time, blocked, width, height):
         if (

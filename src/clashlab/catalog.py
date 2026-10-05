@@ -1,6 +1,7 @@
 """Inspect versioned statistics and report gaps instead of inventing values."""
 
 from copy import deepcopy
+from hashlib import sha256
 
 from .common import InputError, integer, read_json
 
@@ -22,10 +23,37 @@ class Catalog:
 
     @classmethod
     def load(cls, data_directory):
-        return cls(
+        result = cls(
             read_json(data_directory / "catalog.json"),
             read_json(data_directory / "secondary-raw.json"),
         )
+        result.source_data_directory = data_directory
+        return result
+
+    def crafting_station_source(self):
+        if not hasattr(self, "_crafting_station_source"):
+            directory = getattr(self, "source_data_directory", None)
+            if directory is None:
+                raise InputError(
+                    "Crafted weapons need the pinned secondary building extraction"
+                )
+            path = directory / "clashking-static-data.json"
+            digest = sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+            if (
+                digest
+                != "ff2b72ec8a71b403d247b061c5d0edb0c59dfe0dbea8f199f3451de2ece26cb8"
+            ):
+                raise InputError(
+                    "Crafted secondary extraction differs from the audited pinned blob"
+                )
+            raw = read_json(path)
+            matches = [row for row in raw["buildings"] if row.get("_id") == 1000097]
+            if len(matches) != 1:
+                raise InputError(
+                    "Pinned secondary Crafting Station mapping is not unique"
+                )
+            self._crafting_station_source = matches[0]
+        return deepcopy(self._crafting_station_source)
 
     def entity(self, entity_id):
         if entity_id not in self.records:

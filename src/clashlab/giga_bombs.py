@@ -301,6 +301,8 @@ class GigaBombCombat:
         )
 
     def _trigger_eligible(self, trap, actor, time):
+        if actor.get("_spell_trap_trigger_exempt", False):
+            return False
         if not self._live_unit(trap, actor, time):
             return False
         parameters = trap["parameters"]

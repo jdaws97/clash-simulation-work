@@ -2,6 +2,8 @@
 
 from copy import deepcopy
 from pathlib import Path
+import json
+from math import inf, nextafter
 import unittest
 
 from clashlab.advanced_spell_models import CONTRACT, POLICIES, compile_advanced_spell
@@ -16,6 +18,8 @@ from clashlab.common import InputError
 from clashlab.rates import pause_attack_work
 from clashlab.spatial import _select_target
 from clashlab.full_battle import compile_full_battle
+from clashlab.attack_spell_models import compile_attack_spell
+from clashlab.recipe_spells import RecipeSpellCombat
 from test_full_battle import fixture
 
 
@@ -351,11 +355,17 @@ class AdvancedSpellTests(unittest.TestCase):
         self.assertEqual(exact.resolved, set())
         exact.prepare(1e-12, [])
         self.assertEqual(exact.resolved, {"jump-spell"})
+        delayed = cast(self.catalog, "jump-spell", time=100, impact_delay_seconds=1e-15)
+        exact = AdvancedSpellCombat([delayed], actors)
+        exact.prepare(100, [])
+        self.assertEqual(exact.resolved, set())
+        boundary = exact.next_boundary(100)
+        self.assertEqual(boundary, nextafter(100, inf))
+        exact.prepare(boundary, [])
+        self.assertEqual(exact.resolved, {"jump-spell"})
 
-    def test_full_battle_baseline_rejects_unbound_domain_module(self):
-        # Integration evidence: the sanitized stable kernel MUST continue rejecting
-        # these casts until the lead binds the domain, rather than claiming success
-        # from a standalone compiler or registry presence.
+    def test_old_scope_still_rejects_advanced_spell_inventory(self):
+        # New shared bindings do not widen older schema capabilities.
         for entity in (
             "clone-spell",
             "jump-spell",
@@ -368,8 +378,92 @@ class AdvancedSpellTests(unittest.TestCase):
             specification, account, army, layout = fixture(self.catalog)
             account["levels"][entity] = 1
             army["spells"] = [{"id": entity, "level": 1, "count": 1}]
-            with self.assertRaisesRegex(InputError, "runtime adapter"):
+            expected = "explicit v29 scope"
+            with self.assertRaisesRegex(InputError, expected):
                 compile_full_battle(specification, account, army, layout, self.catalog)
+
+    def test_angry_clock_survives_real_recall_until_absolute_expiry(self):
+        for return_time in (3, 9):
+            actor = unit("held-troop", blocking=False)
+            actors, trace = {actor["id"]: actor}, []
+            angry = AdvancedSpellCombat(
+                [cast(self.catalog, "angry-spell")],
+                actors,
+                base_selector=_select_target,
+            )
+            parameters = json.loads(
+                (ROOT / "data/battle-policies/recipe-spells.json").read_text()
+            )["recall-spell"]
+            parameters["redeployment"] = {
+                "time_seconds": return_time,
+                "position": {"x": 20, "y": 10},
+                "regions": [{"left": 19, "right": 21, "top": 9, "bottom": 11}],
+                "source": "synthetic-open-redeployment-cell",
+            }
+            model = compile_attack_spell(
+                {
+                    "id": "recall",
+                    "entity": "recall-spell",
+                    "level": 1,
+                    "town_hall": 18,
+                    "time_seconds": 2,
+                    "x": 20,
+                    "y": 10,
+                    "parameters": parameters,
+                },
+                self.catalog,
+            )
+            recall = RecipeSpellCombat([model], actors, 30, 30)
+            angry.prepare(0, trace)
+            actor["x"] = 20
+            angry.prepare(1, trace)
+            self.assertEqual(angry.anger_until["angry-spell", actor["id"]], 8)
+            recall.prepare(2, trace)
+            angry.prepare(2, trace)
+            self.assertTrue(actor["_recalled"])
+            self.assertEqual(angry.anger_until.get(("angry-spell", actor["id"])), 8)
+            self.assertEqual(actor["_spell_movement_bonus"], 0)
+            self.assertFalse(actor["_spell_defense_priority"])
+            recall.prepare(return_time, trace)
+            angry.prepare(return_time, trace)
+            self.assertFalse(actor["_recalled"])
+            self.assertEqual(actor["_spell_defense_priority"], return_time < 8)
+            if return_time < 8:
+                self.assertEqual(angry.anger_until["angry-spell", actor["id"]], 8)
+                self.assertEqual(actor["_spell_movement_bonus"], 4.375)
+                angry.prepare(8, trace)
+            self.assertNotIn(("angry-spell", actor["id"]), angry.anger_until)
+            self.assertEqual(actor["_spell_movement_bonus"], 0)
+            self.assertFalse(actor["_spell_defense_priority"])
+            self.assertEqual(
+                len([e for e in trace if e["event"] == "recall_capture"]), 1
+            )
+            self.assertEqual(
+                len([e for e in trace if e["event"] == "recall_redeployment"]), 1
+            )
+
+    def test_simultaneous_bat_clone_settles_once_independent_of_cross_family_ids(self):
+        for clone_id, bat_id in (("a-clone", "z-bat"), ("z-clone", "a-bat")):
+            actors, trace = {}, []
+            callbacks = Callbacks(actors)
+            models = [
+                cast(self.catalog, "clone-spell", clone_id),
+                cast(self.catalog, "bat-spell", bat_id),
+            ]
+            callbacks.reserves(models)
+            runtime = AdvancedSpellCombat(models, actors, **callbacks.arguments())
+            runtime.prepare(0, trace)
+            once, trace_once = runtime.result(), deepcopy(trace)
+            self.assertEqual(runtime.spawned.get(clone_id, 0), 22)
+            self.assertEqual(runtime.spawned[bat_id], 1)
+            self.assertEqual(runtime.capacity[clone_id], 0)
+            self.assertEqual(set(runtime.clone_expiry.values()), {30})
+            runtime.prepare(0, trace)
+            self.assertEqual(runtime.result(), once)
+            self.assertEqual(trace, trace_once)
+            self.assertEqual(
+                len([e for e in trace if e["event"] == "attack_spell_cast"]), 2
+            )
 
 
 if __name__ == "__main__":

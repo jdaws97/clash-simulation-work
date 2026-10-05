@@ -61,6 +61,21 @@ def loaded(actors):
 
 
 class ElectroTitanTests(unittest.TestCase):
+    def test_positive_first_pulse_is_exact_and_skipped_clock_rejects(self):
+        actor = titan(self.catalog)
+        actor["aura_model"]["parameters"]["first_pulse_delay_seconds"] = 1e-12
+        actors = loaded([actor, synthetic_structure("near", x=5, y=4)])
+        runtime = ElectroTitanCombat(actors)
+        trace = []
+        self.assertEqual(runtime.next_boundary(0), 1e-12)
+        self.assertEqual(dict(runtime.resolve(0, trace)), {})
+        self.assertEqual(trace, [])
+        self.assertEqual(dict(runtime.resolve(1e-12, trace)), {"near": 55})
+        self.assertEqual(trace[0]["time_seconds"], 1e-12)
+        self.assertEqual(trace[0]["pulse_index"], 0)
+        with self.assertRaisesRegex(InputError, "boundary was skipped"):
+            runtime.resolve(runtime.next_boundary(1e-12) + 1e-12, trace)
+
     @classmethod
     def setUpClass(cls):
         cls.catalog = Catalog.load(ROOT / "data")

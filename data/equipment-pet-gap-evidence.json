@@ -1,0 +1,871 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-04",
+  "source_collection": "existing supplied files plus public official documents only",
+  "baseline_commit": "3a814ec6a36f06de3f2165b0c9da0df2a0b43972",
+  "baseline_tree": "ade5a051c51ce1626eb2884beb50e7cde66bb9af",
+  "catalog_snapshot": "c6967314d7281bb87c362993e2635e58cd77b351",
+  "extraction_sha256_normalized": "ff2b72ec8a71b403d247b061c5d0edb0c59dfe0dbea8f199f3451de2ece26cb8",
+  "child_inventory_search": {
+    "supplied_troop_names_matching_lava_pup_booger": [
+      "Lava Hound",
+      "Lavaloon"
+    ],
+    "scope": "Pinned extraction troops array; absence is not a claim that no public source exists"
+  },
+  "items": {
+    "lavaloon-puppet": {
+      "catalog_source": "https://github.com/chiefpansancolt/clash-of-clans-data/blob/c6967314d7281bb87c362993e2635e58cd77b351/data/home/hero-equipment/lavaloon-puppet.json",
+      "catalog_verification": "unverified_snapshot",
+      "entity": {
+        "id": "lavaloon-puppet",
+        "dataId": 90000041,
+        "name": "Lavaloon Puppet",
+        "base": "home",
+        "category": "hero-equipment",
+        "hero": "grand-warden",
+        "rarity": "Epic",
+        "abilityType": "Active"
+      },
+      "catalog_rows": [
+        {
+          "level": 1,
+          "hitpointIncrease": 50,
+          "upgradeShinyOre": 0,
+          "upgradeGlowingOre": 0,
+          "upgradeStarryOre": 0,
+          "blacksmithLevelRequired": 1,
+          "stats": {
+            "summonedLavaloons": 1,
+            "lavaloonLevel": 1,
+            "dpsIncrease": 10
+          }
+        },
+        {
+          "level": 27,
+          "hitpointIncrease": 150,
+          "upgradeShinyOre": 3600,
+          "upgradeGlowingOre": 600,
+          "upgradeStarryOre": 150,
+          "blacksmithLevelRequired": 9,
+          "stats": {
+            "summonedLavaloons": 3,
+            "lavaloonLevel": 11,
+            "dpsIncrease": 50
+          }
+        }
+      ],
+      "existing_extraction_source": "https://raw.githubusercontent.com/ClashKingInc/ClashKingAssets/b8f42a707fe92d5293d46088bf536450ae422e7b/assets/static_data.json",
+      "extracted_entity": {
+        "_id": 90000041,
+        "name": "Lavaloon Puppet",
+        "info": "Summons spooky Lavaloons",
+        "production_building": "Blacksmith",
+        "production_building_level": 1,
+        "rarity": "Epic",
+        "hero": "Grand Warden"
+      },
+      "extracted_rows": [
+        {
+          "level": 1,
+          "hitpoints": 0,
+          "dps": 10,
+          "heal_on_activation": 0,
+          "required_blacksmith_level": 1,
+          "required_townhall": 8,
+          "strength_weight": 100,
+          "upgrade_cost": {
+            "shiny_ore": 120,
+            "glowy_ore": 0,
+            "starry_ore": 0
+          },
+          "abilities": [
+            {
+              "Level": 1,
+              "TroopCount": 1,
+              "TroopLevel": 1,
+              "name": "Lavaloon Puppet",
+              "info": "Summons spooky Lavaloons"
+            }
+          ]
+        },
+        {
+          "level": 27,
+          "hitpoints": 0,
+          "dps": 50,
+          "heal_on_activation": 0,
+          "required_blacksmith_level": 9,
+          "required_townhall": 16,
+          "strength_weight": 4700,
+          "upgrade_cost": {
+            "shiny_ore": 0,
+            "glowy_ore": 0,
+            "starry_ore": 0
+          },
+          "abilities": [
+            {
+              "Level": 27,
+              "TroopCount": 3,
+              "TroopLevel": 11,
+              "name": "Lavaloon Puppet",
+              "info": "Summons spooky Lavaloons"
+            }
+          ]
+        }
+      ],
+      "whole_battle_admission": false,
+      "calibrated": false,
+      "implementation": "existing equipment_summons rejection retained; no duplicate runtime",
+      "acceptance": "existing guard retained; no new child lifecycle acceptance",
+      "resolved": [
+        "count/level in both supplied sources"
+      ],
+      "remaining_evidence": [
+        "equipment child stats",
+        "bomb geometry/timing",
+        "death damage",
+        "Lava Pup stats/count",
+        "finite child ownership/Recall semantics"
+      ],
+      "central_dependencies": [
+        "reuse EquipmentSummonCombat inventory",
+        "shared child death release and finite reserve entitlement"
+      ],
+      "extracted_lavaloon_is_seasonal": true
+    },
+    "dark-crown": {
+      "catalog_source": "https://github.com/chiefpansancolt/clash-of-clans-data/blob/c6967314d7281bb87c362993e2635e58cd77b351/data/home/hero-equipment/dark-crown.json",
+      "catalog_verification": "unverified_snapshot",
+      "entity": {
+        "id": "dark-crown",
+        "dataId": 90000035,
+        "name": "Dark Crown",
+        "description": "Boosts health and damage a total of 3 times when allies are defeated",
+        "base": "home",
+        "category": "hero-equipment",
+        "hero": "minion-prince",
+        "rarity": "Epic",
+        "abilityType": "Passive"
+      },
+      "catalog_rows": [
+        {
+          "level": 1,
+          "hitpointIncrease": 550,
+          "upgradeShinyOre": 0,
+          "upgradeGlowingOre": 0,
+          "upgradeStarryOre": 0,
+          "blacksmithLevelRequired": 1,
+          "stats": {
+            "maxHealthIncrease": 3,
+            "maxDamageIncrease": 3,
+            "attackSpeedIncrease": 1
+          }
+        },
+        {
+          "level": 27,
+          "hitpointIncrease": 1200,
+          "upgradeShinyOre": 3600,
+          "upgradeGlowingOre": 600,
+          "upgradeStarryOre": 150,
+          "blacksmithLevelRequired": 9,
+          "stats": {
+            "maxHealthIncrease": 30,
+            "maxDamageIncrease": 30,
+            "attackSpeedIncrease": 11
+          }
+        }
+      ],
+      "existing_extraction_source": "https://raw.githubusercontent.com/ClashKingInc/ClashKingAssets/b8f42a707fe92d5293d46088bf536450ae422e7b/assets/static_data.json",
+      "extracted_entity": {
+        "_id": 90000035,
+        "name": "Dark Crown",
+        "info": "Boosts health and damage a total of 3 times when allies are defeated",
+        "production_building": "Blacksmith",
+        "production_building_level": 1,
+        "rarity": "Epic",
+        "hero": "Minion Prince"
+      },
+      "extracted_rows": [
+        {
+          "level": 1,
+          "hitpoints": 0,
+          "dps": 0,
+          "heal_on_activation": 0,
+          "required_blacksmith_level": 1,
+          "required_townhall": 8,
+          "strength_weight": 100,
+          "upgrade_cost": {
+            "shiny_ore": 120,
+            "glowy_ore": 0,
+            "starry_ore": 0
+          },
+          "abilities": [
+            {
+              "Level": 1,
+              "PercentHealthIncrease": 3,
+              "BoostDamagePercentage": 3,
+              "name": "Dark Crown",
+              "info": "Boosts health and damage a total of 3 times when allies are defeated"
+            },
+            {
+              "Level": 1,
+              "PercentHealthIncrease": 1,
+              "BoostDamagePercentage": 1,
+              "name": "Dark Crown"
+            },
+            {
+              "Level": 1,
+              "PercentHealthIncrease": 2,
+              "BoostDamagePercentage": 2,
+              "name": "Dark Crown"
+            }
+          ]
+        },
+        {
+          "level": 27,
+          "hitpoints": 0,
+          "dps": 0,
+          "heal_on_activation": 0,
+          "required_blacksmith_level": 9,
+          "required_townhall": 16,
+          "strength_weight": 4700,
+          "upgrade_cost": {
+            "shiny_ore": 0,
+            "glowy_ore": 0,
+            "starry_ore": 0
+          },
+          "abilities": [
+            {
+              "Level": 10,
+              "PercentHealthIncrease": 30,
+              "BoostDamagePercentage": 30,
+              "name": "Dark Crown",
+              "info": "Boosts health and damage a total of 3 times when allies are defeated"
+            },
+            {
+              "Level": 10,
+              "PercentHealthIncrease": 10,
+              "BoostDamagePercentage": 10,
+              "name": "Dark Crown"
+            },
+            {
+              "Level": 10,
+              "PercentHealthIncrease": 20,
+              "BoostDamagePercentage": 20,
+              "name": "Dark Crown"
+            }
+          ]
+        }
+      ],
+      "whole_battle_admission": false,
+      "calibrated": false,
+      "implementation": "dark_crown.py: executable weighted defeat ledger and source modifier outputs",
+      "acceptance": "one bounded probe; actual shared settled defeats, multi-stage/cap, receipt deduplication, unavailable owner, no local HP overwrite, missing thresholds rejected",
+      "resolved": [
+        "existing extraction contains 3 distinct health/damage stage pairs: level27 10/20/30, level1 1/2/3"
+      ],
+      "remaining_evidence": [
+        "stage trigger thresholds and weight membership",
+        "stage ordering/cumulative interpretation",
+        "owner Recall/revival/death rules",
+        "passive cadence interpretation",
+        "catalog additive HP versus extraction zero"
+      ],
+      "central_dependencies": [
+        "actual defeat events after lethal interception",
+        "shared composable maximum-HP ledger compatible with Life Gem",
+        "damage/cadence modifier composition"
+      ],
+      "publisher_source": "https://supercell.com/en/games/clashofclans/blog/news/dark-days-medal-event-2/"
+    },
+    "monolith-arrow": {
+      "catalog_source": "https://github.com/chiefpansancolt/clash-of-clans-data/blob/c6967314d7281bb87c362993e2635e58cd77b351/data/home/hero-equipment/monolith-arrow.json",
+      "catalog_verification": "unverified_snapshot",
+      "entity": {
+        "id": "monolith-arrow",
+        "dataId": 90000059,
+        "name": "Monolith Arrow",
+        "description": "Monolith Arrow's extra damage decreases when more than 180 and 250 housing spaces of units are deployed",
+        "base": "home",
+        "category": "hero-equipment",
+        "hero": "archer-queen",
+        "rarity": "Epic",
+        "abilityType": "Passive"
+      },
+      "catalog_rows": [
+        {
+          "level": 1,
+          "hitpointIncrease": 100,
+          "upgradeShinyOre": 0,
+          "upgradeGlowingOre": 0,
+          "upgradeStarryOre": 0,
+          "blacksmithLevelRequired": 1,
+          "stats": {
+            "extraDamageBelow180": "9.5%",
+            "extraDamage181To250": "7%",
+            "extraDamage251Plus": "4%",
+            "incomingDamageReduction": "3%"
+          }
+        },
+        {
+          "level": 27,
+          "hitpointIncrease": 1160,
+          "upgradeShinyOre": 3600,
+          "upgradeGlowingOre": 600,
+          "upgradeStarryOre": 150,
+          "blacksmithLevelRequired": 9,
+          "stats": {
+            "extraDamageBelow180": "14%",
+            "extraDamage181To250": "10%",
+            "extraDamage251Plus": "5%",
+            "incomingDamageReduction": "10%"
+          }
+        }
+      ],
+      "existing_extraction_source": "https://raw.githubusercontent.com/ClashKingInc/ClashKingAssets/b8f42a707fe92d5293d46088bf536450ae422e7b/assets/static_data.json",
+      "extracted_entity": {
+        "_id": 90000016,
+        "name": "Monolith Arrow",
+        "info": "Monolith Arrow's extra damage decreases when more than <num> and <num2> housing spaces of units are deployed",
+        "production_building": "Blacksmith",
+        "production_building_level": 1,
+        "rarity": "Epic",
+        "hero": "Archer Queen"
+      },
+      "extracted_rows": [
+        {
+          "level": 1,
+          "hitpoints": 0,
+          "dps": 0,
+          "heal_on_activation": 0,
+          "required_blacksmith_level": 1,
+          "required_townhall": 8,
+          "strength_weight": 100,
+          "upgrade_cost": {
+            "shiny_ore": 120,
+            "glowy_ore": 0,
+            "starry_ore": 0
+          },
+          "abilities": [
+            {
+              "Level": 1,
+              "ShieldProtectionPercent": 3,
+              "DamagePermilHp": 95,
+              "name": "Monolith Arrow",
+              "info": "Monolith Arrow's extra damage decreases when more than <num> and <num2> housing spaces of units are deployed"
+            },
+            {
+              "Level": 1,
+              "ShieldProtectionPercent": 3,
+              "DamagePermilHp": 70,
+              "name": "Monolith Arrow"
+            },
+            {
+              "Level": 1,
+              "ShieldProtectionPercent": 3,
+              "DamagePermilHp": 40,
+              "name": "Monolith Arrow"
+            }
+          ]
+        },
+        {
+          "level": 27,
+          "hitpoints": 0,
+          "dps": 0,
+          "heal_on_activation": 0,
+          "required_blacksmith_level": 9,
+          "required_townhall": 16,
+          "strength_weight": 4700,
+          "upgrade_cost": {
+            "shiny_ore": 0,
+            "glowy_ore": 0,
+            "starry_ore": 0
+          },
+          "abilities": [
+            {
+              "Level": 10,
+              "ShieldProtectionPercent": 10,
+              "DamagePermilHp": 140,
+              "name": "Monolith Arrow",
+              "info": "Monolith Arrow's extra damage decreases when more than <num> and <num2> housing spaces of units are deployed"
+            },
+            {
+              "Level": 10,
+              "ShieldProtectionPercent": 10,
+              "DamagePermilHp": 100,
+              "name": "Monolith Arrow"
+            },
+            {
+              "Level": 10,
+              "ShieldProtectionPercent": 10,
+              "DamagePermilHp": 50,
+              "name": "Monolith Arrow"
+            }
+          ]
+        }
+      ],
+      "whole_battle_admission": false,
+      "calibrated": false,
+      "implementation": "monolith_arrow.py: executable deployment ledger and captured bonus/reduction outputs",
+      "acceptance": "one bounded probe; 180/181/250/251 boundaries, exclusions, Recall deduplication, shared delayed packet surviving source loss",
+      "resolved": [
+        "publisher specifies target maximum HP",
+        "publisher membership/weights and brackets",
+        "extracted percent brackets agree with catalog"
+      ],
+      "remaining_evidence": [
+        "Recall/redeploy counting",
+        "launch vs impact sampling",
+        "outgoing/incoming modifier composition",
+        "catalog passive HP versus extraction zero"
+      ],
+      "central_dependencies": [
+        "canonical successful paid deployment events and inventory",
+        "bonus captured after ordinary scaling",
+        "shared incoming modifier"
+      ],
+      "publisher_source": "https://supercell.com/en/games/clashofclans/blog/release-notes/the-anime-fury-update-is-here/"
+    },
+    "rocket-backpack": {
+      "catalog_source": "https://github.com/chiefpansancolt/clash-of-clans-data/blob/c6967314d7281bb87c362993e2635e58cd77b351/data/home/hero-equipment/rocket-backpack.json",
+      "catalog_verification": "unverified_snapshot",
+      "entity": {
+        "id": "rocket-backpack",
+        "dataId": 90000053,
+        "name": "Rocket Backpack",
+        "description": "Dashes across the center of the village breathing Fire and avoiding attacks",
+        "base": "home",
+        "category": "hero-equipment",
+        "hero": "dragon-duke",
+        "rarity": "Epic",
+        "abilityType": "Active",
+        "ability": {
+          "damageArea": "4 tiles"
+        }
+      },
+      "catalog_rows": [
+        {
+          "level": 1,
+          "hitpointIncrease": 900,
+          "hpRecoveryIncrease": 300,
+          "upgradeShinyOre": 0,
+          "upgradeGlowingOre": 0,
+          "upgradeStarryOre": 0,
+          "blacksmithLevelRequired": 1,
+          "stats": {
+            "abilityDamage": 575,
+            "dpsIncrease": 20
+          }
+        },
+        {
+          "level": 21,
+          "hitpointIncrease": 2670,
+          "hpRecoveryIncrease": 1860,
+          "upgradeShinyOre": 3000,
+          "upgradeGlowingOre": 600,
+          "upgradeStarryOre": 100,
+          "blacksmithLevelRequired": 7,
+          "stats": {
+            "abilityDamage": 1925,
+            "dpsIncrease": 74
+          }
+        },
+        {
+          "level": 27,
+          "hitpointIncrease": 3200,
+          "hpRecoveryIncrease": 2000,
+          "upgradeShinyOre": 3600,
+          "upgradeGlowingOre": 600,
+          "upgradeStarryOre": 150,
+          "blacksmithLevelRequired": 9,
+          "stats": {
+            "abilityDamage": 2200,
+            "dpsIncrease": 86
+          }
+        }
+      ],
+      "existing_extraction_source": "https://raw.githubusercontent.com/ClashKingInc/ClashKingAssets/b8f42a707fe92d5293d46088bf536450ae422e7b/assets/static_data.json",
+      "extracted_entity": {
+        "_id": 90000053,
+        "name": "Rocket Backpack",
+        "info": "Dashes across the center of the village breathing fire and avoiding attacks",
+        "production_building": "Blacksmith",
+        "production_building_level": 1,
+        "rarity": "Epic",
+        "hero": "Dragon Duke"
+      },
+      "extracted_rows": [
+        {
+          "level": 1,
+          "hitpoints": 0,
+          "dps": 20,
+          "heal_on_activation": 300,
+          "required_blacksmith_level": 1,
+          "required_townhall": 8,
+          "strength_weight": 100,
+          "upgrade_cost": {
+            "shiny_ore": 120,
+            "glowy_ore": 0,
+            "starry_ore": 0
+          },
+          "abilities": [
+            {
+              "Level": 1,
+              "ActAsPenetratingDamage": 575,
+              "ActAsPenetratingHitEffect": "ps_dd_rocketBP_Impact_lvl1-3",
+              "name": "Rocket Backpack",
+              "info": "Dashes across the center of the village breathing fire and avoiding attacks"
+            }
+          ]
+        },
+        {
+          "level": 21,
+          "hitpoints": 0,
+          "dps": 74,
+          "heal_on_activation": 1860,
+          "required_blacksmith_level": 7,
+          "required_townhall": 14,
+          "strength_weight": 3300,
+          "upgrade_cost": {
+            "shiny_ore": 3100,
+            "glowy_ore": 0,
+            "starry_ore": 0
+          },
+          "abilities": [
+            {
+              "Level": 8,
+              "ActAsPenetratingDamage": 1875,
+              "ActAsPenetratingHitEffect": "ps_dd_rocketBP_Impact_lvl4-6",
+              "name": "Rocket Backpack",
+              "info": "Dashes across the center of the village breathing fire and avoiding attacks"
+            }
+          ]
+        },
+        {
+          "level": 27,
+          "hitpoints": 0,
+          "dps": 86,
+          "heal_on_activation": 2000,
+          "required_blacksmith_level": 9,
+          "required_townhall": 16,
+          "strength_weight": 4700,
+          "upgrade_cost": {
+            "shiny_ore": 0,
+            "glowy_ore": 0,
+            "starry_ore": 0
+          },
+          "abilities": [
+            {
+              "Level": 10,
+              "ActAsPenetratingDamage": 2150,
+              "ActAsPenetratingHitEffect": "ps_dd_rocketBP_Impact_lvl7-8",
+              "name": "Rocket Backpack",
+              "info": "Dashes across the center of the village breathing fire and avoiding attacks"
+            }
+          ]
+        }
+      ],
+      "whole_battle_admission": false,
+      "calibrated": false,
+      "implementation": "rocket_backpack.py: executable experimental forced motion/contact/demand component",
+      "acceptance": "two bounded probes; exact contacts 0.15/0.55 at step0.017/0.25; protected visit; 2150 actual settled loss; cancel/death/Recall/Freeze; one charge; explicit source selection",
+      "resolved": [
+        "extracted damage at21=1875 and27=2150 agrees with May publisher table",
+        "June publisher notes require Flame Blower activation before dash"
+      ],
+      "source_conflict": "catalog21=1925,27=2200; explicit historical or extraction branch required; no automatic update",
+      "remaining_evidence": [
+        "endpoint/trajectory",
+        "speed",
+        "meaning of 4tile area",
+        "breath allocation and layers",
+        "interruptions",
+        "damage/status immunity"
+      ],
+      "central_dependencies": [
+        "shared charge and Flame Blower initial-direction ordering",
+        "forced movement arbitration",
+        "scoped immunity and preserved ordinary work",
+        "relative contact scheduler",
+        "status/Recall/trap admission"
+      ],
+      "publisher_sources": [
+        "https://supercell.com/en/games/clashofclans/blog/news/state-of-gameplay-part-2/",
+        "https://supercell.com/en/games/clashofclans/blog/release-notes/the-anime-fury-update-is-here/"
+      ]
+    },
+    "poison-lizard": {
+      "catalog_source": "https://github.com/chiefpansancolt/clash-of-clans-data/blob/c6967314d7281bb87c362993e2635e58cd77b351/data/home/pets/poison-lizard.json",
+      "catalog_verification": "unverified_snapshot",
+      "entity": {
+        "id": "poison-lizard",
+        "dataId": 73000007,
+        "name": "Poison Lizard",
+        "description": "Always the fastest never the lastest, Poison Lizard spits slowing toxins at its foes. Is it actually a venom lizard? Possibly, but who's brave enough to correct it?",
+        "base": "home",
+        "category": "pet",
+        "targetType": "both",
+        "preferredTarget": "Heroes and Troops",
+        "attackType": "Single Target",
+        "movementSpeed": 36,
+        "attackSpeed": 0.35,
+        "range": 4.5,
+        "petHouseLevelRequired": 7,
+        "specialAbility": "Bad Breath"
+      },
+      "catalog_rows": [
+        {
+          "level": 1,
+          "damagePerSecond": 181,
+          "damagePerHit": 63.35,
+          "poisonMaxDps": 80,
+          "poisonSpeedDecreasePercent": 26,
+          "poisonAttackRateDecreasePercent": 35,
+          "hitpoints": 1400,
+          "petHouseLevelRequired": 7,
+          "townHallRequired": 15,
+          "upgradeCost": 0,
+          "upgradeCostResource": "Dark Elixir",
+          "upgradeTime": {
+            "days": 0,
+            "hours": 0,
+            "minutes": 0,
+            "seconds": 0
+          }
+        },
+        {
+          "level": 10,
+          "damagePerSecond": 280,
+          "damagePerHit": 98,
+          "poisonMaxDps": 120,
+          "poisonSpeedDecreasePercent": 38,
+          "poisonAttackRateDecreasePercent": 50,
+          "hitpoints": 2050,
+          "petHouseLevelRequired": 7,
+          "townHallRequired": 15,
+          "upgradeCost": 150000,
+          "upgradeCostResource": "Dark Elixir",
+          "upgradeTime": {
+            "days": 5,
+            "hours": 0,
+            "minutes": 0,
+            "seconds": 0
+          }
+        },
+        {
+          "level": 15,
+          "damagePerSecond": 335,
+          "damagePerHit": 117.25,
+          "poisonMaxDps": 140,
+          "poisonSpeedDecreasePercent": 42,
+          "poisonAttackRateDecreasePercent": 55,
+          "hitpoints": 2300,
+          "petHouseLevelRequired": 11,
+          "townHallRequired": 17,
+          "upgradeCost": 260000,
+          "upgradeCostResource": "Dark Elixir",
+          "upgradeTime": {
+            "days": 8,
+            "hours": 0,
+            "minutes": 0,
+            "seconds": 0
+          }
+        }
+      ],
+      "existing_extraction_source": "https://raw.githubusercontent.com/ClashKingInc/ClashKingAssets/b8f42a707fe92d5293d46088bf536450ae422e7b/assets/static_data.json",
+      "extracted_entity": {
+        "_id": 73000007,
+        "name": "Poison Lizard",
+        "info": "Always the fastest never the lastest, Poison Lizard spits slowing toxins at its foes. Is it actually a venom lizard? Possibly, but who's brave enough to correct it?",
+        "production_building": "Pet House",
+        "production_building_level": 7,
+        "upgrade_resource": "Dark Elixir",
+        "is_flying": false,
+        "is_air_targeting": true,
+        "is_ground_targeting": true,
+        "movement_speed": 450,
+        "attack_speed": 350,
+        "attack_range": 450,
+        "warden_weight": 3
+      },
+      "extracted_rows": [
+        {
+          "level": 1,
+          "hitpoints": 1400,
+          "dps": 181,
+          "upgrade_time": 86400,
+          "upgrade_cost": 60000,
+          "required_pet_house_level": 7,
+          "required_townhall": 15,
+          "strength_weight": 15000
+        },
+        {
+          "level": 10,
+          "hitpoints": 2050,
+          "dps": 280,
+          "upgrade_time": 518400,
+          "upgrade_cost": 180000,
+          "required_pet_house_level": 7,
+          "required_townhall": 15,
+          "strength_weight": 21500
+        },
+        {
+          "level": 15,
+          "hitpoints": 2300,
+          "dps": 335,
+          "upgrade_time": 0,
+          "upgrade_cost": 0,
+          "required_pet_house_level": 11,
+          "required_townhall": 17,
+          "strength_weight": 24000
+        }
+      ],
+      "whole_battle_admission": false,
+      "calibrated": false,
+      "implementation": "poison_lizard.py: executable experimental exposure/priority/continuation component",
+      "acceptance": "two bounded probes, source-death/refresh/Recall/expiry at two steps; immune hits; building exclusion; target death/revival; rejected missing policy and skipped clocks",
+      "resolved": [
+        "ordinary level10 stats agree across snapshots",
+        "catalog poison ceiling and slow rates available"
+      ],
+      "remaining_evidence": [
+        "duration",
+        "ramp",
+        "refresh/stack semantics",
+        "nearby acquisition radius and retention",
+        "guardian eligibility",
+        "Recall/status ordering"
+      ],
+      "central_dependencies": [
+        "canonical paired pet compilation",
+        "defender role/targeting bindings",
+        "stable per-impact IDs",
+        "scheduler/after-health hooks",
+        "continuation ownership"
+      ],
+      "publisher_source": "https://supercell.com/en/games/clashofclans/blog/release-notes/full-release-notes-2/"
+    },
+    "sneezy": {
+      "catalog_source": "https://github.com/chiefpansancolt/clash-of-clans-data/blob/c6967314d7281bb87c362993e2635e58cd77b351/data/home/pets/sneezy.json",
+      "catalog_verification": "unverified_snapshot",
+      "entity": {
+        "id": "sneezy",
+        "dataId": 73000016,
+        "name": "Sneezy",
+        "description": "Her nose is blocked and loaded! Sneezy hangs behind her Hero due to allergies and sneezes tanky air Boogers that target Buildings. She goes on attack when her Hero falls!",
+        "base": "home",
+        "category": "pet",
+        "targetType": "both",
+        "preferredTarget": "Defenses",
+        "attackType": "Single Target",
+        "movementSpeed": 24,
+        "attackSpeed": 0.8,
+        "range": 5.5,
+        "petHouseLevelRequired": 11,
+        "specialAbility": "ACHOO!",
+        "maxBoogersSummoned": 2,
+        "rageDuration": 30,
+        "rageDamageIncreasePercent": 1
+      },
+      "catalog_rows": [
+        {
+          "level": 1,
+          "damagePerSecond": 270,
+          "damagePerHit": 216,
+          "hitpoints": 3300,
+          "petHouseLevelRequired": 11,
+          "townHallRequired": 17,
+          "upgradeCost": 0,
+          "upgradeCostResource": "Dark Elixir",
+          "upgradeTime": {
+            "days": 0,
+            "hours": 0,
+            "minutes": 0,
+            "seconds": 0
+          }
+        },
+        {
+          "level": 10,
+          "damagePerSecond": 450,
+          "damagePerHit": 360,
+          "hitpoints": 4650,
+          "petHouseLevelRequired": 11,
+          "townHallRequired": 17,
+          "upgradeCost": 360000,
+          "upgradeCostResource": "Dark Elixir",
+          "upgradeTime": {
+            "days": 8,
+            "hours": 0,
+            "minutes": 0,
+            "seconds": 0
+          }
+        }
+      ],
+      "existing_extraction_source": "https://raw.githubusercontent.com/ClashKingInc/ClashKingAssets/b8f42a707fe92d5293d46088bf536450ae422e7b/assets/static_data.json",
+      "extracted_entity": {
+        "_id": 73000016,
+        "name": "Sneezy",
+        "info": "Her nose is blocked and loaded! Sneezy hangs behind her Hero due to allergies and sneezes tanky air Boogers that target buildings. She goes on the attack when her Hero falls!",
+        "production_building": "Pet House",
+        "production_building_level": 11,
+        "upgrade_resource": "Dark Elixir",
+        "is_flying": true,
+        "is_air_targeting": true,
+        "is_ground_targeting": true,
+        "movement_speed": 300,
+        "attack_speed": 800,
+        "attack_range": 250,
+        "warden_weight": 3
+      },
+      "extracted_rows": [
+        {
+          "level": 1,
+          "hitpoints": 3300,
+          "dps": 270,
+          "upgrade_time": 691200,
+          "upgrade_cost": 200000,
+          "required_pet_house_level": 11,
+          "required_townhall": 17,
+          "strength_weight": 15000
+        },
+        {
+          "level": 10,
+          "hitpoints": 4650,
+          "dps": 450,
+          "upgrade_time": 0,
+          "upgrade_cost": 0,
+          "required_pet_house_level": 11,
+          "required_townhall": 17,
+          "strength_weight": 24000
+        }
+      ],
+      "whole_battle_admission": false,
+      "calibrated": false,
+      "implementation": "existing hero_pets rejection retained; no guessed Booger actor",
+      "acceptance": "existing guard retained; no new child lifecycle acceptance",
+      "resolved": [
+        "parent ordinary HP/damage/cadence available",
+        "publisher confirms owner-loss attack transition"
+      ],
+      "source_conflicts": [
+        "catalog range5.5 vs extraction attack_range250 (2.5 centitile interpretation)",
+        "catalog rageDamageIncreasePercent1 ambiguous"
+      ],
+      "remaining_evidence": [
+        "Booger complete actor stats",
+        "first/repeat spawn timing",
+        "concurrent vs total cap",
+        "finite reserve bounds",
+        "follow geometry",
+        "owner loss rage interpretation",
+        "Recall and child death semantics"
+      ],
+      "central_dependencies": [
+        "reused finite child reserves",
+        "shared follower motion and owner defeat callback"
+      ],
+      "publisher_source": "https://supercell.com/en/games/clashofclans/blog/release-notes/welcome-to-clash-anytime-update/"
+    }
+  },
+  "result": "FOUR_EXPERIMENTAL_COMPONENTS_TWO_CHILD_FAMILY_BLOCKERS_NO_FULL_BATTLE_ADMISSION"
+}

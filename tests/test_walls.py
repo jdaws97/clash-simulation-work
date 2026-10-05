@@ -13,7 +13,7 @@ from clashlab.adapters import (
 from clashlab.catalog import Catalog
 from clashlab.common import InputError, read_json
 from clashlab.spatial import simulate_spatial
-from clashlab.walls import RULESET, WALL_RULES
+from clashlab.walls import RULESET, WALL_RULES, WallRouting
 
 from test_adapters import entity_instance, sector
 from test_combat import pattern_scene
@@ -84,6 +84,36 @@ def wall_parameters(kind="clear_obstructions"):
 
 
 class WallRoutingTests(unittest.TestCase):
+    def test_cached_routes_react_to_live_wall_hp_rates_and_mutable_route_consumption(
+        self,
+    ):
+        actor = synthetic_unit(x=0.5, y=1.5, range=0)
+        actor["wall_behavior"] = breach_profile()
+        target = synthetic_structure(x=2.5, y=1.5, width=0, height=0)
+        walls = {(1, 1): {"hp": 300}}
+
+        def route():
+            return WallRouting._virtual_route(actor, target, walls, set(), 3, 3)
+
+        detour, cost = route()
+        self.assertEqual(cost, 2)
+        self.assertEqual(detour, [(0.5, 0.5), (1.5, 0.5), (2.5, 0.5), (2.5, 1.5)])
+        detour.clear()
+        self.assertEqual(len(route()[0]), 4)
+        walls[(1, 1)]["hp"] = 100
+        self.assertEqual(route(), ([(1.5, 1.5), (2.5, 1.5)], 1.4))
+        walls[(1, 1)]["hp"] = 300
+        self.assertEqual(route()[1], 2)
+        for field in ("_buff_damage_multiplier", "_hazard_attack_rate"):
+            actor[field] = 3
+            points, cost = route()
+            self.assertEqual(points, [(1.5, 1.5), (2.5, 1.5)])
+            self.assertAlmostEqual(cost, 1.4)
+            del actor[field]
+            self.assertEqual(route()[1], 2)
+        actor["speed"] = 1
+        self.assertEqual(route(), ([(1.5, 1.5), (2.5, 1.5)], 3.2))
+
     def test_breach_opens_a_shared_route_and_followers_reach_the_defense(self):
         result = simulate_spatial(wall_scene())
         self.assertAlmostEqual(result["actors"]["wall-3"]["death_time"], 0.8)

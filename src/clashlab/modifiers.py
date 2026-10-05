@@ -39,7 +39,9 @@ def resolve_battle_modifiers(configuration, rules):
         "profile_id": profile_id,
         "entity_role": role,
         "source": source,
-        "checked_on": rules["retrieved_on"],
+        "checked_on": profile.get("checked_on", rules["retrieved_on"]),
+        "source_published_on": profile.get("source_published_on"),
+        "verification": profile.get("verification", "unspecified_profile_evidence"),
         "modifiers": {
             "hitpoints_multiplier": hp,
             "damage_multiplier": damage,

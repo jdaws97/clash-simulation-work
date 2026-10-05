@@ -69,9 +69,14 @@ class ModifierTests(unittest.TestCase):
         self.assertEqual(scaled["modifiers"]["maximum_hp_damage_multiplier"], 1.2)
         self.assertEqual(scaled["modifiers"]["attack_interval_multiplier"], 1)
 
-    def test_user_modes_keep_explicit_no_modifier_selection(self):
+    def test_active_ranked_profile_is_distinct_from_historical_unmodified_fixture(self):
         selected = self.rules["battle_modifier_policy"]["current_user_scenarios"]
-        self.assertEqual(selected, {"electro31": "none", "master_ii_cwl": "none"})
+        self.assertEqual(selected, {"legend_i": "legend_i", "master_ii_cwl": "none"})
+        self.assertEqual(
+            self.rules["battle_modifier_policy"]["historical_scenario_profiles"],
+            {"electro31": "none"},
+        )
+        self.assertEqual(self.rules["ranked"]["legend_i"]["modifiers"], "legend_i")
         result = resolve_battle_modifiers(
             configuration("none", "defending_hero"), self.rules
         )

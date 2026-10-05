@@ -8,7 +8,7 @@ once. Damage is returned to the shared simultaneous-health settlement.
 from collections import defaultdict
 from copy import deepcopy
 from heapq import heappop, heappush
-from math import hypot
+from math import hypot, nextafter, inf, isfinite
 
 from .battle_termination import continuation_fact
 from .buffs import damage_multiplier
@@ -108,6 +108,7 @@ class TroopLineCombat:
         self.pending = []
         self.serial = 0
         self.resolved = []
+        self.damage_eligible = None
 
     def launch(self, actor, target, time, trace, flat_damage=None):
         model = self.models[actor["id"]]
@@ -139,7 +140,14 @@ class TroopLineCombat:
                 + model["release_delay_seconds"]
                 + travel / model["speed_tiles_per_second"]
             )
+            if not isfinite(due):
+                raise InputError("Line projectile impact clock must remain finite")
+            if due <= time:
+                due = nextafter(time, inf)
             packet = {
+                "pattern": deepcopy(actor["attack_model"]),
+                "source_team": actor["team"],
+                "primary_layer": target["layer"],
                 "source": actor["id"],
                 "target": target["id"],
                 "origin": origin,
@@ -177,8 +185,17 @@ class TroopLineCombat:
                     key in packet["visited"]
                     or actor["team"] == packet["team"]
                     or not _active(actor, time)
-                    or actor["kind"] not in packet["kinds"]
-                    or actor["layer"] not in packet["layers"]
+                    or (
+                        self.damage_eligible is None
+                        and (
+                            actor["kind"] not in packet["kinds"]
+                            or actor["layer"] not in packet["layers"]
+                        )
+                    )
+                    or (
+                        self.damage_eligible is not None
+                        and not self.damage_eligible(packet, actor, time)
+                    )
                     or untargetable_until(actor) > time + EPSILON
                 ):
                     continue

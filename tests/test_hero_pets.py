@@ -283,7 +283,10 @@ class HeroPetTests(unittest.TestCase):
                 self.assertFalse(actor["counts_for_destruction"])
                 self.assertIn(entity, pets.models["pet"]["statistics_source"])
                 self.assertIn("assignment", pets.models["pet"]["publisher_sources"])
-        self.assertEqual(SUPPORTED_PETS, set(expected) | {"mighty-yak", "angry-jelly"})
+        self.assertEqual(
+            SUPPORTED_PETS,
+            set(expected) | {"mighty-yak", "angry-jelly", "greedy-raven"},
+        )
 
     def test_owl_range_disagreement_is_retained_and_frosty_fails_with_source_gap(self):
         actors, pets, _ = self.runtime("electro-owl")
@@ -301,7 +304,7 @@ class HeroPetTests(unittest.TestCase):
             instance[field] = value
             with self.subTest(field=field), self.assertRaises(InputError):
                 compile_pet(instance, self.catalog, 8, {"hero": owner()})
-        for entity in SUPPORTED_PETS - {"mighty-yak", "angry-jelly"}:
+        for entity in SUPPORTED_PETS - {"mighty-yak", "angry-jelly", "greedy-raven"}:
             instance = pet_instance(entity)
             del instance["parameters"]["owner_death_policy"]
             with self.subTest(entity=entity), self.assertRaises(InputError):

@@ -12,6 +12,7 @@ from .modifiers import ROLES, resolve_battle_modifiers
 
 
 VERSION = "role-aware-battle-modifiers-v1"
+CRAFTED_PROFILE_BINDING = "crafted-role-profile-model-scaling-v1"
 MARKER = "battle_modifier_application"
 MODIFIER_FIELDS = {
     "hitpoints_multiplier",
@@ -167,6 +168,23 @@ def _scale_actor(actor, resolved, policy, changes):
     damage = modifiers["damage_multiplier"]
     _scale(actor, ("hitpoints",), modifiers["hitpoints_multiplier"], "role_hp", changes)
     _scale(actor, ("damage",), damage, "role_weapon_damage", changes)
+    if "crafted_defense_model" in actor:
+        for field in ("damage_per_hit", "explosion_damage"):
+            _scale(
+                actor,
+                ("crafted_defense_model", field),
+                damage,
+                "role_weapon_damage",
+                changes,
+            )
+        if actor["crafted_defense_model"]["variant"] == "hero-hunter":
+            _scale(
+                actor,
+                ("crafted_defense_model", "poison_maximum_dps"),
+                _secondary_factor(policy, "impact_hazard_damage_policy", damage),
+                policy["impact_hazard_damage_policy"],
+                changes,
+            )
     if "maximum_hp_fraction" in actor.get("attack_model", {}):
         _scale(
             actor,
@@ -312,6 +330,9 @@ def apply_battle_modifiers(compiled_scene, policy, catalog, mode_rules):
         by_id[actor_id] = actor
         if "entity_adapter" in actor:
             roles[actor_id] = _catalog_role(actor, catalog)
+    from .crafted_bindings import validate_crafted_owners, synchronize_profile_contract
+
+    validate_crafted_owners(by_id, enabled=True)
     for actor in actors:
         if "entity_adapter" in actor:
             continue
@@ -381,6 +402,7 @@ def apply_battle_modifiers(compiled_scene, policy, catalog, mode_rules):
                 )
                 actor["entity_adapter"]["modifiers"] = deepcopy(selected["modifiers"])
             _scale_actor(actor, selected, policy, changes)
+            synchronize_profile_contract(actor)
             actor[MARKER] = {
                 "version": VERSION,
                 "profile_id": policy["profile_id"],
@@ -390,6 +412,11 @@ def apply_battle_modifiers(compiled_scene, policy, catalog, mode_rules):
     trap_ledger = _trap_ledger(scene.get("traps", []), catalog, resolved, policy)
     application = {
         "version": VERSION,
+        "capabilities": (
+            [CRAFTED_PROFILE_BINDING]
+            if any("crafted_defense_model" in actor for actor in actors)
+            else []
+        ),
         "profile_id": policy["profile_id"],
         "policy": deepcopy(policy),
         "resolved_roles": resolved,

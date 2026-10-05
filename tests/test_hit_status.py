@@ -2,13 +2,14 @@
 
 from copy import deepcopy
 from pathlib import Path
+from math import nextafter
 import unittest
 
 from clashlab.adapters import compile_entity_scene
 from clashlab.catalog import Catalog
 from clashlab.common import InputError
-from clashlab.hit_status import RULES, RULESET, SCOPE
-from clashlab.spatial import simulate_spatial
+from clashlab.hit_status import HitStatusCombat, RULES, RULESET, SCOPE
+from clashlab.spatial import _load_actors, simulate_spatial
 
 from test_adapters import entity_instance
 from test_deaths import damage
@@ -84,6 +85,40 @@ def launches(result, actor_id):
 
 
 class HitStatusTests(unittest.TestCase):
+    def test_neighboring_observation_preserves_slow_until_exact_shared_expiry(self):
+        for before in (2 - 5e-11, nextafter(2, 0)):
+            scene = status_scene(
+                recording_interval_seconds=before, maximum_step_seconds=before
+            )
+            actors = _load_actors(scene, scene["width"], scene["height"])
+            runtime = HitStatusCombat(actors)
+            trace = []
+            source = scene["actors"][0]["id"]
+            runtime.impact(
+                {"source": source, "on_hit_status": slow()},
+                actors["tower"],
+                actors,
+                0,
+                trace,
+            )
+            runtime.prepare(actors, 0, trace)
+            runtime.prepare(actors, before, trace)
+            self.assertEqual(actors["tower"]["_hit_status_attack_rate"], 0.25)
+            self.assertEqual(runtime.next_boundary(), 2)
+            runtime.prepare(actors, 2, trace)
+            self.assertEqual(actors["tower"]["_hit_status_attack_rate"], 1)
+            self.assertIsNone(runtime.next_boundary())
+            result = simulate_spatial(scene)
+            expiries = [
+                e
+                for e in result["trace"]
+                if e.get("event") == "hit_status_change"
+                and e["target"] == "tower"
+                and not e["sources"]
+            ]
+            self.assertEqual([e["time_seconds"] for e in expiries], [2])
+            self.assertEqual(launches(result, "tower"), [0, 2.5, 3.5, 4.5])
+
     @classmethod
     def setUpClass(cls):
         cls.catalog = Catalog.load(Path(__file__).resolve().parents[1] / "data")

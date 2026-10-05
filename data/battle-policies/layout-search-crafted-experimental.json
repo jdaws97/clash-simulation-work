@@ -1,0 +1,123 @@
+{
+  "source": "explicit-layout-ensemble-phase4-hypothesis-not-live-calibrated",
+  "variants": {
+    "cake-a-pult": {
+      "shared_binding": {
+        "source": "explicit-layout-ensemble-phase4-hypothesis-not-live-calibrated",
+        "status": "explicit_uncalibrated_hypothesis",
+        "same_time_settlement": "launches_then_crafted_impacts_and_new_poison_in_shared_health_batch",
+        "clock_rounding": "positive_delay_rounds_up_if_lost",
+        "range_contact": "shared_inclusive_geometry_tolerance",
+        "resources": "one_selected_station_no_extra_modules_or_destruction_credit"
+      },
+      "parameters": {
+        "source": "explicit-layout-ensemble-phase4-hypothesis-not-live-calibrated",
+        "status": "explicit_uncalibrated_hypothesis",
+        "scope": "conditional_phase4_crafted_defenses",
+        "variant": "cake-a-pult",
+        "phase": 4,
+        "availability_policy": "official_august_2026_phase4_th11_plus_not_current_date_certified",
+        "as_of_date": "2026-10-04",
+        "rotation_policy": "explicit_phase4_selection_not_current_date_certified",
+        "module_levels": {
+          "Hitpoints": 1,
+          "Damage": 1,
+          "Explosion Damage": 1
+        },
+        "module_statistics_policy": "pinned_catalog_crosschecked_secondary_module_rows",
+        "projectile_delay_seconds": 0.1,
+        "impact_position": "launch_sampled_primary_center",
+        "minimum_range_policy": "launch_eligibility_only",
+        "hero_selector": "not_applicable",
+        "candle": null,
+        "poison": null
+      }
+    },
+    "hero-hunter": {
+      "shared_binding": {
+        "source": "explicit-layout-ensemble-phase4-hypothesis-not-live-calibrated",
+        "status": "explicit_uncalibrated_hypothesis",
+        "same_time_settlement": "launches_then_crafted_impacts_and_new_poison_in_shared_health_batch",
+        "clock_rounding": "positive_delay_rounds_up_if_lost",
+        "range_contact": "shared_inclusive_geometry_tolerance",
+        "resources": "one_selected_station_no_extra_modules_or_destruction_credit"
+      },
+      "parameters": {
+        "source": "explicit-layout-ensemble-phase4-hypothesis-not-live-calibrated",
+        "status": "explicit_uncalibrated_hypothesis",
+        "scope": "conditional_phase4_crafted_defenses",
+        "variant": "hero-hunter",
+        "phase": 4,
+        "availability_policy": "official_august_2026_phase4_th11_plus_not_current_date_certified",
+        "as_of_date": "2026-10-04",
+        "rotation_policy": "explicit_phase4_selection_not_current_date_certified",
+        "module_levels": {
+          "Hitpoints": 1,
+          "Damage": 1,
+          "Poison Level": 1
+        },
+        "module_statistics_policy": "pinned_catalog_crosschecked_secondary_module_rows",
+        "projectile_delay_seconds": 0.1,
+        "impact_position": "launch_sampled_primary_center",
+        "minimum_range_policy": "launch_eligibility_only",
+        "hero_selector": "heroes_first_nearest_then_id",
+        "candle": null,
+        "poison": {
+          "membership": "impact_anchored_shared_hazard_experimental",
+          "radius": 1,
+          "pulse_interval_seconds": 0.5,
+          "first_pulse_offset_seconds": 0,
+          "growth_by_field_age": [
+            {
+              "after_seconds": 0,
+              "dps_multiplier": 1
+            }
+          ],
+          "exit_linger_seconds": 0,
+          "protection_policy": "damage_immunity_also_blocks_status",
+          "excluded_classes": [
+            "siege",
+            "guardian"
+          ]
+        }
+      }
+    },
+    "hot-candle": {
+      "shared_binding": {
+        "source": "explicit-layout-ensemble-phase4-hypothesis-not-live-calibrated",
+        "status": "explicit_uncalibrated_hypothesis",
+        "same_time_settlement": "launches_then_crafted_impacts_and_new_poison_in_shared_health_batch",
+        "clock_rounding": "positive_delay_rounds_up_if_lost",
+        "range_contact": "shared_inclusive_geometry_tolerance",
+        "resources": "one_selected_station_no_extra_modules_or_destruction_credit"
+      },
+      "parameters": {
+        "source": "explicit-layout-ensemble-phase4-hypothesis-not-live-calibrated",
+        "status": "explicit_uncalibrated_hypothesis",
+        "scope": "conditional_phase4_crafted_defenses",
+        "variant": "hot-candle",
+        "phase": 4,
+        "availability_policy": "official_august_2026_phase4_th11_plus_not_current_date_certified",
+        "as_of_date": "2026-10-04",
+        "rotation_policy": "explicit_phase4_selection_not_current_date_certified",
+        "module_levels": {
+          "Hitpoints": 1,
+          "Damage": 1,
+          "Seconds Active": 1
+        },
+        "module_statistics_policy": "pinned_catalog_crosschecked_secondary_module_rows",
+        "projectile_delay_seconds": 0.1,
+        "impact_position": "launch_sampled_primary_center",
+        "minimum_range_policy": "launch_eligibility_only",
+        "hero_selector": "not_applicable",
+        "candle": {
+          "second_decay_after_first_seconds": 10,
+          "melt_clock": "battle_start_zero",
+          "freeze": "melt_clock_continues_experimental",
+          "launch_cap": "live_capacity_at_launch_distinct_targets"
+        },
+        "poison": null
+      }
+    }
+  }
+}

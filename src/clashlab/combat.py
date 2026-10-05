@@ -12,6 +12,8 @@ from math import hypot
 from .spell_visibility import untargetable_until
 from .common import InputError, identifier, integer, number, require
 from .buffs import damage_multiplier
+from .raven_lifecycle import launch_multiplier as raven_launch_multiplier
+from .defense_upgrades import InfernoAmmunitionCombat
 from .spatial import (
     EPSILON,
     MODEL_RULES,
@@ -38,6 +40,7 @@ COMBAT_RULES = {
 KINDS = {"unit", "defense", "building", "wall"}
 LAYERS = {"ground", "air"}
 PATTERNS = {
+    "crafted_phase4_weapon",
     "none",
     "single",
     "radial",
@@ -49,6 +52,7 @@ PATTERNS = {
     "firespitter_ballistic_bullet",
     "siege_area",
     "siege_extended",
+    "siege_barrel",
     "primary_centered_fanout",
 }
 AREA_EFFECTS = {
@@ -90,6 +94,7 @@ def validate_pattern(pattern):
     from .valkyries import validate_source_radial
     from .siege_machines import validate_siege_pattern
     from .siege_extensions import validate_extended_siege_pattern
+    from .siege_barrels import validate_barrel_pattern
     from .firespitters import (
         PATTERN as FIRESPITTER_PATTERN,
         validate_firespitter_pattern,
@@ -99,8 +104,17 @@ def validate_pattern(pattern):
     if kind not in PATTERNS:
         raise InputError("Unsupported attack pattern")
     identifier(require(pattern, "source"), "attack-pattern evidence")
+    if kind == "crafted_phase4_weapon":
+        if set(pattern) != {"kind", "source"}:
+            raise InputError(
+                "Crafted weapon tag requires exact dedicated dispatch contract"
+            )
+        return
     if kind == "siege_extended":
         validate_extended_siege_pattern(pattern)
+        return
+    if kind == "siege_barrel":
+        validate_barrel_pattern(pattern)
         return
     if kind == FANOUT_PATTERN:
         validate_fanout_pattern(pattern)
@@ -248,6 +262,7 @@ class PatternCombat:
         self.patterns = {}
         self.ammunition = {}
         self.depletion_reported = set()
+        self.inferno_ammunition = InfernoAmmunitionCombat(actors)
         self.pending = []
         self.serial = 0
         for actor in actors.values():
@@ -262,9 +277,11 @@ class PatternCombat:
             actor["_minimum_range"] = minimum
             pattern = deepcopy(require(actor, "attack_model"))
             validate_pattern(pattern)
-            if (pattern["kind"] == "none") != (actor["damage"] == 0):
+            if (pattern["kind"] in {"none", "crafted_phase4_weapon"}) != (
+                actor["damage"] == 0
+            ):
                 raise InputError("Non-attacking actors need the explicit none pattern")
-            if pattern["kind"] != "none":
+            if pattern["kind"] not in {"none", "crafted_phase4_weapon"}:
                 if not set(actor["target_priorities"]) <= set(pattern["target_kinds"]):
                     raise InputError("Attack pattern omits a primary target kind")
                 if not set(actor["target_layers"]) <= set(pattern["target_layers"]):
@@ -318,7 +335,9 @@ class PatternCombat:
         self, actor, primary, actors, time, trace, flat_damage=None, weapon_state=None
     ):
         pattern = self.patterns[actor["id"]]
-        if pattern["kind"] in {"siege_area", "siege_extended"}:
+        if pattern["kind"] == "crafted_phase4_weapon":
+            raise InputError("Crafted weapons require their dedicated Station runtime")
+        if pattern["kind"] in {"siege_area", "siege_extended", "siege_barrel"}:
             raise InputError("Siege weapons require their dedicated carrier runtime")
         if pattern["kind"] == "firespitter_ballistic_bullet":
             raise InputError(
@@ -337,7 +356,9 @@ class PatternCombat:
                     self.depletion_reported.add(actor["id"])
                 return
             self.ammunition[actor["id"]] -= 1
-        for target in self._targets_for_volley(actor, primary, actors, time):
+        targets = self._targets_for_volley(actor, primary, actors, time)
+        targets = self.inferno_ammunition.reserve_launch(actor, targets, time, trace)
+        for target in targets:
             projectile = pattern["projectile"]
             destination = (
                 center(actor) if pattern["kind"] == "source_radial" else center(target)
@@ -359,7 +380,18 @@ class PatternCombat:
                 "launch_position": center(actor),
                 "primary_layer": target["layer"],
                 "flat_damage": (actor["damage"] if flat_damage is None else flat_damage)
-                * damage_multiplier(actor),
+                * damage_multiplier(actor)
+                * (
+                    actor.get("_spell_town_hall_damage_multiplier", 1)
+                    if target.get("entity_adapter", {}).get("entity") == "town-hall"
+                    else (
+                        actor.get("_spell_resource_damage_multiplier", 1)
+                        if target.get("entity_adapter", {}).get("catalog_category")
+                        == "resource"
+                        else 1
+                    )
+                )
+                * raven_launch_multiplier(actor, target),
                 "pattern": pattern,
                 "chain_index": 0,
                 "visited": [target["id"]],
@@ -528,6 +560,7 @@ class PatternCombat:
                 )
             for impacted, multiplier in impacts:
                 from .recipe_troops import recipe_damage_multiplier
+                from .wall_breakers import wall_blast_multiplier
 
                 if status_callback is not None:
                     status_callback(packet, impacted, actors, time, trace)
@@ -538,6 +571,7 @@ class PatternCombat:
                     )
                     * multiplier
                     * recipe_damage_multiplier(actors[packet["source"]], impacted)
+                    * wall_blast_multiplier(actors[packet["source"]], impacted)
                 )
                 protected = impacted["immune_until"] > time + EPSILON
                 resolved = record_damage(
@@ -620,6 +654,11 @@ class PatternCombat:
 
     def result(self):
         return {
+            **(
+                {"inferno_ammunition": self.inferno_ammunition.result()}
+                if self.inferno_ammunition.models
+                else {}
+            ),
             **(
                 {"ammunition_remaining": dict(self.ammunition)}
                 if self.ammunition

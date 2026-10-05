@@ -5,6 +5,14 @@ experiment toolkit. This private repository preserves the v29 engine and adds
 portable fixtures, bounded regression checks, and reproducible development
 benchmarks. It does not establish live-game accuracy or predict win rates.
 
+The current draft includes a [runnable full-village prototype](docs/FULL_COMPARISON_QUICKSTART.md)
+and an [independently checked publication summary](docs/PROTOTYPE_PUBLICATION.md).
+Two complete synthetic TH18 battles compare declared TH16 attack plans against
+the same Legend I Hot Candle defense. Running them requires explicit acceptance
+of the provisional air-contact convention. These are conditional army-plan
+results, with zero held-out game calibration; they do not establish an optimized
+base, army ranking, or gameplay recommendation.
+
 This is a publication baseline for review, not a calibrated release. Strict
 mode still rejects the original full-air case at 18.305471759 simulated seconds
 because of Dragon Duke isolation contact chatter. An explicitly selected

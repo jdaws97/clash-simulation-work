@@ -240,6 +240,19 @@ class MinionPrinceCombat:
                 for field in ("damage", "range", "attack_model")
             }
             for item in actor["hero_model"]["equipment"]:
+                from .equipment_summons import (
+                    OWNERS as SUMMON_OWNERS,
+                    validate_equipment as validate_summon,
+                )
+
+                if item["entity"] in SUMMON_OWNERS:
+                    validate_summon(item)
+                    continue
+                from .equipment_weapons import OWNERS, validate_equipment
+
+                if item["entity"] in OWNERS:
+                    validate_equipment(item)
+                    continue
                 validate_prince_equipment(item)
                 if item["entity"] in self.equipment[key]:
                     raise InputError("Prince equipment cannot be duplicated")

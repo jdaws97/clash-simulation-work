@@ -104,6 +104,24 @@ Phase transitions appear in the trace and frames; final state is under
 `combat.multi_gear.revenge_towers`. Existing advanced-defense hooks own the
 lifecycle, so this work does not change the shared movement/timeout kernel.
 
+Selected current TH18 crafted defenses remain a full-village evaluation gap for
+this particular example. Its uncrafted passive Station does not represent a
+village with an active crafted weapon. Cake-A-Pult, Hero Hunter and Hot Candle
+are now separately wired and paid-battle tested, including explicit TH11+ season
+eligibility, module caps and shared clocks; see
+[CRAFTED_SEASON_ACCESS.md](CRAFTED_SEASON_ACCESS.md). Independent shared-path
+review is pending. The pinned catalog snapshot
+`c6967314d7281bb87c362993e2635e58cd77b351` (retrieved 2026-10-03) lists twelve
+variants; it marks Cake-A-Pult, Hero Hunter and Hot Candle `isCurrent=true` and
+nine others historical. These flags do not verify the October 2026 live rotation.
+Accepted selected-weapon inputs require the versioned variant/module selection,
+explicit experimental behavior parameters, strict Station/module inventory and
+ownership contract. Unsupported or incomplete selections fail closed. Unknown
+identity or module levels in an opponent image stay unknown. No uncrafted
+stand-in may be labelled representative current TH18 crafted coverage. This
+profile-`none` engineering example also does not validate Legend I; see
+[LEGEND_PROFILE_SCOPE.md](LEGEND_PROFILE_SCOPE.md).
+
 Other inherited conditional policies remain material: Firespitter spread and
 flight, artillery pool overlap, Guardian movement/emergence, Super Wizard fanout,
 CC release, defense response, destruction scoring, and the six-tile deployment
@@ -156,3 +174,12 @@ focused lifecycle test rather than this failed assault. These results are only
 conditional fixture outcomes; they do not estimate a real player's chance to
 score stars or validate army/base recommendations. Portable suite: 1,202 tests
 passed. Black 24.10.0 checked all 231 Python files unchanged.
+
+A later [selected crafted shared checkpoint](CRAFTED_SHARED_CHECKPOINT.md) adds
+conditional paid TH18 family checks. The large benchmark above still selects an
+uncrafted Station and has not been rerun or promoted as selected-variant coverage.
+
+The [season access correction](CRAFTED_SEASON_ACCESS.md) also admits explicitly
+selected seasonal Stations at TH11–18. The nonseasonal inventory constructor above
+is a historical benchmark choice, not proof that a TH16/17 live base lacks its
+seasonal Station. Its old results do not validate a current complete inventory.

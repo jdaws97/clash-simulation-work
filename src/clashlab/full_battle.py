@@ -46,6 +46,7 @@ from .advanced_defense_rules import (
     SCOPE as ADVANCED_DEFENSE_SCOPE,
 )
 from .hero_pets import validate_pet_inventory
+from .siege_extensions import validate_barracks_inventory
 from .reinforcements import (
     ReinforcementCombat,
     compile_attacking_reinforcements,
@@ -93,6 +94,8 @@ SCENE_FIELDS = {
     "traps",
     "buff_spells",
     "attack_spells",
+    "advanced_spell_binding",
+    "giga_bomb_response_binding",
     "defending_unit_responses",
     "attacking_reinforcements",
     "pets",
@@ -312,7 +315,14 @@ def _bind_defenders(layout, scene, catalog):
             bindings.update(_bind_guardian(building, instance, guardians, layout))
         elif building["id"] == "town-hall" and building.get("settings"):
             raise InputError("Guardian settings require a TH18 Hall")
+        if building["id"] == "crafting-station" and "crafted_parameters" in instance:
+            from .crafted_bindings import bind_layout_selection
+
+            bind_layout_selection(building, instance)
+        elif building["id"] == "crafting-station" and building.get("settings"):
+            raise InputError("Passive Station cannot satisfy a selected crafted layout")
         if building.get("settings") and building["id"] not in {
+            "crafting-station",
             "air-sweeper",
             "firespitter",
             "clan-castle",
@@ -445,6 +455,8 @@ def _bind_reinforcements(army, account, scene, catalog, attackers):
         actor_id: instance
         for actor_id, instance in attackers.items()
         if "payload_member_parameters" in instance
+        or "barracks_member_parameters" in instance
+        or "barrel_member_parameters" in instance
         or catalog.entity(instance["entity"])["category"] == "siege-machine"
     }
     if "attacking_reinforcements" not in scene:
@@ -495,6 +507,57 @@ def _bind_reinforcements(army, account, scene, catalog, attackers):
         scene["attacking_reinforcements"], catalog, compiled
     )
     bindings = validate_reinforcement_inventory(model, compiled, army, account, catalog)
+    validate_barracks_inventory(compiled, account)
+    for actor_id, actor in compiled.items():
+        barrel = actor.get("barrel_member_model")
+        if barrel is not None:
+            carrier_id = barrel["carrier_id"]
+            carrier = compiled.get(carrier_id, {})
+            requirements = carrier.get("siege_model", {}).get(
+                "generated_requirements", []
+            )
+            expected = {
+                "actor_id": actor_id,
+                "entity": actor["entity_adapter"]["entity"],
+                "level": actor["entity_adapter"]["level"],
+                "barrel_index": barrel["barrel_index"],
+            }
+            if (
+                carrier.get("siege_model", {}).get("entity") != "sky-wagon"
+                or requirements.count(expected) != 1
+            ):
+                raise InputError(
+                    "Generated Sky Wagon troop differs from its source-level carrier manifest"
+                )
+            if actor_id in bindings:
+                raise InputError(
+                    "Generated Sky Wagon troop cannot claim a second paid origin"
+                )
+            bindings[actor_id] = {
+                "origin": "siege_generated",
+                "entity": expected["entity"],
+                "level": expected["level"],
+                "carrier_id": carrier_id,
+                "generation_kind": "barrel",
+            }
+            continue
+        member = actor.get("barracks_member_model")
+        if member is None:
+            continue
+        carrier_id = member["parameters"]["carrier_id"]
+        carrier = compiled.get(carrier_id, {})
+        if carrier.get("siege_model", {}).get("entity") != "siege-barracks":
+            raise InputError("Generated Barracks troop has no selected carrier")
+        if actor_id in bindings:
+            raise InputError(
+                "Generated Barracks troop cannot claim a second paid origin"
+            )
+        bindings[actor_id] = {
+            "origin": "siege_generated",
+            "entity": member["entity"],
+            "level": member["level"],
+            "carrier_id": carrier_id,
+        }
     return bindings, ReinforcementCombat(
         compiled, model, scene["width"], scene["height"]
     )
@@ -613,6 +676,16 @@ def _bind_commands(scene, attackers, limit, reinforcements=None):
                 if actor_id not in attackers or actor_id in deployments:
                     raise InputError(
                         "Deployments may spend each declared attacker once only"
+                    )
+                if any(
+                    field in attackers[actor_id]
+                    for field in (
+                        "barracks_member_parameters",
+                        "barrel_member_parameters",
+                    )
+                ):
+                    raise InputError(
+                        "Generated siege reserves cannot be player deployments"
                     )
                 if attackers[actor_id]["spawn_seconds"] != "controlled":
                     raise InputError(
@@ -776,7 +849,11 @@ def validate_battle_bindings(specification, account, army, layout, catalog):
     required_fields = {"id", "source", "time_limit_seconds", "entity_scene"}
     if not required_fields <= set(specification) or set(
         specification
-    ) - required_fields - {"battle_modifier_policy", "termination_policy"}:
+    ) - required_fields - {
+        "battle_modifier_policy",
+        "termination_policy",
+        "paid_observation_plan",
+    }:
         raise InputError(
             "Full battle needs id, source, time limit, its complete entity scene "
             "and optionally one battle modifier policy plus the v28 termination policy"
@@ -813,6 +890,13 @@ def validate_battle_bindings(specification, account, army, layout, catalog):
         ATTACK_SPELL_SCOPE: ATTACK_SPELL_RULES,
     }
     selected_scope = require(scene, "scope")
+    if "paid_observation_plan" in specification and (
+        selected_scope != ATTACK_SPELL_SCOPE
+        or "termination_policy" not in specification
+    ):
+        raise InputError(
+            "Paid observation plans require the v29 paid scope and explicit termination policy"
+        )
     if "termination_policy" in specification and selected_scope not in {
         TERMINATION_SCOPE,
         ATTACK_SPELL_SCOPE,
@@ -1019,7 +1103,26 @@ def compile_full_battle(specification, account, army, layout, catalog, mode_rule
             and actor_id == actor["spell_decoy_model"]["cast_id"] + ":totem"
         )
         if (
-            not (attacking_summon or defending_summon or spell_decoy)
+            not (
+                attacking_summon
+                or defending_summon
+                or spell_decoy
+                or (
+                    actor["team"] == "attack"
+                    and any(
+                        actor.get(key, {}).get("cast_id")
+                        in {
+                            model["id"]
+                            for model in compiled["scene"].get(
+                                "attack_spell_models", []
+                            )
+                            if model["entity"]
+                            in {"bat-spell", "skeleton-spell", "clone-spell"}
+                        }
+                        for key in ("spell_generated_model", "spell_clone_model")
+                    )
+                )
+            )
             or actor["counts_for_destruction"]
             or actor["spawn_seconds"] != "controlled"
         ):
@@ -1027,6 +1130,15 @@ def compile_full_battle(specification, account, army, layout, catalog, mode_rule
                 "An extra actor must be generated by a declared supported summon lifecycle"
             )
         generated.append(actor_id)
+    paid_admission = {}
+    if "paid_observation_plan" in specification:
+        from .paid_control import validate_paid_plan
+
+        paid_admission = {
+            "paid_observation_admission": validate_paid_plan(
+                specification["paid_observation_plan"], specification, compiled
+            )
+        }
     return {
         "id": specification["id"],
         "source": specification["source"],
@@ -1034,6 +1146,7 @@ def compile_full_battle(specification, account, army, layout, catalog, mode_rule
         "time_limit_seconds": specification["time_limit_seconds"],
         "validation": validation,
         "generated_summon_ids": generated,
+        **paid_admission,
         "battle_modifier_audit": modifier_audit,
         **(
             {"termination_policy": deepcopy(specification["termination_policy"])}
@@ -1154,6 +1267,14 @@ def simulate_full_battle(
     )
     scene = battle["compiled"]["scene"]
     bindings = battle["validation"]
+    controller = None
+    if "paid_observation_plan" in specification:
+        from .paid_control import PaidObservationController
+
+        controller = PaidObservationController(
+            specification["paid_observation_plan"], specification, battle
+        )
+        bindings = controller.bindings
     counted_ids = [
         _layout_actor_id(item)
         for item in layout["buildings"]
@@ -1171,11 +1292,16 @@ def simulate_full_battle(
         termination = CompletionOnlyTermination(
             counted_ids, battle["time_limit_seconds"]
         )
-    combat = simulate_spatial(scene, termination=termination)
+    if controller is not None:
+        controller.termination = termination
+        termination.exact_time_limit = True
+    combat = simulate_spatial(scene, controller=controller, termination=termination)
     outcome = compute_battle_outcome(layout, combat, battle["time_limit_seconds"])
     battle.update(
         combat=combat,
         outcome=outcome,
         resource_use=battle_resource_use(bindings, combat, outcome["elapsed_seconds"]),
     )
+    if controller is not None:
+        battle["paid_observation"] = controller.result()
     return battle

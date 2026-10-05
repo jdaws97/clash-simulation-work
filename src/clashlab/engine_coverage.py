@@ -24,6 +24,10 @@ from .garrisons import GARRISON_MEMBERS
 from .source_audit import audit_extracted_source
 
 
+# The domain-only Duke base role deliberately suppresses its intrinsic. Keep
+# the audit unpromoted until shared-kernel acceptance covers that explicit role.
+AUDITED_DEFENDING_HEROES = DEFENDING_HEROES - {"dragon-duke"}
+
 ATTACK_CATEGORIES = {
     "troop",
     "hero",
@@ -482,7 +486,7 @@ def _town_hall_variants(entity):
 def _defending_hero_behavior(entity):
     if entity["category"] != "hero":
         return None
-    supported = entity["id"] in DEFENDING_HEROES
+    supported = entity["id"] in AUDITED_DEFENDING_HEROES
     if supported:
         registry = deepcopy(partial_adapter_status(entity, role="defense"))
         status = "conditional_mechanics"
@@ -722,7 +726,7 @@ def _opponent_status(entity, caps, town_hall):
             return "not_unlocked"
         return (
             "available_defending_conditional_mechanics"
-            if entity["id"] in DEFENDING_HEROES
+            if entity["id"] in AUDITED_DEFENDING_HEROES
             else "available_defending_behavior_missing"
         )
     if category == "crafted-defense":
