@@ -1,0 +1,69 @@
+{
+  "local_engine_base": "fd52f6cfeb4c65acafde8ec797bafdb1bb1ccbe0",
+  "combat_source_base": "fc9d0b8a921dbc261f95be0418f8b7618b50a714",
+  "published_main_reported_by_parent": "a278e193",
+  "publication_status_independently_rechecked_here": false,
+  "main_reconciliation": "Compare engine/data fingerprints and explicit movement policies; sanitized publication ancestry cannot substitute for identity",
+  "duke_candidate": {
+    "commit": "5093f38a33c828345db43b3e453eb198285641f4",
+    "tree": "d1a0e8fedbeba999e5e1e557d554ec5b168bd99d",
+    "patch_sha256": "f3b36800a51e34fedd36c8e9c2a0f2f14c67db30fa3a87ff9e45fb7fe35a0e0e",
+    "independent_review": "pending",
+    "status_at_inspection": "frozen_candidate_full_completion_pending",
+    "full04_process_exit": 0,
+    "full04_receipt_status": "unsupported_unscored",
+    "full04_receipt_sha256": "1f75200d2bf79f362d36486d1d47005f0f9c13b423206f61b6f31186c2bd9b44",
+    "full04_error": "Unsupported Dragon Duke isolation boundary chatter: duke='dragon-duke', friendly_air='army-dragon-11', time_seconds=49.70915584843428, radius_tiles=3, membership=center_distance_inside_after_motion_hypothesis; new motion immediately reverses a committed crossing. A declared contact dynamics policy is required.",
+    "full04_outcome": null,
+    "warning": "Supervisor zero exit is not a completed battle; read bound terminal receipt and outcome"
+  },
+  "handoff_contract": {
+    "required": [
+      "exact source/data/runner fingerprints",
+      "input manifest and per-bundle hashes",
+      "one deployment per paid actor; explicit paid preparation window and scheduled commitment; no same-actor salvage claim",
+      "Legend I/war kept separate",
+      "active crafted Station and full inventory admission",
+      "actual TH levels/capacities and direction",
+      "fresh attempt and terminal receipt before score",
+      "outcome/resources recomputation",
+      "all failed/unsupported cells retained",
+      "full defender/shared-model equivalence, with only roster-expanded response entries under the same declared mechanics"
+    ],
+    "army_reporting": [
+      "per-case outcome",
+      "shoulder clearance at scheduled commitment and actual deployment times; no conditional rescue inferred",
+      "actual spent/unspent units and spells",
+      "hero/ability use",
+      "Hall outcome and cleanup/time limit",
+      "candidate-specific strengths/risks and user-facing action card",
+      "exact-state ability gates, visibility and human-latency limitations explicitly separated from practical visual tells"
+    ],
+    "defense_reporting": [
+      "identical attack projection within each layout pair",
+      "layout inventory/settings hash or explicit design difference",
+      "style and entry coverage",
+      "conditional paired outcomes with all gaps",
+      "no best-base or probability from missing cells"
+    ]
+  },
+  "owners_handoff_readiness_at_inspection": {
+    "task23": "New assignment active; only prior search-pipeline audit handoff present, no new shortlist results claimed",
+    "task24": "New defense-stress-work at fd52; no new stress matrix receipt claimed",
+    "task26": "Frozen candidate inspected; full04 explicitly unsupported_unscored"
+  },
+  "paid_deployment_contract": {
+    "kind": "single_scheduled_deployment_per_paid_actor",
+    "funnel_required": false,
+    "clearance_observation": "diagnostic_at_scheduled_commit_not_release_gate",
+    "same_actor_alternative_deployment_supported": false,
+    "automatic_salvage": false,
+    "separate_reserve_branch_limitation": "Suppresses main commitment and leaves held main actors undeployed; not a rescue of that force"
+  },
+  "review_correction": {
+    "reviewer": "task25",
+    "checklist_sha256": "d54aa6064abe0302ab204222fd9f2fc2bc9a0824b33791368d789c2abda4fe0c",
+    "finding": "Existing alternate events cannot redirect the same held main force",
+    "resolution": "Use honest scheduled commitment for current candidate screen; keep alternative-entitlement deployment on backlog"
+  }
+}

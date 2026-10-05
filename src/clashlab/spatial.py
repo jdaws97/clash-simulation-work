@@ -3086,7 +3086,31 @@ def simulate_spatial(specification, controller=None, termination=None):
                 motions[actor["id"]] = (route, speed if route else 0)
                 if forced is None:
                     routes[actor["id"]] = route
+        original_motions = dict(motions)
         _air_contact_motions(actors, motions, time, width, height, forced_actors)
+        if hero_roster is not None:
+            contacts = hero_roster.duke.resolve_contact_motions(
+                actors,
+                motions,
+                time,
+                width,
+                height,
+                forced_actors,
+                trace,
+                original_motions,
+            )
+            if contacts:
+                # Duke contact depends only on unchanged direct proposals or
+                # an ally following a ground target. Re-resolve other airborne
+                # followers from their original proposals so they see the
+                # Duke's final velocity. Ground proposals remain unchanged.
+                motions = {
+                    **original_motions,
+                    **{key: motions[key] for key in contacts},
+                }
+                _air_contact_motions(
+                    actors, motions, time, width, height, forced_actors
+                )
         for actor_id, (route, speed) in motions.items():
             actor = actors[actor_id]
             if actor_id not in forced_actors:

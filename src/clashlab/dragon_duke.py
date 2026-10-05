@@ -19,13 +19,14 @@ from .hero_extensions import (
     validate_parameter_provenance,
 )
 from .range_events import _position, _segments
-from .rates import rescale_remaining_cooldown
-from .spatial import EPSILON, _active, center, target_distance
+from .rates import movement_speed, rescale_remaining_cooldown
+from .spatial import EPSILON, _active, _eligible, center, target_distance
 
 
 EQUIPMENT = {"revenge-deck", "fire-heart"}
 AIR_CLASSES = {"troop", "hero", "pet", "siege", "guardian"}
 SAMPLED_MEMBERSHIP = "center_distance_sampled_inclusive_experimental"
+CONTACT_POLICY = "nearby_translation_at_single_attracting_air_contact_experimental"
 
 
 def validate_isolation_update(parameters):
@@ -327,6 +328,7 @@ def first_relative_circle_crossing(
     second_segments = _segments(second, second_route, second_speed, extended_horizon)
     first_index = second_index = 0
     state = currently_inside
+    neutral_contact = False
     while first_index < len(first_segments) and second_index < len(second_segments):
         a = first_segments[first_index]
         b = second_segments[second_index]
@@ -335,6 +337,22 @@ def first_relative_circle_crossing(
         delta = (pa[0] - pb[0], pa[1] - pb[1])
         velocity = (a[3][0] - b[3][0], a[3][1] - b[3][1])
         speed_squared = velocity[0] ** 2 + velocity[1] ** 2
+        if (
+            velocity == (0.0, 0.0)
+            and abs(hypot(*delta) - radius) <= EPSILON
+            and (start == 0 or neutral_contact)
+        ):
+            # Identical translation cannot cross the circle. Preserve its
+            # committed side instead of turning roundoff into a new crossing.
+            # Nonzero relative drift must use the ordinary classifier, however
+            # small it is; a speed tolerance would suppress real crossings.
+            neutral_contact = True
+            if a[1] <= end + EPSILON:
+                first_index += 1
+            if b[1] <= end + EPSILON:
+                second_index += 1
+            continue
+        neutral_contact = False
         contacts = [0.0, end - start]
         if speed_squared > EPSILON**2:
             projection = delta[0] * velocity[0] + delta[1] * velocity[1]
@@ -413,6 +431,10 @@ class DragonDukeCombat:
         self.packets = []
         self.sequence = 0
         self.log = []
+        self.contact_context = None
+        self.active_contacts = set()
+        self.contact_vectors = {}
+        self.contact_motion_counts = defaultdict(int)
         self.combat = combat
         for key, actor in actors.items():
             if actor.get("hero_model", {}).get("entity") != "dragon-duke":
@@ -483,6 +505,7 @@ class DragonDukeCombat:
         )
 
     def prepare(self, actors, time, trace):
+        self.contact_context = None
         for key, hint in list(self.crossing_hints.items()):
             if hint["time_seconds"] <= time + EPSILON:
                 if abs(hint["time_seconds"] - time) <= EPSILON:
@@ -571,6 +594,177 @@ class DragonDukeCombat:
                     + heart["parameters"]["first_self_heal_delay_seconds"]
                 )
 
+    def _contact_translation(
+        self, actors, key, other_id, routes, speeds, time, positions=None
+    ):
+        """Resolve only the supported single-friend attracting surface.
+
+        Nearby pursuit must leave the circle, whereas isolated range would stop
+        the Duke and let that same ally enter. Keep the inclusive nearby side by
+        translating with the ally; unsupported geometry still reaches the guard.
+        """
+        if self.contact_context is None:
+            return None
+        width, height, excluded, independent_movers = self.contact_context
+        duke, other = actors[key], actors[other_id]
+        model = self.models[key]
+        parameters = model["parameters"]
+        if (
+            "isolation_update" in parameters
+            or key in excluded
+            or other_id in excluded
+            or other_id not in independent_movers
+            or other_id in self.models
+            or duke.get("_duke_isolated", True)
+            or not _active(duke, time)
+            or not self._friendly(duke, other, time, parameters)
+            or (
+                {
+                    pair[1]
+                    for pair, inside in self.membership.items()
+                    if pair[0] == key and inside
+                }
+                != {other_id}
+                and (key, other_id) not in self.active_contacts
+            )
+            or len(routes.get(key, [])) != 1
+            or len(routes.get(other_id, [])) > 1
+            or not 0 <= speeds.get(other_id, 0) <= movement_speed(duke)
+            or speeds.get(key, 0) <= 0
+        ):
+            return None
+        target = actors.get(duke.get("target"))
+        if (
+            target is None
+            or target["movement"] != "stationary"
+            or not _eligible(duke, target, time)
+        ):
+            return None
+        p, q = positions if positions is not None else (center(duke), center(other))
+        delta = (p[0] - q[0], p[1] - q[1])
+        if abs(hypot(*delta) - parameters["friendly_air_radius_tiles"]) > EPSILON:
+            # The existing two-epsilon event advance can put an entry slightly
+            # inside the circle. Recognize that committed event, then retain
+            # its relative vector during exact translation; do not widen the
+            # geometric contact radius or suppress later crossings.
+            pair = (key, other_id)
+            previous = self.contact_vectors.get(pair)
+            side = self.boundary_sides.get(pair)
+            retained = (
+                previous is not None
+                and hypot(*(delta[i] - previous[i] for i in (0, 1))) <= EPSILON
+            )
+            committed = (
+                side is not None
+                and side["inside_after"]
+                and 0 <= time - side["time_seconds"] <= EPSILON * 128
+                and all(
+                    hypot(*(point[i] - side[field][i] for i in (0, 1))) <= EPSILON * 128
+                    for point, field in ((p, "first_position"), (q, "second_position"))
+                )
+            )
+            if positions is not None or not (retained or committed):
+                return None
+        if (
+            target_distance(p, target)
+            > parameters["isolated_range_tiles"]
+            * duke["hero_model"]["range_multiplier"]
+            + EPSILON
+        ):
+            return None
+        first = (routes[key][0][0] - p[0], routes[key][0][1] - p[1])
+        second = (
+            (routes[other_id][0][0] - q[0], routes[other_id][0][1] - q[1])
+            if routes.get(other_id)
+            else (0, 0)
+        )
+        a, b = hypot(*first), hypot(*second)
+        if a <= EPSILON:
+            return None
+        u = tuple(value * speeds[key] / a for value in first)
+        stopped_contact = (
+            (key, other_id) in self.active_contacts
+            and not routes.get(other_id)
+            and speeds.get(other_id, 0) == 0
+        )
+        if b <= EPSILON:
+            if not stopped_contact:
+                return None
+            v = (0, 0)
+        else:
+            v = tuple(value * speeds[other_id] / b for value in second)
+        outward = sum(delta[i] * (u[i] - v[i]) for i in (0, 1))
+        isolated_inward = -sum(delta[i] * v[i] for i in (0, 1))
+        endpoint = (p[0] + second[0], p[1] + second[1])
+        if not (
+            outward > 0
+            and (isolated_inward < 0 or stopped_contact)
+            and 0 <= endpoint[0] < width
+            and 0 <= endpoint[1] < height
+        ):
+            return None
+        return ([] if stopped_contact else [endpoint]), speeds[other_id]
+
+    def resolve_contact_motions(
+        self,
+        actors,
+        motions,
+        time,
+        width,
+        height,
+        excluded,
+        trace,
+        original_motions=None,
+    ):
+        """Resolve before any route, field, trap or weapon crossing query."""
+        original_motions = motions if original_motions is None else original_motions
+        independent_movers = {
+            key
+            for key, motion in motions.items()
+            if original_motions.get(key) == motion
+            or actors.get(actors[key].get("target"), {}).get("movement") == "ground"
+        }
+        self.contact_context = (
+            width,
+            height,
+            set(excluded),
+            independent_movers,
+        )
+        routes = {key: route for key, (route, _) in motions.items()}
+        speeds = {key: speed for key, (_, speed) in motions.items()}
+        active = set()
+        for key in self.models:
+            for pair, inside in self.membership.items():
+                if pair[0] != key or not inside:
+                    continue
+                motion = self._contact_translation(
+                    actors, key, pair[1], routes, speeds, time
+                )
+                if motion is not None:
+                    motions[key] = motion
+                    active.add(pair)
+                    self.contact_motion_counts[key] += 1
+        for pair in sorted(active ^ self.active_contacts):
+            trace.append(
+                dict(
+                    event="dragon_duke_contact_motion",
+                    time_seconds=time,
+                    source=pair[0],
+                    friendly_air=pair[1],
+                    active=pair in active,
+                    policy=CONTACT_POLICY,
+                    game_calibrated=False,
+                )
+            )
+        self.active_contacts = active
+        self.contact_vectors = {
+            pair: tuple(
+                center(actors[pair[0]])[i] - center(actors[pair[1]])[i] for i in (0, 1)
+            )
+            for pair in active
+        }
+        return {pair[0] for pair in active}
+
     def first_crossing_delay(self, actors, routes, speeds, time, horizon):
         earliest = None
         for key, model in self.models.items():
@@ -611,8 +805,19 @@ class DragonDukeCombat:
                 # Reject this unresolved boundary policy instead of inventing
                 # hysteresis, skipping a crossing, or changing actor motion.
                 side = self.boundary_sides.get(pair)
+                # A nonpartner can enter while the contact partner is stopped,
+                # then exit when that partner resumes. Neither crossing changes
+                # isolation or the retained contact motion, so schedule that
+                # real crossing normally; it is not an isolation relay.
+                retained_other_contact = any(
+                    contact[0] == key
+                    and contact != pair
+                    and self.membership.get(contact, False)
+                    for contact in self.active_contacts
+                )
                 if (
                     side is not None
+                    and not retained_other_contact
                     and crossing["inside_after"] != side["inside_after"]
                     and time - side["time_seconds"] <= EPSILON * 128
                     and all(
@@ -634,6 +839,24 @@ class DragonDukeCombat:
                         "A declared contact dynamics policy is required."
                     )
                 delay = crossing.pop("delay_seconds")
+                if (
+                    not crossing["inside_after"]
+                    and self._contact_translation(
+                        actors,
+                        key,
+                        other_id,
+                        routes,
+                        speeds,
+                        time,
+                        (crossing["first_position"], crossing["second_position"]),
+                    )
+                    is not None
+                ):
+                    # Keep the real contact timestamp. At this attracting
+                    # surface the declared continuation is nearby translation,
+                    # not an isolated stop followed by an immediate reversal.
+                    crossing["inside_after"] = True
+                    crossing["contact_policy"] = CONTACT_POLICY
                 self.crossing_hints[pair] = {**crossing, "time_seconds": time + delay}
                 earliest = delay if earliest is None else min(earliest, delay)
         return earliest
@@ -828,6 +1051,8 @@ class DragonDukeCombat:
 
     def result(self):
         result = {
+            "isolation_contact_policy": CONTACT_POLICY,
+            "contact_motion_applications": dict(self.contact_motion_counts),
             "isolation_changes": deepcopy(self.log),
             "death_effects_released_for": sorted(self.heart_released),
             "pending_packets": len(self.packets),

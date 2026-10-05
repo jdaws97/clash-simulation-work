@@ -1,0 +1,68 @@
+{
+  "source": "task23-original-paid-funnel-screen-20261005-v1",
+  "operation": "simulate",
+  "timeout_seconds": 240,
+  "full_game_prediction": false,
+  "held_out_game_calibrations": 0,
+  "rankings": [],
+  "engine_commit": "fc9d0b8a921dbc261f95be0418f8b7618b50a714",
+  "automatic_retries": 0,
+  "maximum_total_wall_seconds": 490,
+  "cases": [
+    {
+      "bundle": "cases/ranked-defense-1-hero-hunter-A-funnel-cleanup-east.json",
+      "input_sha256": "4dc4eafbd66fa6914d223480ddcb93971f7c28e52274195aefcd81007c140ae7",
+      "case": {
+        "id": "ranked-defense-1-hero-hunter-A-funnel-cleanup-east",
+        "candidate_id": "defense-1-hero-hunter",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "family": "A-funnel-cleanup",
+        "entry_policy": "east",
+        "ability_policy": "fixed-core-hp-gated-abilities-observed-cleanup",
+        "mode": "ranked",
+        "attacker_town_hall": 16,
+        "defender_town_hall": 18,
+        "split": "search"
+      },
+      "admission": {
+        "input_sha256": "4dc4eafbd66fa6914d223480ddcb93971f7c28e52274195aefcd81007c140ae7",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "bundle": "cases/ranked-defense-1-hero-hunter-B-funnel-balloon-east.json",
+      "input_sha256": "67ae64914833f388dc3182233c751fb055e5edcdd07c8222f0818bf8a2eacdf5",
+      "case": {
+        "id": "ranked-defense-1-hero-hunter-B-funnel-balloon-east",
+        "candidate_id": "defense-1-hero-hunter",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "family": "B-funnel-balloon",
+        "entry_policy": "east",
+        "ability_policy": "fixed-core-hp-gated-abilities-observed-cleanup",
+        "mode": "ranked",
+        "attacker_town_hall": 16,
+        "defender_town_hall": 18,
+        "split": "search"
+      },
+      "admission": {
+        "input_sha256": "67ae64914833f388dc3182233c751fb055e5edcdd07c8222f0818bf8a2eacdf5",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    }
+  ],
+  "selection_gate": "Only completed A/B screen cases are eligible; at most2 transfer cases. No replacement candidates."
+}

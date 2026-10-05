@@ -1,0 +1,156 @@
+{
+  "source": "task23-original-paid-funnel-screen-20261005-v1",
+  "engine": {
+    "code_sha256": "cb29676510c6ea39b19f9358ec9f5caa695b1cc0abc9055249099a929058761c",
+    "data_sha256": "a5cb33c781fbe49ce30a5425dd3946b9471d2d460d642f9fa6a34b877a510441",
+    "runtime": {
+      "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+      "platform": "Windows-11-10.0.26200-SP0"
+    }
+  },
+  "cases": [
+    {
+      "case_id": "ranked-defense-0-hot-candle-fourteen-dragons-twenty-minions",
+      "input_sha256": "37b6304271652bafca7483880f235e7bac212de876400e9c6c68e7fc0a89116f",
+      "file_sha256": "7b302a5889682c2c336762a4f04d2b7003b3ae07cbf9ce857d76274ce98c19d9",
+      "environment_sha256": "84ddf5f87b9c8a8a7ce4cac19fe4466c052187dd9244974995232b8cecdaad3d",
+      "army_validation": {
+        "town_hall": 16,
+        "used": {
+          "army_housing": 320,
+          "spell_housing": 11,
+          "clan_castle_troops": 50,
+          "clan_castle_spells": 3
+        },
+        "id": "0621216d74ac6741d3e8",
+        "status": "LEGAL_UNDER_ENTERED_ACCOUNT_AND_CATALOG_SNAPSHOT"
+      },
+      "admission": {
+        "input_sha256": "37b6304271652bafca7483880f235e7bac212de876400e9c6c68e7fc0a89116f",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "case_id": "ranked-defense-0-hot-candle-A-funnel-cleanup-west",
+      "input_sha256": "af780093d71a8d9e505fe0e476173ac5e01990f30fbc049cac6d4dafd2fb7c43",
+      "file_sha256": "ae181377a44c278d4eb9bb48536341d972947c1041c302d2153deb9d67c0cbe3",
+      "environment_sha256": "84ddf5f87b9c8a8a7ce4cac19fe4466c052187dd9244974995232b8cecdaad3d",
+      "army_validation": {
+        "town_hall": 16,
+        "used": {
+          "army_housing": 320,
+          "spell_housing": 11,
+          "clan_castle_troops": 50,
+          "clan_castle_spells": 3
+        },
+        "id": "0621216d74ac6741d3e8",
+        "status": "LEGAL_UNDER_ENTERED_ACCOUNT_AND_CATALOG_SNAPSHOT"
+      },
+      "admission": {
+        "input_sha256": "af780093d71a8d9e505fe0e476173ac5e01990f30fbc049cac6d4dafd2fb7c43",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "case_id": "ranked-defense-0-hot-candle-B-funnel-balloon-west",
+      "input_sha256": "c077effb23dd5db0e99aec25ed56954174508a68e2fafc8b17cc38364f99b925",
+      "file_sha256": "9b9d88d934ee6465864438ef638e9dc010565aec50fadad38ea7133c73b7e727",
+      "environment_sha256": "84ddf5f87b9c8a8a7ce4cac19fe4466c052187dd9244974995232b8cecdaad3d",
+      "army_validation": {
+        "town_hall": 16,
+        "used": {
+          "army_housing": 320,
+          "spell_housing": 11,
+          "clan_castle_troops": 50,
+          "clan_castle_spells": 3
+        },
+        "id": "f01eb5ad55bb2a5d6866",
+        "status": "LEGAL_UNDER_ENTERED_ACCOUNT_AND_CATALOG_SNAPSHOT"
+      },
+      "admission": {
+        "input_sha256": "c077effb23dd5db0e99aec25ed56954174508a68e2fafc8b17cc38364f99b925",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "case_id": "ranked-defense-1-hero-hunter-A-funnel-cleanup-east",
+      "input_sha256": "4dc4eafbd66fa6914d223480ddcb93971f7c28e52274195aefcd81007c140ae7",
+      "file_sha256": "359f028a17617447e5e8e4d6393f3fa220b3d32e5c18c802998dcdb6f8ebbdb9",
+      "environment_sha256": "d3132e735c7b64d43e8d7120dc85ae6132639735f52f357510859921edc69796",
+      "army_validation": {
+        "town_hall": 16,
+        "used": {
+          "army_housing": 320,
+          "spell_housing": 11,
+          "clan_castle_troops": 50,
+          "clan_castle_spells": 3
+        },
+        "id": "0621216d74ac6741d3e8",
+        "status": "LEGAL_UNDER_ENTERED_ACCOUNT_AND_CATALOG_SNAPSHOT"
+      },
+      "admission": {
+        "input_sha256": "4dc4eafbd66fa6914d223480ddcb93971f7c28e52274195aefcd81007c140ae7",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "case_id": "ranked-defense-1-hero-hunter-B-funnel-balloon-east",
+      "input_sha256": "67ae64914833f388dc3182233c751fb055e5edcdd07c8222f0818bf8a2eacdf5",
+      "file_sha256": "df66245d83e92f215625f7a4e67175ec03643d8af40863e79f34dfea4b5ed280",
+      "environment_sha256": "d3132e735c7b64d43e8d7120dc85ae6132639735f52f357510859921edc69796",
+      "army_validation": {
+        "town_hall": 16,
+        "used": {
+          "army_housing": 320,
+          "spell_housing": 11,
+          "clan_castle_troops": 50,
+          "clan_castle_spells": 3
+        },
+        "id": "f01eb5ad55bb2a5d6866",
+        "status": "LEGAL_UNDER_ENTERED_ACCOUNT_AND_CATALOG_SNAPSHOT"
+      },
+      "admission": {
+        "input_sha256": "67ae64914833f388dc3182233c751fb055e5edcdd07c8222f0818bf8a2eacdf5",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    }
+  ],
+  "environment_comparison": "Exact defense/shared-policy/layout/account equality after verifying the fixed roster-dependent response projections; no Hall timing or defense mechanics variation permitted",
+  "screen_environment_identical": true,
+  "transfer_environment_identical": true
+}

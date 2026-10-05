@@ -1,0 +1,628 @@
+{
+  "schema": "reviewed-deliverable-cohorts-v1",
+  "sanitized_main_base": {
+    "commit": "a278e1934c77a0b4cbb0dc3b8e42fe2e2bfdd47e",
+    "tree": "02086f5fe8ee6323eee77ba7a62b09ca6d9a6d10"
+  },
+  "integrated_engine": {
+    "accepted_local_reference": "82d14cee920f06f9d19cc88e09dafb36481fd671",
+    "accepted_tree": "bb62e4d75b7ff89bdd02e399d53df2e0de0fab53",
+    "git_blob_source_data_and_runner_equal": true,
+    "checked_files": 196,
+    "content_inventory_sha256": "8de0479298623832d6ba27caac2d9d71d3e0a45918b50481c1b751fe8f61f42a",
+    "current_checkout_fingerprints": {
+      "code_sha256": "557649e931cc8a3b0deaafeef3ffbb940ae07c57dc378e45e30eff1650b1c517",
+      "data_sha256": "ba7a807d8740fb67088372e393352d97663499775f9d218704536b9256b47db2",
+      "runtime": {
+        "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+        "platform": "Windows-11-10.0.26200-SP0"
+      }
+    },
+    "raw_execution_hash_note": "Historical owner worktrees may use CRLF; retain every original execution fingerprint. Published LF Git blobs match accepted reference content exactly.",
+    "acceptance": "scoped_uncalibrated_contact_policy_accepted_for_same_policy_comparisons",
+    "review": {
+      "file": "duke-neutral-independent-recheck.json",
+      "sha256": "c84567c50488bd91e21fb8073b0d04d020f5a0959186a59822aecced8741fa66"
+    },
+    "new_full_battles_by_integrator": 0
+  },
+  "army_cohort": {
+    "engine_commit": "fc9d0b8a921dbc261f95be0418f8b7618b50a714",
+    "engine": {
+      "code_sha256": "cb29676510c6ea39b19f9358ec9f5caa695b1cc0abc9055249099a929058761c",
+      "data_sha256": "a5cb33c781fbe49ce30a5425dd3946b9471d2d460d642f9fa6a34b877a510441",
+      "runtime": {
+        "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+        "platform": "Windows-11-10.0.26200-SP0"
+      },
+      "runner_sha256": "280054dd1cb968328e2b161faacd936f73f7968c39d3b6331396fbfb697889da",
+      "air_contact_policy": "declared_air_weapon_follows_departing_retained_target_at_target_speed",
+      "movement_fidelity": "explicit_uncalibrated_hypothesis_may_change_outcomes"
+    },
+    "cases": [
+      {
+        "case_id": "ranked-defense-0-hot-candle-fourteen-dragons-twenty-minions",
+        "family": "fourteen-dragons-twenty-minions",
+        "defense": "defense-0-hot-candle",
+        "entry": "west",
+        "input_sha256": "37b6304271652bafca7483880f235e7bac212de876400e9c6c68e7fc0a89116f",
+        "status": "completed",
+        "completion_proven": true,
+        "outcome": {
+          "stars": 2,
+          "destruction": 89.36170212765957,
+          "elapsed_seconds": 180,
+          "end_reason": "declared_time_limit"
+        },
+        "result_sha256": "84a0aa1b02b2a2b5ac9b532961aa0078ecb66ea351e731372f9c4c136b6ea4c4",
+        "hall_death_seconds": 44.27148873500015,
+        "shoulders": {},
+        "spell_housing": {
+          "army": {
+            "available": 11,
+            "spent": 11
+          },
+          "clan_castle": {
+            "available": 3,
+            "spent": 3
+          }
+        },
+        "undeployed_owned_troop_housing": 0,
+        "abilities_used": [
+          "archer-queen",
+          "grand-warden",
+          "royal-champion"
+        ]
+      },
+      {
+        "case_id": "ranked-defense-0-hot-candle-A-funnel-cleanup-west",
+        "family": "A-funnel-cleanup",
+        "defense": "defense-0-hot-candle",
+        "entry": "west",
+        "input_sha256": "af780093d71a8d9e505fe0e476173ac5e01990f30fbc049cac6d4dafd2fb7c43",
+        "status": "process_failure",
+        "completion_proven": false,
+        "outcome": null,
+        "result_sha256": null,
+        "hall_death_seconds": null,
+        "shoulders": null,
+        "spell_housing": null,
+        "undeployed_owned_troop_housing": null,
+        "abilities_used": null
+      },
+      {
+        "case_id": "ranked-defense-0-hot-candle-B-funnel-balloon-west",
+        "family": "B-funnel-balloon",
+        "defense": "defense-0-hot-candle",
+        "entry": "west",
+        "input_sha256": "c077effb23dd5db0e99aec25ed56954174508a68e2fafc8b17cc38364f99b925",
+        "status": "completed",
+        "completion_proven": true,
+        "outcome": {
+          "stars": 2,
+          "destruction": 93.61702127659575,
+          "elapsed_seconds": 83.06029988173896,
+          "end_reason": "attack_force_exhausted"
+        },
+        "result_sha256": "8e6e2180e1d67b7900352ec5370f4e3c5d318b9c75138d71b6dd549b8bb0bd65",
+        "hall_death_seconds": 82.63991505914306,
+        "shoulders": {
+          "army-camp-0": {
+            "death_seconds": 1.75,
+            "dead_before_core20": true
+          },
+          "gold-storage-0": {
+            "death_seconds": 9.632200578285822,
+            "dead_before_core20": true
+          }
+        },
+        "spell_housing": {
+          "army": {
+            "available": 11,
+            "spent": 6
+          },
+          "clan_castle": {
+            "available": 3,
+            "spent": 1
+          }
+        },
+        "undeployed_owned_troop_housing": 0,
+        "abilities_used": [
+          "archer-queen",
+          "grand-warden",
+          "royal-champion"
+        ]
+      },
+      {
+        "case_id": "ranked-defense-0-hot-candle-B-funnel-balloon-west-v2",
+        "family": "B-funnel-balloon-v2",
+        "defense": "defense-0-hot-candle",
+        "entry": "west",
+        "input_sha256": "6465af880a2e0037d652cb671279ecbc46dcda99302f527765c71316ff05e9e0",
+        "status": "completed",
+        "completion_proven": true,
+        "outcome": {
+          "stars": 2,
+          "destruction": 98.93617021276596,
+          "elapsed_seconds": 180,
+          "end_reason": "declared_time_limit"
+        },
+        "result_sha256": "28b7338c8514b20c93dd59d2cbaaee7a021727827d59faf87d4d4aabfff31e2d",
+        "hall_death_seconds": 61.436762474366574,
+        "shoulders": {
+          "army-camp-0": {
+            "death_seconds": 1.75,
+            "dead_before_core20": true
+          },
+          "gold-storage-0": {
+            "death_seconds": 9.632200578285822,
+            "dead_before_core20": true
+          }
+        },
+        "spell_housing": {
+          "army": {
+            "available": 11,
+            "spent": 10
+          },
+          "clan_castle": {
+            "available": 3,
+            "spent": 3
+          }
+        },
+        "undeployed_owned_troop_housing": 0,
+        "abilities_used": [
+          "archer-queen",
+          "grand-warden",
+          "royal-champion"
+        ]
+      },
+      {
+        "case_id": "ranked-defense-1-hero-hunter-B-funnel-balloon-east-v2",
+        "family": "B-funnel-balloon-v2",
+        "defense": "defense-1-hero-hunter",
+        "entry": "east",
+        "input_sha256": "034150945328686362c94e430f3a4af3890d6913c0b3a79eab36248bb73b5be7",
+        "status": "completed",
+        "completion_proven": true,
+        "outcome": {
+          "stars": 0,
+          "destruction": 47.87234042553192,
+          "elapsed_seconds": 68.61679242847875,
+          "end_reason": "attack_force_exhausted"
+        },
+        "result_sha256": "45ce14e9ff56e452bf4f5ac98dcd26194b1e589ff43f72957c19ad7e58d27dd7",
+        "hall_death_seconds": null,
+        "shoulders": {
+          "air-defense-3": {
+            "death_seconds": 4.643095261909526,
+            "dead_before_core20": true
+          },
+          "super-wizard-tower-0": {
+            "death_seconds": 7.985478606699276,
+            "dead_before_core20": true
+          }
+        },
+        "spell_housing": {
+          "army": {
+            "available": 11,
+            "spent": 7
+          },
+          "clan_castle": {
+            "available": 3,
+            "spent": 2
+          }
+        },
+        "undeployed_owned_troop_housing": 0,
+        "abilities_used": [
+          "archer-queen",
+          "grand-warden",
+          "royal-champion"
+        ]
+      }
+    ],
+    "attempts": 5,
+    "completed": 4,
+    "unscored": 1,
+    "independent_review": {
+      "status": "independent_receipt_and_input_review_pass_with_scope_limits",
+      "file": "completed-army-screen-review.json",
+      "sha256": "03dd494097ee6a0a7a0244e38f0478b20d9016d5dcc42b36718f88d9b6a20685"
+    },
+    "evidence_archive": {
+      "sha256": "9e740a973c2c8097858a709c44abd8e3b333981c01a36679485fc6c638638b44",
+      "file": "clash-army-input-screen-evidence.zip"
+    },
+    "disposition": {
+      "B_v2": "Strongest observed completed west package; east0star47.87% failure prevents general TH18 promotion; not player-ready",
+      "C0": "Retain as simpler reproducibility control; no funnel claim",
+      "A": "Unranked: existing Duke guard blocks v1; v2 input correction compiled only"
+    },
+    "results_belong_to_integrated_duke_engine": false,
+    "limits": [
+      "B v2 leads only the completed west Hot Candle packages; severe east Hero Hunter failure prevents broad TH18 promotion",
+      "A v1 is unscored after the original Duke guard; A v2 is compiled only and has no inherited result",
+      "No validated two-army shortlist, global winner, calibrated probability or guaranteed three-star claim",
+      "Scheduled commitment after paid preparation; no same-force alternative deployment or validated Hall-bait detection"
+    ]
+  },
+  "defense_cohort": {
+    "engine_commit": "82d14cee920f06f9d19cc88e09dafb36481fd671",
+    "engine_tree": "bb62e4d75b7ff89bdd02e399d53df2e0de0fab53",
+    "cases": [
+      {
+        "case": "ranked-staggered_compartments-declared-th16-th17-air-west",
+        "status": "completed",
+        "input_sha256": "cb31de130c1a005a6869f50edd03b66923ee77a941a75fed5949268e0ad3637d",
+        "result_sha256": "a3e0c737a44f7ee0d67c08b7ccacf947ecb9e3353edf8e2585de5412037bef14",
+        "wall_seconds": 88.42200000002049,
+        "outcome": {
+          "stars": 3,
+          "destruction": 100.0,
+          "elapsed_seconds": 62.8163368172233,
+          "end_reason": "all_counted_buildings_destroyed"
+        },
+        "diagnostic": null
+      },
+      {
+        "case": "ranked-split_core-declared-th16-th17-air-west",
+        "status": "completed",
+        "input_sha256": "a87fab848480ef18c775051f4d2f9254c0e0197c72e4a551c390be0cf2bc5950",
+        "result_sha256": "4f867c8a1ff5cc789422923627a1e460732a3a3a08f27a10adac3887b95c12d5",
+        "wall_seconds": 98.32799999997951,
+        "outcome": {
+          "stars": 3,
+          "destruction": 100.0,
+          "elapsed_seconds": 60.35472491518103,
+          "end_reason": "all_counted_buildings_destroyed"
+        },
+        "diagnostic": null
+      }
+    ],
+    "fresh_complete_cases": 2,
+    "independent_review": {
+      "status": "accepted_receipts_for_single_conditional_pair",
+      "file": "independent-receipt.json",
+      "sha256": "65c8175a0db402871e17befa3c624c8c16ed334fc2a11012eaecac8813b316de"
+    },
+    "evidence_archive": {
+      "file": "clash-duke-pair82-evidence.zip",
+      "sha256": "9f8ebe2aef3cbcc1615ae52d5ed064ab0da0ce741a2d1cf632c9c078ace693c4"
+    },
+    "verification": {
+      "file": "duke-pair82-verification.json",
+      "sha256": "717867a608ff1950e8016dac9af0cf487accd7a17faeafceb4226b7e093ad691"
+    },
+    "general_base_winner": null,
+    "manual_build_recommendation": false,
+    "limits": [
+      "Both 95/95 TH16 layouts tripled against one identical genuine TH17 air/west attack",
+      "Fresh accepted-policy results do not clear separate King/core-four timeouts or establish broad defense robustness"
+    ]
+  },
+  "separate_stress_history": {
+    "engine_commit": "fc9d0b8a921dbc261f95be0418f8b7618b50a714",
+    "king_substituted_for_duke": true,
+    "status_counts": {
+      "completed": 2,
+      "timeout": 4,
+      "not_run": 10
+    },
+    "complete_comparison_pairs": [],
+    "timeouts_remain_unscored": [
+      {
+        "case": "ranked-split_core-th16-hot-candle-th17-air-east-core4",
+        "status": "timeout",
+        "diagnostic": [
+          "{\"wall_seconds\": 140.0319999998901, \"simulated_seconds\": 18.50860711122506}",
+          "{\"wall_seconds\": 160.04699999978766, \"simulated_seconds\": 18.50860788170198}",
+          "{\"wall_seconds\": 180.06299999984913, \"simulated_seconds\": 18.50860877901067}",
+          "{\"wall_seconds\": 200.06299999984913, \"simulated_seconds\": 18.5086095110927}",
+          "{\"wall_seconds\": 220.06299999984913, \"simulated_seconds\": 18.508610375399}"
+        ],
+        "outcome": null
+      },
+      {
+        "case": "ranked-staggered_compartments-th16-hot-candle-th18-ground-west-core4",
+        "status": "timeout",
+        "diagnostic": [
+          "{\"wall_seconds\": 140.0470000000205, \"simulated_seconds\": 5.72717053713769}",
+          "{\"wall_seconds\": 160.0470000000205, \"simulated_seconds\": 5.740414083362073}",
+          "{\"wall_seconds\": 180.10899999993853, \"simulated_seconds\": 5.741126656911427}",
+          "{\"wall_seconds\": 200.14000000013039, \"simulated_seconds\": 5.760740580880936}",
+          "{\"wall_seconds\": 220.14000000013039, \"simulated_seconds\": 5.761801071141726}"
+        ],
+        "outcome": null
+      },
+      {
+        "case": "ranked-split_core-th16-hot-candle-th18-ground-west-core4",
+        "status": "timeout",
+        "diagnostic": [
+          "{\"wall_seconds\": 140.14100000006147, \"simulated_seconds\": 10.591888440813785}",
+          "{\"wall_seconds\": 160.2970000000205, \"simulated_seconds\": 11.501388968440697}",
+          "{\"wall_seconds\": 181.01600000006147, \"simulated_seconds\": 12.338677950960783}",
+          "{\"wall_seconds\": 201.0470000000205, \"simulated_seconds\": 12.846698066756696}",
+          "{\"wall_seconds\": 221.0779999999795, \"simulated_seconds\": 13.03636956021577}"
+        ],
+        "outcome": null
+      },
+      {
+        "case": "war-split_core-th16-hot-candle-th18-air-east-core4",
+        "status": "timeout",
+        "diagnostic": [
+          "{\"wall_seconds\": 140.0789999999106, \"simulated_seconds\": 7.919165855195006}",
+          "{\"wall_seconds\": 160.0789999999106, \"simulated_seconds\": 7.958256950625224}",
+          "{\"wall_seconds\": 180.0789999999106, \"simulated_seconds\": 8.029769806260848}",
+          "{\"wall_seconds\": 200.0789999999106, \"simulated_seconds\": 8.110614143270702}",
+          "{\"wall_seconds\": 220.0789999999106, \"simulated_seconds\": 8.153777145364433}"
+        ],
+        "outcome": null
+      }
+    ],
+    "evidence_archive": {
+      "file": "clash-defense-stress-evidence.zip",
+      "sha256": "9aecb26c4d7747900520ccc0ac15311d39065136b57a358ccc9f16b65505f148"
+    },
+    "new_runs_or_fixes_claimed": false,
+    "input_patch_integrated_in_this_deliverable": false,
+    "contact_diagnosis": {
+      "evidence_file": "STRESS-AIR-CONTACT-DIAGNOSIS-NOW.txt",
+      "sha256": "fa40f795b123aec20c52a50cba9320db056918c7431bf0c22269fe77224d06e4",
+      "source_engine": "fc9d0b8",
+      "reduced_actor_count": 6,
+      "frontiers": 512,
+      "advance_seconds": 1.9796675811534215e-05,
+      "pursuer_speed": 3.0,
+      "forced_target_speed_approx": 3.061467459,
+      "production_patch": null,
+      "other_three_timeout_causes": "unresolved",
+      "does_not_modify_accepted_duke": true
+    }
+  },
+  "current_engine_compile_only_admissions": [
+    {
+      "path": "examples/army-input-screen/cases/ranked-defense-0-hot-candle-A-funnel-cleanup-west.json",
+      "input_sha256": "af780093d71a8d9e505fe0e476173ac5e01990f30fbc049cac6d4dafd2fb7c43",
+      "admission": {
+        "input_sha256": "af780093d71a8d9e505fe0e476173ac5e01990f30fbc049cac6d4dafd2fb7c43",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "path": "examples/army-input-screen/cases/ranked-defense-0-hot-candle-B-funnel-balloon-west.json",
+      "input_sha256": "c077effb23dd5db0e99aec25ed56954174508a68e2fafc8b17cc38364f99b925",
+      "admission": {
+        "input_sha256": "c077effb23dd5db0e99aec25ed56954174508a68e2fafc8b17cc38364f99b925",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "path": "examples/army-input-screen/cases/ranked-defense-0-hot-candle-fourteen-dragons-twenty-minions.json",
+      "input_sha256": "37b6304271652bafca7483880f235e7bac212de876400e9c6c68e7fc0a89116f",
+      "admission": {
+        "input_sha256": "37b6304271652bafca7483880f235e7bac212de876400e9c6c68e7fc0a89116f",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "path": "examples/army-input-screen/cases/ranked-defense-1-hero-hunter-A-funnel-cleanup-east.json",
+      "input_sha256": "4dc4eafbd66fa6914d223480ddcb93971f7c28e52274195aefcd81007c140ae7",
+      "admission": {
+        "input_sha256": "4dc4eafbd66fa6914d223480ddcb93971f7c28e52274195aefcd81007c140ae7",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "path": "examples/army-input-screen/cases/ranked-defense-1-hero-hunter-B-funnel-balloon-east.json",
+      "input_sha256": "67ae64914833f388dc3182233c751fb055e5edcdd07c8222f0818bf8a2eacdf5",
+      "admission": {
+        "input_sha256": "67ae64914833f388dc3182233c751fb055e5edcdd07c8222f0818bf8a2eacdf5",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "path": "examples/army-input-screen/review-corrections-v2/cases/ranked-defense-0-hot-candle-A-funnel-cleanup-west-v2.json",
+      "input_sha256": "ee4cda61948b8ea67747b8fa7acdbb9deefc6fe49a97dc6c94c660640dc82e6e",
+      "admission": {
+        "input_sha256": "ee4cda61948b8ea67747b8fa7acdbb9deefc6fe49a97dc6c94c660640dc82e6e",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "path": "examples/army-input-screen/review-corrections-v2/cases/ranked-defense-0-hot-candle-B-funnel-balloon-west-v2.json",
+      "input_sha256": "6465af880a2e0037d652cb671279ecbc46dcda99302f527765c71316ff05e9e0",
+      "admission": {
+        "input_sha256": "6465af880a2e0037d652cb671279ecbc46dcda99302f527765c71316ff05e9e0",
+        "candidate_layout_sha256": "1d10e01d82a54dd34a1df90ab45b9ecbfb4d635aa9d0a8d02469c2c4b89fe918",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "path": "examples/army-input-screen/review-corrections-v2/cases/ranked-defense-1-hero-hunter-A-funnel-cleanup-east-v2.json",
+      "input_sha256": "56880c7e45792792f34afeb40e060168423618d109ada14ad7ebb3001f1a5f8e",
+      "admission": {
+        "input_sha256": "56880c7e45792792f34afeb40e060168423618d109ada14ad7ebb3001f1a5f8e",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "path": "examples/army-input-screen/review-corrections-v2/cases/ranked-defense-1-hero-hunter-B-funnel-balloon-east-v2.json",
+      "input_sha256": "034150945328686362c94e430f3a4af3890d6913c0b3a79eab36248bb73b5be7",
+      "admission": {
+        "input_sha256": "034150945328686362c94e430f3a4af3890d6913c0b3a79eab36248bb73b5be7",
+        "candidate_layout_sha256": "88d0a724bf756a07458e67cdca52142c35e74ed59f41acfc93aa8f3cb9cd88ff",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hero-hunter",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "path": "examples/defense-comparison/cases/ranked-split_core-declared-th16-th17-air-west.json",
+      "input_sha256": "a87fab848480ef18c775051f4d2f9254c0e0197c72e4a551c390be0cf2bc5950",
+      "admission": {
+        "input_sha256": "a87fab848480ef18c775051f4d2f9254c0e0197c72e4a551c390be0cf2bc5950",
+        "candidate_layout_sha256": "09fdb28b3e2491b4115452f578e04774df5e6439470dfef2dc0fc6288f111459",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    },
+    {
+      "path": "examples/defense-comparison/cases/ranked-staggered_compartments-declared-th16-th17-air-west.json",
+      "input_sha256": "cb31de130c1a005a6869f50edd03b66923ee77a941a75fed5949268e0ad3637d",
+      "admission": {
+        "input_sha256": "cb31de130c1a005a6869f50edd03b66923ee77a941a75fed5949268e0ad3637d",
+        "candidate_layout_sha256": "b5b423d3de816859193c2d67589b547f05f683c5ff0b8d93ed023451e3128154",
+        "crafted": {
+          "station": "crafting-station-0",
+          "variant": "hot-candle",
+          "active_weapon_compiled": true,
+          "game_calibrated": false
+        },
+        "status": "compiled_no_outcome"
+      }
+    }
+  ],
+  "full_game_prediction": false,
+  "complete_held_out_game_calibrations": 0,
+  "account_and_season_confirmation": "Preserved account compatibility checked; active boosts, readiness, donations, live league and current season are unconfirmed. Legend I remains the requested synthetic scenario.",
+  "publication": "draft_only_no_merge_or_deploy",
+  "reviewed_candidate_card": {
+    "path": "docs/B_V2_WEST_CANDIDATE_CARD.md",
+    "reviewer_original_sha256": "0e2f7d297ded0a5a85d8f0019ee0a393880da2a042e8514adde87593c6f6c89e",
+    "published_sha256": "6cee71066cd30f2004e8347ef87283ade985734251457c1d26bd6e5354923cb3",
+    "edits": "Evidence link made repository-relative; reviewed loadout, schedule and outcome text preserved, including the original Unicode arrow.",
+    "later_account_addendum": "docs/B_V2_ACCOUNT_AVAILABILITY.md"
+  },
+  "account_availability_check": {
+    "path": "examples/reviewed-deliverable/account-availability.json",
+    "sha256": "4575ef138f89c3d4633f170c40aa288e3c89bc479e71cf9bc86084fc3796c8f7",
+    "result": "Required items recorded; candidate levels met under recorded potion model and legal-donation planning policy",
+    "current_game_account_query": false,
+    "limitations": [
+      "Power/Hero potions are recorded planning choices; actual inventory, active boosts and current upgrades are unverified.",
+      "Equipment is never potion-boosted; all eight required gear items are present at candidate levels in the preserved record.",
+      "Hero Potion also raises pet levels in the existing declared simulator model; live caps/mechanics require patch verification.",
+      "Legal maximum donations are a planning permission, not evidence that those donations are currently available.",
+      "Legend I is the requested synthetic scenario; this check does not establish the account's present league.",
+      "No purchase, potion activation, donation or other account action was performed."
+    ]
+  },
+  "integration_verification": {
+    "tests": 1432,
+    "suite_exit": 0,
+    "format_exit": 0,
+    "catalog_cli_exit": 0,
+    "black_version": "24.10.0",
+    "black_files_unchanged": 347,
+    "source_data_tools_tests_unchanged_by_checks": true,
+    "checks": [
+      {
+        "label": "suite",
+        "exit_code": 0,
+        "wall_seconds": 53.35900000017136,
+        "log": "reviewed-deliverable-run2-suite.log",
+        "log_sha256": "50c37595ec6cfe33a2d6c23825653d5dffc9ce52ef3391be2cee203556002ccb"
+      },
+      {
+        "label": "format",
+        "exit_code": 0,
+        "wall_seconds": 20.125,
+        "log": "reviewed-deliverable-run2-format.log",
+        "log_sha256": "57c720a81776f8a8813cd2df817f3b86671796556fe75b9c2b71cdc97a4ab635"
+      },
+      {
+        "label": "catalog",
+        "exit_code": 0,
+        "wall_seconds": 0.375,
+        "log": "reviewed-deliverable-run2-catalog.log",
+        "log_sha256": "23c7f2f73f19c5b2315bd89d3972136754f94bd705695aebbf9b46a6163c9cdc"
+      }
+    ],
+    "initial_failure": {
+      "count": 1,
+      "cause": "Preexisting sampled-isolation integration test expected the now-supported narrow continuous contact case to raise boundary chatter.",
+      "log_sha256": "0fd762c27a76e19ec98ff3aaf16bf8540fd26241842c7470cf832d96a4a16d8b"
+    },
+    "integration_test_adjustment": "Existing test now asserts explicit experimental contact policy, positive contact applications, progress, uncalibrated flag and true-to-false isolation transition. Sampled-policy opt-in/cadence/step checks and unsupported-contact guard tests retained.",
+    "focused_tests": 10,
+    "production_changes_beyond_accepted_reference": false
+  },
+  "catalog_audit": {
+    "snapshot_commit": "c6967314d7281bb87c362993e2635e58cd77b351",
+    "entity_count": 207,
+    "finding_count": 44,
+    "finding_kinds": {
+      "no_secondary_record": 3,
+      "hero_cap_disagreement": 3,
+      "dps_disagreement": 6,
+      "official_balance_conflict": 24,
+      "balance_review_required": 8
+    },
+    "output_sha256": "02036fed87979c405abbab03e8b189b953e03ba1239697597e6106f45441c0b5",
+    "meaning": "CLI execution passed; existing snapshot-source/balance findings remain reported. This is not live-data reconciliation or calibration."
+  },
+  "candidate_use_boundary": "Research candidate only; west is a synthetic coordinate-fixture entry, not a validated archetype. Raw coordinates and ideal health gates are not manual attack instructions."
+}

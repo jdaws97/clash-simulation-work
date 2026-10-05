@@ -8,6 +8,7 @@ from clashlab.adapters import compile_entity_scene
 from clashlab.advanced_defense_rules import RULES as OLD_RULES, SCOPE as OLD_SCOPE
 from clashlab.catalog import Catalog
 from clashlab.common import InputError, read_json
+from clashlab.dragon_duke import CONTACT_POLICY
 from clashlab.full_battle import compile_full_battle
 from clashlab.hero_roster_rules import RULES, RULESET, SCOPE, SAMPLED_DUKE_ISOLATION
 from clashlab.spatial import simulate_spatial
@@ -74,8 +75,18 @@ class HeroRosterIntegrationTests(unittest.TestCase):
         specification = roster_sector(
             self.catalog, [duke, ally, building("storage", 14)], duration_seconds=3
         )
-        with self.assertRaisesRegex(InputError, "boundary chatter"):
-            simulate_spatial(compile_entity_scene(specification, self.catalog)["scene"])
+        continuous = simulate_spatial(
+            compile_entity_scene(specification, self.catalog)["scene"]
+        )
+        contact = continuous["extended_heroes"]["dragon_duke"]
+        self.assertEqual(contact["isolation_contact_policy"], CONTACT_POLICY)
+        self.assertGreater(contact["contact_motion_applications"]["hero"], 0)
+        self.assertFalse(contact["game_calibrated"])
+        self.assertGreater(continuous["actors"]["hero"]["x"], 10)
+        self.assertEqual(
+            [change["isolated"] for change in contact["isolation_changes"]],
+            [True, False],
+        )
         policy = read_json(
             ROOT / "data/battle-policies/experimental-duke-isolation.json"
         )

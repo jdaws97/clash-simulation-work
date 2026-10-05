@@ -1,0 +1,257 @@
+{
+  "source": "task23-input-only-finite-army-screen",
+  "engine": {
+    "code_sha256": "cb29676510c6ea39b19f9358ec9f5caa695b1cc0abc9055249099a929058761c",
+    "data_sha256": "a5cb33c781fbe49ce30a5425dd3946b9471d2d460d642f9fa6a34b877a510441",
+    "runtime": {
+      "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+      "platform": "Windows-11-10.0.26200-SP0"
+    },
+    "runner_sha256": "280054dd1cb968328e2b161faacd936f73f7968c39d3b6331396fbfb697889da",
+    "air_contact_policy": "declared_air_weapon_follows_departing_retained_target_at_target_speed",
+    "movement_fidelity": "explicit_uncalibrated_hypothesis_may_change_outcomes"
+  },
+  "engine_commit": "fc9d0b8a921dbc261f95be0418f8b7618b50a714",
+  "engine_tree": "6f3adbac8ceba95f95d71e39206cc2aa06c510da",
+  "cases": [
+    {
+      "case_id": "ranked-defense-0-hot-candle-fourteen-dragons-twenty-minions",
+      "family": "fourteen-dragons-twenty-minions",
+      "defense": "defense-0-hot-candle",
+      "entry": "west",
+      "input_sha256": "37b6304271652bafca7483880f235e7bac212de876400e9c6c68e7fc0a89116f",
+      "status": "completed",
+      "completion_proven": true,
+      "outcome": {
+        "stars": 2,
+        "destruction": 89.36170212765957,
+        "elapsed_seconds": 180,
+        "end_reason": "declared_time_limit"
+      },
+      "wall_seconds": 214.56300000008196,
+      "hall_death_seconds": 44.27148873500015,
+      "shoulders": {},
+      "shoulder_first_targets": {
+        "army-dragon-0": "army-camp-0",
+        "army-dragon-1": null
+      },
+      "spell_housing": {
+        "army": {
+          "available": 11,
+          "spent": 11
+        },
+        "clan_castle": {
+          "available": 3,
+          "spent": 3
+        }
+      },
+      "undeployed_owned_troop_housing": 0,
+      "abilities_used": [
+        "archer-queen",
+        "grand-warden",
+        "royal-champion"
+      ],
+      "result_sha256": "84a0aa1b02b2a2b5ac9b532961aa0078ecb66ea351e731372f9c4c136b6ea4c4",
+      "reason": null,
+      "worker_log_tail": null
+    },
+    {
+      "case_id": "ranked-defense-0-hot-candle-A-funnel-cleanup-west",
+      "family": "A-funnel-cleanup",
+      "defense": "defense-0-hot-candle",
+      "entry": "west",
+      "input_sha256": "af780093d71a8d9e505fe0e476173ac5e01990f30fbc049cac6d4dafd2fb7c43",
+      "status": "process_failure",
+      "completion_proven": false,
+      "outcome": null,
+      "wall_seconds": 56.84399999980815,
+      "hall_death_seconds": null,
+      "shoulders": null,
+      "shoulder_first_targets": null,
+      "spell_housing": null,
+      "undeployed_owned_troop_housing": null,
+      "abilities_used": null,
+      "result_sha256": null,
+      "reason": "No completed result accepted; see worker.log",
+      "worker_log_tail": [
+        "  File \"C:\\Users\\jarod\\Documents\\Codex\\2026-10-04\\task-23\\army-screen-work\\src\\clashlab\\hero_roster.py\", line 101, in first_crossing_delay",
+        "    crossing = runtime.first_crossing_delay(",
+        "               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+        "  File \"C:\\Users\\jarod\\Documents\\Codex\\2026-10-04\\task-23\\army-screen-work\\src\\clashlab\\dragon_duke.py\", line 627, in first_crossing_delay",
+        "    raise InputError(",
+        "clashlab.common.InputError: Unsupported Dragon Duke isolation boundary chatter: duke='dragon-duke', friendly_air='siege', time_seconds=25.839675625595948, radius_tiles=3, membership=center_distance_inside_after_motion_hypothesis; new motion immediately reverses a committed crossing. A declared contact dynamics policy is required."
+      ]
+    },
+    {
+      "case_id": "ranked-defense-0-hot-candle-B-funnel-balloon-west",
+      "family": "B-funnel-balloon",
+      "defense": "defense-0-hot-candle",
+      "entry": "west",
+      "input_sha256": "c077effb23dd5db0e99aec25ed56954174508a68e2fafc8b17cc38364f99b925",
+      "status": "completed",
+      "completion_proven": true,
+      "outcome": {
+        "stars": 2,
+        "destruction": 93.61702127659575,
+        "elapsed_seconds": 83.06029988173896,
+        "end_reason": "attack_force_exhausted"
+      },
+      "wall_seconds": 157.18799999984913,
+      "hall_death_seconds": 82.63991505914306,
+      "shoulders": {
+        "army-camp-0": {
+          "death_seconds": 1.75,
+          "dead_before_core20": true
+        },
+        "gold-storage-0": {
+          "death_seconds": 9.632200578285822,
+          "dead_before_core20": true
+        }
+      },
+      "shoulder_first_targets": {
+        "army-dragon-0": "army-camp-0",
+        "army-dragon-1": "gold-storage-0"
+      },
+      "spell_housing": {
+        "army": {
+          "available": 11,
+          "spent": 6
+        },
+        "clan_castle": {
+          "available": 3,
+          "spent": 1
+        }
+      },
+      "undeployed_owned_troop_housing": 0,
+      "abilities_used": [
+        "archer-queen",
+        "grand-warden",
+        "royal-champion"
+      ],
+      "result_sha256": "8e6e2180e1d67b7900352ec5370f4e3c5d318b9c75138d71b6dd549b8bb0bd65",
+      "reason": null,
+      "worker_log_tail": null
+    },
+    {
+      "case_id": "ranked-defense-0-hot-candle-B-funnel-balloon-west-v2",
+      "family": "B-funnel-balloon-v2",
+      "defense": "defense-0-hot-candle",
+      "entry": "west",
+      "input_sha256": "6465af880a2e0037d652cb671279ecbc46dcda99302f527765c71316ff05e9e0",
+      "status": "completed",
+      "completion_proven": true,
+      "outcome": {
+        "stars": 2,
+        "destruction": 98.93617021276596,
+        "elapsed_seconds": 180,
+        "end_reason": "declared_time_limit"
+      },
+      "wall_seconds": 173.125,
+      "hall_death_seconds": 61.436762474366574,
+      "shoulders": {
+        "army-camp-0": {
+          "death_seconds": 1.75,
+          "dead_before_core20": true
+        },
+        "gold-storage-0": {
+          "death_seconds": 9.632200578285822,
+          "dead_before_core20": true
+        }
+      },
+      "shoulder_first_targets": {
+        "army-dragon-0": "army-camp-0",
+        "army-dragon-1": "gold-storage-0"
+      },
+      "spell_housing": {
+        "army": {
+          "available": 11,
+          "spent": 10
+        },
+        "clan_castle": {
+          "available": 3,
+          "spent": 3
+        }
+      },
+      "undeployed_owned_troop_housing": 0,
+      "abilities_used": [
+        "archer-queen",
+        "grand-warden",
+        "royal-champion"
+      ],
+      "result_sha256": "28b7338c8514b20c93dd59d2cbaaee7a021727827d59faf87d4d4aabfff31e2d",
+      "reason": null,
+      "worker_log_tail": null
+    },
+    {
+      "case_id": "ranked-defense-1-hero-hunter-B-funnel-balloon-east-v2",
+      "family": "B-funnel-balloon-v2",
+      "defense": "defense-1-hero-hunter",
+      "entry": "east",
+      "input_sha256": "034150945328686362c94e430f3a4af3890d6913c0b3a79eab36248bb73b5be7",
+      "status": "completed",
+      "completion_proven": true,
+      "outcome": {
+        "stars": 0,
+        "destruction": 47.87234042553192,
+        "elapsed_seconds": 68.61679242847875,
+        "end_reason": "attack_force_exhausted"
+      },
+      "wall_seconds": 83.93700000015087,
+      "hall_death_seconds": null,
+      "shoulders": {
+        "air-defense-3": {
+          "death_seconds": 4.643095261909526,
+          "dead_before_core20": true
+        },
+        "super-wizard-tower-0": {
+          "death_seconds": 7.985478606699276,
+          "dead_before_core20": true
+        }
+      },
+      "shoulder_first_targets": {
+        "army-dragon-0": "air-defense-3",
+        "army-dragon-1": "super-wizard-tower-0"
+      },
+      "spell_housing": {
+        "army": {
+          "available": 11,
+          "spent": 7
+        },
+        "clan_castle": {
+          "available": 3,
+          "spent": 2
+        }
+      },
+      "undeployed_owned_troop_housing": 0,
+      "abilities_used": [
+        "archer-queen",
+        "grand-warden",
+        "royal-champion"
+      ],
+      "result_sha256": "45ce14e9ff56e452bf4f5ac98dcd26194b1e589ff43f72957c19ad7e58d27dd7",
+      "reason": null,
+      "worker_log_tail": null
+    }
+  ],
+  "attempts": 5,
+  "maximum_attempts": 5,
+  "reported_case_wall_seconds": 685.6569999998901,
+  "completed": 4,
+  "unscored": 1,
+  "conditional_west_order": [
+    "ranked-defense-0-hot-candle-B-funnel-balloon-west-v2",
+    "ranked-defense-0-hot-candle-B-funnel-balloon-west",
+    "ranked-defense-0-hot-candle-fourteen-dragons-twenty-minions"
+  ],
+  "order_scope": "Only terminal west HotCandle cases, identical engine/data/defender/account/mode; whole packages and revisions. No time utility, probabilities or cross-fixture ordering.",
+  "practical_disposition": {
+    "B_v2": "Strongest observed completed west package; east0star47.87% failure prevents general TH18 promotion; not player-ready",
+    "C0": "Retain as simpler reproducibility control; no funnel claim",
+    "A": "Unranked: existing Duke guard blocks v1; v2 input correction compiled only"
+  },
+  "repository_tests_added": 0,
+  "shared_combat_edits": 0,
+  "full_game_prediction": false,
+  "held_out_game_calibrations": 0,
+  "published": false
+}
