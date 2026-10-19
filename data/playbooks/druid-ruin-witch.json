@@ -269,6 +269,34 @@
    ]
   },
   {
+   "id": "balloons_warden_screen",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 2,
+   "at": "unit:Grand Warden",
+   "group": "charge",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 41.6,
+     "quote": "going to drop the two Test Balloons,",
+     "verified_t": 41.6
+    },
+    {
+     "video": "mTgmnznwvww",
+     "t": 62.6,
+     "quote": "healers and a coco loon.",
+     "verified_t": 62.6
+    }
+   ],
+   "completion": true
+  },
+  {
    "id": "invis_1",
    "action": "spell",
    "what": "Invisibility Spell",
@@ -493,6 +521,41 @@
    ]
   },
   {
+   "id": "poison_duke_defenders",
+   "action": "spell",
+   "what": "Poison Spell",
+   "count": 1,
+   "at": "defenders:duke",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "after": "duke",
+      "delay": 0
+     },
+     {
+      "defenders_near": "duke"
+     }
+    ]
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 60.6,
+     "quote": "ahead and drop our Poison right there.",
+     "verified_t": 60.6
+    },
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 211.8,
+     "quote": "We poison up the clan",
+     "verified_t": 211.8
+    }
+   ],
+   "completion": true
+  },
+  {
    "id": "furnace",
    "action": "deploy",
    "what": "Furnace",
@@ -638,6 +701,34 @@
    ]
   },
   {
+   "id": "headhunter_main_support",
+   "action": "deploy",
+   "what": "Headhunter",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "launcher",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 369,
+     "quote": "sprinkle in our head hunters.",
+     "verified_t": 369.0
+    },
+    {
+     "video": "M4KZ_Gmmhig",
+     "t": 141.3,
+     "quote": "Let's send in a couple of head hunters.",
+     "verified_t": 141.3
+    }
+   ],
+   "completion": true
+  },
+  {
    "id": "overgrowth",
    "action": "spell",
    "what": "Overgrowth Spell",
@@ -672,6 +763,34 @@
      "quote": "overgrowth to cut down an area of the base until later"
     }
    ]
+  },
+  {
+   "id": "rocket_balloons_mortar",
+   "action": "deploy",
+   "what": "Rocket Balloon",
+   "count": "all",
+   "at": "building:mortar",
+   "group": "funnel",
+   "when": {
+    "after": "overgrowth",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "M4KZ_Gmmhig",
+     "t": 160.4,
+     "quote": "Suppose I'll send in my rocket balloons",
+     "verified_t": 160.4
+    },
+    {
+     "video": "M4KZ_Gmmhig",
+     "t": 161.5,
+     "quote": "and we try and get down the mortar,",
+     "verified_t": 161.5
+    }
+   ],
+   "completion": true
   },
   {
    "id": "freeze_main",
@@ -1457,7 +1576,8 @@
   "Alternative army M4KZ_Gmmhig: troops Archer x3, Super Wall Breaker x2, Balloon x2, Healer x5, Ice Golem x1, Headhunter x2, Ruin Witch x6, Rocket Balloon x4, Apprentice Warden x1, Furnace x1, Sky Wagon x1, Log Launcher x2; spells Invisibility Spell x3, Freeze Spell x1, Earthquake Spell x3, Totem Spell x2, Ice Block Spell x1, Poison Spell x1; CC Barbarian x1, Super Wall Breaker x1, Rocket Balloon x2, Ice Golem x2, Troop Launcher x2, Overgrowth Spell x1, Revive Spell x1; heroes Barbarian King [Earthquake Boots, Spiky Ball, Phoenix], Archer Queen [Action Figure, Magic Mirror, Frosty], Grand Warden [Rage Gem, Fireball, Sneezy], Dragon Duke [Revenge Deck, Fire Heart, Greedy Raven].",
   "Alternative army NEvdsy6wmH4: troops Healer x5, Balloon x2, Furnace x1, Ruin Witch x4, Ice Golem x1, Super Wall Breaker x2, Druid x2, Apprentice Warden x1, Rocket Balloon x3, Wizard x1, Headhunter x1, Archer x1; spells Invisibility Spell x3, Totem Spell x2, Freeze Spell x1, Earthquake Spell x2, Ice Block Spell x1, Overgrowth Spell x1; CC Log Launcher x1, Troop Launcher x1, Rocket Balloon x4, Balloon x1, Baby Dragon x1, Archer x1, Minion x1, Revive Spell x1, Poison Spell x1; heroes Grand Warden [Fireball, Rage Gem, Unicorn], Archer Queen [Action Figure, Magic Mirror, Frosty], Barbarian King [Stick Horse, Giant Gauntlet, Angry Jelly], Dragon Duke [Fire Heart, Revenge Deck, Phoenix].",
   "Alternative army VrdRZZ4I2K4: troops Healer x5, Balloon x2, Furnace x2, Ruin Witch x6, Ice Golem x1, Super Wall Breaker x2, Headhunter x1, Wizard x1, Minion x1, Archer x5, Rocket Balloon x4, Troop Launcher x1, Log Launcher x1, Siege Barracks x1; spells Ice Block Spell x4, Invisibility Spell x1, Totem Spell x2, Freeze Spell x1, Overgrowth Spell x1, Poison Spell x1; CC troops Super Valkyrie x1, Super Yeti x1, CC spells Rage Spell x1, Revive Spell x1, CC siege inventory Log Launcher x1, Flame Flinger x1; heroes Barbarian King [Giant Gauntlet, Stick Horse, Angry Jelly], Archer Queen [Magic Mirror, Action Figure, Frosty], Grand Warden [Rage Gem, Life Gem, Greedy Raven], Dragon Duke [Fire Heart, Revenge Deck, Phoenix].",
-  "Alternative army mTgmnznwvww: troops Balloon x2, Healer x5, Super Witch x3, Ruin Witch x3, Apprentice Warden x1, Super Wall Breaker x2, Headhunter x1, Siege Barracks x1, Log Launcher x1; spells Invisibility Spell x3, Earthquake Spell x2, Freeze Spell x1, Rage Spell x1, Revive Spell x1, Skeleton Spell x1; CC Balloon x3, Root Rider x1, Ice Golem x1, Troop Launcher x2, Totem Spell x2, Poison Spell x1; heroes Royal Champion [Rocket Spear, Electro Boots, Phoenix], Archer Queen [Magic Mirror, Action Figure, Frosty], Grand Warden [Fireball, Rage Gem, Unicorn], Dragon Duke [Stun Blaster, Fire Heart, Spirit Fox]."
+  "Alternative army mTgmnznwvww: troops Balloon x2, Healer x5, Super Witch x3, Ruin Witch x3, Apprentice Warden x1, Super Wall Breaker x2, Headhunter x1, Siege Barracks x1, Log Launcher x1; spells Invisibility Spell x3, Earthquake Spell x2, Freeze Spell x1, Rage Spell x1, Revive Spell x1, Skeleton Spell x1; CC Balloon x3, Root Rider x1, Ice Golem x1, Troop Launcher x2, Totem Spell x2, Poison Spell x1; heroes Royal Champion [Rocket Spear, Electro Boots, Phoenix], Archer Queen [Magic Mirror, Action Figure, Frosty], Grand Warden [Fireball, Rage Gem, Unicorn], Dragon Duke [Stun Blaster, Fire Heart, Spirit Fox].",
+  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py)."
  ],
  "check": {
   "steps_kept": 26,

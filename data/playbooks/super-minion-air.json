@@ -506,6 +506,141 @@
    ]
   },
   {
+   "id": "rocket_balloons_flinger_xbow",
+   "action": "deploy",
+   "what": "Rocket Balloon",
+   "count": "all",
+   "at": "building:xbow",
+   "group": "funnel",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 641.8,
+     "quote": "all rocket loons for this expo.",
+     "verified_t": 641.8
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 1122.6,
+     "quote": "Rest of these loons are going for that",
+     "verified_t": 1122.6
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "balloon_healer_screen",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 1,
+   "at": "unit_ahead:Grand Warden",
+   "group": "charge",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 967.2,
+     "quote": "one coco loon ahead of the healers.",
+     "verified_t": 967.2
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "furnaces_opening_walk",
+   "action": "deploy",
+   "what": "Furnace",
+   "count": 2,
+   "at": "unit:Grand Warden",
+   "group": "charge",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 225.8,
+     "quote": "walk here. We have two furnaces with it.",
+     "verified_t": 225.8
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "super_minion_walk_support",
+   "action": "deploy",
+   "what": "Super Minion",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1510.6,
+     "quote": "I will just use a super minion here to",
+     "verified_t": 1510.6
+    },
+    {
+     "video": "yiUwu_vHfng",
+     "t": 778.6,
+     "quote": "So, we're going to add a super menu to",
+     "verified_t": 778.6
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "healers_warden",
+   "action": "deploy",
+   "what": "Healer",
+   "count": "all",
+   "at": "unit:Grand Warden",
+   "group": "charge",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "tFITZCY8XhU",
+     "t": 650,
+     "quote": "The healers don't always heal him very cleanly",
+     "verified_t": 650.3
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 852,
+     "quote": "his healers do die",
+     "verified_t": 851.7
+    },
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 799,
+     "quote": "One of the healers doesn't get recalled",
+     "verified_t": 799.0
+    }
+   ],
+   "completion": true,
+   "note": "Added by Claude, not Codex: the sources narrate the Healers walking and being recalled with the Warden, not the drop itself."
+  },
+  {
    "id": "warden_invisibility",
    "action": "spell",
    "what": "Invisibility Spell",
@@ -622,6 +757,50 @@
      "quote": "Recall my warden"
     }
    ]
+  },
+  {
+   "id": "minion_warden_funnel",
+   "action": "deploy",
+   "what": "Minion",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "after": "fireball",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "dn6J46bW0ts",
+     "t": 1259.6,
+     "quote": "I'm sending in a minion to just try to",
+     "verified_t": 1259.6
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "wizard_entry_setup",
+   "action": "deploy",
+   "what": "Wizard",
+   "count": 1,
+   "at": "edge:main",
+   "group": "funnel",
+   "when": {
+    "after": "fireball",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1039.3,
+     "quote": "a bit better. Let's use the wizard",
+     "verified_t": 1039.3
+    }
+   ],
+   "completion": true
   },
   {
    "id": "redeploy_warden",
@@ -787,6 +966,96 @@
      "quote": "course the giant arrow with the dragon"
     }
    ]
+  },
+  {
+   "id": "log_launcher_hero_entry",
+   "action": "deploy",
+   "what": "Log Launcher",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "queen_arrow",
+    "delay": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "dn6J46bW0ts",
+     "t": 423.8,
+     "quote": "point, I'm using a log launcher from a",
+     "verified_t": 423.8
+    },
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 986.4,
+     "quote": "that guy, log launcher, skelly spell.",
+     "verified_t": 986.4
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 883,
+     "quote": "Now, here I'm going to use the log",
+     "verified_t": 883.0
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 955.2,
+     "quote": "log launcher on this style of base.",
+     "verified_t": 955.2
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 846.2,
+     "quote": "log launcher with the hero dive on the",
+     "verified_t": 846.2
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "rage_tower_finish_quake_1",
+   "action": "spell",
+   "what": "Earthquake Spell",
+   "count": 1,
+   "at": "building:st",
+   "group": "main",
+   "when": {
+    "after": "queen_arrow",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 1067.4,
+     "quote": "takes two quakes for a rage tower to go",
+     "verified_t": 1067.4
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "rage_tower_finish_quake_2",
+   "action": "spell",
+   "what": "Earthquake Spell",
+   "count": 1,
+   "at": "building:st",
+   "group": "main",
+   "when": {
+    "after": "rage_tower_finish_quake_1",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 1067.4,
+     "quote": "takes two quakes for a rage tower to go",
+     "verified_t": 1067.4
+    }
+   ],
+   "completion": true
   },
   {
    "id": "duke",
@@ -955,6 +1224,28 @@
    ]
   },
   {
+   "id": "archers_late_cleanup",
+   "action": "deploy",
+   "what": "Archer",
+   "count": "all",
+   "at": "edge:main",
+   "group": "cleanup",
+   "when": {
+    "after": "king_spiky_ball",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 193.1,
+     "quote": "archers and stuff down. Yeah, okay.",
+     "verified_t": 193.1
+    }
+   ],
+   "completion": true
+  },
+  {
    "id": "druid",
    "action": "deploy",
    "what": "Druid",
@@ -982,6 +1273,78 @@
      "quote": "sure I send that druid in on my queen,"
     }
    ]
+  },
+  {
+   "id": "headhunter_hero_defense",
+   "action": "deploy",
+   "what": "Headhunter",
+   "count": 1,
+   "at": "defenders:main",
+   "group": "main",
+   "when": {
+    "defenders_near": "main"
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 631.8,
+     "quote": "head hunter. Make sure I get that enemy",
+     "verified_t": 631.8
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 678.2,
+     "quote": "head hunter in.",
+     "verified_t": 678.2
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 745.7,
+     "quote": "The head hunters because there is",
+     "verified_t": 745.7
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 944.6,
+     "quote": "So, let's put down the head hunters to",
+     "verified_t": 944.6
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "totem_warden_pressure",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "threat:charge",
+   "group": "charge",
+   "when": {
+    "heavy_fire": "Grand Warden"
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "dn6J46bW0ts",
+     "t": 663.1,
+     "quote": "toteming the logger just to make sure",
+     "verified_t": 663.1
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 828.2,
+     "quote": "wasting a totem spell just to ensure",
+     "verified_t": 828.2
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 1186.2,
+     "quote": "Well, I I ended up using a totem anyway,",
+     "verified_t": 1186.2
+    }
+   ],
+   "completion": true
   }
  ],
  "variants": [
@@ -1764,7 +2127,8 @@
   "yiUwu_vHfng's Town Hall 13 alternative has 6 Super Minions, 11 Rocket Balloons, 5 Healers and 2 Ice Golems; spells are Earthquake 2, Invisibility 3, Poison 1, Rage 1, Skeleton 1 and Freeze 2. Its Clan Castle contains Flame Flinger 1, Super Minion 3, Rocket Balloon 1, Barbarian 1 and Recall 1. Heroes are King with Spiky Ball/Stick Horse, Queen with Action Figure/Magic Mirror, Warden with Rage Gem/Fireball, and Royal Champion with Rocket Spear/Electro Boots. Recall is discussed but no cast is established in that extraction.",
   "O8of3SqwmUo, b_kCBBnsuvo and x5AiCcU008Y provide partial inventories with unknown totals, so they do not supply another complete composition. x5AiCcU008Y explicitly has three Headhunters and three Invisibility Spells. O8of3SqwmUo favors Troop Launcher in several examples, while other sources also discuss Log Launcher or omitting Flame Flinger when X-Bows or defending heroes restrict it.",
   "Revive is contested and absent from the selected army. qlLv2Bvu4ig, b_kCBBnsuvo and x5AiCcU008Y describe reviving Dragon Duke; O8of3SqwmUo discusses reserving it. pTmX2vmv4sc argues against it without follow-up spells, and tFITZCY8XhU revives Warden instead. No revival target or corpse-position anchor has been invented.",
-  "The '1 minute 30-ish' hero timing in dn6J46bW0ts does not identify elapsed versus remaining time and is not converted into a numeric trigger. Unresolved names such as cake, candle, logger and long shot remain unresolved. Failed or criticized placements, including unsuccessful Warden pulls, are not promoted to default rules."
+  "The '1 minute 30-ish' hero timing in dn6J46bW0ts does not identify elapsed versus remaining time and is not converted into a numeric trigger. Unresolved names such as cake, candle, logger and long shot remain unresolved. Failed or criticized placements, including unsuccessful Warden pulls, are not promoted to default rules.",
+  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py)."
  ],
  "check": {
   "steps_kept": 16,

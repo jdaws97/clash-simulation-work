@@ -449,6 +449,33 @@
      "quote": "totem spells in front of the main army"
     }
    ]
+  },
+  {
+   "id": "poison_cc_main",
+   "action": "spell",
+   "what": "Poison Spell",
+   "count": 1,
+   "at": "defenders:main",
+   "group": "main",
+   "when": {
+    "defenders_near": "main"
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "L8NYban_eLc",
+     "t": 508.3,
+     "quote": "pull the CC. We're going to go ahead and",
+     "verified_t": 508.3
+    },
+    {
+     "video": "L8NYban_eLc",
+     "t": 509.5,
+     "quote": "poison that up.",
+     "verified_t": 509.5
+    }
+   ],
+   "completion": true
   }
  ],
  "variants": [
@@ -1424,7 +1451,8 @@
   "The Rage-assisted variant applies when the flank needs help. edge:funnel approximates that flank. The Skeleton target is captioned only as bomb pipe; threat:main is a coarse proxy, and no defense identity is asserted. Exact Electro Dragon spacing is unspecified.",
   "In the ground variant, individual hero order is unspecified; the listed order serializes their deployment. Queen ability is immediate as stated. Super Wall Breaker count all commits the two listed breakers together, although the count per narrated placement is unknown. Wall-break and Totem ordering varies; the encoded order follows the protected-entry narration. heavy_fire approximates the Warden or Champion needing early protection without inventing an HP threshold.",
   "XtLqXV-ab6U also describes a Battle Blimp Town Hall snipe before the main deployment, with Super Yeti and Super Valkyrie, then Minion Prince on the left and Electro Dragons on the right. The vocabulary has no Town Hall-destroyed trigger, so this sequence is retained here without inventing a wait. Its suggested inventory adjustment is one fewer Revive and two Totems.",
-  "Hero substitutions are source-specific: XtLqXV-ab6U suggests Royal Champion for an underleveled Duke; vbPEc45cUK4 suggests Barbarian King with Angry Jelly and Stick Horse, or Royal Champion with Rocket Spear and Seeking Shield. Complete substitute loadouts are unspecified."
+  "Hero substitutions are source-specific: XtLqXV-ab6U suggests Royal Champion for an underleveled Duke; vbPEc45cUK4 suggests Barbarian King with Angry Jelly and Stick Horse, or Royal Champion with Rocket Spear and Seeking Shield. Complete substitute loadouts are unspecified.",
+  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py)."
  ],
  "check": {
   "steps_kept": 9,

@@ -231,6 +231,56 @@
    ]
   },
   {
+   "id": "completion_rocket_charge",
+   "action": "deploy",
+   "what": "Rocket Balloon",
+   "count": 2,
+   "at": "building:at",
+   "group": "charge",
+   "when": {
+    "after": "rc",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "WlWHcFAz7ys",
+     "t": 207.8,
+     "quote": "These two rocket balloons take",
+     "verified_t": 207.8
+    },
+    {
+     "video": "WlWHcFAz7ys",
+     "t": 210.2,
+     "quote": "down the arch tower just in time.",
+     "verified_t": 210.2
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "completion_archer_charge",
+   "action": "deploy",
+   "what": "Archer",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "funnel",
+   "when": {
+    "after": "rc",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "a6fRLOU-bLc",
+     "t": 599.1,
+     "quote": "Let's use like an archer on the outside.",
+     "verified_t": 599.1
+    }
+   ],
+   "completion": true
+  },
+  {
    "id": "recall",
    "action": "recall",
    "what": "Recall Spell",
@@ -279,6 +329,28 @@
      "quote": "Deploy one ice golem first, followed by the"
     }
    ]
+  },
+  {
+   "id": "completion_minion_corner",
+   "action": "deploy",
+   "what": "Minion",
+   "count": "all",
+   "at": "edge:charge",
+   "group": "funnel",
+   "when": {
+    "after": "recall",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "b46w2PUASJI",
+     "t": 286.9,
+     "quote": "used minions on the corner to clear",
+     "verified_t": 286.9
+    }
+   ],
+   "completion": true
   },
   {
    "id": "roots",
@@ -471,6 +543,34 @@
    ]
   },
   {
+   "id": "completion_apprentice_main",
+   "action": "deploy",
+   "what": "Apprentice Warden",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "roots",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "u9owFe-ervU",
+     "t": 518.7,
+     "quote": "We get our army going, get the",
+     "verified_t": 518.7
+    },
+    {
+     "video": "u9owFe-ervU",
+     "t": 519.6,
+     "quote": "apprentice warden in, get our sky wagon,",
+     "verified_t": 519.6
+    }
+   ],
+   "completion": true
+  },
+  {
    "id": "queen",
    "action": "deploy",
    "what": "Archer Queen",
@@ -548,6 +648,46 @@
      "quote": "prince. Here, we use our dragon duke."
     }
    ]
+  },
+  {
+   "id": "completion_quake_duke_cc",
+   "action": "spell",
+   "what": "Earthquake Spell",
+   "count": 1,
+   "at": "building:cc",
+   "group": "duke",
+   "when": {
+    "after": "duke",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "C0lnvxJraoM",
+     "t": 195.6,
+     "quote": "most buildings with just one Earthquake",
+     "verified_t": 195.6
+    },
+    {
+     "video": "C0lnvxJraoM",
+     "t": 197.8,
+     "quote": "spell. So, lining up value like the CC",
+     "verified_t": 197.8
+    },
+    {
+     "video": "QCrKyyMDYr4",
+     "t": 705,
+     "quote": "Notice how my earthquake spell allows me",
+     "verified_t": 705.0
+    },
+    {
+     "video": "QCrKyyMDYr4",
+     "t": 706.9,
+     "quote": "to damage the clan castle here.",
+     "verified_t": 706.9
+    }
+   ],
+   "completion": true
   },
   {
    "id": "poison",
@@ -696,6 +836,108 @@
      "quote": "Then I use an overgrowth spell to neutralize the cake and the monolith."
     }
    ]
+  },
+  {
+   "id": "completion_rocket_outskirts",
+   "action": "deploy",
+   "what": "Rocket Balloon",
+   "count": "all",
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "overgrowth",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "g9UjZ9xFQOU",
+     "t": 216.1,
+     "quote": "Now we use the remaining rocket loons and",
+     "verified_t": 216.1
+    },
+    {
+     "video": "g9UjZ9xFQOU",
+     "t": 218.5,
+     "quote": "a few super barbs to clear the outskirts.",
+     "verified_t": 218.5
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "completion_super_barb_outskirts",
+   "action": "deploy",
+   "what": "Super Barbarian",
+   "count": "all",
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "overgrowth",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "C0lnvxJraoM",
+     "t": 431.3,
+     "quote": "Super Barbarians on the outside to clear",
+     "verified_t": 431.3
+    },
+    {
+     "video": "C0lnvxJraoM",
+     "t": 433.4,
+     "quote": "out trash buildings and control the",
+     "verified_t": 433.4
+    },
+    {
+     "video": "g9UjZ9xFQOU",
+     "t": 218.5,
+     "quote": "a few super barbs to clear the outskirts.",
+     "verified_t": 218.5
+    },
+    {
+     "video": "eQAelt6VLeE",
+     "t": 263.4,
+     "quote": "Then just use the super",
+     "verified_t": 263.4
+    },
+    {
+     "video": "eQAelt6VLeE",
+     "t": 265.5,
+     "quote": "barbarians and archers to clear the",
+     "verified_t": 265.5
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "completion_archers_cleanup",
+   "action": "deploy",
+   "what": "Archer",
+   "count": "all",
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "overgrowth",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "eQAelt6VLeE",
+     "t": 265.5,
+     "quote": "barbarians and archers to clear the",
+     "verified_t": 265.5
+    },
+    {
+     "video": "eQAelt6VLeE",
+     "t": 267.7,
+     "quote": "ungarded defenses so you don't [music]",
+     "verified_t": 267.7
+    }
+   ],
+   "completion": true
   }
  ],
  "variants": [
@@ -1770,7 +2012,8 @@
   "Other substantial compositions include eQAelt6VLeE's four Root Riders, three Valkyries, five Healers, two Ice Golems and one Druid, and WlWHcFAz7ys's similar four-Root-Rider, three-Valkyrie army. Both carry five Invisibility Spells, Recall and two Overgrowth Spells. Their two-Overgrowth sequencing differs from the default, and no expiration duration is invented.",
   "QBJSv33_sIc describes a continuous Royal Champion and Grand Warden walk without a narrated Recall. Its Town Hall variant above extracts the Overgrowth and saved-Spear policy. Overgrowth expiration and exact Town Hall arrival are not available triggers, and the source states no numeric wait. The required zero-delay fallback cannot enforce the narrated expiration timing or guarantee Rocket Spear targets the Town Hall.",
   "The narration does not supply a complete executable deployment schedule for every carried utility troop or every spell. Unspecified default uses of Earthquakes, the remaining Totem, Rocket Balloons, Apprentice Warden, cleanup troops and the remaining Balloon are intentionally unscheduled. No repeat interval, cleanup percentage, automatic siege release or troop batch is invented.",
-  "Variants are alternative substitutions and are not automatically cumulative. Variants introducing different troops, heroes, equipment, spells or siege machines require their stated source composition; the default army does not supply those additional inventories. Reused step ids preserve dependency references and do not necessarily retain their original action meaning."
+  "Variants are alternative substitutions and are not automatically cumulative. Variants introducing different troops, heroes, equipment, spells or siege machines require their stated source composition; the default army does not supply those additional inventories. Reused step ids preserve dependency references and do not necessarily retain their original action meaning.",
+  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py)."
  ],
  "check": {
   "steps_kept": 21,

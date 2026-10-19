@@ -36,12 +36,37 @@ Anchors:
 from __future__ import annotations
 
 import math
+import os
 from dataclasses import dataclass, field
 
 from . import heroes
 from .plans import SPELL_NAMES, THREAT, AttackPlan, edge_point
 
 SPELL_KEYS = {v: k for k, v in SPELL_NAMES.items()}
+
+
+# How fast a player can act. One action at a time: dragging n troops out of a
+# slot costs PACE_TAP each plus PACE_SWITCH to pick the slot and the spot; a
+# spell, recall or redeploy costs PACE_SWITCH; a hero ability PACE_ABILITY.
+# These are assumptions (no source gives human input rates), and the overall
+# scale BASELAB_PACE is fitted to the real battle times of the defense log
+# (docs/SIM_ACCURACY.md check 6), which makes check 6 a fitted, not an
+# independent, check.
+PACE_TAP, PACE_SWITCH, PACE_ABILITY = 0.15, 0.6, 0.3
+
+
+def action_time(act: str, n: int = 1) -> float:
+    scale = float(os.environ.get("BASELAB_PACE", "1.0"))
+    if act == "deploy":
+        return scale * (PACE_SWITCH + PACE_TAP * n)
+    if act == "ability":
+        return scale * PACE_ABILITY
+    return scale * PACE_SWITCH
+
+
+# troops that go in as one stack even when several are dropped: Healers
+# follow whoever they are healing, Wall Breakers open one wall section
+LINE_EXEMPT = {"Healer", "Wall Breaker"}
 
 
 @dataclass
@@ -95,13 +120,16 @@ class PlaybookPlan(AttackPlan):
         )
 
     # ------------------------------------------------------------ anchors
-    def _edge(self, battle, which):
+    def _edge_angle(self, which):
         off = {"main": 0.0, "left": -self.flank_offset, "right": self.flank_offset}
         if which == "charge":
             which = self.charge_side
         elif which == "funnel":
             which = "right" if self.charge_side == "left" else "left"
-        return edge_point(battle, self.angle + off.get(which, 0.0), 0.0)
+        return self.angle + off.get(which, 0.0)
+
+    def _edge(self, battle, which):
+        return edge_point(battle, self._edge_angle(which), 0.0)
 
     def _unit(self, battle, name):
         for u in battle.attackers:
@@ -254,8 +282,19 @@ class PlaybookPlan(AttackPlan):
         n = left if s.get("count") in (None, "all") else min(left, int(s["count"]))
         if n <= 0:
             return False
-        for _ in range(n):
-            self._drop(battle, what, pos[0], pos[1], s.get("group", "main"), jitter=s.get("spread", 1.0))
+        at = str(s.get("at", ""))
+        if at.startswith("edge:") and n >= 3 and "spread" not in s and what not in LINE_EXEMPT:
+            # several troops at an edge are dragged in a line along the
+            # deploy border (about a tile apart, at most 8 tiles wide), not
+            # stacked on one tile
+            ang = self._edge_angle(at.split(":", 1)[1])
+            w = min(float(n - 1), 8.0)
+            for i in range(n):
+                x, y = edge_point(battle, ang, -w / 2 + w * i / (n - 1))
+                self._drop(battle, what, x, y, s.get("group", "main"), jitter=0.3)
+        else:
+            for _ in range(n):
+                self._drop(battle, what, pos[0], pos[1], s.get("group", "main"), jitter=s.get("spread", 1.0))
         self.inventory[what] = left - n
         self._deployed.add(what)
         return True
@@ -316,7 +355,14 @@ class PlaybookPlan(AttackPlan):
             if target and target in self._deployed and self._unit(battle, target) is None                     and not any(u.name == target for u in battle.portal_stash):
                 self._done[st["id"]] = t
                 self.log_steps.append((round(t, 1), st["id"] + " (skipped: " + target + " down)"))
-        for s in self.steps:
+        # the consolidated playbook's own steps first; steps added later for
+        # units it never deployed (completion) and uncited fallbacks fill in
+        # when none of those is ready
+        order = [x for x in self.steps if not (x.get("completion") or x.get("uncited"))]
+        order += [x for x in self.steps if x.get("completion") or x.get("uncited")]
+        for s in order:
+            if t < getattr(self, "_busy_until", 0.0):
+                break  # the player's hands are still on the last action
             sid = s["id"]
             rep = s.get("every")
             if sid in self._done and not rep:
@@ -328,6 +374,7 @@ class PlaybookPlan(AttackPlan):
                 continue
             ok = False
             act = s["action"]
+            before = self.inventory.get(s.get("what"), 0)
             if act == "release_siege":
                 ok = battle.release_siege(s.get("what"))
             elif act == "ability":
@@ -339,11 +386,16 @@ class PlaybookPlan(AttackPlan):
                 if act == "deploy":
                     ok = self._deploy(battle, s, pos)
                 elif act in ("spell", "recall"):
-                    ok = self._spell(battle, {**s, "what": s.get("what") or "Recall Spell"}, pos)
+                    # a recall step's "what" may name the unit recalled; the
+                    # spell is always Recall
+                    ok = self._spell(battle, {**s, "what": "Recall Spell" if act == "recall" else s.get("what")}, pos)
                 elif act == "redeploy":
                     if battle.portal_stash and t >= battle.portal_ready_at:
                         heroes.portal_redeploy(battle, pos[0], pos[1])
                         ok = True
+            if ok:
+                n = max(1, before - self.inventory.get(s.get("what"), 0)) if act == "deploy" else 1
+                self._busy_until = t + action_time(act, n)
             if ok or s.get("skip_if_impossible"):
                 if sid not in self._done:
                     self._done[sid] = t
@@ -385,19 +437,35 @@ class PlaybookPlan(AttackPlan):
         a real player does not finish an attack with half of them unused."""
         self._step_kinds()
         t = battle.t
-        if t < getattr(self, "_next_fallback", 0.0):
+        if t < getattr(self, "_next_fallback", 0.0) or t < getattr(self, "_busy_until", 0.0):
             return
         self._next_fallback = t + 0.5
         main = self.main_units(battle)
         if not main:
             return
         self._fallback = True
+        left = sum(self.spells.values()) + sum(self.cc_spells.values())
         try:
             if not self._zap_done and self.zap_ad != (0, 0):
                 self._zap(battle)
             self.generic_spells(battle, main)
         finally:
             self._fallback = False
+        cast = left - sum(self.spells.values()) - sum(self.cc_spells.values())
+        if cast > 0:
+            self._busy_until = t + cast * action_time("spell", 1)
+        # heroes whose ability the playbook never names use the scripted
+        # plans' ability timing (uncited, like the spells above); the
+        # playbook's own ability steps keep control of theirs
+        mine = {st.get("what") for st in self.steps if st["action"] == "ability"}
+        held = [u for u in battle.attackers if u.alive and u.is_hero and u.name in mine and not u.ability_used]
+        for u in held:
+            u.ability_used = True
+        try:
+            self.hero_abilities(battle)
+        finally:
+            for u in held:
+                u.ability_used = False
         self.revive_knocked_out(battle)
 
 
@@ -416,8 +484,10 @@ def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict) -> li
         w = st.get("what")
         if st["action"] in ("deploy",):
             return w in have
-        if st["action"] in ("spell", "recall"):
-            return (w or "Recall Spell") in have
+        if st["action"] == "recall":
+            return "Recall Spell" in have
+        if st["action"] == "spell":
+            return w in have
         if st["action"] == "ability":
             return w in heroes_in
         if st["action"] == "redeploy":
@@ -460,6 +530,12 @@ def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict) -> li
     for n in rest:
         kept.append({"id": f"rest-{n}", "action": "deploy", "what": n, "count": "all", "at": "edge:main",
                      "when": anchor, "uncited": True, "cite": []})
+    # a hero the playbook never deploys (the army brings a different hero
+    # than the playbook's example) goes in with the main push too
+    for h in heroes_in:
+        if h not in mentioned:
+            kept.append({"id": f"rest-{h}", "action": "deploy", "what": h, "count": 1, "at": "edge:main",
+                         "group": "main", "when": anchor, "uncited": True, "cite": []})
     return kept
 
 

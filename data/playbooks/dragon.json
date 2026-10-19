@@ -182,6 +182,116 @@
  ],
  "steps": [
   {
+   "id": "rocket_balloons_bomb_tower",
+   "action": "deploy",
+   "what": "Rocket Balloon",
+   "count": 2,
+   "at": "building:bt",
+   "group": "charge",
+   "when": {
+    "t": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "47wtlBeNIPw",
+     "t": 90.3,
+     "quote": "like to snipe out these bomb towers with",
+     "verified_t": 90.3
+    },
+    {
+     "video": "47wtlBeNIPw",
+     "t": 91.9,
+     "quote": "some rocket loons.",
+     "verified_t": 91.9
+    },
+    {
+     "video": "47wtlBeNIPw",
+     "t": 93.2,
+     "quote": "You don't have to. I do two each just",
+     "verified_t": 93.2
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "earthquake_opening_first",
+   "action": "spell",
+   "what": "Earthquake Spell",
+   "count": 1,
+   "at": "building:st",
+   "group": "charge",
+   "when": {
+    "t": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "KYxypCKWh-E",
+     "t": 4.1,
+     "quote": "I know you see the three earthquakes. We",
+     "verified_t": 4.1
+    },
+    {
+     "video": "KYxypCKWh-E",
+     "t": 122.4,
+     "quote": "earthquakes on this rage tower so I can",
+     "verified_t": 122.4
+    },
+    {
+     "video": "KYxypCKWh-E",
+     "t": 339.6,
+     "quote": "first thing always is the earthquakes.",
+     "verified_t": 339.6
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "earthquake_opening_second",
+   "action": "spell",
+   "what": "Earthquake Spell",
+   "count": 1,
+   "at": "building:st",
+   "group": "charge",
+   "when": {
+    "after": "earthquake_opening_first",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "KYxypCKWh-E",
+     "t": 122.4,
+     "quote": "earthquakes on this rage tower so I can",
+     "verified_t": 122.4
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "earthquake_opening_third",
+   "action": "spell",
+   "what": "Earthquake Spell",
+   "count": 1,
+   "at": "building:st",
+   "group": "charge",
+   "when": {
+    "after": "earthquake_opening_second",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "KYxypCKWh-E",
+     "t": 122.4,
+     "quote": "earthquakes on this rage tower so I can",
+     "verified_t": 122.4
+    }
+   ],
+   "completion": true
+  },
+  {
    "id": "duke",
    "action": "deploy",
    "what": "Dragon Duke",
@@ -321,6 +431,40 @@
      "quote": "I'm going to go lava hound to lead."
     }
    ]
+  },
+  {
+   "id": "rocket_balloons_air_defense",
+   "action": "deploy",
+   "what": "Rocket Balloon",
+   "count": 3,
+   "at": "building:ad",
+   "group": "main",
+   "when": {
+    "after": "sky",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "KYxypCKWh-E",
+     "t": 1013.0,
+     "quote": "much damage and not get the air defense",
+     "verified_t": 1013.0
+    },
+    {
+     "video": "KYxypCKWh-E",
+     "t": 1014.6,
+     "quote": "to lock on. Three rocket loons will take",
+     "verified_t": 1014.6
+    },
+    {
+     "video": "KYxypCKWh-E",
+     "t": 1016.1,
+     "quote": "that down. I think you could have gone",
+     "verified_t": 1016.1
+    }
+   ],
+   "completion": true
   },
   {
    "id": "dragons",
@@ -605,6 +749,62 @@
      "quote": "Free spells, on the other hand, are perfect for multi-target infernos"
     }
    ]
+  },
+  {
+   "id": "archer_cleanup",
+   "action": "deploy",
+   "what": "Archer",
+   "count": "all",
+   "at": "edge:charge",
+   "group": "cleanup",
+   "when": {
+    "after": "freeze",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "KYxypCKWh-E",
+     "t": 879.8,
+     "quote": "Get some archers in for cleanup because",
+     "verified_t": 879.8
+    },
+    {
+     "video": "t5yxQTXbY6w",
+     "t": 859.7,
+     "quote": "Get some archers in here for clean up.",
+     "verified_t": 859.7
+    }
+   ],
+   "completion": true
+  },
+  {
+   "id": "minion_cleanup",
+   "action": "deploy",
+   "what": "Minion",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "cleanup",
+   "when": {
+    "after": "freeze",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "t5yxQTXbY6w",
+     "t": 862.0,
+     "quote": "Look at this bottom side.",
+     "verified_t": 862.0
+    },
+    {
+     "video": "t5yxQTXbY6w",
+     "t": 864.0,
+     "quote": "Maybe get a minion down.",
+     "verified_t": 864.0
+    }
+   ],
+   "completion": true
   },
   {
    "id": "poison",
@@ -1816,7 +2016,7 @@
       {
        "video": "_sotzQjtl2A",
        "t": 64.2,
-       "quote": "deploy the Queen at 12 o\u2019clock."
+       "quote": "deploy the Queen at 12 o’clock."
       }
      ]
     },
@@ -2157,7 +2357,8 @@
   "Sin7pQqHJLo's zapquake variant needs four Earthquake and six Lightning Spells and uses Eternal Tome/Rage Gem Warden. Its Queen and Duke deployment ordering is supplied by _sotzQjtl2A because Sin7pQqHJLo narrates only their abilities. Monolith and Inferno anchors approximate its stated high-value target areas; zero-delay single casts preserve its two-plus-two Earthquake and six-Lightning counts.",
   "Revive is carried and repeatedly recommended for fallen Duke, but no Revive step is scheduled: this executor resolves unit anchors only for living units, while the vocabulary supplies no fallen-hero anchor. Assigning an edge or group position would invent the corpse's location.",
   "Town Hall entry is contested: KHh13uguqf0 recommends an early Town Hall entry after one failure but later succeeds through the Monolith; s5btI1E0LdY changes entry with Sweepers and hero concentrations, while wanC6B7TJyk generally finishes toward the Town Hall and defending heroes. No universal Town Hall-first rule is imposed.",
-  "Sources span TH16-TH18, and several have no fixed attacking Town Hall. The representative army comes from a TH18 link. Missing counts, unresolved names such as logger or cake, accidental casts, missed arrows and explicitly criticized ability timings are not promoted to new instructions. No recall, redeploy or manual siege-release timing is established."
+  "Sources span TH16-TH18, and several have no fixed attacking Town Hall. The representative army comes from a TH18 link. Missing counts, unresolved names such as logger or cake, accidental casts, missed arrows and explicitly criticized ability timings are not promoted to new instructions. No recall, redeploy or manual siege-release timing is established.",
+  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py)."
  ],
  "check": {
   "steps_kept": 17,
