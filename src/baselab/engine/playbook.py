@@ -35,8 +35,10 @@ Anchors:
 
 from __future__ import annotations
 
+import json
 import math
 import os
+from pathlib import Path
 from dataclasses import dataclass, field
 
 from . import heroes
@@ -48,10 +50,9 @@ SPELL_KEYS = {v: k for k, v in SPELL_NAMES.items()}
 # How fast a player can act. One action at a time: dragging n troops out of a
 # slot costs PACE_TAP each plus PACE_SWITCH to pick the slot and the spot; a
 # spell, recall or redeploy costs PACE_SWITCH; a hero ability PACE_ABILITY.
-# These are assumptions (no source gives human input rates), and the overall
-# scale BASELAB_PACE is fitted to the real battle times of the defense log
-# (docs/SIM_ACCURACY.md check 6), which makes check 6 a fitted, not an
-# independent, check.
+# These are assumptions (no source gives human input rates). BASELAB_PACE
+# scales them (default 1.0); it is NOT tuned to the real battle times, which
+# stay a held-out test (docs/SIM_ACCURACY.md check 6).
 PACE_TAP, PACE_SWITCH, PACE_ABILITY = 0.15, 0.6, 0.3
 
 
@@ -539,6 +540,45 @@ def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict) -> li
     return kept
 
 
+def _gaps():
+    p = Path(__file__).resolve().parents[3] / "data" / "playbook-gaps.json"
+    if os.environ.get("BASELAB_GAPS", "1") == "0" or not p.exists():
+        return None
+    g = json.loads(p.read_text(encoding="utf-8"))
+    return g["same_group"]["median"], g["group_change"]["median"]
+
+
+def add_waits(steps: list) -> None:
+    """The playbooks write "after X" with delay 0 when the source names the
+    order but not the wait. Real players wait: the median gap between such
+    steps in the source videos is 4.5 s within a group and 16.6 s when the
+    attack moves to a new group (tools/baselab/step_gaps.py ->
+    data/playbook-gaps.json). Those medians replace the unstated zeros,
+    less the time the action itself takes (action_time). Explicit non-zero
+    delays and the uncited fallbacks keep theirs."""
+    g = _gaps()
+    if g is None:
+        return
+    same, change = g
+    group = {s["id"]: s.get("group", "main") for s in steps}
+    act = {s["id"]: s["action"] for s in steps}
+
+    def fix(w, mine):
+        if not isinstance(w, dict):
+            return w
+        if "after" in w and not w.get("delay") and w["after"] in group:
+            gap = same if group[w["after"]] == mine else change
+            w = {**w, "delay": max(0.0, gap - action_time(act[w["after"]], 1))}
+        for k in ("all", "any"):
+            if k in w:
+                w = {**w, k: [fix(x, mine) for x in w[k]]}
+        return w
+
+    for st in steps:
+        if not st.get("uncited"):
+            st["when"] = fix(st.get("when"), st.get("group", "main"))
+
+
 def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own_levels: bool = False,
                   flank_offset: float = 0.9, charge_side: str = "left", build: dict | None = None) -> PlaybookPlan:
     """A PlaybookPlan for a playbook dict (data/playbooks/*.json). With
@@ -569,6 +609,7 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
     plan.inventory = inv
     heroes_in = [h for h in build["heroes"] if h in heroes.HEROES]
     plan.steps = fit_steps(pb["steps"], inv, heroes_in, dict(base._spells0, **{k: c for k, c in base.cc_spells.items()}))
+    add_waits(plan.steps)
     # Invisibility cadence on a charging hero depends on her pet: the merged
     # playbooks' 10-second cycle relies on Spirit Fox covering the gaps; without
     # a Fox players chain one every 4 seconds ("invisibility spells every 4

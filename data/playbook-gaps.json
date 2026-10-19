@@ -1,0 +1,21 @@
+{
+ "note": "Median wait (s) between a step and the step it follows, from same-video cite times (tools/baselab/step_gaps.py).",
+ "same_group": {
+  "median": 4.5,
+  "n": 50,
+  "quartiles": [
+   2.6,
+   4.5,
+   13.1
+  ]
+ },
+ "group_change": {
+  "median": 16.6,
+  "n": 16,
+  "quartiles": [
+   5.5,
+   16.6,
+   23.5
+  ]
+ }
+}
