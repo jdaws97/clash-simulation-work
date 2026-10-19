@@ -1,0 +1,1319 @@
+{
+ "note": "New strategies reasoned from game mechanics (docs/NEW_STRATEGIES.md), legal TH16 armies for the user's account: camp 320, CC 50, spells 11, CC spells 3. Tested by tools/baselab/army_bench.py against baselines.",
+ "builds": [
+  {
+   "archetype": "portal-relay-rr",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "idea": "The user's Root Rider army with the Minion Prince (Portal Pendant + Dark Orb) walking in the push. When the push stalls or is hurt, he portals it out and redeploys it healed and hasted on a fresh side: a second push from one army. Portal Pendant is a week old, so no human playbook exists yet.",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Royal Champion",
+    "Dragon Duke",
+    "Minion Prince",
+    "Grand Warden"
+   ],
+   "funnel": [
+    "Dragon Duke",
+    "Royal Champion"
+   ],
+   "push": [
+    "Minion Prince",
+    "Grand Warden"
+   ],
+   "loadouts": {
+    "Minion Prince": [
+     "Portal Pendant",
+     "Dark Orb",
+     "Angry Jelly"
+    ],
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Spirit Fox"
+    ],
+    "Dragon Duke": [
+     "Rocket Backpack",
+     "Fire Heart",
+     "Phoenix"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Electro Owl"
+    ]
+   },
+   "family": "root-rider"
+  },
+  {
+   "archetype": "druid-titan-rr",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "idea": "Healers fly, so Air Sweepers, Seeking Air Mines and air defenses pick them off. Ground healing (Druids) behind an Electro Titan tank keeps the Root Rider block alive where Healers die.",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Electro Titan": 1,
+    "Druid": 3,
+    "Baby Dragon": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Royal Champion",
+    "Dragon Duke",
+    "Archer Queen",
+    "Grand Warden"
+   ],
+   "family": "root-rider"
+  },
+  {
+   "archetype": "puppet-queen-throwers",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "idea": "The Queen with Healer Puppet + Magic Mirror walks with the Throwers and brings her own Healers, so the 5 camp Healers (70 housing) become 4 more Throwers.",
+   "troops": {
+    "Super Wall Breaker": 2,
+    "Ice Golem": 1,
+    "Thrower": 15,
+    "Baby Dragon": 1,
+    "Balloon": 3,
+    "Valkyrie": 2,
+    "Archer": 8
+   },
+   "spells": {
+    "Totem Spell": 2,
+    "Freeze Spell": 2,
+    "Ice Block Spell": 1,
+    "Revive Spell": 2,
+    "Rage Spell": 1
+   },
+   "cc": {
+    "Log Launcher": 1,
+    "Minion": 1,
+    "Valkyrie": 1,
+    "Root Rider": 2,
+    "Totem Spell": 3
+   },
+   "heroes": [
+    "Barbarian King",
+    "Archer Queen",
+    "Grand Warden",
+    "Dragon Duke"
+   ],
+   "funnel": [
+    "Barbarian King",
+    "Dragon Duke"
+   ],
+   "push": [
+    "Archer Queen",
+    "Grand Warden"
+   ],
+   "loadouts": {
+    "Archer Queen": [
+     "Healer Puppet",
+     "Magic Mirror",
+     "Frosty"
+    ]
+   },
+   "family": "mass-thrower"
+  },
+  {
+   "archetype": "lavaloon-queen-dragons",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "idea": "The Queen with Lavaloon Puppet funnels one flank and the King the other, so no camp space is spent on funnel troops; 16 Dragons and 11 Lightning (the real TH16 meta) behind them.",
+   "troops": {
+    "Dragon": 16
+   },
+   "spells": {
+    "Lightning Spell": 11
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Balloon": 2,
+    "Dragon": 2,
+    "Lightning Spell": 1,
+    "Rage Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Archer Queen",
+    "Minion Prince",
+    "Dragon Duke"
+   ],
+   "funnel": [
+    "Archer Queen",
+    "Barbarian King"
+   ],
+   "push": [
+    "Dragon Duke",
+    "Minion Prince"
+   ],
+   "loadouts": {
+    "Archer Queen": [
+     "Lavaloon Puppet",
+     "Giant Arrow",
+     "Unicorn"
+    ]
+   },
+   "family": "mass-dragons"
+  },
+  {
+   "archetype": "decoy-super-yeti",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "idea": "Super Yetis behind Ice Golems, with Bat and Skeleton Spells as decoys that pull Scattershot / Monolith / single-target fire off the push, and Druids healing from the ground.",
+   "troops": {
+    "Super Yeti": 6,
+    "Druid": 3,
+    "Ice Golem": 2,
+    "Super Wall Breaker": 2,
+    "Baby Dragon": 1,
+    "Archer": 6
+   },
+   "spells": {
+    "Rage Spell": 2,
+    "Bat Spell": 2,
+    "Skeleton Spell": 2,
+    "Freeze Spell": 2,
+    "Invisibility Spell": 1
+   },
+   "cc": {
+    "Log Launcher": 1,
+    "Super Yeti": 1,
+    "Headhunter": 1,
+    "Wizard": 2,
+    "Ice Block Spell": 2,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Royal Champion",
+    "Barbarian King",
+    "Archer Queen",
+    "Grand Warden"
+   ],
+   "pol": {
+    "skeleton_on": 1.0,
+    "bat_on": 1.0
+   },
+   "family": "mass-super-yeti"
+  },
+  {
+   "archetype": "flinger-throwers",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "idea": "The real TH16 Thrower build 1, but the siege is a Flame Flinger that burns a side from outside instead of a Log Launcher (separation funnel; rare at TH16).",
+   "troops": {
+    "Super Wall Breaker": 2,
+    "Ice Golem": 1,
+    "Thrower": 11,
+    "Healer": 5,
+    "Baby Dragon": 1,
+    "Balloon": 3,
+    "Valkyrie": 2,
+    "Archer": 2
+   },
+   "spells": {
+    "Totem Spell": 2,
+    "Freeze Spell": 2,
+    "Ice Block Spell": 1,
+    "Revive Spell": 2
+   },
+   "cc": {
+    "Flame Flinger": 1,
+    "Minion": 1,
+    "Valkyrie": 1,
+    "Root Rider": 2,
+    "Totem Spell": 3
+   },
+   "heroes": [
+    "Barbarian King",
+    "Archer Queen",
+    "Grand Warden",
+    "Dragon Duke"
+   ],
+   "family": "mass-thrower"
+  },
+  {
+   "archetype": "user-rr",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Control: the user's own Root Rider + Valkyrie army (engine/plans.py root_riders, TH16) with Root Rider family calibration, for a fair comparison.",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Royal Champion",
+    "Dragon Duke",
+    "Archer Queen",
+    "Grand Warden"
+   ],
+   "funnel": [
+    "Royal Champion",
+    "Dragon Duke"
+   ],
+   "push": [
+    "Archer Queen",
+    "Grand Warden"
+   ],
+   "loadouts": {
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Unicorn"
+    ],
+    "Dragon Duke": [
+     "Revenge Deck",
+     "Fire Heart",
+     "Phoenix"
+    ],
+    "Archer Queen": [
+     "Action Figure",
+     "Giant Arrow",
+     "Frosty"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Poison Lizard"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-BK-AQ-GW-RC",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes BK-AQ-GW-RC",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Archer Queen",
+    "Grand Warden",
+    "Royal Champion"
+   ],
+   "loadouts": {
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Unicorn"
+    ],
+    "Archer Queen": [
+     "Action Figure",
+     "Giant Arrow",
+     "Frosty"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Poison Lizard"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-BK-AQ-GW-MP",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes BK-AQ-GW-MP",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Archer Queen",
+    "Grand Warden",
+    "Minion Prince"
+   ],
+   "loadouts": {
+    "Archer Queen": [
+     "Action Figure",
+     "Giant Arrow",
+     "Frosty"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Poison Lizard"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-BK-AQ-GW-DD",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes BK-AQ-GW-DD",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Archer Queen",
+    "Grand Warden",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Dragon Duke": [
+     "Revenge Deck",
+     "Fire Heart",
+     "Phoenix"
+    ],
+    "Archer Queen": [
+     "Action Figure",
+     "Giant Arrow",
+     "Frosty"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Poison Lizard"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-BK-AQ-RC-MP",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes BK-AQ-RC-MP",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Archer Queen",
+    "Royal Champion",
+    "Minion Prince"
+   ],
+   "loadouts": {
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Unicorn"
+    ],
+    "Archer Queen": [
+     "Action Figure",
+     "Giant Arrow",
+     "Frosty"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-BK-AQ-RC-DD",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes BK-AQ-RC-DD",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Archer Queen",
+    "Royal Champion",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Unicorn"
+    ],
+    "Dragon Duke": [
+     "Revenge Deck",
+     "Fire Heart",
+     "Phoenix"
+    ],
+    "Archer Queen": [
+     "Action Figure",
+     "Giant Arrow",
+     "Frosty"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-BK-AQ-MP-DD",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes BK-AQ-MP-DD",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Archer Queen",
+    "Minion Prince",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Dragon Duke": [
+     "Revenge Deck",
+     "Fire Heart",
+     "Phoenix"
+    ],
+    "Archer Queen": [
+     "Action Figure",
+     "Giant Arrow",
+     "Frosty"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-BK-GW-RC-MP",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes BK-GW-RC-MP",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Grand Warden",
+    "Royal Champion",
+    "Minion Prince"
+   ],
+   "loadouts": {
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Unicorn"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Poison Lizard"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-BK-GW-RC-DD",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes BK-GW-RC-DD",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Grand Warden",
+    "Royal Champion",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Unicorn"
+    ],
+    "Dragon Duke": [
+     "Revenge Deck",
+     "Fire Heart",
+     "Phoenix"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Poison Lizard"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-BK-GW-MP-DD",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes BK-GW-MP-DD",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Grand Warden",
+    "Minion Prince",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Dragon Duke": [
+     "Revenge Deck",
+     "Fire Heart",
+     "Phoenix"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Poison Lizard"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-BK-RC-MP-DD",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes BK-RC-MP-DD",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Royal Champion",
+    "Minion Prince",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Unicorn"
+    ],
+    "Dragon Duke": [
+     "Revenge Deck",
+     "Fire Heart",
+     "Phoenix"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-AQ-GW-RC-MP",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes AQ-GW-RC-MP",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Archer Queen",
+    "Grand Warden",
+    "Royal Champion",
+    "Minion Prince"
+   ],
+   "loadouts": {
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Unicorn"
+    ],
+    "Archer Queen": [
+     "Action Figure",
+     "Giant Arrow",
+     "Frosty"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Poison Lizard"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-AQ-GW-RC-DD",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes AQ-GW-RC-DD",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Archer Queen",
+    "Grand Warden",
+    "Royal Champion",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Unicorn"
+    ],
+    "Dragon Duke": [
+     "Revenge Deck",
+     "Fire Heart",
+     "Phoenix"
+    ],
+    "Archer Queen": [
+     "Action Figure",
+     "Giant Arrow",
+     "Frosty"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Poison Lizard"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-AQ-GW-MP-DD",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes AQ-GW-MP-DD",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Archer Queen",
+    "Grand Warden",
+    "Minion Prince",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Dragon Duke": [
+     "Revenge Deck",
+     "Fire Heart",
+     "Phoenix"
+    ],
+    "Archer Queen": [
+     "Action Figure",
+     "Giant Arrow",
+     "Frosty"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Poison Lizard"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-AQ-RC-MP-DD",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes AQ-RC-MP-DD",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Archer Queen",
+    "Royal Champion",
+    "Minion Prince",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Unicorn"
+    ],
+    "Dragon Duke": [
+     "Revenge Deck",
+     "Fire Heart",
+     "Phoenix"
+    ],
+    "Archer Queen": [
+     "Action Figure",
+     "Giant Arrow",
+     "Frosty"
+    ]
+   }
+  },
+  {
+   "archetype": "user-rr-h-GW-RC-MP-DD",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "Hero-choice test: the user's Root Rider army with heroes GW-RC-MP-DD",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Rocket Balloon": 4,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Grand Warden",
+    "Royal Champion",
+    "Minion Prince",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Unicorn"
+    ],
+    "Dragon Duke": [
+     "Revenge Deck",
+     "Fire Heart",
+     "Phoenix"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Poison Lizard"
+    ]
+   }
+  },
+  {
+   "archetype": "user-air",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "troops": {
+    "Healer": 5,
+    "Rocket Balloon": 8,
+    "Ice Golem": 1,
+    "Super Minion": 5,
+    "Balloon": 2,
+    "Druid": 1,
+    "Furnace": 2,
+    "Minion": 3,
+    "Wizard": 3,
+    "Headhunter": 3,
+    "Wall Breaker": 5,
+    "Archer": 3
+   },
+   "spells": {
+    "Invisibility Spell": 3,
+    "Earthquake Spell": 5,
+    "Recall Spell": 1,
+    "Totem Spell": 1
+   },
+   "cc": {
+    "Log Launcher": 1,
+    "Ice Golem": 1,
+    "Super Yeti": 1,
+    "Ice Block Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Archer Queen",
+    "Grand Warden",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Barbarian King": [
+     "Spiky Ball",
+     "Stick Horse",
+     "Phoenix"
+    ],
+    "Archer Queen": [
+     "Giant Arrow",
+     "Action Figure",
+     "Unicorn"
+    ],
+    "Grand Warden": [
+     "Rage Gem",
+     "Fireball",
+     "Electro Owl"
+    ],
+    "Dragon Duke": [
+     "Rocket Backpack",
+     "Fire Heart",
+     "Diggy"
+    ]
+   },
+   "idea": "The user's own Super Minion army, decoded from their battle log (20261012).",
+   "family": null,
+   "own_levels": true
+  },
+  {
+   "archetype": "user-druid-ruin",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "troops": {
+    "Healer": 5,
+    "Super Minion": 3,
+    "Rocket Balloon": 6,
+    "Ice Golem": 1,
+    "Root Rider": 2,
+    "Druid": 2,
+    "Ruin Witch": 2,
+    "Valkyrie": 3,
+    "Archer": 3
+   },
+   "spells": {
+    "Invisibility Spell": 3,
+    "Earthquake Spell": 2,
+    "Freeze Spell": 3,
+    "Revive Spell": 1
+   },
+   "cc": {
+    "Log Launcher": 1,
+    "Ice Golem": 2,
+    "Root Rider": 1,
+    "Rage Spell": 1,
+    "Freeze Spell": 1
+   },
+   "heroes": [
+    "Archer Queen",
+    "Grand Warden",
+    "Royal Champion",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Archer Queen": [
+     "Giant Arrow",
+     "Action Figure",
+     "Unicorn"
+    ],
+    "Grand Warden": [
+     "Fireball",
+     "Rage Gem",
+     "Frosty"
+    ],
+    "Royal Champion": [
+     "Electro Boots",
+     "Rocket Spear",
+     "Spirit Fox"
+    ],
+    "Dragon Duke": [
+     "Fire Heart",
+     "Rocket Backpack",
+     "Phoenix"
+    ]
+   },
+   "idea": "The user's own Ruin Witch army, decoded from their battle log (20261012).",
+   "family": null,
+   "own_levels": true
+  }
+ ]
+}

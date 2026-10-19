@@ -1,0 +1,372 @@
+"""Behaviour specifications for every attacking unit, pet and summon.
+
+Numbers (HP, damage, range, speed, attack interval, housing) come from the
+registry at the requested level. This table adds what the stat tables do not
+say: targeting, wall handling, attack shape and special abilities, each taken
+from the unit's wiki page (mirrored 2026-10-15; see docs/WIKI_DIGEST.md).
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from . import stats
+
+
+@dataclass(frozen=True)
+class UnitSpec:
+    name: str
+    prefer: str = "any"  # any defense air_defense resource wall heroes support th rubble follow none
+    walls: str = "normal"  # normal | ignore | smash | fly
+    attack: str = "single"  # single splash spin chain bounce pierce beam heal heal_chain suicide none
+    splash: float = 0.0
+    splash_ground_only: bool = False
+    chain: int = 0  # extra targets after the first
+    chain_range: float = 3.0
+    chain_decay: float = 0.8
+    chain_from_primary: bool = False
+    bounces: int = 0  # bowlers
+    bounce_gap: float = 3.0
+    pierce: float = 0.0
+    vs_walls: float = 1.0
+    vs_resources: float = 1.0
+    vs_defenses: float = 1.0
+    vs_heroes: float = 1.0
+    vs_buildings: float = 1.0
+    engages_units: bool = True
+    death_damage: str | None = None  # registry column for death damage
+    death_radius: float = 0.0
+    death_delay: float = 0.0
+    death_freeze: str | None = None  # registry column for freeze time
+    death_freeze_radius: float = 0.0
+    death_spawn: tuple = ()  # (summon name, registry column or int count)
+    special: tuple = ()  # names of special hooks implemented in units.py
+    heal_air: bool = False
+    flying_override: bool | None = None
+    notes: str = ""
+
+
+S = UnitSpec
+
+SPECS: dict[str, UnitSpec] = {
+    s.name: s
+    for s in [
+        # ---------------- Elixir troops
+        S("Barbarian"),
+        S("Archer"),
+        S("Giant", prefer="defense"),
+        S("Goblin", prefer="resource", vs_resources=2.0),
+        S("Wall Breaker", prefer="wall", attack="suicide", splash=2.0, vs_walls=40.0, death_damage="Damage when destroyed", death_radius=2.0),
+        S("Balloon", prefer="defense", walls="fly", attack="splash", splash=1.2, splash_ground_only=True, engages_units=False, death_damage="Damage Upon Death", death_radius=1.2),
+        S("Wizard", attack="splash", splash=0.3),
+        S("Healer", prefer="support", walls="fly", attack="heal", splash=1.5, engages_units=False),
+        S("Dragon", walls="fly", attack="splash", splash=0.3),
+        S("P.E.K.K.A"),
+        S("Baby Dragon", walls="fly", attack="splash", splash=0.3, special=("tantrum",)),
+        S("Miner", walls="ignore", special=("burrow",)),
+        S("Electro Dragon", walls="fly", attack="chain", chain=4, chain_range=3.0, chain_decay=0.8, special=("death_bolts",)),
+        S("Yeti", special=("yetimites",)),
+        S("Dragon Rider", prefer="defense", walls="fly", engages_units=False, death_damage="Damage Upon Death", death_radius=2.0),
+        S("Electro Titan", special=("titan_aura",)),
+        S("Root Rider", prefer="defense", walls="smash", engages_units=False),
+        S("Thrower"),
+        # ---------------- Dark troops
+        S("Minion", walls="fly"),
+        S("Hog Rider", prefer="defense", walls="ignore", engages_units=False),
+        S("Valkyrie", attack="spin", splash=1.0),
+        S("Golem", prefer="defense", engages_units=False, death_damage="Damage Upon Death", death_radius=1.5, death_spawn=("Golemite", "Golemites spawned Upon Death")),
+        S("Witch", attack="splash", splash=0.3, special=("witch_skeletons",)),
+        # Wiki: Lava Hound states a 3.5-tile death radius.
+        S(
+            "Lava Hound",
+            prefer="air_defense",
+            walls="fly",
+            engages_units=False,
+            death_damage="Damage Upon Death",
+            death_radius=3.5,
+            death_spawn=("Lava Pup", "Lava Pups Spawned (After Death) / On Offense"),
+        ),
+        S("Bowler", attack="bounce", splash=1.0, bounces=1, bounce_gap=3.0),
+        S("Ice Golem", prefer="defense", engages_units=False, death_freeze="Freeze Time After Death / On Offense", death_freeze_radius=7.5, special=("chill",)),
+        S("Headhunter", prefer="heroes", walls="ignore", vs_heroes=4.0, special=("hh_poison",)),
+        S("Apprentice Warden", prefer="follow", walls="ignore", special=("life_aura",)),
+        S("Druid", prefer="support", walls="ignore", attack="heal_chain", chain=3, heal_air=True, engages_units=False, special=("bear_after",)),
+        S("Furnace", prefer="none", attack="none", engages_units=False, special=("furnace",)),
+        # Wiki: Meteor Golem deals fivefold damage to walls.
+        S(
+            "Meteor Golem",
+            attack="splash",
+            splash=1.0,
+            vs_walls=5.0,
+            special=("meteormites",),
+        ),
+        S("Ruin Witch", prefer="rubble", attack="none", engages_units=False, special=("ruin_witch",)),
+        # ---------------- Super troops
+        S("Super Barbarian", special=("start_rage",)),
+        S("Super Archer", attack="pierce", pierce=11.5),
+        S("Super Giant", prefer="defense", vs_walls=5.0),
+        S("Sneaky Goblin", prefer="resource", vs_resources=2.0, special=("cloak",)),
+        S("Super Wall Breaker", prefer="wall", attack="suicide", splash=1.6, vs_walls=40.0, death_damage="Damage when destroyed", death_radius=1.6, special=("mega_bomb",)),
+        S(
+            "Rocket Balloon",
+            prefer="defense",
+            walls="fly",
+            attack="splash",
+            splash=1.2,
+            splash_ground_only=True,
+            death_damage="Damage Upon Death",
+            death_radius=1.2,
+            special=("boosters",),
+        ),
+        S("Super Wizard", attack="chain", chain=9, chain_range=3.0, chain_decay=0.4, chain_from_primary=True),
+        S("Super Dragon", walls="fly", attack="splash", splash=1.0, special=("burst",)),
+        S("Inferno Dragon", walls="fly", attack="beam"),
+        S("Super Minion", walls="fly", special=("long_shot",)),
+        S("Super Valkyrie", attack="spin", splash=1.0, special=("death_rage",)),
+        S("Super Witch", attack="splash", splash=0.3, special=("big_boy",)),
+        S(
+            "Ice Hound",
+            prefer="air_defense",
+            walls="fly",
+            death_freeze="Freeze Time when Destroyed",
+            death_freeze_radius=4.0,
+            death_spawn=("Ice Pup", "Ice Pups Spawned / On Offense"),
+            special=("ice_chill",),
+        ),
+        S("Super Bowler", attack="bounce", splash=0.6, bounces=2, bounce_gap=3.0),
+        S("Super Miner", walls="ignore", attack="beam", special=("burrow",), death_damage="Damage when Destroyed", death_radius=2.0),
+        S("Super Hog Rider", prefer="defense", walls="ignore", special=("hog_split",)),
+        S("Super Yeti", special=("electromites",)),
+        # ---------------- Siege machines
+        S("Wall Wrecker", prefer="th", vs_walls=10.0, engages_units=False, special=("siege_cc",)),
+        S("Battle Blimp", prefer="th", walls="fly", attack="none", engages_units=False, special=("siege_cc", "blimp_bombs")),
+        S("Stone Slammer", prefer="defense", walls="fly", attack="splash", splash=3.0, engages_units=False, special=("siege_cc",)),
+        S("Siege Barracks", prefer="none", attack="none", engages_units=False, special=("siege_cc", "siege_barracks")),
+        S(
+            "Log Launcher",
+            prefer="th",
+            attack="none",
+            vs_walls=4.0,
+            engages_units=False,
+            special=("siege_cc", "logs"),
+        ),
+        S("Flame Flinger", prefer="defense", attack="splash", splash=1.5, engages_units=False, special=("siege_cc", "flinger")),
+        S("Battle Drill", prefer="defense", walls="ignore", engages_units=False, special=("siege_cc", "burrow", "drill_stun")),
+        S("Troop Launcher", prefer="none", attack="none", engages_units=False, special=("siege_cc", "troop_launcher")),
+        S("Sky Wagon", prefer="defense", walls="fly", attack="none", engages_units=False, special=("siege_cc", "sky_wagon")),
+        # ---------------- Summons
+        S("Lava Pup", walls="fly"),
+        S("Golemite", prefer="defense", engages_units=False, death_damage="Damage Upon Death", death_radius=1.2),
+        # Wiki: Yeti/Yetimite gives fourfold defense and half resource damage.
+        S(
+            "Yetimite",
+            prefer="defense",
+            walls="ignore",
+            attack="splash",
+            splash=0.8,
+            vs_defenses=4.0,
+            vs_resources=0.5,
+        ),
+        S(
+            "Electromite",
+            prefer="building",
+            walls="ignore",
+            attack="chain",
+            chain=2,
+            chain_range=3.0,
+            chain_decay=0.8,
+            vs_buildings=4.0,
+        ),
+        S("Big Boy"),
+        S("Ruin Knight", vs_walls=3.0),  # Wiki: Ruin Witch/Ruin Knight.
+        S(
+            "Firemite", walls="ignore", attack="splash", splash=0.8
+        ),  # Wiki: Furnace/Firemite.
+        S("Bear", prefer="defense"),
+        # ---------------- TH18 Guardians (defend from the Town Hall)
+        S("Longshot", attack="splash", splash=1.0, death_damage="Damage Upon Death", death_radius=3.5, special=("guardian",)),
+        S("Smasher", attack="splash", splash=2.5, special=("guardian", "smasher")),
+        S("Logger", attack="splash", splash=1.5, special=("guardian", "logger")),
+        S("Ice Pup", walls="fly", special=("ice_chill",)),
+        S("Meteormite", walls="ignore"),  # Wiki: Meteor Golem/Meteormite.
+        S("Frostmite"),
+        S("Skeleton"),
+        S("Spell Skeleton"),
+        S("Bat", prefer="defense", walls="fly"),
+        S("Snake", walls="ignore"),
+        S("Super Rider", vs_walls=2.0),  # Wiki: Super Hog Rider/Super Rider.
+        S("Super Hog", prefer="defense", walls="ignore"),
+        S("Henchman", walls="ignore"),
+        S("Lavaloon", prefer="defense", walls="fly", attack="splash", splash=1.2, engages_units=False),
+        S("Booger"),
+        S("Giant Giant", prefer="defense", engages_units=False, vs_walls=2.0),  # hidden 2x vs walls (wiki: Giant Giant)
+        # ---------------- Heroes (equipment handled in heroes.py)
+        S("Barbarian King"),
+        S("Archer Queen"),
+        S("Grand Warden", prefer="follow", walls="ignore"),
+        S("Royal Champion", prefer="defense", walls="ignore"),
+        S("Minion Prince", walls="fly"),
+        S("Dragon Duke", walls="fly", special=("royal_rampage",)),
+    ]
+}
+
+
+def spec(name: str) -> UnitSpec:
+    if name in ("Royal Ghost", "Battle Ram", "M.E.C.H.A"):
+        # Their event abilities need an explicit implementation (individual wiki pages).
+        raise ValueError(f"Unsupported temporary troop: {name}")
+    if name in SPECS:
+        return SPECS[name]
+    if name in stats.registry():
+        sp = generic_spec(name)
+        SPECS[name] = sp
+        return sp
+    raise KeyError(f"no behaviour spec for {name}")
+
+
+def generic_spec(name: str) -> UnitSpec:
+    """Behaviour inferred from the wiki infobox for limited-time event troops
+    that have no hand-written spec: preferred target, flying, splash. Their
+    special abilities are not modelled (notes='generic')."""
+    a = stats.attrs(name)
+    pref_text = (a.get("preferred_target") or "").lower()
+    if "defense" in pref_text:
+        prefer = "defense"
+    elif "resource" in pref_text:
+        prefer = "resource"
+    elif "wall" in pref_text:
+        prefer = "wall"
+    else:
+        prefer = "any"
+    atk = (a.get("attack_type") or "").lower()
+    splash = 1.0 if "splash" in atk else 0.0
+    walls = "fly" if a.get("is_flying") else "normal"
+    return UnitSpec(name, prefer=prefer, walls=walls, attack="splash" if splash else "single", splash=splash, notes="generic")
+
+
+# Effective housing does not make these summons deployable or donatable.
+SUBTROOP_HOUSING = {
+    "Yetimite": 2,  # Wiki: Yeti/Yetimite.
+    "Meteormite": 20,  # Wiki: Meteor Golem/Meteormite.
+    "Golemite": 6,  # Wiki: Golem/Golemite.
+    "Skeleton": 1,  # Wiki: Skeleton.
+    "Lava Pup": 1,  # Wiki: Lava Hound/Lava Pup; Clone weight is disputed.
+    "Bear": 10,  # Wiki: Druid/Bear.
+    "Firemite": 1,  # Wiki: Furnace/Firemite.
+    "Big Boy": 20,  # Wiki: Super Witch/Big Boy.
+    "Witch Golem Big Boy": 20,  # Wiki: Witch Golem/Big Boy.
+    "Super Hog": 5,  # Wiki: Super Hog Rider/Super Hog.
+    "Super Rider": 5,  # Wiki: Super Hog Rider/Super Rider.
+    "Electromite": 3,  # Wiki: Super Yeti/Electromite.
+    "Ice Pup": 1,  # Wiki: Ice Hound/Ice Pup.
+    "Lavaloon Pup": 1,  # Wiki: Lavaloon/Lavaloon Pup.
+    "Witch Golem Skeleton": 1,  # Wiki: Witch Golem/Skeleton.
+}
+
+
+def movement_speed(name):
+    # Wiki: Troop Movement Speed, exact tiles per second.
+    exact = {
+        "Giant Giant": 1.65,
+        "Mighty Yak": 2.5,
+        "Log Launcher": 0.625,
+        "Flame Flinger": 0.75,
+    }
+    if name in exact:
+        return exact[name]
+    a = stats.attrs(name)
+    # Keep internal precision; conflicting display values remain in the registry.
+    if a.get("speed") is not None:
+        return a["speed"]
+    display = a.get("speed_display")
+    return display / 8.0 if display is not None else 0.0
+
+
+def attack_range(name):
+    # Individual wiki pages: Range or Attack Range precedes extracted reach.
+    a = stats.attrs(name)
+    raw = a.get("raw", {})
+    for key in ("Range", "Attack Range"):
+        value = stats.num(raw.get(key))
+        if value is not None:
+            return value
+    for key in ("range", "range_ck"):
+        if a.get(key) is not None:
+            return a[key]
+    return None
+
+
+def unit_numbers(name: str, level: int) -> dict:
+    """Read wiki numbers first, using game data only for missing values."""
+    a = stats.attrs(name)
+    # Wiki level columns retain their page names in the registry. The wiki's
+    # Inferno Dragon table repeats level 11, so levels 11-12 use the game
+    # data's unambiguous rows (lowercase keys) instead.
+    game_first = name == "Inferno Dragon" and level in (11, 12)
+    hp = stats.get(name, level, *(("hitpoints", "Hitpoints") if game_first else ("Hitpoints", "hitpoints")), default=0.0)
+    interval = a.get("attack_interval")
+    if interval is None:
+        interval = a.get("attack_interval_ck")
+    if interval is None:
+        interval = 1.0
+    dps = stats.get(name, level, "dps", default=None) if game_first else None
+    dps = dps if dps is not None else stats.get(
+        name,
+        level,
+        "Damage per Second",
+        "Damage per Second / Initial",
+        "~damage per second",
+        "dps",
+        default=None,
+    )
+    dmg = stats.get(
+        name,
+        level,
+        "Damage per Hit",
+        "Damage per Attack",
+        "Damage per Hit (Primary Target)",
+        "Damage per Hit (Primary)",
+        "Damage per Hit / Hitbox 1",  # Wiki: Stone Slammer.
+        "Damage per Hit*",  # Wiki: Sky Wagon and Ruin Witch.
+        "Damage per Shot",
+        "Damage",
+        default=None,
+    )
+    if dmg is None and dps is not None:
+        dmg = abs(dps) * interval
+    if dps is not None and dps < 0:  # healers carry negative DPS in game data
+        dmg = 0.0
+    rng = attack_range(name)
+    if name == "Healer":
+        # Wiki: Healer gives 5 tiles; ClashKing's 450/100 gives 4.5.
+        rng = 5.0
+        interval = 0.7  # Heal speed (wiki: Healer).
+    speed = movement_speed(name)
+    housing = SUBTROOP_HOUSING.get(name, a.get("housing"))
+    if housing is None:
+        housing = a.get("housing_ck")
+    if name == "Druid":
+        interval = stats.num(a["raw"]["Heal Speed"])  # Wiki: Druid.
+    flying = a.get("is_flying")
+    hits_air = a.get("is_air_targeting")
+    hits_ground = a.get("is_ground_targeting")
+    if flying is None or hits_air is None:
+        at = (a.get("attack_type") or "").lower() + " " + (a.get("targets_text") or "").lower()
+        hits_air = "air" in at if hits_air is None else hits_air
+        hits_ground = ("ground" in at or "air" not in at) if hits_ground is None else hits_ground
+        flying = bool(flying)
+    if name == "Yetimite":
+        # Wiki: Yeti/Yetimite explicitly attacks both air and ground.
+        hits_air = hits_ground = True
+    return {
+        "hp": float(0.0 if hp is None else hp),
+        "dmg": float(0.0 if dmg is None else dmg),
+        "dps": float(0.0 if dps is None else dps),
+        "interval": float(interval),
+        "range": float(0.5 if rng is None else rng),
+        "speed": float(0.0 if speed is None else speed),
+        "housing": int(0 if housing is None else housing),
+        "flying": bool(flying),
+        "hits_air": bool(hits_air),
+        "hits_ground": bool(hits_ground),
+    }

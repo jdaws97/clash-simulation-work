@@ -1,0 +1,380 @@
+{
+ "name": "test: The Stealth RC charge Root Riders (single source)",
+ "family": "root-rider",
+ "sources": [
+  "L_LKqcL56NE"
+ ],
+ "note": "Single-video playbook to test the executor. Steps not described (Headhunters, Balloon, Ice Golems, Furnace, Archer, Apprentice Warden) are not deployed.",
+ "army": {
+  "troops": {
+   "Root Rider": 5,
+   "Valkyrie": 8,
+   "Apprentice Warden": 1,
+   "Headhunter": 2,
+   "Balloon": 1,
+   "Healer": 5,
+   "Ice Golem": 2,
+   "Furnace": 1,
+   "Archer": 1
+  },
+  "spells": {
+   "Rage Spell": 1,
+   "Invisibility Spell": 6,
+   "Recall Spell": 1,
+   "Freeze Spell": 1
+  },
+  "cc": {
+   "Minion": 1,
+   "Totem Spell": 2,
+   "Poison Spell": 1,
+   "Siege Barracks": 1
+  },
+  "heroes": [
+   "Royal Champion",
+   "Grand Warden",
+   "Archer Queen",
+   "Dragon Duke"
+  ]
+ },
+ "steps": [
+  {
+   "id": "rc",
+   "action": "deploy",
+   "what": "Royal Champion",
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "t": 0.5
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 49.6,
+     "quote": "We release our royal champion on this"
+    }
+   ]
+  },
+  {
+   "id": "spear",
+   "action": "ability",
+   "what": "Royal Champion",
+   "when": {
+    "after": "rc",
+    "delay": 1.5
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 51.6,
+     "quote": "site and use her rocket spear ability to"
+    }
+   ]
+  },
+  {
+   "id": "warden",
+   "action": "deploy",
+   "what": "Grand Warden",
+   "at": "unit:Royal Champion",
+   "group": "charge",
+   "when": {
+    "inside": "Royal Champion"
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 58.2,
+     "quote": "her up with the grand warden."
+    }
+   ]
+  },
+  {
+   "id": "invis",
+   "action": "spell",
+   "what": "Invisibility Spell",
+   "at": "unit_ahead:Royal Champion",
+   "when": {
+    "after": "warden"
+   },
+   "every": 4.0,
+   "until": {
+    "spells_left": "Invisibility Spell",
+    "n": 0
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 63.8,
+     "quote": "invisibility spells every 4 seconds to"
+    }
+   ]
+  },
+  {
+   "id": "recall",
+   "action": "recall",
+   "what": "Recall Spell",
+   "at": "unit:Royal Champion",
+   "when": {
+    "all": [
+     {
+      "spells_left": "Invisibility Spell",
+      "n": 0
+     },
+     {
+      "after": "invis",
+      "delay": 4.0
+     }
+    ]
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 72.5,
+     "quote": "will recall them both back to our main"
+    }
+   ]
+  },
+  {
+   "id": "queen",
+   "action": "deploy",
+   "what": "Archer Queen",
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "recall",
+    "delay": 1.0
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 82.7,
+     "quote": "release our archer queen on this side"
+    }
+   ]
+  },
+  {
+   "id": "barracks",
+   "action": "deploy",
+   "what": "Siege Barracks",
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "queen",
+    "delay": 0.5
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 84.6,
+     "quote": "backed up with the siege barrack."
+    }
+   ]
+  },
+  {
+   "id": "arrow",
+   "action": "ability",
+   "what": "Archer Queen",
+   "aim": "arrow",
+   "when": {
+    "after": "queen",
+    "delay": 3.0
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 182.6,
+     "quote": "use your archer queen's giant arrow to"
+    }
+   ]
+  },
+  {
+   "id": "rr",
+   "action": "deploy",
+   "what": "Root Rider",
+   "count": "all",
+   "at": "edge:main",
+   "when": {
+    "after": "queen",
+    "delay": 8.0
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 190.7,
+     "quote": "release your all troops in the"
+    }
+   ]
+  },
+  {
+   "id": "valk",
+   "action": "deploy",
+   "what": "Valkyrie",
+   "count": "all",
+   "at": "edge:main",
+   "when": {
+    "after": "rr",
+    "delay": 0.5
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 190.7,
+     "quote": "release your all troops in the"
+    }
+   ]
+  },
+  {
+   "id": "healers",
+   "action": "deploy",
+   "what": "Healer",
+   "count": "all",
+   "at": "edge:main",
+   "when": {
+    "after": "rr",
+    "delay": 1.0
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 190.7,
+     "quote": "release your all troops in the"
+    }
+   ]
+  },
+  {
+   "id": "heroes_back",
+   "action": "redeploy",
+   "at": "edge:main",
+   "when": {
+    "after": "rr",
+    "delay": 1.5
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 192.6,
+     "quote": "middle backed up with the recalled"
+    }
+   ]
+  },
+  {
+   "id": "freeze_cc",
+   "action": "spell",
+   "what": "Freeze Spell",
+   "at": "defenders:main",
+   "when": {
+    "defenders_near": "main"
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 193.9,
+     "quote": "Use freeze and poison"
+    }
+   ]
+  },
+  {
+   "id": "poison_cc",
+   "action": "spell",
+   "what": "Poison Spell",
+   "at": "defenders:main",
+   "when": {
+    "after": "freeze_cc",
+    "delay": 0.5
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 193.9,
+     "quote": "Use freeze and poison"
+    }
+   ]
+  },
+  {
+   "id": "duke",
+   "action": "deploy",
+   "what": "Dragon Duke",
+   "at": "edge:charge",
+   "group": "duke",
+   "when": {
+    "group_inside": "main"
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 198.0,
+     "quote": "Only release your dragon duke"
+    }
+   ]
+  },
+  {
+   "id": "rage",
+   "action": "spell",
+   "what": "Rage Spell",
+   "at": "group:main",
+   "when": {
+    "near_th": "main",
+    "r": 10
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 220.1,
+     "quote": "Use your rage spell when your troops"
+    }
+   ]
+  },
+  {
+   "id": "tome",
+   "action": "ability",
+   "what": "Grand Warden",
+   "when": {
+    "near_th": "main",
+    "r": 6
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 223.8,
+     "quote": "ability to protect them from town hall"
+    }
+   ]
+  },
+  {
+   "id": "totem",
+   "action": "spell",
+   "what": "Totem Spell",
+   "at": "threat:main",
+   "when": {
+    "after": "tome",
+    "delay": 2.0
+   },
+   "every": 6.0,
+   "until": {
+    "spells_left": "Totem Spell",
+    "n": 0
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 228.3,
+     "quote": "have to do is use your totem spell to"
+    }
+   ]
+  },
+  {
+   "id": "duke_ab",
+   "action": "ability",
+   "what": "Dragon Duke",
+   "when": {
+    "heavy_fire": "Dragon Duke"
+   },
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 232.2,
+     "quote": "duke ability to wipe out the maximum"
+    }
+   ]
+  }
+ ]
+}

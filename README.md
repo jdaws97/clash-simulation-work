@@ -5,8 +5,8 @@ experiment toolkit. This private repository preserves the v29 engine and adds
 portable fixtures, bounded regression checks, and reproducible development
 benchmarks. It does not establish live-game accuracy or predict win rates.
 
-The current draft includes a [runnable full-village prototype](docs/FULL_COMPARISON_QUICKSTART.md)
-and an [independently checked publication summary](docs/PROTOTYPE_PUBLICATION.md).
+The current draft includes a [runnable full-village prototype](docs/legacy/FULL_COMPARISON_QUICKSTART.md)
+and an [independently checked publication summary](docs/legacy/PROTOTYPE_PUBLICATION.md).
 Two complete synthetic TH18 battles compare declared TH16 attack plans against
 the same Legend I Hot Candle defense. Running them requires explicit acceptance
 of the provisional air-contact convention. These are conditional army-plan
@@ -16,10 +16,10 @@ base, army ranking, or gameplay recommendation.
 This is a publication baseline for review, not a calibrated release. Strict
 mode still rejects the original full-air case at 18.305471759 simulated seconds
 because of Dragon Duke isolation contact chatter. An explicitly selected
-[sampled-isolation experiment](docs/DUKE_CONTACT_EXPERIMENT.md) now completes that
+[sampled-isolation experiment](docs/legacy/DUKE_CONTACT_EXPERIMENT.md) now completes that
 case and agrees under a half-step check, but its unmeasured cadence materially
 changes the result. It is not a verified game mechanic. See
-[publication scope](docs/PUBLICATION.md).
+[publication scope](docs/legacy/PUBLICATION.md).
 
 For practical starting layouts and loadouts, see the [TH16 account-matched guide](docs/TH16_USE_NOW_GUIDE.md). It includes the approved recorded game levels, distinguishes creator recipes from untested adaptations, and checks housing against the pinned catalog. These recommendations are not simulator-validated rankings.
 

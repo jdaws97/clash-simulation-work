@@ -1,0 +1,1140 @@
+"""Every defensive building's weapon, wiki-verified (mirror 2026-10-15).
+
+Numbers per level come from the registry; behaviour constants below quote
+the wiki page they come from. TH17/18 defenses are included so the engine can
+also simulate the user's attacks on higher Town Halls.
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+
+from . import effects, stats
+from .entities import Building, Pending, Unit, dist
+
+
+class Weapon:
+    __slots__ = (
+        "owner",
+        "kind",
+        "targets",
+        "range",
+        "min_range",
+        "interval",
+        "damage",
+        "cooldown",
+        "target",
+        "multi",
+        "lock_time",
+        "idle_until",
+        "facing",
+        "mode",
+        "extra",
+        "burst_left",
+        "ammunition",
+        "ammo_time",
+    )
+
+    def __init__(self, owner: Building, kind: str, *, targets="both", range_=10.0, min_range=0.0, interval=1.0, damage=0.0, extra=None):
+        self.owner = owner
+        self.kind = kind
+        self.targets = targets
+        self.range = range_
+        self.min_range = min_range
+        self.interval = interval
+        self.damage = damage
+        self.cooldown = 0.0
+        self.target = None
+        self.multi = []
+        self.lock_time = 0.0
+        self.idle_until = 0.0
+        self.facing = 0.0
+        self.mode = owner.mode
+        self.extra = extra or {}
+        self.burst_left = 0
+        self.ammunition = None
+        self.ammo_time = 0.0
+
+
+FACINGS = {"N": -math.pi / 2, "NE": -math.pi / 4, "E": 0.0, "SE": math.pi / 4, "S": math.pi / 2, "SW": 3 * math.pi / 4, "W": math.pi, "NW": -3 * math.pi / 4}
+
+# TH16 Giga Inferno (wiki "Town Hall/Giga Inferno (TH16)"): 300 DPS per target,
+# 4 targets, range 10, death bomb 1,100 within 4.5 tiles plus a 12 s poison
+# (180 max DPS, 50% movement and attack slow). Activates once the Town Hall is
+# damaged or the base is 51% destroyed.
+GIGA_INFERNO = {
+    13: dict(dps=None, targets=5),
+    16: dict(dps=300.0, targets=4, range=10.0, death=1100.0, death_radius=4.5, poison_dps=180.0, poison_time=12.0, slow=0.5),
+}
+# TH17-18 Inferno Artillery (wiki): range 12, 4 targets, 3.5 s, 210 per hit
+# (L5) plus flame pools of 75 DPS for 6.8 s; always active.
+INFERNO_ARTILLERY = dict(range=12.0, targets=4, interval=3.5, damage=210.0, pool_dps=75.0, pool_time=6.8, pool_radius=1.5)
+
+
+def _dmg(name, level, interval):
+    d = stats.get(name, level, "Damage per Shot", "Damage per Hit", "Damage per Attack", default=None)
+    if d is None:
+        dps = stats.get(name, level, "dps", "Damage per Second", default=0.0)
+        d = dps * interval
+    return d
+
+
+CRAFTED = {
+    "cake": "Cake-A-Pult",
+    "candle": "Hot Candle",
+    "hunter": "Hero Hunter",
+    "bell": "Hero Bell",
+    "hook": "Hook Tower",
+}
+
+
+def crafted_level(name: str, town_hall: int) -> int:
+    """Highest module level allowed at this Town Hall (wiki tables)."""
+    best = 1
+    for r in stats.record(name)["levels"]:
+        lv = r.get("level")
+        if not isinstance(lv, int):
+            continue
+        req = stats.num(stats.row(name, lv).get("Town Hall Level Required"), 99)
+        if req <= town_hall:
+            best = max(best, lv)
+    return best
+
+
+def _attach_crafted(battle, b: Building):
+    # Wiki: Crafting Station, phase 4 runs August 1 to December 31, 2026.
+    if battle.crafting_phase != 4 or not (
+        "2026-08-01" <= battle.crafting_date <= "2026-12-31"
+    ):
+        raise ValueError("Only crafting phase 4 is supported")
+    mode = b.mode
+    if mode in (None, "none"):
+        b.hp = b.max_hp = 1000.0  # Wiki: Crafting Station, unselected station.
+        return
+    if mode not in ("cake", "candle", "hunter"):
+        raise ValueError("Crafted defense is unavailable in phase 4")
+    name = CRAFTED[mode]
+    cap = crafted_level(name, battle.town_hall)
+    level = battle.defense_levels.get("crafting", cap)
+    hp_level = battle.defense_levels.get("crafting:hitpoints", level)
+    damage_level = battle.defense_levels.get("crafting:damage", level)
+    effect_level = battle.defense_levels.get("crafting:effect", level)
+    for selected in (hp_level, damage_level, effect_level):
+        if not isinstance(selected, int) or not 1 <= selected <= cap:
+            raise ValueError(f"Illegal {name} module level: {selected}")
+    b.name, b.level = name, damage_level
+    b.hp = b.max_hp = stats.get(name, hp_level, "Hitpoints")
+    W = Weapon
+    if mode == "cake":
+        # Wiki: Cake-A-Pult, both-height delayed bomb and same-height impact.
+        b.weapon = W(
+            b,
+            "cake",
+            range_=12.0,
+            min_range=3.0,
+            interval=3.0,
+            damage=stats.get(name, damage_level, "Damage per Hit"),
+            extra={
+                "splash": 2.5,
+                "bomb": stats.get(name, effect_level, "Explosion Damage"),
+                "bomb_radius": 2.5,
+                "bomb_delay": 3.0,
+            },
+        )
+    elif mode == "candle":
+        # Wiki: Hot Candle, use the starts of the decay ranges.
+        damage = stats.get(name, damage_level, "Damage per Hit")
+        dps = stats.get(name, damage_level, "Damage per Second per Flame")
+        b.weapon = W(
+            b,
+            "candle",
+            range_=10.5,
+            interval=damage / dps,
+            damage=damage,
+            extra={
+                "targets": 6,
+                "melt1": stats.get(
+                    name, effect_level, "Total Seconds Active / First Decay"
+                ),
+                "melt2": stats.get(
+                    name, effect_level, "Total Seconds Active / Second Decay"
+                ),
+            },
+        )
+    else:
+        # Wiki: Hero Hunter, the poison module selects its Poison Spell level.
+        b.weapon = W(
+            b,
+            "hunter",
+            range_=9.5,
+            interval=0.6,
+            damage=stats.get(name, damage_level, "Damage per Hit"),
+            extra={
+                "poison_level": int(
+                    stats.get(name, effect_level, "Poison Spell Level")
+                ),
+                "poison_time": 3.0,
+            },
+        )
+
+
+def attach_weapon(battle, b: Building):
+    key, name, lvl = b.key, b.name, b.level
+    a = stats.attrs(name) if name in stats.registry() else {}
+    W = Weapon
+    if key == "th":
+        th = battle.town_hall
+        if th >= 18:
+            return  # Guardians defend in place of weapons (wiki: Town Hall/Guardians)
+        if th >= 17:
+            ia = INFERNO_ARTILLERY
+            b.weapon = W(
+                b,
+                "inferno_artillery",
+                range_=ia["range"],
+                interval=ia["interval"],
+                damage=_artillery_damage(battle),
+                extra=dict(ia),
+            )
+            battle.th_active = True
+            b.is_defense = True
+        elif th >= 13:
+            g = GIGA_INFERNO[16]
+            b.weapon = W(b, "giga_inferno", range_=g["range"], interval=0.128, damage=g["dps"] * 0.128, extra=dict(g))
+            b.is_defense = True
+        return
+    if key == "ad":
+        b.weapon = W(b, "single", targets="air", range_=10.0, interval=1.0, damage=_dmg(name, lvl, 1.0))
+    elif key == "at":
+        b.weapon = W(b, "single", range_=10.0, interval=0.5, damage=_dmg(name, lvl, 0.5))
+    elif key == "cannon":
+        b.weapon = W(b, "single", targets="ground", range_=9.0, interval=0.8, damage=_dmg(name, lvl, 0.8))
+    elif key == "mat":
+        # Wiki: Multi-Archer Tower, charges use the Damage per Shot column.
+        # 3 archers; with fewer targets several archers focus one (wiki)
+        per = stats.get(name, lvl, "Damage per Hit", "Damage per Shot")
+        b.weapon = W(b, "multi_archer", range_=10.0, interval=0.6, damage=per)
+    elif key == "ric":
+        b.weapon = W(b, "ricochet", targets="ground", range_=9.0, interval=0.8, damage=stats.get(name, lvl, "Damage per Shot (Primary Target)", default=312.0),
+                     extra={"bounce": stats.get(name, lvl, "Secondary Chain Damage", default=218.4), "bounce_range": 3.5})
+    elif key == "bt":
+        b.weapon = W(b, "splash", targets="ground", range_=6.0, interval=1.1, damage=_dmg(name, lvl, 1.1),
+                     extra={"splash": 1.5, "death": stats.get(name, lvl, "Damage when destroyed", default=600.0), "death_radius": 2.75, "death_delay": 1.0})
+    elif key == "wt":
+        b.weapon = W(b, "splash", range_=7.0, interval=1.3, damage=_dmg(name, lvl, 1.3), extra={"splash": 1.0, "same_type": True})
+    elif key == "mortar":
+        # Wiki: Mortar, normal hits must not read the geared shell column.
+        b.weapon = W(
+            b,
+            "mortar",
+            targets="ground",
+            range_=11.0,
+            min_range=4.0,
+            interval=5.0,
+            damage=stats.get(name, lvl, "Damage per Hit", "Damage per Shot"),
+            extra={"splash": 1.5, "flight": 1.5},
+        )
+    elif key == "xbow":
+        both = b.mode == "both"
+        b.weapon = W(b, "single", targets="both" if both else "ground", range_=11.5 if both else 14.0, interval=0.128, damage=_dmg(name, lvl, 0.128))
+    elif key == "tesla":
+        b.weapon = W(b, "single", range_=7.0, interval=0.6, damage=_dmg(name, lvl, 0.6), extra={"trigger": 6.0})
+    elif key == "inferno":
+        if b.mode == "multi":
+            # Wiki: Inferno Tower/Home Village lists the beam count per level.
+            dps = stats.get(name, lvl, "Damage per Second per Target", default=120.0)
+            b.weapon = W(
+                b,
+                "inferno_multi",
+                range_=10.0,
+                interval=0.128,
+                damage=dps * 0.128,
+                extra={"targets": int(stats.get(name, lvl, "Number of Targets"))},
+            )
+        else:
+            ramp = [
+                (0.0, stats.get(name, lvl, "Damage per Second / Initial", default=120.0)),
+                (1.5, stats.get(name, lvl, "Damage per Second / After 1.5s", default=260.0)),
+                (5.25, stats.get(name, lvl, "Damage per Second / After 5.25s", default=2600.0)),
+            ]
+            b.weapon = W(b, "inferno_single", range_=9.0, interval=0.128, extra={"ramp": ramp})
+    elif key == "eagle":
+        b.weapon = W(b, "eagle", range_=50.0, min_range=7.0, interval=10.0, damage=stats.get(name, lvl, "Damage per Hit", default=525.0),
+                     extra={"activation": 200, "shells": 3, "gap": 0.75, "shock": stats.get(name, lvl, "Shockwave Damage", default=50.0), "splash": 0.75, "shock_radius": 3.0})
+    elif key == "scatter":
+        b.weapon = W(b, "scatter", range_=10.0, min_range=3.0, interval=3.2, damage=stats.get(name, lvl, "Damage per Shot*", default=576.0),
+                     extra={"splash_max": 420.0, "splash_min": 150.0})
+        hi = stats.text(name, lvl, "Damage per Shot*")
+        if hi and "-" in str(hi):
+            lo_, hi_ = [stats.num(x) for x in str(hi).split("-")]
+            b.weapon.damage = hi_
+            b.weapon.extra["inner_min"] = lo_
+        sp = stats.text(name, lvl, "Splash Damage**")
+        if sp and "-" in str(sp):
+            lo_, hi_ = [stats.num(x) for x in str(sp).split("-")]
+            b.weapon.extra.update(splash_min=lo_, splash_max=hi_)
+    elif key == "mono":
+        b.weapon = W(b, "monolith", range_=11.0, interval=1.5, damage=stats.get(name, lvl, "Base Damage per Shot", default=289.5),
+                     extra={"pct": stats.get(name, lvl, "Bonus Damage per Shot", default=13.0) / 100.0})
+    elif key == "sweeper":
+        b.weapon = W(b, "sweeper", targets="air", range_=15.0, min_range=1.0, interval=5.0, extra={"push": stats.get(name, lvl, "Push Strength", default=4.0)})
+        b.weapon.facing = FACINGS.get(b.mode or "E", 0.0)
+    elif key == "bh":
+        if lvl == 1:
+            b.is_defense = False
+            return
+        b.weapon = W(b, "single", range_=7.0, interval=0.4, damage=_dmg(name, lvl, 0.4),
+                     extra={"repair": stats.get(name, lvl, "Repair per Second", default=85.0), "repair_range": 7.0})
+        b.is_defense = True
+        position = (b.x, b.y)
+        if battle.battle_mode == "multiplayer":
+            # Wiki: Builder's Hut, Builders may start at their construction sites.
+            position = battle.builder_starts.get(b.id, position)
+        battle.builders.append(Builder(b, *position))
+    elif key == "st":
+        b.weapon = W(b, "spell_tower", range_=9.0, interval=70.0)
+        b.weapon.mode = b.mode or "rage"
+        unlocks = {
+            "rage": 1,
+            "poison": 2,
+            "invis": 3,
+            "eq": 4,
+            "quake": 4,
+            "earthquake": 4,
+        }
+        # Wiki: Spell Tower, Earthquake unlocks at level 4 and TH17.
+        required = unlocks.get(b.weapon.mode)
+        if required is None or lvl < required:
+            raise ValueError("Spell Tower mode is not unlocked")
+        if required == 4 and battle.town_hall < 17:
+            raise ValueError("Earthquake Spell Towers require Town Hall 17")
+    elif key == "mgt":
+        if b.mode == "long":
+            b.weapon = W(b, "single", range_=12.0, interval=1.0, damage=stats.get(name, lvl, "Damage per Hit", default=390.0))
+        else:
+            b.weapon = W(b, "burst", range_=8.0, interval=0.383, damage=stats.get(name, lvl, "Damage per Hit**", default=170.4), extra={"shots": 4, "gap": 0.192})
+    elif key == "firespitter":
+        b.weapon = W(b, "firespitter", range_=16.0, interval=1.0167, damage=stats.get(name, lvl, "Damage per Hit**", default=51.07), extra={"shots": 20, "gap": 0.064, "pierce": 2, "arc": math.radians(75)})
+        # Wiki: Firespitter, four orientations separated by 90 degrees.
+        if b.mode not in (None, "N", "E", "S", "W"):
+            raise ValueError("Firespitter facing must be N, E, S or W")
+        b.weapon.facing = FACINGS[b.mode or "E"]
+    elif key == "swt":
+        b.weapon = W(b, "super_wizard", range_=8.0, interval=1.3, damage=stats.get(name, lvl, "Damage per Hit (Primary)", default=416.0),
+                     extra={"secondary": stats.get(name, lvl, "Damage per Hit (Secondary)", default=166.4), "chain": 15, "chain_range": 4.0})
+    elif key == "revenge":
+        b.weapon = W(b, "revenge", range_=11.0, interval=1.2, damage=stats.get(name, lvl, "Damage per Shot", default=500.0))
+    elif key == "crafting":
+        _attach_crafted(battle, b)
+    if key in ("at", "cannon", "mortar"):
+        _gear_up(battle, b)
+    # Wiki: X-Bow, Inferno Tower, Eagle Artillery and Scattershot ammunition.
+    capacities = {"xbow": 1500, "inferno": 1000, "eagle": 90, "scatter": 90}
+    if key in capacities:
+        capacity = capacities[key]
+        rounds = battle.defense_ammo.get(b.id, battle.defense_ammo.get(key, capacity))
+        if not isinstance(rounds, int) or not 0 <= rounds <= capacity:
+            raise ValueError(f"Illegal {b.name} ammunition: {rounds}")
+        b.weapon.ammunition = rounds
+
+
+def _artillery_damage(battle):
+    # Wiki: Town Hall/Inferno Artillery, five weapon levels.
+    level = battle.defense_levels.get("th:weapon", 5)
+    if level not in range(1, 6):
+        raise ValueError("Inferno Artillery level must be between 1 and 5")
+    return (140.0, 157.5, 175.0, 192.5, 210.0)[level - 1]
+
+
+def _gear_up(battle, b):
+    if b.mode in (None, "normal"):
+        return
+    if b.mode not in ("geared", "burst", "fast"):
+        raise ValueError(f"Unknown {b.name} mode: {b.mode}")
+    # Wiki: Cannon/Home Village, Archer Tower/Home Village and Mortar.
+    minimum = {"cannon": 7, "at": 10, "mortar": 8}[b.key]
+    if not isinstance(b.level, int):
+        # Mortar's geared charge tables disagree about the required Town Hall.
+        raise ValueError("Geared Mortar supercharge eligibility is unresolved")
+    if b.level < minimum:
+        raise ValueError(f"{b.name} is below its gear-up level")
+    w = b.weapon
+    if b.key == "at":
+        # Wiki: Archer Tower/Home Village, Fast Attack damage per shot, L10-21.
+        shots = (31.5, 35, 37.5, 40, 45, 50, 52.5, 55, 60, 65, 69, 72.5)
+        w.range, w.interval, w.damage = 8.0, 0.25, shots[b.level - minimum]
+    elif b.key == "cannon":
+        w.kind, w.range, w.interval = "burst", 7.0, 1.6
+        w.damage = stats.get(b.name, b.level, "Damage per Hit**")
+        w.extra.update(shots=4, gap=0.192)
+    else:
+        w.kind, w.interval = "mortar_burst", 4.0
+        w.damage = stats.get(b.name, b.level, "Damage per Shot")
+        w.extra.update(shots=3, gap=0.5)
+
+
+def reveal_tesla(battle, b):
+    if b.revealed or not b.alive:
+        return
+    b.revealed = True
+    for unit in battle.attackers:
+        unit.target = unit.wall_target = None
+        unit.target_kind = None
+        unit.extra.pop("next_engage", None)
+    # Wiki: Hidden Tesla/Home Village, residual spell coverage survives reveal.
+    for field in battle.fields:
+        if not field.started <= battle.t < field.until:
+            continue
+        if b.edge_distance(field.x, field.y) > field.radius:
+            continue
+        if field.kind == "tesla_freeze":
+            b.frozen_until = max(b.frozen_until, field.until)
+        elif field.kind == "tesla_overgrowth":
+            b.overgrown_until = max(b.overgrown_until, field.until)
+
+
+def on_destroyed(battle, b: Building):
+    if b.name == "Hero Bell":
+        bell_tick(battle)
+    w = b.weapon
+    if w is None or b.extra.get("unavailable"):
+        return
+    if w.kind == "spell_tower" and w.cooldown <= 0:
+        from . import spells
+
+        near = _tower_candidates(battle, w)
+        spells.tower_cast(battle, b, w.mode, near)
+        w.cooldown = 70.0 if w.mode in ("rage", "poison") else 50.0
+        w.extra.pop("trigger", None)
+    if w.kind == "giga_inferno":
+        g = w.extra
+        battle.add_pending(
+            Pending(
+                battle.t + 1.0,
+                b.x,
+                b.y,
+                g["death_radius"],
+                g["death"],
+                True,
+                True,
+                "th_death",
+                actor=b,
+                effect="death",
+                extra={
+                    "poison": {
+                        "dps": g["poison_dps"],
+                        "time": g["poison_time"],
+                        "slow": g["slow"],
+                        "radius": g["death_radius"],
+                    }
+                },
+            )
+        )
+    elif b.key == "bt":
+        battle.add_pending(
+            Pending(
+                battle.t + w.extra["death_delay"],
+                b.x,
+                b.y,
+                w.extra["death_radius"],
+                w.extra["death"],
+                False,
+                True,
+                "bt_death",
+                actor=b,
+                effect="death",
+            )
+        )
+
+
+def _visible(battle, w: Weapon, r: float):
+    b = w.owner
+    t = battle.t
+    out = []
+    for a in battle.attackers_near(b.x, b.y, r):
+        if not a.targetable(t):
+            continue
+        if a.name != "Totem":
+            if a.flying:
+                if w.targets == "ground":
+                    continue
+            elif w.targets == "air":
+                continue
+        if w.min_range and dist(a.x, a.y, b.x, b.y) < w.min_range:
+            continue
+        out.append(a)
+    return out
+
+
+def _rage(battle, b):
+    return b.rage_mult if battle.t < b.rage_until else 1.0
+
+
+def _slow(battle, b):
+    return effects.slow_mult(b, battle.t)
+
+
+def act(battle, w: Weapon):
+    b = w.owner
+    t = battle.t
+    dt = battle.DT
+    if w.kind == "bh_repair_only":
+        return
+    if b.key == "tesla" and not b.revealed:
+        if any(
+            a.name != "Totem" and not a.underground
+            for a in battle.attackers_near(b.x, b.y, w.extra["trigger"])
+        ):
+            reveal_tesla(battle, b)
+        else:
+            return
+    if b.extra.get("unavailable") or w.ammunition == 0:
+        return
+    if t < b.stun_until and w.kind == "monolith":
+        w.target = None
+    if b.disabled(t):
+        w.lock_time = 0.0
+        if w.kind != "eagle":
+            w.burst_left = 0
+        return
+    if w.kind == "giga_inferno" and not battle.th_active:
+        return
+    # cooldowns carry their remainder so intervals that are not multiples of
+    # the tick (X-Bow 0.128 s, Firespitter 0.064 s) keep their true rate
+    w.cooldown = max(w.cooldown - dt * _slow(battle, b), -dt)
+    for _ in range(12):
+        before = w.cooldown
+        _act_once(battle, w)
+        if w.ammunition == 0 or w.cooldown > 0 or w.cooldown == before:
+            break
+
+
+def _act_once(battle, w: Weapon):
+    b = w.owner
+    t = battle.t
+    dt = battle.DT
+    k = w.kind
+    if k == "hook":
+        if w.cooldown > 0:
+            return
+        candidates = _visible(battle, w, w.range)
+        if not candidates:
+            return
+        target = min(candidates, key=lambda unit: dist(b.x, b.y, unit.x, unit.y))
+        # Wiki: Hook Tower damages and stuns sieges without reeling them. Reeling
+        # other units in is not modelled (its pull numbers are not stated), so
+        # they take the hit and the stun only.
+        battle.hit_unit(target, w.damage)
+        target.stun_until = max(target.stun_until, t + w.extra["stun"])
+        w.cooldown += w.interval
+        return
+    if k == "eagle":
+        return _eagle(battle, w)
+    if k == "sweeper":
+        return _sweeper(battle, w)
+    if k == "spell_tower":
+        return _spell_tower(battle, w)
+    rage = _rage(battle, b)
+    if k == "candle":
+        # Wiki: Hot Candle, August 31 history uses deployment; summary conflicts.
+        first = battle.first_deploy_t
+        if first is not None:
+            active = battle.t - first
+            w.extra["targets"] = 6 if active < w.extra["melt1"] else 4 if active < w.extra["melt2"] else 3
+        return _multi(battle, w, rage)
+    if k == "cake":
+        return _cake(battle, w, rage)
+    if k in ("multi_archer", "inferno_multi", "giga_inferno"):
+        return _multi(battle, w, rage)
+    if k == "inferno_artillery":
+        return _inferno_artillery(battle, w, rage)
+    if k == "super_wizard":
+        return _super_wizard(battle, w, rage)
+    if k == "firespitter":
+        return _firespitter(battle, w, rage)
+    # single-target families keep their target while valid
+    tgt = w.target
+    if tgt is not None:
+        d = dist(tgt.x, tgt.y, b.x, b.y)
+        if not tgt.alive or not tgt.targetable(t) or d > w.range or d < w.min_range:
+            tgt = None
+            w.lock_time = 0.0
+    if tgt is None:
+        if t < w.idle_until:
+            return
+        pool = _visible(battle, w, w.range)
+        if not pool:
+            w.idle_until = t + 0.25
+            return
+        if k == "hunter" and any(a.is_hero for a in pool):
+            pool = [a for a in pool if a.is_hero]  # prioritises heroes (wiki)
+        tgt = min(pool, key=lambda a: dist(a.x, a.y, b.x, b.y))
+        w.target = tgt
+        w.lock_time = 0.0
+    if k == "inferno_single":
+        w.lock_time += dt
+        dps = 0.0
+        for start, value in w.extra["ramp"]:
+            if w.lock_time >= start:
+                dps = value
+        duration = dt * _slow(battle, b)
+        if w.ammunition is not None:
+            duration = min(duration, w.ammunition * w.interval - w.ammo_time)
+        battle.hit_unit(tgt, dps * duration * rage)
+        w.ammo_time += duration
+        # Wiki: Inferno Tower, one round per 0.128 seconds at every charge stage.
+        while w.ammo_time + 1e-9 >= w.interval:
+            w.ammo_time -= w.interval
+            w.ammunition -= 1
+        return
+    if w.cooldown > 0:
+        return
+    if k == "burst":
+        if w.burst_left <= 0:
+            w.burst_left = w.extra["shots"]
+        battle.hit_unit(tgt, w.damage * rage)
+        w.burst_left -= 1
+        w.cooldown += w.extra["gap"] if w.burst_left > 0 else w.interval
+        return
+    if k == "mortar_burst":
+        if w.burst_left <= 0:
+            w.burst_left = w.extra["shots"]
+        _mortar_shell(battle, w, tgt, w.damage * rage)
+        w.burst_left -= 1
+        w.cooldown += w.extra["gap"] if w.burst_left else w.interval
+        return
+    if k == "revenge":
+        _revenge(battle, w, tgt, rage)
+        return
+    w.cooldown += w.interval
+    if w.ammunition is not None:
+        w.ammunition -= 1
+    dmg = w.damage * rage
+    if k == "single":
+        battle.hit_unit(tgt, dmg)
+    elif k == "monolith":
+        # rage tower boosts only the base damage (wiki)
+        # league modifiers do not boost the percentage bonus (wiki)
+        battle.hit_unit(tgt, dmg + w.extra["pct"] * tgt.max_hp / battle.def_mult)
+    elif k == "ricochet":
+        battle.hit_unit(tgt, dmg)
+        best, bd = None, w.extra["bounce_range"]
+        for a in battle.attackers_near(tgt.x, tgt.y, bd):
+            if a is not tgt and not a.flying and a.targetable(t):
+                d = dist(a.x, a.y, tgt.x, tgt.y)
+                if d <= bd:
+                    bd, best = d, a
+        if best is not None:
+            battle.hit_unit(best, w.extra["bounce"] * rage)
+    elif k == "splash":
+        # Wizard Tower damages only the target's type; Bomb Tower ground only
+        air = tgt.flying if w.extra.get("same_type") else w.targets in ("air", "both")
+        ground = (not tgt.flying) if w.extra.get("same_type") else w.targets in ("ground", "both")
+        battle.splash_units(tgt.x, tgt.y, w.extra["splash"], dmg, air, ground)
+    elif k == "mortar":
+        _mortar_shell(battle, w, tgt, dmg)
+    elif k == "scatter":
+        _scatter(battle, w, tgt, dmg, rage)
+    elif k == "hunter":
+        _hunter_hit(battle, w, tgt, rage)
+
+
+def _mortar_shell(battle, w, target, damage):
+    battle.add_pending(
+        Pending(
+            battle.t + w.extra["flight"],
+            target.x,
+            target.y,
+            w.extra["splash"],
+            damage,
+            False,
+            True,
+            "mortar",
+            falloff=True,
+            extra={"origin": (w.owner.x, w.owner.y)},
+        )
+    )
+
+
+def _multi(battle, w: Weapon, rage):
+    b = w.owner
+    t = battle.t
+    if w.cooldown > 0:
+        return
+    if w.kind == "multi_archer":
+        n = 3
+    elif w.kind == "giga_inferno":
+        n = w.extra["targets"]
+    else:
+        n = w.extra["targets"]
+    if w.kind == "candle":
+        # Wiki: Hot Candle, all flames go to the nearest available targets.
+        keep = sorted(
+            _visible(battle, w, w.range),
+            key=lambda a: (dist(a.x, a.y, b.x, b.y), a.spawned_at, a.id),
+        )[:n]
+    else:
+        keep = [
+            a
+            for a in w.multi
+            if a.alive and a.targetable(t) and dist(a.x, a.y, b.x, b.y) <= w.range
+        ]
+    if len(keep) < n:
+        for a in sorted(_visible(battle, w, w.range), key=lambda a: dist(a.x, a.y, b.x, b.y)):
+            if a not in keep:
+                keep.append(a)
+                if len(keep) >= n:
+                    break
+    w.multi = keep
+    if not keep:
+        return
+    if w.kind in ("multi_archer", "candle"):
+        keep.sort(key=lambda a: (dist(a.x, a.y, b.x, b.y), a.spawned_at, a.id))
+        # Wiki: Multi-Archer Tower and Hot Candle, concentrate unused shots.
+        arrows = [keep[i % len(keep)] for i in range(n)]
+        for a in arrows:
+            battle.hit_unit(a, w.damage * rage)
+        w.cooldown += w.interval
+        return
+    dmg = w.damage * rage
+    if w.ammunition is not None:
+        w.ammunition -= 1
+    for a in keep:
+        battle.hit_unit(a, dmg)
+    w.cooldown += w.interval
+
+
+def _cake(battle, w, rage):
+    if w.cooldown > 0:
+        return
+    b = w.owner
+    pool = _visible(battle, w, w.range)
+    if not pool:
+        return
+    tgt = min(pool, key=lambda a: dist(a.x, a.y, b.x, b.y))
+    battle.splash_units(tgt.x, tgt.y, w.extra["splash"], w.damage * rage, tgt.flying, not tgt.flying)
+    battle.add_pending(Pending(battle.t + w.extra["bomb_delay"], tgt.x, tgt.y, w.extra["bomb_radius"], w.extra["bomb"] * rage, True, True, "cake"))
+    w.cooldown += w.interval
+
+
+def _hunter_hit(battle, w, tgt, rage):
+    """Cards deal double damage to heroes and poison the target: Poison
+    Spell slows at the module's spell level, damage wears off fast (wiki)."""
+    battle.hit_unit(tgt, w.damage * rage * (2.0 if tgt.is_hero else 1.0))
+    lvl = w.extra["poison_level"]
+    slow = stats.get("Poison Spell", lvl, "Speed Decrease", default=50.0) / 100.0
+    atk = stats.get("Poison Spell", lvl, "Attack Rate Decrease", default=70.0) / 100.0
+    t = battle.t
+    tgt.move_slow, tgt.move_slow_until = min(tgt.move_slow if t < tgt.move_slow_until else 1.0, 1.0 - slow), t + w.extra["poison_time"]
+    tgt.atk_slow, tgt.atk_slow_until = min(tgt.atk_slow if t < tgt.atk_slow_until else 1.0, 1.0 - atk), t + w.extra["poison_time"]
+
+
+def _scatter(battle, w, tgt, dmg, rage):
+    """Primary hit plus a 90-degree cone behind the target; units within 1 tile
+    take the max splash, 1-5 tiles fall off to the min (wiki)."""
+    b = w.owner
+    battle.hit_unit(tgt, dmg)
+    ax, ay = tgt.x - b.x, tgt.y - b.y
+    ang = math.atan2(ay, ax)
+    smax, smin = w.extra["splash_max"] * rage, w.extra["splash_min"] * rage
+    for a in battle.attackers_near(tgt.x, tgt.y, 5.0):
+        if a is tgt or a.flying != tgt.flying or not a.alive or a.underground:
+            continue
+        dx, dy = a.x - tgt.x, a.y - tgt.y
+        d = math.hypot(dx, dy)
+        if d > 1e-6:
+            off = abs((math.atan2(dy, dx) - ang + math.pi) % (2 * math.pi) - math.pi)
+            if off > math.pi / 4:
+                continue
+        amt = smax if d <= 1.0 else smax - (smax - smin) * (d - 1.0) / 4.0
+        battle.hit_unit(a, amt)
+
+
+def _eagle(battle, w: Weapon):
+    if battle.deployed_housing < w.extra["activation"] or w.cooldown > 0:
+        return
+    b = w.owner
+    if w.burst_left <= 0:
+        pool = [
+            unit for unit in _visible(battle, w, w.range) if unit.name != "Yetimite"
+        ]
+        if not pool:
+            return
+        # The wiki does not state the HP-density kernel or Giant Giant's weight.
+        w.target = min(pool, key=lambda a: dist(a.x, a.y, b.x, b.y))
+        w.burst_left = w.extra["shells"]
+    target = w.target
+    if target is None or not target.alive:
+        # the burst's target was cleared mid-burst (Totem or Invisibility
+        # retargeting, or it died): pick the nearest visible unit, or stop
+        pool = [unit for unit in _visible(battle, w, w.range) if unit.name != "Yetimite"]
+        if not pool:
+            w.burst_left = 0
+            return
+        w.target = target = min(pool, key=lambda a: dist(a.x, a.y, b.x, b.y))
+    # Launch only the current shell; disabling the tower pauses later launches.
+    # Flight delay remains the existing approximation; the wiki gives no timing.
+    for radius, damage in (
+        (w.extra["splash"], w.damage - w.extra["shock"]),
+        (w.extra["shock_radius"], w.extra["shock"]),
+    ):
+        battle.add_pending(
+            Pending(
+                battle.t + 1.5,
+                target.x,
+                target.y,
+                radius,
+                damage * _rage(battle, b),
+                True,
+                True,
+                "eagle",
+                extra={
+                    "track": target,
+                    "origin": (b.x, b.y),
+                    "min_range": w.min_range,
+                    "max_range": w.range,
+                },
+            )
+        )
+    if w.ammunition is not None:
+        w.ammunition -= 1
+    w.burst_left -= 1
+    # Wiki: Eagle Artillery, 0.75-second launch gaps then 10 seconds.
+    w.cooldown += w.extra["gap"] if w.burst_left else w.interval
+
+
+def _sweeper(battle, w: Weapon):
+    if w.cooldown > 0:
+        return
+    b = w.owner
+    # swivels up to 45 degrees either side; the puff covers ~10 degrees (wiki)
+    cands = []
+    for a in battle.attackers_near(b.x, b.y, w.range):
+        if not a.flying or a.name == "Totem" or not a.targetable(battle.t):
+            continue
+        d = dist(a.x, a.y, b.x, b.y)
+        if d < w.min_range:
+            continue
+        ang = math.atan2(a.y - b.y, a.x - b.x)
+        if abs((ang - w.facing + math.pi) % (2 * math.pi) - math.pi) <= math.pi / 4:
+            cands.append((d, ang, a))
+    if not cands:
+        return
+    _, aim, _ = min(cands, key=lambda c: c[0])  # ties must not compare units
+    push = w.extra["push"]
+    for a in battle.attackers_near(b.x, b.y, w.range):
+        if not a.flying or a.name == "Totem":
+            continue
+        ang = math.atan2(a.y - b.y, a.x - b.x)
+        if abs((ang - aim + math.pi) % (2 * math.pi) - math.pi) <= math.radians(5):
+            battle._nudge(a, math.cos(ang) * push, math.sin(ang) * push)
+            a.extra["pushed_at"] = battle.t
+            # Wiki: Air Sweeper, knockback resets Inferno Dragon's charge.
+            from . import units
+
+            units.reset_beam(a)
+    w.cooldown += w.interval
+
+
+def _tower_candidates(battle, w):
+    from . import spells
+
+    return [
+        unit
+        for unit in _visible(battle, w, w.range)
+        if unit.name not in spells.NO_TRIGGER
+        and (w.mode not in ("eq", "quake", "earthquake") or not unit.flying)
+    ]
+
+
+def _spell_tower(battle, w: Weapon):
+    from . import spells
+
+    if w.cooldown > 0:
+        return
+    t = battle.t
+    trigger = w.extra.get("trigger")
+    if w.mode == "invis":
+        triggers = {
+            unit: since
+            for unit, since in w.extra.get("hit_triggers", {}).items()
+            if unit.alive
+        }
+        w.extra["hit_triggers"] = triggers
+        if not triggers:
+            return
+        unit = min(triggers, key=triggers.get)
+        since = triggers[unit]
+    else:
+        near = _tower_candidates(battle, w)
+        if trigger is None or trigger[0] not in near:
+            w.extra.pop("trigger", None)
+            if near:
+                w.extra["trigger"] = (near[0], t)
+            return
+        unit, since = trigger
+    if t - since < 1.2:  # Wiki: Spell Tower, continuous activation time.
+        return
+    spells.tower_cast(battle, w.owner, w.mode, [unit])
+    w.extra.pop("trigger", None)
+    w.extra.pop("hit_triggers", None)
+    w.cooldown += 70.0 if w.mode in ("rage", "poison") else 50.0
+
+
+@dataclass
+class Builder:
+    owner: Building
+    x: float
+    y: float
+    target: Building | None = None
+    cooldown: float = 0.0
+    frozen_until: float = 0.0
+    stun_until: float = 0.0
+    repair_slow: float = 1.0
+    slow_until: float = 0.0
+    rage_until: float = 0.0
+    rage_speed: float = 0.0
+    repair_boost: float = 1.0
+
+
+def builder_spell(battle, field):
+    t = battle.t
+    for builder in battle.builders:
+        if not builder.owner.alive:
+            continue
+        if dist(builder.x, builder.y, field.x, field.y) > field.radius:
+            continue
+        if field.kind == "tesla_freeze":
+            builder.frozen_until = max(builder.frozen_until, field.until)
+        elif field.kind == "freeze":
+            builder.frozen_until = max(builder.frozen_until, t + field.value)
+        elif field.kind == "poison":
+            builder.repair_slow = 1.0 - field.extra["atk"]
+            builder.slow_until = min(field.until, t + battle.DT)
+        elif field.kind in ("lightning", "totem"):
+            builder.target = None
+            if field.kind == "lightning":
+                # Wiki: Lightning Spell, the listed stun lasts 0.1 seconds.
+                duration = stats.num(stats.attrs("Lightning Spell")["raw"]["Stun Time"])
+                builder.stun_until = max(builder.stun_until, t + duration)
+            # Totem's stun duration is unstated.
+        elif field.kind == "def_rage" or (field.kind == "rage" and field.team == "def"):
+            # Wiki: Spell Tower; Builder repair doubles without faster attacks.
+            builder.repair_boost = 2.0
+            builder.rage_speed = field.extra.get("speed", 30.0 / 8.0)
+            builder.rage_until = min(field.until, t + battle.DT)
+
+
+def builders_tick(battle):
+    groups = {}
+    t = battle.t
+    for builder in battle.builders:
+        b = builder.owner
+        if not b.alive or b.extra.get("unavailable"):
+            continue
+        target = builder.target
+
+        def available(other):
+            return (
+                other.alive
+                and other.counted
+                and other.hp < other.max_hp
+                and t >= other.invisible_until
+                and t >= other.overgrown_until
+                and dist(other.x, other.y, b.x, b.y) <= b.weapon.extra["repair_range"]
+            )
+
+        if target is None or not available(target):
+            pool = [other for other in battle.buildings if available(other)]
+            # Initial selection priority is unstated; retain the existing heuristic.
+            target = min(pool, key=lambda other: other.hp / other.max_hp, default=None)
+            builder.target = target
+        if target is None or t < max(builder.frozen_until, builder.stun_until):
+            continue
+        # Wiki: Builder's Hut, display speed 20 and a 0.75-second repair interval.
+        speed = stats.attrs(b.name)["speed_display"] / 8.0
+        boost = builder.repair_boost if t < builder.rage_until else 1.0
+        if t < builder.rage_until:
+            speed += builder.rage_speed
+        # Exact repair reach is unstated; travel currently ends at the target center.
+        distance = dist(builder.x, builder.y, target.x, target.y)
+        step = speed * battle.DT
+        if distance > step:
+            builder.x += (target.x - builder.x) * step / distance
+            builder.y += (target.y - builder.y) * step / distance
+            continue
+        builder.x, builder.y = target.x, target.y
+        slow = builder.repair_slow if t < builder.slow_until else 1.0
+        builder.cooldown = max(builder.cooldown - battle.DT * slow, -battle.DT)
+        groups.setdefault(target, []).append((builder, boost))
+    for target, builders in groups.items():
+        # Wiki: Builder's Hut, marginal repair effectiveness for five Builders.
+        weights = (1.0, 1.0, 0.9, 0.9, 0.7)
+        amounts = [
+            stats.get(builder.owner.name, builder.owner.level, "Repair per Hit") * boost
+            for builder, boost in builders
+        ]
+        # The wiki gives no assignment order for unequal repair amounts.
+        efficiency = (
+            sum(weights[: len(builders)]) / len(builders)
+            if len(set(amounts)) == 1
+            else 1.0
+        )
+        for (builder, _), amount in zip(builders, amounts):
+            if builder.cooldown <= 0:
+                target.hp = min(target.max_hp, target.hp + amount * efficiency)
+                builder.cooldown += 0.75
+
+
+def _inferno_artillery(battle, w, rage):
+    if w.cooldown > 0:
+        return
+    b = w.owner
+    pool = sorted(_visible(battle, w, w.range), key=lambda a: dist(a.x, a.y, b.x, b.y))[: w.extra["targets"]]
+    if not pool:
+        return
+    from .entities import Field
+
+    # Wiki: Town Hall/Inferno Artillery, distribute four single-target projectiles.
+    for index in range(w.extra["targets"]):
+        a = pool[index % len(pool)]
+        battle.hit_unit(a, w.damage * rage)
+        battle.fields.append(Field("def_burn", a.x, a.y, w.extra["pool_radius"], battle.t + w.extra["pool_time"], team="def", value=w.extra["pool_dps"]))
+    w.cooldown += w.interval
+
+
+def _super_wizard(battle, w, rage):
+    if w.cooldown > 0:
+        return
+    b = w.owner
+    pool = _visible(battle, w, w.range)
+    if not pool:
+        return
+    tgt = min(pool, key=lambda a: dist(a.x, a.y, b.x, b.y))
+    battle.hit_unit(tgt, w.damage * rage)
+    hit = {tgt.id}
+    for _ in range(w.extra["chain"]):
+        nxt, nd = None, w.extra["chain_range"]
+        for a in battle.attackers_near(tgt.x, tgt.y, nd):
+            if a.id not in hit and a.targetable(battle.t):
+                d = dist(a.x, a.y, tgt.x, tgt.y)
+                if d <= nd:
+                    nd, nxt = d, a
+        if nxt is None:
+            break
+        hit.add(nxt.id)
+        battle.hit_unit(nxt, w.extra["secondary"] * rage)
+    w.cooldown += w.interval
+
+
+def _firespitter(battle, w, rage):
+    b = w.owner
+    t = battle.t
+    if w.cooldown > 0:
+        return
+    tgt = w.target
+    arc = w.extra["arc"]
+    in_sector = (
+        tgt is not None
+        and abs(
+            (math.atan2(tgt.y - b.y, tgt.x - b.x) - w.facing + math.pi) % (2 * math.pi)
+            - math.pi
+        )
+        <= arc
+    )
+    if (
+        tgt is None
+        or not tgt.alive
+        or not tgt.targetable(t)
+        or dist(tgt.x, tgt.y, b.x, b.y) > w.range
+        or not in_sector
+    ):
+        w.burst_left = 0
+        cands = []
+        for a in _visible(battle, w, w.range):
+            ang = math.atan2(a.y - b.y, a.x - b.x)
+            if abs((ang - w.facing + math.pi) % (2 * math.pi) - math.pi) <= arc:
+                cands.append((dist(a.x, a.y, b.x, b.y), a))
+        if not cands:
+            return
+        tgt = min(cands, key=lambda c: c[0])[1]
+        w.target = tgt
+    if w.burst_left <= 0:
+        w.burst_left = w.extra["shots"]
+    # each ball pierces to the next unit behind the target on the same line
+    battle.hit_unit(tgt, w.damage * rage)
+    ang = math.atan2(tgt.y - b.y, tgt.x - b.x)
+    for a in battle.attackers_near(tgt.x, tgt.y, 2.0):
+        if a is not tgt and a.targetable(t):
+            off = abs((math.atan2(a.y - b.y, a.x - b.x) - ang + math.pi) % (2 * math.pi) - math.pi)
+            if off < 0.2 and dist(a.x, a.y, b.x, b.y) > dist(tgt.x, tgt.y, b.x, b.y):
+                battle.hit_unit(a, w.damage * rage)
+                break
+    w.burst_left -= 1
+    w.cooldown += w.extra["gap"] if w.burst_left > 0 else w.interval
+
+
+def _revenge(battle, w, tgt, rage):
+    # Wiki: Revenge Tower, stages after 5, 25 and 50 destroyed buildings.
+    destroyed = battle.destroyed_counted
+    if destroyed < 5:
+        return
+    stage = 3 if destroyed >= 50 else 2 if destroyed >= 25 else 1
+    if stage == 1:
+        battle.hit_unit(tgt, w.damage * rage)
+        w.cooldown += 1.2
+        return
+    columns = (
+        "Damage per Shot (Primary)",
+        "Damage per Shot (Secondary)",
+        "Damage per Shot (Tertiary)",
+    )
+    current, hit = tgt, {tgt.id}
+    battle.hit_unit(tgt, stats.get(w.owner.name, w.owner.level, columns[0]) * rage)
+    for column in columns[1:stage]:
+        next_target = next(
+            (
+                unit
+                for unit in battle.attackers_near(current.x, current.y, 2.0)
+                if unit.id not in hit and unit.targetable(battle.t)
+            ),
+            None,
+        )
+        if next_target is None:
+            break
+        battle.hit_unit(
+            next_target, stats.get(w.owner.name, w.owner.level, column) * rage
+        )
+        hit.add(next_target.id)
+        current = next_target
+    w.cooldown += 0.6 if stage == 2 else 0.35
+
+
+def bell_tick(battle):
+    bells = [b for b in battle.buildings if b.alive and b.name == "Hero Bell"]
+    for hero in battle.defenders:
+        if not hero.alive or not hero.is_hero:
+            continue
+        damage_boost = health_boost = 0.0
+        for bell in bells:
+            if dist(hero.x, hero.y, bell.x, bell.y) > stats.attrs("Hero Bell")["range"]:
+                continue
+            # Module percentages and radius (wiki: Hero Bell).
+            damage_level = battle.defense_levels.get("crafting:damage", bell.level)
+            health_level = battle.defense_levels.get("crafting:health", bell.level)
+            damage_boost = max(
+                damage_boost,
+                stats.get("Hero Bell", damage_level, "Hero DPS Boost") / 100.0,
+            )
+            health_boost = max(
+                health_boost,
+                stats.get("Hero Bell", health_level, "Hero HP Boost") / 100.0,
+            )
+        previous = hero.extra.get("bell_health", 1.0)
+        multiplier = 1.0 + health_boost
+        hero.hp *= multiplier / previous
+        hero.max_hp *= multiplier / previous
+        hero.extra["bell_health"] = multiplier
+        hero.extra["bell_damage"] = 1.0 + damage_boost
+    # Activation/removal delay is not stated; no delay is invented.

@@ -28,9 +28,9 @@ explicit `attack_spells` list, including `[]` when no such cast is selected.
 
 The conditional recipe integration adds seven selected troops, four equipment
 items, Frosty with explicit Frostmite statistics, paid Totem/Recall, and Log
-Launcher. See [the recipe binding map](RECIPE_BINDING_MAP.md). Complete TH17/18
+Launcher. See [the recipe binding map](legacy/RECIPE_BINDING_MAP.md). Complete TH17/18
 scenario assembly and the experimental Revenge Tower contract are documented in
-[higher-TH scenarios](HIGHER_TH_SCENARIOS.md). Compilation does not establish
+[higher-TH scenarios](legacy/HIGHER_TH_SCENARIOS.md). Compilation does not establish
 complete battle execution or game accuracy.
 
 Behavior remains conditional on explicit geometry, quantity, stacking, visibility,
@@ -58,9 +58,9 @@ Optional Inferno fuel now gates the shared weapon rather than being discarded.
 Ice Block's ordinary troop weapon/movement path is now bound and tested through
 paid battles, including defensive Ice Golem death-Freeze overlap in both orders.
 Secondary lifecycle recipients fail closed; selected core hero loadouts now bind
-under the subsequent [spell lifecycle checkpoint](SPELL_LIFECYCLE_CHECKPOINT.md).
+under the subsequent [spell lifecycle checkpoint](legacy/SPELL_LIFECYCLE_CHECKPOINT.md).
 The Jump/Tornado expiry correction uses a legal shared ground exit after capture.
-See [the clock checkpoint](SPELL_CLOCK_CHECKPOINT.md) for exact scope and limits.
+See [the clock checkpoint](legacy/SPELL_CLOCK_CHECKPOINT.md) for exact scope and limits.
 
 Bat, Skeleton and Jump now have explicit v29 shared bindings and paid battle
 regressions. They require `advanced_spell_binding` as well as the complete spell
@@ -81,7 +81,7 @@ Stabilization rejects immediate reversal of a committed isolation contact with a
 diagnostic identifying actors, time, radius, and the unresolved policy. It does
 not invent hysteresis, sampled updates, or sliding/contact dynamics. Completing
 that battle requires evidence or an explicit experimental policy for this case.
-An opt-in [sampled-isolation policy](DUKE_CONTACT_EXPERIMENT.md) now provides a
+An opt-in [sampled-isolation policy](legacy/DUKE_CONTACT_EXPERIMENT.md) now provides a
 finite experimental continuation, with explicit timing/provenance and separate
 sensitivity checks. Strict rejection remains the default. Its cadence is not a
 measured game mechanic.
@@ -101,7 +101,7 @@ observations. These contracts have no calibrated full-battle validation.
 The previous ground development battle reached three stars under its declared
 parameters. The full-air benchmark completes only under the explicitly selected
 sampled-isolation policy; strict isolation still rejects the unresolved contact.
-The [consolidated recipe checkpoint](CONSOLIDATED_RECIPE_CHECKPOINT.md) separates
+The [consolidated recipe checkpoint](legacy/CONSOLIDATED_RECIPE_CHECKPOINT.md) separates
 exact-recipe compilation, bounded execution attempts and remaining blockers.
 One exact-recipe attempt also ended in native process failure `0xC0000005` with
 no outcome. A bounded runner mitigation stopped cooperatively without recurrence;

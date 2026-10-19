@@ -12,3 +12,9 @@ private/
 *.log
 *.zip
 *.gz
+
+# simulator lab: generated output, the 69 MB local wiki mirror (rebuilt by
+# tools/baselab/wiki_mirror.py) and dated backup copies of data files
+output/
+data/wiki/
+data/*-pre-*.json
