@@ -1,0 +1,112 @@
+{
+ "mass-thrower-16-1": {
+  "strength": 1.0144200224092894,
+  "real": 0.68,
+  "clamped": false
+ },
+ "mass-thrower-16-2": {
+  "strength": 1.1705660901592454,
+  "real": 0.75,
+  "clamped": false
+ },
+ "mass-dragons-16-1": {
+  "strength": 0.8791028464910257,
+  "real": 0.42,
+  "clamped": false
+ },
+ "root-rider-16-1": {
+  "strength": 1.1705660901592454,
+  "real": 0.61,
+  "clamped": false
+ },
+ "root-rider-16-2": {
+  "strength": 1.1705660901592454,
+  "real": 0.581,
+  "clamped": false
+ },
+ "mass-dragons-18-1": {
+  "strength": 0.8791028464910257,
+  "real": 0.551,
+  "uncalibrated": true
+ },
+ "mass-dragons-18-2": {
+  "strength": 0.8791028464910257,
+  "real": 0.574,
+  "uncalibrated": true
+ },
+ "mass-thrower-18-1": {
+  "strength": 1.0924930562842674,
+  "real": 0.681,
+  "uncalibrated": true
+ },
+ "mass-thrower-18-2": {
+  "strength": 1.0924930562842674,
+  "real": 0.35,
+  "uncalibrated": true
+ },
+ "e-drag-spam-18-1": {
+  "strength": 1.0,
+  "real": 0.252,
+  "uncalibrated": true
+ },
+ "e-drag-spam-18-2": {
+  "strength": 1.0,
+  "real": 0.213,
+  "uncalibrated": true
+ },
+ "root-rider-18-1": {
+  "strength": 1.1705660901592454,
+  "real": 0.615,
+  "uncalibrated": true
+ },
+ "root-rider-18-2": {
+  "strength": 1.1705660901592454,
+  "real": 0.5,
+  "uncalibrated": true
+ },
+ "super-bowler-smash-18-1": {
+  "strength": 1.0,
+  "real": 0.6,
+  "uncalibrated": true
+ },
+ "super-bowler-smash-18-3": {
+  "strength": 1.0,
+  "real": 0.638,
+  "uncalibrated": true
+ },
+ "mass-super-yeti-18-1": {
+  "strength": 1.0,
+  "real": 0.563,
+  "uncalibrated": true
+ },
+ "mass-super-yeti-18-4": {
+  "strength": 1.0,
+  "real": 0.603,
+  "uncalibrated": true
+ },
+ "mass-meteor-golem-18-1": {
+  "strength": 1.0,
+  "real": 0.393,
+  "uncalibrated": true
+ },
+ "mass-dragons-17-1": {
+  "strength": 0.8791028464910257,
+  "real": 0.401,
+  "uncalibrated": true
+ },
+ "mass-dragons-17-2": {
+  "strength": 0.8791028464910257,
+  "real": 0.236,
+  "uncalibrated": true
+ },
+ "mass-thrower-17-1": {
+  "strength": 1.0924930562842674,
+  "real": 0.47,
+  "uncalibrated": true
+ },
+ "mass-thrower-17-2": {
+  "strength": 1.0924930562842674,
+  "real": 0.382,
+  "uncalibrated": true
+ }
+}
