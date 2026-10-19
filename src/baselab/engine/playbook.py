@@ -202,8 +202,22 @@ class PlaybookPlan(AttackPlan):
             u = self._unit(battle, w["inside"])
             return u is not None and self._inside(battle, u)
         if "group_inside" in w:
+            # "once the army enters the base": most of the group is deep
+            # inside, or (ranged armies such as Throwers fight from outside)
+            # most of it has been attacking buildings for 3 s
             g = self._group(battle, w["group_inside"])
-            return bool(g) and sum(self._inside(battle, u) for u in g) >= max(1, len(g) // 2)
+            if not g:
+                return False
+            if sum(self._inside(battle, u) for u in g) >= max(1, len(g) // 2):
+                return True
+            engaged = sum(1 for u in g if u.target is not None and getattr(u.target, "alive", False)
+                          and not isinstance(u.target, type(u)) and u.cooldown > 0)
+            key = "engaged_since:" + w["group_inside"]
+            if engaged >= max(1, len(g) // 2):
+                since = self._hurt.setdefault(key, battle.t)
+                return battle.t - since >= 3.0
+            self._hurt.pop(key, None)
+            return False
         if "near_th" in w:
             g = self._group(battle, w["near_th"])
             if not g or battle.th is None:
@@ -211,8 +225,9 @@ class PlaybookPlan(AttackPlan):
             cx, cy = self.centroid(g)
             return not battle.th.alive or math.hypot(cx - battle.th.x, cy - battle.th.y) <= w.get("r", 8.0)
         if "heavy_fire" in w:
-            u = self._unit(battle, w["heavy_fire"])
-            return u is not None and self._heavy_fire(battle, u, w.get("frac", 0.15))
+            # any unit of that name under heavy fire (several Throwers, etc.)
+            return any(u.alive and u.name == w["heavy_fire"] and self._heavy_fire(battle, u, w.get("frac", 0.15))
+                       for u in battle.attackers)
         if "hp_below" in w:
             u = self._unit(battle, w["hp_below"])
             return u is not None and u.hp < w.get("frac", 0.5) * u.max_hp
@@ -286,6 +301,21 @@ class PlaybookPlan(AttackPlan):
         if alive:
             self._last_alive = t
         stalled = t - getattr(self, "_last_alive", 0.0) > 3.0
+        # a step aimed at a hero or unit that has already fallen cannot happen
+        # (Recall a dead Champion, Invisibility on her): skip it so the steps
+        # chained after it go ahead, as a player moves on when a charge dies
+        for st in self.steps:
+            if st["id"] in self._done:
+                continue
+            target = None
+            at = str(st.get("at", ""))
+            if at.startswith("unit:") or at.startswith("unit_ahead:"):
+                target = at.split(":", 1)[1]
+            elif st["action"] == "ability":
+                target = st.get("what")
+            if target and target in self._deployed and self._unit(battle, target) is None                     and not any(u.name == target for u in battle.portal_stash):
+                self._done[st["id"]] = t
+                self.log_steps.append((round(t, 1), st["id"] + " (skipped: " + target + " down)"))
         for s in self.steps:
             sid = s["id"]
             rep = s.get("every")
@@ -375,7 +405,8 @@ def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict) -> li
     rest = [n for n, c in inventory.items() if c and n not in mentioned]
     main_deploys = [x["id"] for x in kept if x["action"] == "deploy" and x.get("at", "edge:main") == "edge:main"
                     and x.get("what") not in heroes.HEROES]
-    anchor = {"after": main_deploys[-1], "delay": 1.0} if main_deploys else {"t": 15.0}
+    # the leftovers go with the main push: right after its first deploy
+    anchor = {"after": main_deploys[0], "delay": 1.0} if main_deploys else {"t": 15.0}
     for n in rest:
         kept.append({"id": f"rest-{n}", "action": "deploy", "what": n, "count": "all", "at": "edge:main",
                      "when": anchor, "uncited": True, "cite": []})
@@ -412,5 +443,17 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
     plan.inventory = inv
     heroes_in = [h for h in build["heroes"] if h in heroes.HEROES]
     plan.steps = fit_steps(pb["steps"], inv, heroes_in, dict(base._spells0, **{k: c for k, c in base.cc_spells.items()}))
+    # Invisibility cadence on a charging hero depends on her pet: the merged
+    # playbooks' 10-second cycle relies on Spirit Fox covering the gaps; without
+    # a Fox players chain one every 4 seconds ("invisibility spells every 4
+    # seconds", The Stealth, L_LKqcL56NE at 1:03)
+    for st in plan.steps:
+        at = str(st.get("at", ""))
+        if st.get("what") == "Invisibility Spell" and st.get("every") and ":" in at:
+            hero = at.split(":", 1)[1]
+            lo = plan.loadouts.get(hero)
+            if hero in heroes.HEROES and (lo is None or lo.pet != "Spirit Fox"):
+                st["every"] = 4.0
+                st.setdefault("cite", []).append({"video": "L_LKqcL56NE", "t": 63.8, "quote": "invisibility spells every 4 seconds to"})
     plan.flank_offset, plan.charge_side = flank_offset, charge_side
     return plan
