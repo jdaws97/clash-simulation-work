@@ -77,7 +77,11 @@ def _pet_level(battle, hero, loadout, plan, town_hall):
     # Pet House unlocks and level caps come from the individual pet pages.
     maximum = stats.max_level(name, town_hall)
     if maximum is None:
-        raise ValueError(f"{name} is unavailable at Town Hall {town_hall}")
+        if not getattr(plan, "observed", False):
+            raise ValueError(f"{name} is unavailable at Town Hall {town_hall}")
+        # a real attacker brought it, so our unlock data is behind: use its
+        # highest known level
+        maximum = max(r["level"] for r in stats.record(name)["levels"])
     level = (getattr(plan, "pet_levels", {}) or {}).get(name, maximum)
     if level is None:
         level = maximum

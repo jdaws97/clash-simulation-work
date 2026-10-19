@@ -57,10 +57,10 @@ def to_build(army: dict, th: int, n: int) -> tuple[dict, list]:
     for h in army.get("heroes", []):
         heroes.append(h["hero"])
         eq = [e for e in h.get("equipment", []) if not e.startswith("equipment#")]
-        if h.get("pet"):
-            loadouts[h["hero"]] = (eq + [None, None])[:2] + [h["pet"]]
-        elif len(eq) == 2:
-            loadouts[h["hero"]] = eq
+        # the log is the truth: a hero shown without equipment or pet gets
+        # none, never the sim's default loadout (it could clash with another
+        # hero's real pet)
+        loadouts[h["hero"]] = (eq + [None, None])[:2] + [h.get("pet")]
     for t in troops:
         if t.startswith("troop#"):
             unknown.append(t)

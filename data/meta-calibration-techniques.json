@@ -5,42 +5,42 @@
   "clamped": false
  },
  "mass-thrower-16-2": {
-  "strength": 1.074209683890529,
+  "strength": 0.9046390100332466,
   "real": 0.75,
   "clamped": false
  },
  "mass-dragons-16-1": {
-  "strength": 0.8067385504973235,
+  "strength": 0.7403309993322453,
   "real": 0.42,
   "clamped": false
  },
  "root-rider-16-1": {
-  "strength": 1.275565647917153,
+  "strength": 0.9857849588033157,
   "real": 0.61,
   "clamped": false
  },
  "root-rider-16-2": {
-  "strength": 1.312618255725293,
+  "strength": 1.0144200224092894,
   "real": 0.581,
   "clamped": false
  },
  "mass-dragons-18-1": {
-  "strength": 0.8067385504973235,
+  "strength": 0.7403309993322453,
   "real": 0.551,
   "uncalibrated": true
  },
  "mass-dragons-18-2": {
-  "strength": 0.8067385504973235,
+  "strength": 0.7403309993322453,
   "real": 0.574,
   "uncalibrated": true
  },
  "mass-thrower-18-1": {
-  "strength": 0.9894243469618879,
+  "strength": 0.9046390100332466,
   "real": 0.681,
   "uncalibrated": true
  },
  "mass-thrower-18-2": {
-  "strength": 0.9894243469618879,
+  "strength": 0.9046390100332466,
   "real": 0.35,
   "uncalibrated": true
  },
@@ -55,12 +55,12 @@
   "uncalibrated": true
  },
  "root-rider-18-1": {
-  "strength": 1.294091951821223,
+  "strength": 1.0001024906063025,
   "real": 0.615,
   "uncalibrated": true
  },
  "root-rider-18-2": {
-  "strength": 1.294091951821223,
+  "strength": 1.0001024906063025,
   "real": 0.5,
   "uncalibrated": true
  },
@@ -90,22 +90,22 @@
   "uncalibrated": true
  },
  "mass-dragons-17-1": {
-  "strength": 0.8067385504973235,
+  "strength": 0.7403309993322453,
   "real": 0.401,
   "uncalibrated": true
  },
  "mass-dragons-17-2": {
-  "strength": 0.8067385504973235,
+  "strength": 0.7403309993322453,
   "real": 0.236,
   "uncalibrated": true
  },
  "mass-thrower-17-1": {
-  "strength": 0.9894243469618879,
+  "strength": 0.9046390100332466,
   "real": 0.47,
   "uncalibrated": true
  },
  "mass-thrower-17-2": {
-  "strength": 0.9894243469618879,
+  "strength": 0.9046390100332466,
   "real": 0.382,
   "uncalibrated": true
  }
