@@ -73,9 +73,9 @@ def to_build(army: dict, th: int, n: int) -> tuple[dict, list]:
 def _run(args):
     lj, build, angle, seed, strength, tech = args
     from baselab.engine.battle import Battle
-    from baselab.meta_armies import compose
+    from baselab.meta_armies import plan_for_build
 
-    plan = compose(build, angle=angle, seed=seed)
+    plan = plan_for_build(build, angle=angle, seed=seed)
     if tech is not None:
         apply_charge(plan, tech)
     plan.strength = strength * skill(seed)

@@ -27,14 +27,14 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from baselab.evaluate import SCOUT, apply_charge, attacker_trophies, pool, skill, techniques  # noqa: E402
 from baselab.layout import Layout  # noqa: E402
-from baselab.meta_armies import compose, data  # noqa: E402
+from baselab.meta_armies import compose, data, plan_for_build  # noqa: E402
 
 
 def _run(args):
     lj, build, angle, seed, strength, tech = args
     from baselab.engine.battle import Battle
 
-    plan = compose(build, angle=angle, seed=seed)
+    plan = plan_for_build(build, angle=angle, seed=seed)
     if tech is not None:
         apply_charge(plan, tech)
     plan.strength = strength * skill(seed)

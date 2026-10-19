@@ -165,21 +165,45 @@ def playbooks_on() -> bool:
     return os.environ.get("BASELAB_PLAYBOOKS") == "1"
 
 
+# main troop -> family, for armies with no known archetype (decoded real
+# battles): the most housing-heavy signature troop decides
+TROOP_FAMILY = (("Root Rider", "root-rider"), ("Thrower", "thrower"), ("Electro Dragon", "electro-dragon"),
+                ("Super Bowler", "super-bowler"), ("Meteor Golem", "meteor-golem"), ("Super Yeti", "yeti"),
+                ("Yeti", "yeti"), ("Ruin Witch", "druid-ruin-witch"), ("Super Minion", "super-minion-air"),
+                ("Lava Hound", "lavaloon"), ("Dragon", "dragon"))
+
+
+def family_of(build: dict):
+    fam = PLAYBOOK_FAMILY.get(build["archetype"])
+    if fam:
+        return fam
+    troops = build.get("troops", {})
+    for troop, f in TROOP_FAMILY:
+        if troops.get(troop, 0) >= 2:
+            return f
+    return None
+
+
+def plan_for_build(build: dict, angle: float, seed: int):
+    """The attack plan for a build: its family's cited playbook when
+    BASELAB_PLAYBOOKS=1 and one exists, otherwise the scripted compose()."""
+    family = family_of(build) if playbooks_on() else None
+    pb = _playbook(family) if family else None
+    if pb is not None:
+        from .engine.playbook import from_playbook
+
+        # the charge flank alternates with the seed (the player's choice per base)
+        return from_playbook(pb, angle=angle, seed=seed, th=build["th"], build=build,
+                             charge_side="left" if seed % 2 == 0 else "right")
+    return compose(build, angle=angle, seed=seed)
+
+
 def make_plan(army: str, angle: float, th: int, seed: int):
     """A plan for a scenario army: "meta:<archetype>-<th>-<build>" is a real
     build, anything else one of the scripted engine/plans.py armies."""
     if army.startswith("meta:") or army.startswith("custom:"):
         build = build_by_id(army[5:] if army.startswith("meta:") else army)
-        family = PLAYBOOK_FAMILY.get(build["archetype"])
-        pb = _playbook(family) if family and playbooks_on() else None
-        if pb is not None:
-            from .engine.playbook import from_playbook
-
-            # the charge flank alternates with the seed (left/right is the
-            # player's choice per base; the tactic search can also set it)
-            return from_playbook(pb, angle=angle, seed=seed, th=build["th"], build=build,
-                                 charge_side="left" if seed % 2 == 0 else "right")
-        return compose(build, angle=angle, seed=seed)
+        return plan_for_build(build, angle, seed)
     from .engine.plans import ARMIES
 
     return ARMIES[army](angle=angle, town_hall=th, seed=seed)
