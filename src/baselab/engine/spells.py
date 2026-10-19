@@ -420,7 +420,13 @@ def _apply(battle, f: Field) -> bool:
             from . import units
 
             # One-second lingering boost per field (wiki: Rage Spell/Home Village).
-            units.add_rage(u, _source(battle, f), 1.0 + inc, spd, pulses[-1] + 1.0)
+            units.add_rage(
+                u,
+                _source(battle, f),
+                1.0 + inc,
+                spd,
+                pulses[-1] + f.extra.get("boost_time", 1.0),
+            )
         if f.team == "def" and "defense_damage" in f.extra:
             # Wiki: Super Valkyrie; friendly defenses get +60%, separately.
             for b in battle.buildings:
@@ -433,7 +439,10 @@ def _apply(battle, f: Field) -> bool:
                         b.rage_mult if t < b.rage_until else 1.0,
                         f.extra["defense_damage"],
                     )
-                    b.rage_until = max(b.rage_until, t + 1.0)
+                    b.rage_until = max(
+                        b.rage_until,
+                        pulses[-1] + f.extra.get("boost_time", 1.0),
+                    )
         return True
     if k == "def_burn":
         # Wiki: Inferno Artillery, pools neither stack nor gain difficulty damage.
@@ -1062,11 +1071,14 @@ def _totem(battle, f):
     u.spawned_at = u.active_at = battle.t
     battle.attackers.append(u)
     # Wiki: Totem Spell, only defenders in the landing area retarget.
-    # Stun duration is not stated; do not borrow another spell's duration.
+    # game data v18.200.9: Totem.StunTimeMS=200 -> 0.2 s.
+    until = battle.t + 0.2
     for b in battle.buildings:
         if b.alive and b.weapon is not None and b.edge_distance(f.x, f.y) <= f.radius:
+            b.stun_until = max(b.stun_until, until)
             _retarget(b)
     for d in battle.defenders_near(f.x, f.y, f.radius):
+        d.stun_until = max(d.stun_until, until)
         _retarget(d)
 
 

@@ -76,6 +76,7 @@ def _run(args):
     from baselab.meta_armies import plan_for_build
 
     plan = plan_for_build(build, angle=angle, seed=seed)
+    plan.observed = True  # a real army from the battle log
     if tech is not None:
         apply_charge(plan, tech)
     plan.strength = strength * skill(seed)

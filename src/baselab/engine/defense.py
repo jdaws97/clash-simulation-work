@@ -631,7 +631,23 @@ def _act_once(battle, w: Weapon):
         # Wizard Tower damages only the target's type; Bomb Tower ground only
         air = tgt.flying if w.extra.get("same_type") else w.targets in ("air", "both")
         ground = (not tgt.flying) if w.extra.get("same_type") else w.targets in ("ground", "both")
-        battle.splash_units(tgt.x, tgt.y, w.extra["splash"], dmg, air, ground)
+        if b.key == "wt" and b.level <= 4:
+            # game data v18.200.9: wizardTower_projectile.Speed=500 -> 5 tiles/s.
+            flight = dist(b.x, b.y, tgt.x, tgt.y) / 5.0
+            battle.add_pending(
+                Pending(
+                    t + flight,
+                    tgt.x,
+                    tgt.y,
+                    w.extra["splash"],
+                    dmg,
+                    air,
+                    ground,
+                    "wizard_tower",
+                )
+            )
+        else:
+            battle.splash_units(tgt.x, tgt.y, w.extra["splash"], dmg, air, ground)
     elif k == "mortar":
         _mortar_shell(battle, w, tgt, dmg)
     elif k == "scatter":
@@ -915,10 +931,12 @@ def builder_spell(battle, field):
         elif field.kind in ("lightning", "totem"):
             builder.target = None
             if field.kind == "lightning":
-                # Wiki: Lightning Spell, the listed stun lasts 0.1 seconds.
-                duration = stats.num(stats.attrs("Lightning Spell")["raw"]["Stun Time"])
-                builder.stun_until = max(builder.stun_until, t + duration)
-            # Totem's stun duration is unstated.
+                # game data v18.200.9: Lightning.StunTimeMS=100 -> 0.1 s.
+                duration = 0.1
+            else:
+                # game data v18.200.9: Totem.StunTimeMS=200 -> 0.2 s.
+                duration = 0.2
+            builder.stun_until = max(builder.stun_until, t + duration)
         elif field.kind == "def_rage" or (field.kind == "rage" and field.team == "def"):
             # Wiki: Spell Tower; Builder repair doubles without faster attacks.
             builder.repair_boost = 2.0
@@ -957,14 +975,16 @@ def builders_tick(battle):
         boost = builder.repair_boost if t < builder.rage_until else 1.0
         if t < builder.rage_until:
             speed += builder.rage_speed
-        # Exact repair reach is unstated; travel currently ends at the target center.
+        # game data v18.200.9: Defending Builder.AttackRange=50 -> 0.5 tiles.
+        # Keep the existing center-distance convention.
+        reach = 0.5
         distance = dist(builder.x, builder.y, target.x, target.y)
-        step = speed * battle.DT
-        if distance > step:
+        if distance > reach:
+            step = min(speed * battle.DT, distance - reach)
             builder.x += (target.x - builder.x) * step / distance
             builder.y += (target.y - builder.y) * step / distance
-            continue
-        builder.x, builder.y = target.x, target.y
+            if distance - step > reach:
+                continue
         slow = builder.repair_slow if t < builder.slow_until else 1.0
         builder.cooldown = max(builder.cooldown - battle.DT * slow, -battle.DT)
         groups.setdefault(target, []).append((builder, boost))

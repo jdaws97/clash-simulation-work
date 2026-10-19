@@ -904,6 +904,12 @@ class Battle:
             # Released attacks keep their origin through invisibility and death.
             with effects.damage_source(self, pending.actor, pending.effect):
                 self._src = pending.src
+                if "troop_impact" in pending.extra:
+                    units.projectile_impact(self, pending)
+                    continue
+                if "healing" in pending.extra:
+                    pending.target.heal(pending.extra["healing"])
+                    continue
                 x, y = pending.x, pending.y
                 if pending.target is not None:
                     x, y = pending.target.x, pending.target.y
@@ -937,7 +943,11 @@ class Battle:
                     for unit in self.attackers_near(x, y, pending.radius):
                         if (
                             unit.alive
-                            and unit.name == "Barbarian"
+                            and not unit.flying
+                            and not unit.is_hero
+                            and unit.kind not in ("pet", "siege", "siege_idle")
+                            # game data v18.200.9: Mortar.PushbackHousingLimit=3 -> 3 housing spaces.
+                            and 0 < unit.housing <= 3
                             and not unit.underground
                         ):
                             origin_x, origin_y = pending.extra.get("origin", (x, y))
@@ -1023,7 +1033,8 @@ class Battle:
             or self.t < getattr(self, "_next_cc_exit", 0.0)
         ):
             return
-        radius = stats.attrs("Clan Castle").get("trigger_radius") or 13.0
+        # game data v18.200.9: CLAN_CASTLE_RADIUS.NumberValue=13 -> 13 tiles.
+        radius = 13.0
         intruders = [
             unit
             for unit in self.attackers_near(castle.x, castle.y, radius)
@@ -1126,7 +1137,7 @@ class Battle:
         if target is None:
             u.target_kind = None
             units.interrupt_attack(u)
-        if u.name == "Grand Warden":
+        if u.name in ("Grand Warden", "Apprentice Warden"):
             followed = units.follow_target(self, u)
             grouped = u.extra.get("warden_group", False)
             if followed is not None:
@@ -1399,6 +1410,8 @@ class Battle:
                 if self.t >= u.extra["next"]:
                     units.launch_barrel(self, u, target)
                 return
+            if not units.attack_ready(self, u, target):
+                return
             units.track_beam(self, u, target)
             if u.team == "atk" and "burrow" in u.spec.special:
                 u.underground = False
@@ -1552,6 +1565,8 @@ class Battle:
         d = dist(u.x, u.y, target.x, target.y)
         reach = units.effective_range(u)
         if d <= reach:
+            if not units.attack_ready(self, u, target):
+                return
             units.track_beam(self, u, target)
             if u.cooldown <= 0:
                 units.strike(self, u, target)

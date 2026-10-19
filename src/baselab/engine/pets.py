@@ -167,8 +167,11 @@ def owner_defeated(battle, pet):
 def _summon(battle, pet):
     if pet.name not in ("Frosty", "Sneezy"):
         return False
-    if battle.t < pet.extra["next_summon"]:
-        return False
+    summon_at = pet.extra.get("summon_at")
+    if summon_at is not None and battle.t < summon_at:
+        return True
+    if summon_at is None and battle.t < pet.extra["next_summon"]:
+        return battle.t < pet.extra.get("summon_until", 0.0)
     alive = [child for child in pet.extra.get("children", []) if child.alive]
     if pet.name == "Sneezy":
         name, level, count, cap, cooldown = (
@@ -178,6 +181,15 @@ def _summon(battle, pet):
             2,
             10.0,
         )  # wiki: Sneezy
+        if summon_at is None:
+            pet.extra["next_summon"] = battle.t + cooldown
+            if len(alive) >= cap:
+                return True
+            # game data v18.200.9: Sneezy.SummonDelay=1000 -> 1 s.
+            pet.extra["summon_at"] = battle.t + 1.0
+            # game data v18.200.9: Sneezy.SummonTime=1500 -> 1.5 s.
+            pet.extra["summon_until"] = battle.t + 1.5
+            return True
     else:
         name, level = "Frostmite", 1
         count = int(stats.get("Frosty", pet.level, "Frostmites per Summon"))
@@ -198,9 +210,11 @@ def _summon(battle, pet):
             child.flying = True  # wiki: Sneezy/Booger
         alive.append(child)
     pet.extra["children"] = alive
+    if pet.name == "Sneezy":
+        pet.extra.pop("summon_at", None)
+        return battle.t < pet.extra["summon_until"]
     pet.extra["next_summon"] = battle.t + cooldown
-    # Sneezy pauses to summon; the pause length is not stated.
-    return pet.name == "Sneezy"
+    return False
 
 
 def _move(battle, pet, target):
@@ -342,10 +356,11 @@ def act(battle, pet):
 def _owl_link(first, second):
     if not isinstance(first, Building) or not isinstance(second, Building):
         return False
-    # Two empty tiles between buildings stop a chain (wiki: Electro Owl).
+    # game data v18.200.9: Electro Owl.ChainAttackDistance=300 -> 3 tiles.
+    # Keep the existing building-edge geometry and eligibility.
     dx = max(0.0, abs(first.x - second.x) - (first.size + second.size) / 2.0)
     dy = max(0.0, abs(first.y - second.y) - (first.size + second.size) / 2.0)
-    return (dx * dx + dy * dy) ** 0.5 < 2.0
+    return (dx * dx + dy * dy) ** 0.5 < 3.0
 
 
 def passives(battle, pet):
@@ -358,5 +373,9 @@ def passives(battle, pet):
         if present:
             hero.invisible_until = max(hero.invisible_until, t + duration)
         pet.extra["fox_next"] = t + duration + 6.0  # wiki: Spirit Fox
+    if pet.name == "Angry Jelly":
+        # game data v18.200.9: AngryJellyAbility.AttackRange=700 -> 7 tiles.
+        # game data v18.200.9: Angry Jelly.AttackRange=500 -> 5 tiles.
+        pet.range = 7.0 if pet.attached(t) else 5.0
     if pet.attached(t):
         pet.x, pet.y = hero.x, hero.y

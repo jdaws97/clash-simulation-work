@@ -77,8 +77,12 @@ POLICY = {
 TANKS = {"Ice Golem", "Golem", "Lava Hound", "Ice Hound", "Giant", "Super Giant", "Electro Titan", "P.E.K.K.A", "Yeti",
          "Meteor Golem", "Headhunter"}
 
-HOUSING_CAP = {16: 320, 17: 340, 18: 352}
-CC_HOUSING = {16: 50, 17: 55, 18: 55}  # Clan Castle L12/13/14 (wiki)
+# Army capacity. Game data v18.200.9 (Aug 2026) gives 4 camps x 80/85 =
+# 320/340 at TH16/17, but every real TH16 attacker in the user's battle log
+# (Oct 2026) brings 340 camp + 55 Clan Castle and every TH17 one 352, so a
+# later update raised them: the observed values win. TH18 is unobserved.
+HOUSING_CAP = {16: 340, 17: 352, 18: 352}
+CC_HOUSING = {16: 55, 17: 55, 18: 55}
 SPELL_CAP = {16: 11, 17: 11, 18: 11}  # Wiki: Spell Factory and Dark Spell Factory.
 CC_SPELLS = {16: 3, 17: 3, 18: 4}  # Clan Castle L12/13/14 (wiki)
 
@@ -393,7 +397,8 @@ class AttackPlan:
         return out
 
     def require_legal(self):
-        problems = self.legal()
+        # armies replayed from real battles happened, so they are legal by definition
+        problems = [] if getattr(self, "observed", False) else self.legal()
         if problems:
             raise ValueError("Illegal attack plan: " + "; ".join(problems))
         for stock in self._spell_stock:

@@ -11,7 +11,7 @@ import math
 
 from ..mechanics import MARGIN, TRAP_NAMES, TRAP_SIZES
 from . import stats
-from .entities import Field, Trap, dist
+from .entities import Field, Pending, Trap, dist
 
 FUSE = {"bomb": 1.5, "giant": 0.5, "airbomb": 0.5, "spring": 0.3, "seeking": 0.5, "giga": 0.5, "skeleton": 0.0, "tornado": 0.0}  # assumed
 NO_TRIGGER = {
@@ -142,8 +142,7 @@ def _fire(battle, tr: Trap):
                 u.extra["trap_knockback_at"] = t
         # Knockback distance/speed are NUMBER NOT STATED; only record eligibility.
     elif k == "airbomb":
-        # Air Bomb: opening time and flight speed are NUMBER NOT STATED.
-        # Resolve the existing fuse at the acquired target; flight remains unresolved.
+        # Opening time remains the existing fuse approximation.
         u = tr.extra.get("trigger_unit")
         # Air Bomb: replacements can be within twice the trigger radius.
         radius = tr.trigger if u is not None and u.alive else 2 * tr.trigger
@@ -155,16 +154,21 @@ def _fire(battle, tr: Trap):
         if not cands:
             return
         u = min(cands, key=lambda a: dist(a.x, a.y, tr.x, tr.y))
-        battle.splash_units(
-            u.x,
-            u.y,
-            tr.radius,
-            tr.damage,
-            True,
-            False,
-            team="atk",
-            src=src,
-            kind="trap",
+        # game data v18.200.9: AirTrapBalloon.Speed=250 -> 2.5 tiles/s.
+        # Fly to the acquired location; this projectile does not track.
+        flight = dist(tr.x, tr.y, u.x, u.y) / 2.5
+        battle.add_pending(
+            Pending(
+                t + flight,
+                u.x,
+                u.y,
+                tr.radius,
+                tr.damage,
+                True,
+                False,
+                src,
+                effect="trap",
+            )
         )
     elif k == "giga":
         pool = [u for u in battle.attackers_near(tr.x, tr.y, tr.radius) if u.name != "Totem" and not u.underground]

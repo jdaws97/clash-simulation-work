@@ -86,7 +86,9 @@ SPECS: dict[str, UnitSpec] = {
             death_radius=3.5,
             death_spawn=("Lava Pup", "Lava Pups Spawned (After Death) / On Offense"),
         ),
-        S("Bowler", attack="bounce", splash=1.0, bounces=1, bounce_gap=3.0),
+        # game data v18.200.9: Bowler.DamageRadius=30 -> 0.3 tiles.
+        # game data v18.200.9: Bowler.ChainShootingDistance=400 -> 4 tiles.
+        S("Bowler", attack="bounce", splash=0.3, bounces=1, bounce_gap=4.0),
         S("Ice Golem", prefer="defense", engages_units=False, death_freeze="Freeze Time After Death / On Offense", death_freeze_radius=7.5, special=("chill",)),
         S("Headhunter", prefer="heroes", walls="ignore", vs_heroes=4.0, special=("hh_poison",)),
         S("Apprentice Warden", prefer="follow", walls="ignore", special=("life_aura",)),
@@ -140,7 +142,18 @@ SPECS: dict[str, UnitSpec] = {
         # ---------------- Siege machines
         S("Wall Wrecker", prefer="th", vs_walls=10.0, engages_units=False, special=("siege_cc",)),
         S("Battle Blimp", prefer="th", walls="fly", attack="none", engages_units=False, special=("siege_cc", "blimp_bombs")),
-        S("Stone Slammer", prefer="defense", walls="fly", attack="splash", splash=3.0, engages_units=False, special=("siege_cc",)),
+        # game data v18.200.9: Stone Slammer.DieDamageRadius=300 -> 3 tiles.
+        S(
+            "Stone Slammer",
+            prefer="defense",
+            walls="fly",
+            attack="splash",
+            splash=3.0,
+            engages_units=False,
+            death_damage="Damage when Destroyed",
+            death_radius=3.0,
+            special=("siege_cc",),
+        ),
         S("Siege Barracks", prefer="none", attack="none", engages_units=False, special=("siege_cc", "siege_barracks")),
         S(
             "Log Launcher",
@@ -190,7 +203,8 @@ SPECS: dict[str, UnitSpec] = {
         S("Ice Pup", walls="fly", special=("ice_chill",)),
         S("Meteormite", walls="ignore"),  # Wiki: Meteor Golem/Meteormite.
         # Wiki: Frosty/Frostmite.
-        S("Frostmite", prefer="defense", walls="ignore"),
+        # game data v18.200.9: Icemite.DamageRadius=80 -> 0.8 tiles.
+        S("Frostmite", prefer="defense", walls="ignore", splash=0.8),
         S("Skeleton"),
         S("Spell Skeleton"),
         S("Bat", prefer="defense", walls="fly", engages_units=False),
@@ -254,7 +268,8 @@ SUBTROOP_HOUSING = {
     "Meteormite": 20,  # Wiki: Meteor Golem/Meteormite.
     "Golemite": 6,  # Wiki: Golem/Golemite.
     "Skeleton": 1,  # Wiki: Skeleton.
-    "Lava Pup": 1,  # Wiki: Lava Hound/Lava Pup; Clone weight is disputed.
+    # game data v18.200.9: Lava Pup.HousingSpace=1 -> 1 housing space.
+    "Lava Pup": 1,
     "Bear": 10,  # Wiki: Druid/Bear.
     "Firemite": 1,  # Wiki: Furnace/Firemite.
     "Big Boy": 20,  # Wiki: Super Witch/Big Boy.
@@ -341,6 +356,9 @@ def unit_numbers(name: str, level: int) -> dict:
     if dps is not None and dps < 0:  # healers carry negative DPS in game data
         dmg = 0.0
     rng = attack_range(name)
+    if name == "Booger":
+        # game data v18.200.9: Booger.AttackRange=90 -> 0.9 tiles.
+        rng = 0.9
     if name == "Healer":
         # Wiki: Healer gives 5 tiles; ClashKing's 450/100 gives 4.5.
         rng = 5.0

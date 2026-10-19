@@ -169,6 +169,13 @@ def follow_target(battle, u):
     targets the nearest building himself (None here)."""
     ww = warden_weights()
     table, radius = ww["weights"], ww["vision_radius"]
+    threshold = ww["threshold"]
+    if u.name == "Apprentice Warden":
+        # game data v18.200.9: Apprentice Warden.TargetGroupsRange=1300 -> 13 tiles.
+        radius = 13.0
+        # game data v18.200.9: Apprentice Warden.TargetGroupsMinWeight=1000 -> 10 Warden Weight.
+        threshold = 10.0
+        # The existing aggregate heuristic does not model group clustering.
     score: dict = {}
     total_weight = 0.0
     for a in battle.attackers_near(u.x, u.y, radius):
@@ -193,7 +200,7 @@ def follow_target(battle, u):
         ):
             continue
         score[target] = score.get(target, 0.0) + weight
-    if total_weight < ww["threshold"] or not score:
+    if total_weight < threshold or not score:
         return None
     return max(score.items(), key=lambda kv: kv[1])[0]
 
@@ -256,7 +263,10 @@ def on_spawn(battle, u: Unit):
         u.underground = u.team == "atk"
         if u.name == "Miner" and u.team == "def":
             u.speed = 2.5  # Wiki: Miner, defensive movement speed 20.
-        # Wiki: Super Miner/Home Village; defensive speed is NUMBER NOT STATED.
+        if u.name == "Super Miner" and u.team == "def":
+            # game data v18.200.9: Super Miner.Speed=400 -> 4 tiles/s before the ground penalty.
+            # game data v18.200.9: UNDERGROUND_UNIT_GROUND_SPEED_PERCENTAGE.NumberValue=70 -> 70%.
+            u.speed = 4.0 * 0.7
     if "yetimites" in sp.special:
         u.extra["mites"] = int(stats.get(u.name, u.level, "Yetimites spawned", default=14))
         u.extra["mite_dmg"] = 0.0
@@ -290,7 +300,7 @@ def on_spawn(battle, u: Unit):
     if "long_shot" in sp.special:
         # Wiki: Super Minion; offense has eight Long Shots, defense three.
         u.extra["long_shots"] = 8 if u.team == "atk" else 3
-        # Rocket flight speed/delay: NUMBER NOT STATED; keep immediate impacts.
+        # Projectile speed is selected before consuming each Long Shot.
     if "burst" in sp.special:
         # Wiki: Super Dragon/Home Village.
         u.extra["burst_left"] = int(
@@ -313,6 +323,8 @@ def pre_tick(battle, u: Unit) -> bool:
     """Per-tick upkeep. Returns True if the unit should do nothing else."""
     t = battle.t
     sp = u.spec
+    if u.extra.get("leaping"):
+        return True
     if u.name == "Meteormite" and try_merge_meteor(battle, u):
         return True
     if sp.attack == "beam" and u.target is not None:
@@ -526,7 +538,18 @@ def update_burrow(battle, u, target):
         u.underground = False
         return
     was_underground = u.underground
-    u.underground = target is None or target_distance(u, target) > effective_range(u)
+    retreating = target is None or target_distance(u, target) > effective_range(u)
+    if u.name == "Miner" and retreating and not was_underground:
+        # game data v18.200.9: MINER_HIDE_TIME.NumberValue=1000 -> 1 s.
+        # The random timer's distribution is unresolved; use the base component.
+        hide_at = u.extra.setdefault("hide_at", battle.t + 1.0)
+        u.held_until = max(u.held_until, hide_at)
+        u.underground = battle.t >= hide_at
+    else:
+        u.underground = retreating
+        hide_at = u.extra.pop("hide_at", None)
+        if not retreating and hide_at is not None and u.held_until == hide_at:
+            u.held_until = battle.t
     if u.name == "Battle Drill" and was_underground and not u.underground:
         # Wiki: Battle Drill destroys contacted walls on emergence.
         for wall in battle.walls.values():
@@ -733,17 +756,26 @@ def on_death(battle, u: Unit):
         battle.fields.append(Field("def_rage", u.x, u.y, 5.0, t + 18.0, team="def", value=1.6, started=t))
     if "death_rage" in special:
         # Wiki: Super Valkyrie and Rage Spell/Home Village; level-four potency.
-        # Duration: NUMBER NOT STATED; retain the existing duration assumption.
+        # game data v18.200.9: EliteValkyrieRage.NumberOfHits=60 -> 60 pulses.
+        # game data v18.200.9: EliteValkyrieRage.TimeBetweenHitsMS=300 -> 0.3 s.
+        # The last pulse is 59 * 0.3 = 17.7 seconds after the first.
         battle.fields.append(
             Field(
                 "rage",
                 u.x,
                 u.y,
                 4.0,
-                t + 12.0,
+                t + 18.0,
                 team=u.team,
                 value=2.6,
-                extra={"speed": 26 / 8.0, "defense_damage": 1.6},
+                extra={
+                    "speed": 26 / 8.0,
+                    "defense_damage": 1.6,
+                    "pulses": 60,
+                    "gap": 0.3,
+                    # game data v18.200.9: EliteValkyrieRage.BoostTimeMS=1000 -> 1 s.
+                    "boost_time": 1.0,
+                },
                 started=t,
             )
         )
@@ -1104,6 +1136,7 @@ SPATIAL_TROOPS = {
     "Firemite",
     "Meteor Golem",
     "Stone Slammer",
+    "Phoenix",
     "Flame Flinger",
     "Super Archer",
     "Super Wizard",
@@ -1155,6 +1188,17 @@ def valkyrie_position(battle, u, target):
     _, other, position = min(candidates, key=lambda item: item[0])
     u.extra["spin_position"] = (target, other, position)
     return position
+
+
+def attack_ready(battle, u, target):
+    if u.name not in ("Frostmite", "Firemite"):
+        return True
+    if u.extra.get("attack_target") is not target:
+        u.extra["attack_target"] = target
+        # game data v18.200.9: Icemite.NewTargetAttackDelay=500 -> 0.5 s.
+        # game data v18.200.9: Firemite Spawn.NewTargetAttackDelay=500 -> 0.5 s.
+        u.extra["attack_ready_at"] = battle.t + 0.5
+    return battle.t >= u.extra["attack_ready_at"]
 
 
 def effective_range(u):
@@ -1243,11 +1287,24 @@ def _attack_targets(battle, u, walls=False):
 
 
 def _chill(battle, u, target):
+    if u.name in ("Frosty", "Frostmite"):
+        # game data v18.200.9: Frosty.FrostOnHitPercent=50 -> 50% slow.
+        # game data v18.200.9: Icemite.FrostOnHitPercent=50 -> 50% slow.
+        # game data v18.200.9: Frosty.FrostOnHitTime=4000 -> 4 s.
+        # game data v18.200.9: Icemite.FrostOnHitTime=4000 -> 4 s.
+        target.atk_slow = min(
+            target.atk_slow if battle.t < target.atk_slow_until else 1.0, 0.5
+        )
+        target.atk_slow_until = max(target.atk_slow_until, battle.t + 4.0)
+        return
     if not any(tag in u.spec.special for tag in ("ice_chill", "chill")):
         return
-    # Wiki: Ice Hound and Ice Hound/Ice Pup inherit Ice Golem's chill.
-    # Inference: Ice Golem's 50% fire-rate reduction for two seconds.
-    # Direct potency/duration and Pup movement slow: NUMBER NOT STATED.
+    # game data v18.200.9: Ice Hound.FrostOnHitPercent=50 -> 50% slow.
+    # game data v18.200.9: Defensive Ice Hound.FrostOnHitPercent=50 -> 50% slow.
+    # game data v18.200.9: Ice Hound.FrostOnHitTime=2000 -> 2 s.
+    # game data v18.200.9: Ice Hound Pup.FrostOnHitPercent=50 -> 50% slow.
+    # game data v18.200.9: Ice Hound Pup.FrostOnHitTime=2000 -> 2 s.
+    # Ice Golem keeps its existing chill; these units share its numeric values.
     target.atk_slow = min(
         target.atk_slow if battle.t < target.atk_slow_until else 1.0, 0.5
     )
@@ -1457,6 +1514,176 @@ def _mult_vs(u, target, battle=None):
     return m
 
 
+def projectile_speed(u):
+    level = u.level
+    if u.name == "Wizard" and 1 <= level <= 3:
+        # game data v18.200.9: ps_chr_WizardAttack_Projectile.Speed=500 -> 5 tiles/s.
+        return 5.0
+    if u.name == "Thrower" and 1 <= level <= 4:
+        # game data v18.200.9: ThrowerProjectile4.Speed=700 -> 7 tiles/s.
+        return 7.0
+    if u.name == "Minion" and 1 <= level <= 14:
+        # game data v18.200.9: gargoyle_projectile.Speed=380 -> 3.8 tiles/s.
+        return 3.8
+    if u.name in ("Witch", "Super Witch") and 1 <= level <= 8:
+        # game data v18.200.9: Witch_projectile.Speed=500 -> 5 tiles/s.
+        return 5.0
+    if u.name == "Lava Hound" and 1 <= level <= 8:
+        # game data v18.200.9: hound_projectile.Speed=200 -> 2 tiles/s.
+        return 2.0
+    if u.name == "Lava Pup":
+        # game data v18.200.9: tinyhound_projectile.Speed=300 -> 3 tiles/s.
+        return 3.0
+    if u.name == "Super Archer" and 5 <= level <= 14:
+        # game data v18.200.9: magic_archer_projectile.Speed=1400 -> 14 tiles/s.
+        return 14.0
+    if u.name == "Super Dragon" and 3 <= level <= 12:
+        # game data v18.200.9: SuperDragonProjectile.Speed=480 -> 4.8 tiles/s.
+        return 4.8
+    if u.name == "Super Minion":
+        if u.extra.get("long_shots", 0) > 0:
+            # game data v18.200.9: super_gargoyle_projectile_big.Speed=600 -> 6 tiles/s.
+            return 6.0
+        # game data v18.200.9: super_gargoyle_projectile.Speed=400 -> 4 tiles/s.
+        return 4.0
+    if u.name == "Ice Pup":
+        # game data v18.200.9: icy_tinyhound_projectile.Speed=300 -> 3 tiles/s.
+        return 3.0
+    if u.name == "Super Bowler" and 1 <= level <= 10:
+        # game data v18.200.9: SuperBowlerProjectile.Speed=475 -> 4.75 tiles/s.
+        return 4.75
+    if u.name == "Bowler" and 1 <= level <= 10:
+        # game data v18.200.9: trollBoulder_lvl1.Speed=475 -> 4.75 tiles/s.
+        return 4.75
+    if u.name == "Frostmite":
+        # game data v18.200.9: FrostmiteJump.Speed=400 -> 4 tiles/s.
+        return 4.0
+    if u.name == "Firemite":
+        # game data v18.200.9: FireSpiritJump1.Speed=400 -> 4 tiles/s.
+        return 4.0
+    if u.name == "Lavaloon Pup" and 1 <= level <= 11:
+        # game data v18.200.9: GW_Lavaloon Pup Projectile.Speed=300 -> 3 tiles/s.
+        return 3.0
+    return None
+
+
+def launch_projectile(battle, u, target, damage, speed):
+    sp = u.spec
+    length = dist(u.x, u.y, target.x, target.y)
+    dx = (target.x - u.x) / (length or 1.0)
+    dy = (target.y - u.y) / (length or 1.0)
+    mode = "single"
+    track = target
+    extra = {}
+    if sp.attack == "pierce":
+        mode, track = "pierce", None
+        extra = {
+            "origin": (u.x, u.y),
+            "direction": (dx, dy),
+            "speed": speed,
+            "travel": 0.0,
+            "hit": set(),
+        }
+    elif sp.attack == "bounce":
+        # Retain the existing collinear impact geometry.
+        for index in range(sp.bounces + 1):
+            travel = length + index * sp.bounce_gap
+            battle.add_pending(
+                Pending(
+                    battle.t + travel / speed,
+                    target.x + dx * index * sp.bounce_gap,
+                    target.y + dy * index * sp.bounce_gap,
+                    sp.splash,
+                    damage,
+                    u.hits_air,
+                    u.hits_ground,
+                    "unit:" + u.name,
+                    team="def" if u.team == "atk" else "atk",
+                    extra={"troop_impact": "area"},
+                    actor=u,
+                )
+            )
+        return
+    elif u.name in ("Firemite", "Frostmite"):
+        mode = "leap"
+        u.extra["leaping"] = True
+    elif u.name == "Super Dragon":
+        mode, track = "dragon", None
+    elif sp.attack == "splash":
+        # These fireballs land at the firing-time position.
+        mode, track = "area", None
+    extra["troop_impact"] = mode
+    battle.add_pending(
+        Pending(
+            battle.t + (battle.DT if mode == "pierce" else length / speed),
+            target.x,
+            target.y,
+            sp.splash,
+            damage,
+            u.hits_air,
+            u.hits_ground,
+            "unit:" + u.name,
+            team="def" if u.team == "atk" else "atk",
+            extra=extra,
+            actor=u,
+            target=track,
+        )
+    )
+
+
+def projectile_impact(battle, pending):
+    u = pending.actor
+    mode = pending.extra["troop_impact"]
+    x, y = pending.x, pending.y
+    if pending.target is not None:
+        x, y = pending.target.x, pending.target.y
+    if mode == "pierce":
+        ox, oy = pending.extra["origin"]
+        dx, dy = pending.extra["direction"]
+        previous = pending.extra["travel"]
+        travel = min(
+            u.spec.pierce,
+            (battle.t - pending.released_at) * pending.extra["speed"],
+        )
+        for victim in _attack_targets(battle, u, walls=True):
+            if victim in pending.extra["hit"]:
+                continue
+            px, py = victim.x - ox, victim.y - oy
+            along = px * dx + py * dy
+            half = getattr(victim, "half_hit", 0.0)
+            # Retain the existing 0.3-tile arrow-width approximation.
+            if (
+                along + half >= previous
+                and along - half <= travel
+                and 0 < along <= u.spec.pierce
+                and abs(px * dy - py * dx) <= half + 0.3
+            ):
+                pending.extra["hit"].add(victim)
+                _hit_target(battle, u, victim, pending.damage)
+        if travel < u.spec.pierce:
+            pending.extra["travel"] = travel
+            pending.at = round(battle.t + battle.DT, 6)
+            battle.add_pending(pending)
+        return
+    if mode == "single":
+        target = pending.target
+        if target.alive and (
+            not isinstance(target, Unit) or target.indirect_targetable(battle.t)
+        ):
+            _hit_target(battle, u, target, pending.damage)
+        return
+    if mode == "dragon":
+        for victim in _attack_targets(battle, u, walls=True):
+            if _dragon_footprint(victim, x, y):
+                _hit_target(battle, u, victim, pending.damage)
+        return
+    _area_hit(battle, u, x, y, pending.radius, pending.damage, walls=True)
+    if mode == "leap":
+        u.x, u.y = x, y
+        u.extra["suicided"] = True
+        battle.kill(u)
+
+
 @effects.sourced("attack")
 def strike(battle, u: Unit, target):
     t = battle.t
@@ -1488,12 +1715,11 @@ def strike(battle, u: Unit, target):
             vial = u.extra["vial_bonus"] * battle.atk_hero_mult
             dmg = max(dmg, ordinary + vial)
         dmg = max(dmg, ordinary + heroes.strike_bonus(battle, u, target))
+    speed = projectile_speed(u)
     if "long_shot" in sp.special and u.extra.get("long_shots", 0) > 0:
         u.extra["long_shots"] -= 1
-    if u.name == "Frostmite":
-        # Wiki: Frosty/Frostmite melts on impact; frost potency is not stated.
-        _hit_target(battle, u, target, dmg)
-        battle.kill(u)
+    if speed is not None:
+        launch_projectile(battle, u, target, dmg, speed)
         return
     if u.name in SPATIAL_TROOPS:
         _spatial_strike(battle, u, target, dmg)
@@ -1535,9 +1761,8 @@ def strike(battle, u: Unit, target):
         if u.kit is not None:
             heroes.on_hit_extra(battle, u, target)
         if u.name in ("Miner", "Super Miner") and u.team == "atk" and not target.alive:
-            # Skeleton Trap: burrow between victims; timings are NUMBER NOT STATED.
-            u.underground = True
             u.target = None
+            update_burrow(battle, u, None)
         return
     team_def = u.team == "def"
     if team_def:
@@ -1654,16 +1879,16 @@ def _after_unit_hit(battle, u, target, dmg):
     if "hh_poison" in sp.special and not (
         target.kind == "guardian" and target.extra.get("waiting")
     ):
-        # Slow persistence remains the existing two-second approximation.
+        # game data v18.200.9: HeadhunterPoison.PoisonOnHitDuration=3000 -> 3 s.
+        duration = 3.0 if u.level <= 3 else 2.0
         slow = stats.get("Headhunter", u.level, "Speed Decrease", default=46.0) / 100.0
         atk = stats.get("Headhunter", u.level, "Attack Rate Decrease", default=68.0) / 100.0
         from . import spells
 
         _, slow, atk = spells.poison_factors(target, 0.0, slow, atk)
-        target.move_slow, target.move_slow_until = 1.0 - slow, t + 2.0
-        target.atk_slow, target.atk_slow_until = 1.0 - atk, t + 2.0
-        # Wiki: Headhunter gives peak poison DPS, but not its ramp/stacking/lifetime.
-        # Keep the existing slow duration explicit rather than inventing poison damage.
+        target.move_slow, target.move_slow_until = 1.0 - slow, t + duration
+        target.atk_slow, target.atk_slow_until = 1.0 - atk, t + duration
+        # Poison damage, accumulation and the residual tail remain unresolved.
     if (
         u.name not in SPATIAL_TROOPS
         and sp.attack in ("splash", "spin")
@@ -1873,7 +2098,7 @@ def act_healer(battle, u: Unit):
     if t < due and not math.isclose(t, due):
         return
     # Wiki: Healer pulses every 0.7 seconds; Druid heals every one second.
-    # Initial phase and projectile travel are not stated.
+    # The existing initial pulse phase is retained.
     u.extra["heal_next"] = t + u.interval
     if u.name == "Healer":
         rate = stats.get(u.name, u.level, "Healing per Pulse")
@@ -1882,10 +2107,33 @@ def act_healer(battle, u: Unit):
         rate = stats.get(u.name, u.level, "Healing per Hit")
         hero_rate = stats.get(u.name, u.level, "Hero Healing")
     rage, _ = rage_boost(u, t)
-    for ally in recipients:
+    # game data v18.200.9: HealerEnergy.Speed=1200 -> 12 tiles/s.
+    # game data v18.200.9: BattleDruidProjectile.Speed=1200 -> 12 tiles/s.
+    flight = dist(u.x, u.y, target.x, target.y) / 12.0
+    previous = target
+    for index, ally in enumerate(recipients):
+        if u.name == "Druid" and index:
+            flight += dist(previous.x, previous.y, ally.x, ally.y) / 12.0
+        previous = ally
         amount = (
             (hero_rate if ally.is_hero else rate)
             * max(rage, u.aura_dmg)
             * effectiveness[ally]
         )
-        ally.heal(amount)
+        battle.add_pending(
+            Pending(
+                t + flight,
+                ally.x,
+                ally.y,
+                0.0,
+                0.0,
+                False,
+                False,
+                "unit:" + u.name,
+                team=u.team,
+                extra={"healing": amount},
+                actor=u,
+                effect="heal",
+                target=ally,
+            )
+        )

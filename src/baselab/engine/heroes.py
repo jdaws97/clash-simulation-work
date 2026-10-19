@@ -220,6 +220,8 @@ def _spawn_pet(battle, hero: Unit, k: Kit):
     p.owner = hero
     p.spawned_at = battle.t
     if name == "Angry Jelly":
+        # game data v18.200.9: Angry Jelly.AttackRange=500 -> 5 tiles.
+        p.range = 5.0
         p.x, p.y = hero.x, hero.y
         # Angry Jelly: Brainwash lasts 25/30/35 seconds by pet level.
         p.extra["brainwash_until"] = battle.t + stats.get(
@@ -234,6 +236,10 @@ def _spawn_pet(battle, hero: Unit, k: Kit):
     if name == "Diggy":
         p.underground = True
     if name == "Phoenix":
+        from dataclasses import replace
+
+        # game data v18.200.9: Phoenix.DamageRadius=30 -> 0.3 tiles.
+        p.spec = replace(p.spec, attack="splash", splash=0.3)
         # starts as an egg: invulnerable, untargetable, does nothing until
         # its hero is first knocked out (wiki: Phoenix)
         p.extra["egg"] = True
