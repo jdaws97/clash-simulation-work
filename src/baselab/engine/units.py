@@ -730,27 +730,24 @@ def on_death(battle, u: Unit):
         txt = stats.text(u.name, u.level, "Damage when destroyed") or "0 x0"
         per = stats.num(txt) or 0.0
         n = 6
-        # Scatter/impact geometry is not stated; retain the old local footprint.
-        cands = [
-            foe
-            for foe in (battle.defenders if u.team == "atk" else battle.attackers)
-            if foe.alive and not foe.flying and dist(u.x, u.y, foe.x, foe.y) <= 3.0
-        ]
-        if u.team == "atk":
-            cands.extend(
-                b
-                for b in battle.buildings
-                if b.alive and b.counted and b.edge_distance(u.x, u.y) <= 3.0
-            )
+        # Keep the same radial sampling approximation as Santa's Surprise.
         for k in range(n):
-            if not cands:
-                break
-            victim = battle.rng.choice(cands)
-            if isinstance(victim, Unit):
-                battle.hit_unit(victim, per)
-            else:
-                battle.hit_building(victim, per)
-            cands = [victim for victim in cands if victim.alive]
+            angle = battle.rng.random() * 2 * math.pi
+            # game data v18.200.9: ElectroDragonDie.RandomRadius=250 -> 2.5 tiles.
+            offset = battle.rng.random() * 2.5
+            x, y = u.x + offset * math.cos(angle), u.y + offset * math.sin(angle)
+            # game data v18.200.9: ElectroDragonDie.Radius=200 -> 2 tiles.
+            if u.team == "atk":
+                battle.splash_buildings(x, y, 2.0, per, walls=False)
+            battle.splash_units(
+                x,
+                y,
+                2.0,
+                per,
+                False,
+                True,
+                team="def" if u.team == "atk" else "atk",
+            )
     if "smasher" in special and u.team == "def":
         # Sore Loser: drops a defensive Rage Spell like the Spell Tower's (wiki)
         battle.fields.append(Field("def_rage", u.x, u.y, 5.0, t + 18.0, team="def", value=1.6, started=t))
@@ -1138,6 +1135,7 @@ SPATIAL_TROOPS = {
     "Stone Slammer",
     "Phoenix",
     "Flame Flinger",
+    "Giant Giant",
     "Super Archer",
     "Super Wizard",
     "Super Bowler",
@@ -1287,6 +1285,14 @@ def _attack_targets(battle, u, walls=False):
 
 
 def _chill(battle, u, target):
+    if u.extra.get("bouncing_frostmite"):
+        # game data v18.200.9: BouncingFrostmite.FrostOnHitPercent=30 -> 30% slow.
+        target.atk_slow = min(
+            target.atk_slow if battle.t < target.atk_slow_until else 1.0, 0.7
+        )
+        # game data v18.200.9: BouncingFrostmite.FrostOnHitTime=3000 -> 3 s.
+        target.atk_slow_until = max(target.atk_slow_until, battle.t + 3.0)
+        return
     if u.name in ("Frosty", "Frostmite"):
         # game data v18.200.9: Frosty.FrostOnHitPercent=50 -> 50% slow.
         # game data v18.200.9: Icemite.FrostOnHitPercent=50 -> 50% slow.
@@ -1516,6 +1522,15 @@ def _mult_vs(u, target, battle=None):
 
 def projectile_speed(u):
     level = u.level
+    if u.name == "Royal Champion":
+        # game data v18.200.9: AmazonQueen_javelin.Speed=1200 -> 12 tiles/s.
+        return 12.0
+    if u.name == "Minion Prince":
+        # game data v18.200.9: MinionHeroAttackProjectile.Speed=1000 -> 10 tiles/s.
+        return 10.0
+    if u.name == "Longshot":
+        # game data v18.200.9: GuardianRangedProjectile.Speed=1500 -> 15 tiles/s.
+        return 15.0
     if u.name == "Wizard" and 1 <= level <= 3:
         # game data v18.200.9: ps_chr_WizardAttack_Projectile.Speed=500 -> 5 tiles/s.
         return 5.0
@@ -1567,7 +1582,7 @@ def projectile_speed(u):
     return None
 
 
-def launch_projectile(battle, u, target, damage, speed):
+def launch_projectile(battle, u, target, damage, speed, *, rocket=False):
     sp = u.spec
     length = dist(u.x, u.y, target.x, target.y)
     dx = (target.x - u.x) / (length or 1.0)
@@ -1612,6 +1627,10 @@ def launch_projectile(battle, u, target, damage, speed):
     elif sp.attack == "splash":
         # These fireballs land at the firing-time position.
         mode, track = "area", None
+    if rocket:
+        mode = "rocket"
+    elif u.name == "Longshot":
+        mode, track = "longshot", target
     extra["troop_impact"] = mode
     battle.add_pending(
         Pending(
@@ -1665,6 +1684,26 @@ def projectile_impact(battle, pending):
             pending.at = round(battle.t + battle.DT, 6)
             battle.add_pending(pending)
         return
+    if mode == "rocket":
+        from . import heroes
+
+        # Empowered hit and 0.8-tile splash (wiki: Rocket Spear).
+        target = pending.target
+        if target.alive and (
+            not isinstance(target, Unit) or target.indirect_targetable(battle.t)
+        ):
+            heroes._damage(battle, target, pending.damage)
+            heroes._blast(battle, x, y, 0.8, pending.damage, exclude=target)
+        return
+    if mode == "longshot":
+        for victim in _attack_targets(battle, u):
+            if (
+                isinstance(victim, Unit)
+                and victim.flying == pending.target.flying
+                and dist(victim.x, victim.y, x, y) <= pending.radius
+            ):
+                _hit_target(battle, u, victim, pending.damage)
+        return
     if mode == "single":
         target = pending.target
         if target.alive and (
@@ -1716,6 +1755,10 @@ def strike(battle, u: Unit, target):
             dmg = max(dmg, ordinary + vial)
         dmg = max(dmg, ordinary + heroes.strike_bonus(battle, u, target))
     speed = projectile_speed(u)
+    if rocket:
+        # game data v18.200.9: RocketSpearProjectile.Speed=1200 -> 12 tiles/s.
+        launch_projectile(battle, u, target, dmg, 12.0, rocket=True)
+        return
     if "long_shot" in sp.special and u.extra.get("long_shots", 0) > 0:
         u.extra["long_shots"] -= 1
     if speed is not None:
@@ -1745,11 +1788,6 @@ def strike(battle, u: Unit, target):
             u.extra["suicided"] = True
             battle.kill(u)
             return
-    if rocket:
-        # Empowered hit and 0.8-tile splash (wiki: Rocket Spear).
-        heroes._damage(battle, target, dmg)
-        heroes._blast(battle, target.x, target.y, 0.8, dmg, exclude=target)
-        return
     if u.kit is not None and t < u.extra.get("gauntlet_until", 0.0):
         _gauntlet_hit(battle, u, target, dmg)
         heroes.on_hit_extra(battle, u, target)

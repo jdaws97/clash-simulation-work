@@ -214,7 +214,15 @@ SPECS: dict[str, UnitSpec] = {
         S("Henchman", walls="ignore"),
         S("Lavaloon", prefer="defense", walls="fly", attack="splash", splash=1.2, engages_units=False),
         S("Booger"),
-        S("Giant Giant", prefer="defense", engages_units=False, vs_walls=2.0),  # hidden 2x vs walls (wiki: Giant Giant)
+        # game data v18.200.9: Giant Giant.DamageRadius=150 -> 1.5 tiles.
+        S(
+            "Giant Giant",
+            prefer="defense",
+            attack="splash",
+            splash=1.5,
+            engages_units=False,
+            vs_walls=2.0,
+        ),
         # ---------------- Heroes (equipment handled in heroes.py)
         S("Barbarian King"),
         S("Archer Queen"),

@@ -69,7 +69,20 @@ GIGA_INFERNO = {
 }
 # TH17-18 Inferno Artillery (wiki): range 12, 4 targets, 3.5 s, 210 per hit
 # (L5) plus flame pools of 75 DPS for 6.8 s; always active.
-INFERNO_ARTILLERY = dict(range=12.0, targets=4, interval=3.5, damage=210.0, pool_dps=75.0, pool_time=6.8, pool_radius=1.5)
+# game data v18.200.9: TH17WeaponAreaDamage.Radius=250 -> 2.5 tiles.
+INFERNO_ARTILLERY = dict(
+    range=12.0,
+    targets=4,
+    interval=3.5,
+    damage=210.0,
+    pool_dps=75.0,
+    pool_time=6.8,
+    pool_radius=2.5,
+    # game data v18.200.9: TH17WeaponAreaDamage.TimeBetweenHitsMS=400 -> 0.4 s.
+    pool_gap=0.4,
+    # game data v18.200.9: TH17WeaponAreaDamage.NumberOfHits=17 -> 17 applications.
+    pool_hits=17,
+)
 
 
 def _dmg(name, level, interval):
@@ -315,7 +328,15 @@ def attach_weapon(battle, b: Building):
         else:
             b.weapon = W(b, "burst", range_=8.0, interval=0.383, damage=stats.get(name, lvl, "Damage per Hit**", default=170.4), extra={"shots": 4, "gap": 0.192})
     elif key == "firespitter":
-        b.weapon = W(b, "firespitter", range_=16.0, interval=1.0167, damage=stats.get(name, lvl, "Damage per Hit**", default=51.07), extra={"shots": 20, "gap": 0.064, "pierce": 2, "arc": math.radians(75)})
+        # game data v18.200.9: Firespitter.AttackSpeed=1000 -> 1 s.
+        b.weapon = W(
+            b,
+            "firespitter",
+            range_=16.0,
+            interval=1.0,
+            damage=stats.get(name, lvl, "Damage per Hit**", default=51.07),
+            extra={"shots": 20, "gap": 0.064, "pierce": 2, "arc": math.radians(75)},
+        )
         # Wiki: Firespitter, four orientations separated by 90 degrees.
         if b.mode not in (None, "N", "E", "S", "W"):
             raise ValueError("Firespitter facing must be N, E, S or W")
@@ -593,7 +614,11 @@ def _act_once(battle, w: Weapon):
     if k == "burst":
         if w.burst_left <= 0:
             w.burst_left = w.extra["shots"]
-        battle.hit_unit(tgt, w.damage * rage)
+        if b.key == "mgt":
+            # game data v18.200.9: merged_cat_cannon_projectile_lvl1.Speed=1200 -> 12 tiles/s.
+            _projectile(battle, w, tgt, w.damage * rage, 12.0)
+        else:
+            battle.hit_unit(tgt, w.damage * rage)
         w.burst_left -= 1
         w.cooldown += w.extra["gap"] if w.burst_left > 0 else w.interval
         return
@@ -612,7 +637,17 @@ def _act_once(battle, w: Weapon):
         w.ammunition -= 1
     dmg = w.damage * rage
     if k == "single":
-        battle.hit_unit(tgt, dmg)
+        if b.key == "cannon":
+            # game data v18.200.9: Cannonball.Speed=1200 -> 12 tiles/s.
+            _projectile(battle, w, tgt, dmg, 12.0)
+        elif b.key == "at":
+            # game data v18.200.9: Tower Arrow.Speed=1800 -> 18 tiles/s.
+            _projectile(battle, w, tgt, dmg, 18.0)
+        elif b.key == "ad":
+            # game data v18.200.9: Firework.Speed=800 -> 8 tiles/s.
+            _projectile(battle, w, tgt, dmg, 8.0)
+        else:
+            battle.hit_unit(tgt, dmg)
     elif k == "monolith":
         # rage tower boosts only the base damage (wiki)
         # league modifiers do not boost the percentage bonus (wiki)
@@ -646,6 +681,20 @@ def _act_once(battle, w: Weapon):
                     "wizard_tower",
                 )
             )
+        elif b.key == "bt":
+            # game data v18.200.9: Bomb Tower Ammo1.Speed=800 -> 8 tiles/s.
+            battle.add_pending(
+                Pending(
+                    t + dist(b.x, b.y, tgt.x, tgt.y) / 8.0,
+                    tgt.x,
+                    tgt.y,
+                    w.extra["splash"],
+                    dmg,
+                    air,
+                    ground,
+                    "bt",
+                )
+            )
         else:
             battle.splash_units(tgt.x, tgt.y, w.extra["splash"], dmg, air, ground)
     elif k == "mortar":
@@ -654,6 +703,24 @@ def _act_once(battle, w: Weapon):
         _scatter(battle, w, tgt, dmg, rage)
     elif k == "hunter":
         _hunter_hit(battle, w, tgt, rage)
+
+
+def _projectile(battle, w, target, damage, speed, *, offset=0.0):
+    flight = max(0.0, dist(w.owner.x, w.owner.y, target.x, target.y) - offset) / speed
+    battle.add_pending(
+        Pending(
+            battle.t + flight,
+            target.x,
+            target.y,
+            0.0,
+            damage,
+            target.flying,
+            not target.flying,
+            w.owner.key,
+            extra={"direct": True},
+            target=target,
+        )
+    )
 
 
 def _mortar_shell(battle, w, target, damage):
@@ -710,7 +777,11 @@ def _multi(battle, w: Weapon, rage):
         # Wiki: Multi-Archer Tower and Hot Candle, concentrate unused shots.
         arrows = [keep[i % len(keep)] for i in range(n)]
         for a in arrows:
-            battle.hit_unit(a, w.damage * rage)
+            if w.kind == "multi_archer":
+                # game data v18.200.9: super_archer_tower_projectile.Speed=1800 -> 18 tiles/s.
+                _projectile(battle, w, a, w.damage * rage, 18.0)
+            else:
+                battle.hit_unit(a, w.damage * rage)
         w.cooldown += w.interval
         return
     dmg = w.damage * rage
@@ -771,6 +842,10 @@ def _eagle(battle, w: Weapon):
     if battle.deployed_housing < w.extra["activation"] or w.cooldown > 0:
         return
     b = w.owner
+    # game data v18.200.9: Eagle Artillery.WakeUpSpeed=1125 -> 1.125 s.
+    ready_at = w.extra.setdefault("wake_at", battle.t + 1.125)
+    if battle.t < ready_at:
+        return
     if w.burst_left <= 0:
         pool = [
             unit for unit in _visible(battle, w, w.range) if unit.name != "Yetimite"
@@ -790,14 +865,14 @@ def _eagle(battle, w: Weapon):
             return
         w.target = target = min(pool, key=lambda a: dist(a.x, a.y, b.x, b.y))
     # Launch only the current shell; disabling the tower pauses later launches.
-    # Flight delay remains the existing approximation; the wiki gives no timing.
-    for radius, damage in (
-        (w.extra["splash"], w.damage - w.extra["shock"]),
-        (w.extra["shock_radius"], w.extra["shock"]),
+    # game data v18.200.9: Artillery Ammo7.FixedTravelTime=5000 -> 5 s.
+    for radius, damage, shock in (
+        (w.extra["splash"], w.damage - w.extra["shock"], False),
+        (w.extra["shock_radius"], w.extra["shock"], True),
     ):
         battle.add_pending(
             Pending(
-                battle.t + 1.5,
+                battle.t + 5.0,
                 target.x,
                 target.y,
                 radius,
@@ -810,6 +885,10 @@ def _eagle(battle, w: Weapon):
                     "origin": (b.x, b.y),
                     "min_range": w.min_range,
                     "max_range": w.range,
+                    # game data v18.200.9: Eagle Artillery.Pushback=50 -> 0.5 tiles.
+                    "push": 0.5 if shock else 0.0,
+                    # game data v18.200.9: Eagle Artillery.PushbackHousingLimit=3 -> 3 housing spaces.
+                    "push_housing": 3,
                 },
             )
         )
@@ -1020,7 +1099,19 @@ def _inferno_artillery(battle, w, rage):
     for index in range(w.extra["targets"]):
         a = pool[index % len(pool)]
         battle.hit_unit(a, w.damage * rage)
-        battle.fields.append(Field("def_burn", a.x, a.y, w.extra["pool_radius"], battle.t + w.extra["pool_time"], team="def", value=w.extra["pool_dps"]))
+        battle.fields.append(
+            Field(
+                "def_burn",
+                a.x,
+                a.y,
+                w.extra["pool_radius"],
+                battle.t + w.extra["pool_time"],
+                team="def",
+                value=w.extra["pool_dps"],
+                extra={"pulses": w.extra["pool_hits"], "gap": w.extra["pool_gap"]},
+                started=battle.t,
+            )
+        )
     w.cooldown += w.interval
 
 
@@ -1083,13 +1174,15 @@ def _firespitter(battle, w, rage):
     if w.burst_left <= 0:
         w.burst_left = w.extra["shots"]
     # each ball pierces to the next unit behind the target on the same line
-    battle.hit_unit(tgt, w.damage * rage)
+    # game data v18.200.9: GatlingGunAmmo.Speed=2000 -> 20 tiles/s.
+    # game data v18.200.9: GatlingGunAmmo.StartOffset=170 -> 1.7 tiles.
+    _projectile(battle, w, tgt, w.damage * rage, 20.0, offset=1.7)
     ang = math.atan2(tgt.y - b.y, tgt.x - b.x)
     for a in battle.attackers_near(tgt.x, tgt.y, 2.0):
         if a is not tgt and a.indirect_targetable(t):
             off = abs((math.atan2(a.y - b.y, a.x - b.x) - ang + math.pi) % (2 * math.pi) - math.pi)
             if off < 0.2 and dist(a.x, a.y, b.x, b.y) > dist(tgt.x, tgt.y, b.x, b.y):
-                battle.hit_unit(a, w.damage * rage)
+                _projectile(battle, w, a, w.damage * rage, 20.0, offset=1.7)
                 break
     w.burst_left -= 1
     w.cooldown += w.extra["gap"] if w.burst_left > 0 else w.interval
@@ -1132,7 +1225,13 @@ def _revenge(battle, w, tgt, rage):
 
 
 def bell_tick(battle):
-    bells = [b for b in battle.buildings if b.alive and b.name == "Hero Bell"]
+    # game data v18.200.9: HeroBoosterAttackAbility.ActiveAfterTime=2200 -> 2.2 s.
+    # game data v18.200.9: HeroBoosterEffectAbility.ActiveAfterTime=2200 -> 2.2 s.
+    bells = [
+        b
+        for b in battle.buildings
+        if b.alive and b.name == "Hero Bell" and battle.t >= 2.2
+    ]
     for hero in battle.defenders:
         if not hero.alive or not hero.is_hero:
             continue
@@ -1156,5 +1255,9 @@ def bell_tick(battle):
         hero.hp *= multiplier / previous
         hero.max_hp *= multiplier / previous
         hero.extra["bell_health"] = multiplier
-        hero.extra["bell_damage"] = 1.0 + damage_boost
-    # Activation/removal delay is not stated; no delay is invented.
+        if damage_boost:
+            # game data v18.200.9: SeasonalDefenseHeroBoosterRageAura.BoostTimeMS=1000 -> 1 s.
+            hero.extra["bell_damage"] = 1.0 + damage_boost
+            hero.extra["bell_damage_until"] = battle.t + 1.0
+        elif battle.t >= hero.extra.get("bell_damage_until", 0.0):
+            hero.extra["bell_damage"] = 1.0

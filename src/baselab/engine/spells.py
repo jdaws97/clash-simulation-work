@@ -20,7 +20,8 @@ STORAGES = {"gs", "es", "ds"}
 NO_TRIGGER = {"Spell Skeleton", "Skeleton", "Bat", "Totem"}
 POISON_LINGER = 6.0  # wiki: effect lasts 6 s after leaving the radius
 POISON_RAMP = 4.0  # seconds to reach max damage per second (assumed)
-POISON_HERO_MULT = 0.5  # "much less damage against Heroes" (assumed factor)
+# game data v18.200.9: Poison.HeroDamageMultiplier=5 -> 0.05x damage.
+POISON_HERO_MULT = 0.05
 
 
 def _lvl(battle, name, level):
@@ -206,7 +207,8 @@ def cast_effect(battle, name, x, y, level=None):
             "santa",
             x,
             y,
-            4.0,
+            # game data v18.200.9: Santas Surprise.RandomRadius=100 -> 1 tile.
+            1.0,
             t + 0.4,
             value=stats.get(name, lv, "Damage per Strike", default=370.0),
             extra={"pulses": 5, "gap": 0.1},
@@ -388,10 +390,11 @@ def _apply(battle, f: Field) -> bool:
             ang = battle.rng.random() * 2 * math.pi
             r = battle.rng.random() * f.radius
             sx, sy = f.x + r * math.cos(ang), f.y + r * math.sin(ang)
+            # game data v18.200.9: Santas Surprise.Radius=150 -> 1.5 tiles.
             for building in battle.buildings:
-                if building.alive and building.edge_distance(sx, sy) <= 1.0:
+                if building.alive and building.edge_distance(sx, sy) <= 1.5:
                     battle.hit_building(building, f.value)
-            for unit in battle.defenders_near(sx, sy, 1.0):
+            for unit in battle.defenders_near(sx, sy, 1.5):
                 battle.hit_unit(unit, f.value)
         return f.extra.get("delivered", 0) < f.extra["pulses"]
     if k == "heal":
@@ -445,9 +448,19 @@ def _apply(battle, f: Field) -> bool:
                     )
         return True
     if k == "def_burn":
+        # Application pulses remain separate from the existing damage approximation.
+        if "pulses" not in f.extra or _pulses(f, t):
+            f.extra["victims"] = {
+                unit.id for unit in battle.attackers_near(f.x, f.y, f.radius)
+            }
         # Wiki: Inferno Artillery, pools neither stack nor gain difficulty damage.
         for u in battle.attackers_near(f.x, f.y, f.radius):
-            if not u.alive or u.underground or u.extra.get("burn_tick") == t:
+            if (
+                not u.alive
+                or u.underground
+                or u.extra.get("burn_tick") == t
+                or u.id not in f.extra.get("victims", ())
+            ):
                 continue
             damage = max(
                 field.value
@@ -483,13 +496,17 @@ def _apply(battle, f: Field) -> bool:
             )
         return True
     if k == "haste":
+        # game data v18.200.9: Haste.TimeBetweenHitsMS=250 -> 0.25 s.
+        pulse = _application(f, t, 0.25)
+        if pulse is None:
+            return True
         for u in battle.attackers_near(f.x, f.y, f.radius):
             if _affected(u):
                 spd = f.extra["speed"] * (0.5 if u.is_hero else 1.0)
-                # Haste Spell does not state linger timing; retain the existing policy.
+                # game data v18.200.9: Haste.BoostTimeMS=1000 -> 1 s.
                 u.extra.setdefault("haste_effects", {})[_source(battle, f)] = (
                     spd,
-                    t + 1.0,
+                    pulse + 1.0,
                 )
         return True
     if k == "jump":
@@ -527,6 +544,9 @@ def _apply(battle, f: Field) -> bool:
             )
         return True
     if k == "def_poison":
+        gap = f.extra.get("gap", dt)
+        if _application(f, t, gap) is None:
+            return True
         for u in battle.attackers_near(f.x, f.y, f.radius):
             if _affected(u) or (
                 f.extra.get("origin") == "town_hall" and u.name == "Stone Slammer"
@@ -542,6 +562,7 @@ def _apply(battle, f: Field) -> bool:
                     origin=f.extra.get("origin", "tower"),
                     source=_source(battle, f),
                     source_until=f.until,
+                    refresh=f.extra.get("gap", 0.2),
                 )
         return True
     if k == "quake":
@@ -576,6 +597,9 @@ def _apply(battle, f: Field) -> bool:
                 battle.hit_unit(u, u.max_hp * f.value / (2 * n - 1), src="spell_tower")
         return False
     if k == "clone":
+        # game data v18.200.9: Clone.TimeBetweenHitsMS=300 -> 0.3 s.
+        if _application(f, t, 0.3) is None:
+            return True
         cap = f.value
         # Wiki: Clone Spell permits repeated copies and cloning existing clones.
         sources = sorted(
@@ -631,7 +655,13 @@ def _apply(battle, f: Field) -> bool:
             return False  # cast on walls: no free tiles, spell wasted (wiki)
         for j in range(n):
             sx, sy = spots[j % len(spots)]
-            battle.spawn(name, "atk", sx, sy, kind="summon", group="spell")
+            child = battle.spawn(name, "atk", sx, sy, kind="summon", group="spell")
+            if f.extra.get("name") == "Bag of Frostmites":
+                from dataclasses import replace
+
+                child.extra["bouncing_frostmite"] = True
+                # game data v18.200.9: BouncingFrostmite.DamageRadius=80 -> 0.8 tiles.
+                child.spec = replace(child.spec, splash=0.8)
         return False
     if k == "invis":
         until = _invisibility_until(f, t)
@@ -728,6 +758,16 @@ def _source(battle, field):
     return source
 
 
+def _application(field, t, gap):
+    at = field.extra.get("next_apply", field.started)
+    if at > t and not math.isclose(at, t):
+        return None
+    while at + gap < t or math.isclose(at + gap, t):
+        at += gap
+    field.extra["next_apply"] = at + gap
+    return at
+
+
 def _pulses(field, t):
     delivered = field.extra.get("delivered", 0)
     due = []
@@ -803,6 +843,7 @@ def _poison(
     origin="spell",
     source=None,
     source_until=None,
+    refresh=0.2,
 ):
     t = battle.t
     if u.kind == "guardian" and u.extra.get("waiting"):
@@ -815,7 +856,7 @@ def _poison(
     st["dps"] = damage
     st["ramp"] = ramp
     linger = POISON_LINGER if u.team == "def" else 0.0
-    st["until"] = t + (POISON_LINGER if u.team == "def" else 0.2)
+    st["until"] = t + (POISON_LINGER if u.team == "def" else refresh)
     if source_until is not None:
         st["until"] = min(st["until"], source_until + linger)
     st["slow"], st["atk"] = slow, atk
@@ -881,6 +922,9 @@ def add_defensive_poison(battle, x, y, cfg, *, origin="tower"):
         },
         started=battle.t,
     )
+    if origin == "tower":
+        # game data v18.200.9: Spell Tower Poison.TimeBetweenHitsMS=400 -> 0.4 s.
+        f.extra["gap"] = 0.4
     battle.fields.append(f)
 
 

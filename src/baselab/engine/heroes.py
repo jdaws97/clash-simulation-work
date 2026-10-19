@@ -11,7 +11,7 @@ import math
 
 from ..loadouts import HeroLoadout
 from . import effects, spells, stats, units
-from .entities import Building, Unit, Wall, dist
+from .entities import Building, Pending, Unit, Wall, dist
 
 HEROES = {"Barbarian King", "Archer Queen", "Grand Warden", "Royal Champion", "Minion Prince", "Dragon Duke"}
 
@@ -132,6 +132,9 @@ def equip(battle, u: Unit, plan):
             k.hp_recovery += _col(e, lvl, "health recovery")
         if e == "Vampstache":
             k.vamp = _col(e, lvl, "heal per hit")
+        if e == "Electro Boots":
+            # game data v18.200.9: Electro Boots Aura.HitTimeMS=400 -> 0.4 s.
+            u.extra["boots_next"] = battle.t + 0.4
         if e == "Frozen Arrow":
             k.frozen_arrow = (_col(e, lvl, "slow down") / 100.0, _col(e, lvl, "slow down duration"))
         if e == "Stick Horse":
@@ -318,7 +321,8 @@ def tick(battle, u: Unit):
             )
             u.extra["boots_next"] = t + 0.4
     if t < k.heal_until:
-        for a in battle.attackers_near(u.x, u.y, 7.0):
+        # game data v18.200.9: Healing Tome Aura.Radius=900 -> 9 tiles.
+        for a in battle.attackers_near(u.x, u.y, 9.0):
             if a.kind not in ("siege", "siege_idle"):
                 a.heal(k.heal_rate * dt)
 
@@ -620,12 +624,19 @@ def activate(battle, u: Unit):
             )
             # Wiki: Invisibility Spell and Overgrowth Spell, top-corner fallback.
             x, y = (target.x, target.y) if target is not None else (0.0, 0.0)
-            _blast(
-                battle,
-                x,
-                y,
-                _col(e, lv, "damage radius"),
-                _col(e, lv, "projectile damage"),
+            # game data v18.200.9: vfx_chr_gw_Fireball_lvl1.FixedTravelTime=1500 -> 1.5 s.
+            battle.add_pending(
+                Pending(
+                    t + 1.5,
+                    x,
+                    y,
+                    _col(e, lv, "damage radius"),
+                    _col(e, lv, "projectile damage"),
+                    True,
+                    True,
+                    u.name,
+                    extra={"hero_impact": "blast"},
+                )
             )
         elif e == "Heroic Torch":
             dur = _col(e, lv, "ability duration", default=27.5)
@@ -637,24 +648,20 @@ def activate(battle, u: Unit):
             )
             _moving_auras(battle, u)
         elif e == "Seeking Shield":
-            dmg = _col(e, lv, "projectile damage")
-            previous, visited = u, set()
-            for _ in range(4):  # wiki: Seeking Shield
-                candidates = [
-                    a for a in _targets(battle, defenses=True) if a not in visited
-                ]
-                if not candidates:
-                    candidates = [a for a in _targets(battle) if a not in visited]
-                if not candidates:
-                    # Targetless Shield flies to the top corner (wiki: Overgrowth Spell).
-                    u.extra["shield_destination"] = (0.0, 0.0)
-                    break
-                target = min(
-                    candidates, key=lambda a: _distance(a, previous.x, previous.y)
+            # game data v18.200.9: RoyalChampionShieldBounce.PreActivationDelayTime=933 -> 0.933 s.
+            battle.add_pending(
+                Pending(
+                    t + 0.933,
+                    u.x,
+                    u.y,
+                    0.0,
+                    _col(e, lv, "projectile damage"),
+                    True,
+                    True,
+                    u.name,
+                    extra={"hero_impact": "shield", "remaining": 4, "visited": set()},
                 )
-                visited.add(target)
-                _damage(battle, target, dmg)
-                previous = target
+            )
         elif e == "Rocket Spear":
             k.spear_shots = int(_col(e, lv, "number of attacks", default=9))
             k.spear_bonus = _col(e, lv, "damage per shot increase")
@@ -696,19 +703,32 @@ def activate(battle, u: Unit):
                     target.frozen_until, t + _col(e, lv, "slow down duration")
                 )
         elif e == "Dark Orb":
-            slow = _col(e, lv, "slow down") / 100.0
-            centre = tgt if tgt is not None else u
-            # Five-tile footprint; moving travel parameters are unstated (wiki: Dark Orb).
-            for target in _targets(battle):
-                if _distance(target, centre.x, centre.y) <= 5.0:
-                    _damage(battle, target, _col(e, lv, "projectile damage"))
-                    effects.add_slow(
-                        target,
-                        (e, u.id),
-                        1.0 - slow,
-                        1.0 - slow,
-                        t + _col(e, lv, "slow down duration"),
-                    )
+            dx, dy = u.extra["facing"]
+            length = math.hypot(dx, dy) or 1.0
+            # game data v18.200.9: vfx_projectile_DarkOrb.Speed=1250 -> 12.5 tiles/s.
+            # game data v18.200.9: vfx_projectile_DarkOrb.MaxTravelTime=1250 -> 1.25 s.
+            battle.add_pending(
+                Pending(
+                    t,
+                    u.x,
+                    u.y,
+                    5.0,
+                    _col(e, lv, "projectile damage"),
+                    True,
+                    True,
+                    u.name,
+                    extra={
+                        "hero_impact": "orb",
+                        "direction": (dx / length, dy / length),
+                        "speed": 12.5,
+                        "until": t + 1.25,
+                        "last_at": t,
+                        "visited": set(),
+                        "slow": _col(e, lv, "slow down") / 100.0,
+                        "duration": _col(e, lv, "slow down duration"),
+                    },
+                )
+            )
         elif e == "Metal Pants":
             k.reduction = _col(e, lv, "incoming damage reduction") / 100.0
             k.reduction_until = t + _col(e, lv, "ability duration", default=15.0)
@@ -734,10 +754,87 @@ def activate(battle, u: Unit):
             u.extra["flame_direction"] = (
                 u.dash["dir"] if u.dash is not None else u.extra["facing"]
             )
-            # Extent and victims (wiki: Flame Blower); cone angle is unstated.
-            _blast(battle, u.x, u.y, stats.attrs(e)["radius"], dmg)
+            dx, dy = u.extra["flame_direction"]
+            facing = math.atan2(dy, dx)
+            # game data v18.200.9: DragonDukeFireBlast.ConeAngle=60 -> 60 degrees.
+            half_angle = math.radians(60.0) / 2.0
+            for target in _targets(battle):
+                angle = math.atan2(target.y - u.y, target.x - u.x)
+                offset = abs((angle - facing + math.pi) % (2 * math.pi) - math.pi)
+                if (
+                    offset <= half_angle
+                    and _distance(target, u.x, u.y) <= stats.attrs(e)["radius"]
+                ):
+                    _damage(battle, target, dmg)
     if battle.record:
         battle.log.append((round(t, 1), "ability", u.name))
+
+
+def projectile_impact(battle, pending):
+    mode = pending.extra["hero_impact"]
+    if mode == "blast":
+        _blast(battle, pending.x, pending.y, pending.radius, pending.damage)
+        return
+    if mode == "shield":
+        target = pending.target
+        if target is not None:
+            pending.x, pending.y = target.x, target.y
+            if target.alive:
+                _damage(battle, target, pending.damage)
+            pending.extra["remaining"] -= 1
+        if not pending.extra["remaining"]:
+            return
+        visited = pending.extra["visited"]
+        candidates = [
+            target
+            for target in _targets(battle, defenses=True)
+            if target not in visited
+        ]
+        if not candidates:
+            candidates = [
+                target for target in _targets(battle) if target not in visited
+            ]
+        if not candidates:
+            pending.actor.extra["shield_destination"] = (0.0, 0.0)
+            return
+        target = min(
+            candidates, key=lambda target: _distance(target, pending.x, pending.y)
+        )
+        visited.add(target)
+        # game data v18.200.9: AmazonQueen_shield.Speed=2000 -> 20 tiles/s.
+        pending.at = battle.t + dist(pending.x, pending.y, target.x, target.y) / 20.0
+        pending.target = target
+        battle.add_pending(pending)
+        return
+    if mode == "orb":
+        state = pending.extra
+        at = min(battle.t, state["until"])
+        distance = max(0.0, at - state["last_at"]) * state["speed"]
+        dx, dy = state["direction"]
+        for target in _targets(battle):
+            if target in state["visited"]:
+                continue
+            along = (target.x - pending.x) * dx + (target.y - pending.y) * dy
+            along = min(distance, max(0.0, along))
+            x, y = pending.x + dx * along, pending.y + dy * along
+            if _distance(target, x, y) > pending.radius:
+                continue
+            state["visited"].add(target)
+            _damage(battle, target, pending.damage)
+            slow = 1.0 - state["slow"]
+            effects.add_slow(
+                target,
+                ("Dark Orb", pending.actor.id),
+                slow,
+                slow,
+                battle.t + state["duration"],
+            )
+        pending.x += dx * distance
+        pending.y += dy * distance
+        state["last_at"] = at
+        if at < state["until"]:
+            pending.at = min(battle.t + battle.DT, state["until"])
+            battle.add_pending(pending)
 
 
 def _ball_targets(battle, hit):
@@ -917,9 +1014,10 @@ def _blast(battle, x, y, radius, damage, *, exclude=None):
 
 def _moving_auras(battle, warden, members=None):
     t = battle.t
-    # Keep the existing membership radius; the equipment pages do not verify it.
+    # game data v18.200.9: Eternal Tome Aura.Radius=900 -> 9 tiles.
+    # game data v18.200.9: Heroic Torch Aura.Radius=900 -> 9 tiles.
     if members is None:
-        members = battle.attackers_near(warden.x, warden.y, 7.0)
+        members = battle.attackers_near(warden.x, warden.y, 9.0)
     for ally in members:
         if ally.name == "Totem":
             continue
@@ -1263,7 +1361,25 @@ def summon_death(battle, unit):
             group=unit.group,
             owner=unit,
         )
-    # Death damage is tabulated; its unstated radius prevents an area blast.
+    # game data v18.200.9: GW Equipment Lavaloon.DieDamageRadius=200 -> 2 tiles.
+    # game data v18.200.9: GW Equipment Lavaloon.DieDamageDelay=416 -> 0.416 s.
+    damage = stats.get("Lavaloon", unit.level, "Damage when Destroyed")
+    battle.add_pending(
+        Pending(
+            battle.t + 0.416,
+            unit.x,
+            unit.y,
+            2.0,
+            damage,
+            False,
+            True,
+            unit.name,
+            team="def" if unit.team == "atk" else "atk",
+            extra={"buildings": damage if unit.team == "atk" else 0.0},
+            actor=unit,
+            effect="death",
+        )
+    )
 
 
 def _invisible(unit, until):
@@ -1306,7 +1422,7 @@ def new_member(battle, unit):
         if (
             warden.alive
             and warden.name == "Grand Warden"
-            and dist(warden.x, warden.y, unit.x, unit.y) <= 7.0
+            and dist(warden.x, warden.y, unit.x, unit.y) <= 9.0
         ):
             _moving_auras(battle, warden, (unit,))
 

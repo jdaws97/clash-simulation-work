@@ -3,7 +3,7 @@
 import math
 
 from . import effects, stats, units
-from .entities import Building, Unit, Wall, dist
+from .entities import Building, Pending, Unit, Wall, dist
 
 
 def _valid(battle, pet, target):
@@ -58,8 +58,7 @@ def _independent(battle, pet, buildings, defenders):
         nearby = [
             defender
             for defender in defenders
-            if dist(pet.x, pet.y, defender.x, defender.y)
-            <= ENGAGE_RADIUS + units.effective_range(pet)
+            if dist(pet.x, pet.y, defender.x, defender.y) <= ENGAGE_RADIUS
         ]
         defender = _nearest(pet, nearby)
         if defender is not None:
@@ -328,7 +327,17 @@ def act(battle, pet):
         pet.cooldown = delay
     else:
         pet.cooldown += delay
-    # Poison Lizard toxin lifetime and ramp: NUMBER NOT STATED; no guessed timer.
+    if pet.name == "Poison Lizard" and isinstance(target, Unit):
+        from . import spells
+
+        movement = stats.get(pet.name, pet.level, "Poison Speed Decrease") / 100.0
+        attack = stats.get(pet.name, pet.level, "Poison Attack Rate Decrease") / 100.0
+        _, movement, attack = spells.poison_factors(target, 0.0, movement, attack)
+        # game data v18.200.9: LizardPetPoison.PoisonOnHitDuration=3000 -> 3 s.
+        if not (target.kind == "guardian" and target.extra.get("waiting")):
+            target.move_slow, target.move_slow_until = 1.0 - movement, t + 3.0
+            target.atk_slow, target.atk_slow_until = 1.0 - attack, t + 3.0
+        # Poison dose accumulation and residual damage remain unresolved.
     if pet.name == "Electro Owl":
         # Two targets, with 80% damage on the second (wiki: Electro Owl).
         candidates = [
@@ -346,11 +355,23 @@ def act(battle, pet):
                 pet.extra.get("bell_damage", 1.0),
             )
             damage = pet.dmg * boost * 0.8
-            with effects.damage_source(battle, pet, "chain"):
-                if isinstance(second, Unit):
-                    battle.hit_unit(second, damage, attacker=pet, kind="chain")
-                else:
-                    battle.hit_building(second, damage)
+            # game data v18.200.9: Electro Owl.ChainAttackDelay=128 -> 0.128 s.
+            battle.add_pending(
+                Pending(
+                    t + 0.128,
+                    second.x,
+                    second.y,
+                    0.0,
+                    damage,
+                    False,
+                    True,
+                    pet.name,
+                    extra={"direct": True},
+                    actor=pet,
+                    effect="chain",
+                    target=second,
+                )
+            )
 
 
 def _owl_link(first, second):

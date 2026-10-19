@@ -30,9 +30,11 @@ DT = 0.1
 MAX_TIME = 180.0  # Wiki: Multiplayer Battles, three minutes of combat.
 SCOUT_TIME = 30.0  # Wiki: Multiplayer Battles, maximum scouting time.
 BUCKET = 4.0
-# Awareness radii/path costs: NUMBER NOT STATED; retain existing heuristics.
-ENGAGE_RADIUS = 4.0
-AWARE_RADIUS = 3.0
+# game data v18.200.9: CHAR_VS_CHAR_RADIUS_FOR_ATTACKER.NumberValue=7 -> 7 tiles.
+ENGAGE_RADIUS = 7.0
+# game data v18.200.9: ALLIANCE_ALERT_RADIUS.NumberValue=700 -> 7 tiles.
+AWARE_RADIUS = 7.0
+# Wall path costs retain their existing heuristic.
 WALL_COST = {"normal": 12.0, "smash": 1.2, "ignore": 0.0, "fly": 0.0}
 
 # Ranked difficulty modifiers (wiki "Ranked Battles"): defense DPS bonus,
@@ -904,6 +906,17 @@ class Battle:
             # Released attacks keep their origin through invisibility and death.
             with effects.damage_source(self, pending.actor, pending.effect):
                 self._src = pending.src
+                if "hero_impact" in pending.extra:
+                    heroes.projectile_impact(self, pending)
+                    continue
+                if pending.extra.get("direct"):
+                    target = pending.target
+                    if isinstance(target, Unit):
+                        if target.indirect_targetable(t):
+                            self.hit_unit(target, pending.damage)
+                    elif target.alive:
+                        self.hit_building(target, pending.damage)
+                    continue
                 if "troop_impact" in pending.extra:
                     units.projectile_impact(self, pending)
                     continue
@@ -937,6 +950,27 @@ class Battle:
                     falloff=pending.falloff,
                     src=pending.src,
                 )
+                if pending.extra.get("push"):
+                    for unit in self.attackers_near(x, y, pending.radius):
+                        if (
+                            unit.alive
+                            and not unit.is_hero
+                            and unit.kind not in ("pet", "siege", "siege_idle")
+                            and 0 < unit.housing <= pending.extra["push_housing"]
+                            and not unit.underground
+                        ):
+                            dx, dy = unit.x - x, unit.y - y
+                            distance = math.hypot(dx, dy)
+                            if not distance:
+                                ox, oy = pending.extra["origin"]
+                                dx, dy = x - ox, y - oy
+                                distance = math.hypot(dx, dy)
+                            if distance:
+                                push = pending.extra["push"]
+                                self._nudge(
+                                    unit, push * dx / distance, push * dy / distance
+                                )
+                                unit.target = unit.wall_target = None
                 if pending.src == "mortar":
                     # Wiki: Barbarian/Home Village states two tiles of knockback.
                     # Travel duration and exact direction convention are unstated.
@@ -1156,16 +1190,14 @@ class Battle:
         ):
             u.extra["next_engage"] = t + 0.5
             if t < u.aware_until or self._ally_under_attack(u):
-                foe = self._nearest_defender(
-                    u, ENGAGE_RADIUS + units.effective_range(u)
-                )
+                foe = self._nearest_defender(u, ENGAGE_RADIUS)
                 if foe is not None:
                     target, u.target_kind, u.wall_target = foe, "unit", None
         if target is None:
             u.wall_target = None
             target, u.target_kind = self.choose_target(u)
         if u.name == "Dragon" and target is not None and not isinstance(target, Unit):
-            foe = self._nearest_defender(u, ENGAGE_RADIUS + units.effective_range(u))
+            foe = self._nearest_defender(u, ENGAGE_RADIUS)
             if foe is not None and units.target_distance(
                 u, foe
             ) < units.target_distance(u, target):
@@ -1266,9 +1298,7 @@ class Battle:
             if u.spec.engages_units and (
                 t < u.aware_until or self._ally_under_attack(u)
             ):
-                foe = self._nearest_defender(
-                    u, ENGAGE_RADIUS + units.effective_range(u)
-                )
+                foe = self._nearest_defender(u, ENGAGE_RADIUS)
                 if foe is not None:
                     return foe, "unit"
             return None, None
