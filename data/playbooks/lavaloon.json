@@ -1,0 +1,2214 @@
+{
+ "family": "lavaloon",
+ "name": "Ice Block Duke and Royal Champion Lalo",
+ "sources": [
+  "ahiJ-bgdmSE",
+  "l0D7kFeev5g"
+ ],
+ "army": {
+  "troops": {
+   "Archer": 3,
+   "Ice Hound": 3,
+   "Balloon": 30,
+   "Inferno Dragon": 4,
+   "Minion": 4,
+   "Baby Dragon": 1,
+   "Barbarian": 1
+  },
+  "spells": {
+   "Earthquake Spell": 1,
+   "Haste Spell": 1,
+   "Totem Spell": 2,
+   "Freeze Spell": 2,
+   "Poison Spell": 1,
+   "Ice Block Spell": 4
+  },
+  "cc": {
+   "Sky Wagon": 1,
+   "Inferno Dragon": 1,
+   "Ice Hound": 1,
+   "Overgrowth Spell": 1,
+   "Revive Spell": 1
+  },
+  "heroes": [
+   "Royal Champion",
+   "Minion Prince",
+   "Grand Warden",
+   "Dragon Duke"
+  ],
+  "loadouts": {
+   "Royal Champion": [
+    "Seeking Shield",
+    "Rocket Spear",
+    "Phoenix"
+   ],
+   "Minion Prince": [
+    "Dark Orb",
+    "Meteor Staff",
+    "Greedy Raven"
+   ],
+   "Grand Warden": [
+    "Life Gem",
+    "Eternal Tome",
+    "Sneezy"
+   ],
+   "Dragon Duke": [
+    "Fire Heart",
+    "Revenge Deck",
+    "Angry Jelly"
+   ]
+  }
+ },
+ "base_reading": [
+  {
+   "rule": "Prepare the funnel before sending Dragon Duke into the intended entry; the two sources use Inferno Dragons or a Fireball opening.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 1495,
+     "quote": "That's why you don't deploy him right away"
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 59.3,
+     "quote": "warden and his fireball to set the funnel"
+    }
+   ]
+  },
+  {
+   "rule": "Choose hero entry angles that avoid Logger disrupting the charge: avoid the Logger beside the Monolith for Dragon Duke and avoid Logger hits on Archer Queen.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 107,
+     "quote": "into the monolith is the logger is right beside it"
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 1225.6,
+     "quote": "Hopefully the queen doesn't get hit by the logger."
+    }
+   ]
+  },
+  {
+   "rule": "Avoid charging Dragon Duke into an Air Sweeper.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 133.8,
+     "quote": "I ideally would not want to attack into a sweeper."
+    }
+   ]
+  },
+  {
+   "rule": "Identify the unnamed defense called 'cake' and the Fire Spitters, Inferno Towers, Super Wizard Towers and Scattershots that threaten the Lalo with splash damage.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 65.6,
+     "quote": "public enemy number one for our Lalo."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 79.7,
+     "quote": "Anything kind of splash damage. Super wizard towers,"
+    }
+   ]
+  },
+  {
+   "rule": "Prefer a Dragon Duke entry that draws several dangerous defenses onto him; the first Royal Champion demonstration uses the Revenge Tower entry.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 155.4,
+     "quote": "towards this revenge tower, that's spectacular"
+    }
+   ]
+  },
+  {
+   "rule": "In the Royal Champion plan, prefer removing the Monolith early instead of leaving it with splash defenses for the back end.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 481.1,
+     "quote": "So attacking in towards it early is a good thing."
+    }
+   ]
+  },
+  {
+   "rule": "Treat compact cores with multiple splash defenses, opposing Air Sweepers and Rage Spell Towers as difficult Lalo layouts.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 1424,
+     "quote": "triple multi infernos, two scatter shots, two wizard towers"
+    }
+   ]
+  },
+  {
+   "rule": "Extend Dragon Duke's actual route with Royal Champion and Earthquake; choose the route that does not reach Logger too soon.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 208.2,
+     "quote": "on top of that funnel with the royal champion,"
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 243,
+     "quote": "towards the logger too soon."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 1507.2,
+     "quote": "you have the RC in your back pocket"
+    }
+   ]
+  },
+  {
+   "rule": "Send Balloons in separate groups toward individual defenses instead of deploying them all together.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 310.5,
+     "quote": "three or four for each defense."
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 158.6,
+     "quote": "seven because then they can one-shot any defense with a group of seven."
+    }
+   ]
+  },
+  {
+   "rule": "Snipe an easily removed defense with Balloons if it would waste Royal Champion's Rocket Spear shots, while preserving enough Balloons for the back end.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 493.3,
+     "quote": "should have sniped it out early with some balloons."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 1665,
+     "quote": "you don't want to use so many balloons that you struggle on the back end."
+    }
+   ]
+  },
+  {
+   "rule": "Use Totem to distract Logger threatening the Lalo.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 327.4,
+     "quote": "keep it distracted. Or you can use a totem spell."
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 1932.5,
+     "quote": "Total the logger."
+    }
+   ]
+  },
+  {
+   "rule": "Against Logger, feed Ice Hounds toward it to distract it. Against Longshot, send Hounds behind the Lalo to catch core traps instead of repeatedly feeding them toward the guardian.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 327.4,
+     "quote": "keep it distracted. Or you can use a totem spell."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 1598,
+     "quote": "I could have sent them behind my lo"
+    }
+   ]
+  },
+  {
+   "rule": "Place Sky Wagon on the opposite side with the Lalo to help funnel in the Royal Champion plan.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 935.4,
+     "quote": "sky wagon is placed on the opposite side with the Lo."
+    }
+   ]
+  },
+  {
+   "rule": "Cover the cake and Fire Spitters threatening the flight path with Overgrowth; cast early when the dangerous area is under an activated Rage Spell Tower.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 338.5,
+     "quote": "An overgrowth here is absolutely fantastic."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 1604.4,
+     "quote": "here is cuz the rage shower just set off."
+    }
+   ]
+  },
+  {
+   "rule": "In the Fireball plan, choose a Fireball opening that funnels Archer Queen and Dragon Duke, and start Lalo from their side so it clears outside targets before Duke is revived into the core.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 59.3,
+     "quote": "warden and his fireball to set the funnel"
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 123.1,
+     "quote": "side that I sent my queen and Duke"
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 917,
+     "quote": "I got to wait. I got to be patient."
+    }
+   ]
+  },
+  {
+   "rule": "Fireball targeting is base dependent: the first demonstration targets a Rage Spell Tower; another removes the Giga Bomb area while leaving a Monolith for Balloons; clustered Town Hall and Clan Castle value can justify Fireball near the Clan Castle.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 75.7,
+     "quote": "this rage spell tower and I can take out"
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 337.6,
+     "quote": "then I don't have to lalo over it,"
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 2306.8,
+     "quote": "Fireballing over near the CC, taking that out was the right one"
+    }
+   ]
+  },
+  {
+   "rule": "Include alternative Fireball targets such as an outside Archer Tower in the Invisibility setup, or snipe that tower first; save the third Invisibility when only two are needed.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 998.7,
+     "quote": "Because I missed the archer tower to the right."
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 2896.7,
+     "quote": "we only have to use two invades so I can save one."
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 3049.5,
+     "quote": "snipe this arch tower to make it easier to invis."
+    }
+   ]
+  },
+  {
+   "rule": "Haste the outer Balloon path to push inward, but avoid accelerating Balloons out of Grand Warden's Life Gem aura at a Giga Bomb.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 147,
+     "quote": "the edges around to push the Lalo"
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 2817.6,
+     "quote": "I don't want to haste them out of the warden"
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 2837.8,
+     "quote": "the life gem, you keep them in that warden,"
+    }
+   ]
+  },
+  {
+   "rule": "If only Archer Queen can be revived, use Revive on her instead of forcing the usual Dragon Duke revival.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 2486.9,
+     "quote": "I can bring only the queen back to life,"
+    }
+   ]
+  },
+  {
+   "rule": "When holding Dragon Duke near a Monolith, wait for it to lock onto him before Ice Block; a cast can be delayed when he can safely advance farther.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 1071,
+     "quote": "the monolith locks onto my dragon duke"
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 1299.5,
+     "quote": "Let him get even further in."
+    }
+   ]
+  },
+  {
+   "rule": "In the Fireball source, deploying Minion Prince before Dragon Duke dies lets Dark Crown gain the hero-death buff.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 381.5,
+     "quote": "could drop the minion prints before the duke dies"
+    }
+   ]
+  },
+  {
+   "rule": "A Freeze can hold the defending Archer Queen off the remaining troops in the Royal Champion source's final attack.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 1352.8,
+     "quote": "Let's freeze that. Okay. Keep the queen locked off other troops."
+    }
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "funnel_charge",
+   "action": "deploy",
+   "what": "Inferno Dragon",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "funnel",
+   "when": {
+    "t": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 163.4,
+     "quote": "So, you can use an eye drag here."
+    }
+   ]
+  },
+  {
+   "id": "funnel_other",
+   "action": "deploy",
+   "what": "Inferno Dragon",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "funnel_charge",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 175.8,
+     "quote": "And inferno dragon right here."
+    }
+   ]
+  },
+  {
+   "id": "duke",
+   "action": "deploy",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "duke",
+   "when": {
+    "after": "funnel_other",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 177.9,
+     "quote": "And then you're going to go dragon in."
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 191.2,
+     "quote": "Let's go the Duke over like that."
+    }
+   ]
+  },
+  {
+   "id": "ice_block_1",
+   "action": "spell",
+   "what": "Ice Block Spell",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "after": "duke",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Dragon Duke"
+     }
+    ]
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 184.1,
+     "quote": "you go ice block right here once he approaches,"
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 205.4,
+     "quote": "We'll go ice block this."
+    }
+   ]
+  },
+  {
+   "id": "ice_block_2",
+   "action": "spell",
+   "what": "Ice Block Spell",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "after": "ice_block_1",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Dragon Duke"
+     }
+    ]
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 184.1,
+     "quote": "you go ice block right here once he approaches,"
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 211,
+     "quote": "We'll ice block again."
+    }
+   ]
+  },
+  {
+   "id": "ice_block_3",
+   "action": "spell",
+   "what": "Ice Block Spell",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "after": "ice_block_2",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Dragon Duke"
+     }
+    ]
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 184.1,
+     "quote": "you go ice block right here once he approaches,"
+    }
+   ]
+  },
+  {
+   "id": "duke_ability",
+   "action": "ability",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "after": "ice_block_3",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Dragon Duke"
+     }
+    ]
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 461.2,
+     "quote": "support a little bit here with his ability."
+    }
+   ]
+  },
+  {
+   "id": "ice_block_4",
+   "action": "spell",
+   "what": "Ice Block Spell",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "after": "duke_ability",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Dragon Duke"
+     }
+    ]
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 184.1,
+     "quote": "you go ice block right here once he approaches,"
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 461.2,
+     "quote": "support a little bit here with his ability."
+    }
+   ]
+  },
+  {
+   "id": "royal_champion",
+   "action": "deploy",
+   "what": "Royal Champion",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "after": "ice_block_4",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 208.2,
+     "quote": "on top of that funnel with the royal champion,"
+    }
+   ]
+  },
+  {
+   "id": "champion_quake",
+   "action": "spell",
+   "what": "Earthquake Spell",
+   "count": 1,
+   "at": "threat:charge",
+   "group": "charge",
+   "when": {
+    "after": "royal_champion",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 215.1,
+     "quote": "earthquake spell goes with the royal champion."
+    }
+   ]
+  },
+  {
+   "id": "champion_ability",
+   "action": "ability",
+   "what": "Royal Champion",
+   "count": 1,
+   "at": "unit:Royal Champion",
+   "group": "charge",
+   "when": {
+    "after": "champion_quake",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 915.5,
+     "quote": "Royal champion. I got the earthquake here and then her ability in"
+    }
+   ]
+  },
+  {
+   "id": "outside_baby_dragon",
+   "action": "deploy",
+   "what": "Baby Dragon",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "cleanup",
+   "when": {
+    "after": "champion_ability",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 259.3,
+     "quote": "We can start clearing out these trash buildings"
+    }
+   ]
+  },
+  {
+   "id": "outside_infernos",
+   "action": "deploy",
+   "what": "Inferno Dragon",
+   "count": "all",
+   "at": "edge:funnel",
+   "group": "cleanup",
+   "when": {
+    "after": "outside_baby_dragon",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 259.3,
+     "quote": "We can start clearing out these trash buildings"
+    }
+   ]
+  },
+  {
+   "id": "entry_balloons",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 2,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "champion_ability",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 296.2,
+     "quote": "Couple balloons, an ice hound, the minion prince, and the warden."
+    }
+   ]
+  },
+  {
+   "id": "ice_hound",
+   "action": "deploy",
+   "what": "Ice Hound",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "entry_balloons",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 296.2,
+     "quote": "Couple balloons, an ice hound, the minion prince, and the warden."
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 233.4,
+     "quote": "Here comes the the Ice Hound."
+    }
+   ]
+  },
+  {
+   "id": "minion_prince",
+   "action": "deploy",
+   "what": "Minion Prince",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "ice_hound",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 300.6,
+     "quote": "hound, the minion prince, and the warden."
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 231.2,
+     "quote": "Minion Prince and then we'll drop the"
+    }
+   ]
+  },
+  {
+   "id": "air_warden",
+   "action": "deploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "minion_prince",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 300.6,
+     "quote": "hound, the minion prince, and the warden."
+    }
+   ]
+  },
+  {
+   "id": "sky_wagon",
+   "action": "deploy",
+   "what": "Sky Wagon",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "air_warden",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 935.4,
+     "quote": "sky wagon is placed on the opposite side with the Lo."
+    }
+   ]
+  },
+  {
+   "id": "balloons_1",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 4,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "sky_wagon",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 303.8,
+     "quote": "slowly put in some loons to target these buildings here."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 310.5,
+     "quote": "three or four for each defense."
+    }
+   ]
+  },
+  {
+   "id": "balloons_2",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 4,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "balloons_1",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 303.8,
+     "quote": "slowly put in some loons to target these buildings here."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 310.5,
+     "quote": "three or four for each defense."
+    }
+   ]
+  },
+  {
+   "id": "more_ice_hounds",
+   "action": "deploy",
+   "what": "Ice Hound",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "balloons_2",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 327.4,
+     "quote": "keep it distracted. Or you can use a totem spell."
+    }
+   ]
+  },
+  {
+   "id": "balloons_3",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 4,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "more_ice_hounds",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 303.8,
+     "quote": "slowly put in some loons to target these buildings here."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 310.5,
+     "quote": "three or four for each defense."
+    }
+   ]
+  },
+  {
+   "id": "overgrowth",
+   "action": "spell",
+   "what": "Overgrowth Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "balloons_3",
+      "delay": 0
+     },
+     {
+      "group_inside": "main"
+     }
+    ]
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 338.5,
+     "quote": "An overgrowth here is absolutely fantastic."
+    }
+   ]
+  },
+  {
+   "id": "warden_ability",
+   "action": "ability",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "balloons_3",
+      "delay": 0
+     },
+     {
+      "group_inside": "main"
+     }
+    ]
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 353.4,
+     "quote": "Combine the warden ability with the haste spell"
+    }
+   ]
+  },
+  {
+   "id": "haste",
+   "action": "spell",
+   "what": "Haste Spell",
+   "count": 1,
+   "at": "group:main",
+   "group": "main",
+   "when": {
+    "after": "warden_ability",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 353.4,
+     "quote": "Combine the warden ability with the haste spell"
+    }
+   ]
+  },
+  {
+   "id": "prince_ability",
+   "action": "ability",
+   "what": "Minion Prince",
+   "count": 1,
+   "at": "unit:Minion Prince",
+   "group": "main",
+   "when": {
+    "after": "warden_ability",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 1329.3,
+     "quote": "haste, minion prince, and warden ability"
+    }
+   ]
+  },
+  {
+   "id": "balloons_4",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 4,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "balloons_3",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 303.8,
+     "quote": "slowly put in some loons to target these buildings here."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 310.5,
+     "quote": "three or four for each defense."
+    }
+   ]
+  },
+  {
+   "id": "balloons_5",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 4,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "balloons_4",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 303.8,
+     "quote": "slowly put in some loons to target these buildings here."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 310.5,
+     "quote": "three or four for each defense."
+    }
+   ]
+  },
+  {
+   "id": "balloons_6",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 4,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "balloons_5",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 303.8,
+     "quote": "slowly put in some loons to target these buildings here."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 310.5,
+     "quote": "three or four for each defense."
+    }
+   ]
+  },
+  {
+   "id": "balloons_7",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 4,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "balloons_6",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 303.8,
+     "quote": "slowly put in some loons to target these buildings here."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 310.5,
+     "quote": "three or four for each defense."
+    }
+   ]
+  },
+  {
+   "id": "poison",
+   "action": "spell",
+   "what": "Poison Spell",
+   "count": 1,
+   "at": "defenders:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "ice_hound",
+      "delay": 0
+     },
+     {
+      "defenders_near": "main"
+     }
+    ]
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 539.4,
+     "quote": "poison on the logger and what's in the CC."
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 1937.7,
+     "quote": "Let's poison up the logger here."
+    }
+   ]
+  },
+  {
+   "id": "totem",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "defenders:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "ice_hound",
+      "delay": 0
+     },
+     {
+      "defenders_near": "main"
+     }
+    ]
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 327.4,
+     "quote": "keep it distracted. Or you can use a totem spell."
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 1932.5,
+     "quote": "Total the logger."
+    }
+   ]
+  },
+  {
+   "id": "revive_duke",
+   "action": "spell",
+   "what": "Revive Spell",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "dead": "Dragon Duke"
+     },
+     {
+      "after": "balloons_3",
+      "delay": 0
+     },
+     {
+      "group_inside": "main"
+     }
+    ]
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 563.8,
+     "quote": "revive my dragon duke to take care of the scattershot."
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 245.2,
+     "quote": "Revive that Duke."
+    }
+   ]
+  },
+  {
+   "id": "cleanup_archers",
+   "action": "deploy",
+   "what": "Archer",
+   "count": "all",
+   "at": "edge:funnel",
+   "group": "cleanup",
+   "when": {
+    "after": "balloons_7",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 670.4,
+     "quote": "Some archers here. Barbs for cleanup."
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 514.4,
+     "quote": "Some archers up top"
+    }
+   ]
+  },
+  {
+   "id": "cleanup_barbarian",
+   "action": "deploy",
+   "what": "Barbarian",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "cleanup",
+   "when": {
+    "after": "cleanup_archers",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "l0D7kFeev5g",
+     "t": 670.4,
+     "quote": "Some archers here. Barbs for cleanup."
+    }
+   ]
+  }
+ ],
+ "variants": [
+  {
+   "name": "Fireball recall with Queen and Duke",
+   "replaces": [
+    "funnel_charge",
+    "funnel_other",
+    "duke",
+    "ice_block_1",
+    "ice_block_2",
+    "ice_block_3",
+    "duke_ability",
+    "ice_block_4",
+    "royal_champion",
+    "champion_quake",
+    "champion_ability",
+    "outside_baby_dragon",
+    "outside_infernos",
+    "entry_balloons",
+    "ice_hound",
+    "minion_prince",
+    "air_warden",
+    "sky_wagon",
+    "balloons_1",
+    "balloons_2",
+    "more_ice_hounds",
+    "balloons_3",
+    "overgrowth",
+    "warden_ability",
+    "haste",
+    "prince_ability",
+    "balloons_4",
+    "balloons_5",
+    "balloons_6",
+    "balloons_7",
+    "poison",
+    "totem",
+    "revive_duke",
+    "cleanup_archers",
+    "cleanup_barbarian"
+   ],
+   "steps": [
+    {
+     "id": "fb_warden",
+     "action": "deploy",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 56,
+       "quote": "My goal is to start with the grand warden"
+      }
+     ]
+    },
+    {
+     "id": "fb_invis_1",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "after": "fb_warden",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 87.1,
+       "quote": "one, I'm going to invis two, and then invis three"
+      }
+     ]
+    },
+    {
+     "id": "fb_invis_2",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "after": "fb_invis_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 87.1,
+       "quote": "one, I'm going to invis two, and then invis three"
+      }
+     ]
+    },
+    {
+     "id": "fb_invis_3",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "after": "fb_invis_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 87.1,
+       "quote": "one, I'm going to invis two, and then invis three"
+      }
+     ]
+    },
+    {
+     "id": "fb_fireball",
+     "action": "ability",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "charge",
+     "when": {
+      "after": "fb_invis_3",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 89.5,
+       "quote": "invis three so I can fireball,"
+      }
+     ]
+    },
+    {
+     "id": "fb_quake_1",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "after": "fb_fireball",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 92.2,
+       "quote": "earthquake, take all that down, and then"
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 1427.6,
+       "quote": "forgot my second earthquake, duh."
+      }
+     ]
+    },
+    {
+     "id": "fb_quake_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "after": "fb_quake_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 92.2,
+       "quote": "earthquake, take all that down, and then"
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 1427.6,
+       "quote": "forgot my second earthquake, duh."
+      }
+     ]
+    },
+    {
+     "id": "fb_recall",
+     "action": "recall",
+     "what": "Recall Spell",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "charge",
+     "when": {
+      "after": "fb_quake_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 95.1,
+       "quote": "recall the warden."
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 1735.5,
+       "quote": "Warden, fireball, recall."
+      }
+     ]
+    },
+    {
+     "id": "fb_golem_1",
+     "action": "deploy",
+     "what": "Ice Golem",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "fb_recall",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 178.7,
+       "quote": "with an ice golem,"
+      }
+     ]
+    },
+    {
+     "id": "fb_queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "fb_golem_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 178.7,
+       "quote": "with an ice golem, queen,"
+      }
+     ]
+    },
+    {
+     "id": "fb_golem_2",
+     "action": "deploy",
+     "what": "Ice Golem",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "fb_queen",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 186.5,
+       "quote": "Let's go with another ice golem here."
+      }
+     ]
+    },
+    {
+     "id": "fb_headhunter",
+     "action": "deploy",
+     "what": "Headhunter",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "fb_golem_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 189,
+       "quote": "Give it a little head hunter."
+      }
+     ]
+    },
+    {
+     "id": "fb_duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "duke",
+     "when": {
+      "after": "fb_headhunter",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 191.2,
+       "quote": "Let's go the Duke over like that."
+      }
+     ]
+    },
+    {
+     "id": "fb_valkyrie",
+     "action": "deploy",
+     "what": "Valkyrie",
+     "count": 1,
+     "at": "edge:right",
+     "group": "charge",
+     "when": {
+      "after": "fb_duke",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 195,
+       "quote": "Valkyrie to the right."
+      }
+     ]
+    },
+    {
+     "id": "fb_ice_block_1",
+     "action": "spell",
+     "what": "Ice Block Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "all": [
+       {
+        "after": "fb_duke",
+        "delay": 0
+       },
+       {
+        "heavy_fire": "Dragon Duke"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 205.4,
+       "quote": "We'll go ice block this."
+      }
+     ]
+    },
+    {
+     "id": "fb_poison",
+     "action": "spell",
+     "what": "Poison Spell",
+     "count": 1,
+     "at": "defenders:charge",
+     "group": "charge",
+     "when": {
+      "all": [
+       {
+        "after": "fb_queen",
+        "delay": 0
+       },
+       {
+        "defenders_near": "charge"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 208.1,
+       "quote": "We'll poison up the furnace."
+      }
+     ]
+    },
+    {
+     "id": "fb_ice_block_2",
+     "action": "spell",
+     "what": "Ice Block Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "all": [
+       {
+        "after": "fb_ice_block_1",
+        "delay": 0
+       },
+       {
+        "heavy_fire": "Dragon Duke"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 211,
+       "quote": "We'll ice block again."
+      }
+     ]
+    },
+    {
+     "id": "fb_queen_ability",
+     "action": "ability",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "charge",
+     "when": {
+      "all": [
+       {
+        "after": "fb_queen",
+        "delay": 0
+       },
+       {
+        "heavy_fire": "Archer Queen"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 218.7,
+       "quote": "Pop queen ability."
+      }
+     ]
+    },
+    {
+     "id": "fb_prince",
+     "action": "deploy",
+     "what": "Minion Prince",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fb_queen_ability",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 231.2,
+       "quote": "Minion Prince and then we'll drop the"
+      }
+     ]
+    },
+    {
+     "id": "fb_air_warden",
+     "action": "redeploy",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fb_prince",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 233.4,
+       "quote": "Warden up top."
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 1735.5,
+       "quote": "Warden, fireball, recall."
+      }
+     ]
+    },
+    {
+     "id": "fb_sky_wagon",
+     "action": "deploy",
+     "what": "Sky Wagon",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fb_prince",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 476.2,
+       "quote": "So, let's get the sky wagon."
+      }
+     ]
+    },
+    {
+     "id": "fb_hound_1",
+     "action": "deploy",
+     "what": "Ice Hound",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "all": [
+       {
+        "after": "fb_air_warden",
+        "delay": 0
+       },
+       {
+        "after": "fb_sky_wagon",
+        "delay": 0
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 233.4,
+       "quote": "Here comes the the Ice Hound."
+      }
+     ]
+    },
+    {
+     "id": "fb_balloons_1",
+     "action": "deploy",
+     "what": "Balloon",
+     "count": 7,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fb_hound_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 237.5,
+       "quote": "drop about seven."
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 158.6,
+       "quote": "seven because then they can one-shot any defense with a group of seven."
+      }
+     ]
+    },
+    {
+     "id": "fb_hound_2",
+     "action": "deploy",
+     "what": "Ice Hound",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fb_balloons_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 242.1,
+       "quote": "another Ice Hound so we can try to trigger the Giga Bomb."
+      }
+     ]
+    },
+    {
+     "id": "fb_revive_duke",
+     "action": "spell",
+     "what": "Revive Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "all": [
+       {
+        "dead": "Dragon Duke"
+       },
+       {
+        "after": "fb_hound_2",
+        "delay": 0
+       },
+       {
+        "group_inside": "main"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 245.2,
+       "quote": "Revive that Duke."
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 917,
+       "quote": "I got to wait. I got to be patient."
+      }
+     ]
+    },
+    {
+     "id": "fb_balloons_2",
+     "action": "deploy",
+     "what": "Balloon",
+     "count": 7,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fb_hound_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 237.5,
+       "quote": "drop about seven."
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 158.6,
+       "quote": "seven because then they can one-shot any defense with a group of seven."
+      }
+     ]
+    },
+    {
+     "id": "fb_haste_1",
+     "action": "spell",
+     "what": "Haste Spell",
+     "count": 1,
+     "at": "group:main",
+     "group": "main",
+     "when": {
+      "after": "fb_balloons_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 251.6,
+       "quote": "let's try to haste through here."
+      }
+     ]
+    },
+    {
+     "id": "fb_balloons_3",
+     "action": "deploy",
+     "what": "Balloon",
+     "count": 7,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fb_balloons_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 237.5,
+       "quote": "drop about seven."
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 158.6,
+       "quote": "seven because then they can one-shot any defense with a group of seven."
+      }
+     ]
+    },
+    {
+     "id": "fb_balloons_4",
+     "action": "deploy",
+     "what": "Balloon",
+     "count": 7,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fb_balloons_3",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 237.5,
+       "quote": "drop about seven."
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 158.6,
+       "quote": "seven because then they can one-shot any defense with a group of seven."
+      }
+     ]
+    },
+    {
+     "id": "fb_haste_2",
+     "action": "spell",
+     "what": "Haste Spell",
+     "count": 1,
+     "at": "group:main",
+     "group": "main",
+     "when": {
+      "after": "fb_haste_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 147,
+       "quote": "the edges around to push the Lalo"
+      }
+     ]
+    },
+    {
+     "id": "fb_balloons_5",
+     "action": "deploy",
+     "what": "Balloon",
+     "count": 7,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fb_balloons_4",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 237.5,
+       "quote": "drop about seven."
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 158.6,
+       "quote": "seven because then they can one-shot any defense with a group of seven."
+      }
+     ]
+    },
+    {
+     "id": "fb_balloons_6",
+     "action": "deploy",
+     "what": "Balloon",
+     "count": 7,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fb_balloons_5",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 237.5,
+       "quote": "drop about seven."
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 158.6,
+       "quote": "seven because then they can one-shot any defense with a group of seven."
+      }
+     ]
+    },
+    {
+     "id": "fb_totem",
+     "action": "spell",
+     "what": "Totem Spell",
+     "count": 1,
+     "at": "defenders:main",
+     "group": "main",
+     "when": {
+      "all": [
+       {
+        "after": "fb_hound_1",
+        "delay": 0
+       },
+       {
+        "defenders_near": "main"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 1932.5,
+       "quote": "Total the logger."
+      }
+     ]
+    },
+    {
+     "id": "fb_minions",
+     "action": "deploy",
+     "what": "Minion",
+     "count": "all",
+     "at": "edge:funnel",
+     "group": "cleanup",
+     "when": {
+      "after": "fb_balloons_6",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 276.5,
+       "quote": "Drop some Minions here, Minions down there."
+      }
+     ]
+    },
+    {
+     "id": "fb_wall_breakers",
+     "action": "deploy",
+     "what": "Super Wall Breaker",
+     "count": "all",
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "fb_minions",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 280.1,
+       "quote": "See if we wall break to distract,"
+      }
+     ]
+    },
+    {
+     "id": "fb_archers",
+     "action": "deploy",
+     "what": "Archer",
+     "count": "all",
+     "at": "edge:funnel",
+     "group": "cleanup",
+     "when": {
+      "after": "fb_minions",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 514.4,
+       "quote": "Some archers up top"
+      }
+     ]
+    },
+    {
+     "id": "fb_prince_ability",
+     "action": "ability",
+     "what": "Minion Prince",
+     "count": 1,
+     "at": "unit:Minion Prince",
+     "group": "main",
+     "when": {
+      "all": [
+       {
+        "after": "fb_prince",
+        "delay": 0
+       },
+       {
+        "group_inside": "main"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 294.4,
+       "quote": "Let's pop the Minion Prince ability"
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 888,
+       "quote": "Minion prince ability would be clutch if I can hit this venge tower."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 56,
+     "quote": "My goal is to start with the grand warden"
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 59.3,
+     "quote": "warden and his fireball to set the funnel"
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 1735.5,
+     "quote": "Warden, fireball, recall."
+    },
+    {
+     "video": "ahiJ-bgdmSE",
+     "t": 123.1,
+     "quote": "side that I sent my queen and Duke"
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "Exactly two relevant lavaloon source playbooks were found. Each complete composition and opening has support 1, so no majority composition or dominant opening exists. The Royal Champion plan is the default tie choice; Fireball and recall has equal support.",
+  "Army counts, equipment and pets come from the source descriptions' army links. l0D7kFeev5g states Town Hall 18; ahiJ-bgdmSE does not explicitly state a Town Hall level.",
+  "The default source's three trained and two donated Sky Wagons are inventory options. Only one Sky Wagon is deployed; it is normalized into the flat cc map and omitted from ordinary troops.",
+  "The Fireball variant requires replacing the default army and loadouts with this complete composition: {\"troops\":{\"Balloon\":38,\"Minion\":10,\"Ice Golem\":2,\"Ice Hound\":2,\"Headhunter\":1,\"Valkyrie\":1,\"Super Wall Breaker\":2,\"Archer\":2},\"spells\":{\"Invisibility Spell\":3,\"Totem Spell\":1,\"Revive Spell\":1,\"Poison Spell\":1,\"Ice Block Spell\":2,\"Recall Spell\":1},\"cc\":{\"Sky Wagon\":1,\"Ice Hound\":1,\"Inferno Dragon\":1,\"Haste Spell\":2,\"Earthquake Spell\":2},\"heroes\":[\"Archer Queen\",\"Grand Warden\",\"Minion Prince\",\"Dragon Duke\"],\"loadouts\":{\"Archer Queen\":[\"Invisibility Vial\",\"Phoenix\"],\"Grand Warden\":[\"Fireball\",\"Life Gem\",\"Sneezy\"],\"Minion Prince\":[\"Dark Crown\",\"Dark Orb\",\"Greedy Raven\"],\"Dragon Duke\":[\"Revenge Deck\",\"Fire Heart\",\"Angry Jelly\"]}}",
+  "The Fireball source also lists Battle Blimp and Flame Flinger as inventory options without spoken deployment plans. Its additional Archer Queen equipment e16 is unidentified and omitted.",
+  "Support counts distinct videos describing the operation, not attacks, repeated casts or duplicate quotations within a video. Exact packet sizes and plan-specific actions retain support 1.",
+  "No source supplies deployment intervals or Ice Block renewal intervals. All after triggers use delay 0 as required; t 0 means the opening. These preserve stated ordering but cannot reproduce gradual Balloon feeding, waiting for a funnel to finish or successive Ice Blocks expiring. No repeat interval or health percentage has been invented.",
+  "Four Balloons per packet selects one of l0D7kFeev5g's stated three-or-four options; it also allows two for smaller defenses. Two entry Balloons plus seven packets of four use its 30 Balloons. The Fireball variant uses repeated packets of seven; the executor limits its final packet to the three remaining from 38. Packet numbers are scheduling labels derived from the inventory, not narrated deployment times.",
+  "The videos disagree on initial air deployment order: the default sends entry Balloons, an Ice Hound, Minion Prince and Grand Warden; the Fireball source sends Minion Prince, the recalled Warden, an Ice Hound and Balloon packets. Neither order has a majority.",
+  "In the default, the Dragon Duke ability before the last Ice Block and Minion Prince ability paired with Haste and Warden ability are particular attacks described by l0D7kFeev5g. These timings have support 1.",
+  "heavy_fire approximates defenses targeting Dragon Duke or Archer Queen's forced ability; group_inside approximates the Lalo reaching dangerous coverage, the remaining Revenge Tower or the outside having been cleared before Revive. The vocabulary cannot test those exact buildings being cleared or an ability's firing angle.",
+  "The Fireball source's first explanation places Earthquakes before Recall, while its first live attack recalls before Earthquakes. The variant follows the extracted explanation. Sky Wagon is added from its second demonstration, after Minion Prince and before the next Hound and Balloon deployments.",
+  "The source does not identify all Invisibility footprints or expose a persistent Fireball-impact anchor. threat:charge is a coarse placeholder for the alternative targets and impact area in the Fireball variant; it cannot guarantee the intended masking or Earthquake coverage.",
+  "Revive is located at unit:Dragon Duke to express the narrated fallen hero's position. The current executor resolves unit anchors only for living attackers, so this location needs corpse-anchor support before the Revive step can execute.",
+  "All source placements described only as here, there or like this are approximated by the available flank, edge, threat or group anchors. The default Sky Wagon uses edge:funnel for the opposite side; exact footprints, compartment boundaries and positions around the outside are unavailable.",
+  "defenders:main and defenders_near cannot distinguish Logger from other nearby defenders. Totem is intended for Logger, while Poison is intended for Logger or defending Clan Castle troops; the encoded guard is broader than those narrated targets.",
+  "Unsized cleanup deployments and additional Ice Hounds use all remaining inventory. This cannot reproduce the sources' unspecified splits across outside locations or gradual Hound reinforcements. The default chooses the stated Baby Dragon cleanup option and uses remaining Inferno Dragons outside.",
+  "The default keeps the two Freeze Spells, a remaining Totem and four Minions in inventory because this source does not establish general further casts or a spoken Minion deployment. The conditional Archer Queen Freeze is recorded as a cited rule rather than applying it to arbitrary defenders.",
+  "Same-side Lalo, Monolith removal and core targeting are base dependent: ahiJ-bgdmSE demonstrates other entry angles and leaves a Monolith for Balloons in one attack, while l0D7kFeev5g prefers dealing with it early. The corrected Lalo entry for l0D7kFeev5g's first live attack is contested, and omitting Overgrowth there is described as a mistake.",
+  "No fixed wait for Revive is stated. Both sources revive Dragon Duke during Lalo; ahiJ-bgdmSE specifically warns against an early revival that sends him to unwanted outside targets."
+ ],
+ "check": {
+  "steps_kept": 35,
+  "steps_dropped": 0,
+  "reasons": {},
+  "dangling_after": []
+ }
+}

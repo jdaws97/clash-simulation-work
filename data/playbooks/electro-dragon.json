@@ -1,0 +1,1435 @@
+{
+ "family": "electro-dragon",
+ "name": "Giant Arrow and Dragon Duke funnel",
+ "sources": [
+  "L8NYban_eLc",
+  "NLIGb_T2Ll0",
+  "XtLqXV-ab6U",
+  "f-qsCT8GujY",
+  "vbPEc45cUK4"
+ ],
+ "army": {
+  "troops": {
+   "Electro Dragon": 10,
+   "Balloon": 2,
+   "Dragon": 2,
+   "Minion": 1
+  },
+  "spells": {
+   "Poison Spell": 1,
+   "Totem Spell": 10
+  },
+  "cc": {
+   "Balloon": 3,
+   "Super Dragon": 1,
+   "Sky Wagon": 1,
+   "Revive Spell": 2
+  },
+  "heroes": [
+   "Archer Queen",
+   "Grand Warden",
+   "Minion Prince",
+   "Dragon Duke"
+  ],
+  "loadouts": {
+   "Archer Queen": [
+    "Action Figure",
+    "Giant Arrow",
+    "Unicorn"
+   ],
+   "Grand Warden": [
+    "Eternal Tome",
+    "Rage Gem",
+    "Sneezy"
+   ],
+   "Minion Prince": [
+    "Meteor Staff",
+    "Dark Orb",
+    "Phoenix"
+   ],
+   "Dragon Duke": [
+    "Fire Heart",
+    "Electro Fangs",
+    "Spirit Fox"
+   ]
+  }
+ },
+ "base_reading": [
+  {
+   "rule": "Align the opening Giant Arrow through two Air Defenses when possible.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "NLIGb_T2Ll0",
+     "t": 23.5,
+     "quote": "If you can line it up with two air defenses, that's ideal."
+    },
+    {
+     "video": "vbPEc45cUK4",
+     "t": 326.6,
+     "quote": "get the giant arrow across the base with the two air defenses."
+    }
+   ]
+  },
+  {
+   "rule": "Use Giant Arrow to remove Air Sweepers as well as Air Defenses; the back-end Sweeper is a possible opening target.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 215.2,
+     "quote": "Giant Arrow to take out a couple of air defenses or air sweepers"
+    },
+    {
+     "video": "f-qsCT8GujY",
+     "t": 140.8,
+     "quote": "your giant arrow take out some air defenses air sweepers"
+    },
+    {
+     "video": "vbPEc45cUK4",
+     "t": 136.7,
+     "quote": "to have the giant arrow for the back end sweeper if possible."
+    }
+   ]
+  },
+  {
+   "rule": "Choose a weak entry with an easy funnel and valuable Electro Dragon chains.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "vbPEc45cUK4",
+     "t": 266.1,
+     "quote": "to find the weakest openings where you have the funnelling somewhat easy"
+    },
+    {
+     "video": "vbPEc45cUK4",
+     "t": 300.8,
+     "quote": "strong when they have the value of getting their electro dragon chains."
+    }
+   ]
+  },
+  {
+   "rule": "Keep the Archer Queen's funnel route away from the defending Clan Castle when possible.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "vbPEc45cUK4",
+     "t": 69,
+     "quote": "only your Archer Queen has to avoid the Clan Castle"
+    }
+   ]
+  },
+  {
+   "rule": "For an isolated core, interrupt the surrounding building rings at their corners so the main army enters the core.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "vbPEc45cUK4",
+     "t": 102,
+     "quote": "to interrupt those rings on the corners."
+    }
+   ]
+  },
+  {
+   "rule": "When possible, remove the Town Hall and Guardian early, then the Revenge Tower, then the Monolith.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "NLIGb_T2Ll0",
+     "t": 152.5,
+     "quote": "The guardian and town hall, then the revenge tower, then the monolith."
+    }
+   ]
+  },
+  {
+   "rule": "For the Zapquake variant, choose a valuable compartment: prioritize the Revenge Tower, then the Monolith, but avoid spending the combination on an isolated defense when another compartment offers more value.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 37.6,
+     "quote": "Two earthquakes, six lightnings will get rid of most of that central compartment."
+    },
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 115.6,
+     "quote": "Number one target is the Revenge Tower."
+    },
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 118.6,
+     "quote": "Number two target, probably the Monolith."
+    },
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 126.4,
+     "quote": "Probably not. There's going to be value elsewhere in the base in a compartment."
+    }
+   ]
+  },
+  {
+   "rule": "For Rocket Backpack, choose a straight Dragon Duke crossing through the center, include secondary Spell Towers on the same line when possible, and check that his exit avoids enemy heroes, Clan Castle troops and a surviving Monolith.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "f-qsCT8GujY",
+     "t": 89.6,
+     "quote": "going in a straight line, left to right or top to bottom."
+    },
+    {
+     "video": "f-qsCT8GujY",
+     "t": 97.3,
+     "quote": "they're in the same line as your main targets, absolute bonus."
+    },
+    {
+     "video": "f-qsCT8GujY",
+     "t": 109.9,
+     "quote": "Second thing to consider is where is your dragon duke going to end up?"
+    }
+   ]
+  },
+  {
+   "rule": "For the Ruin Witch variant, use the two Electro Dragon pairs on the flank building clumps and choose a crossing that gives the Log Launcher value; normally avoid finishing on the Revenge Tower.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "L8NYban_eLc",
+     "t": 58.4,
+     "quote": "funnel with two electro dragons each."
+    },
+    {
+     "video": "L8NYban_eLc",
+     "t": 66.3,
+     "quote": "have two massive natural funnels already"
+    },
+    {
+     "video": "L8NYban_eLc",
+     "t": 312.4,
+     "quote": "normally I would recommend not to do."
+    },
+    {
+     "video": "L8NYban_eLc",
+     "t": 457.4,
+     "quote": "Want to get our log launcher to maximize"
+    }
+   ]
+  },
+  {
+   "rule": "Line up Minion Prince's Dark Orb with defenses.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "NLIGb_T2Ll0",
+     "t": 92.2,
+     "quote": "Try and line up that dark orb with some defenses,"
+    }
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "queen",
+   "action": "deploy",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "t": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "vbPEc45cUK4",
+     "t": 116.8,
+     "quote": "the Royal We we sent the archer queen"
+    }
+   ]
+  },
+  {
+   "id": "arrow",
+   "action": "ability",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "unit:Archer Queen",
+   "group": "charge",
+   "when": {
+    "after": "queen",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "NLIGb_T2Ll0",
+     "t": 21.8,
+     "quote": "giant arrow through the base with the"
+    },
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 215.2,
+     "quote": "Giant Arrow to take out a couple of air defenses or air sweepers"
+    },
+    {
+     "video": "f-qsCT8GujY",
+     "t": 140.8,
+     "quote": "your giant arrow take out some air defenses air sweepers"
+    },
+    {
+     "video": "vbPEc45cUK4",
+     "t": 136.7,
+     "quote": "to have the giant arrow for the back end sweeper if possible."
+    }
+   ]
+  },
+  {
+   "id": "duke",
+   "action": "deploy",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "duke",
+   "when": {
+    "after": "arrow",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "NLIGb_T2Ll0",
+     "t": 40.2,
+     "quote": "Dragon Duke on the other side,"
+    },
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 88.3,
+     "quote": "Use your Siege Barracks on one side of the base to funnel."
+    }
+   ]
+  },
+  {
+   "id": "edrags",
+   "action": "deploy",
+   "what": "Electro Dragon",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "duke",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "NLIGb_T2Ll0",
+     "t": 69.3,
+     "quote": "sending your electro dragons, and then"
+    },
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 49.2,
+     "quote": "your Electro Dragons, your Grand Warden, your Minion Prince as quickly as possible."
+    },
+    {
+     "video": "f-qsCT8GujY",
+     "t": 144.2,
+     "quote": "electro dragons in the center."
+    },
+    {
+     "video": "vbPEc45cUK4",
+     "t": 149.1,
+     "quote": "Everything in there."
+    }
+   ]
+  },
+  {
+   "id": "warden",
+   "action": "deploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "edrags",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 49.2,
+     "quote": "your Electro Dragons, your Grand Warden, your Minion Prince as quickly as possible."
+    }
+   ]
+  },
+  {
+   "id": "prince",
+   "action": "deploy",
+   "what": "Minion Prince",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 49.2,
+     "quote": "your Electro Dragons, your Grand Warden, your Minion Prince as quickly as possible."
+    }
+   ]
+  },
+  {
+   "id": "tome",
+   "action": "ability",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "main",
+   "when": {
+    "after": "prince",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 53.6,
+     "quote": "Then, use the Grand Warden's ability to protect as many troops as you can."
+    },
+    {
+     "video": "vbPEc45cUK4",
+     "t": 162,
+     "quote": "Now, the warden ability. Try to use it not too late."
+    }
+   ]
+  },
+  {
+   "id": "orb",
+   "action": "ability",
+   "what": "Minion Prince",
+   "count": 1,
+   "at": "unit:Minion Prince",
+   "group": "main",
+   "when": {
+    "after": "tome",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "NLIGb_T2Ll0",
+     "t": 92.2,
+     "quote": "Try and line up that dark orb with some defenses,"
+    },
+    {
+     "video": "vbPEc45cUK4",
+     "t": 432.5,
+     "quote": "and if you have to pop the warden ability at the same time,"
+    }
+   ]
+  },
+  {
+   "id": "totem",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "group_inside": "main"
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "NLIGb_T2Ll0",
+     "t": 97,
+     "quote": "totem spells in front of the main army"
+    }
+   ]
+  }
+ ],
+ "variants": [
+  {
+   "name": "Revenge Tower compartment Zapquake with Siege Barracks",
+   "replaces": [
+    "queen",
+    "arrow",
+    "duke",
+    "edrags"
+   ],
+   "steps": [
+    {
+     "id": "zap_eq_1",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XtLqXV-ab6U",
+       "t": 37.6,
+       "quote": "Two earthquakes,"
+      }
+     ]
+    },
+    {
+     "id": "zap_eq_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "after": "zap_eq_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XtLqXV-ab6U",
+       "t": 37.6,
+       "quote": "Two earthquakes,"
+      }
+     ]
+    },
+    {
+     "id": "zap_lightning_1",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "after": "zap_eq_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XtLqXV-ab6U",
+       "t": 39.6,
+       "quote": "six lightnings will get rid of most of that central compartment."
+      }
+     ]
+    },
+    {
+     "id": "zap_lightning_2",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "after": "zap_lightning_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XtLqXV-ab6U",
+       "t": 39.6,
+       "quote": "six lightnings will get rid of most of that central compartment."
+      }
+     ]
+    },
+    {
+     "id": "zap_lightning_3",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "after": "zap_lightning_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XtLqXV-ab6U",
+       "t": 39.6,
+       "quote": "six lightnings will get rid of most of that central compartment."
+      }
+     ]
+    },
+    {
+     "id": "zap_lightning_4",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "after": "zap_lightning_3",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XtLqXV-ab6U",
+       "t": 39.6,
+       "quote": "six lightnings will get rid of most of that central compartment."
+      }
+     ]
+    },
+    {
+     "id": "zap_lightning_5",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "after": "zap_lightning_4",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XtLqXV-ab6U",
+       "t": 39.6,
+       "quote": "six lightnings will get rid of most of that central compartment."
+      }
+     ]
+    },
+    {
+     "id": "zap_lightning_6",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "after": "zap_lightning_5",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XtLqXV-ab6U",
+       "t": 39.6,
+       "quote": "six lightnings will get rid of most of that central compartment."
+      }
+     ]
+    },
+    {
+     "id": "zap_barracks",
+     "action": "deploy",
+     "what": "Siege Barracks",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "zap_lightning_6",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XtLqXV-ab6U",
+       "t": 88.3,
+       "quote": "Use your Siege Barracks on one side of the base to funnel."
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "duke",
+     "when": {
+      "after": "zap_barracks",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XtLqXV-ab6U",
+       "t": 88.3,
+       "quote": "Use your Siege Barracks on one side of the base to funnel."
+      }
+     ]
+    },
+    {
+     "id": "edrags",
+     "action": "deploy",
+     "what": "Electro Dragon",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XtLqXV-ab6U",
+       "t": 49.2,
+       "quote": "your Electro Dragons, your Grand Warden, your Minion Prince as quickly as possible."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 37.6,
+     "quote": "Two earthquakes, six lightnings will get rid of most of that central compartment."
+    },
+    {
+     "video": "XtLqXV-ab6U",
+     "t": 88.3,
+     "quote": "Use your Siege Barracks on one side of the base to funnel."
+    }
+   ]
+  },
+  {
+   "name": "Rocket Backpack Zapquake with a secondary Spell Tower",
+   "replaces": [
+    "queen",
+    "arrow",
+    "duke",
+    "edrags"
+   ],
+   "steps": [
+    {
+     "id": "rocket_eq_1",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "f-qsCT8GujY",
+       "t": 48.8,
+       "quote": "Two earthquakes, three lightnings."
+      }
+     ]
+    },
+    {
+     "id": "rocket_eq_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "after": "rocket_eq_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "f-qsCT8GujY",
+       "t": 48.8,
+       "quote": "Two earthquakes, three lightnings."
+      }
+     ]
+    },
+    {
+     "id": "rocket_lightning_1",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "after": "rocket_eq_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "f-qsCT8GujY",
+       "t": 48.8,
+       "quote": "Two earthquakes, three lightnings."
+      }
+     ]
+    },
+    {
+     "id": "rocket_lightning_2",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "after": "rocket_lightning_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "f-qsCT8GujY",
+       "t": 48.8,
+       "quote": "Two earthquakes, three lightnings."
+      }
+     ]
+    },
+    {
+     "id": "rocket_lightning_3",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "charge",
+     "when": {
+      "after": "rocket_lightning_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "f-qsCT8GujY",
+       "t": 48.8,
+       "quote": "Two earthquakes, three lightnings."
+      }
+     ]
+    },
+    {
+     "id": "rocket_secondary_eq_1",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:swt",
+     "group": "charge",
+     "when": {
+      "after": "rocket_lightning_3",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "f-qsCT8GujY",
+       "t": 53.7,
+       "quote": "two earthquakes there, that'll take that out."
+      }
+     ]
+    },
+    {
+     "id": "rocket_secondary_eq_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:swt",
+     "group": "charge",
+     "when": {
+      "after": "rocket_secondary_eq_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "f-qsCT8GujY",
+       "t": 53.7,
+       "quote": "two earthquakes there, that'll take that out."
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "duke",
+     "when": {
+      "after": "rocket_secondary_eq_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "f-qsCT8GujY",
+       "t": 79.7,
+       "quote": "follow it up with the dragon duke with that rocket backpack."
+      }
+     ]
+    },
+    {
+     "id": "rocket_backpack",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "f-qsCT8GujY",
+       "t": 79.7,
+       "quote": "follow it up with the dragon duke with that rocket backpack."
+      }
+     ]
+    },
+    {
+     "id": "queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "rocket_backpack",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "f-qsCT8GujY",
+       "t": 137.2,
+       "quote": "then an electro dragon or hero on the other side of the base"
+      }
+     ]
+    },
+    {
+     "id": "arrow",
+     "action": "ability",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "funnel",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "f-qsCT8GujY",
+       "t": 140.8,
+       "quote": "your giant arrow take out some air defenses air sweepers"
+      }
+     ]
+    },
+    {
+     "id": "edrags",
+     "action": "deploy",
+     "what": "Electro Dragon",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "arrow",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "f-qsCT8GujY",
+       "t": 144.2,
+       "quote": "electro dragons in the center."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "f-qsCT8GujY",
+     "t": 79.7,
+     "quote": "follow it up with the dragon duke with that rocket backpack."
+    },
+    {
+     "video": "f-qsCT8GujY",
+     "t": 137.2,
+     "quote": "then an electro dragon or hero on the other side of the base"
+    }
+   ]
+  },
+  {
+   "name": "Rage-assisted flank and Skeleton distraction",
+   "replaces": [
+    "tome",
+    "totem"
+   ],
+   "steps": [
+    {
+     "id": "flank_rage",
+     "action": "spell",
+     "what": "Rage Spell",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "main",
+     "when": {
+      "after": "edrags",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vbPEc45cUK4",
+       "t": 149.1,
+       "quote": "I will rage the flank of this"
+      }
+     ]
+    },
+    {
+     "id": "skeleton",
+     "action": "spell",
+     "what": "Skeleton Spell",
+     "count": 1,
+     "at": "threat:main",
+     "group": "main",
+     "when": {
+      "after": "flank_rage",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vbPEc45cUK4",
+       "t": 158.3,
+       "quote": "Now, the skeleton spell just to distract the bomb pipe."
+      }
+     ]
+    },
+    {
+     "id": "tome",
+     "action": "ability",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "main",
+     "when": {
+      "all": [
+       {
+        "after": "prince",
+        "delay": 0
+       },
+       {
+        "after": "skeleton",
+        "delay": 0
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vbPEc45cUK4",
+       "t": 162,
+       "quote": "Now, the warden ability. Try to use it not too late."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "vbPEc45cUK4",
+     "t": 149.1,
+     "quote": "I will rage the flank of this"
+    },
+    {
+     "video": "vbPEc45cUK4",
+     "t": 158.3,
+     "quote": "Now, the skeleton spell just to distract the bomb pipe."
+    }
+   ]
+  },
+  {
+   "name": "Four Electro Dragons funnel a Ruin Witch and hero push",
+   "replaces": [
+    "queen",
+    "arrow",
+    "duke",
+    "edrags",
+    "warden",
+    "prince",
+    "tome",
+    "orb",
+    "totem"
+   ],
+   "steps": [
+    {
+     "id": "ground_edrags_charge",
+     "action": "deploy",
+     "what": "Electro Dragon",
+     "count": 2,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 58.4,
+       "quote": "funnel with two electro dragons each."
+      }
+     ]
+    },
+    {
+     "id": "ground_edrags_funnel",
+     "action": "deploy",
+     "what": "Electro Dragon",
+     "count": 2,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 58.4,
+       "quote": "funnel with two electro dragons each."
+      }
+     ]
+    },
+    {
+     "id": "ground_rage_charge",
+     "action": "spell",
+     "what": "Rage Spell",
+     "count": 1,
+     "at": "group:charge",
+     "group": "charge",
+     "when": {
+      "after": "ground_edrags_funnel",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 77.6,
+       "quote": "going to go ahead and rage both of those"
+      }
+     ]
+    },
+    {
+     "id": "ground_rage_funnel",
+     "action": "spell",
+     "what": "Rage Spell",
+     "count": 1,
+     "at": "group:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "ground_rage_charge",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 77.6,
+       "quote": "going to go ahead and rage both of those"
+      }
+     ]
+    },
+    {
+     "id": "ground_ice",
+     "action": "deploy",
+     "what": "Ice Golem",
+     "count": 3,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "ground_rage_funnel",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 104.9,
+       "quote": "spread out my ice golems."
+      }
+     ]
+    },
+    {
+     "id": "ground_witches",
+     "action": "deploy",
+     "what": "Ruin Witch",
+     "count": 6,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "ground_ice",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 112.8,
+       "quote": "That way I can spread out my rune witches"
+      }
+     ]
+    },
+    {
+     "id": "ground_queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "ground_witches",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 123.5,
+       "quote": "Then we'll drop all of our heroes"
+      }
+     ]
+    },
+    {
+     "id": "ground_queen_ability",
+     "action": "ability",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "main",
+     "when": {
+      "after": "ground_queen",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 213.1,
+       "quote": "I'm going to instantly pop the queen's ability"
+      }
+     ]
+    },
+    {
+     "id": "ground_warden",
+     "action": "deploy",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "ground_witches",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 123.5,
+       "quote": "Then we'll drop all of our heroes"
+      }
+     ]
+    },
+    {
+     "id": "ground_rc",
+     "action": "deploy",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "ground_witches",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 123.5,
+       "quote": "Then we'll drop all of our heroes"
+      }
+     ]
+    },
+    {
+     "id": "ground_duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "ground_witches",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 123.5,
+       "quote": "Then we'll drop all of our heroes"
+      }
+     ]
+    },
+    {
+     "id": "ground_log",
+     "action": "deploy",
+     "what": "Log Launcher",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "ground_duke",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 124.6,
+       "quote": "We've got our log launcher in"
+      }
+     ]
+    },
+    {
+     "id": "ground_totem",
+     "action": "spell",
+     "what": "Totem Spell",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "ground_log",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 126.4,
+       "quote": "We're going to use our totem spells on the entry."
+      }
+     ]
+    },
+    {
+     "id": "ground_wall_break",
+     "action": "deploy",
+     "what": "Super Wall Breaker",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "ground_totem",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 220.2,
+       "quote": "Our wall breaks going in."
+      }
+     ]
+    },
+    {
+     "id": "ground_tome",
+     "action": "ability",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "main",
+     "when": {
+      "any": [
+       {
+        "heavy_fire": "Grand Warden"
+       },
+       {
+        "heavy_fire": "Royal Champion"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 129.1,
+       "quote": "warden's eternal tome if you're taking a lot of damage"
+      },
+      {
+       "video": "L8NYban_eLc",
+       "t": 372.2,
+       "quote": "our royal champion was really low"
+      }
+     ]
+    },
+    {
+     "id": "ground_poison",
+     "action": "spell",
+     "what": "Poison Spell",
+     "count": 1,
+     "at": "defenders:main",
+     "group": "main",
+     "when": {
+      "defenders_near": "main"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L8NYban_eLc",
+       "t": 508.3,
+       "quote": "pull the CC. We're going to go ahead and poison that up."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "L8NYban_eLc",
+     "t": 58.4,
+     "quote": "funnel with two electro dragons each."
+    },
+    {
+     "video": "L8NYban_eLc",
+     "t": 112.8,
+     "quote": "That way I can spread out my rune witches"
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "All five relevant electro-dragon sources were read. Four use ten Electro Dragons as the main army; L8NYban_eLc uses four to funnel a ground push. Every complete composition is different, so there is no unique modal full army. NLIGb_T2Ll0 represents the dominant ten-Electro-Dragon plan; its ten-Totem inventory has no majority support.",
+  "The default army follows NLIGb_T2Ll0. Log Launcher, Troop Launcher and Sky Wagon listed in its own troop section are carried siege options and are excluded from ordinary troops. Its reinforcement Sky Wagon is retained in cc. No siege deployment, support-troop deployment or Poison placement is narrated.",
+  "Variants require their source-specific armies and equipment. The prescribed variant shape has no army override; replacing steps alone does not change the default inventory.",
+  "XtLqXV-ab6U alternative: Electro Dragon 10, Balloon 8; Earthquake Spell 2, Lightning Spell 6, Revive Spell 2, starting Totem count unknown. Reinforcement troops are Super Yeti 1 and Super Valkyrie 1; siege options are Battle Blimp, Log Launcher, Siege Barracks and Troop Thrower. The encoded variant selects Siege Barracks. Heroes are Dragon Duke, Grand Warden, Minion Prince and Archer Queen. Stated loadouts are Warden [Eternal Tome, Rage Gem], Minion Prince [Meteor Staff, Dark Orb], Queen [Giant Arrow, Healer Puppet]. Duke equipment and pets are unidentified; Action Figure replaces Healer Puppet in the third replay.",
+  "f-qsCT8GujY alternative: Electro Dragon 10, Balloon 10, Minion 1; Earthquake Spell 4, Lightning Spell 3, Totem Spell 3, Poison Spell 1. Reinforcements remain unresolved. Log Launcher, Troop Launcher and Sky Wagon are carried options without deployment instructions. Queen and Warden loadouts match the default; Minion Prince uses [Meteor Staff, Dark Orb, Spirit Fox], and Duke uses [Rocket Backpack, Fire Heart, Phoenix].",
+  "vbPEc45cUK4 alternative: Electro Dragon 10, Rocket Balloon 4, Super Wall Breaker 1; Freeze Spell 3, Totem Spell 6, Poison Spell 1, Skeleton Spell 1. Reinforcements are Minion 1, Balloon 1, Super Minion 4 and Rage Spell 2. Its link lists Log Launcher, Flame Flinger and Siege Barracks options and two reinforcement Siege Barracks; these counts do not establish multiple deployed sieges. Loadouts are Queen [Action Figure, Giant Arrow, Frosty], Warden [Eternal Tome, Healing Tome, Sneezy], Minion Prince [Meteor Staff, Dark Orb, Phoenix], Duke [Fire Heart, Stun Blaster, Angry Jelly].",
+  "L8NYban_eLc alternative: Electro Dragon 4, Super Wall Breaker 2, Ruin Witch 6, Ice Golem 3, Balloon 3; Rage Spell 2, Revive Spell 3, Freeze Spell 1; cc Log Launcher 1, Super Yeti 1, Super Valkyrie 1, Poison Spell 1, Totem Spell 3. Troop Launcher and Siege Barracks are carried alternatives; the narrated siege is Log Launcher. Loadouts are Royal Champion [Rocket Spear, Electro Boots, Spirit Fox], Queen [Healer Puppet, Action Figure, Frosty], Warden [Rage Gem, Eternal Tome, Greedy Raven], Duke [Fire Heart, Revenge Deck, Phoenix].",
+  "t=0 denotes the narrated opening. Citation times are transcript positions, not battle delays. Every after delay is zero because no numerical battle delay is stated. After duke approximates an established funnel; after the flank Rages approximates the ground variant's established funnel. Neither trigger measures whether exterior buildings have been cleared.",
+  "Support counts distinct videos describing the shared action or rule; equipment and precise timing can differ. Queen-first and Duke-first openings both occur. The Rocket Backpack variant retains Duke-first order. Rapid Warden and Minion Prince deployment is explicitly supplied by XtLqXV-ab6U.",
+  "Orb timing follows vbPEc45cUK4's permitted activation together with Eternal Tome. NLIGb_T2Ll0 supplies alignment advice without an activation time. The allowed vocabulary cannot specify directional ability aiming; entry positions and facing must supply the Arrow, Dark Orb and Rocket Backpack alignment.",
+  "The default Totem step encodes one placement. group_inside approximates an advancing army, and threat:main approximates a threatening defense in front of it. No source supplies a numerical repeat cadence, so additional moving placements are unscheduled. Freeze casts with unidentified targets are also unscheduled.",
+  "Revive inventories are retained. NLIGb_T2Ll0 normally prioritizes Duke; XtLqXV-ab6U prefers him later; L8NYban_eLc revives him immediately when needed, reserves spells for him when uncertain, and allows other heroes when overkilling. Revive steps are unencoded because unit anchors resolve only living units and the allowed vocabulary has no fallen-hero anchor.",
+  "Spell combinations are expanded into individual casts because the executor casts one spell per step. Zero delays preserve the source counts without inventing spacing. building:revenge approximates the chosen compartment. Use the Siege Barracks Zapquake variant when that compartment offers the described value and the main army can take the Town Hall quickly.",
+  "The Rocket Backpack variant selects the demonstrated Revenge Tower target and a secondary Spell Tower on the crossing. building:swt approximates that selected tower. Duke activation uses the zero-delay fallback for an unstated activation time. Queen is selected from the explicit Electro Dragon-or-hero opposite-flank option.",
+  "The Rage-assisted variant applies when the flank needs help. edge:funnel approximates that flank. The Skeleton target is captioned only as bomb pipe; threat:main is a coarse proxy, and no defense identity is asserted. Exact Electro Dragon spacing is unspecified.",
+  "In the ground variant, individual hero order is unspecified; the listed order serializes their deployment. Queen ability is immediate as stated. Super Wall Breaker count all commits the two listed breakers together, although the count per narrated placement is unknown. Wall-break and Totem ordering varies; the encoded order follows the protected-entry narration. heavy_fire approximates the Warden or Champion needing early protection without inventing an HP threshold.",
+  "XtLqXV-ab6U also describes a Battle Blimp Town Hall snipe before the main deployment, with Super Yeti and Super Valkyrie, then Minion Prince on the left and Electro Dragons on the right. The vocabulary has no Town Hall-destroyed trigger, so this sequence is retained here without inventing a wait. Its suggested inventory adjustment is one fewer Revive and two Totems.",
+  "Hero substitutions are source-specific: XtLqXV-ab6U suggests Royal Champion for an underleveled Duke; vbPEc45cUK4 suggests Barbarian King with Angry Jelly and Stick Horse, or Royal Champion with Rocket Spear and Seeking Shield. Complete substitute loadouts are unspecified."
+ ],
+ "check": {
+  "steps_kept": 9,
+  "steps_dropped": 0,
+  "reasons": {},
+  "dangling_after": []
+ }
+}

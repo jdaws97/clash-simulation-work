@@ -1,0 +1,2480 @@
+{
+ "family": "super-bowler",
+ "name": "Queen Recall Super Bowler Smash",
+ "sources": [
+  "4HmRoonPBIU",
+  "4TGHrJl3h1s",
+  "6FVZHuESY4g",
+  "KkXmRkx20x4",
+  "Lp0_1GWln48",
+  "NC_E4SvSb_E",
+  "P6twlQY3fLk",
+  "QH4OIrEePh4",
+  "_N5VEy9FTN0",
+  "gWXxU_sp7Kg",
+  "h-6DBh45ozk",
+  "qqdSRPKkDVY",
+  "yI1ZdPZswNM",
+  "yxVyP7vPQPw"
+ ],
+ "army": {
+  "troops": {
+   "Archer": 3,
+   "Super Wall Breaker": 3,
+   "Wizard": 2,
+   "Balloon": 3,
+   "Healer": 5,
+   "Baby Dragon": 1,
+   "Valkyrie": 2,
+   "Super Bowler": 5,
+   "Ice Golem": 2,
+   "Headhunter": 1,
+   "Apprentice Warden": 1
+  },
+  "spells": {
+   "Rage Spell": 3,
+   "Freeze Spell": 2,
+   "Invisibility Spell": 2,
+   "Poison Spell": 1
+  },
+  "cc": {
+   "Sky Wagon": 1,
+   "Super Valkyrie": 1,
+   "Super Yeti": 1,
+   "Recall Spell": 1,
+   "Totem Spell": 2
+  },
+  "heroes": [
+   "Barbarian King",
+   "Archer Queen",
+   "Grand Warden",
+   "Dragon Duke"
+  ],
+  "loadouts": {
+   "Barbarian King": [
+    "Spiky Ball",
+    "Snake Bracelet",
+    "Frosty"
+   ],
+   "Archer Queen": [
+    "Monolith Arrow",
+    "Action Figure",
+    "Angry Jelly"
+   ],
+   "Grand Warden": [
+    "Heroic Torch",
+    "Eternal Tome",
+    "Poison Lizard"
+   ],
+   "Dragon Duke": [
+    "Fire Heart",
+    "Stun Blaster",
+    "Spirit Fox"
+   ]
+  }
+ },
+ "base_reading": [
+  {
+   "rule": "Choose the Super Bowler route through the core first, then identify the buildings the opening hero must remove to establish that route.",
+   "support": 4,
+   "cite": [
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 100.4,
+     "quote": "figure out what buildings need to go"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 145.6,
+     "quote": "compartment has the most super bowler"
+    },
+    {
+     "video": "_N5VEy9FTN0",
+     "t": 120.2,
+     "quote": "my Super Bowlers to maintain them staying in the core of the base,"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 140.4,
+     "quote": "is can my queen take a slice out of it?"
+    }
+   ]
+  },
+  {
+   "rule": "Prioritize establishing the funnel over extra charge value or a particular major defense; preserve spells for the main army.",
+   "support": 5,
+   "cite": [
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 116.7,
+     "quote": "close, is setting the funnel."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 216.9,
+     "quote": "make a funnel, so try not to get caught"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 1346.5,
+     "quote": "me out with is there's no funnel set"
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 384,
+     "quote": "That queen charge didn't get me my"
+    },
+    {
+     "video": "P6twlQY3fLk",
+     "t": 552.4,
+     "quote": "counterfunnel is so dang important"
+    }
+   ]
+  },
+  {
+   "rule": "Clear both flanks before the main push so the Super Bowlers enter the intended core route.",
+   "support": 14,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 59.5,
+     "quote": "is get a funnel sorted for your super bowlers."
+    },
+    {
+     "video": "4HmRoonPBIU",
+     "t": 43.5,
+     "quote": "the dragon duke initially has to create a really nice funnel."
+    },
+    {
+     "video": "6FVZHuESY4g",
+     "t": 65.6,
+     "quote": "used to create a clean cut and control"
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 123.2,
+     "quote": "For this attack, I chose the left side."
+    },
+    {
+     "video": "Lp0_1GWln48",
+     "t": 43.8,
+     "quote": "Use the king and queen as support"
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 170.7,
+     "quote": "do is mainly just get pathing for your"
+    },
+    {
+     "video": "P6twlQY3fLk",
+     "t": 240.2,
+     "quote": "your queen deals with 9:00 all the way up to kind of 12:00"
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 277.8,
+     "quote": "Now that you set up the funnel on either side"
+    },
+    {
+     "video": "_N5VEy9FTN0",
+     "t": 281.4,
+     "quote": "have that baby dragon to clear out the funnel a little bit more."
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 447,
+     "quote": "three lanes is appropriate for how wide"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 162.6,
+     "quote": "destroying its nearest areas. Now,"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 460.7,
+     "quote": "don't really do anything until that funnel is formed."
+    },
+    {
+     "video": "yI1ZdPZswNM",
+     "t": 45.4,
+     "quote": "We will guide our army through the blue"
+    },
+    {
+     "video": "yxVyP7vPQPw",
+     "t": 83.7,
+     "quote": "Now let's use the king abilities to funnel even better."
+    }
+   ]
+  },
+  {
+   "rule": "For a Queen opening, give the harder adjacent compartment to the Queen and the lighter flank to King and Duke. Keep Duke nearer the main army and King outside; adjust lane spacing to the funnel width.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "h-6DBh45ozk",
+     "t": 167.6,
+     "quote": "tougher one for the queen search and"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 447,
+     "quote": "three lanes is appropriate for how wide"
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 345.6,
+     "quote": "start with the Duke and deploy the king wider and a little later."
+    }
+   ]
+  },
+  {
+   "rule": "Prefer an early defending Clan Castle lure when it fits the funnel; clear those troops before committing Heroic Torch when possible.",
+   "support": 4,
+   "cite": [
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 140.4,
+     "quote": "charge where you'll draw the clan castle"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 373,
+     "quote": "want to do is trigger enemy CC troops"
+    },
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 333,
+     "quote": "nothing's going to slow my torch down cuz I've taken care of the CC already."
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 1386.8,
+     "quote": "Surprise, surprise, we get the CC lure."
+    }
+   ]
+  },
+  {
+   "rule": "When the Clan Castle is isolated and a Queen lure would expose her to the Monolith and possible Headhunters, handle it with the main army and delay the outside heroes until it engages.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "KkXmRkx20x4",
+     "t": 90.5,
+     "quote": "when the clan castle is isolated like this, I usually prefer"
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 278.2,
+     "quote": "I can't deploy the king or the duke until the clan castle troops come out"
+    }
+   ]
+  },
+  {
+   "rule": "Predict Angry Jelly targeting and avoid Queen entries with concentrated damage, the Town Hall guardian, or Air Sweepers separating the Healers.",
+   "support": 4,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 136.2,
+     "quote": "monolith and logger combined might give you a ton of problems."
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 115.7,
+     "quote": "prefer doing my queen walk away from him."
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 234.5,
+     "quote": "the sweepers to keep getting pushed away"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 889,
+     "quote": "I think I can actually get this monolith."
+    }
+   ]
+  },
+  {
+   "rule": "Identify Invisibility Towers before committing: activation can redirect charging heroes or split the main army. A wider counter funnel or Log Launcher can help.",
+   "support": 5,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 474.8,
+     "quote": "Obviously, not the invisibility tower."
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 553.3,
+     "quote": "I also don't want to enter directly through the town hall because of the invisibility,"
+    },
+    {
+     "video": "_N5VEy9FTN0",
+     "t": 187.4,
+     "quote": "champ is going to run off."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 295,
+     "quote": "to trigger the invisibility towers. That"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 1729.7,
+     "quote": "There's an invis. So, I'm going to switch to a log launch right now."
+    }
+   ]
+  },
+  {
+   "rule": "Save Heroic Torch for the core or significant incoming damage, and finish the outside funnel and defending Clan Castle engagement before activating when possible.",
+   "support": 4,
+   "cite": [
+    {
+     "video": "KkXmRkx20x4",
+     "t": 392.2,
+     "quote": "hold the heroic torch until they actually start taking significant damage."
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 413.4,
+     "quote": "you're in the core of the base"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 257.2,
+     "quote": "ability until the Duke and the king have"
+    },
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 333,
+     "quote": "nothing's going to slow my torch down cuz I've taken care of the CC already."
+    }
+   ]
+  },
+  {
+   "rule": "Cover Bowlers and Healers with entry Rage; during Eternal Tome and Heroic Torch, place Rage ahead with its near edge barely covering the advancing Bowlers.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 309.1,
+     "quote": "army, covering the bowlers and the healers."
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 347.6,
+     "quote": "eternal to and heroic torch, just rage ahead of the army."
+    }
+   ]
+  },
+  {
+   "rule": "Preserve spells for the guardian or other major threat according to whether it will be encountered early or late.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 489.4,
+     "quote": "saved up a couple of spells to deal with"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 346.5,
+     "quote": "if you can delay it as much as you can"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 212.8,
+     "quote": "spell to distract the guardian. The main"
+    }
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "charge_hero",
+   "action": "deploy",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "t": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 147.3,
+     "quote": "what if we go in towards the town hall?"
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 123.2,
+     "quote": "For this attack, I chose the left side."
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 578.7,
+     "quote": "this. Let's go queen down like this. I'm"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 31.8,
+     "quote": "every attack with a queen charge. We're"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 47.8,
+     "quote": "attack with the queen, a coco loon"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 240.4,
+     "quote": "If I get my queen up top here, I get"
+    }
+   ]
+  },
+  {
+   "id": "charge_scout",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "after": "charge_hero",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 549.1,
+     "quote": "queen, healers, test loon, super wall breaker right away"
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 583.4,
+     "quote": "slowly putting in some cocoa loons in"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 47.8,
+     "quote": "attack with the queen, a coco loon"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 410.5,
+     "quote": "I get balloons out just to get seeking air mines."
+    }
+   ]
+  },
+  {
+   "id": "charge_healers",
+   "action": "deploy",
+   "what": "Healer",
+   "count": "all",
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "after": "charge_scout",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 549.1,
+     "quote": "queen, healers, test loon, super wall breaker right away"
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 504.2,
+     "quote": "I start with the queen and deploy the healers."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 49.6,
+     "quote": "before deploying the healers to make"
+    }
+   ]
+  },
+  {
+   "id": "charge_wall",
+   "action": "deploy",
+   "what": "Super Wall Breaker",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "after": "charge_healers",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 181.6,
+     "quote": "I'm going to get a super wall breaker"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 53.3,
+     "quote": "Let's use a wall breaker to lead the"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 253.7,
+     "quote": "have gotten a super wall breaker in early"
+    }
+   ]
+  },
+  {
+   "id": "charge_tank",
+   "action": "deploy",
+   "what": "Ice Golem",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "all": [
+     {
+      "after": "charge_hero",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Archer Queen"
+     }
+    ]
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 170.6,
+     "quote": "Use an ice golem."
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 158.6,
+     "quote": "deploy the ice golem"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 57.2,
+     "quote": "We will send an ice golem in front of"
+    }
+   ]
+  },
+  {
+   "id": "charge_invis",
+   "action": "spell",
+   "what": "Invisibility Spell",
+   "count": 1,
+   "at": "unit:Archer Queen",
+   "group": "charge",
+   "when": {
+    "heavy_fire": "Archer Queen"
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 567.9,
+     "quote": "use them on the earlier end"
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 522,
+     "quote": "an invisibility spell is enough."
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 609.8,
+     "quote": "is I'm going to pop this invisibility."
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 366.7,
+     "quote": "You can use them to keep her alive or to redirect her"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 63.6,
+     "quote": "queen is under heavy damage. We don't"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 418.7,
+     "quote": "good time to invisibility."
+    }
+   ]
+  },
+  {
+   "id": "charge_rage",
+   "action": "spell",
+   "what": "Rage Spell",
+   "count": 1,
+   "at": "unit:Healer",
+   "group": "charge",
+   "when": {
+    "all": [
+     {
+      "after": "charge_healers",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Archer Queen"
+     }
+    ]
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 588.2,
+     "quote": "I'm getting in an early rage."
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 172.6,
+     "quote": "The priority is making sure your healers are inside it."
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 78.5,
+     "quote": "rage spells. I'm going to use a super"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 297.3,
+     "quote": "Don't force using a rage spell with the queen if you don't need it."
+    }
+   ]
+  },
+  {
+   "id": "charge_poison",
+   "action": "spell",
+   "what": "Poison Spell",
+   "count": 1,
+   "at": "defenders:charge",
+   "group": "charge",
+   "when": {
+    "defenders_near": "charge"
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 193.5,
+     "quote": "Poison down first"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 1437.6,
+     "quote": "Poison here."
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 869.3,
+     "quote": "should have just poisoned the furnace."
+    },
+    {
+     "video": "yI1ZdPZswNM",
+     "t": 80.2,
+     "quote": "clan castle is triggered, place a poison"
+    }
+   ]
+  },
+  {
+   "id": "charge_recall",
+   "action": "recall",
+   "what": "Recall Spell",
+   "count": 1,
+   "at": "unit:Archer Queen",
+   "group": "charge",
+   "when": {
+    "all": [
+     {
+      "after": "charge_healers",
+      "delay": 0
+     },
+     {
+      "inside": "Archer Queen"
+     }
+    ]
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 876.5,
+     "quote": "then I recalled."
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 189.5,
+     "quote": "I recall the queen"
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 251,
+     "quote": "rather going to go for the recall. Okay,"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 40.1,
+     "quote": "funnel, we're going to recall her."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 70,
+     "quote": "got the value we needed, so let's recall"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 828.6,
+     "quote": "So, I let it take as many shots. Boom, recall."
+    }
+   ]
+  },
+  {
+   "id": "charge_cleanup",
+   "action": "deploy",
+   "what": "Baby Dragon",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "funnel",
+   "when": {
+    "after": "charge_recall",
+    "delay": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 625.8,
+     "quote": "I want this baby dragon to take care of the storage."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 350,
+     "quote": "baby dragon to clear the test buildings"
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 220.7,
+     "quote": "a baby dragon down here for cleanup. And"
+    },
+    {
+     "video": "P6twlQY3fLk",
+     "t": 223.1,
+     "quote": "the baby dragon and wizard, sorry,"
+    },
+    {
+     "video": "_N5VEy9FTN0",
+     "t": 281.4,
+     "quote": "have that baby dragon to clear out the funnel a little bit more."
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 453.5,
+     "quote": "baby dragon. I'm going to get a wizard."
+    }
+   ]
+  },
+  {
+   "id": "funnel_duke",
+   "action": "deploy",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "duke",
+   "when": {
+    "after": "charge_recall",
+    "delay": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 277.8,
+     "quote": "king and duke either here at 9:00 or at 3:00."
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 345.6,
+     "quote": "start with the Duke and deploy the king wider and a little later."
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 116.7,
+     "quote": "duke down over here as well. And then"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 46.6,
+     "quote": "the dragon duke and the king beside them"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 78.1,
+     "quote": "building. Let's send the duke and the"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 486.8,
+     "quote": "There goes the king. There goes the dragon duke."
+    }
+   ]
+  },
+  {
+   "id": "funnel_king",
+   "action": "deploy",
+   "what": "Barbarian King",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "funnel_duke",
+    "delay": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 277.8,
+     "quote": "king and duke either here at 9:00 or at 3:00."
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 345.6,
+     "quote": "start with the Duke and deploy the king wider and a little later."
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 631.3,
+     "quote": "this all intact. I'm going to go King"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 46.6,
+     "quote": "the dragon duke and the king beside them"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 78.1,
+     "quote": "building. Let's send the duke and the"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 486.8,
+     "quote": "There goes the king. There goes the dragon duke."
+    }
+   ]
+  },
+  {
+   "id": "king_ability",
+   "action": "ability",
+   "what": "Barbarian King",
+   "count": 1,
+   "at": "unit:Barbarian King",
+   "group": "funnel",
+   "when": {
+    "after": "funnel_king",
+    "delay": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "h-6DBh45ozk",
+     "t": 404.3,
+     "quote": "instantly used his ability because I had"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 1503.8,
+     "quote": "we're going to pop the king's ability a little early"
+    },
+    {
+     "video": "4HmRoonPBIU",
+     "t": 162.2,
+     "quote": "will pop that king ability to force those super bowlers hopefully back inside"
+    },
+    {
+     "video": "6FVZHuESY4g",
+     "t": 54.9,
+     "quote": "with their abilities are key to creating"
+    },
+    {
+     "video": "yxVyP7vPQPw",
+     "t": 83.7,
+     "quote": "Now let's use the king abilities to funnel even better."
+    }
+   ]
+  },
+  {
+   "id": "funnel_valkyries",
+   "action": "deploy",
+   "what": "Valkyrie",
+   "count": "all",
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "funnel_king",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 304,
+     "quote": "I get the Valkyries down,"
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 633.8,
+     "quote": "Valk over here with wizards."
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 455.5,
+     "quote": "I'm going to get a valk all to start funneling."
+    }
+   ]
+  },
+  {
+   "id": "funnel_wizards",
+   "action": "deploy",
+   "what": "Wizard",
+   "count": "all",
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "funnel_king",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 305.3,
+     "quote": "couple wizards to clean this funnel up quickly."
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 633.8,
+     "quote": "Valk over here with wizards."
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 453.5,
+     "quote": "baby dragon. I'm going to get a wizard."
+    }
+   ]
+  },
+  {
+   "id": "queen_join",
+   "action": "redeploy",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "funnel_king",
+    "delay": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 1036.4,
+     "quote": "That's a ton of damage. I'm out of there."
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 257.5,
+     "quote": "I start the super bowlers on the left side together with the queen,"
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 128.6,
+     "quote": "highest level, use that. Drop the queen"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 43.5,
+     "quote": "her down again with the super bowlers and the warden."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 418.2,
+     "quote": "queen goes into the core with the"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 474.8,
+     "quote": "queen's back, she's going to get healed up."
+    }
+   ]
+  },
+  {
+   "id": "main_tank",
+   "action": "deploy",
+   "what": "Ice Golem",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "queen_join",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "4HmRoonPBIU",
+     "t": 328.2,
+     "quote": "one ice golem super bowlers, wall break maybe."
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 600.3,
+     "quote": "We're going to put an ice skull in front of them."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 84.4,
+     "quote": "Finally, we can send the second ice"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 478.2,
+     "quote": "golem in a tank."
+    }
+   ]
+  },
+  {
+   "id": "main_balloons",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "main_tank",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 636.6,
+     "quote": "Go like this. Super Bowlers, balloons,"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 86.5,
+     "quote": "golem, loons, super bowlers, warden,"
+    }
+   ]
+  },
+  {
+   "id": "bowlers",
+   "action": "deploy",
+   "what": "Super Bowler",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "main_balloons",
+    "delay": 0
+   },
+   "support": 12,
+   "cite": [
+    {
+     "video": "4HmRoonPBIU",
+     "t": 123.8,
+     "quote": "I think we're now going in from the far side,"
+    },
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 285.6,
+     "quote": "bowlers would be either here at the hero hall"
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 257.5,
+     "quote": "I start the super bowlers on the left side together with the queen,"
+    },
+    {
+     "video": "Lp0_1GWln48",
+     "t": 54.2,
+     "quote": "Bowlers to push deep inside and wreak"
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 636.6,
+     "quote": "Go like this. Super Bowlers, balloons,"
+    },
+    {
+     "video": "P6twlQY3fLk",
+     "t": 317.8,
+     "quote": "our super bowlers"
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 285.2,
+     "quote": "your super bowler smash."
+    },
+    {
+     "video": "_N5VEy9FTN0",
+     "t": 608.9,
+     "quote": "to go super bowlers a little bit spread out here."
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 43.5,
+     "quote": "her down again with the super bowlers and the warden."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 86.5,
+     "quote": "golem, loons, super bowlers, warden,"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 476.7,
+     "quote": "Super bowler's down."
+    },
+    {
+     "video": "yI1ZdPZswNM",
+     "t": 119.7,
+     "quote": "barbarian king, the grand warden, all super bowlers, the healers, and the rest"
+    }
+   ]
+  },
+  {
+   "id": "warden",
+   "action": "deploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "bowlers",
+    "delay": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 639.4,
+     "quote": "this log launcher. Boom. Warden. Okay."
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 43.5,
+     "quote": "her down again with the super bowlers and the warden."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 86.5,
+     "quote": "golem, loons, super bowlers, warden,"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 480.4,
+     "quote": "the warden."
+    },
+    {
+     "video": "yI1ZdPZswNM",
+     "t": 119.7,
+     "quote": "barbarian king, the grand warden, all super bowlers, the healers, and the rest"
+    },
+    {
+     "video": "P6twlQY3fLk",
+     "t": 739.4,
+     "quote": "Ice golem in here. Okay, minions."
+    }
+   ]
+  },
+  {
+   "id": "apprentice",
+   "action": "deploy",
+   "what": "Apprentice Warden",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "QH4OIrEePh4",
+     "t": 291.7,
+     "quote": "apprentice warden help maintain a lot of their HP"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 89.2,
+     "quote": "mini warden, and the sky warden. Super"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 62.2,
+     "quote": "Apprentice warden goes with the super bowlers."
+    },
+    {
+     "video": "yI1ZdPZswNM",
+     "t": 304.6,
+     "quote": "apprentice warden, and the remaining"
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 263.9,
+     "quote": "the log launcher queen down as well. I'm"
+    }
+   ]
+  },
+  {
+   "id": "siege",
+   "action": "deploy",
+   "what": "Sky Wagon",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "apprentice",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "QH4OIrEePh4",
+     "t": 325.7,
+     "quote": "wagon, it will provide support troops to help protect your healers"
+    },
+    {
+     "video": "_N5VEy9FTN0",
+     "t": 612.9,
+     "quote": "I'm still using the sky wagon."
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 608.8,
+     "quote": "obviously we're going to wall break here. Skywagon."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 89.2,
+     "quote": "mini warden, and the sky warden. Super"
+    }
+   ]
+  },
+  {
+   "id": "main_wall",
+   "action": "deploy",
+   "what": "Super Wall Breaker",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "siege",
+    "delay": 0
+   },
+   "support": 7,
+   "cite": [
+    {
+     "video": "4HmRoonPBIU",
+     "t": 153.4,
+     "quote": "The wall break is going in."
+    },
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 328,
+     "quote": "I sneak in a super wall breaker."
+    },
+    {
+     "video": "P6twlQY3fLk",
+     "t": 312.1,
+     "quote": "Super wall breaker down to get me early access."
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 298.1,
+     "quote": "with a super wall breaker to open the walls."
+    },
+    {
+     "video": "_N5VEy9FTN0",
+     "t": 322.8,
+     "quote": "Open up this wall here with the super wall breakers"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 91.8,
+     "quote": "wall breakers to keep the main army"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 905.3,
+     "quote": "super wall breaker to give us access in"
+    }
+   ]
+  },
+  {
+   "id": "duke_ability",
+   "action": "ability",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "after": "funnel_duke",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Dragon Duke"
+     }
+    ]
+   },
+   "support": 7,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 341.5,
+     "quote": "Stuns this whole area in here."
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 336.5,
+     "quote": "He has the stun and can still get good value in the core."
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 156.5,
+     "quote": "duke ability too quickly. I liked it how"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 424,
+     "quote": "using the stun ability with the Duke if he's near the army"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 98.6,
+     "quote": "stun the nearest defenses."
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 508.8,
+     "quote": "Here goes the dragon duke ability. The stun was awesome."
+    },
+    {
+     "video": "yI1ZdPZswNM",
+     "t": 361.1,
+     "quote": "duke's ability so the X-Bows cannot deal"
+    }
+   ]
+  },
+  {
+   "id": "rage_entry",
+   "action": "spell",
+   "what": "Rage Spell",
+   "count": 1,
+   "at": "group:main",
+   "group": "main",
+   "when": {
+    "group_inside": "main"
+   },
+   "support": 11,
+   "cite": [
+    {
+     "video": "KkXmRkx20x4",
+     "t": 617.6,
+     "quote": "It also helps the wall breakers from the troop launcher"
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 656.2,
+     "quote": "here, I'm going to go like this rage cuz"
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 340,
+     "quote": "So, using one as you enter the core of the base"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 309.1,
+     "quote": "army, covering the bowlers and the healers."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 104.9,
+     "quote": "raise up the super bowlers. Poison for"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 862,
+     "quote": "kind of cook under this rage spell."
+    },
+    {
+     "video": "yI1ZdPZswNM",
+     "t": 176,
+     "quote": "deploy the rage spell on the super"
+    },
+    {
+     "video": "P6twlQY3fLk",
+     "t": 334,
+     "quote": "the torch paired up with the rages."
+    },
+    {
+     "video": "_N5VEy9FTN0",
+     "t": 895,
+     "quote": "going to go early rage."
+    },
+    {
+     "video": "yxVyP7vPQPw",
+     "t": 98,
+     "quote": "Let's rage this up here."
+    },
+    {
+     "video": "4HmRoonPBIU",
+     "t": 175.6,
+     "quote": "So now let's rage it up, warden ability,"
+    }
+   ]
+  },
+  {
+   "id": "warden_ability",
+   "action": "ability",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "warden",
+      "delay": 0
+     },
+     {
+      "group_inside": "main"
+     },
+     {
+      "heavy_fire": "Super Bowler"
+     }
+    ]
+   },
+   "support": 12,
+   "cite": [
+    {
+     "video": "4HmRoonPBIU",
+     "t": 175.6,
+     "quote": "So now let's rage it up, warden ability,"
+    },
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 329.9,
+     "quote": "Then, I pop the torch ability"
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 392.2,
+     "quote": "hold the heroic torch until they actually start taking significant damage."
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 691.6,
+     "quote": "ability with the rage. Yeah, it's good"
+    },
+    {
+     "video": "P6twlQY3fLk",
+     "t": 326.6,
+     "quote": "I'm going to use the warden ability here."
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 307.2,
+     "quote": "want to activate your warden's eternal tome and heroic torch."
+    },
+    {
+     "video": "_N5VEy9FTN0",
+     "t": 382.1,
+     "quote": "pop the warden,"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 52.3,
+     "quote": "going to activate the warden ability,"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 102.9,
+     "quote": "so we will use the warden ability and"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 1232,
+     "quote": "Going to pop the warden."
+    },
+    {
+     "video": "yI1ZdPZswNM",
+     "t": 181.9,
+     "quote": "grand warden's ability to protect all"
+    },
+    {
+     "video": "yxVyP7vPQPw",
+     "t": 266.3,
+     "quote": "the back end of that compartment."
+    }
+   ]
+  },
+  {
+   "id": "rage_torch",
+   "action": "spell",
+   "what": "Rage Spell",
+   "count": 1,
+   "at": "unit_ahead:Super Bowler",
+   "group": "main",
+   "when": {
+    "after": "warden_ability",
+    "delay": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "4HmRoonPBIU",
+     "t": 175.6,
+     "quote": "So now let's rage it up, warden ability,"
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 186.5,
+     "quote": "pairing up the rages when you're using"
+    },
+    {
+     "video": "P6twlQY3fLk",
+     "t": 334,
+     "quote": "the torch paired up with the rages."
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 344.4,
+     "quote": "one during the heroic torch ability"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 55.5,
+     "quote": "torch, and we're going to rage those super bowlers as well."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 104.9,
+     "quote": "raise up the super bowlers. Poison for"
+    }
+   ]
+  },
+  {
+   "id": "poison_main",
+   "action": "spell",
+   "what": "Poison Spell",
+   "count": 1,
+   "at": "defenders:main",
+   "group": "main",
+   "when": {
+    "defenders_near": "main"
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "h-6DBh45ozk",
+     "t": 107,
+     "quote": "enemy CC troops. The healers are still"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 869.3,
+     "quote": "should have just poisoned the furnace."
+    }
+   ]
+  },
+  {
+   "id": "freeze_main",
+   "action": "spell",
+   "what": "Freeze Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "heavy_fire": "Super Bowler"
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 361.4,
+     "quote": "or the multi infernos or even the logger."
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 1043,
+     "quote": "We'll freeze the revenge tower."
+    },
+    {
+     "video": "_N5VEy9FTN0",
+     "t": 639.4,
+     "quote": "then we can freeze this revenge tower"
+    },
+    {
+     "video": "yI1ZdPZswNM",
+     "t": 141.3,
+     "quote": "Freeze the monolith and the multi-archer tower"
+    }
+   ]
+  },
+  {
+   "id": "totem_main",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "heavy_fire": "Super Bowler"
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "KkXmRkx20x4",
+     "t": 395.6,
+     "quote": "tank the logger with the totem"
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 351.6,
+     "quote": "use your tone spells to redirect damage"
+    },
+    {
+     "video": "_N5VEy9FTN0",
+     "t": 360,
+     "quote": "I should have put it behind the logger."
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 351,
+     "quote": "totem spells to distract point defenses"
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 116.7,
+     "quote": "totem spell for long shot and the skelly"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 533.7,
+     "quote": "there, but totem for the revenge tower."
+    }
+   ]
+  },
+  {
+   "id": "queen_ability",
+   "action": "ability",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "unit:Archer Queen",
+   "group": "main",
+   "when": {
+    "after": "warden_ability",
+    "delay": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "4HmRoonPBIU",
+     "t": 368.8,
+     "quote": "Queen ability."
+    },
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 1096.4,
+     "quote": "pop the queen ability."
+    },
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 674.8,
+     "quote": "queen ability and then see if I can just"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 1046.8,
+     "quote": "Great stuff there. Pop the queen ability."
+    },
+    {
+     "video": "yxVyP7vPQPw",
+     "t": 292.3,
+     "quote": "Queen ability because why not?"
+    }
+   ]
+  },
+  {
+   "id": "headhunter",
+   "action": "deploy",
+   "what": "Headhunter",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "defenders_near": "main"
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 702.3,
+     "quote": "I get in a head hunter to help with those enemy heroes."
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 1304.4,
+     "quote": "a header on that king right there."
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 515.2,
+     "quote": "head hunters in"
+    }
+   ]
+  },
+  {
+   "id": "cleanup_archers",
+   "action": "deploy",
+   "what": "Archer",
+   "count": "all",
+   "at": "edge:main",
+   "group": "funnel",
+   "when": {
+    "after": "warden_ability",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 1114.9,
+     "quote": "Get some archers in here."
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 1262.9,
+     "quote": "Archers in for cleanup."
+    }
+   ]
+  }
+ ],
+ "variants": [
+  {
+   "name": "Royal Champion charge with Queen and Duke counter funnel",
+   "replaces": [
+    "charge_hero",
+    "charge_scout",
+    "charge_healers",
+    "charge_wall",
+    "charge_tank",
+    "charge_invis",
+    "charge_rage",
+    "charge_poison",
+    "charge_recall",
+    "charge_cleanup",
+    "funnel_duke",
+    "funnel_king",
+    "king_ability",
+    "funnel_valkyries",
+    "funnel_wizards",
+    "queen_join",
+    "main_tank",
+    "queen_ability"
+   ],
+   "steps": [
+    {
+     "id": "charge_hero",
+     "action": "deploy",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 4,
+     "cite": [
+      {
+       "video": "P6twlQY3fLk",
+       "t": 274,
+       "quote": "I used the world champion"
+      },
+      {
+       "video": "QH4OIrEePh4",
+       "t": 151.7,
+       "quote": "champion charge, you're often alternating the invisibility effect with"
+      },
+      {
+       "video": "_N5VEy9FTN0",
+       "t": 200.7,
+       "quote": "Roll champion at this super wizard tower expo area."
+      },
+      {
+       "video": "yI1ZdPZswNM",
+       "t": 51.7,
+       "quote": "6:00 side, deploy the Royal Champion and"
+      }
+     ]
+    },
+    {
+     "id": "charge_invis",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "unit:Royal Champion",
+     "group": "charge",
+     "when": {
+      "heavy_fire": "Royal Champion"
+     },
+     "support": 4,
+     "cite": [
+      {
+       "video": "P6twlQY3fLk",
+       "t": 275.6,
+       "quote": "and I used an extra invisibility on that multi archer tower."
+      },
+      {
+       "video": "QH4OIrEePh4",
+       "t": 153.4,
+       "quote": "alternating the invisibility effect with the spirit fox and invisibility spells,"
+      },
+      {
+       "video": "_N5VEy9FTN0",
+       "t": 232.2,
+       "quote": "see, I don't drop that invisibility down right away."
+      },
+      {
+       "video": "yI1ZdPZswNM",
+       "t": 88.9,
+       "quote": "invisibility spells whenever needed to"
+      }
+     ]
+    },
+    {
+     "id": "charge_poison",
+     "action": "spell",
+     "what": "Poison Spell",
+     "count": 1,
+     "at": "defenders:charge",
+     "group": "charge",
+     "when": {
+      "defenders_near": "charge"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "yI1ZdPZswNM",
+       "t": 80.2,
+       "quote": "clan castle is triggered, place a poison"
+      }
+     ]
+    },
+    {
+     "id": "queen_join",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "inside": "Royal Champion"
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "P6twlQY3fLk",
+       "t": 240.2,
+       "quote": "your queen deals with 9:00 all the way up to kind of 12:00"
+      },
+      {
+       "video": "QH4OIrEePh4",
+       "t": 233.3,
+       "quote": "royal champion charge, having the archer queen and dragon duke"
+      },
+      {
+       "video": "_N5VEy9FTN0",
+       "t": 301.1,
+       "quote": "Well, queen shot from this wizard tower."
+      }
+     ]
+    },
+    {
+     "id": "queen_ability",
+     "action": "ability",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "funnel",
+     "when": {
+      "after": "queen_join",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "P6twlQY3fLk",
+       "t": 301.5,
+       "quote": "to go for the queen shot and try to snipe out both those air defenses."
+      },
+      {
+       "video": "_N5VEy9FTN0",
+       "t": 301.1,
+       "quote": "Well, queen shot from this wizard tower."
+      }
+     ]
+    },
+    {
+     "id": "funnel_duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "duke",
+     "when": {
+      "after": "queen_ability",
+      "delay": 0
+     },
+     "support": 4,
+     "cite": [
+      {
+       "video": "P6twlQY3fLk",
+       "t": 238.4,
+       "quote": "your Duke goes a little bit higher up."
+      },
+      {
+       "video": "QH4OIrEePh4",
+       "t": 233.3,
+       "quote": "royal champion charge, having the archer queen and dragon duke"
+      },
+      {
+       "video": "_N5VEy9FTN0",
+       "t": 307,
+       "quote": "Duke to work the from the storage towards the top side."
+      },
+      {
+       "video": "yI1ZdPZswNM",
+       "t": 108.2,
+       "quote": "at the 9:00 side and pair him with the"
+      }
+     ]
+    },
+    {
+     "id": "main_tank",
+     "action": "deploy",
+     "what": "Ice Golem",
+     "count": 2,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "funnel_duke",
+      "delay": 0
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "QH4OIrEePh4",
+       "t": 290.1,
+       "quote": "the ice golems alongside the apprentice warden"
+      },
+      {
+       "video": "_N5VEy9FTN0",
+       "t": 619.8,
+       "quote": "just going to go double up on the ice golems here."
+      },
+      {
+       "video": "yI1ZdPZswNM",
+       "t": 116.5,
+       "quote": "army. Now, deploy both ice golems, the"
+      }
+     ]
+    },
+    {
+     "id": "main_healers",
+     "action": "deploy",
+     "what": "Healer",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "bowlers",
+      "delay": 0
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "P6twlQY3fLk",
+       "t": 930.2,
+       "quote": "back in here and I'm going to freeze."
+      },
+      {
+       "video": "QH4OIrEePh4",
+       "t": 328.2,
+       "quote": "help protect your healers"
+      },
+      {
+       "video": "yI1ZdPZswNM",
+       "t": 119.7,
+       "quote": "barbarian king, the grand warden, all super bowlers, the healers, and the rest"
+      }
+     ]
+    }
+   ],
+   "support": 4,
+   "cite": [
+    {
+     "video": "P6twlQY3fLk",
+     "t": 274,
+     "quote": "I used the world champion"
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 151.7,
+     "quote": "champion charge, you're often alternating the invisibility effect with"
+    },
+    {
+     "video": "_N5VEy9FTN0",
+     "t": 200.7,
+     "quote": "Roll champion at this super wizard tower expo area."
+    },
+    {
+     "video": "yI1ZdPZswNM",
+     "t": 51.7,
+     "quote": "6:00 side, deploy the Royal Champion and"
+    }
+   ]
+  },
+  {
+   "name": "Dragon Duke charge with King and Queen support",
+   "replaces": [
+    "charge_hero",
+    "charge_scout",
+    "charge_healers",
+    "charge_wall",
+    "charge_tank",
+    "charge_invis",
+    "charge_rage",
+    "charge_poison",
+    "charge_recall",
+    "charge_cleanup",
+    "funnel_duke",
+    "funnel_king",
+    "queen_join",
+    "duke_ability"
+   ],
+   "steps": [
+    {
+     "id": "charge_hero",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "4HmRoonPBIU",
+       "t": 43.5,
+       "quote": "the dragon duke initially has to create a really nice funnel."
+      },
+      {
+       "video": "Lp0_1GWln48",
+       "t": 38.7,
+       "quote": "your Duke charge carefully"
+      },
+      {
+       "video": "QH4OIrEePh4",
+       "t": 179.3,
+       "quote": "you'll have access to the dragon duke charge."
+      }
+     ]
+    },
+    {
+     "id": "charge_invis",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "charge",
+     "when": {
+      "heavy_fire": "Dragon Duke"
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "4HmRoonPBIU",
+       "t": 65.9,
+       "quote": "much damage initially so we can just um delay the first inviz"
+      },
+      {
+       "video": "QH4OIrEePh4",
+       "t": 190.2,
+       "quote": "using invisibility spells to keep him from being targeted by defenses."
+      }
+     ]
+    },
+    {
+     "id": "duke_ability",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "charge",
+     "when": {
+      "all": [
+       {
+        "after": "charge_invis",
+        "delay": 0
+       },
+       {
+        "heavy_fire": "Dragon Duke"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "QH4OIrEePh4",
+       "t": 210.3,
+       "quote": "you can heal him right back up with his own HP regen"
+      }
+     ]
+    },
+    {
+     "id": "queen_join",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "inside": "Dragon Duke"
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "4HmRoonPBIU",
+       "t": 232.9,
+       "quote": "either support your king with the queen or use it with the super bowlers,"
+      },
+      {
+       "video": "Lp0_1GWln48",
+       "t": 43.8,
+       "quote": "Use the king and queen as support"
+      },
+      {
+       "video": "QH4OIrEePh4",
+       "t": 223.2,
+       "quote": "Over on the other side, you'll be using the archer queen"
+      }
+     ]
+    },
+    {
+     "id": "funnel_king",
+     "action": "deploy",
+     "what": "Barbarian King",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "queen_join",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "4HmRoonPBIU",
+       "t": 142.1,
+       "quote": "We can use the king on this side here."
+      },
+      {
+       "video": "Lp0_1GWln48",
+       "t": 43.8,
+       "quote": "Use the king and queen as support"
+      }
+     ]
+    },
+    {
+     "id": "main_healers",
+     "action": "deploy",
+     "what": "Healer",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "bowlers",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "QH4OIrEePh4",
+       "t": 328.2,
+       "quote": "help protect your healers"
+      }
+     ]
+    }
+   ],
+   "support": 3,
+   "cite": [
+    {
+     "video": "4HmRoonPBIU",
+     "t": 43.5,
+     "quote": "the dragon duke initially has to create a really nice funnel."
+    },
+    {
+     "video": "Lp0_1GWln48",
+     "t": 38.7,
+     "quote": "your Duke charge carefully"
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 179.3,
+     "quote": "you'll have access to the dragon duke charge."
+    }
+   ]
+  },
+  {
+   "name": "Protect the Queen with Totem and reserve Rage for Bowlers",
+   "replaces": [
+    "charge_rage"
+   ],
+   "steps": [
+    {
+     "id": "charge_rage",
+     "action": "spell",
+     "what": "Totem Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "heavy_fire": "Archer Queen"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "h-6DBh45ozk",
+       "t": 67.6,
+       "quote": "invis and totem spells to help her. We"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "h-6DBh45ozk",
+     "t": 366.4,
+     "quote": "invest any rage spells on her because"
+    }
+   ]
+  },
+  {
+   "name": "Troop Launcher for gradual wall access",
+   "replaces": [
+    "siege"
+   ],
+   "steps": [
+    {
+     "id": "siege",
+     "action": "deploy",
+     "what": "Troop Launcher",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "apprentice",
+      "delay": 0
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "4TGHrJl3h1s",
+       "t": 363,
+       "quote": "Troop launcher is going to give me automatic value throughout."
+      },
+      {
+       "video": "KkXmRkx20x4",
+       "t": 221.4,
+       "quote": "I can move through the base more slowly"
+      },
+      {
+       "video": "qqdSRPKkDVY",
+       "t": 500.3,
+       "quote": "with the troop launcher just because I"
+      }
+     ]
+    }
+   ],
+   "support": 3,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 363,
+     "quote": "Troop launcher is going to give me automatic value throughout."
+    },
+    {
+     "video": "KkXmRkx20x4",
+     "t": 221.4,
+     "quote": "I can move through the base more slowly"
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 500.3,
+     "quote": "with the troop launcher just because I"
+    }
+   ]
+  },
+  {
+   "name": "Log Launcher entry for Invisibility Towers or failed wall access",
+   "replaces": [
+    "siege"
+   ],
+   "steps": [
+    {
+     "id": "siege",
+     "action": "deploy",
+     "what": "Log Launcher",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "bowlers",
+      "delay": 0
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "NC_E4SvSb_E",
+       "t": 639.4,
+       "quote": "this log launcher. Boom. Warden. Okay."
+      },
+      {
+       "video": "gWXxU_sp7Kg",
+       "t": 1133.2,
+       "quote": "We do need a log launcher."
+      },
+      {
+       "video": "h-6DBh45ozk",
+       "t": 295,
+       "quote": "to trigger the invisibility towers. That"
+      }
+     ]
+    }
+   ],
+   "support": 3,
+   "cite": [
+    {
+     "video": "NC_E4SvSb_E",
+     "t": 639.4,
+     "quote": "this log launcher. Boom. Warden. Okay."
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 1133.2,
+     "quote": "We do need a log launcher."
+    },
+    {
+     "video": "h-6DBh45ozk",
+     "t": 295,
+     "quote": "to trigger the invisibility towers. That"
+    }
+   ]
+  },
+  {
+   "name": "Rocket Backpack and Flame Blower funnel",
+   "replaces": [
+    "duke_ability"
+   ],
+   "steps": [
+    {
+     "id": "duke_ability",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "after": "funnel_duke",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "yxVyP7vPQPw",
+       "t": 45.5,
+       "quote": "like you really cheap funnel with that"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "yxVyP7vPQPw",
+     "t": 45.5,
+     "quote": "like you really cheap funnel with that"
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "All 14 relevant super-bowler source playbooks were read. Queen charge/recall is the plurality opening in six videos: 4TGHrJl3h1s, KkXmRkx20x4, NC_E4SvSb_E, gWXxU_sp7Kg, h-6DBh45ozk and qqdSRPKkDVY. Dragon Duke charge appears in three and Royal Champion charge in four, with QH4OIrEePh4 describing both alternatives.",
+  "No complete composition repeats verbatim. The default is the gWXxU_sp7Kg roster: its troops match 4TGHrJl3h1s, its home spells match NC_E4SvSb_E, and its complete loadouts match both. Five Super Bowlers are specified by six videos versus six by three. Unknown quantities are not zero. Siege inventory entries are alternatives; only Sky Wagon is selected here.",
+  "Support counts distinct videos describing an action or rule, not replays or duplicated policies. Counts describe the shared action and purpose; sources differ on quantities, exact conditions and ordering. Quotes and timestamps are copied from source records using verified_t.",
+  "Every delay of 0 represents an unspecified delay. It does not establish that the funnel has finished. inside:Archer Queen approximates obtaining the required charge value before Recall; inside:Royal Champion and inside:Dragon Duke approximate establishing their alternate funnels. The vocabulary cannot test cleared funnel buildings, absence of defending troops, or spell-effect expiry.",
+  "The scouting Balloon precedes Healers as in h-6DBh45ozk; 4TGHrJl3h1s instead says Queen, Healers, test Balloon. The Ice Golem's heavy_fire trigger approximates initial damage protection; its position relative to wall opening varies. One Ice Golem remains for the main push.",
+  "Charge Rage is conditional in four sources. h-6DBh45ozk explicitly reserves Rage for Bowlers and uses Invisibility/Totem instead. Only one conditional Invisibility cast is encoded because Queen sources give no fixed repeat interval. Additional situational casts are described, but no interval is invented.",
+  "Recall uses what:Recall Spell so the executor can cast it, with the Queen as the anchor. h-6DBh45ozk explicitly recalls Queen and Healers. Other sources do not consistently identify the supporting troops captured. Redeployment returns the recalled group; Healers not recalled have no invented second deployment.",
+  "Source charge-duration advice conflicts: NC_E4SvSb_E recommends around 45 seconds, around 40 when time is a problem, and sometimes a minute; 4TGHrJl3h1s recommends about a minute, extending to 1:15 only when confident. No universal charge duration is imposed.",
+  "Duke-before-King follows KkXmRkx20x4 and h-6DBh45ozk; other sources reverse or overlap them with the main deployment. edge:funnel cannot express separate inner Duke and wider outside King lanes. Utility troops use all remaining quantities from the selected roster, not newly inferred narration counts.",
+  "group_inside:main approximates reaching the core, and heavy_fire:Super Bowler approximates significant danger. These cannot enforce clearing the outside funnel or defending Clan Castle before Torch. Sources warn against premature Torch; some demonstrations activate around Clan Castle engagement.",
+  "rage_entry and rage_torch represent the separate entry and Torch Rages explicitly described in QH4OIrEePh4. Their separation is unstated and the triggers can coincide. No Rage repeat interval is invented. unit_ahead:Super Bowler approximates gWXxU_sp7Kg's forward placement.",
+  "The two Poison steps share the single available spell. defenders anchors cannot prioritize Furnace separately from other defenders or distinguish enemy heroes for Headhunters. threat:main approximates named Freeze/Totem targets and cannot enforce a multi-defense Freeze or the corrected Totem position behind the defense.",
+  "King ability after deployment follows h-6DBh45ozk's immediate funnel example; other sources use it while funneling or correcting Bowler drift. Queen ability and cleanup Archers after Warden are zero-delay approximations for otherwise unspecified main-push and late-cleanup timing. Most exact placement tiles are unspoken.",
+  "Royal Champion variant requires an army/loadout change before execution; the required variant schema has no army override. Replace King with Royal Champion for the Queen/Duke/Warden composition. QH4OIrEePh4's charging RC uses Electro Boots/Haste Vial/Spirit Fox and its supporting Duke uses Fire Heart/Stun Blaster. P6twlQY3fLk and yI1ZdPZswNM instead give Rocket Spear examples. yI1ZdPZswNM uses King and no Queen, a distinct minority lineup. Queen-shot steps require Giant Arrow, as named in P6twlQY3fLk, rather than the default Monolith Arrow. QH4OIrEePh4's counted preset provides six Bowlers and five Invisibility Spells; other RC armies are partially stated.",
+  "Royal Champion ability timing conflicts: immediate in yI1ZdPZswNM, low health or immediate in different P6twlQY3fLk examples, and held for the main army in _N5VEy9FTN0. No universal RC ability step or invented HP threshold is selected. Recall is explicit in P6twlQY3fLk but not every RC replay, so it is not required in the shared variant.",
+  "P6twlQY3fLk states Invisibility casts at attack-clock 2:56, 2:46, 2:36 and so on. QH4OIrEePh4 describes alternating with Spirit Fox and possible double cycling; _N5VEy9FTN0 delays its first cast. The shared RC variant therefore encodes one conditional cast and does not impose a universal cadence.",
+  "Dragon Duke charge needs Electro Fangs/Fire Heart instead of the default support loadout: 4HmRoonPBIU uses Spirit Fox, QH4OIrEePh4 uses Angry Jelly. The heavy_fire ability trigger after Invisibility is the closest proxy for needing his health regeneration after protection ends; it can activate too early because spell expiry is unavailable. Only one conditional cast is encoded; no universal interval is established. The variant retains King/Queen support from 4HmRoonPBIU and Lp0_1GWln48 rather than QH4OIrEePh4's Queen/RC counter funnel. Both counted Duke-charge rosters use six Bowlers and five Invisibility Spells; the default five-Bowler/two-Invisibility inventory is not their preset.",
+  "For siege variants, replace Sky Wagon in cc with the selected machine. KkXmRkx20x4 prefers Sky Wagon against Lava Launcher and gradual Troop Launcher progress when that threat is absent. Exact siege deployment times are often unstated; zero delays approximate deployment during the main push.",
+  "The Rocket Backpack/Flame Blower variant requires those Duke equipment pieces and Phoenix as in yxVyP7vPQPw. It replaces only the Duke's funnel ability call; that video's unspoken main deployment order is not reconstructed. Its Earthquake/Town Hall entry, Skeleton activation of the Invisibility Tower and Tesla-clearing Yeti remain source-specific options rather than invented complete openings.",
+  "Other composition: 4HmRoonPBIU has 6 Bowlers, 5 Healers, 2 Ice Golems, 2 Archers, 2 Super Wall Breakers, 2 Balloons, 1 Baby Dragon, 1 Apprentice Warden, 2 Headhunters and 1 Minion; home spells are 2 Rage, 2 Totem and 5 Invisibility, with 2 donated Revive. Queen uses Action Figure/Magic Mirror/Diggy.",
+  "Other composition: 4TGHrJl3h1s has the default troops but 3 Rage, 1 Freeze, 3 Invisibility and 1 Poison. KkXmRkx20x4 has 5 Bowlers, 5 Healers, 2 Ice Golems, 3 Balloons, 3 Super Wall Breakers, 2 Valkyries, 1 Wizard, 1 Archer, 1 Baby Dragon, 1 Apprentice Warden, 1 Headhunter, 2 Wall Breakers and 1 Minion; home spells are 3 Rage, 2 Invisibility, 1 Freeze and 2 Totem, with donated Poison, Skeleton and Recall. Its Duke has Stun Blaster/Electro Fangs/Spirit Fox and its narrated siege is Troop Launcher.",
+  "Other composition: NC_E4SvSb_E differs from the default with 2 Archers, 3 Wizards, 4 Balloons and 1 Valkyrie; its cc has Balloon, Ice Golem and Super Yeti plus Recall and 2 Totem. It narrates Log Launcher. 6FVZHuESY4g and Lp0_1GWln48 give no complete counted army.",
+  "Other composition: QH4OIrEePh4 has 6 Bowlers, 5 Healers, 2 Balloons, 2 Super Wall Breakers, 1 Apprentice Warden, 2 Ice Golems, 2 Headhunters and 1 Minion; home spells are 5 Invisibility, 1 Revive, 1 Overgrowth and 1 Rage, with donated Rage/Totem and Sky Wagon/Super Yeti/Super Valkyrie. Its heroes are Queen/Duke/RC/Warden; Queen has Giant Arrow/Action Figure/Frosty. Its TH16 preset has 5 Bowlers plus Baby Dragon; its TH18 preset exchanges home Rage for 2 Totem and donates 2 Rage.",
+  "Other composition: P6twlQY3fLk and _N5VEy9FTN0 give partial RC armies with 5 Invisibility and mostly unknown other quantities. P6twlQY3fLk specifies 2 Ice Golems; _N5VEy9FTN0 names Sky Wagon and its TH17 account lacks its introduced Frost Flake. yI1ZdPZswNM specifies 6 Bowlers and 2 Ice Golems, uses RC/Duke/King/Warden, leaves most other quantities unknown, and does not identify its siege or attacking cc.",
+  "Other composition: h-6DBh45ozk has 5 Bowlers, 5 Healers, 3 Balloons, 3 Super Wall Breakers, 2 Ice Golems, 1 Apprentice Warden, 1 Baby Dragon, 1 Headhunter, 1 Valkyrie, 2 Minions and 3 Archers; home spells are 3 Invisibility, 2 Rage, 1 Poison, 1 Freeze and 2 Totem. Donated contents are 1 Balloon, 2 Ice Golems, 1 Super Valkyrie, Skeleton and Recall; hero loadouts are partial.",
+  "Other composition: qqdSRPKkDVY specifies 3 Archers, 1 Baby Dragon, 2 Valkyries, 2 Ice Golems, 1 Apprentice Warden, 2 Rage and 3 Invisibility; most other quantities and attacking cc are unknown. Duke equipment discussion is ambiguous between Fire Heart and Stun Blaster, and Phoenix is named.",
+  "Other composition: yxVyP7vPQPw has 5 Bowlers, 5 Healers, 1 Ice Golem, 2 Archers, 2 Super Wall Breakers, 1 Balloon, 2 Wizards, 1 Baby Dragon, 1 Apprentice Warden, 1 Electro Titan, 1 Headhunter and 1 Yeti; home spells are 3 Rage, 2 Totem, 1 Invisibility, 1 Earthquake and 1 Skeleton, with 2 donated Freeze and 1 Revive. Duke has Rocket Backpack/Flame Blower/Phoenix; Queen has Action Figure/Magic Mirror/Diggy.",
+  "Revive and Overgrowth are absent from the default composition. Sources describe reviving Duke, with _N5VEy9FTN0 allowing RC if Duke survives, and QH4OIrEePh4 describes Overgrowth for path control while warning against splits. These need their source-specific spell inventories. Ambiguous defense names such as logger, cake, candle and long shot are not assigned unsupported in-game identities.",
+  "No unambiguous shared siege release timing is provided, so no release_siege step is invented. No synthetic performance or real-game calibration claim is made."
+ ],
+ "check": {
+  "steps_kept": 33,
+  "steps_dropped": 0,
+  "reasons": {},
+  "dangling_after": []
+ }
+}

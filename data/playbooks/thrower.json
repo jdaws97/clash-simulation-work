@@ -1,0 +1,2376 @@
+{
+ "family": "thrower",
+ "name": "Revenge Deck funnel into a Thrower core push",
+ "sources": [
+  "-9bQzRv7slI",
+  "0h7c4WKuPB8",
+  "15TbHFSYt84",
+  "3KPlpZZeWsg",
+  "5InNp3cBzCA",
+  "6UjxhDyQkyI",
+  "AZTUaqyRtew",
+  "BMlNYGg37J8",
+  "C0mxv9JyBAk",
+  "FfvfHeRMDZs",
+  "HJfCl7Ycf6E",
+  "NrogBoJyRVI",
+  "OWBSVJa-H_E",
+  "T9LOFmCucwo",
+  "WZbB1yebB9A",
+  "XTTBlGH4zXE",
+  "XibexH-PFis",
+  "Xk6Q2cZqvHM",
+  "aLOitRlGp8g",
+  "aRUj8A45u4A",
+  "dHij_8HI47w",
+  "dxLogWcc0VU",
+  "eeDapoJl4d8",
+  "gVNS9seD83w",
+  "hiT9weAx9pQ",
+  "ufdEws4wP9c",
+  "uzgXTc3seHY",
+  "wFK5O0nLJEw",
+  "zSh-YQVhKT8"
+ ],
+ "army": {
+  "troops": {
+   "Ruin Witch": 1,
+   "Super Barbarian": 4,
+   "Ice Golem": 1,
+   "Healer": 5,
+   "Balloon": 3,
+   "Thrower": 9,
+   "Super Wall Breaker": 2,
+   "Archer": 4,
+   "Baby Dragon": 1
+  },
+  "spells": {
+   "Totem Spell": 2,
+   "Freeze Spell": 1,
+   "Revive Spell": 2,
+   "Overgrowth Spell": 1,
+   "Poison Spell": 1,
+   "Skeleton Spell": 1
+  },
+  "cc": {
+   "Log Launcher": 1,
+   "Ice Golem": 1,
+   "Super Yeti": 1,
+   "Ice Block Spell": 3
+  },
+  "heroes": [
+   "Dragon Duke",
+   "Grand Warden",
+   "Barbarian King",
+   "Archer Queen"
+  ],
+  "loadouts": {
+   "Grand Warden": [
+    "Life Gem",
+    "Rage Gem",
+    "Unicorn"
+   ],
+   "Archer Queen": [
+    "Action Figure",
+    "Magic Mirror",
+    "Frosty"
+   ],
+   "Barbarian King": [
+    "Snake Bracelet",
+    "Spiky Ball",
+    "Spirit Fox"
+   ],
+   "Dragon Duke": [
+    "Fire Heart",
+    "Revenge Deck",
+    "Phoenix"
+   ]
+  }
+ },
+ "base_reading": [
+  {
+   "rule": "Build two flanks that keep the Throwers together inside the core, within range of surrounding defenses.",
+   "support": 18,
+   "cite": [
+    {
+     "video": "BMlNYGg37J8",
+     "t": 115.6,
+     "quote": "a funnel on both sides so that the"
+    },
+    {
+     "video": "XibexH-PFis",
+     "t": 74.2,
+     "quote": "you want to maintain them in the core"
+    },
+    {
+     "video": "dHij_8HI47w",
+     "t": 406.4,
+     "quote": "throwers stay together."
+    }
+   ]
+  },
+  {
+   "rule": "Keep Dragon Duke away from the Monolith; normally give the Monolith route to the Throwers. Check single-target Inferno Towers before choosing his flank.",
+   "support": 12,
+   "cite": [
+    {
+     "video": "BMlNYGg37J8",
+     "t": 181.7,
+     "quote": "send the Yuke too close to the monolith, he can get taken down really quickly."
+    },
+    {
+     "video": "OWBSVJa-H_E",
+     "t": 74.8,
+     "quote": "has the monolith cuz the monolith is the"
+    },
+    {
+     "video": "T9LOFmCucwo",
+     "t": 347.5,
+     "quote": "he's going to get completely destroyed by the single inferno."
+    }
+   ]
+  },
+  {
+   "rule": "Prefer a Dragon Duke approach from behind the Air Sweepers so knockback does not spoil the funnel or Ice Block value.",
+   "support": 7,
+   "cite": [
+    {
+     "video": "5InNp3cBzCA",
+     "t": 93.5,
+     "quote": "I generally want to avoid sending the dragon duke directly into a sweeper,"
+    },
+    {
+     "video": "XibexH-PFis",
+     "t": 1828.2,
+     "quote": "So, to go behind this sweeper so it"
+    }
+   ]
+  },
+  {
+   "rule": "Check Firespitter firing directions; prefer an entry behind their coverage that protects Throwers and Healers.",
+   "support": 8,
+   "cite": [
+    {
+     "video": "XTTBlGH4zXE",
+     "t": 285.1,
+     "quote": "in which fire spitters are facing and start your attack from behind them."
+    },
+    {
+     "video": "dHij_8HI47w",
+     "t": 162.3,
+     "quote": "And with this entry, we can enter behind them."
+    }
+   ]
+  },
+  {
+   "rule": "When a safe Dragon Duke approach can reach the enemy Guardian, remove it early rather than leaving it for the main ground army.",
+   "support": 5,
+   "cite": [
+    {
+     "video": "NrogBoJyRVI",
+     "t": 42.5,
+     "quote": "take out the enemy guardian, usually the"
+    },
+    {
+     "video": "FfvfHeRMDZs",
+     "t": 332.7,
+     "quote": "dragon duke as long as there's not too many defenses or heroes around, they"
+    }
+   ]
+  },
+  {
+   "rule": "Choose the Town Hall side only when it gives reliable access and manageable damage. A lightly defended Town Hall can be assigned to Dragon Duke; a Monolith or concentrated defending heroes can make that charge unsuitable.",
+   "support": 6,
+   "cite": [
+    {
+     "video": "C0mxv9JyBAk",
+     "t": 170.9,
+     "quote": "Don't really send him directly against the town hall unless it's not very well defended."
+    },
+    {
+     "video": "aRUj8A45u4A",
+     "t": 597.6,
+     "quote": "the throwers then in there. Let's start"
+    },
+    {
+     "video": "ufdEws4wP9c",
+     "t": 729.8,
+     "quote": "monolith near the town hall. So, we can't send the the duke in there."
+    }
+   ]
+  },
+  {
+   "rule": "Choose Log Launcher for a long route through many walls toward the Town Hall; choose Troop Launcher for an open base, few wall layers, or an entry already near the Town Hall.",
+   "support": 13,
+   "cite": [
+    {
+     "video": "BMlNYGg37J8",
+     "t": 317.4,
+     "quote": "normally use the log launcher,"
+    },
+    {
+     "video": "BMlNYGg37J8",
+     "t": 342.2,
+     "quote": "the troop launcher is a great option."
+    },
+    {
+     "video": "XTTBlGH4zXE",
+     "t": 356.4,
+     "quote": "open walls, then prefer using troop launcher instead of log launcher."
+    }
+   ]
+  },
+  {
+   "rule": "Inspect likely Spring Trap entries and avoid predictable or baited routes. Scout or provide tanks ahead of the Throwers when the source plan specifies them.",
+   "support": 7,
+   "cite": [
+    {
+     "video": "5InNp3cBzCA",
+     "t": 641.6,
+     "quote": "There could be a lot of spring traps and giant bombs in this section."
+    },
+    {
+     "video": "OWBSVJa-H_E",
+     "t": 852,
+     "quote": "approaches to avoid the spring traps."
+    },
+    {
+     "video": "wFK5O0nLJEw",
+     "t": 334.5,
+     "quote": "to trigger spring traps along the way."
+    }
+   ]
+  },
+  {
+   "rule": "Delay Troop Launcher until its wall opening or support is useful; do not deploy it early when the army already has access.",
+   "support": 7,
+   "cite": [
+    {
+     "video": "OWBSVJa-H_E",
+     "t": 62.5,
+     "quote": "Only put the troop launcher down once"
+    },
+    {
+     "video": "XibexH-PFis",
+     "t": 284.6,
+     "quote": "didn't need to break any walls early."
+    },
+    {
+     "video": "aRUj8A45u4A",
+     "t": 741.2,
+     "quote": "missing hit points. So when my throwers"
+    }
+   ]
+  },
+  {
+   "rule": "Use Overgrowth to suppress a dangerous compartment or redirect a split, while retaining targets that keep the army moving toward the core or Town Hall.",
+   "support": 11,
+   "cite": [
+    {
+     "video": "ufdEws4wP9c",
+     "t": 225.8,
+     "quote": "overgrowth everything. You cannot remove your pathing."
+    },
+    {
+     "video": "XTTBlGH4zXE",
+     "t": 67.8,
+     "quote": "make our all troops stick together and move towards the town hall"
+    },
+    {
+     "video": "C0mxv9JyBAk",
+     "t": 219.5,
+     "quote": "troops are going to ignore that area now and go after the town hall."
+    }
+   ]
+  },
+  {
+   "rule": "Do not spend Totems on the Logger before attacking troops can engage it.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "XibexH-PFis",
+     "t": 1452.2,
+     "quote": "but nothing's even close to"
+    }
+   ]
+  },
+  {
+   "rule": "Reserve Revive primarily for Dragon Duke and use it when the surrounding damage permits useful survival. Alternative hero priorities differ across sources.",
+   "support": 20,
+   "cite": [
+    {
+     "video": "aLOitRlGp8g",
+     "t": 251.8,
+     "quote": "keep reviving your heroes when it's safe to do so."
+    },
+    {
+     "video": "NrogBoJyRVI",
+     "t": 266.2,
+     "quote": "the dragon duke or the king"
+    },
+    {
+     "video": "XTTBlGH4zXE",
+     "t": 427.9,
+     "quote": "If you have many throwers alive, then choose Grand Warden."
+    },
+    {
+     "video": "XTTBlGH4zXE",
+     "t": 418.2,
+     "quote": "Never use your revival spell on your king or archer queen."
+    }
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "duke_setup",
+   "action": "deploy",
+   "what": "Super Barbarian",
+   "count": 2,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "t": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "T9LOFmCucwo",
+     "t": 162,
+     "quote": "using a couple of super barbarians just"
+    },
+    {
+     "video": "BMlNYGg37J8",
+     "t": 251.3,
+     "quote": "a couple of super barbarians that we can"
+    }
+   ]
+  },
+  {
+   "id": "duke",
+   "action": "deploy",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "duke",
+   "when": {
+    "after": "duke_setup",
+    "delay": 0
+   },
+   "support": 17,
+   "cite": [
+    {
+     "video": "C0mxv9JyBAk",
+     "t": 51.1,
+     "quote": "going to send in the Dragon Duke first"
+    },
+    {
+     "video": "T9LOFmCucwo",
+     "t": 164.4,
+     "quote": "to funnel the dragon into the rage compartment."
+    }
+   ]
+  },
+  {
+   "id": "duke_ice",
+   "action": "spell",
+   "what": "Ice Block Spell",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "duke",
+   "when": {
+    "heavy_fire": "Dragon Duke"
+   },
+   "support": 17,
+   "cite": [
+    {
+     "video": "3KPlpZZeWsg",
+     "t": 137.6,
+     "quote": "Dragon Duke whenever he catches heavy heat."
+    },
+    {
+     "video": "15TbHFSYt84",
+     "t": 320.1,
+     "quote": "inferno's lock on, yeah, it's better"
+    },
+    {
+     "video": "hiT9weAx9pQ",
+     "t": 707.1,
+     "quote": "we don't need to ice block the duke down there. He is also fine."
+    }
+   ]
+  },
+  {
+   "id": "throwers",
+   "action": "deploy",
+   "what": "Thrower",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "duke",
+    "delay": 0
+   },
+   "support": 26,
+   "cite": [
+    {
+     "video": "5InNp3cBzCA",
+     "t": 188.9,
+     "quote": "and then immediately deploy the throwers."
+    },
+    {
+     "video": "BMlNYGg37J8",
+     "t": 282.8,
+     "quote": "throwers, the healers, the warden, and"
+    },
+    {
+     "video": "T9LOFmCucwo",
+     "t": 186.6,
+     "quote": "directly start the throwers."
+    }
+   ]
+  },
+  {
+   "id": "balloon",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "throwers",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "3KPlpZZeWsg",
+     "t": 113,
+     "quote": "Make sure to use one test balloon to"
+    },
+    {
+     "video": "AZTUaqyRtew",
+     "t": 238.1,
+     "quote": "having balloons for scouting air traps"
+    }
+   ]
+  },
+  {
+   "id": "healers",
+   "action": "deploy",
+   "what": "Healer",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "balloon",
+    "delay": 0
+   },
+   "support": 13,
+   "cite": [
+    {
+     "video": "NrogBoJyRVI",
+     "t": 171.5,
+     "quote": "healers, and the grand warden"
+    },
+    {
+     "video": "3KPlpZZeWsg",
+     "t": 253.7,
+     "quote": "Mines, followed by the Healers and the Grand"
+    },
+    {
+     "video": "15TbHFSYt84",
+     "t": 776.5,
+     "quote": "like 30 seconds in towards the attack."
+    }
+   ]
+  },
+  {
+   "id": "warden",
+   "action": "deploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "healers",
+    "delay": 0
+   },
+   "support": 12,
+   "cite": [
+    {
+     "video": "3KPlpZZeWsg",
+     "t": 117,
+     "quote": "After that, deploy your Grand Warden behind the"
+    },
+    {
+     "video": "NrogBoJyRVI",
+     "t": 171.5,
+     "quote": "healers, and the grand warden"
+    }
+   ]
+  },
+  {
+   "id": "entry_wall",
+   "action": "deploy",
+   "what": "Super Wall Breaker",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 11,
+   "cite": [
+    {
+     "video": "NrogBoJyRVI",
+     "t": 177.2,
+     "quote": "super wall breaker."
+    },
+    {
+     "video": "Xk6Q2cZqvHM",
+     "t": 728,
+     "quote": "Then a super wall breaker to give me entry."
+    }
+   ]
+  },
+  {
+   "id": "witch",
+   "action": "deploy",
+   "what": "Ruin Witch",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 9,
+   "cite": [
+    {
+     "video": "BMlNYGg37J8",
+     "t": 285.3,
+     "quote": "we use a witch at the back."
+    },
+    {
+     "video": "NrogBoJyRVI",
+     "t": 276.4,
+     "quote": "a couple of rune witches to put behind"
+    },
+    {
+     "video": "aRUj8A45u4A",
+     "t": 2322.8,
+     "quote": "rune witch earlier. I don't know. Like,"
+    }
+   ]
+  },
+  {
+   "id": "funnel_ice",
+   "action": "deploy",
+   "what": "Ice Golem",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "group_inside": "main"
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "3KPlpZZeWsg",
+     "t": 125.6,
+     "quote": "Use one Ice Golem to support them."
+    },
+    {
+     "video": "hiT9weAx9pQ",
+     "t": 628.4,
+     "quote": "let the ice golem to lead."
+    },
+    {
+     "video": "wFK5O0nLJEw",
+     "t": 592.3,
+     "quote": "Ice Golem and Queen funneling here."
+    }
+   ]
+  },
+  {
+   "id": "king",
+   "action": "deploy",
+   "what": "Barbarian King",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "funnel_ice",
+    "delay": 0
+   },
+   "support": 13,
+   "cite": [
+    {
+     "video": "BMlNYGg37J8",
+     "t": 298.3,
+     "quote": "As for the king and the queen, we use"
+    },
+    {
+     "video": "dHij_8HI47w",
+     "t": 217.8,
+     "quote": "king needs to go in front of the queen"
+    }
+   ]
+  },
+  {
+   "id": "queen",
+   "action": "deploy",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "king",
+    "delay": 0
+   },
+   "support": 13,
+   "cite": [
+    {
+     "video": "T9LOFmCucwo",
+     "t": 198.3,
+     "quote": "now I use the king and queen on the other side"
+    },
+    {
+     "video": "3KPlpZZeWsg",
+     "t": 120.2,
+     "quote": "Then, deploy your King and Queen on the"
+    }
+   ]
+  },
+  {
+   "id": "siege",
+   "action": "deploy",
+   "what": "Log Launcher",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "group_inside": "main"
+   },
+   "support": 14,
+   "cite": [
+    {
+     "video": "5InNp3cBzCA",
+     "t": 323.8,
+     "quote": "Then the log launcher comes in behind them."
+    },
+    {
+     "video": "BMlNYGg37J8",
+     "t": 331.3,
+     "quote": "So, definitely we will use a log"
+    }
+   ]
+  },
+  {
+   "id": "poison",
+   "action": "spell",
+   "what": "Poison Spell",
+   "count": 1,
+   "at": "defenders:main",
+   "group": "main",
+   "when": {
+    "defenders_near": "main"
+   },
+   "support": 10,
+   "cite": [
+    {
+     "video": "dHij_8HI47w",
+     "t": 621.1,
+     "quote": "clan castle is lured, just go ahead and um and uh poison it."
+    },
+    {
+     "video": "Xk6Q2cZqvHM",
+     "t": 867.5,
+     "quote": "Poison spell on the witches, clear that out."
+    },
+    {
+     "video": "zSh-YQVhKT8",
+     "t": 440.2,
+     "quote": "I'm going to go poison like this just cuz those witches could be very bad."
+    }
+   ]
+  },
+  {
+   "id": "monolith_skeleton",
+   "action": "spell",
+   "what": "Skeleton Spell",
+   "count": 1,
+   "at": "building:mono",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "group_inside": "main"
+     },
+     {
+      "heavy_fire": "Thrower"
+     }
+    ]
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "T9LOFmCucwo",
+     "t": 469.1,
+     "quote": "have a skeleton spell I use on it."
+    },
+    {
+     "video": "dHij_8HI47w",
+     "t": 593.9,
+     "quote": "skelly spell on that area."
+    }
+   ]
+  },
+  {
+   "id": "overgrowth",
+   "action": "spell",
+   "what": "Overgrowth Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "group_inside": "main"
+     },
+     {
+      "heavy_fire": "Thrower"
+     }
+    ]
+   },
+   "support": 16,
+   "cite": [
+    {
+     "video": "5InNp3cBzCA",
+     "t": 354.6,
+     "quote": "temporarily remove some of the damage"
+    },
+    {
+     "video": "C0mxv9JyBAk",
+     "t": 108.8,
+     "quote": "using the overgrowth spell to shut down nasty compartments"
+    },
+    {
+     "video": "uzgXTc3seHY",
+     "t": 126.2,
+     "quote": "temporarily stall the defenses that deal extra damage to our army."
+    }
+   ]
+  },
+  {
+   "id": "totem_defense",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "siege",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Thrower"
+     }
+    ]
+   },
+   "support": 15,
+   "cite": [
+    {
+     "video": "AZTUaqyRtew",
+     "t": 265.6,
+     "quote": "spells are used mostly to divert damage away from your troops and heroes"
+    },
+    {
+     "video": "XTTBlGH4zXE",
+     "t": 183.8,
+     "quote": "Use totem spell near defenses [music] to keep your troops safe,"
+    },
+    {
+     "video": "gVNS9seD83w",
+     "t": 423.4,
+     "quote": "I'm going to go totem out here to distract."
+    }
+   ]
+  },
+  {
+   "id": "totem_defenders",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "defenders:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "totem_defense",
+      "delay": 0
+     },
+     {
+      "defenders_near": "main"
+     }
+    ]
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "5InNp3cBzCA",
+     "t": 576.4,
+     "quote": "I always try to save a few totem spells"
+    },
+    {
+     "video": "T9LOFmCucwo",
+     "t": 268.7,
+     "quote": "then we use a DOTM on the heroes and on the logger"
+    },
+    {
+     "video": "eeDapoJl4d8",
+     "t": 117.4,
+     "quote": "Let me just totem the enemy queen actually real quick."
+    }
+   ]
+  },
+  {
+   "id": "freeze",
+   "action": "spell",
+   "what": "Freeze Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "group_inside": "main"
+     },
+     {
+      "heavy_fire": "Thrower"
+     }
+    ]
+   },
+   "support": 8,
+   "cite": [
+    {
+     "video": "dHij_8HI47w",
+     "t": 512.2,
+     "quote": "freezing this inferno tower and super wizard tower because they are raged up"
+    },
+    {
+     "video": "gVNS9seD83w",
+     "t": 442.9,
+     "quote": "freeze too just because how much dang damage is there."
+    },
+    {
+     "video": "aRUj8A45u4A",
+     "t": 692.7,
+     "quote": "have to freeze that core. Please take it"
+    }
+   ]
+  }
+ ],
+ "variants": [
+  {
+   "name": "Troop Launcher for an open or short Town Hall route",
+   "replaces": [
+    "siege"
+   ],
+   "steps": [
+    {
+     "id": "siege",
+     "action": "deploy",
+     "what": "Troop Launcher",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "group_inside": "main"
+     },
+     "support": 4,
+     "cite": [
+      {
+       "video": "BMlNYGg37J8",
+       "t": 342.2,
+       "quote": "the troop launcher is a great option."
+      },
+      {
+       "video": "T9LOFmCucwo",
+       "t": 484.6,
+       "quote": "troop launcher because there aren't many walls that need to be opened."
+      },
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 356.4,
+       "quote": "open walls, then prefer using troop launcher instead of log launcher."
+      },
+      {
+       "video": "XibexH-PFis",
+       "t": 284.6,
+       "quote": "didn't need to break any walls early."
+      }
+     ]
+    }
+   ],
+   "support": 4,
+   "cite": [
+    {
+     "video": "BMlNYGg37J8",
+     "t": 342.2,
+     "quote": "the troop launcher is a great option."
+    },
+    {
+     "video": "T9LOFmCucwo",
+     "t": 484.6,
+     "quote": "troop launcher because there aren't many walls that need to be opened."
+    },
+    {
+     "video": "XTTBlGH4zXE",
+     "t": 356.4,
+     "quote": "open walls, then prefer using troop launcher instead of log launcher."
+    },
+    {
+     "video": "XibexH-PFis",
+     "t": 284.6,
+     "quote": "didn't need to break any walls early."
+    }
+   ]
+  },
+  {
+   "name": "Queen counterfunnel with King saved for the back end",
+   "replaces": [
+    "king",
+    "queen"
+   ],
+   "steps": [
+    {
+     "id": "queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "funnel_ice",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "15TbHFSYt84",
+       "t": 302.7,
+       "quote": "My queen is a great funnel setter for"
+      },
+      {
+       "video": "XibexH-PFis",
+       "t": 168.3,
+       "quote": "side? Well, that's where your queen"
+      }
+     ]
+    },
+    {
+     "id": "queen_funnel_ability",
+     "action": "ability",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "funnel",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "15TbHFSYt84",
+       "t": 1174.7,
+       "quote": "Queen ability popped it right away cuz I"
+      },
+      {
+       "video": "XibexH-PFis",
+       "t": 268.9,
+       "quote": "ability to give herself some extra"
+      }
+     ]
+    },
+    {
+     "id": "king",
+     "action": "deploy",
+     "what": "Barbarian King",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "overgrowth",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "15TbHFSYt84",
+       "t": 507.4,
+       "quote": "like I said, to clear that outside"
+      },
+      {
+       "video": "XibexH-PFis",
+       "t": 337.7,
+       "quote": "this fire spitter. So I sent my king in"
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "15TbHFSYt84",
+     "t": 507.4,
+     "quote": "like I said, to clear that outside"
+    },
+    {
+     "video": "XibexH-PFis",
+     "t": 197.8,
+     "quote": "themselves, you could send your king in"
+    }
+   ]
+  },
+  {
+   "name": "Two Earthquakes and six Lightnings before the Duke funnel",
+   "replaces": [
+    "duke_setup",
+    "duke"
+   ],
+   "steps": [
+    {
+     "id": "duke_setup",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "t": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 29.5,
+       "quote": "base for two earthquake, six lightnings."
+      },
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 33,
+       "quote": "Ricochet Cannon and Monolith on the"
+      }
+     ]
+    },
+    {
+     "id": "zap_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "after": "duke_setup",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 29.5,
+       "quote": "base for two earthquake, six lightnings."
+      }
+     ]
+    },
+    {
+     "id": "zap_3",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "after": "zap_2",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 29.5,
+       "quote": "base for two earthquake, six lightnings."
+      }
+     ]
+    },
+    {
+     "id": "zap_4",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "after": "zap_3",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 29.5,
+       "quote": "base for two earthquake, six lightnings."
+      }
+     ]
+    },
+    {
+     "id": "zap_5",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "after": "zap_4",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 29.5,
+       "quote": "base for two earthquake, six lightnings."
+      }
+     ]
+    },
+    {
+     "id": "zap_6",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "after": "zap_5",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 29.5,
+       "quote": "base for two earthquake, six lightnings."
+      }
+     ]
+    },
+    {
+     "id": "zap_7",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "after": "zap_6",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 29.5,
+       "quote": "base for two earthquake, six lightnings."
+      }
+     ]
+    },
+    {
+     "id": "zap_8",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "after": "zap_7",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 29.5,
+       "quote": "base for two earthquake, six lightnings."
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "duke",
+     "when": {
+      "after": "zap_8",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 40.3,
+       "quote": "send in the Dragon Duke."
+      },
+      {
+       "video": "FfvfHeRMDZs",
+       "t": 56.4,
+       "quote": "Duke on one corner of the base."
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "0h7c4WKuPB8",
+     "t": 29.5,
+     "quote": "base for two earthquake, six lightnings."
+    },
+    {
+     "video": "FfvfHeRMDZs",
+     "t": 22.1,
+     "quote": "two earthquake, six lightnings, will"
+    }
+   ]
+  },
+  {
+   "name": "Earthquakes with Giant Arrow and Rocket Backpack",
+   "replaces": [
+    "duke_setup",
+    "duke",
+    "duke_ice",
+    "queen",
+    "throwers"
+   ],
+   "steps": [
+    {
+     "id": "duke_setup",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Xk6Q2cZqvHM",
+       "t": 124.4,
+       "quote": "You want to drop your earthquakes first."
+      }
+     ]
+    },
+    {
+     "id": "arrow_quake_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "charge",
+     "when": {
+      "after": "duke_setup",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Xk6Q2cZqvHM",
+       "t": 124.4,
+       "quote": "You want to drop your earthquakes first."
+      }
+     ]
+    },
+    {
+     "id": "arrow_quake_3",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "charge",
+     "when": {
+      "after": "arrow_quake_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Xk6Q2cZqvHM",
+       "t": 124.4,
+       "quote": "You want to drop your earthquakes first."
+      }
+     ]
+    },
+    {
+     "id": "queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "charge",
+     "when": {
+      "after": "arrow_quake_3",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Xk6Q2cZqvHM",
+       "t": 381.1,
+       "quote": "And then here comes the queen just so"
+      }
+     ]
+    },
+    {
+     "id": "giant_arrow",
+     "action": "ability",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "charge",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "AZTUaqyRtew",
+       "t": 137.8,
+       "quote": "before using the giant arrow"
+      },
+      {
+       "video": "Xk6Q2cZqvHM",
+       "t": 383.7,
+       "quote": "There goes the queen shot."
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "duke",
+     "when": {
+      "after": "giant_arrow",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "AZTUaqyRtew",
+       "t": 147.2,
+       "quote": "so you can place the Dragon Duke on the opposite side"
+      }
+     ]
+    },
+    {
+     "id": "rocket_backpack",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "AZTUaqyRtew",
+       "t": 149.6,
+       "quote": "use his rocket backpack to snipe defenses and buildings easily."
+      },
+      {
+       "video": "Xk6Q2cZqvHM",
+       "t": 376.9,
+       "quote": "Going to get the dragon duke to fire."
+      }
+     ]
+    },
+    {
+     "id": "throwers",
+     "action": "deploy",
+     "what": "Thrower",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "rocket_backpack",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "AZTUaqyRtew",
+       "t": 232.3,
+       "quote": "you can easily use them to clear buildings on the outside before moving"
+      },
+      {
+       "video": "Xk6Q2cZqvHM",
+       "t": 719.2,
+       "quote": "throwers in, warden in,"
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "AZTUaqyRtew",
+     "t": 96.1,
+     "quote": "buildings or defenses such as the clan castle, monolith, or revenge tower."
+    },
+    {
+     "video": "Xk6Q2cZqvHM",
+     "t": 556.6,
+     "quote": "The CC and cake usually take priority for me."
+    }
+   ]
+  },
+  {
+   "name": "Rocket Backpack with a two-Earthquake three-Lightning finish",
+   "replaces": [
+    "duke_setup",
+    "duke",
+    "throwers"
+   ],
+   "steps": [
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "duke",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "aLOitRlGp8g",
+       "t": 63.7,
+       "quote": "dragon duke's going to normally go left to right through the center of the base"
+      }
+     ]
+    },
+    {
+     "id": "mini_rocket",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "aLOitRlGp8g",
+       "t": 145.2,
+       "quote": "sending the rocket backpack"
+      },
+      {
+       "video": "OWBSVJa-H_E",
+       "t": 23.9,
+       "quote": "backpack straight down the middle of the"
+      }
+     ]
+    },
+    {
+     "id": "mini_spell_1",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "charge",
+     "when": {
+      "after": "mini_rocket",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "aLOitRlGp8g",
+       "t": 69.2,
+       "quote": "Two earthquakes and three lightnings will take out that"
+      }
+     ]
+    },
+    {
+     "id": "mini_spell_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "charge",
+     "when": {
+      "after": "mini_spell_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "aLOitRlGp8g",
+       "t": 69.2,
+       "quote": "Two earthquakes and three lightnings will take out that"
+      }
+     ]
+    },
+    {
+     "id": "mini_spell_3",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "charge",
+     "when": {
+      "after": "mini_spell_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "aLOitRlGp8g",
+       "t": 69.2,
+       "quote": "Two earthquakes and three lightnings will take out that"
+      }
+     ]
+    },
+    {
+     "id": "mini_spell_4",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "charge",
+     "when": {
+      "after": "mini_spell_3",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "aLOitRlGp8g",
+       "t": 69.2,
+       "quote": "Two earthquakes and three lightnings will take out that"
+      }
+     ]
+    },
+    {
+     "id": "mini_spell_5",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "charge",
+     "when": {
+      "after": "mini_spell_4",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "aLOitRlGp8g",
+       "t": 69.2,
+       "quote": "Two earthquakes and three lightnings will take out that"
+      }
+     ]
+    },
+    {
+     "id": "throwers",
+     "action": "deploy",
+     "what": "Thrower",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "mini_spell_5",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "aLOitRlGp8g",
+       "t": 106.6,
+       "quote": "send in the main army."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "aLOitRlGp8g",
+     "t": 69.2,
+     "quote": "Two earthquakes and three lightnings will take out that"
+    }
+   ]
+  },
+  {
+   "name": "Warden walk before the Thrower push",
+   "replaces": [
+    "duke_setup",
+    "duke",
+    "duke_ice",
+    "throwers",
+    "balloon",
+    "healers",
+    "warden",
+    "witch",
+    "entry_wall"
+   ],
+   "steps": [
+    {
+     "id": "warden",
+     "action": "deploy",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "walk",
+     "when": {
+      "t": 0
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 94.7,
+       "quote": "deploy our grand warden in a [music] safe corner"
+      },
+      {
+       "video": "XibexH-PFis",
+       "t": 1608.1,
+       "quote": "start at this bottom side."
+      },
+      {
+       "video": "uzgXTc3seHY",
+       "t": 213.4,
+       "quote": "First, we'll use the Grand Warden to clear this corner."
+      }
+     ]
+    },
+    {
+     "id": "walk_furnaces",
+     "action": "deploy",
+     "what": "Furnace",
+     "count": 2,
+     "at": "edge:charge",
+     "group": "walk",
+     "when": {
+      "after": "warden",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 98.6,
+       "quote": "furnace, healers and a coco loon to keep"
+      }
+     ]
+    },
+    {
+     "id": "balloon",
+     "action": "deploy",
+     "what": "Balloon",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "walk",
+     "when": {
+      "after": "walk_furnaces",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 98.6,
+       "quote": "a coco loon to keep our healers safe from black mines."
+      }
+     ]
+    },
+    {
+     "id": "healers",
+     "action": "deploy",
+     "what": "Healer",
+     "count": "all",
+     "at": "edge:charge",
+     "group": "walk",
+     "when": {
+      "after": "balloon",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 98.6,
+       "quote": "furnace, healers and a coco loon to keep"
+      }
+     ]
+    },
+    {
+     "id": "throwers",
+     "action": "deploy",
+     "what": "Thrower",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "group_inside": "walk"
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 164.8,
+       "quote": "all your throwers, heroes, and [music]"
+      },
+      {
+       "video": "XibexH-PFis",
+       "t": 1608.1,
+       "quote": "start at this bottom side."
+      },
+      {
+       "video": "uzgXTc3seHY",
+       "t": 91.4,
+       "quote": "Let's send the throwers in without letting the warden go too deep inside."
+      }
+     ]
+    },
+    {
+     "id": "entry_wall",
+     "action": "deploy",
+     "what": "Super Wall Breaker",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "throwers",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 325.1,
+       "quote": "Also, use super wall breaker [music] to open the front walls."
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "duke",
+     "when": {
+      "after": "throwers",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 176,
+       "quote": "Release your duke to carve the [music] corner defenses,"
+      },
+      {
+       "video": "uzgXTc3seHY",
+       "t": 111.4,
+       "quote": "Let's release the dragon duke from the top"
+      }
+     ]
+    }
+   ],
+   "support": 3,
+   "cite": [
+    {
+     "video": "XTTBlGH4zXE",
+     "t": 94.7,
+     "quote": "deploy our grand warden in a [music] safe corner"
+    },
+    {
+     "video": "XibexH-PFis",
+     "t": 1608.1,
+     "quote": "start at this bottom side."
+    },
+    {
+     "video": "uzgXTc3seHY",
+     "t": 213.4,
+     "quote": "First, we'll use the Grand Warden to clear this corner."
+    }
+   ]
+  },
+  {
+   "name": "Firemite Clone opening; only the first Clone cast is specified",
+   "replaces": [
+    "duke_setup",
+    "duke",
+    "duke_ice",
+    "throwers",
+    "balloon",
+    "healers",
+    "warden",
+    "witch",
+    "entry_wall"
+   ],
+   "steps": [
+    {
+     "id": "warden",
+     "action": "deploy",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "walk",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "HJfCl7Ycf6E",
+       "t": 107.4,
+       "quote": "a warden walk with four to five furnaces"
+      }
+     ]
+    },
+    {
+     "id": "clone_furnaces",
+     "action": "deploy",
+     "what": "Furnace",
+     "count": 5,
+     "at": "edge:charge",
+     "group": "walk",
+     "when": {
+      "after": "warden",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "HJfCl7Ycf6E",
+       "t": 314,
+       "quote": "we have all five of our furnaces,"
+      }
+     ]
+    },
+    {
+     "id": "first_clone",
+     "action": "spell",
+     "what": "Clone Spell",
+     "count": 1,
+     "at": "unit:Firemite",
+     "group": "walk",
+     "when": {
+      "inside": "Firemite"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "HJfCl7Ycf6E",
+       "t": 139,
+       "quote": "drop your clone spells, making sure to overlap each spell"
+      }
+     ]
+    },
+    {
+     "id": "throwers",
+     "action": "deploy",
+     "what": "Thrower",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "first_clone",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "HJfCl7Ycf6E",
+       "t": 163.6,
+       "quote": "lure over the warden with the throwers,"
+      }
+     ]
+    },
+    {
+     "id": "entry_wall",
+     "action": "deploy",
+     "what": "Super Wall Breaker",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "throwers",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "HJfCl7Ycf6E",
+       "t": 197.9,
+       "quote": "break into the base with super wall breakers"
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "duke",
+     "when": {
+      "group_inside": "main"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "HJfCl7Ycf6E",
+       "t": 259.8,
+       "quote": "while the Dragon Duke out [music] the back-end buildings"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "HJfCl7Ycf6E",
+     "t": 117.4,
+     "quote": "remove the defensive CC along with other defenses,"
+    }
+   ]
+  },
+  {
+   "name": "Spirit Fox and Invisibility Duke charge with an early Warden ability",
+   "replaces": [
+    "duke_setup",
+    "duke",
+    "duke_ice",
+    "throwers"
+   ],
+   "steps": [
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "duke",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "gVNS9seD83w",
+       "t": 214,
+       "quote": "I'm going to start at this corner."
+      }
+     ]
+    },
+    {
+     "id": "spirit_invis",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "unit:Spirit Fox",
+     "group": "duke",
+     "when": {
+      "inside": "Dragon Duke"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "gVNS9seD83w",
+       "t": 86.9,
+       "quote": "on the spirit box. You don't even have"
+      }
+     ]
+    },
+    {
+     "id": "throwers",
+     "action": "deploy",
+     "what": "Thrower",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "spirit_invis",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "gVNS9seD83w",
+       "t": 260,
+       "quote": "throwers from this corner."
+      }
+     ]
+    },
+    {
+     "id": "early_warden_ability",
+     "action": "ability",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "main",
+     "when": {
+      "after": "warden",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "gVNS9seD83w",
+       "t": 278,
+       "quote": "Pop the warden ability early."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "gVNS9seD83w",
+     "t": 86.9,
+     "quote": "on the spirit box. You don't even have"
+    }
+   ]
+  },
+  {
+   "name": "Yeti frontline for the Town Hall and defending heroes",
+   "replaces": [
+    "duke_setup",
+    "duke",
+    "throwers",
+    "funnel_ice",
+    "entry_wall",
+    "king"
+   ],
+   "steps": [
+    {
+     "id": "entry_wall",
+     "action": "deploy",
+     "what": "Super Wall Breaker",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "zSh-YQVhKT8",
+       "t": 123,
+       "quote": "We can super wall break here early."
+      }
+     ]
+    },
+    {
+     "id": "funnel_ice",
+     "action": "deploy",
+     "what": "Ice Golem",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "entry_wall",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "zSh-YQVhKT8",
+       "t": 125.3,
+       "quote": "one ice golem tanks for everything."
+      }
+     ]
+    },
+    {
+     "id": "throwers",
+     "action": "deploy",
+     "what": "Thrower",
+     "count": 8,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "funnel_ice",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "zSh-YQVhKT8",
+       "t": 127.6,
+       "quote": "Then you can get your throwers."
+      }
+     ]
+    },
+    {
+     "id": "yetis",
+     "action": "deploy",
+     "what": "Yeti",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "throwers",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "zSh-YQVhKT8",
+       "t": 129,
+       "quote": "Spam your yetis in as well"
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "duke",
+     "when": {
+      "after": "yetis",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "zSh-YQVhKT8",
+       "t": 166.5,
+       "quote": "duking towards this compartment or the other one."
+      }
+     ]
+    },
+    {
+     "id": "hero_wall",
+     "action": "deploy",
+     "what": "Super Wall Breaker",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "zSh-YQVhKT8",
+       "t": 176.6,
+       "quote": "Super wall breaker here. Get my king and queen access."
+      }
+     ]
+    },
+    {
+     "id": "king",
+     "action": "deploy",
+     "what": "Barbarian King",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "hero_wall",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "zSh-YQVhKT8",
+       "t": 181.5,
+       "quote": "hopefully king and queen, which I'll put in yellow here, can clear this area."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "zSh-YQVhKT8",
+     "t": 129,
+     "quote": "Spam your yetis in as well"
+    }
+   ]
+  },
+  {
+   "name": "Skeleton distractions instead of the Totem package",
+   "replaces": [
+    "totem_defense",
+    "totem_defenders"
+   ],
+   "steps": [
+    {
+     "id": "front_skeleton",
+     "action": "spell",
+     "what": "Skeleton Spell",
+     "count": 1,
+     "at": "unit_ahead:Thrower",
+     "group": "main",
+     "when": {
+      "after": "siege",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "dxLogWcc0VU",
+       "t": 76.7,
+       "quote": "then start putting those skeleton spells in front of the main army."
+      }
+     ]
+    },
+    {
+     "id": "late_skeleton",
+     "action": "spell",
+     "what": "Skeleton Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "all": [
+       {
+        "after": "front_skeleton",
+        "delay": 0
+       },
+       {
+        "heavy_fire": "Dragon Duke"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "dxLogWcc0VU",
+       "t": 331.7,
+       "quote": "we can put down a skeleton spell there or two."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "dxLogWcc0VU",
+     "t": 182,
+     "quote": "You want to keep a couple for the back end of the base,"
+    }
+   ]
+  },
+  {
+   "name": "Two Thrower-Healer flanks and central heroes; unresolved troop split",
+   "replaces": [],
+   "steps": [],
+   "support": 1,
+   "cite": [
+    {
+     "video": "6UjxhDyQkyI",
+     "t": 44.5,
+     "quote": "On the other side use the rest of the throwers with the five healers"
+    },
+    {
+     "video": "6UjxhDyQkyI",
+     "t": 168.9,
+     "quote": "Half and half, of course."
+    }
+   ]
+  },
+  {
+   "name": "Rocket Backpack with Queen Recall and a second funnel; unresolved opening placement",
+   "replaces": [],
+   "steps": [],
+   "support": 1,
+   "cite": [
+    {
+     "video": "eeDapoJl4d8",
+     "t": 953.1,
+     "quote": "be picking up the queen after she's finished doing her thing."
+    },
+    {
+     "video": "eeDapoJl4d8",
+     "t": 130.8,
+     "quote": "I'm going to go ahead and pick her up"
+    },
+    {
+     "video": "eeDapoJl4d8",
+     "t": 132.2,
+     "quote": "and place her over here."
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "All 29 relevant thrower source playbooks were read. -9bQzRv7slI supplies only a Clan Castle recommendation and no tactical steps; WZbB1yebB9A supplies sparse revival and ability commentary rather than a complete deployment sequence.",
+  "Support counts distinct videos describing an action or tactical role, including a source's explicitly described alternatives; it does not mean every supporting video uses the selected count, equipment, or identical deployment order. Replays within one video count once.",
+  "BMlNYGg37J8 and T9LOFmCucwo share the largest identical complete primary army preset: two videos, not a majority of the 29. This preset supplies the default counts and loadouts. Reserve Log Launcher, Flame Flinger, Siege Barracks, and donated Troop Launcher entries are inventory choices; the executable army keeps one active Log Launcher and does not treat other siege options as troops or Clan Castle payload.",
+  "The default order follows the recurrent Duke-first, Throwers-Healers-Warden, opposite hero funnel, siege pattern. 5InNp3cBzCA explicitly starts Throwers immediately after Duke; BMlNYGg37J8 and T9LOFmCucwo describe allowing his funnel to develop. Other videos start Throwers first, open with a Warden walk, or delay Duke. No numerical funnel duration is established.",
+  "Citation t values are video timestamps, never battle timers. Battle t=0 means the stated opening. Every after/delay=0 is the required fallback for an unquantified sequence; it is not a measured delay or a claim that the source prescribes simultaneous actions.",
+  "group_inside:main approximates 'the Throwers have advanced' before the side heroes and delayed siege. group_inside:walk approximates completion of a Warden walk. inside:Firemite approximates Firemites breaching the base. These predicates do not prove that a compartment has been cleared.",
+  "edge:main represents the narrated deployment behind or alongside the Throwers without inventing tile offsets. edge:charge and edge:funnel are scouted flanks, not fixed compass directions. The chosen entry and Log Launcher angle still need to give the intended route toward the Town Hall.",
+  "threat:main is the closest available anchor for an indicated dangerous compartment. heavy_fire:Thrower approximates substantial incoming damage; it cannot identify a Rage Tower activation, an Overgrowth expiry, or the precise area that would split the army. The default Skeleton cast uses the same coarse danger trigger for the Monolith. These approximations may make several protective spells eligible together.",
+  "One Ice Block is scripted when Duke takes heavy fire. The remaining donated Ice Blocks are held because no numerical repeat interval is stated. No every interval, HP fraction, Town Hall radius, destruction percentage, or cleanup timestamp has been invented. Totem replacement after a previous Totem dies and spell-effect expiry are not expressible by the listed triggers.",
+  "Revive is retained as a cited policy instead of a knowingly nonfunctional step: the current executor's unit anchor resolves only living units, so unit:Dragon Duke with dead:Dragon Duke cannot locate his fallen position. The vocabulary provides no corpse anchor. No unrelated edge or living group is substituted for the fallen hero. The two default Revive Spells therefore remain unscripted.",
+  "Revive priorities are contested: NrogBoJyRVI allows Duke or King, T9LOFmCucwo and dHij_8HI47w revive Queen late, and XTTBlGH4zXE forbids King/Queen revives and chooses Warden when many Throwers remain or Duke when few remain. No numerical definition of many or few is supplied.",
+  "The default rear Ruin Witch uses the selected preset's single remaining witch. BMlNYGg37J8 calls it only 'a witch'; its army identifies Ruin Witch, while other cited sources explicitly name Ruin Witches. The primary script does not invent deployment timing for the remaining Archers, Baby Dragon, Balloons, Super Barbarians, or second Super Wall Breaker.",
+  "The default Grand Warden has Life Gem and Rage Gem, with no invented active-ability timing. Early Warden activation belongs to gVNS9seD83w's Heroic Torch variant. XTTBlGH4zXE's endgame Warden policy is not the TH15 Root Rider ability policy in BMlNYGg37J8, which is outside this thrower plan.",
+  "The Troop Launcher variant requires replacing army.cc.Log Launcher with Troop Launcher, retaining the selected payload; deploy one siege machine. Its support of four counts the cited open/short-route alternatives, not every video that mentions Troop Launcher.",
+  "The late-King variant uses Queen's counterfunnel and immediate ability, then approximates the later King deployment by after:overgrowth with delay 0. 15TbHFSYt84 and XibexH-PFis describe Stick Horse and Angry Jelly for a separate King role; 15TbHFSYt84 also names Giant Gauntlet. Use the corresponding source loadout rather than assuming the default Snake Bracelet pairing has the same role.",
+  "The full Zapquake variant uses the Monolith cluster as one explicitly supported target. 0h7c4WKuPB8 and FfvfHeRMDZs prioritize Cake Catapult/Cake-A-Pult, then Revenge Tower, then Monolith, while requiring useful adjacent defenses rather than automatically spending eight spells on an isolated target. No single selected-cluster anchor exists, so other clusters require a scouted target substitution. The two Earthquakes and six Lightnings are separate count-1 casts because the current spell executor casts once per step. Exact spell order is not stated; Earthquakes followed by Lightnings is a serialization with delay 0, not a measured source timing.",
+  "The Giant Arrow/Rocket Backpack variant requires Queen with Giant Arrow and Duke with Rocket Backpack, and the source's Earthquake-bearing spell preset. Three Earthquakes follow Xk6Q2cZqvHM; AZTUaqyRtew instead states at least two for level-24 Rocket Backpack, at least three for level 21 against buildings with at least 6000 HP, and uses four in its example. The script's Monolith anchor is one allowed priority target, not a reconstruction of all separate target sections or Builder's Huts.",
+  "AZTUaqyRtew fires Giant Arrow before Rocket Backpack; Xk6Q2cZqvHM demonstrates Duke firing first. The Arrow variant follows AZTUaqyRtew's order. The provided vocabulary cannot encode either projectile's drawn alignment or the heroes' landing positions; source advice uses building midpoints/corners and often opposite starting positions. Those aiming decisions remain unresolved by these steps.",
+  "The mini-Zapquake variant follows aLOitRlGp8g's Rocket Backpack, two Earthquakes, and three Lightnings. Its Duke loadout is Rocket Backpack/Revenge Deck/Phoenix and it uses that source's army. OWBSVJa-H_E also narrates Rocket Backpack followed by Lightning finishing, but does not narrate its linked Earthquake casts; it is not counted as support for the complete two-Earthquake/three-Lightning variant.",
+  "The Warden-walk variant needs the two Furnaces stated in XTTBlGH4zXE and draws the Warden toward the main Throwers. Its simplified counterfunnel follows the cited walk alternatives; XTTBlGH4zXE additionally allocates one Thrower, a Wizard and a Baby Dragon to its opposite opening, while XibexH-PFis's illustrated walk omits Ruin Witches. The selected default army lacks Furnaces, so load the corresponding source preset before this variant.",
+  "HJfCl7Ycf6E specifies four to five Furnaces and explicitly uses five. Its Clone variant records only the first cast: Clone totals, spacing, overlapping centers toward the core, and completion of the chain are not numerically specified. after:first_clone/delay=0 is only the permitted sequence fallback for the later Thrower phase, not a complete executable Clone chain. Furnace and Clone inventory, optional Rage, Healer deployment, and Stun Blaster/Fire Heart Duke loadout must come from that source; unknown counts are not filled in.",
+  "The Spirit Walk variant uses gVNS9seD83w's Duke with Fire Heart/Monolith Arrow/Spirit Fox, Warden with Heroic Torch/Rage Gem/Diggy, and its Invisibility-bearing army. That source assigns Frosty to King and Greedy Raven to Queen, avoiding the default King's Spirit Fox assignment. The source says cast at timer readings ending in six and prioritize covering Spirit Fox; the timer origin is not identified. Only the first Invisibility is represented, using inside:Dragon Duke as the closest ongoing-charge trigger. No repeat cadence is invented.",
+  "The Yeti variant follows zSh-YQVhKT8: eight Throwers, two Ice Golems, and Yetis whose total is unstated. Its all count means the Yetis in that source army, not a newly inferred quantity. Load a source-compatible army before selecting it. -9bQzRv7slI adds only Super Yeti 1/Ice Golem 1 with donated Earthquake 2/Rage 1; it does not establish the main Yeti count or support an attack sequence.",
+  "The Skeleton-package variant uses dxLogWcc0VU's eight Skeleton Spells, one Overgrowth and one Poison, with two donated Revives. It replaces Totem actions with an initial front distraction and a later Monolith distraction; the retained Monolith Skeleton step is another available cast. Other Skeletons remain discretionary because no interval is stated. The source explicitly saves a couple for the back end and suggests Eternal Tome instead of Life Gem for a committed Town Hall entry.",
+  "6UjxhDyQkyI uses eleven Throwers, ten Healers and three Super Wall Breakers, with five Healers on each flank and central heroes plus Log Launcher. It says split Throwers half and half without specifying the unequal division of eleven, and does not identify all central heroes. Its variant intentionally has no executable replacement steps; assigning numeric Thrower partitions or hero identities would invent information.",
+  "Other stated Thrower/Healer totals: 11/5 in 3KPlpZZeWsg and XTTBlGH4zXE; 8/5 in AZTUaqyRtew, WZbB1yebB9A and hiT9weAx9pQ; 9/5 in 5InNp3cBzCA, eeDapoJl4d8 and ufdEws4wP9c; 10/5 in NrogBoJyRVI and aRUj8A45u4A; 10/4 in C0mxv9JyBAk; 10/6 in aLOitRlGp8g; 12/5 in FfvfHeRMDZs, OWBSVJa-H_E, dHij_8HI47w, dxLogWcc0VU and gVNS9seD83w. 15TbHFSYt84 states nine Throwers and three Ruin Witches, XibexH-PFis states nine Throwers with incomplete support totals, and zSh-YQVhKT8 states eight Throwers with an unspecified Yeti/Healer total. 0h7c4WKuPB8, HJfCl7Ycf6E, Xk6Q2cZqvHM, uzgXTc3seHY and wFK5O0nLJEw do not establish complete Thrower/Healer counts.",
+  "Other main support compositions differ materially: C0mxv9JyBAk and WZbB1yebB9A have four Ruin Witches; 15TbHFSYt84 has three; FfvfHeRMDZs, NrogBoJyRVI, aLOitRlGp8g, dxLogWcc0VU, eeDapoJl4d8, gVNS9seD83w, hiT9weAx9pQ, ufdEws4wP9c and wFK5O0nLJEw have two; aRUj8A45u4A has one. NrogBoJyRVI adds two Druids; 5InNp3cBzCA, OWBSVJa-H_E, aRUj8A45u4A and hiT9weAx9pQ list one. AZTUaqyRtew and XTTBlGH4zXE list two Furnaces, eeDapoJl4d8 one, and the Firemite Clone opening uses five. 0h7c4WKuPB8's narration adds one or two Electro Titans. These are source alternatives, not additions to the default army.",
+  "Other spell packages include: FfvfHeRMDZs's Totem 1/Ice Block 2/Earthquake 2/Lightning 6; NrogBoJyRVI's Totem 2/Ice Block 2/Revive 2/Overgrowth 1/Poison 1; C0mxv9JyBAk's Totem 3/Ice Block 2/Revive 2/Overgrowth 1; WZbB1yebB9A's Revive 3/Poison 1/Totem 2/Overgrowth 1; XTTBlGH4zXE's Totem 6/Poison 1/Overgrowth 1/Skeleton 1/Freeze 1; aLOitRlGp8g's Ice Block 1/Poison 1/Earthquake 2/Lightning 3/Revive 2; hiT9weAx9pQ's Totem 2/Freeze 2/Poison 1/Overgrowth 1/Revive 2. These replace the default package rather than supplementing it.",
+  "Further spell alternatives: 5InNp3cBzCA lists Totem 3/Freeze 1/Ice Block 3/Revive 2 with donated Overgrowth 1/Poison 1; aRUj8A45u4A lists Invisibility 1/Revive 2/Ice Block 2/Overgrowth 1/Skeleton 1/Poison 1 with donated Freeze 1/Totem 2; ufdEws4wP9c lists Totem 3/Skeleton 1/Freeze 1/Ice Block 3/Invisibility 1/Overgrowth 1 with donated Revive 1/Poison 1. dHij_8HI47w lists Totem 3/Freeze 2/Poison 1/Invisibility 1/Skeleton 1/Overgrowth 1/Ice Block 1 with donated Revive 2.",
+  "Rocket and charge spell alternatives: AZTUaqyRtew lists Earthquake 4/Totem 3/Rage 2 with donated Revive 1/Totem 1; OWBSVJa-H_E's Backpack preset lists Totem 3/Lightning 3/Freeze 2/Poison 1/Earthquake 2 with donated Overgrowth 1/Revive 1, and its Revenge Deck preset is the alternative later listed in that extraction; eeDapoJl4d8 lists Earthquake 3/Totem 3/Overgrowth 1/Freeze 1/Poison 1/Invisibility 1 with donated Recall 1/Revive 1; gVNS9seD83w lists Revive 1/Poison 1/Totem 4/Invisibility 4 with donated Angry 1/Freeze 1/Overgrowth 1. Sources with partial spell inventories are not completed by borrowing quantities from other videos.",
+  "Other Clan Castle payloads include three Ice Golems and two Balloons with donated Revive 2 in FfvfHeRMDZs, aLOitRlGp8g and dxLogWcc0VU; NrogBoJyRVI uses the same payload and Revive count. 5InNp3cBzCA instead lists Ice Golem 1/Balloon 1/Super Valkyrie 1/Giant 2; AZTUaqyRtew lists Yeti 1/Root Rider 1/Rocket Balloon 1/Minion 2; XTTBlGH4zXE and gVNS9seD83w list Super Valkyrie 1/Super Yeti 1. These are alternative payloads, not combined donations.",
+  "eeDapoJl4d8's further Recall branch picks up Queen after her initial funnel and redeploys her to create a second funnel; one replay recalls Duke too. Its Giant Arrow/Healer Puppet Queen, Rocket Backpack/Fire Heart Duke and donated Recall 1 belong to that source's army. No numerical recall trigger, exact redeployment location, or complete initial deployment is stated, so the branch is recorded without invented executable placements.",
+  "Town Hall entry preferences conflict: 3KPlpZZeWsg generally favors the far side and dHij_8HI47w accepts leaving Town Hall late; 15TbHFSYt84, 0h7c4WKuPB8 and aLOitRlGp8g favor earlier Town Hall access when practical. Spring Trap bait and Firespitter/Sweeper orientation can reverse a nominal Monolith or Town Hall preference.",
+  "Retain ambiguous labels such as logger, candle, cake, long shot and hero hunter where the extraction does not establish their in-game identity. The defensive logger is not the attacking Log Launcher. Do not convert unclear Recall/Revive captions in 0h7c4WKuPB8 into an extra recall sequence. Defensive-base Clan Castle descriptions in 15TbHFSYt84, XibexH-PFis and zSh-YQVhKT8 are not attacking reinforcement evidence."
+ ],
+ "check": {
+  "steps_kept": 19,
+  "steps_dropped": 0,
+  "reasons": {},
+  "dangling_after": []
+ }
+}

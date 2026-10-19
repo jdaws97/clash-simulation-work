@@ -1,0 +1,1775 @@
+{
+ "family": "super-minion-air",
+ "name": "Fireball Warden charge and Flame Flinger hero dive",
+ "sources": [
+  "12Z_sTAEOHw",
+  "HnEtYULN4Y0",
+  "O8of3SqwmUo",
+  "b_kCBBnsuvo",
+  "dn6J46bW0ts",
+  "pTmX2vmv4sc",
+  "qlLv2Bvu4ig",
+  "tFITZCY8XhU",
+  "x5AiCcU008Y",
+  "yiUwu_vHfng"
+ ],
+ "army": {
+  "troops": {
+   "Balloon": 1,
+   "Healer": 5,
+   "Rocket Balloon": 7,
+   "Super Minion": 8,
+   "Furnace": 3,
+   "Ice Golem": 1,
+   "Headhunter": 3,
+   "Archer": 4,
+   "Wall Breaker": 5,
+   "Druid": 1,
+   "Minion": 1,
+   "Hog Rider": 1,
+   "Goblin": 1,
+   "Flame Flinger": 1,
+   "Stone Slammer": 1,
+   "Troop Launcher": 1
+  },
+  "spells": {
+   "Invisibility Spell": 4,
+   "Earthquake Spell": 5,
+   "Poison Spell": 1,
+   "Skeleton Spell": 1
+  },
+  "cc": {
+   "Super Yeti": 1,
+   "Super Valkyrie": 1,
+   "Siege Barracks": 1,
+   "Log Launcher": 1,
+   "Totem Spell": 2,
+   "Recall Spell": 1
+  },
+  "heroes": [
+   "Barbarian King",
+   "Archer Queen",
+   "Grand Warden",
+   "Dragon Duke"
+  ],
+  "loadouts": {
+   "Barbarian King": [
+    "Spiky Ball",
+    "Snake Bracelet",
+    "Spirit Fox"
+   ],
+   "Archer Queen": [
+    "Giant Arrow",
+    "Action Figure",
+    "Frosty"
+   ],
+   "Grand Warden": [
+    "Fireball",
+    "Rage Gem",
+    "Sneezy"
+   ],
+   "Dragon Duke": [
+    "Fire Heart",
+    "Rocket Backpack",
+    "Phoenix"
+   ]
+  }
+ },
+ "base_reading": [
+  {
+   "rule": "Choose the opening Fireball for useful defensive value; the target varies with the layout and nearby defense clusters.",
+   "support": 10,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 70.5,
+     "quote": "center of the base here. Look at the"
+    },
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 259,
+     "quote": "yeah, usually fire balling the Rico"
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 50.7,
+     "quote": "can take out both the fire spitters and"
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 44,
+     "quote": "fire by the scatter shot."
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 164.2,
+     "quote": "easy fireball. As you see, I took out"
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 95.8,
+     "quote": "just actually just fireball this. It's"
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 77.5,
+     "quote": "is look for that fireball value. This is"
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 353.1,
+     "quote": "The deep fireball is mostly just to allow me to take out the CC"
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 30.7,
+     "quote": "on towards that clan castle."
+    },
+    {
+     "video": "yiUwu_vHfng",
+     "t": 631.4,
+     "quote": "Probably something in the core. Scattershot's actually really good."
+    }
+   ]
+  },
+  {
+   "rule": "Plan a Giant Arrow line through valuable defenses, especially the Clan Castle, Revenge Tower or Monolith; coordinate Rocket Backpack where the source identifies that combination.",
+   "support": 8,
+   "cite": [
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 878.5,
+     "quote": "fireball poison tower and then log"
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 692.1,
+     "quote": "let's take down the CC and the monolith"
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 54.2,
+     "quote": "giant arrow backpack combo."
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 233.5,
+     "quote": "heavy-hitting defenses that your queen"
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1055.8,
+     "quote": "get the core out with the arrow"
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 50.5,
+     "quote": "first, look for giant arrow and backpack"
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 1161.1,
+     "quote": "instead I can just arrow all of those out together."
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 116.7,
+     "quote": "the revenge tower if I do angle my"
+    }
+   ]
+  },
+  {
+   "rule": "Scout Flame Flinger value and the defenses or defending heroes that constrain its placement before choosing the siege approach.",
+   "support": 10,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 120.5,
+     "quote": "one corner, the flame flinger on the"
+    },
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 641.8,
+     "quote": "all rocket loons for this expo."
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 604.3,
+     "quote": "flinger value in this base."
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 738.4,
+     "quote": "like literally up here at the top. Why"
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 115.5,
+     "quote": "really, really good flame flinger spot"
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 273,
+     "quote": "have anywhere some great flame flinger value?"
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 123.9,
+     "quote": "look for two defenses. That's going to"
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 1304.6,
+     "quote": "to be pretty precise because of the expo and the multi arch tower there."
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 78.4,
+     "quote": "There's nothing that can outrange"
+    },
+    {
+     "video": "yiUwu_vHfng",
+     "t": 1047.8,
+     "quote": "flinger outside somewhere, but there's heroes all over the outside"
+    }
+   ]
+  },
+  {
+   "rule": "Use the Warden, siege and supporting troops to establish a strong funnel for the hero dive.",
+   "support": 6,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 120.5,
+     "quote": "one corner, the flame flinger on the"
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 584.6,
+     "quote": "flame finger here because that's still"
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 913.3,
+     "quote": "the king into one of these compartments"
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 401.2,
+     "quote": "we're going to have some super minion funnel like that."
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 262.4,
+     "quote": "really about squeezing your heroes in"
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 287.7,
+     "quote": "funneling is really really important for the hero dive."
+    }
+   ]
+  },
+  {
+   "rule": "When selecting Flame Flinger, establish whether the Town Hall will fall to the Warden charge or the hero dive and verify that the chosen route is accessible.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "dn6J46bW0ts",
+     "t": 637.7,
+     "quote": "some sort of a plan for the town hall."
+    }
+   ]
+  },
+  {
+   "rule": "Choose Warden charge and redeployment positions that limit simultaneous defensive fire.",
+   "support": 5,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 329.7,
+     "quote": "recall him somewhere where he's going to"
+    },
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 895.3,
+     "quote": "As long as my warden is hitting like one"
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 848.8,
+     "quote": "the long range multi gear tower"
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 381.4,
+     "quote": "I can go ahead pick him back up and send"
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 67.5,
+     "quote": "sure he's not getting targeted by too"
+    }
+   ]
+  },
+  {
+   "rule": "Prefer a Warden route that removes the Monolith before the other heroes must fight through its area.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "O8of3SqwmUo",
+     "t": 809.5,
+     "quote": "let's deploy the warden on the monolith"
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 372.5,
+     "quote": "warden walk it instead of having your heroes push through it."
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 115,
+     "quote": "usually you want to have the warden into the monolith, right?"
+    }
+   ]
+  },
+  {
+   "rule": "Preserve buildings needed to anchor Giant Arrow rather than clearing them prematurely.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 820,
+     "quote": "I don't want that helper hut to go down"
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 635.1,
+     "quote": "actually leaving up your anchor points"
+    }
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "warden",
+   "action": "deploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "t": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 65,
+     "quote": "I would just place the warden for now"
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 1115.8,
+     "quote": "So, the first one is to use the warden"
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 48.2,
+     "quote": "clan castle before I sent in my warden"
+    },
+    {
+     "video": "yiUwu_vHfng",
+     "t": 925.7,
+     "quote": "start my warden walk down here."
+    }
+   ]
+  },
+  {
+   "id": "flinger",
+   "action": "deploy",
+   "what": "Flame Flinger",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 8,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 110.6,
+     "quote": "been going on, we've had a flame flinger"
+    },
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 471.8,
+     "quote": "the town hall and set up a flame flinger"
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 762.4,
+     "quote": "Now, I might snipe these two mortars and"
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 500.8,
+     "quote": "decided to use a flame flinger because I spotted really easy value on the right"
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 1136.3,
+     "quote": "Then with your flame flinger, the main"
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 1119,
+     "quote": "you can just set up the flame flinger first"
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 71.4,
+     "quote": "Now I go for a really easy flame flinger"
+    },
+    {
+     "video": "yiUwu_vHfng",
+     "t": 908.2,
+     "quote": "Put a flame flinger on the right."
+    }
+   ]
+  },
+  {
+   "id": "fireball",
+   "action": "ability",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "charge",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 10,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 104.4,
+     "quote": "fireball into the center of the base."
+    },
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 259,
+     "quote": "yeah, usually fire balling the Rico"
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 63.2,
+     "quote": "Oh, that was a risky fireball."
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 44,
+     "quote": "fire by the scatter shot."
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 164.2,
+     "quote": "easy fireball. As you see, I took out"
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 95.8,
+     "quote": "just actually just fireball this. It's"
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 1121.6,
+     "quote": "Now, your fireball should be a really"
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 209.7,
+     "quote": "Just take the CC side. Easy fireball."
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 55.5,
+     "quote": "the fireball. Take it out before those"
+    },
+    {
+     "video": "yiUwu_vHfng",
+     "t": 951.6,
+     "quote": "Okay, I'll just go for the wizard tower now"
+    }
+   ]
+  },
+  {
+   "id": "warden_invisibility",
+   "action": "spell",
+   "what": "Invisibility Spell",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "charge",
+   "when": {
+    "heavy_fire": "Grand Warden"
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "dn6J46bW0ts",
+     "t": 525.5,
+     "quote": "can invest an invis here was necessary"
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1356.2,
+     "quote": "I would just invis to be honest."
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 447.4,
+     "quote": "my warden after the invisibility spell"
+    }
+   ]
+  },
+  {
+   "id": "poison_cc",
+   "action": "spell",
+   "what": "Poison Spell",
+   "count": 1,
+   "at": "defenders:charge",
+   "group": "charge",
+   "when": {
+    "defenders_near": "charge"
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 348.7,
+     "quote": "have to poison that because two"
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 796.6,
+     "quote": "have to waste my my poison spell there."
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 290.5,
+     "quote": "I've just poisoned the uh furnace in there"
+    }
+   ]
+  },
+  {
+   "id": "recall_warden",
+   "action": "recall",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "charge",
+   "when": {
+    "after": "fireball",
+    "delay": 0
+   },
+   "support": 9,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 106.6,
+     "quote": "And any second now he's going to recall"
+    },
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 952.8,
+     "quote": "but okay, I think we're good to recall"
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 96.3,
+     "quote": "going to recall the warden"
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 104.8,
+     "quote": "And then I'll recall and put him at the"
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 895.2,
+     "quote": "recall him out and I place him onto this monolith"
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1024.4,
+     "quote": "side because we're going to recall him later to the right side,"
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 381.4,
+     "quote": "I can go ahead pick him back up and send"
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 242.2,
+     "quote": "recalled the warden."
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 141.1,
+     "quote": "Recall my warden"
+    }
+   ]
+  },
+  {
+   "id": "redeploy_warden",
+   "action": "redeploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "charge",
+   "when": {
+    "after": "recall_warden",
+    "delay": 0
+   },
+   "support": 8,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 143.5,
+     "quote": "If we zoom out, we recalled our warden"
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 99.7,
+     "quote": "place him at 6:00."
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 106.4,
+     "quote": "bottom and then the only thing I have to"
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 895.2,
+     "quote": "recall him out and I place him onto this monolith"
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1024.4,
+     "quote": "side because we're going to recall him later to the right side,"
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 381.4,
+     "quote": "I can go ahead pick him back up and send"
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 688.3,
+     "quote": "funnel the 9:00 corner in, um, before the warden actually got recalled,"
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 143,
+     "quote": "warden and send up to this top side."
+    }
+   ]
+  },
+  {
+   "id": "ice_golem",
+   "action": "deploy",
+   "what": "Ice Golem",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "recall_warden",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 1179.4,
+     "quote": "queen, um, goes in towards the base with"
+    },
+    {
+     "video": "yiUwu_vHfng",
+     "t": 983.4,
+     "quote": "King, ice golem,"
+    }
+   ]
+  },
+  {
+   "id": "queen",
+   "action": "deploy",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "ice_golem",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 1179.4,
+     "quote": "queen, um, goes in towards the base with"
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 1377.4,
+     "quote": "get the king queen down and then just quickly burst down that area."
+    },
+    {
+     "video": "yiUwu_vHfng",
+     "t": 987,
+     "quote": "queen with this."
+    }
+   ]
+  },
+  {
+   "id": "queen_arrow",
+   "action": "ability",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "unit:Archer Queen",
+   "group": "main",
+   "when": {
+    "after": "queen",
+    "delay": 0
+   },
+   "support": 8,
+   "cite": [
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 372.8,
+     "quote": "Aim the arrow there"
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 134.2,
+     "quote": "I'm going to use the arrow from the"
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 54.2,
+     "quote": "giant arrow backpack combo."
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 225.6,
+     "quote": "the revenge tower and the monolith."
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1055.8,
+     "quote": "get the core out with the arrow"
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 50.5,
+     "quote": "first, look for giant arrow and backpack"
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 1091.7,
+     "quote": "set up an arrow off the town hall side for the revenge tower."
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 97.1,
+     "quote": "course the giant arrow with the dragon"
+    }
+   ]
+  },
+  {
+   "id": "duke",
+   "action": "deploy",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "edge:main",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "after": "queen_arrow",
+      "delay": 0
+     },
+     {
+      "inside": "Grand Warden"
+     }
+    ]
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 954.6,
+     "quote": "had the king, queen, and drag juke push towards the tunnel."
+    }
+   ]
+  },
+  {
+   "id": "duke_backpack",
+   "action": "ability",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "duke",
+   "when": {
+    "after": "duke",
+    "delay": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "O8of3SqwmUo",
+     "t": 127.8,
+     "quote": "backpack on the revenge tower."
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 199.5,
+     "quote": "you have the backpack and you have the arrows."
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 369,
+     "quote": "Perfect. And now we can set up the rocket backpack here."
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 1034.5,
+     "quote": "castle with my dragon duke ability."
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 382.8,
+     "quote": "just to clip the CC with the jetack and arrow as well."
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 128.1,
+     "quote": "the dragon duke ability a little bit."
+    }
+   ]
+  },
+  {
+   "id": "wall_breakers",
+   "action": "deploy",
+   "what": "Wall Breaker",
+   "count": 5,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "queen",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 590.6,
+     "quote": "maxed out wall, that's why I have five."
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 771.4,
+     "quote": "I invis and deploy five wall breakers"
+    }
+   ]
+  },
+  {
+   "id": "king",
+   "action": "deploy",
+   "what": "Barbarian King",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "wall_breakers",
+    "delay": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "O8of3SqwmUo",
+     "t": 510.6,
+     "quote": "cuz Warden can follow the king."
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 415.9,
+     "quote": "I was just sent the king."
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 1201.4,
+     "quote": "king in. He's going to move in towards"
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 1195,
+     "quote": "delay the king a little bit"
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 155.6,
+     "quote": "on my hero charge, I don't send him my"
+    }
+   ]
+  },
+  {
+   "id": "king_spiky_ball",
+   "action": "ability",
+   "what": "Barbarian King",
+   "count": 1,
+   "at": "unit:Barbarian King",
+   "group": "main",
+   "when": {
+    "inside": "Barbarian King"
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 898,
+     "quote": "save until I can get it to bounce on the"
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 1206.7,
+     "quote": "spiky ball. That spiky ball is going to"
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 172.8,
+     "quote": "spiky ball can target the revenge tower."
+    }
+   ]
+  },
+  {
+   "id": "druid",
+   "action": "deploy",
+   "what": "Druid",
+   "count": 1,
+   "at": "unit:Archer Queen",
+   "group": "main",
+   "when": {
+    "heavy_fire": "Archer Queen"
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 397.5,
+     "quote": "Druid can be delayed because the queen"
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 418.6,
+     "quote": "to save her and deploy the druid on her"
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 657.3,
+     "quote": "sure I send that druid in on my queen,"
+    }
+   ]
+  }
+ ],
+ "variants": [
+  {
+   "name": "Log Launcher hero dive",
+   "replaces": [
+    "flinger"
+   ],
+   "steps": [
+    {
+     "id": "log_launcher",
+     "action": "deploy",
+     "what": "Log Launcher",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fireball",
+      "delay": 0
+     },
+     "support": 7,
+     "cite": [
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 878.5,
+       "quote": "fireball poison tower and then log"
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 888.5,
+       "quote": "damage the tower and the multi in there."
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 157.9,
+       "quote": "freaking log launcher down. Those were"
+      },
+      {
+       "video": "dn6J46bW0ts",
+       "t": 192.3,
+       "quote": "well, I'm basically setting up a log launcher from the left side."
+      },
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1657.8,
+       "quote": "launcher from the far side, I guess."
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 955.2,
+       "quote": "log launcher on this style of base."
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 846.2,
+       "quote": "log launcher with the hero dive on the"
+      }
+     ]
+    }
+   ],
+   "support": 7,
+   "cite": [
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 878.5,
+     "quote": "fireball poison tower and then log"
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 888.5,
+     "quote": "damage the tower and the multi in there."
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 157.9,
+     "quote": "freaking log launcher down. Those were"
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 122.5,
+     "quote": "flame finger volume, then I would try to incorporate this log launcher approach."
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1657.8,
+     "quote": "launcher from the far side, I guess."
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 955.2,
+     "quote": "log launcher on this style of base."
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 846.2,
+     "quote": "log launcher with the hero dive on the"
+    }
+   ]
+  },
+  {
+   "name": "Troop Launcher from the Town Hall side",
+   "replaces": [
+    "flinger"
+   ],
+   "steps": [
+    {
+     "id": "troop_launcher",
+     "action": "deploy",
+     "what": "Troop Launcher",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "duke_backpack",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "O8of3SqwmUo",
+       "t": 154.1,
+       "quote": "So, I'm using troop launcher here."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "O8of3SqwmUo",
+     "t": 323,
+     "quote": "because I am going from the town hall"
+    }
+   ]
+  },
+  {
+   "name": "Battle Drill siege choice",
+   "replaces": [
+    "flinger"
+   ],
+   "steps": [
+    {
+     "id": "battle_drill",
+     "action": "deploy",
+     "what": "Battle Drill",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fireball",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1267.2,
+       "quote": "going to use the battle drill this time"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1267.2,
+     "quote": "going to use the battle drill this time"
+    }
+   ]
+  },
+  {
+   "name": "Warden and Flame Flinger on the same side",
+   "replaces": [
+    "flinger"
+   ],
+   "steps": [
+    {
+     "id": "flinger",
+     "action": "deploy",
+     "what": "Flame Flinger",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "funnel",
+     "when": {
+      "after": "fireball",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 350,
+       "quote": "So, instead, I once I take out that expo"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 313.7,
+     "quote": "doing it on the same side of the base as"
+    }
+   ]
+  },
+  {
+   "name": "Continue the Warden walk until dangerous defensive fire",
+   "replaces": [
+    "recall_warden"
+   ],
+   "steps": [
+    {
+     "id": "recall_warden",
+     "action": "recall",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "charge",
+     "when": {
+      "all": [
+       {
+        "after": "fireball",
+        "delay": 0
+       },
+       {
+        "heavy_fire": "Grand Warden"
+       }
+      ]
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "dn6J46bW0ts",
+       "t": 553.7,
+       "quote": "just in case the warden starts surging forward"
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 625.4,
+       "quote": "just have to recall him before he ends"
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "dn6J46bW0ts",
+     "t": 553.7,
+     "quote": "just in case the warden starts surging forward"
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 625.4,
+     "quote": "just have to recall him before he ends"
+    }
+   ]
+  },
+  {
+   "name": "Finish Giant Arrow before redeploying the Warden",
+   "replaces": [
+    "redeploy_warden"
+   ],
+   "steps": [
+    {
+     "id": "redeploy_warden",
+     "action": "redeploy",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "charge",
+     "when": {
+      "after": "queen_arrow",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "tFITZCY8XhU",
+       "t": 711.7,
+       "quote": "make sure I could focus on the arrow without having to split my attention."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "tFITZCY8XhU",
+     "t": 711.7,
+     "quote": "make sure I could focus on the arrow without having to split my attention."
+    }
+   ]
+  },
+  {
+   "name": "Early Spiky Ball through a Rage compartment",
+   "replaces": [
+    "king_spiky_ball"
+   ],
+   "steps": [
+    {
+     "id": "king_spiky_ball",
+     "action": "ability",
+     "what": "Barbarian King",
+     "count": 1,
+     "at": "unit:Barbarian King",
+     "group": "main",
+     "when": {
+      "after": "king",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "tFITZCY8XhU",
+       "t": 1199.8,
+       "quote": "Pop the spiky bolt early here just to crush through the rage tower"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "tFITZCY8XhU",
+     "t": 1199.8,
+     "quote": "Pop the spiky bolt early here just to crush through the rage tower"
+    }
+   ]
+  },
+  {
+   "name": "Ice Block-assisted Fireball",
+   "replaces": [
+    "fireball"
+   ],
+   "steps": [
+    {
+     "id": "ice_block",
+     "action": "spell",
+     "what": "Ice Block Spell",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "charge",
+     "when": {
+      "after": "warden",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 95,
+       "quote": "Then we're going to use the ice block"
+      }
+     ]
+    },
+    {
+     "id": "fireball",
+     "action": "ability",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "charge",
+     "when": {
+      "after": "ice_block",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 104.4,
+       "quote": "fireball into the center of the base."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 98.3,
+     "quote": "stalls your warden in place and just"
+    }
+   ]
+  },
+  {
+   "name": "Royal Champion follow-up with raged Rocket Spear",
+   "replaces": [
+    "queen_arrow",
+    "duke",
+    "duke_backpack"
+   ],
+   "steps": [
+    {
+     "id": "royal_champion",
+     "action": "deploy",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "king",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "yiUwu_vHfng",
+       "t": 989.2,
+       "quote": "royal champion work with them this time"
+      }
+     ]
+    },
+    {
+     "id": "rage_champion",
+     "action": "spell",
+     "what": "Rage Spell",
+     "count": 1,
+     "at": "unit:Royal Champion",
+     "group": "main",
+     "when": {
+      "after": "royal_champion",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "yiUwu_vHfng",
+       "t": 1312.1,
+       "quote": "champion in with my king. We're going to rage right here, too."
+      }
+     ]
+    },
+    {
+     "id": "champion_spear",
+     "action": "ability",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "unit:Royal Champion",
+     "group": "main",
+     "when": {
+      "after": "rage_champion",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "yiUwu_vHfng",
+       "t": 997.8,
+       "quote": "activate the uh rocket spear in the rage."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "yiUwu_vHfng",
+     "t": 1155.9,
+     "quote": "While the royal champions in the rage, we'll activate the uh rocket spear"
+    }
+   ]
+  },
+  {
+   "name": "Three Earthquakes before Rocket Backpack",
+   "replaces": [
+    "duke_backpack"
+   ],
+   "steps": [
+    {
+     "id": "core_quake_1",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "main",
+     "when": {
+      "after": "queen_arrow",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "dn6J46bW0ts",
+       "t": 716.7,
+       "quote": "you can triple quake the core"
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 121.9,
+       "quote": "sent in the three earthquakes"
+      }
+     ]
+    },
+    {
+     "id": "core_quake_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "main",
+     "when": {
+      "after": "core_quake_1",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "dn6J46bW0ts",
+       "t": 716.7,
+       "quote": "you can triple quake the core"
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 121.9,
+       "quote": "sent in the three earthquakes"
+      }
+     ]
+    },
+    {
+     "id": "core_quake_3",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "main",
+     "when": {
+      "after": "core_quake_2",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "dn6J46bW0ts",
+       "t": 716.7,
+       "quote": "you can triple quake the core"
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 121.9,
+       "quote": "sent in the three earthquakes"
+      }
+     ]
+    },
+    {
+     "id": "duke_backpack",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "all": [
+       {
+        "after": "duke",
+        "delay": 0
+       },
+       {
+        "after": "core_quake_3",
+        "delay": 0
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "x5AiCcU008Y",
+       "t": 128.1,
+       "quote": "the dragon duke ability a little bit."
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "dn6J46bW0ts",
+     "t": 716.7,
+     "quote": "you can triple quake the core"
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 121.9,
+     "quote": "sent in the three earthquakes"
+    }
+   ]
+  },
+  {
+   "name": "Two simultaneous split Earthquakes on the Revenge Tower and Monolith",
+   "replaces": [],
+   "steps": [
+    {
+     "id": "split_quake_revenge",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:revenge",
+     "group": "main",
+     "when": {
+      "after": "queen_arrow",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "tFITZCY8XhU",
+       "t": 817.9,
+       "quote": "putting two of them down at the same time"
+      }
+     ]
+    },
+    {
+     "id": "split_quake_monolith",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "after": "queen_arrow",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "tFITZCY8XhU",
+       "t": 817.9,
+       "quote": "putting two of them down at the same time"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "tFITZCY8XhU",
+     "t": 817.9,
+     "quote": "putting two of them down at the same time"
+    }
+   ]
+  },
+  {
+   "name": "One Super Minion to accelerate a lengthy Warden charge",
+   "replaces": [],
+   "steps": [
+    {
+     "id": "charge_super_minion",
+     "action": "deploy",
+     "what": "Super Minion",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "warden",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1510.6,
+       "quote": "I will just use a super minion here to speed things up a little bit"
+      },
+      {
+       "video": "yiUwu_vHfng",
+       "t": 778.6,
+       "quote": "we're going to add a super menu to help speed things up"
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1510.6,
+     "quote": "I will just use a super minion here to speed things up a little bit"
+    },
+    {
+     "video": "yiUwu_vHfng",
+     "t": 778.6,
+     "quote": "we're going to add a super menu to help speed things up"
+    }
+   ]
+  },
+  {
+   "name": "Two Super Minions to snipe a remaining Super Wizard Tower",
+   "replaces": [],
+   "steps": [
+    {
+     "id": "super_wizard_snipers",
+     "action": "deploy",
+     "what": "Super Minion",
+     "count": 2,
+     "at": "edge:funnel",
+     "group": "cleanup",
+     "when": {
+      "after": "king_spiky_ball",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "dn6J46bW0ts",
+       "t": 1346.2,
+       "quote": "but usually it's two super minions per super wizard tower"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "dn6J46bW0ts",
+     "t": 1346.2,
+     "quote": "but usually it's two super minions per super wizard tower"
+    }
+   ]
+  },
+  {
+   "name": "Open the Flame Flinger to tank for the Queen",
+   "replaces": [],
+   "steps": [
+    {
+     "id": "release_flinger",
+     "action": "release_siege",
+     "what": "Flame Flinger",
+     "count": 1,
+     "at": "unit:Flame Flinger",
+     "group": "main",
+     "when": {
+      "inside": "Archer Queen"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "tFITZCY8XhU",
+       "t": 676.6,
+       "quote": "get the troops out in front of the queen to tank."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "tFITZCY8XhU",
+     "t": 676.6,
+     "quote": "get the troops out in front of the queen to tank."
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "All 219 source JSON files were checked; these are the 10 with relevant=true and army_family=super-minion-air. Support counts distinct videos, including their rules and policies, rather than attacks within a video.",
+  "The selected complete army is shared by HnEtYULN4Y0 and dn6J46bW0ts after flattening the former's nested Clan Castle fields. Every other quantified composition differs. This is the most frequent complete composition, not a majority of all 10 videos or a vote on individual equipment items.",
+  "The five listed siege machines are available options, not simultaneous deployments. Flame Flinger is the default; Log Launcher and Troop Launcher variants use the corresponding listed option. The Battle Drill variant requires pTmX2vmv4sc's alternative inventory.",
+  "Initial Healer deployment is not explicitly narrated in any extraction. The five Healers remain in the inventory without an invented deployment step. A complete shared deployment sequence for the main Super Minions is also absent; unquantified funnel and late-support drops have not been converted into numerical allocations or an all-troops drop.",
+  "The Dragon Duke deployment is supported only by pTmX2vmv4sc's conditional plan to push King, Queen and Duke toward the Town Hall if the Warden survives and maintains his route. inside:Grand Warden is the closest available proxy for that living Warden continuing into the base. Other sources mainly describe the Duke's ability without a deployment step.",
+  "t=0 translates the opening Warden deployment. Every delay=0 encodes narrated order when no delay is stated. Caption timestamps are citation times, not attack-relative deployment times. The sources vary on whether Flame Flinger or Warden is placed first; concurrent opening work is approximated by ordered zero-delay steps.",
+  "Fireball setup is incomplete in the available vocabulary: O8of3SqwmUo, dn6J46bW0ts and qlLv2Bvu4ig describe one- or two-Invisibility setups, while 12Z_sTAEOHw also describes three or four with Ice Block. The buildings to hide and portable placement coordinates are not specified sufficiently for executable redirection casts. No casting interval is stated.",
+  "Recall timing varies: some sources immediately recall after Fireball, while others first remove additional defenses or continue until danger. Those building-destruction and desired-value conditions have no matching trigger. The default after-fireball zero-delay trigger collapses the unquantified extra walk; the continued-walk variant approximates danger with heavy_fire.",
+  "edge:main represents the scouted hero entry, edge:charge the opening Warden flank, and edge:funnel the second flank. The redeployed Warden uses edge:funnel as a proxy for the separately chosen safe second position; absolute clock positions and an independent third entry cannot be preserved with these anchors.",
+  "Hero-ability activation order, Giant Arrow angles, Rocket Backpack angles and Fireball aiming geometry are incompletely narrated. The zero-delay ability sequence supplies ordering only; the unit anchors do not encode an aiming line.",
+  "The King trigger after wall_breakers approximates a completed funnel and opened entry, which have no direct completion trigger. inside:Barbarian King approximates reaching the core for Spiky Ball. heavy_fire:Archer Queen approximates the narrated need for Druid healing without inventing a health percentage. The Druid misses the intended Queen in x5AiCcU008Y's demonstrated example.",
+  "The initial Ice Golem precedes the Queen to approximate the narrated tanking role. The release-siege variant uses inside:Archer Queen as the closest trigger to releasing reinforcements in front of her. The early Spiky Ball variant uses after:king with zero delay because the remaining Ice Golem freeze duration is not stated.",
+  "defenders_near includes defending heroes as well as Clan Castle troops; it is the closest available trigger for the cited Headhunter and Furnace Clan Castle threats. The source-specific identities are more precise than the executor's trigger.",
+  "The five Wall Breakers come from HnEtYULN4Y0's max-wall instruction and dn6J46bW0ts's explicit five-Wall-Breaker Queen entry. The latter pairs the entry with Invisibility but does not identify that spell's target, so no additional placement is asserted.",
+  "The inventory's five Earthquakes do not establish a common casting sequence. Explicit alternatives include three on the Revenge Tower/core and two split over the Revenge Tower and Monolith. Three casts are separate steps because no repeat interval is supplied. The split casts share a trigger to represent simultaneous placement.",
+  "The one-Super-Minion charge variant maps an unquantified lengthy-charge or time-pressure stage to after:warden with zero delay. The two-Super-Minion sniper variant maps late cleanup to after:king_spiky_ball and uses edge:funnel as the closest deploy-edge anchor to the selected remaining Super Wizard Tower; exact sniping tiles are absent.",
+  "The same-side Flame Flinger variant waits for Fireball as a proxy for the narrated extra Warden clearing, including removal of an X-Bow. The Troop Launcher follows the described hero-ability sequence. Battle Drill deployment timing is unstated and uses the shared post-Fireball siege stage with zero delay.",
+  "Variants describe alternative phases, not a set to apply simultaneously. The Royal Champion/Rage and Ice Block variants require the corresponding source army and loadouts; the default inventory has neither Royal Champion, Rage Spell nor Ice Block Spell. No fixed spell cadence is supplied.",
+  "12Z_sTAEOHw is a Town Hall 16 Fireball/Rocket Balloon plan against Town Hall 18 bases, grouped here because its Flame Flinger carries Super Minions. Its alternative has 11 Rocket Balloons, 5 Healers, 2 Furnaces, 2 Ice Golems and no trained Super Minions; spells are Rage 1, Earthquake 2, Invisibility 5, Ice Block 1 and Poison 1. Its Clan Castle includes Super Minion 4, Minion 1, Recall 1 and Totem 1. It uses Royal Champion with Seeking Shield, Rocket Spear and Diggy instead of Dragon Duke; King has Earthquake Boots/Spiky Ball, Queen Magic Mirror/Action Figure, and Warden Rage Gem/Fireball. Its King can use Spiky Ball before the Queen entry, and its recall can leave a Healer behind when Unicorn survives.",
+  "pTmX2vmv4sc's alternative has 6 Super Minions, 8 Rocket Balloons, 5 Healers, 3 Furnaces, 1 Ice Golem and 2 Druids. Its link lists Invisibility 4, Earthquake 5 and Totem 2; narrated Freeze, Poison and Recall quantities are unresolved, and Clan Castle contents are unspecified. Siege choices include Flame Flinger, Troop Launcher and Battle Drill, with a separately narrated Log Launcher approach. King uses Stick Horse and Warden Greedy Raven. The narrator replaces Revive with additional Freeze and Invisibility because the revived Duke otherwise lacks support.",
+  "qlLv2Bvu4ig's Town Hall 18 alternative has 8 Super Minions, 8 Rocket Balloons, 5 Healers, 3 Furnaces, 1 Ice Golem and 1 Druid; spells are Invisibility 3, Earthquake 5, Poison 1 and Revive 1. Its Clan Castle has Super Yeti 1, Super Valkyrie 1, Recall 1 and Totem 2. King uses Stick Horse and Warden Greedy Raven. Its guide permits same-side Warden/Flinger funneling when removing the core would otherwise let the heroes split.",
+  "tFITZCY8XhU's alternative has 5 Super Minions, 9 Rocket Balloons, 5 Healers, 2 Furnaces, 2 Ice Golems, 1 Yeti and 2 Druids; spells are Invisibility 3, Earthquake 5, Poison 1 and Revive 1, with Recall 1 and Totem 2 in the Clan Castle. The full siege payload is unresolved. King uses Stick Horse, Warden Greedy Raven and Duke Revenge Deck/Rocket Backpack. Its examples include manually releasing Flame Flinger reinforcements and reviving the Warden.",
+  "yiUwu_vHfng's Town Hall 13 alternative has 6 Super Minions, 11 Rocket Balloons, 5 Healers and 2 Ice Golems; spells are Earthquake 2, Invisibility 3, Poison 1, Rage 1, Skeleton 1 and Freeze 2. Its Clan Castle contains Flame Flinger 1, Super Minion 3, Rocket Balloon 1, Barbarian 1 and Recall 1. Heroes are King with Spiky Ball/Stick Horse, Queen with Action Figure/Magic Mirror, Warden with Rage Gem/Fireball, and Royal Champion with Rocket Spear/Electro Boots. Recall is discussed but no cast is established in that extraction.",
+  "O8of3SqwmUo, b_kCBBnsuvo and x5AiCcU008Y provide partial inventories with unknown totals, so they do not supply another complete composition. x5AiCcU008Y explicitly has three Headhunters and three Invisibility Spells. O8of3SqwmUo favors Troop Launcher in several examples, while other sources also discuss Log Launcher or omitting Flame Flinger when X-Bows or defending heroes restrict it.",
+  "Revive is contested and absent from the selected army. qlLv2Bvu4ig, b_kCBBnsuvo and x5AiCcU008Y describe reviving Dragon Duke; O8of3SqwmUo discusses reserving it. pTmX2vmv4sc argues against it without follow-up spells, and tFITZCY8XhU revives Warden instead. No revival target or corpse-position anchor has been invented.",
+  "The '1 minute 30-ish' hero timing in dn6J46bW0ts does not identify elapsed versus remaining time and is not converted into a numeric trigger. Unresolved names such as cake, candle, logger and long shot remain unresolved. Failed or criticized placements, including unsuccessful Warden pulls, are not promoted to default rules."
+ ],
+ "check": {
+  "steps_kept": 16,
+  "steps_dropped": 0,
+  "reasons": {},
+  "dangling_after": []
+ }
+}

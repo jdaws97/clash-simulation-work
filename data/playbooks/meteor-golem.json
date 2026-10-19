@@ -1,0 +1,1284 @@
+{
+ "family": "meteor-golem",
+ "name": "Dragon Duke funnel into Meteor Golems",
+ "sources": [
+  "-jNbwwWqnOE",
+  "MUssbWM-qpk",
+  "UqzQGpGU0FI",
+  "lHLHvW8vFTg",
+  "lTp7FjulP8Q",
+  "mfjjo4_FuZI",
+  "uRJw__PO-Iw",
+  "y7npC3rCP3g",
+  "yBFCuLpbDbU"
+ ],
+ "army": {
+  "troops": {
+   "Meteor Golem": 8,
+   "Apprentice Warden": 1
+  },
+  "spells": {
+   "Totem Spell": 8,
+   "Rage Spell": 2,
+   "Revive Spell": 1
+  },
+  "cc": {
+   "Meteor Golem": 1,
+   "Troop Launcher": 1
+  },
+  "heroes": [
+   "Barbarian King",
+   "Archer Queen",
+   "Grand Warden",
+   "Dragon Duke"
+  ],
+  "loadouts": {
+   "Barbarian King": [
+    "Earthquake Boots",
+    "Spiky Ball"
+   ],
+   "Archer Queen": [
+    "Action Figure",
+    "Healer Puppet"
+   ],
+   "Grand Warden": [
+    "Eternal Tome",
+    "Rage Gem"
+   ],
+   "Dragon Duke": [
+    "Electro Fangs",
+    "Fire Heart",
+    "Phoenix"
+   ]
+  }
+ },
+ "base_reading": [
+  {
+   "rule": "Use the Dragon Duke to clear one flank before or alongside preparation of the Meteor Golem entry.",
+   "support": 5,
+   "cite": [
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 40.7,
+     "quote": "funnel one side with your dragon duke"
+    },
+    {
+     "video": "MUssbWM-qpk",
+     "t": 44.5,
+     "quote": "Duke on the other corner."
+    },
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 49.2,
+     "quote": "dragon duke on one side to funnel."
+    },
+    {
+     "video": "mfjjo4_FuZI",
+     "t": 412.8,
+     "quote": "duke from the opposite side."
+    },
+    {
+     "video": "uRJw__PO-Iw",
+     "t": 39.4,
+     "quote": "placing the Duke on one side of the base."
+    }
+   ]
+  },
+  {
+   "rule": "Use two Meteor Golems on the opposite corner when a separate funnel is needed, then send the remaining Meteor Golems through the middle.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 61.0,
+     "quote": "couple meteor golems over here with a"
+    },
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 60.3,
+     "quote": "and then we will drop two meteor golems"
+    }
+   ]
+  },
+  {
+   "rule": "Avoid leaving the Revenge Tower for the end when the entry or opening heroes can remove it earlier.",
+   "support": 4,
+   "cite": [
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 135.3,
+     "quote": "you don't want to end on that with your main army"
+    },
+    {
+     "video": "lHLHvW8vFTg",
+     "t": 1103.5,
+     "quote": "I'd rather go into the revenge tower"
+    },
+    {
+     "video": "mfjjo4_FuZI",
+     "t": 403.6,
+     "quote": "I got to go lava launcher and the revenge tower."
+    },
+    {
+     "video": "yBFCuLpbDbU",
+     "t": 422.0,
+     "quote": "the bottom here and go through the revenge tower first."
+    }
+   ]
+  },
+  {
+   "rule": "Place Totem Spells at defenses threatening the push; the Warden-walk Ruin Witch plan concentrates its Totems on entry.",
+   "support": 4,
+   "cite": [
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 122.0,
+     "quote": "sprinkle in on the heavy hitting defenses."
+    },
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 91.9,
+     "quote": "them in on any heavy hitting defenses."
+    },
+    {
+     "video": "MUssbWM-qpk",
+     "t": 129.7,
+     "quote": "used on the entry to try to keep"
+    },
+    {
+     "video": "yBFCuLpbDbU",
+     "t": 199.8,
+     "quote": "spells on the heavy hitting defenses."
+    }
+   ]
+  },
+  {
+   "rule": "Delay reviving the Dragon Duke when nearby defenses would immediately kill him; wait for protection from the main army or removal of the relevant threat.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 126.1,
+     "quote": "So once it's safe, we'll revive the Dragon Duke"
+    },
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 348.6,
+     "quote": "threats around it, don't revive it."
+    },
+    {
+     "video": "lTp7FjulP8Q",
+     "t": 647.7,
+     "quote": "revive it when the air defense is gone,"
+    }
+   ]
+  },
+  {
+   "rule": "For the Fireball variant, select valuable opening defenses and clear defenses that would interfere with the intended Fireball target.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "lHLHvW8vFTg",
+     "t": 124.5,
+     "quote": "three balloons to take out defenses on"
+    },
+    {
+     "video": "lTp7FjulP8Q",
+     "t": 98.2,
+     "quote": "to wait for the mortar as well."
+    },
+    {
+     "video": "y7npC3rCP3g",
+     "t": 52.8,
+     "quote": "soon as the arch tower is gone, with two"
+    }
+   ]
+  },
+  {
+   "rule": "For the Log Launcher variant, prefer an entry opposite the Town Hall and finish at the Town Hall.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "MUssbWM-qpk",
+     "t": 269.3,
+     "quote": "launcher, I like to come in opposite of"
+    }
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "duke",
+   "action": "deploy",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "duke",
+   "when": {
+    "t": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 49.2,
+     "quote": "dragon duke on one side to funnel."
+    },
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 40.7,
+     "quote": "funnel one side with your dragon duke"
+    },
+    {
+     "video": "MUssbWM-qpk",
+     "t": 44.5,
+     "quote": "Duke on the other corner."
+    },
+    {
+     "video": "mfjjo4_FuZI",
+     "t": 412.8,
+     "quote": "duke from the opposite side."
+    },
+    {
+     "video": "uRJw__PO-Iw",
+     "t": 39.4,
+     "quote": "placing the Duke on one side of the base."
+    }
+   ]
+  },
+  {
+   "id": "funnel_golems",
+   "action": "deploy",
+   "what": "Meteor Golem",
+   "count": 2,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "duke",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 60.3,
+     "quote": "and then we will drop two meteor golems"
+    },
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 61.0,
+     "quote": "couple meteor golems over here with a"
+    }
+   ]
+  },
+  {
+   "id": "main_golems",
+   "action": "deploy",
+   "what": "Meteor Golem",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "funnel_golems",
+    "delay": 0
+   },
+   "support": 7,
+   "cite": [
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 73.4,
+     "quote": "meteor golems, your apprentice warden,"
+    },
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 82.9,
+     "quote": "meteor golems followed by your"
+    },
+    {
+     "video": "MUssbWM-qpk",
+     "t": 94.4,
+     "quote": "Meteor Golem to go ahead and pull our"
+    },
+    {
+     "video": "lHLHvW8vFTg",
+     "t": 132.7,
+     "quote": "start your meteor golems and your two"
+    },
+    {
+     "video": "mfjjo4_FuZI",
+     "t": 802.1,
+     "quote": "Let's go meteor golems like this."
+    },
+    {
+     "video": "uRJw__PO-Iw",
+     "t": 75.6,
+     "quote": "I deploy my meteor golems together with the supporting troops into the base."
+    },
+    {
+     "video": "yBFCuLpbDbU",
+     "t": 176.5,
+     "quote": "So we're going to use our meteor golems"
+    }
+   ]
+  },
+  {
+   "id": "apprentice",
+   "action": "deploy",
+   "what": "Apprentice Warden",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "main_golems",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 73.4,
+     "quote": "meteor golems, your apprentice warden,"
+    },
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 84.4,
+     "quote": "apprentice warden, your king, your"
+    },
+    {
+     "video": "lHLHvW8vFTg",
+     "t": 542.3,
+     "quote": "Four burger golems and one apprentice warden."
+    }
+   ]
+  },
+  {
+   "id": "king",
+   "action": "deploy",
+   "what": "Barbarian King",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "apprentice",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 84.4,
+     "quote": "apprentice warden, your king, your"
+    },
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 76.0,
+     "quote": "all of your heroes and then your troop"
+    },
+    {
+     "video": "y7npC3rCP3g",
+     "t": 109.5,
+     "quote": "Let's get the king in there."
+    }
+   ]
+  },
+  {
+   "id": "queen",
+   "action": "deploy",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "king",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 85.6,
+     "quote": "queen, your warden."
+    },
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 76.0,
+     "quote": "all of your heroes and then your troop"
+    },
+    {
+     "video": "lTp7FjulP8Q",
+     "t": 141.6,
+     "quote": "then the archer queen and such walking"
+    },
+    {
+     "video": "y7npC3rCP3g",
+     "t": 312.6,
+     "quote": "Queen in there as well."
+    }
+   ]
+  },
+  {
+   "id": "warden",
+   "action": "deploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "queen",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 85.6,
+     "quote": "queen, your warden."
+    },
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 76.0,
+     "quote": "all of your heroes and then your troop"
+    },
+    {
+     "video": "mfjjo4_FuZI",
+     "t": 810.8,
+     "quote": "Warden to get through kind of all the way towards the town hall area,"
+    }
+   ]
+  },
+  {
+   "id": "launcher",
+   "action": "deploy",
+   "what": "Troop Launcher",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 76.0,
+     "quote": "your troop launcher obviously."
+    },
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 95.7,
+     "quote": "be using the troop launcher here"
+    },
+    {
+     "video": "lHLHvW8vFTg",
+     "t": 136.3,
+     "quote": "troop launcher is going to go down and"
+    },
+    {
+     "video": "y7npC3rCP3g",
+     "t": 107.1,
+     "quote": "Let's get that siege in there."
+    },
+    {
+     "video": "yBFCuLpbDbU",
+     "t": 179.7,
+     "quote": "our troop launcher down."
+    }
+   ]
+  },
+  {
+   "id": "queen_ability",
+   "action": "ability",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "unit:Archer Queen",
+   "group": "main",
+   "when": {
+    "after": "queen",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 79.6,
+     "quote": "the queen's ability right away because"
+    },
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 86.5,
+     "quote": "insta pop your queen ability to get the healers out"
+    },
+    {
+     "video": "yBFCuLpbDbU",
+     "t": 183.5,
+     "quote": "pop her ability."
+    }
+   ]
+  },
+  {
+   "id": "rage_entry",
+   "action": "spell",
+   "what": "Rage Spell",
+   "count": 1,
+   "at": "group:main",
+   "group": "main",
+   "when": {
+    "after": "main_golems",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 98.1,
+     "quote": "I like to use one rage on the entry"
+    },
+    {
+     "video": "MUssbWM-qpk",
+     "t": 228.6,
+     "quote": "the rage and the warden's eternal tome"
+    },
+    {
+     "video": "yBFCuLpbDbU",
+     "t": 495.3,
+     "quote": "the rage on the warden so we used the rage on our entry here"
+    }
+   ]
+  },
+  {
+   "id": "totem_main",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "after": "main_golems",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 91.9,
+     "quote": "them in on any heavy hitting defenses."
+    },
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 122.0,
+     "quote": "sprinkle in on the heavy hitting defenses."
+    },
+    {
+     "video": "MUssbWM-qpk",
+     "t": 129.7,
+     "quote": "used on the entry to try to keep"
+    },
+    {
+     "video": "yBFCuLpbDbU",
+     "t": 199.8,
+     "quote": "spells on the heavy hitting defenses."
+    }
+   ]
+  },
+  {
+   "id": "warden_ability",
+   "action": "ability",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "warden",
+      "delay": 0
+     },
+     {
+      "any": [
+       {
+        "heavy_fire": "Grand Warden"
+       },
+       {
+        "heavy_fire": "Barbarian King"
+       },
+       {
+        "heavy_fire": "Archer Queen"
+       },
+       {
+        "defenders_near": "main"
+       }
+      ]
+     }
+    ]
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 270.3,
+     "quote": "use a pretty early warden ability because there is a lot of damage in there."
+    },
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 457.3,
+     "quote": "We held onto that as long as we could."
+    },
+    {
+     "video": "MUssbWM-qpk",
+     "t": 105.0,
+     "quote": "my Warden's Eternal Tome pretty early."
+    },
+    {
+     "video": "mfjjo4_FuZI",
+     "t": 449.4,
+     "quote": "Let's go warden ability through this damage"
+    }
+   ]
+  },
+  {
+   "id": "rage_core",
+   "action": "spell",
+   "what": "Rage Spell",
+   "count": 1,
+   "at": "group:main",
+   "group": "main",
+   "when": {
+    "group_inside": "main"
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 100.0,
+     "quote": "and then one rage kind of in the core of"
+    }
+   ]
+  },
+  {
+   "id": "revive_duke",
+   "action": "spell",
+   "what": "Revive Spell",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "dead": "Dragon Duke"
+     },
+     {
+      "group_inside": "main"
+     }
+    ]
+   },
+   "support": 7,
+   "cite": [
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 94.3,
+     "quote": "Then your revive spell's always going to be used on the dragon duke."
+    },
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 123.1,
+     "quote": "And then the two revive spells are going to be used on the Dragon Duke."
+    },
+    {
+     "video": "MUssbWM-qpk",
+     "t": 409.4,
+     "quote": "Dragon Duke and just instantly revive it"
+    },
+    {
+     "video": "lHLHvW8vFTg",
+     "t": 185.8,
+     "quote": "if my warden goes down super early, I'm going to use it on him."
+    },
+    {
+     "video": "lTp7FjulP8Q",
+     "t": 647.7,
+     "quote": "revive it when the air defense is gone,"
+    },
+    {
+     "video": "mfjjo4_FuZI",
+     "t": 866.6,
+     "quote": "Revive old duke."
+    },
+    {
+     "video": "y7npC3rCP3g",
+     "t": 375.0,
+     "quote": "actually revive the dragon duke."
+    }
+   ]
+  }
+ ],
+ "variants": [
+  {
+   "name": "Natural funnel: send all Meteor Golems together",
+   "replaces": [
+    "funnel_golems",
+    "main_golems"
+   ],
+   "steps": [
+    {
+     "id": "main_golems",
+     "action": "deploy",
+     "what": "Meteor Golem",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "UqzQGpGU0FI",
+       "t": 261.2,
+       "quote": "natural funnel that way anyway."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "UqzQGpGU0FI",
+     "t": 261.2,
+     "quote": "natural funnel that way anyway."
+    }
+   ]
+  },
+  {
+   "name": "Six Meteor Golems with seven Super Archers",
+   "replaces": [
+    "main_golems",
+    "rage_entry",
+    "rage_core"
+   ],
+   "steps": [
+    {
+     "id": "funnel_archers",
+     "action": "deploy",
+     "what": "Super Archer",
+     "count": 2,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "funnel_golems",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "-jNbwwWqnOE",
+       "t": 62.5,
+       "quote": "couple super archers behind."
+      }
+     ]
+    },
+    {
+     "id": "main_golems",
+     "action": "deploy",
+     "what": "Meteor Golem",
+     "count": 4,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "funnel_archers",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "-jNbwwWqnOE",
+       "t": 82.9,
+       "quote": "meteor golems followed by your"
+      }
+     ]
+    },
+    {
+     "id": "wall_breakers",
+     "action": "deploy",
+     "what": "Wall Breaker",
+     "count": 4,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "queen_ability",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "-jNbwwWqnOE",
+       "t": 90.4,
+       "quote": "And then you have four wall breakers just to get through that"
+      }
+     ]
+    },
+    {
+     "id": "main_archers",
+     "action": "deploy",
+     "what": "Super Archer",
+     "count": 5,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "all": [
+       {
+        "after": "launcher",
+        "delay": 0
+       },
+       {
+        "after": "wall_breakers",
+        "delay": 0
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "-jNbwwWqnOE",
+       "t": 113.9,
+       "quote": "you're going to drop them in last"
+      }
+     ]
+    },
+    {
+     "id": "poison_cc",
+     "action": "spell",
+     "what": "Poison Spell",
+     "count": 1,
+     "at": "defenders:main",
+     "group": "main",
+     "when": {
+      "defenders_near": "main"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "-jNbwwWqnOE",
+       "t": 185.0,
+       "quote": "You have a poison spell to use on the clan castle."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 62.5,
+     "quote": "couple super archers behind."
+    },
+    {
+     "video": "-jNbwwWqnOE",
+     "t": 113.9,
+     "quote": "you're going to drop them in last"
+    }
+   ]
+  },
+  {
+   "name": "Warden walk opening with test Balloons and five Healers",
+   "replaces": [
+    "warden",
+    "duke",
+    "funnel_golems",
+    "main_golems"
+   ],
+   "steps": [
+    {
+     "id": "warden",
+     "action": "deploy",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "MUssbWM-qpk",
+       "t": 33.2,
+       "quote": "Warden on one corner."
+      },
+      {
+       "video": "yBFCuLpbDbU",
+       "t": 43.2,
+       "quote": "start off with your grand warden and on"
+      }
+     ]
+    },
+    {
+     "id": "test_balloons",
+     "action": "deploy",
+     "what": "Balloon",
+     "count": 2,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "warden",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "MUssbWM-qpk",
+       "t": 36.0,
+       "quote": "two test balloons down just to test for"
+      },
+      {
+       "video": "yBFCuLpbDbU",
+       "t": 47.6,
+       "quote": "you're going to drop one test balloon,"
+      }
+     ]
+    },
+    {
+     "id": "walk_healers",
+     "action": "deploy",
+     "what": "Healer",
+     "count": 5,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "test_balloons",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "MUssbWM-qpk",
+       "t": 40.2,
+       "quote": "healers. Then we'll let our Warden start"
+      },
+      {
+       "video": "yBFCuLpbDbU",
+       "t": 49.0,
+       "quote": "then your five healers and"
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "duke",
+     "when": {
+      "after": "walk_healers",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "MUssbWM-qpk",
+       "t": 44.5,
+       "quote": "Duke on the other corner."
+      }
+     ]
+    },
+    {
+     "id": "main_golems",
+     "action": "deploy",
+     "what": "Meteor Golem",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "MUssbWM-qpk",
+       "t": 94.4,
+       "quote": "Meteor Golem to go ahead and pull our"
+      },
+      {
+       "video": "yBFCuLpbDbU",
+       "t": 176.5,
+       "quote": "So we're going to use our meteor golems"
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "MUssbWM-qpk",
+     "t": 33.2,
+     "quote": "Warden on one corner."
+    },
+    {
+     "video": "yBFCuLpbDbU",
+     "t": 43.2,
+     "quote": "start off with your grand warden and on"
+    }
+   ]
+  },
+  {
+   "name": "Fireball opening instead of the Dragon Duke and two-Golem funnel",
+   "replaces": [
+    "duke",
+    "funnel_golems",
+    "main_golems",
+    "warden",
+    "warden_ability"
+   ],
+   "steps": [
+    {
+     "id": "warden",
+     "action": "deploy",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "lTp7FjulP8Q",
+       "t": 70.2,
+       "quote": "Let's just start the one right here."
+      }
+     ]
+    },
+    {
+     "id": "fireball",
+     "action": "ability",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "charge",
+     "when": {
+      "after": "warden",
+      "delay": 0
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 129.8,
+       "quote": "drop your fireball, drop your earthquakes."
+      },
+      {
+       "video": "lTp7FjulP8Q",
+       "t": 113.1,
+       "quote": "three, fireball, let's go."
+      },
+      {
+       "video": "y7npC3rCP3g",
+       "t": 64.5,
+       "quote": "we have now one invis, second invis, fireball, one, two."
+      }
+     ]
+    },
+    {
+     "id": "main_golems",
+     "action": "deploy",
+     "what": "Meteor Golem",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "fireball",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 132.7,
+       "quote": "start your meteor golems and your two"
+      }
+     ]
+    },
+    {
+     "id": "ruin_witches",
+     "action": "deploy",
+     "what": "Ruin Witch",
+     "count": 2,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "main_golems",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 134.5,
+       "quote": "rune witches going one direction."
+      }
+     ]
+    }
+   ],
+   "support": 3,
+   "cite": [
+    {
+     "video": "lHLHvW8vFTg",
+     "t": 129.8,
+     "quote": "drop your fireball, drop your earthquakes."
+    },
+    {
+     "video": "lTp7FjulP8Q",
+     "t": 113.1,
+     "quote": "three, fireball, let's go."
+    },
+    {
+     "video": "y7npC3rCP3g",
+     "t": 64.5,
+     "quote": "we have now one invis, second invis, fireball, one, two."
+    }
+   ]
+  },
+  {
+   "name": "Queen opposite the Meteor Golem push; delay her ability",
+   "replaces": [
+    "queen",
+    "queen_ability"
+   ],
+   "steps": [
+    {
+     "id": "queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "all": [
+       {
+        "after": "main_golems",
+        "delay": 0
+       },
+       {
+        "group_inside": "main"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "uRJw__PO-Iw",
+       "t": 97.0,
+       "quote": "the archer queen on the opposite side."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "uRJw__PO-Iw",
+     "t": 97.0,
+     "quote": "the archer queen on the opposite side."
+    },
+    {
+     "video": "uRJw__PO-Iw",
+     "t": 119.0,
+     "quote": "Don't activate your hero's abilities immediately."
+    }
+   ]
+  },
+  {
+   "name": "Opening Giant Arrow, Dragon Duke and Barbarian King before the main push",
+   "replaces": [],
+   "steps": [],
+   "support": 1,
+   "cite": [
+    {
+     "video": "mfjjo4_FuZI",
+     "t": 782.5,
+     "quote": "shot from the top side and the duke."
+    },
+    {
+     "video": "mfjjo4_FuZI",
+     "t": 791.8,
+     "quote": "king, and king ability."
+    },
+    {
+     "video": "mfjjo4_FuZI",
+     "t": 802.1,
+     "quote": "Let's go meteor golems like this."
+    },
+    {
+     "video": "mfjjo4_FuZI",
+     "t": 804.1,
+     "quote": "I'm I'm to go healers,"
+    },
+    {
+     "video": "mfjjo4_FuZI",
+     "t": 807.1,
+     "quote": "Let's go log launcher this time."
+    }
+   ]
+  },
+  {
+   "name": "Warden and three Furnaces; Queen funnels while King and Royal Champion clear another flank",
+   "replaces": [],
+   "steps": [],
+   "support": 1,
+   "cite": [
+    {
+     "video": "yBFCuLpbDbU",
+     "t": 50.8,
+     "quote": "the three furnaces behind and you're"
+    },
+    {
+     "video": "yBFCuLpbDbU",
+     "t": 181.5,
+     "quote": "We're going to use our queen and insta"
+    },
+    {
+     "video": "yBFCuLpbDbU",
+     "t": 202.1,
+     "quote": "Now I'm going to send in my king and my"
+    },
+    {
+     "video": "yBFCuLpbDbU",
+     "t": 204.3,
+     "quote": "royal champion over here as we talked"
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "All nine complete source compositions are different, so there is no most common complete composition. The army uses UqzQGpGU0FI as a representative of the Dragon Duke funnel and grouped Meteor Golem plan. Its hero equipment matches -jNbwwWqnOE. This is a tie-break, not a claim that eight Meteor Golems are the most common count. Four Meteor Golems occur in three sources; five Healers occur in six.",
+  "Support counts describe the shared tactical action, not unanimous agreement on troop quantity, exact ordering, loadout or trigger. In particular, the seven sources supporting a main Meteor Golem deployment do not all describe the two-Golem funnel. The explicit Apprentice Warden, King, Queen, Warden and Troop Launcher order comes from -jNbwwWqnOE and UqzQGpGU0FI.",
+  "t=0 means the stated start of the attack. Citation times are video timestamps, not attack-clock delays. No source supplies a fixed wait for funnel completion. All zero-delay dependencies preserve narrated order without inventing a duration; they do not establish that the funnel has actually finished.",
+  "group_inside:main approximates reaching the core and the main army approaching the fallen Dragon Duke. It cannot establish the actual core location, proximity to his fallen position, destruction of an Air Defense or a distracted Monolith. The heavy_fire and defenders_near alternatives approximate the narrated Warden ability conditions without inventing health thresholds.",
+  "Totem support is described as repeated, discretionary placement, but no source supplies a casting interval. Consequently no every value is invented. totem_main encodes one supported cast; the remaining Totems have no executable schedule in this object. Additional Dragon Duke revivals in compositions carrying multiple Revive Spells likewise have no invented repeat interval.",
+  "The literal revival anchor is unit:Dragon Duke. The current executor resolves unit anchors only for living units, so this step cannot currently resolve its anchor after dead:Dragon Duke becomes true. The vocabulary also cannot express the source's safe-revival conditions exactly. No guessed corpse coordinates were substituted.",
+  "The Warden-walk and Fireball variants are supported partial substitutions, not complete executable conversions between the source armies. Their inventories, hero rosters and loadouts differ from the default army. The schema provides no variant army field. The two variants with empty steps document distinct plans whose complete deployment sequence cannot be reconstructed without supplying unspoken placements or prerequisites.",
+  "The Warden-walk variant uses MUssbWM-qpk's two test Balloons; yBFCuLpbDbU uses one. MUssbWM-qpk deploys the Dragon Duke on the opposite corner and uses Ruin Witches. yBFCuLpbDbU instead uses three Furnaces, a funneling Queen and a King/Royal Champion flank. Their later hero and spell sequences must not be treated as interchangeable.",
+  "Fireball sources specify Invisibility setup but do not identify the spell circles. lHLHvW8vFTg budgets four Invisibility Spells; lTp7FjulP8Q and y7npC3rCP3g describe two in particular openings. lHLHvW8vFTg follows Fireball with Earthquakes, but their placement is unspecified. These casts are not assigned invented anchors. The zero-delay Fireball dependency does not reproduce the omitted targeting setup. Ruin Witches belong to lHLHvW8vFTg's composition, not every Fireball composition.",
+  "The immediate Queen ability applies to Healer Puppet and Action Figure in -jNbwwWqnOE, UqzQGpGU0FI and yBFCuLpbDbU. MUssbWM-qpk combines Magic Mirror with Rage, Rocket Spear and Eternal Tome. lTp7FjulP8Q and y7npC3rCP3g use later Queen abilities. uRJw__PO-Iw explicitly advises against immediate hero abilities and supplies no precise replacement trigger.",
+  "The opposite-side Queen anchor is an approximation because uRJw__PO-Iw does not tie that side to a named edge. Likewise, edge anchors preserve narrated flank relationships without inventing compass directions or deployment coordinates. The Super Archer variant's final deployment follows the other deployments, but the vocabulary has no direct trigger for defenses first acquiring the leading troops.",
+  "Alternative composition -jNbwwWqnOE: 6 Meteor Golems, 7 Super Archers, 1 Apprentice Warden and 4 Wall Breakers; 6 Totem, 2 Revive and 1 Poison Spells. Troop Launcher is named, but its troop payload and donated spell split are unresolved. Four main Meteor Golems and five main Super Archers are the source extraction's remainders after the two-of-each funnel allocation.",
+  "Alternative composition MUssbWM-qpk: 4 Meteor Golems, 4 Ruin Witches, 2 Balloons, 5 Healers and 1 Super Wall Breaker; 1 Rage, 3 Revive, 1 Freeze and 2 Invisibility Spells; Clan Castle Log Launcher, 1 Poison and 3 Totem Spells, with two troop identities unresolved. Heroes are Grand Warden, Dragon Duke, Archer Queen and Royal Champion; the Warden has Eternal Tome, the Queen Magic Mirror, and the Duke Fire Heart/Revenge Deck. Exact remaining Ruin Witch and main-army deployment details are incomplete.",
+  "Alternative composition lHLHvW8vFTg: 5 Healers, 3 Balloons, 4 Meteor Golems, 2 Ruin Witches, 1 Apprentice Warden, 3 Super Barbarians, 3 Headhunters and 2 Archers; 4 Invisibility, 5 Earthquake, 1 Totem and 1 Freeze Spells. Clan Castle contains 1 Archer, 3 Rocket Balloons, 2 Ice Golems, Troop Launcher, 1 Overgrowth and 1 Revive Spell. Heroes are Barbarian King, Archer Queen, Grand Warden and Dragon Duke, with Fireball on the Warden. The 'arrow backpack' activation sequence and the identities called 'cake' and 'logger' remain unresolved.",
+  "Alternative composition lTp7FjulP8Q: 5 Healers, 3 Meteor Golems, 3 Throwers, 1 Apprentice Warden, 3 Ice Golems, 4 Archers, 3 Balloons, 2 Super Wall Breakers, 2 Wizards and 1 Headhunter; 4 Invisibility, 1 Earthquake, 1 Overgrowth, 1 Rage and 2 Totem Spells. Clan Castle lists 1 Super Valkyrie, 1 Super Yeti, 1 Earthquake, 1 Revive and 1 Angry Spell. Siege choices include Flame Flinger, Log Launcher and Troop Launcher. Heroes are Archer Queen, Grand Warden, Royal Champion and Dragon Duke, with Fireball on the Warden. Meteor Golem, Ice Golem and Apprentice Warden deployments are not verbally specified.",
+  "Alternative composition mfjjo4_FuZI: 5 Healers, 4 Balloons, 1 Baby Dragon and 6 Meteor Golems; 1 Revive, 4 Totem, 1 Poison and 4 Earthquake Spells. Siege inventory lists 2 Log Launchers and 1 Siege Barracks as choices, not simultaneous deployments. Clan Castle lists 1 Super Valkyrie, 1 Super Yeti, 1 Overgrowth and 1 Revive Spell. Heroes are Barbarian King, Archer Queen, Grand Warden and Dragon Duke; the Queen uses Giant Arrow and the Warden Eternal Tome. Opening Queen deployment details and exact shot alignment are incomplete.",
+  "Alternative composition uRJw__PO-Iw: 7 Meteor Golems and 1 each of Headhunter, Wizard, Archer, Miner, Minion, Ice Golem, Apprentice Warden and Furnace; 5 Invisibility, 1 Revive, 1 Poison, 1 Totem and 1 Rage Spell. Clan Castle lists 2 Archers, 1 Yeti, 1 Super Yeti, 1 Rage, 1 Totem and 1 Angry Spell. Listed siege choices include Battle Blimp, Troop Launcher, Sky Wagon and Siege Barracks, but the deployed siege is not narrated. Heroes are Archer Queen, Dragon Duke, Grand Warden and Royal Champion. Supporting troops and spell-specific actions are not individually narrated.",
+  "Alternative composition y7npC3rCP3g: 5 Healers, 2 Balloons, 4 Meteor Golems, 2 Throwers, 1 Apprentice Warden, 2 Super Wall Breakers, 4 Rocket Balloons, 2 Archers, 1 Wizard and 1 Headhunter; 3 Invisibility, 3 Earthquake, 3 Totem and 1 Revive Spell. Clan Castle lists 2 Balloons, 1 Minion, 1 Rocket Balloon, 1 Ice Golem, 1 Root Rider, 1 Poison, 2 Lightning and 1 Freeze Spell. Siege choices include Log Launcher, Flame Flinger and Troop Launcher; Troop Launcher is identified in the first attack. Heroes are Barbarian King, Archer Queen, Grand Warden and Dragon Duke, with Fireball on the Warden. Meteor Golem, Healer and Thrower deployment order is not narrated.",
+  "Alternative composition yBFCuLpbDbU: 5 Healers, 3 Furnaces, 5 Meteor Golems, 3 Balloons and 1 Archer; 8 Totem, 1 Rage and 1 Invisibility Spell. Clan Castle lists 1 Balloon, 1 Super Yeti, 1 Ice Golem, 1 Poison, 1 Invisibility and 1 Revive Spell. Siege choices are Troop Launcher, Log Launcher and Siege Barracks, with Troop Launcher deployment narrated. Heroes are Barbarian King, Archer Queen, Grand Warden and Royal Champion. The Warden has Rage Gem/Life Gem, so no Eternal Tome activation belongs to that composition. Royal Champion is the usual Revive target, with an early fallen Warden as an exception.",
+  "Army-changing variants require the corresponding source inventory and loadouts. Available siege options in army links do not establish multiple siege deployments. Unnamed troop IDs, unspecified cleanup actions, undefined equipment combinations and garbled targets have not been converted into additional steps."
+ ],
+ "check": {
+  "steps_kept": 14,
+  "steps_dropped": 0,
+  "reasons": {},
+  "dangling_after": []
+ }
+}

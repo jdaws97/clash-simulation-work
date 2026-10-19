@@ -1,0 +1,1781 @@
+{
+ "family": "root-rider",
+ "name": "Royal Champion recall into a funneled Root Rider smash",
+ "sources": [
+  "--MRQU7FUxQ",
+  "40ln9NIrCUU",
+  "45MwOV3C1nQ",
+  "C0lnvxJraoM",
+  "Ff0NfWFgSiY",
+  "L1Nk6QhfxmQ",
+  "L_LKqcL56NE",
+  "QBJSv33_sIc",
+  "QCrKyyMDYr4",
+  "WlWHcFAz7ys",
+  "a6fRLOU-bLc",
+  "b46w2PUASJI",
+  "e5VTP7535II",
+  "eQAelt6VLeE",
+  "g9UjZ9xFQOU",
+  "rBhknrms4J4",
+  "u9owFe-ervU"
+ ],
+ "army": {
+  "troops": {
+   "Super Barbarian": 6,
+   "Archer": 3,
+   "Minion": 1,
+   "Balloon": 3,
+   "Rocket Balloon": 6,
+   "Healer": 5,
+   "Baby Dragon": 1,
+   "Root Rider": 4,
+   "Ice Golem": 2,
+   "Valkyrie": 4,
+   "Headhunter": 2,
+   "Apprentice Warden": 1
+  },
+  "spells": {
+   "Invisibility Spell": 5,
+   "Poison Spell": 1,
+   "Totem Spell": 2,
+   "Earthquake Spell": 3
+  },
+  "cc": {
+   "Super Valkyrie": 1,
+   "Super Yeti": 1,
+   "Sky Wagon": 1,
+   "Recall Spell": 1,
+   "Overgrowth Spell": 1
+  },
+  "heroes": [
+   "Royal Champion",
+   "Grand Warden",
+   "Archer Queen",
+   "Dragon Duke"
+  ],
+  "loadouts": {
+   "Dragon Duke": [
+    "Rocket Backpack",
+    "Fire Heart",
+    "Phoenix"
+   ],
+   "Archer Queen": [
+    "Action Figure",
+    "Giant Arrow",
+    "Frosty"
+   ],
+   "Grand Warden": [
+    "Rage Gem",
+    "Eternal Tome",
+    "Diggy"
+   ],
+   "Royal Champion": [
+    "Electro Boots",
+    "Rocket Spear",
+    "Spirit Fox"
+   ]
+  }
+ },
+ "base_reading": [
+  {
+   "rule": "Choose the Royal Champion charge primarily to establish the main army's funnel; additional defensive value is secondary.",
+   "support": 8,
+   "cite": [
+    {
+     "video": "C0lnvxJraoM",
+     "t": 120.2,
+     "quote": "charge doesn't need to clear high value defenses, but focus more on creating pathing."
+    },
+    {
+     "video": "40ln9NIrCUU",
+     "t": 163.3,
+     "quote": "funnel is number one priority."
+    }
+   ]
+  },
+  {
+   "rule": "Clear one section with the Royal Champion and use the opposite flank to create an L-shaped route through the core. A middle-compartment charge can instead create a U-shaped route.",
+   "support": 4,
+   "cite": [
+    {
+     "video": "40ln9NIrCUU",
+     "t": 41.8,
+     "quote": "defenses that kind of make a wedge to give you L-shaped pathing."
+    },
+    {
+     "video": "eQAelt6VLeE",
+     "t": 36.8,
+     "quote": "either an U-shaped path or an L-shaped"
+    }
+   ]
+  },
+  {
+   "rule": "Remove outside buildings left behind by the charge when they would compromise the funnel.",
+   "support": 6,
+   "cite": [
+    {
+     "video": "Ff0NfWFgSiY",
+     "t": 98.6,
+     "quote": "down like a wizard or a valkyrie"
+    },
+    {
+     "video": "40ln9NIrCUU",
+     "t": 77,
+     "quote": "some wizards, so you could just invest some wizards and get that out."
+    }
+   ]
+  },
+  {
+   "rule": "Inspect the Royal Champion's proposed route for the Giga Bomb and avoid losing Spirit Fox to it.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "40ln9NIrCUU",
+     "t": 310.2,
+     "quote": "it can basically one-shot your fox if your fox takes any other damage,"
+    },
+    {
+     "video": "u9owFe-ervU",
+     "t": 476.3,
+     "quote": "lose my spirit fox to the gigabomb."
+    }
+   ]
+  },
+  {
+   "rule": "Use Giant Arrow during the Queen's funnel to trigger Invisibility Spell Towers when the alignment permits it.",
+   "support": 9,
+   "cite": [
+    {
+     "video": "40ln9NIrCUU",
+     "t": 99.2,
+     "quote": "You obviously want to aim for the invisibility tower."
+    },
+    {
+     "video": "g9UjZ9xFQOU",
+     "t": 335.7,
+     "quote": "We use the giant arrow to trigger the"
+    }
+   ]
+  },
+  {
+   "rule": "Use Overgrowth to control pathing, keep the army grouped, or temporarily suppress a dangerous defensive section according to the layout.",
+   "support": 13,
+   "cite": [
+    {
+     "video": "40ln9NIrCUU",
+     "t": 136.1,
+     "quote": "just to force pathing to keep my troops grouped nice and tightly"
+    },
+    {
+     "video": "rBhknrms4J4",
+     "t": 693.1,
+     "quote": "control troop pathing, eliminate side damage, or temporarily disable dangerous defensive sections."
+    }
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "rc",
+   "action": "deploy",
+   "what": "Royal Champion",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "t": 0
+   },
+   "support": 14,
+   "cite": [
+    {
+     "video": "g9UjZ9xFQOU",
+     "t": 105,
+     "quote": "At three minute mark, we deploy the rc"
+    }
+   ]
+  },
+  {
+   "id": "invisibility",
+   "action": "spell",
+   "what": "Invisibility Spell",
+   "count": 1,
+   "at": "unit_ahead:Royal Champion",
+   "group": "charge",
+   "when": {
+    "after": "rc",
+    "delay": 4
+   },
+   "every": 10,
+   "until": {
+    "spells_left": "Invisibility Spell",
+    "n": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "g9UjZ9xFQOU",
+     "t": 117.1,
+     "quote": "this case is 56 second."
+    },
+    {
+     "video": "b46w2PUASJI",
+     "t": 93.1,
+     "quote": "use your invisibility spells every 10"
+    },
+    {
+     "video": "C0lnvxJraoM",
+     "t": 125,
+     "quote": "using your invisibility spells every 10 seconds"
+    }
+   ]
+  },
+  {
+   "id": "recall",
+   "action": "recall",
+   "what": "Recall Spell",
+   "count": 1,
+   "at": "unit:Royal Champion",
+   "group": "charge",
+   "when": {
+    "spells_left": "Invisibility Spell",
+    "n": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "C0lnvxJraoM",
+     "t": 165,
+     "quote": "Once you run out of invisibility spells, recall the Royal"
+    },
+    {
+     "video": "b46w2PUASJI",
+     "t": 122.4,
+     "quote": "use your recall spell on the royal"
+    }
+   ]
+  },
+  {
+   "id": "main_ice",
+   "action": "deploy",
+   "what": "Ice Golem",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "recall",
+    "delay": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "Ff0NfWFgSiY",
+     "t": 246.5,
+     "quote": "ice golem down in front."
+    },
+    {
+     "video": "g9UjZ9xFQOU",
+     "t": 169.4,
+     "quote": "Deploy one ice golem first, followed by the"
+    }
+   ]
+  },
+  {
+   "id": "roots",
+   "action": "deploy",
+   "what": "Root Rider",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "main_ice",
+    "delay": 0
+   },
+   "support": 15,
+   "cite": [
+    {
+     "video": "g9UjZ9xFQOU",
+     "t": 171.8,
+     "quote": "root riders, healers, and everything else."
+    },
+    {
+     "video": "QBJSv33_sIc",
+     "t": 255.8,
+     "quote": "I spam the root riders"
+    }
+   ]
+  },
+  {
+   "id": "balloons",
+   "action": "deploy",
+   "what": "Balloon",
+   "count": 2,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "roots",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "u9owFe-ervU",
+     "t": 135,
+     "quote": "two test balloons down, then the"
+    }
+   ]
+  },
+  {
+   "id": "healers",
+   "action": "deploy",
+   "what": "Healer",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "balloons",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "u9owFe-ervU",
+     "t": 136.1,
+     "quote": "healers, the warden, the sky wagon, and"
+    },
+    {
+     "video": "eQAelt6VLeE",
+     "t": 184.7,
+     "quote": "root riders, loons, healers, warden, and"
+    }
+   ]
+  },
+  {
+   "id": "valkyries",
+   "action": "deploy",
+   "what": "Valkyrie",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "roots",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "C0lnvxJraoM",
+     "t": 246.9,
+     "quote": "Valkyries, Warden, Healers, Royal Champion, and the new siege, the Sky Wagon,"
+    },
+    {
+     "video": "--MRQU7FUxQ",
+     "t": 109.5,
+     "quote": "all the root riders, Valkyries, healers, and recalled heroes."
+    }
+   ]
+  },
+  {
+   "id": "warden",
+   "action": "deploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "healers",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "u9owFe-ervU",
+     "t": 136.1,
+     "quote": "healers, the warden, the sky wagon, and"
+    }
+   ]
+  },
+  {
+   "id": "sky_wagon",
+   "action": "deploy",
+   "what": "Sky Wagon",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "u9owFe-ervU",
+     "t": 136.1,
+     "quote": "healers, the warden, the sky wagon, and"
+    },
+    {
+     "video": "C0lnvxJraoM",
+     "t": 246.9,
+     "quote": "Valkyries, Warden, Healers, Royal Champion, and the new siege, the Sky Wagon,"
+    }
+   ]
+  },
+  {
+   "id": "rc_main",
+   "action": "redeploy",
+   "what": "Royal Champion",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "sky_wagon",
+    "delay": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "eQAelt6VLeE",
+     "t": 199.2,
+     "quote": "root riders. Deploy the RC behind the"
+    },
+    {
+     "video": "g9UjZ9xFQOU",
+     "t": 174.6,
+     "quote": "Make sure to deploy the rc a little"
+    }
+   ]
+  },
+  {
+   "id": "funnel_ice",
+   "action": "deploy",
+   "what": "Ice Golem",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "roots",
+    "delay": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "u9owFe-ervU",
+     "t": 94,
+     "quote": "is we're going to drop an ice golem"
+    },
+    {
+     "video": "Ff0NfWFgSiY",
+     "t": 248.2,
+     "quote": "ahead and use a second ice golem out in"
+    }
+   ]
+  },
+  {
+   "id": "queen",
+   "action": "deploy",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "funnel_ice",
+    "delay": 0
+   },
+   "support": 12,
+   "cite": [
+    {
+     "video": "40ln9NIrCUU",
+     "t": 219.8,
+     "quote": "We'll use our queen down here at the bottom"
+    },
+    {
+     "video": "u9owFe-ervU",
+     "t": 95.9,
+     "quote": "we're going to drop the queen, shoot the"
+    }
+   ]
+  },
+  {
+   "id": "queen_arrow",
+   "action": "ability",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "unit:Archer Queen",
+   "group": "funnel",
+   "when": {
+    "after": "queen",
+    "delay": 0
+   },
+   "support": 10,
+   "cite": [
+    {
+     "video": "b46w2PUASJI",
+     "t": 152.2,
+     "quote": "instantly. Her giant arrow will trigger"
+    },
+    {
+     "video": "Ff0NfWFgSiY",
+     "t": 112.9,
+     "quote": "any invis towers anything like that."
+    }
+   ]
+  },
+  {
+   "id": "duke",
+   "action": "deploy",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "duke",
+   "when": {
+    "inside": "Root Rider"
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "L_LKqcL56NE",
+     "t": 198,
+     "quote": "Only release your dragon duke"
+    },
+    {
+     "video": "45MwOV3C1nQ",
+     "t": 95.8,
+     "quote": "root riders first"
+    },
+    {
+     "video": "Ff0NfWFgSiY",
+     "t": 266.6,
+     "quote": "prince. Here, we use our dragon duke."
+    }
+   ]
+  },
+  {
+   "id": "poison",
+   "action": "spell",
+   "what": "Poison Spell",
+   "count": 1,
+   "at": "defenders:main",
+   "group": "main",
+   "when": {
+    "defenders_near": "main"
+   },
+   "support": 8,
+   "cite": [
+    {
+     "video": "40ln9NIrCUU",
+     "t": 264.6,
+     "quote": "immediately drop the poison on all the witches and that furnace."
+    },
+    {
+     "video": "QBJSv33_sIc",
+     "t": 501.7,
+     "quote": "Poison spell handles it easily."
+    }
+   ]
+  },
+  {
+   "id": "totem",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "group_inside": "main"
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "u9owFe-ervU",
+     "t": 139.9,
+     "quote": "going to use totem spells on the entry"
+    },
+    {
+     "video": "40ln9NIrCUU",
+     "t": 145.4,
+     "quote": "totem spells on the entry."
+    }
+   ]
+  },
+  {
+   "id": "headhunters",
+   "action": "deploy",
+   "what": "Headhunter",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "defenders_near": "main"
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "40ln9NIrCUU",
+     "t": 397.8,
+     "quote": "sprinkling in our head hunters to help with these enemy heroes."
+    },
+    {
+     "video": "a6fRLOU-bLc",
+     "t": 822.8,
+     "quote": "down the king with those head hunters."
+    }
+   ]
+  },
+  {
+   "id": "tome",
+   "action": "ability",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "main",
+   "when": {
+    "group_inside": "main"
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "C0lnvxJraoM",
+     "t": 271.9,
+     "quote": "means you can use the Eternal Tome around the core"
+    },
+    {
+     "video": "u9owFe-ervU",
+     "t": 145.6,
+     "quote": "ability until we're getting closer to"
+    }
+   ]
+  },
+  {
+   "id": "rc_spear",
+   "action": "ability",
+   "what": "Royal Champion",
+   "count": 1,
+   "at": "unit:Royal Champion",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "rc_main",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Royal Champion"
+     }
+    ]
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "eQAelt6VLeE",
+     "t": 250.7,
+     "quote": "is at low HP or she goes ahead of the"
+    }
+   ]
+  },
+  {
+   "id": "overgrowth",
+   "action": "spell",
+   "what": "Overgrowth Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "after": "tome",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "b46w2PUASJI",
+     "t": 188.7,
+     "quote": "around the core of the base to minimize"
+    },
+    {
+     "video": "rBhknrms4J4",
+     "t": 323.6,
+     "quote": "Then I use an overgrowth spell to neutralize the cake and the monolith."
+    }
+   ]
+  }
+ ],
+ "variants": [
+  {
+   "name": "Recall early rather than risk the Royal Champion or Spirit Fox",
+   "replaces": [
+    "recall"
+   ],
+   "steps": [
+    {
+     "id": "recall",
+     "action": "recall",
+     "what": "Recall Spell",
+     "count": 1,
+     "at": "unit:Royal Champion",
+     "group": "charge",
+     "when": {
+      "all": [
+       {
+        "after": "invisibility",
+        "delay": 0
+       },
+       {
+        "heavy_fire": "Royal Champion"
+       }
+      ]
+     },
+     "support": 5,
+     "cite": [
+      {
+       "video": "WlWHcFAz7ys",
+       "t": 599.1,
+       "quote": "he pulled the royal champion early"
+      },
+      {
+       "video": "Ff0NfWFgSiY",
+       "t": 385.4,
+       "quote": "it. Our fox went down, too risky. So,"
+      }
+     ]
+    }
+   ],
+   "support": 5,
+   "cite": [
+    {
+     "video": "40ln9NIrCUU",
+     "t": 198.4,
+     "quote": "So, I recalled her out because I did lose my fox."
+    },
+    {
+     "video": "L1Nk6QhfxmQ",
+     "t": 218.2,
+     "quote": "should have recalled, but I was just"
+    }
+   ]
+  },
+  {
+   "name": "Royal Champion and Grand Warden charge with four-second Invisibility and a Siege Barracks funnel",
+   "replaces": [
+    "invisibility",
+    "recall",
+    "main_ice",
+    "funnel_ice",
+    "warden",
+    "sky_wagon",
+    "rc_main",
+    "rc_spear"
+   ],
+   "steps": [
+    {
+     "id": "rc_opening_spear",
+     "action": "ability",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "unit:Royal Champion",
+     "group": "charge",
+     "when": {
+      "after": "rc",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "--MRQU7FUxQ",
+       "t": 64.2,
+       "quote": "Then activate our rocket spear ability to wipe out some corner defenses,"
+      }
+     ]
+    },
+    {
+     "id": "warden_charge",
+     "action": "deploy",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "unit:Royal Champion",
+     "group": "charge",
+     "when": {
+      "inside": "Royal Champion"
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "--MRQU7FUxQ",
+       "t": 72.8,
+       "quote": "back her up with our grand warden,"
+      },
+      {
+       "video": "L_LKqcL56NE",
+       "t": 58.2,
+       "quote": "her up with the grand warden."
+      }
+     ]
+    },
+    {
+     "id": "invisibility",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "group:charge",
+     "group": "charge",
+     "when": {
+      "after": "warden_charge",
+      "delay": 0
+     },
+     "every": 4,
+     "until": {
+      "spells_left": "Invisibility Spell",
+      "n": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "--MRQU7FUxQ",
+       "t": 82.8,
+       "quote": "invisibility spells every 4 seconds to keep them safe."
+      }
+     ]
+    },
+    {
+     "id": "recall",
+     "action": "recall",
+     "what": "Recall Spell",
+     "count": 1,
+     "at": "group:charge",
+     "group": "charge",
+     "when": {
+      "spells_left": "Invisibility Spell",
+      "n": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "L_LKqcL56NE",
+       "t": 171.7,
+       "quote": "invisibility [music] spells, immediately recall both heroes back to your army."
+      }
+     ]
+    },
+    {
+     "id": "funnel_ice",
+     "action": "deploy",
+     "what": "Ice Golem",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "recall",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "L_LKqcL56NE",
+       "t": 327.8,
+       "quote": "another corner and then release Ice Golems first."
+      }
+     ]
+    },
+    {
+     "id": "sky_wagon",
+     "action": "deploy",
+     "what": "Siege Barracks",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "L_LKqcL56NE",
+       "t": 84.6,
+       "quote": "backed up with the siege barrack."
+      }
+     ]
+    },
+    {
+     "id": "main_ice",
+     "action": "deploy",
+     "what": "Ice Golem",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "queen_arrow",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "--MRQU7FUxQ",
+       "t": 107.7,
+       "quote": "release an ice golem in the middle"
+      }
+     ]
+    },
+    {
+     "id": "warden",
+     "action": "redeploy",
+     "what": "Grand Warden",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "healers",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "--MRQU7FUxQ",
+       "t": 109.5,
+       "quote": "all the root riders, Valkyries, healers, and recalled heroes."
+      },
+      {
+       "video": "L_LKqcL56NE",
+       "t": 192.6,
+       "quote": "middle backed up with the recalled"
+      }
+     ]
+    },
+    {
+     "id": "rage",
+     "action": "spell",
+     "what": "Rage Spell",
+     "count": 1,
+     "at": "group:main",
+     "group": "main",
+     "when": {
+      "group_inside": "main"
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "L_LKqcL56NE",
+       "t": 220.1,
+       "quote": "Use your rage spell when your troops"
+      },
+      {
+       "video": "--MRQU7FUxQ",
+       "t": 124,
+       "quote": "use our rage spell and warden ability to take it down."
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "--MRQU7FUxQ",
+     "t": 91.2,
+     "quote": "Then we will recall them both back to our main army"
+    },
+    {
+     "video": "L_LKqcL56NE",
+     "t": 63.8,
+     "quote": "invisibility spells every 4 seconds to"
+    }
+   ]
+  },
+  {
+   "name": "Rocket Backpack and Giant Arrow setup before the main army",
+   "replaces": [
+    "duke",
+    "funnel_ice",
+    "queen_arrow",
+    "main_ice"
+   ],
+   "steps": [
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "duke",
+     "when": {
+      "after": "recall",
+      "delay": 0
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "C0lnvxJraoM",
+       "t": 188.2,
+       "quote": "with the Dragon Duke or by using a few troops to funnel him in."
+      }
+     ]
+    },
+    {
+     "id": "duke_backpack",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "C0lnvxJraoM",
+       "t": 203.1,
+       "quote": "additional value before letting the Jetpack go through the rest of the base."
+      },
+      {
+       "video": "a6fRLOU-bLc",
+       "t": 209,
+       "quote": "inferno tower with the rocket backpack"
+      }
+     ]
+    },
+    {
+     "id": "funnel_ice",
+     "action": "deploy",
+     "what": "Ice Golem",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "recall",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "g9UjZ9xFQOU",
+       "t": 160.1,
+       "quote": "Make sure to support her with an ice"
+      },
+      {
+       "video": "u9owFe-ervU",
+       "t": 94,
+       "quote": "is we're going to drop an ice golem"
+      }
+     ]
+    },
+    {
+     "id": "queen_arrow",
+     "action": "ability",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "funnel",
+     "when": {
+      "all": [
+       {
+        "after": "queen",
+        "delay": 0
+       },
+       {
+        "after": "duke_backpack",
+        "delay": 0
+       }
+      ]
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "C0lnvxJraoM",
+       "t": 221,
+       "quote": "value with the Giant Arrow as the Duke's Jetpack moves through buildings."
+      },
+      {
+       "video": "a6fRLOU-bLc",
+       "t": 211,
+       "quote": "and the arrow and just placed down the"
+      }
+     ]
+    },
+    {
+     "id": "main_ice",
+     "action": "deploy",
+     "what": "Ice Golem",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "queen_arrow",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "g9UjZ9xFQOU",
+       "t": 169.4,
+       "quote": "Deploy one ice golem first, followed by the"
+      },
+      {
+       "video": "--MRQU7FUxQ",
+       "t": 107.7,
+       "quote": "release an ice golem in the middle"
+      }
+     ]
+    }
+   ],
+   "support": 3,
+   "cite": [
+    {
+     "video": "L1Nk6QhfxmQ",
+     "t": 597.6,
+     "quote": "wouldn't it, to the giant arrow and the rocket backpack just by itself."
+    },
+    {
+     "video": "a6fRLOU-bLc",
+     "t": 204.2,
+     "quote": "spotted the value here. Both invis"
+    }
+   ]
+  },
+  {
+   "name": "Dragon Duke opening with Flame Blower, Earthquake and Angry Spell",
+   "replaces": [
+    "rc",
+    "invisibility",
+    "recall",
+    "duke",
+    "funnel_ice",
+    "queen",
+    "main_ice",
+    "rc_main"
+   ],
+   "steps": [
+    {
+     "id": "rc",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "duke",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "QCrKyyMDYr4",
+       "t": 182.4,
+       "quote": "I start with the duke,"
+      }
+     ]
+    },
+    {
+     "id": "earthquake",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "duke",
+     "when": {
+      "after": "rc",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "QCrKyyMDYr4",
+       "t": 184.7,
+       "quote": "the earthquake spell,"
+      }
+     ]
+    },
+    {
+     "id": "recall",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "after": "earthquake",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "QCrKyyMDYr4",
+       "t": 184.7,
+       "quote": "and the rocket backpack to clear this section and establish the funnel."
+      }
+     ]
+    },
+    {
+     "id": "angry",
+     "action": "spell",
+     "what": "Angry Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "after": "recall",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "QCrKyyMDYr4",
+       "t": 192.5,
+       "quote": "followed by the angry spell."
+      }
+     ]
+    },
+    {
+     "id": "queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "angry",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "QCrKyyMDYr4",
+       "t": 252.3,
+       "quote": "Then I finished the setup with the queen"
+      }
+     ]
+    },
+    {
+     "id": "main_ice",
+     "action": "deploy",
+     "what": "Ice Golem",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "queen_arrow",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "g9UjZ9xFQOU",
+       "t": 169.4,
+       "quote": "Deploy one ice golem first, followed by the"
+      }
+     ]
+    },
+    {
+     "id": "rc_main",
+     "action": "deploy",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "sky_wagon",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "eQAelt6VLeE",
+       "t": 199.2,
+       "quote": "root riders. Deploy the RC behind the"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "QCrKyyMDYr4",
+     "t": 91.8,
+     "quote": "around using the flame blower and the rocket backpack to create your initial funnel."
+    }
+   ]
+  },
+  {
+   "name": "Dragon Duke charge with Ice Block and delayed revival",
+   "replaces": [
+    "rc",
+    "invisibility",
+    "recall",
+    "main_ice",
+    "sky_wagon",
+    "rc_main",
+    "duke",
+    "funnel_ice",
+    "queen",
+    "queen_arrow"
+   ],
+   "steps": [
+    {
+     "id": "rc",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "duke",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "rBhknrms4J4",
+       "t": 186.5,
+       "quote": "I started by deploying the dragon duke"
+      }
+     ]
+    },
+    {
+     "id": "invisibility",
+     "action": "spell",
+     "what": "Ice Block Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "heavy_fire": "Dragon Duke"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "rBhknrms4J4",
+       "t": 499.7,
+       "quote": "I also used an ice block to help him survive"
+      }
+     ]
+    },
+    {
+     "id": "sky_wagon",
+     "action": "deploy",
+     "what": "Sky Wagon",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "inside": "Dragon Duke"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "rBhknrms4J4",
+       "t": 265.3,
+       "quote": "followed by the sky wagon,"
+      }
+     ]
+    },
+    {
+     "id": "main_ice",
+     "action": "deploy",
+     "what": "Ice Golem",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "sky_wagon",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "g9UjZ9xFQOU",
+       "t": 169.4,
+       "quote": "Deploy one ice golem first, followed by the"
+      }
+     ]
+    },
+    {
+     "id": "rc_main",
+     "action": "deploy",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "warden",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "eQAelt6VLeE",
+       "t": 199.2,
+       "quote": "root riders. Deploy the RC behind the"
+      }
+     ]
+    },
+    {
+     "id": "queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "roots",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "rBhknrms4J4",
+       "t": 512.6,
+       "quote": "Normally, I like to use my archer queen on the outside"
+      }
+     ]
+    },
+    {
+     "id": "totem_revive",
+     "action": "spell",
+     "what": "Totem Spell",
+     "count": 1,
+     "at": "threat:main",
+     "group": "main",
+     "when": {
+      "all": [
+       {
+        "dead": "Dragon Duke"
+       },
+       {
+        "group_inside": "main"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "rBhknrms4J4",
+       "t": 355.8,
+       "quote": "I also use a totem spell to neutralize the cake."
+      }
+     ]
+    },
+    {
+     "id": "revive",
+     "action": "spell",
+     "what": "Revive Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "all": [
+       {
+        "after": "totem_revive",
+        "delay": 0
+       },
+       {
+        "dead": "Dragon Duke"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "rBhknrms4J4",
+       "t": 359.4,
+       "quote": "Then I revive the Dragon Duke,"
+      },
+      {
+       "video": "rBhknrms4J4",
+       "t": 336.6,
+       "quote": "delay his revival until my troops move down and start tanking"
+      }
+     ]
+    },
+    {
+     "id": "ice_revived",
+     "action": "spell",
+     "what": "Ice Block Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "after": "revive",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "rBhknrms4J4",
+       "t": 748.6,
+       "quote": "use the Ice Blocks to help him tank the remaining defenses."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "rBhknrms4J4",
+     "t": 87.7,
+     "quote": "ideally, I want to deploy the Dragon Duke away from the monolith,"
+    }
+   ]
+  },
+  {
+   "name": "Root Rider and Thrower main army",
+   "replaces": [
+    "valkyries"
+   ],
+   "steps": [
+    {
+     "id": "valkyries",
+     "action": "deploy",
+     "what": "Thrower",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "roots",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "b46w2PUASJI",
+       "t": 291.1,
+       "quote": "root riders and the throwers together"
+      },
+      {
+       "video": "40ln9NIrCUU",
+       "t": 213,
+       "quote": "went ahead and started our main army on"
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "40ln9NIrCUU",
+     "t": 19,
+     "quote": "Get things started as early as you possibly can."
+    },
+    {
+     "video": "b46w2PUASJI",
+     "t": 291.1,
+     "quote": "root riders and the throwers together"
+    }
+   ]
+  },
+  {
+   "name": "Barbarian King with the main army",
+   "replaces": [
+    "duke"
+   ],
+   "steps": [
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Barbarian King",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "healers",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "b46w2PUASJI",
+       "t": 143.7,
+       "quote": "riders, coco loons, healers, king,"
+      }
+     ]
+    },
+    {
+     "id": "king_ability",
+     "action": "ability",
+     "what": "Barbarian King",
+     "count": 1,
+     "at": "unit:Barbarian King",
+     "group": "main",
+     "when": {
+      "after": "tome",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "b46w2PUASJI",
+       "t": 175.1,
+       "quote": "ability and right after, use the king"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "b46w2PUASJI",
+     "t": 175.1,
+     "quote": "ability and right after, use the king"
+    }
+   ]
+  },
+  {
+   "name": "Super Archers protected by an entry Totem",
+   "replaces": [
+    "valkyries",
+    "totem"
+   ],
+   "steps": [
+    {
+     "id": "valkyries",
+     "action": "deploy",
+     "what": "Super Archer",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "sky_wagon",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "u9owFe-ervU",
+       "t": 138.7,
+       "quote": "then the super archers. And then we're"
+      }
+     ]
+    },
+    {
+     "id": "totem",
+     "action": "spell",
+     "what": "Totem Spell",
+     "count": 1,
+     "at": "threat:main",
+     "group": "main",
+     "when": {
+      "after": "valkyries",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "u9owFe-ervU",
+       "t": 139.9,
+       "quote": "going to use totem spells on the entry"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "u9owFe-ervU",
+     "t": 138.7,
+     "quote": "then the super archers. And then we're"
+    }
+   ]
+  },
+  {
+   "name": "Isolate the Town Hall with Overgrowth and save Rocket Spear for it",
+   "replaces": [
+    "overgrowth",
+    "tome",
+    "rc_spear"
+   ],
+   "steps": [
+    {
+     "id": "overgrowth",
+     "action": "spell",
+     "what": "Overgrowth Spell",
+     "count": 1,
+     "at": "th",
+     "group": "main",
+     "when": {
+      "group_inside": "main"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "QBJSv33_sIc",
+       "t": 281,
+       "quote": "The overgrowth spell needs to cover the town hall."
+      }
+     ]
+    },
+    {
+     "id": "tome",
+     "action": "ability",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "main",
+     "when": {
+      "after": "overgrowth",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "QBJSv33_sIc",
+       "t": 354.9,
+       "quote": "as soon as the overgrowth expires, I use the eternal tome ability,"
+      }
+     ]
+    },
+    {
+     "id": "rc_spear",
+     "action": "ability",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "unit:Royal Champion",
+     "group": "main",
+     "when": {
+      "after": "tome",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "QBJSv33_sIc",
+       "t": 416.5,
+       "quote": "You save rocket spear for the town hall"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "QBJSv33_sIc",
+     "t": 230.2,
+     "quote": "take the Town Hall later into the attack, not immediately at the start."
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "All 17 matching source playbooks were read. e5VTP7535II contains no extracted tactical steps or rules, so it contributes no tactical support; its only stated recommendation is two Clan Castle Dragon Riders, one Revive Spell and one Overgrowth Spell.",
+  "The most repeated complete troop roster is shared by L1Nk6QhfxmQ and a6fRLOU-bLc. The default spells, reinforcements and loadouts follow that pair. 45MwOV3C1nQ partially matches it but contains unresolved troop entries and a different Grand Warden pet; it is not counted as another identical complete roster.",
+  "The matching pair lists three Log Launchers and two Sky Wagons as inventory options. These are not simultaneous battle deployments. Log Launchers are omitted from the troop roster, and Sky Wagon is normalized to the single deployed machine explicitly described by C0lnvxJraoM and u9owFe-ervU.",
+  "Support counts distinct videos describing the consolidated action and role. Exact counts, cadences and alternative charge partners have narrower support where specified. Sources with incomplete rosters are not treated as identical army compositions.",
+  "Attack time zero represents the stated three-minute deployment. The first Invisibility delay of four seconds translates the stated initial 56-second timer reading. The normal ten-second interval is supported by explicit statements or the 56, 46, 36 sequence. Every six means a countdown reading ending in six, not a six-second interval. b46w2PUASJI also contains a conflicting six-second statement; its explicit ten-second statement and examples are used.",
+  "The ten-second cycle assumes Spirit Fox is available with the stated compatible timing. C0lnvxJraoM and b46w2PUASJI prescribe four-second casts if Spirit Fox dies; C0lnvxJraoM also prescribes them near the Clan Castle, Inferno Artillery, Monolith or Long Shot Guardian. The vocabulary cannot detect Spirit Fox death, pet level or all those proximity conditions, so no automatic cadence switch is invented.",
+  "All unstated sequential delays are zero. This includes grouped main-army deployments, delayed Royal Champion redeployment, and hero ability setup. Zero preserves narration order without claiming a measured interval.",
+  "The default starts the main army before completing the opposite Queen funnel, following the practical sequence in 40ln9NIrCUU, Ff0NfWFgSiY, b46w2PUASJI, eQAelt6VLeE and one u9owFe-ervU example. Other sources establish that flank first. The two-hero and Backpack variants move it before the main entry.",
+  "Relative edge anchors translate locations described as this side, a corner or the opposite flank. They do not recover exact tiles. unit_ahead:Royal Champion approximates covering the moving Champion and Spirit Fox. threat:main approximates the narrated dangerous defensive compartment and cannot guarantee a particular backend compartment or coverage of several named defenses.",
+  "group_inside:main is the closest available trigger for entry or core arrival. heavy_fire:Royal Champion approximates an unstated low-health or dangerous-charge condition without inventing a health fraction. The early Recall variant cannot verify that the desired funnel is complete. defenders_near:main also includes Clan Castle troops, whereas the Headhunter instructions specifically target enemy heroes.",
+  "The default loadout has Rocket Backpack and Fire Heart. No ability timing is invented for its delayed Dragon Duke deployment. The pre-push Backpack variant supplies a sourced activation sequence. Stun Blaster with Fire Heart is a more frequent Duke equipment pairing across the broader sources, but does not match the most repeated complete roster.",
+  "The two-hero variant requires its source army rather than the default inventory: L_LKqcL56NE has five Root Riders, eight Valkyries, five Healers, two Ice Golems, one Furnace and supporting troops; six Invisibility Spells, Recall, Rage and Freeze; Siege Barracks, two donated Totems and Poison. Its Duke uses Stun Blaster and Fire Heart. --MRQU7FUxQ instead has six Root Riders, eight Valkyries, one Ice Golem and Barbarian King. Both recall and redeploy the two heroes together; the single redeploy action represents the recalled group.",
+  "The Flame Blower opening requires QCrKyyMDYr4's loadout and inventory: Flame Blower and Rocket Backpack on Dragon Duke, four Earthquakes, two Freezes, Overgrowth, Revive and Poison, plus donated Angry Spell and two Totems. The source does not give Earthquake counts per placement; the listed step represents one cast and does not invent the remaining allocation. Its instruction to wait for the Queen to commit has no matching trigger or stated duration; the existing zero-delay sequence cannot enforce that wait.",
+  "The Ice Block and revival variant requires rBhknrms4J4's composition: four Root Riders, four Valkyries, five Healers, one main-army Ice Golem and supporting troops; five Ice Blocks, Revive, Freeze, Overgrowth and Poison; Sky Wagon with Inferno Dragons and three donated Totems. Dragon Duke uses Revenge Deck and Fire Heart, Queen uses Magic Mirror and Action Figure, and Royal Champion uses Diggy. Duke-inside and main-group-inside approximate assessing his cleared section and waiting for friendly tanking. The source's instruction to wait for defending Ice Golems to die before deploying Queen cannot be expressed by the available triggers.",
+  "The executor's unit: anchor resolves living units. Consequently the revival variant's unit:Dragon Duke anchor cannot locate a dead Duke even though the dead trigger is valid. The sourced revival is retained, but cannot execute faithfully with this anchor vocabulary; no death location or substitute coordinate is invented.",
+  "Thrower compositions differ: 40ln9NIrCUU has four Root Riders, seven Throwers, five Healers and two Ice Golems, with Stun Blaster Dragon Duke; b46w2PUASJI has six Root Riders, six Throwers, five Healers and one Ice Golem, with Barbarian King and Troop Launcher. The latter also has six Invisibility Spells, Recall, Rage, Overgrowth, two Totems and Poison across its listed spell inventory. A Thrower substitution requires the corresponding troop inventory. The King variant requires replacing Duke in the hero roster; its ability order comes specifically from b46w2PUASJI.",
+  "u9owFe-ervU supplies the Super Archer variant, two scouting Balloons, two Ice Golems and a Stun Blaster Duke, but leaves Root Rider, Super Archer and Healer totals unstated. No Super Archer quantity is invented. Ff0NfWFgSiY instead names two Super Yetis and leaves its Root Rider total unstated.",
+  "Other substantial compositions include eQAelt6VLeE's four Root Riders, three Valkyries, five Healers, two Ice Golems and one Druid, and WlWHcFAz7ys's similar four-Root-Rider, three-Valkyrie army. Both carry five Invisibility Spells, Recall and two Overgrowth Spells. Their two-Overgrowth sequencing differs from the default, and no expiration duration is invented.",
+  "QBJSv33_sIc describes a continuous Royal Champion and Grand Warden walk without a narrated Recall. Its Town Hall variant above extracts the Overgrowth and saved-Spear policy. Overgrowth expiration and exact Town Hall arrival are not available triggers, and the source states no numeric wait. The required zero-delay fallback cannot enforce the narrated expiration timing or guarantee Rocket Spear targets the Town Hall.",
+  "The narration does not supply a complete executable deployment schedule for every carried utility troop or every spell. Unspecified default uses of Earthquakes, the remaining Totem, Rocket Balloons, Apprentice Warden, cleanup troops and the remaining Balloon are intentionally unscheduled. No repeat interval, cleanup percentage, automatic siege release or troop batch is invented.",
+  "Variants are alternative substitutions and are not automatically cumulative. Variants introducing different troops, heroes, equipment, spells or siege machines require their stated source composition; the default army does not supply those additional inventories. Reused step ids preserve dependency references and do not necessarily retain their original action meaning."
+ ],
+ "check": {
+  "steps_kept": 21,
+  "steps_dropped": 0,
+  "reasons": {},
+  "dangling_after": []
+ }
+}

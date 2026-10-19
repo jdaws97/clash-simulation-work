@@ -1,0 +1,1086 @@
+{
+ "family": "yeti",
+ "name": "Dragon Duke funnel into Super Yeti core push",
+ "sources": [
+  "3O9g9-Gujcw",
+  "AAawYGfV-AE",
+  "KDalGKrAyL0",
+  "RPYN96e1hvE",
+  "Z9mIhJiByqE",
+  "dMcpXZ_wc8Q",
+  "g36z6N8CfTc"
+ ],
+ "army": {
+  "troops": {
+   "Super Yeti": 7,
+   "Druid": 2,
+   "Ice Golem": 1,
+   "Apprentice Warden": 1,
+   "Baby Dragon": 2,
+   "Barbarian": 2,
+   "Archer": 2,
+   "Valkyrie": 1,
+   "Super Wall Breaker": 1
+  },
+  "spells": {
+   "Freeze Spell": 2,
+   "Totem Spell": 2,
+   "Ice Block Spell": 3,
+   "Skeleton Spell": 1,
+   "Poison Spell": 1,
+   "Rage Spell": 1
+  },
+  "cc": {
+   "Ice Golem": 2,
+   "P.E.K.K.A": 1,
+   "Sky Wagon": 1,
+   "Revive Spell": 2
+  },
+  "heroes": [
+   "Barbarian King",
+   "Archer Queen",
+   "Grand Warden",
+   "Dragon Duke"
+  ],
+  "loadouts": {
+   "Barbarian King": [
+    "Spiky Ball",
+    "Earthquake Boots",
+    "Diggy"
+   ],
+   "Archer Queen": [
+    "Giant Arrow",
+    "Action Figure",
+    "Frosty"
+   ],
+   "Grand Warden": [
+    "Heroic Torch",
+    "Rage Gem",
+    "Poison Lizard"
+   ],
+   "Dragon Duke": [
+    "Revenge Deck",
+    "Fire Heart",
+    "Phoenix"
+   ]
+  }
+ },
+ "base_reading": [
+  {
+   "rule": "Choose Dragon Duke's starting position first.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 62.4,
+     "quote": "you always want to pick out where you're going to start your Dragon Duke"
+    }
+   ]
+  },
+  {
+   "rule": "Normally keep Dragon Duke's opening route outside Monolith range.",
+   "support": 6,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 75,
+     "quote": "usually a big fat no-go"
+    },
+    {
+     "video": "dMcpXZ_wc8Q",
+     "t": 74.4,
+     "quote": "we obviously don't want to put the dragon duke in the range of the monolith."
+    }
+   ]
+  },
+  {
+   "rule": "Check Air Sweeper directions before choosing Dragon Duke's entry.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 103.2,
+     "quote": "Be careful of sweepers as well, too."
+    },
+    {
+     "video": "KDalGKrAyL0",
+     "t": 30.8,
+     "quote": "that's not into a sweeper or monolith or logger."
+    }
+   ]
+  },
+  {
+   "rule": "Avoid sending Dragon Duke directly into the defense called the logger.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 78.1,
+     "quote": "Logger is also something you don't want"
+    },
+    {
+     "video": "KDalGKrAyL0",
+     "t": 30.8,
+     "quote": "that's not into a sweeper or monolith or logger."
+    }
+   ]
+  },
+  {
+   "rule": "Establish both funnel edges before sending the Super Yetis through the middle or core.",
+   "support": 7,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 199.8,
+     "quote": "Straight bee line through the core of the base."
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 28.4,
+     "quote": "got to make sure you funnel your troops."
+    }
+   ]
+  },
+  {
+   "rule": "Use Dragon Duke on one funnel flank and Archer Queen on the other.",
+   "support": 6,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 199.8,
+     "quote": "Straight bee line through the core of the base."
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 33.7,
+     "quote": "Opposite side I'm going to set a funnel"
+    }
+   ]
+  },
+  {
+   "rule": "Account for Town Hall access and one-star risk when selecting the entry.",
+   "support": 4,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 90.6,
+     "quote": "Sometimes you can use your Dragon Duke to kind of distract and super Yeti spam"
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 172.5,
+     "quote": "make sure that town hall goes down."
+    }
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "baby_funnel",
+   "action": "deploy",
+   "what": "Baby Dragon",
+   "count": 2,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "t": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 120.4,
+     "quote": "like set the funnel a little bit for me."
+    },
+    {
+     "video": "RPYN96e1hvE",
+     "t": 10.4,
+     "quote": "You can use a baby dragon to direct his pathing."
+    }
+   ]
+  },
+  {
+   "id": "duke",
+   "action": "deploy",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "after": "baby_funnel",
+    "delay": 0
+   },
+   "support": 7,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 133.1,
+     "quote": "with that we're going to get the dragon duke here."
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 32,
+     "quote": "I'm just going to send my duke in."
+    }
+   ]
+  },
+  {
+   "id": "queen",
+   "action": "deploy",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "duke",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "KDalGKrAyL0",
+     "t": 50.2,
+     "quote": "I throw the queen with the siege barracks on one side,"
+    },
+    {
+     "video": "dMcpXZ_wc8Q",
+     "t": 86.3,
+     "quote": "set the counter funnel with the queen"
+    }
+   ]
+  },
+  {
+   "id": "queen_ability",
+   "action": "ability",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "unit:Archer Queen",
+   "group": "funnel",
+   "when": {
+    "after": "queen",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 164.2,
+     "quote": "Queen shot here."
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 35.2,
+     "quote": "with my queen fire her shot"
+    }
+   ]
+  },
+  {
+   "id": "siege_funnel",
+   "action": "deploy",
+   "what": "Sky Wagon",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "queen_ability",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 171.2,
+     "quote": "sky wagon always in combination with my queen."
+    },
+    {
+     "video": "dMcpXZ_wc8Q",
+     "t": 31.4,
+     "quote": "So this PEKKA's going to come out, tank,"
+    }
+   ]
+  },
+  {
+   "id": "skeleton_monolith",
+   "action": "spell",
+   "what": "Skeleton Spell",
+   "count": 1,
+   "at": "building:mono",
+   "group": "funnel",
+   "when": {
+    "after": "siege_funnel",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 179.9,
+     "quote": "That will distract the monolith."
+    },
+    {
+     "video": "dMcpXZ_wc8Q",
+     "t": 1014.9,
+     "quote": "Put a skeleton spell by that monolith."
+    }
+   ]
+  },
+  {
+   "id": "ice_golem",
+   "action": "deploy",
+   "what": "Ice Golem",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "siege_funnel",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "KDalGKrAyL0",
+     "t": 882.5,
+     "quote": "ice golem, super yetis, e-titans, king, warden, druids."
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 40,
+     "quote": "a totem spell, ice golems, super yetis."
+    }
+   ]
+  },
+  {
+   "id": "yetis",
+   "action": "deploy",
+   "what": "Super Yeti",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "ice_golem",
+    "delay": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 193.2,
+     "quote": "A big old fat spam of super yetis right here."
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 40,
+     "quote": "a totem spell, ice golems, super yetis."
+    }
+   ]
+  },
+  {
+   "id": "apprentice",
+   "action": "deploy",
+   "what": "Apprentice Warden",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "yetis",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "AAawYGfV-AE",
+     "t": 348.6,
+     "quote": "Apprentice warden."
+    }
+   ]
+  },
+  {
+   "id": "wall_breaker",
+   "action": "deploy",
+   "what": "Super Wall Breaker",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "apprentice",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "AAawYGfV-AE",
+     "t": 350.6,
+     "quote": "Super wall breaker. Let's go."
+    }
+   ]
+  },
+  {
+   "id": "druids",
+   "action": "deploy",
+   "what": "Druid",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "yetis",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "AAawYGfV-AE",
+     "t": 641.8,
+     "quote": "druids. Let's king warden it up."
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 50.2,
+     "quote": "get a totem down here, druid."
+    }
+   ]
+  },
+  {
+   "id": "king",
+   "action": "deploy",
+   "what": "Barbarian King",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "yetis",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "AAawYGfV-AE",
+     "t": 123.8,
+     "quote": "Okay, plus the king all right here"
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 37,
+     "quote": "in here as well to lead."
+    }
+   ]
+  },
+  {
+   "id": "warden",
+   "action": "deploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "king",
+    "delay": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 582.8,
+     "quote": "warden down, super Yeti's down"
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 180.8,
+     "quote": "super yetis, sky wagon, warden."
+    }
+   ]
+  },
+  {
+   "id": "warden_ability",
+   "action": "ability",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "main",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "AAawYGfV-AE",
+     "t": 359,
+     "quote": "Pop the warden."
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 191.2,
+     "quote": "warden ability, combine that all up,"
+    }
+   ]
+  },
+  {
+   "id": "rage_main",
+   "action": "spell",
+   "what": "Rage Spell",
+   "count": 1,
+   "at": "group:main",
+   "group": "main",
+   "when": {
+    "after": "warden_ability",
+    "delay": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 293.8,
+     "quote": "Rage early. Smash through this rage tower."
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 66.4,
+     "quote": "and then I like to combine them with a rage."
+    }
+   ]
+  },
+  {
+   "id": "king_ability",
+   "action": "ability",
+   "what": "Barbarian King",
+   "count": 1,
+   "at": "unit:Barbarian King",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "warden_ability",
+      "delay": 0
+     },
+     {
+      "inside": "Barbarian King"
+     }
+    ]
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 308.4,
+     "quote": "All those walls are open with the king ability."
+    },
+    {
+     "video": "dMcpXZ_wc8Q",
+     "t": 57,
+     "quote": "the earthquake boots and the spiky ball deeper into the base"
+    }
+   ]
+  },
+  {
+   "id": "totem_main",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "group_inside": "main"
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 223.3,
+     "quote": "the logger and the cake. Distract with free spells or totem spells, whatever"
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 60.1,
+     "quote": "And then we're going to go totem to defend here"
+    }
+   ]
+  },
+  {
+   "id": "freeze_main",
+   "action": "spell",
+   "what": "Freeze Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "heavy_fire": "Super Yeti"
+   },
+   "support": 7,
+   "cite": [
+    {
+     "video": "AAawYGfV-AE",
+     "t": 208.1,
+     "quote": "I freeze the cake because I want to give the druids time to heal"
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 203,
+     "quote": "rage into here and I'm going to freeze this revenge tower."
+    }
+   ]
+  },
+  {
+   "id": "poison_defenders",
+   "action": "spell",
+   "what": "Poison Spell",
+   "count": 1,
+   "at": "defenders:main",
+   "group": "main",
+   "when": {
+    "defenders_near": "main"
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "AAawYGfV-AE",
+     "t": 175.8,
+     "quote": "So I get a poison down on the furnace"
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 82.2,
+     "quote": "I'm going to go poison spell on this dragon duke,"
+    }
+   ]
+  },
+  {
+   "id": "duke_ability",
+   "action": "ability",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "charge",
+   "when": {
+    "heavy_fire": "Dragon Duke"
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 543.3,
+     "quote": "I just popped the Dragon Duke ability to get some extra health back."
+    },
+    {
+     "video": "Z9mIhJiByqE",
+     "t": 790.7,
+     "quote": "it's just a little bit of health regen."
+    }
+   ]
+  },
+  {
+   "id": "ice_block_duke",
+   "action": "spell",
+   "what": "Ice Block Spell",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "charge",
+   "when": {
+    "heavy_fire": "Dragon Duke"
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 672.6,
+     "quote": "ice block early. There's so many things locked on to him."
+    },
+    {
+     "video": "dMcpXZ_wc8Q",
+     "t": 258,
+     "quote": "that we can deal with that air defense"
+    }
+   ]
+  },
+  {
+   "id": "revive_duke",
+   "action": "spell",
+   "what": "Revive Spell",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "dead": "Dragon Duke"
+   },
+   "support": 7,
+   "cite": [
+    {
+     "video": "Z9mIhJiByqE",
+     "t": 130.6,
+     "quote": "I'm going to bring back the duke here"
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 91.4,
+     "quote": "can start reviving my duke."
+    }
+   ]
+  },
+  {
+   "id": "revive_duke_again",
+   "action": "spell",
+   "what": "Revive Spell",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "all": [
+     {
+      "after": "revive_duke",
+      "delay": 0
+     },
+     {
+      "dead": "Dragon Duke"
+     }
+    ]
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "KDalGKrAyL0",
+     "t": 80.4,
+     "quote": "reviving it wherever I need to."
+    },
+    {
+     "video": "Z9mIhJiByqE",
+     "t": 144.5,
+     "quote": "then we'll just bring him back again."
+    }
+   ]
+  }
+ ],
+ "variants": [
+  {
+   "name": "Siege Barracks counter-funnel with a later Queen ability",
+   "replaces": [
+    "siege_funnel",
+    "queen_ability"
+   ],
+   "steps": [
+    {
+     "id": "siege_funnel",
+     "action": "deploy",
+     "what": "Siege Barracks",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "KDalGKrAyL0",
+       "t": 50.2,
+       "quote": "I throw the queen with the siege barracks on one side,"
+      },
+      {
+       "video": "RPYN96e1hvE",
+       "t": 17.2,
+       "quote": "to use the queen and a siege barracks"
+      }
+     ]
+    },
+    {
+     "id": "queen_ability",
+     "action": "ability",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "funnel",
+     "when": {
+      "heavy_fire": "Archer Queen"
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "KDalGKrAyL0",
+       "t": 61,
+       "quote": "pop your queen ability where you need it,"
+      },
+      {
+       "video": "RPYN96e1hvE",
+       "t": 176.2,
+       "quote": "Activate the queen ability."
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "KDalGKrAyL0",
+     "t": 50.2,
+     "quote": "I throw the queen with the siege barracks on one side,"
+    },
+    {
+     "video": "RPYN96e1hvE",
+     "t": 17.2,
+     "quote": "to use the queen and a siege barracks"
+    }
+   ]
+  },
+  {
+   "name": "Log Launcher through the main entry",
+   "replaces": [
+    "siege_funnel"
+   ],
+   "steps": [
+    {
+     "id": "siege_funnel",
+     "action": "deploy",
+     "what": "Log Launcher",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "queen_ability",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "Z9mIhJiByqE",
+       "t": 119,
+       "quote": "the warden ability to protect the log launcher and everything."
+      },
+      {
+       "video": "g36z6N8CfTc",
+       "t": 275.6,
+       "quote": "Some of you might want a log launcher in here."
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "Z9mIhJiByqE",
+     "t": 119,
+     "quote": "the warden ability to protect the log launcher and everything."
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 275.6,
+     "quote": "Some of you might want a log launcher in here."
+    }
+   ]
+  },
+  {
+   "name": "One Super Yeti on each flank before the rest",
+   "replaces": [
+    "yetis"
+   ],
+   "steps": [
+    {
+     "id": "yeti_left",
+     "action": "deploy",
+     "what": "Super Yeti",
+     "count": 1,
+     "at": "edge:left",
+     "group": "funnel_left",
+     "when": {
+      "after": "ice_golem",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "3O9g9-Gujcw",
+       "t": 695.1,
+       "quote": "I'm going to go one super yeti here, one over here, and now the rest,"
+      }
+     ]
+    },
+    {
+     "id": "yeti_right",
+     "action": "deploy",
+     "what": "Super Yeti",
+     "count": 1,
+     "at": "edge:right",
+     "group": "funnel_right",
+     "when": {
+      "after": "yeti_left",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "3O9g9-Gujcw",
+       "t": 695.1,
+       "quote": "I'm going to go one super yeti here, one over here, and now the rest,"
+      }
+     ]
+    },
+    {
+     "id": "yetis",
+     "action": "deploy",
+     "what": "Super Yeti",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "yeti_right",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "3O9g9-Gujcw",
+       "t": 695.1,
+       "quote": "I'm going to go one super yeti here, one over here, and now the rest,"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 695.1,
+     "quote": "I'm going to go one super yeti here, one over here, and now the rest,"
+    }
+   ]
+  },
+  {
+   "name": "Wait for the last friendly Ice Golem before Torch and Rage",
+   "replaces": [
+    "warden_ability",
+    "rage_main"
+   ],
+   "steps": [
+    {
+     "id": "warden_ability",
+     "action": "ability",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "main",
+     "when": {
+      "all": [
+       {
+        "after": "warden",
+        "delay": 0
+       },
+       {
+        "dead": "Ice Golem"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "dMcpXZ_wc8Q",
+       "t": 469.3,
+       "quote": "right when this last ice golem dies."
+      }
+     ]
+    },
+    {
+     "id": "rage_main",
+     "action": "spell",
+     "what": "Rage Spell",
+     "count": 1,
+     "at": "group:main",
+     "group": "main",
+     "when": {
+      "after": "warden_ability",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "dMcpXZ_wc8Q",
+       "t": 469.3,
+       "quote": "right when this last ice golem dies."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "dMcpXZ_wc8Q",
+     "t": 469.3,
+     "quote": "right when this last ice golem dies."
+    }
+   ]
+  },
+  {
+   "name": "Protect the charging Dragon Duke with Invisibility",
+   "replaces": [
+    "ice_block_duke"
+   ],
+   "steps": [
+    {
+     "id": "ice_block_duke",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "charge",
+     "when": {
+      "heavy_fire": "Dragon Duke"
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "Z9mIhJiByqE",
+       "t": 1169.4,
+       "quote": "we'll stay invisible here."
+      },
+      {
+       "video": "g36z6N8CfTc",
+       "t": 245.5,
+       "quote": "you're taking some damage. Look at this. Just slight invisibility."
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "Z9mIhJiByqE",
+     "t": 1169.4,
+     "quote": "we'll stay invisible here."
+    },
+    {
+     "video": "g36z6N8CfTc",
+     "t": 245.5,
+     "quote": "you're taking some damage. Look at this. Just slight invisibility."
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "All seven relevant yeti extractions were considered. Support counts distinct videos describing the shared action or rule, including different quantities or situational timing; citations are representative. It does not count individual attacks or identical rosters.",
+  "No complete army repeats. The selected full roster is AAawYGfV-AE: its seven Super Yetis and two Baby Dragons match the current main composition in 3O9g9-Gujcw. The two five-Yeti sources use different hybrid armies, so there is no majority complete composition.",
+  "The selected roster's carried Sky Wagon and Troop Launcher entries are siege inventory, not additional troop deployments. Keep the single active Sky Wagon in cc; no Troop Launcher deployment is narrated.",
+  "The seven-Yeti plan uses the opening Giant Arrow shot described by 3O9g9-Gujcw, AAawYGfV-AE and g36z6N8CfTc. Other videos use later Queen abilities; the opening shot is not universal.",
+  "At t=0 means the opening deployment. All after/delay=0 links preserve narrated order where no elapsed delay is stated. They do not imply that the funnel clears instantly. Funnel completion has no exact trigger in this vocabulary; the main entry follows the siege setup without an invented wait.",
+  "Baby Dragon counts vary: two in the chosen seven-Yeti army, one in KDalGKrAyL0 and RPYN96e1hvE. RPYN96e1hvE introduces Duke before the Baby Dragon; the other three describe preparing his path first.",
+  "The Ice Golem precedes the main Yetis in KDalGKrAyL0 and g36z6N8CfTc; RPYN96e1hvE lists it after Yetis and Druids. Main support troops are deployed rapidly together, with differing internal order. Quantities follow the selected roster, and all means the remaining inventory.",
+  "Apprentice Warden and Super Wall Breaker deployment timing comes only from AAawYGfV-AE. The Barbarian, Archer and Valkyrie cleanup counts are known there, but their precise deployment instructions are not; no cleanup steps are invented.",
+  "edge:charge and edge:funnel encode the two narrated flanks, not recovered coordinates. The executor's edge:main cannot reproduce an explicitly spread line exactly using this vocabulary.",
+  "inside:Barbarian King approximates middle/deeper/back-end wall access. group_inside:main approximates an advancing push. heavy_fire approximates heavy damage, defense lock-on, or using protection as needed; no health fraction, radius or repeat interval is invented.",
+  "Threat-based Freeze and Totem steps combine different narrated targets. Logger, cake and hot candle are not confidently identified; no building key is invented for them. Skeleton uses the explicitly identified Monolith; 3O9g9-Gujcw also allows another distraction when it is too deep.",
+  "Ice Blocks should affect Dragon Duke without catching the surrounding army (dMcpXZ_wc8Q, 497.0). Additional Ice Blocks, Freezes and Totems are narrated, but no common repeat interval is stated, so the executable policy does not invent one.",
+  "Revive placement is unresolved. edge:charge approximates the charge-side revival position recorded in Z9mIhJiByqE; it is not an inferred corpse tile. The vocabulary has no fallen-hero anchor. Both revival steps require Duke to be dead; the second also requires the first revive, without an invented delay.",
+  "Poison use is contested: 3O9g9-Gujcw saves it against an Ice-Golem-only CC without Furnace, while g36z6N8CfTc explicitly Poisons emerging Ice Golems. The generic defenders trigger cannot distinguish CC composition; choose that situational policy when selecting the plan.",
+  "Early Warden activation is common. AAawYGfV-AE recommends delaying Torch against early defending Ice Golems; dMcpXZ_wc8Q separately waits for the last friendly Ice Golem to die. The delayed-Torch variant represents the friendly case only. 3O9g9-Gujcw describes Torch as active without narrating a manual activation.",
+  "Siege variants require matching active siege inventory and, for the later Queen ability, the corresponding Queen loadout. RPYN96e1hvE's introduction says Siege Barracks, while its later narration and army link say Sky Wagon; its two Sky Wagons are inventory, not two deployments. Log Launcher is used by Z9mIhJiByqE and permitted by g36z6N8CfTc. Its precise deployment time is unspecified, so the variant uses the siege setup slot with zero delay.",
+  "The Invisibility variant requires an alternate spell loadout; the selected army has no Invisibility Spell. Z9mIhJiByqE and g36z6N8CfTc describe protecting a Duke charge, while KDalGKrAyL0 separately discusses using Invisibility to force Duke inward. No fixed repeat interval is supplied.",
+  "KDalGKrAyL0 alternative: 5 Super Yetis, 2 Electro Titans, 3 Druids, 1 Ice Golem, 1 Apprentice Warden, 1 Super Wall Breaker, 1 Baby Dragon, 1 Wizard, 1 Headhunter and 2 Archers; 2 Totems, 2 Rages, 1 Freeze, 1 Invisibility and 3 Ice Blocks; CC 2 Ruin Witches, 2 Archers, 1 Goblin and 2 Revives with Siege Barracks or Log Launcher inventory. Its narrated main order is Ice Golem, Yetis, Electro Titans, King, Warden, Druids.",
+  "RPYN96e1hvE alternative: 5 Super Yetis, 2 Ruin Witches, 2 Druids, 2 Ice Golems, 1 Apprentice Warden, 1 Inferno Dragon, 1 Baby Dragon, 1 Balloon, 1 Wizard, 1 Headhunter and 3 Archers; 3 Freezes, 1 Poison, 2 Revives, 2 Totems and 1 Skeleton; CC 2 Ice Golems, 1 P.E.K.K.A and 4 Ice Blocks with Sky Wagon inventory. Ruin Witch deployment timing is unclear. 3O9g9-Gujcw also describes an earlier five-Yeti/two-Ruin-Witch composition.",
+  "g36z6N8CfTc alternative: 8 Super Yetis, 2 Ice Golems, 1 Apprentice Warden, 1 Druid and 3 Minions; 2 Revives, 2 Invisibilities, 2 Rages and 1 Poison; CC 1 Super Yeti, 1 Super Valkyrie, 3 Totems and 1 Freeze, with Sky Wagon and Troop Launcher inventory. It deploys an opening Totem before Ice Golems and Yetis, and also describes Sky Wagon with the main army rather than exclusively with Queen.",
+  "3O9g9-Gujcw supplies only a partial seven-Yeti roster; dMcpXZ_wc8Q gives two Revives but leaves most quantities unstated. Z9mIhJiByqE combines TH15-18 variations with unstated troop totals, Log Launcher, changing CC troops, five or six Revives in some versions and Invisibility in later versions. These incomplete inventories are not filled with invented counts.",
+  "Loadouts differ: KDalGKrAyL0 and RPYN96e1hvE use Magic Mirror/Action Figure on Queen; g36z6N8CfTc uses Magic Mirror/Giant Arrow, Electro Fangs/Fire Heart on Duke and Snake Bracelet on King; Z9mIhJiByqE names Volcanic Heart in its initial setup and later describes Queen-spawned Healers. The selected army retains AAawYGfV-AE's complete loadouts.",
+  "Source actions wait and Main army in Z9mIhJiByqE have no literal executable action/unit in the permitted vocabulary, so they are not emitted as steps. Town Hall-side and opposite-Town-Hall entries both occur; no universal compass direction or fixed Town Hall distance is inferred."
+ ],
+ "check": {
+  "steps_kept": 23,
+  "steps_dropped": 0,
+  "reasons": {},
+  "dangling_after": []
+ }
+}

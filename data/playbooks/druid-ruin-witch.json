@@ -1,0 +1,1468 @@
+{
+ "family": "druid-ruin-witch",
+ "name": "Fireball Mass Ruin Witches",
+ "sources": [
+  "7VvGoqT6b-o",
+  "8WfG8dKMBAw",
+  "LuaPfprkevw",
+  "M4KZ_Gmmhig",
+  "NEvdsy6wmH4",
+  "VrdRZZ4I2K4",
+  "iBpk-396MQs",
+  "mTgmnznwvww"
+ ],
+ "army": {
+  "troops": {
+   "Healer": 5,
+   "Balloon": 2,
+   "Furnace": 1,
+   "Ruin Witch": 6,
+   "Apprentice Warden": 1,
+   "Ice Golem": 1,
+   "Super Wall Breaker": 2,
+   "Headhunter": 1,
+   "Wizard": 1,
+   "Minion": 1,
+   "Archer": 3,
+   "Rocket Balloon": 4,
+   "Troop Launcher": 1
+  },
+  "spells": {
+   "Invisibility Spell": 3,
+   "Totem Spell": 2,
+   "Freeze Spell": 2,
+   "Ice Block Spell": 1,
+   "Earthquake Spell": 2,
+   "Poison Spell": 1
+  },
+  "cc": {
+   "Super Valkyrie": 1,
+   "Super Yeti": 1,
+   "Overgrowth Spell": 1,
+   "Revive Spell": 1
+  },
+  "heroes": [
+   "Barbarian King",
+   "Archer Queen",
+   "Grand Warden",
+   "Dragon Duke"
+  ],
+  "loadouts": {
+   "Barbarian King": [
+    "Giant Gauntlet",
+    "Stick Horse",
+    "Angry Jelly"
+   ],
+   "Archer Queen": [
+    "Magic Mirror",
+    "Action Figure",
+    "Frosty"
+   ],
+   "Grand Warden": [
+    "Rage Gem",
+    "Fireball",
+    "Greedy Raven"
+   ],
+   "Dragon Duke": [
+    "Fire Heart",
+    "Revenge Deck",
+    "Phoenix"
+   ]
+  }
+ },
+ "base_reading": [
+  {
+   "rule": "Choose the Fireball area for both funnel pathing and clustered defensive value; direct the main army along the cleared route.",
+   "support": 5,
+   "cite": [
+    {
+     "video": "8WfG8dKMBAw",
+     "t": 23,
+     "quote": "fireball is mostly just to finish this funnel, get the funnel to the dead zone"
+    },
+    {
+     "video": "M4KZ_Gmmhig",
+     "t": 73.5,
+     "quote": "suppose the most important thing is like pathing. Um,"
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 96.7,
+     "quote": "to clear out a funnel to create pathing"
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 58.2,
+     "quote": "Yes, onto the Ricochet Cannon or we're getting so much value."
+    },
+    {
+     "video": "mTgmnznwvww",
+     "t": 54.8,
+     "quote": "because it is close to the clan castle and clustered defenses."
+    }
+   ]
+  },
+  {
+   "rule": "Clear both funnel flanks so the heroes and Ruin Knights travel together through the entry.",
+   "support": 4,
+   "cite": [
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 32.7,
+     "quote": "use your Warden on one side to funnel,"
+    },
+    {
+     "video": "8WfG8dKMBAw",
+     "t": 47.9,
+     "quote": "all I did was set the funnel so that everything goes in the same direction"
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 130.5,
+     "quote": "the other side of the base will need to be funneled"
+    },
+    {
+     "video": "VrdRZZ4I2K4",
+     "t": 54.9,
+     "quote": "you're just trying to set up the pathing with the wand walk."
+    }
+   ]
+  },
+  {
+   "rule": "Account for the Monolith and Revenge Tower when choosing the entry; their location can change the funnel and route.",
+   "support": 4,
+   "cite": [
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 315.6,
+     "quote": "I don't want to end on that revenge tower."
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 120.6,
+     "quote": "revenge tower, crafted defenses, or monolith"
+    },
+    {
+     "video": "VrdRZZ4I2K4",
+     "t": 67.9,
+     "quote": "I feel like monolith is always a high target."
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 100.4,
+     "quote": "careful with the funnel on the right side because well, there's the Monolith,"
+    }
+   ]
+  },
+  {
+   "rule": "Use cleared buildings to supply Ruin Witch summons, and separate the Witches so they can collect different rubble.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "VrdRZZ4I2K4",
+     "t": 96.1,
+     "quote": "you need to understand where they can actually then spawn your the knights"
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 72.4,
+     "quote": "because there are more buildings for us to convert."
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 191.5,
+     "quote": "Just be sure to separate them ever so much to get the best value."
+    }
+   ]
+  },
+  {
+   "rule": "For the Super Witch version, start the Warden in a safe corner away from single-target Infernos, defending heroes and an outside Clan Castle.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "mTgmnznwvww",
+     "t": 132,
+     "quote": "where there are no single target infernos, enemy clan castle, or enemy heroes nearby,"
+    },
+    {
+     "video": "mTgmnznwvww",
+     "t": 269.8,
+     "quote": "Never release your Grand Warden in a corner where Clan Castle is placed outside."
+    }
+   ]
+  },
+  {
+   "rule": "When using Fireball, hold Ruin Witches until it has fired; their summons can pull the Warden away from the intended setup.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "mTgmnznwvww",
+     "t": 301.8,
+     "quote": "always release your Ruin Witches after using the fireball"
+    }
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "warden",
+   "action": "deploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "t": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 37.8,
+     "quote": "we're going to start off with the Grand Warden up here on this corner."
+    },
+    {
+     "video": "VrdRZZ4I2K4",
+     "t": 54.9,
+     "quote": "you're just trying to set up the pathing with the wand walk."
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 251.8,
+     "quote": "So, I need to wall walk this bottom section"
+    },
+    {
+     "video": "mTgmnznwvww",
+     "t": 60.4,
+     "quote": "grand warden on this side backed up with"
+    }
+   ]
+  },
+  {
+   "id": "healers",
+   "action": "deploy",
+   "what": "Healer",
+   "count": "all",
+   "at": "unit:Grand Warden",
+   "group": "charge",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 42.9,
+     "quote": "then your five Healers,"
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 261.6,
+     "quote": "Healers."
+    },
+    {
+     "video": "mTgmnznwvww",
+     "t": 62.6,
+     "quote": "healers and a coco loon."
+    }
+   ]
+  },
+  {
+   "id": "invis_1",
+   "action": "spell",
+   "what": "Invisibility Spell",
+   "count": 1,
+   "at": "threat:charge",
+   "group": "charge",
+   "when": {
+    "after": "healers",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "iBpk-396MQs",
+     "t": 78.3,
+     "quote": "Then we're going to have Invis Invis."
+    }
+   ]
+  },
+  {
+   "id": "invis_2",
+   "action": "spell",
+   "what": "Invisibility Spell",
+   "count": 1,
+   "at": "threat:charge",
+   "group": "charge",
+   "when": {
+    "after": "invis_1",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "iBpk-396MQs",
+     "t": 78.3,
+     "quote": "Then we're going to have Invis Invis."
+    }
+   ]
+  },
+  {
+   "id": "opener",
+   "action": "ability",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "charge",
+   "when": {
+    "after": "invis_2",
+    "delay": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "8WfG8dKMBAw",
+     "t": 21.6,
+     "quote": "with a fireball."
+    },
+    {
+     "video": "M4KZ_Gmmhig",
+     "t": 88.2,
+     "quote": "fireball. Can I do it now? One, two, I can do it now."
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 116.4,
+     "quote": "the fireball to clear out a given area."
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 82.1,
+     "quote": "Fireball."
+    },
+    {
+     "video": "mTgmnznwvww",
+     "t": 75.2,
+     "quote": "the fireball to target the eagle"
+    }
+   ]
+  },
+  {
+   "id": "quake_1",
+   "action": "spell",
+   "what": "Earthquake Spell",
+   "count": 1,
+   "at": "building:xbow",
+   "group": "charge",
+   "when": {
+    "after": "opener",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "iBpk-396MQs",
+     "t": 84,
+     "quote": "Let's get that Earthquake."
+    },
+    {
+     "video": "mTgmnznwvww",
+     "t": 326.9,
+     "quote": "Immediately use earthquake spells to completely destroy the area."
+    }
+   ]
+  },
+  {
+   "id": "quake_2",
+   "action": "spell",
+   "what": "Earthquake Spell",
+   "count": 1,
+   "at": "building:xbow",
+   "group": "charge",
+   "when": {
+    "after": "quake_1",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "mTgmnznwvww",
+     "t": 326.9,
+     "quote": "Immediately use earthquake spells to completely destroy the area."
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 113.4,
+     "quote": "two quakes and the fireball to clear out a given area."
+    }
+   ]
+  },
+  {
+   "id": "duke",
+   "action": "deploy",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "duke",
+   "when": {
+    "after": "opener",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 55.9,
+     "quote": "we'll drop our Dragon Duke over on this side."
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 135.2,
+     "quote": "funneled, which is where the dragon duke comes into play."
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 111.3,
+     "quote": "Dragon Juke, I think now it might be a good thing."
+    }
+   ]
+  },
+  {
+   "id": "duke_ice_block",
+   "action": "spell",
+   "what": "Ice Block Spell",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "duke",
+   "when": {
+    "heavy_fire": "Dragon Duke"
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "8WfG8dKMBAw",
+     "t": 76.6,
+     "quote": "I usually used it with the dragon duke who has the revenge deck."
+    },
+    {
+     "video": "M4KZ_Gmmhig",
+     "t": 564,
+     "quote": "Let's maybe ice block my dragon duke now"
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 145.5,
+     "quote": "use an ice block spell to help reflect damage and keep the duke healed"
+    },
+    {
+     "video": "VrdRZZ4I2K4",
+     "t": 606.9,
+     "quote": "We can ice block him at any given point."
+    }
+   ]
+  },
+  {
+   "id": "queen",
+   "action": "deploy",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "duke",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 120.2,
+     "quote": "that's going to pull the warden over with the main army."
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 156.1,
+     "quote": "while walking with the warden and queen"
+    },
+    {
+     "video": "LuaPfprkevw",
+     "t": 69.7,
+     "quote": "Then, we're going to send in the king, the queen."
+    }
+   ]
+  },
+  {
+   "id": "furnace",
+   "action": "deploy",
+   "what": "Furnace",
+   "count": 1,
+   "at": "edge:main",
+   "group": "funnel",
+   "when": {
+    "after": "queen",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 163.5,
+     "quote": "use a furnace to help clear buildings to funnel the ruin knights"
+    }
+   ]
+  },
+  {
+   "id": "witches",
+   "action": "deploy",
+   "what": "Ruin Witch",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "queen",
+    "delay": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 124.6,
+     "quote": "and sprinkle in our ruin witches on the ruins,"
+    },
+    {
+     "video": "8WfG8dKMBAw",
+     "t": 37.9,
+     "quote": "ahead of your ruin knights and ruin witches"
+    },
+    {
+     "video": "LuaPfprkevw",
+     "t": 73.9,
+     "quote": "going to start deploying the Rune Witches"
+    },
+    {
+     "video": "M4KZ_Gmmhig",
+     "t": 124,
+     "quote": "and then a couple more of these ruin witches."
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 172,
+     "quote": "ruin witches provide support by clearing out rubble"
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 304.4,
+     "quote": "this queen rune witch rune witch more rune witches more rune witches."
+    }
+   ]
+  },
+  {
+   "id": "ice_golem",
+   "action": "deploy",
+   "what": "Ice Golem",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "witches",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 206.2,
+     "quote": "having the ice golems there to provide more survivability"
+    }
+   ]
+  },
+  {
+   "id": "wall_breakers",
+   "action": "deploy",
+   "what": "Super Wall Breaker",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "witches",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "iBpk-396MQs",
+     "t": 124.5,
+     "quote": "So, let's just get the wall breaks in here."
+    },
+    {
+     "video": "mTgmnznwvww",
+     "t": 94.3,
+     "quote": "with super wall breakers to let our troops enter the base."
+    }
+   ]
+  },
+  {
+   "id": "launcher",
+   "action": "deploy",
+   "what": "Troop Launcher",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "wall_breakers",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "M4KZ_Gmmhig",
+     "t": 137,
+     "quote": "that's what I'm going to use, obviously."
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 214.4,
+     "quote": "the troop launcher to provide additional rocket balloons to help keep the healers alive"
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 559.1,
+     "quote": "But, no. Let's troop launcher."
+    },
+    {
+     "video": "mTgmnznwvww",
+     "t": 86.1,
+     "quote": "along with the troop launcher on this side."
+    }
+   ]
+  },
+  {
+   "id": "overgrowth",
+   "action": "spell",
+   "what": "Overgrowth Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "group_inside": "main"
+     },
+     {
+      "heavy_fire": "Archer Queen"
+     }
+    ]
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "8WfG8dKMBAw",
+     "t": 67.2,
+     "quote": "Overgrowth obviously for pathing"
+    },
+    {
+     "video": "M4KZ_Gmmhig",
+     "t": 145.8,
+     "quote": "just because there is quite a fair bit of damage."
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 281,
+     "quote": "overgrowth to cut down an area of the base until later"
+    }
+   ]
+  },
+  {
+   "id": "freeze_main",
+   "action": "spell",
+   "what": "Freeze Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "group_inside": "main"
+     },
+     {
+      "heavy_fire": "Archer Queen"
+     }
+    ]
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "M4KZ_Gmmhig",
+     "t": 176.7,
+     "quote": "Let's go ahead and freeze up, then we"
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 298.1,
+     "quote": "freeze can be used to stop them in their tracks"
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 121.5,
+     "quote": "I just want to make sure that our things are staying alive,"
+    }
+   ]
+  },
+  {
+   "id": "freeze_duke",
+   "action": "spell",
+   "what": "Freeze Spell",
+   "count": 1,
+   "at": "building:mono",
+   "group": "duke",
+   "when": {
+    "heavy_fire": "Dragon Duke"
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "8WfG8dKMBAw",
+     "t": 540.5,
+     "quote": "I'll freeze the monolith if I need to."
+    },
+    {
+     "video": "M4KZ_Gmmhig",
+     "t": 302.2,
+     "quote": "And I do have to freeze this mono again."
+    }
+   ]
+  },
+  {
+   "id": "totem_entry",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "group_inside": "main"
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 158.4,
+     "quote": "help protect your log launcher so your log launcher doesn't go down immediately."
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 293.6,
+     "quote": "tome spells can redirect damage away from heroes and ruined knights"
+    },
+    {
+     "video": "mTgmnznwvww",
+     "t": 371.8,
+     "quote": "Use the Totem spells near splash damage defenses or near single target infernos"
+    }
+   ]
+  },
+  {
+   "id": "totem_defenders",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "defenders:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "totem_entry",
+      "delay": 0
+     },
+     {
+      "defenders_near": "main"
+     }
+    ]
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 353.7,
+     "quote": "redirect a lot of heavy damage like enemy heroes."
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 726.4,
+     "quote": "just use this totem to distract."
+    }
+   ]
+  },
+  {
+   "id": "king",
+   "action": "deploy",
+   "what": "Barbarian King",
+   "count": 1,
+   "at": "edge:left",
+   "group": "king",
+   "when": {
+    "all": [
+     {
+      "after": "launcher",
+      "delay": 0
+     },
+     {
+      "group_inside": "main"
+     }
+    ]
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "8WfG8dKMBAw",
+     "t": 50.4,
+     "quote": "and then you're going to use your king"
+    },
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 238.8,
+     "quote": "the barbarian king as he can be used to clear out defenses"
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 159.8,
+     "quote": "Top left? I think top left to take down the fire spirit."
+    },
+    {
+     "video": "VrdRZZ4I2K4",
+     "t": 571.8,
+     "quote": "king right here. We can wizard archer um clean up."
+    }
+   ]
+  },
+  {
+   "id": "king_ability",
+   "action": "ability",
+   "what": "Barbarian King",
+   "count": 1,
+   "at": "unit:Barbarian King",
+   "group": "king",
+   "when": {
+    "after": "king",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "iBpk-396MQs",
+     "t": 170.2,
+     "quote": "Let's use the king ability."
+    },
+    {
+     "video": "VrdRZZ4I2K4",
+     "t": 155.6,
+     "quote": "King ability,"
+    }
+   ]
+  },
+  {
+   "id": "queen_ability",
+   "action": "ability",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "unit:Archer Queen",
+   "group": "main",
+   "when": {
+    "after": "freeze_main",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "M4KZ_Gmmhig",
+     "t": 178.1,
+     "quote": "pop my queen ability"
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 190.6,
+     "quote": "Queen ability or just for some more DPS."
+    }
+   ]
+  },
+  {
+   "id": "cleanup_minion",
+   "action": "deploy",
+   "what": "Minion",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "cleanup",
+   "when": {
+    "after": "king",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "iBpk-396MQs",
+     "t": 163.4,
+     "quote": "We can use one minion right here"
+    }
+   ]
+  },
+  {
+   "id": "cleanup_archers",
+   "action": "deploy",
+   "what": "Archer",
+   "count": "all",
+   "at": "edge:main",
+   "group": "cleanup",
+   "when": {
+    "after": "queen_ability",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "iBpk-396MQs",
+     "t": 195.5,
+     "quote": "archers down here."
+    },
+    {
+     "video": "VrdRZZ4I2K4",
+     "t": 571.8,
+     "quote": "king right here. We can wizard archer um clean up."
+    }
+   ]
+  },
+  {
+   "id": "cleanup_wizard",
+   "action": "deploy",
+   "what": "Wizard",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "cleanup",
+   "when": {
+    "after": "king",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "iBpk-396MQs",
+     "t": 580.4,
+     "quote": "have wizard and archers for cleanup"
+    },
+    {
+     "video": "VrdRZZ4I2K4",
+     "t": 571.8,
+     "quote": "king right here. We can wizard archer um clean up."
+    }
+   ]
+  }
+ ],
+ "variants": [
+  {
+   "name": "Life Gem Warden walk",
+   "replaces": [
+    "invis_1",
+    "invis_2",
+    "opener",
+    "quake_1",
+    "quake_2",
+    "furnace"
+   ],
+   "steps": [
+    {
+     "id": "opener",
+     "action": "deploy",
+     "what": "Furnace",
+     "count": 2,
+     "at": "unit:Grand Warden",
+     "group": "charge",
+     "when": {
+      "after": "healers",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "7VvGoqT6b-o",
+       "t": 44.1,
+       "quote": "going to drop two of your Furnaces behind your Grand Warden."
+      },
+      {
+       "video": "VrdRZZ4I2K4",
+       "t": 76.9,
+       "quote": "Those two furnace are going to help you to just speed up the wand walk."
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "7VvGoqT6b-o",
+     "t": 32.7,
+     "quote": "use your Warden on one side to funnel,"
+    },
+    {
+     "video": "VrdRZZ4I2K4",
+     "t": 54.9,
+     "quote": "you're just trying to set up the pathing with the wand walk."
+    }
+   ]
+  },
+  {
+   "name": "Four Ruin Witches with staggered Druids",
+   "replaces": [
+    "witches",
+    "cleanup_minion"
+   ],
+   "steps": [
+    {
+     "id": "witches",
+     "action": "deploy",
+     "what": "Ruin Witch",
+     "count": 4,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "NEvdsy6wmH4",
+       "t": 172,
+       "quote": "ruin witches provide support by clearing out rubble"
+      }
+     ]
+    },
+    {
+     "id": "druid_1",
+     "action": "deploy",
+     "what": "Druid",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "all": [
+       {
+        "after": "witches",
+        "delay": 0
+       },
+       {
+        "heavy_fire": "Archer Queen"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "NEvdsy6wmH4",
+       "t": 201.8,
+       "quote": "Use your druids every so often to offset the burst healing"
+      }
+     ]
+    },
+    {
+     "id": "druid_2",
+     "action": "deploy",
+     "what": "Druid",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "druid_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "NEvdsy6wmH4",
+       "t": 201.8,
+       "quote": "Use your druids every so often to offset the burst healing"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "NEvdsy6wmH4",
+     "t": 201.8,
+     "quote": "Use your druids every so often to offset the burst healing"
+    }
+   ]
+  },
+  {
+   "name": "Electro Titans ahead of four Ruin Witches",
+   "replaces": [
+    "furnace",
+    "witches",
+    "ice_golem"
+   ],
+   "steps": [
+    {
+     "id": "electro_titans",
+     "action": "deploy",
+     "what": "Electro Titan",
+     "count": 2,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "8WfG8dKMBAw",
+       "t": 35,
+       "quote": "you've got your queen and two electro titans"
+      }
+     ]
+    },
+    {
+     "id": "witches",
+     "action": "deploy",
+     "what": "Ruin Witch",
+     "count": 4,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "electro_titans",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "8WfG8dKMBAw",
+       "t": 37.9,
+       "quote": "ahead of your ruin knights and ruin witches"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "8WfG8dKMBAw",
+     "t": 35,
+     "quote": "you've got your queen and two electro titans"
+    },
+    {
+     "video": "8WfG8dKMBAw",
+     "t": 37.9,
+     "quote": "ahead of your ruin knights and ruin witches"
+    }
+   ]
+  },
+  {
+   "name": "Super Witch hybrid with Royal Champion funnel",
+   "replaces": [
+    "duke",
+    "duke_ice_block",
+    "queen",
+    "furnace",
+    "witches",
+    "ice_golem",
+    "wall_breakers",
+    "launcher",
+    "overgrowth",
+    "freeze_main",
+    "freeze_duke",
+    "totem_entry",
+    "totem_defenders",
+    "king",
+    "king_ability",
+    "queen_ability",
+    "cleanup_minion",
+    "cleanup_archers",
+    "cleanup_wizard"
+   ],
+   "steps": [
+    {
+     "id": "super_witches",
+     "action": "deploy",
+     "what": "Super Witch",
+     "count": 3,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "quake_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "mTgmnznwvww",
+       "t": 83.5,
+       "quote": "super witches, ruin witches, and queen"
+      }
+     ]
+    },
+    {
+     "id": "witches",
+     "action": "deploy",
+     "what": "Ruin Witch",
+     "count": 3,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "super_witches",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "mTgmnznwvww",
+       "t": 83.5,
+       "quote": "super witches, ruin witches, and queen"
+      }
+     ]
+    },
+    {
+     "id": "queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "witches",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "mTgmnznwvww",
+       "t": 83.5,
+       "quote": "super witches, ruin witches, and queen"
+      }
+     ]
+    },
+    {
+     "id": "launcher",
+     "action": "deploy",
+     "what": "Troop Launcher",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "mTgmnznwvww",
+       "t": 86.1,
+       "quote": "along with the troop launcher on this side."
+      }
+     ]
+    },
+    {
+     "id": "royal_champion",
+     "action": "deploy",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "launcher",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "mTgmnznwvww",
+       "t": 88.5,
+       "quote": "We will use our royal champion and"
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "royal_champion",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "mTgmnznwvww",
+       "t": 90.3,
+       "quote": "dragon duke together on the other side"
+      }
+     ]
+    },
+    {
+     "id": "wall_breakers",
+     "action": "deploy",
+     "what": "Super Wall Breaker",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "mTgmnznwvww",
+       "t": 94.3,
+       "quote": "with super wall breakers to let our troops enter the base."
+      }
+     ]
+    },
+    {
+     "id": "town_hall_rage",
+     "action": "spell",
+     "what": "Rage Spell",
+     "count": 1,
+     "at": "group:main",
+     "group": "main",
+     "when": {
+      "near_th": "main"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "mTgmnznwvww",
+       "t": 101.5,
+       "quote": "Then, we will use our rage and"
+      }
+     ]
+    },
+    {
+     "id": "town_hall_freeze",
+     "action": "spell",
+     "what": "Freeze Spell",
+     "count": 1,
+     "at": "th",
+     "group": "main",
+     "when": {
+      "after": "town_hall_rage",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "mTgmnznwvww",
+       "t": 104,
+       "quote": "freeze spells to take down this section"
+      }
+     ]
+    },
+    {
+     "id": "skeletons",
+     "action": "spell",
+     "what": "Skeleton Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "heavy_fire": "Archer Queen"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "mTgmnznwvww",
+       "t": 181.6,
+       "quote": "use your skeleton spell near monolith or single target infernos"
+      }
+     ]
+    },
+    {
+     "id": "totem_entry",
+     "action": "spell",
+     "what": "Totem Spell",
+     "count": 1,
+     "at": "threat:main",
+     "group": "main",
+     "when": {
+      "group_inside": "main"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "mTgmnznwvww",
+       "t": 371.8,
+       "quote": "Use the Totem spells near splash damage defenses or near single target infernos"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "mTgmnznwvww",
+     "t": 83.5,
+     "quote": "super witches, ruin witches, and queen"
+    },
+    {
+     "video": "mTgmnznwvww",
+     "t": 88.5,
+     "quote": "We will use our royal champion and"
+    }
+   ]
+  },
+  {
+   "name": "Zapquake Throwers: unresolved opening target",
+   "replaces": [],
+   "steps": [],
+   "support": 1,
+   "cite": [
+    {
+     "video": "LuaPfprkevw",
+     "t": 39,
+     "quote": "first of all, zapquake. Two earthquake, six lightning, take out high-value targets."
+    },
+    {
+     "video": "LuaPfprkevw",
+     "t": 42.2,
+     "quote": "Most bases are going to have valuable targets together you can take out."
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "Five sources use a Fireball opener. 7VvGoqT6b-o and VrdRZZ4I2K4 use a Life Gem/Rage Gem walk; LuaPfprkevw uses zapquake.",
+  "All complete source armies are different, so the exact-composition vote is tied. The baseline selects iBpk-396MQs as a representative of the dominant Fireball plan, using the modal six Ruin Witches and five Healers with that source's full loadouts.",
+  "Only Troop Launcher is selected from iBpk-396MQs's siege inventory. Log Launcher, Siege Barracks and donated Flame Flinger are available alternatives. Multiple siege counts in other source armies also describe available inventory.",
+  "Support counts distinct cited videos describing the action and tactical role. Quantities follow the selected army; source quantities and local ordering differ. Multiple attacks from one video count once.",
+  "t=0 represents the narrated attack opening. Every after/delay=0 represents ordering where no numerical delay is stated. Citation timestamps are transcript times.",
+  "Waiting for exterior buildings, a storage or an Archer Tower to fall cannot be represented directly by the available triggers. The zero-delay opening sequence approximates that ordering and does not encode the narrated clearing wait.",
+  "The two Invisibility steps follow iBpk-396MQs's explicit pair. threat:charge approximates the exterior defenses to hide; exact footprints and distinct targets are unspecified. This approximation cannot guarantee the intended Fireball target.",
+  "Each Earthquake is a separate spell step. iBpk-396MQs narrates one after Fireball to finish X-Bows; NEvdsy6wmH4 supplies a two-Quake combination, and mTgmnznwvww supplies immediate post-Fireball area clearing. Applying both casts at building:xbow is a representative placement approximation; no source confirms that exact combined sequence.",
+  "edge:main substitutes for the narrated main entry and accessible rubble. edge:funnel and edge:left approximate layout-dependent funnel, isolated-King and cleanup positions. Exact deployment tiles, rubble locations and spell footprints are unavailable.",
+  "Ruin Witch count=all consumes the selected army's six Witches. The sources describe adding or sprinkling Witches, sometimes across both flanks, without a shared spacing or interval. Ice Golem placement follows NEvdsy6wmH4; 7VvGoqT6b-o instead deploys it before the wall break and Queen.",
+  "group_inside approximates entry or the later push. heavy_fire on Archer Queen approximates substantial damage to the main hero group; heavy_fire on Dragon Duke approximates his need for protection. These substitutions introduce no health fraction or repeat interval.",
+  "The default Queen ability follows Freeze as narrated in M4KZ_Gmmhig and the first iBpk-396MQs attack. 8WfG8dKMBAw instead prefers saving it until late tanking is gone, with an early Revenge Tower exception.",
+  "Revive targeting requires a fallen hero's position. The permitted unit:<Name> anchor resolves only living units, so targeted Revive steps cannot be represented faithfully. Sources variously name Dragon Duke, Royal Champion and an early-fallen Grand Warden as recipients.",
+  "The baseline leaves Balloon, Apprentice Warden, Headhunter and Rocket Balloon deployments, spare Invisibility and conditional Poison use unspecified because iBpk-396MQs lacks a complete shared sequence for them.",
+  "Variants changing troops, heroes, spells or equipment require the corresponding source army below; the specified variant schema has no army/loadout override. Life Gem Warden walk requires Rage Gem/Life Gem. 7VvGoqT6b-o additionally deploys two Furnaces behind Dragon Duke and uses Royal Champion instead of Barbarian King.",
+  "Only NEvdsy6wmH4 describes deploying main-army Druids. It specifies staggered healing without an interval; druid_2 uses the required delay=0 fallback, which does not encode a measured stagger.",
+  "The Electro Titan source does not narrate a complete Healer, Dragon Duke or successful Troop Launcher deployment sequence. Retained baseline actions are not independently confirmed by that video.",
+  "The Super Witch variant uses mTgmnznwvww's army. near_th uses the executor's existing default radius because the source states no radius. Skeleton placement selects the source's Monolith option; single-target Infernos are another stated option. The one-Witch-behind-Warden refinement and alternative Royal Champion placement are not imposed on this variant.",
+  "The zapquake Thrower variant records a minority plan without executable replacements. LuaPfprkevw supplies two Earthquakes, six Lightning, a four-Healer walk, one funnel Thrower, a 20-30 second Warden wait, King/Queen and four following Ruin Witches, but no named zap target or main Thrower deployment. Those missing instructions prevent a complete literal replacement.",
+  "Alternative army 7VvGoqT6b-o: troops Ruin Witch x6, Furnace x4, Balloon x2, Healer x5, Ice Golem x1, Wall Breaker count unspecified, Headhunter x2, Log Launcher x1; spells Invisibility Spell x2, Poison Spell x1, Totem Spell x3, Revive Spell x3, Freeze Spell x1, Rage Spell x1; CC Super Yeti x1, Super Valkyrie x1; heroes Grand Warden [Life Gem, Rage Gem, Greedy Raven], Dragon Duke [Revenge Deck, Fire Heart, Phoenix], Archer Queen [unspecified], Royal Champion [Rocket Spear].",
+  "Alternative army 8WfG8dKMBAw: troops Healer x5, Balloon x4, Baby Dragon x1, Apprentice Warden x1, Electro Titan x2, Ice Golem x2, Ruin Witch x4, Troop Launcher x1, Super Wall Breaker x2, Minion x2, Archer x5, Sneaky Goblin x3; spells Invisibility Spell x3, Earthquake Spell x2, Totem Spell x2, Freeze Spell x2, Poison Spell x1, Ice Block Spell x1; CC Rocket Balloon x3, Ice Golem x1, Druid x1, Overgrowth Spell x1, Revive Spell x1; heroes Barbarian King [Stick Horse, Giant Gauntlet, Angry Jelly], Archer Queen [Magic Mirror, Action Figure, Sneezy], Grand Warden [Revenge Deck, Fireball, Unicorn], Dragon Duke [Revenge Deck, Fire Heart, Phoenix].",
+  "Alternative army LuaPfprkevw: troops Healer x4, Ruin Witch x4, Thrower x12; spells Earthquake Spell x2, Lightning Spell x6, Skeleton Spell x3; CC troops Super Yeti x1, Valkyrie x1, CC spells Revive Spell x1, Totem Spell x2; heroes Barbarian King [Spiky Ball, Snake Bracelet, Spirit Fox], Archer Queen [Action Figure, Healer Puppet, Unicorn], Grand Warden [Heroic Torch, Healing Tome, Sneezy], Dragon Duke [Electro Fangs, Fire Heart, Phoenix].",
+  "Alternative army M4KZ_Gmmhig: troops Archer x3, Super Wall Breaker x2, Balloon x2, Healer x5, Ice Golem x1, Headhunter x2, Ruin Witch x6, Rocket Balloon x4, Apprentice Warden x1, Furnace x1, Sky Wagon x1, Log Launcher x2; spells Invisibility Spell x3, Freeze Spell x1, Earthquake Spell x3, Totem Spell x2, Ice Block Spell x1, Poison Spell x1; CC Barbarian x1, Super Wall Breaker x1, Rocket Balloon x2, Ice Golem x2, Troop Launcher x2, Overgrowth Spell x1, Revive Spell x1; heroes Barbarian King [Earthquake Boots, Spiky Ball, Phoenix], Archer Queen [Action Figure, Magic Mirror, Frosty], Grand Warden [Rage Gem, Fireball, Sneezy], Dragon Duke [Revenge Deck, Fire Heart, Greedy Raven].",
+  "Alternative army NEvdsy6wmH4: troops Healer x5, Balloon x2, Furnace x1, Ruin Witch x4, Ice Golem x1, Super Wall Breaker x2, Druid x2, Apprentice Warden x1, Rocket Balloon x3, Wizard x1, Headhunter x1, Archer x1; spells Invisibility Spell x3, Totem Spell x2, Freeze Spell x1, Earthquake Spell x2, Ice Block Spell x1, Overgrowth Spell x1; CC Log Launcher x1, Troop Launcher x1, Rocket Balloon x4, Balloon x1, Baby Dragon x1, Archer x1, Minion x1, Revive Spell x1, Poison Spell x1; heroes Grand Warden [Fireball, Rage Gem, Unicorn], Archer Queen [Action Figure, Magic Mirror, Frosty], Barbarian King [Stick Horse, Giant Gauntlet, Angry Jelly], Dragon Duke [Fire Heart, Revenge Deck, Phoenix].",
+  "Alternative army VrdRZZ4I2K4: troops Healer x5, Balloon x2, Furnace x2, Ruin Witch x6, Ice Golem x1, Super Wall Breaker x2, Headhunter x1, Wizard x1, Minion x1, Archer x5, Rocket Balloon x4, Troop Launcher x1, Log Launcher x1, Siege Barracks x1; spells Ice Block Spell x4, Invisibility Spell x1, Totem Spell x2, Freeze Spell x1, Overgrowth Spell x1, Poison Spell x1; CC troops Super Valkyrie x1, Super Yeti x1, CC spells Rage Spell x1, Revive Spell x1, CC siege inventory Log Launcher x1, Flame Flinger x1; heroes Barbarian King [Giant Gauntlet, Stick Horse, Angry Jelly], Archer Queen [Magic Mirror, Action Figure, Frosty], Grand Warden [Rage Gem, Life Gem, Greedy Raven], Dragon Duke [Fire Heart, Revenge Deck, Phoenix].",
+  "Alternative army mTgmnznwvww: troops Balloon x2, Healer x5, Super Witch x3, Ruin Witch x3, Apprentice Warden x1, Super Wall Breaker x2, Headhunter x1, Siege Barracks x1, Log Launcher x1; spells Invisibility Spell x3, Earthquake Spell x2, Freeze Spell x1, Rage Spell x1, Revive Spell x1, Skeleton Spell x1; CC Balloon x3, Root Rider x1, Ice Golem x1, Troop Launcher x2, Totem Spell x2, Poison Spell x1; heroes Royal Champion [Rocket Spear, Electro Boots, Phoenix], Archer Queen [Magic Mirror, Action Figure, Frosty], Grand Warden [Fireball, Rage Gem, Unicorn], Dragon Duke [Stun Blaster, Fire Heart, Spirit Fox]."
+ ],
+ "check": {
+  "steps_kept": 26,
+  "steps_dropped": 0,
+  "reasons": {},
+  "dangling_after": []
+ }
+}

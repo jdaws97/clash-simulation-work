@@ -144,13 +144,42 @@ def _loadouts(build, heroes):
     return out
 
 
+# Army archetype -> playbook family (data/playbooks/<family>.json, compiled
+# from quote-checked video transcripts; docs/playbook-consolidation.md).
+PLAYBOOK_FAMILY = {
+    "root-rider": "root-rider", "user-rr": "root-rider", "mass-thrower": "thrower", "mass-dragons": "dragon",
+    "e-drag-spam": "electro-dragon", "super-bowler-smash": "super-bowler", "mass-super-yeti": "yeti",
+    "mass-meteor-golem": "meteor-golem", "user-air": "super-minion-air", "user-druid-ruin": "druid-ruin-witch",
+}
+
+
+@lru_cache(maxsize=None)
+def _playbook(family: str):
+    p = Path(__file__).resolve().parents[2] / "data" / "playbooks" / f"{family}.json"
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+
+
+def playbooks_on() -> bool:
+    import os
+
+    return os.environ.get("BASELAB_PLAYBOOKS") == "1"
+
+
 def make_plan(army: str, angle: float, th: int, seed: int):
     """A plan for a scenario army: "meta:<archetype>-<th>-<build>" is a real
     build, anything else one of the scripted engine/plans.py armies."""
-    if army.startswith("meta:"):
-        return compose(build_by_id(army[5:]), angle=angle, seed=seed)
-    if army.startswith("custom:"):
-        return compose(build_by_id(army), angle=angle, seed=seed)
+    if army.startswith("meta:") or army.startswith("custom:"):
+        build = build_by_id(army[5:] if army.startswith("meta:") else army)
+        family = PLAYBOOK_FAMILY.get(build["archetype"])
+        pb = _playbook(family) if family and playbooks_on() else None
+        if pb is not None:
+            from .engine.playbook import from_playbook
+
+            # the charge flank alternates with the seed (left/right is the
+            # player's choice per base; the tactic search can also set it)
+            return from_playbook(pb, angle=angle, seed=seed, th=build["th"], build=build,
+                                 charge_side="left" if seed % 2 == 0 else "right")
+        return compose(build, angle=angle, seed=seed)
     from .engine.plans import ARMIES
 
     return ARMIES[army](angle=angle, town_hall=th, seed=seed)

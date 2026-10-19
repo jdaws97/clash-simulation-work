@@ -322,20 +322,82 @@ class PlaybookPlan(AttackPlan):
                     self._next[sid] = t + rep
 
 
+def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict) -> list:
+    """The playbook's steps for a particular army: steps for troops, heroes
+    or spells the army does not carry are dropped, and any step triggered
+    "after" a dropped step inherits the dropped step's own trigger (delays
+    add), so the sequence still flows. Troops the steps never mention join
+    the main push right after the last main-army deploy: that last rule is
+    NOT from a source (real armies differ from the playbook's example army)
+    and is marked "uncited"."""
+    have = set(inventory) | set(heroes_in) | {SPELL_NAMES[k] for k, c in spells.items() if c}
+
+    def usable(st):
+        w = st.get("what")
+        if st["action"] in ("deploy",):
+            return w in have
+        if st["action"] in ("spell", "recall"):
+            return (w or "Recall Spell") in have
+        if st["action"] == "ability":
+            return w in heroes_in
+        if st["action"] == "redeploy":
+            return w is None or w in heroes_in
+        return True
+
+    steps = [dict(x) for x in steps]
+    dropped = {x["id"]: x.get("when") for x in steps if not usable(x)}
+
+    def relink(w):
+        if not isinstance(w, dict):
+            return w
+        if "after" in w and w["after"] in dropped:
+            up = dropped[w["after"]]
+            if not up:
+                return {"t": 0.0}
+            up = relink(dict(up))
+            if "after" in up:
+                up["delay"] = up.get("delay", 0.0) + w.get("delay", 0.0)
+            return up
+        for k in ("all", "any"):
+            if k in w:
+                w = {**w, k: [relink(x) for x in w[k]]}
+        return w
+
+    kept = []
+    for x in steps:
+        if x["id"] in dropped:
+            continue
+        x["when"] = relink(x.get("when"))
+        if x.get("until"):
+            x["until"] = relink(x["until"])
+        kept.append(x)
+    mentioned = {x.get("what") for x in kept if x["action"] == "deploy"}
+    rest = [n for n, c in inventory.items() if c and n not in mentioned]
+    main_deploys = [x["id"] for x in kept if x["action"] == "deploy" and x.get("at", "edge:main") == "edge:main"
+                    and x.get("what") not in heroes.HEROES]
+    anchor = {"after": main_deploys[-1], "delay": 1.0} if main_deploys else {"t": 15.0}
+    for n in rest:
+        kept.append({"id": f"rest-{n}", "action": "deploy", "what": n, "count": "all", "at": "edge:main",
+                     "when": anchor, "uncited": True, "cite": []})
+    return kept
+
+
 def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own_levels: bool = False,
-                  flank_offset: float = 0.9, charge_side: str = "left") -> PlaybookPlan:
-    """A PlaybookPlan for a playbook dict (data/playbooks/*.json): the army
-    from pb["army"], the steps from pb["steps"]; levels, loadouts, spells and
-    Clan Castle handling come from meta_armies.compose so every army path in
-    the sim shares one setup."""
+                  flank_offset: float = 0.9, charge_side: str = "left", build: dict | None = None) -> PlaybookPlan:
+    """A PlaybookPlan for a playbook dict (data/playbooks/*.json). With
+    `build` (a meta or custom army), that army is played through the
+    playbook's steps (fit_steps); otherwise the playbook's example army.
+    Levels, loadouts, spells and Clan Castle handling come from
+    meta_armies.compose so every army path in the sim shares one setup."""
     from dataclasses import fields
 
     from ..meta_armies import compose
 
-    a = pb["army"]
-    build = {"archetype": ("user-" if own_levels else "pb-") + pb.get("family", "x"), "build": 1, "th": th, "share": 1.0,
-             "three_star": 0.0, "troops": dict(a["troops"]), "spells": dict(a["spells"]), "cc": dict(a.get("cc", {})),
-             "heroes": list(a["heroes"]), "loadouts": a.get("loadouts", {}), "own_levels": own_levels}
+    if build is None:
+        a = pb["army"]
+        build = {"archetype": ("user-" if own_levels else "pb-") + pb.get("family", "x"), "build": 1, "th": th, "share": 1.0,
+                 "three_star": 0.0, "troops": dict(a["troops"]), "spells": dict(a["spells"]), "cc": dict(a.get("cc", {})),
+                 "heroes": list(a["heroes"]), "loadouts": a.get("loadouts", {}), "own_levels": own_levels}
     base = compose(build, angle=angle, seed=seed)
     kw = {f.name: getattr(base, f.name) for f in fields(AttackPlan) if not f.name.startswith("_")}
     kw["spells"] = dict(base._spells0)
@@ -344,10 +406,11 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
     plan = PlaybookPlan(**kw)
     plan.build_id = getattr(base, "build_id", None)
     plan.pol = base.pol
-    plan.steps = [dict(s) for s in pb["steps"]]
-    inv = dict(a["troops"])
+    inv = {n: c for n, c in build["troops"].items() if n != plan.siege}
     if plan.siege:
         inv[plan.siege] = 1
     plan.inventory = inv
+    heroes_in = [h for h in build["heroes"] if h in heroes.HEROES]
+    plan.steps = fit_steps(pb["steps"], inv, heroes_in, dict(base._spells0, **{k: c for k, c in base.cc_spells.items()}))
     plan.flank_offset, plan.charge_side = flank_offset, charge_side
     return plan

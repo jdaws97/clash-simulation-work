@@ -1,0 +1,2168 @@
+{
+ "family": "dragon",
+ "name": "Two-flank hero funnel Hydra",
+ "sources": [
+  "2jY5eM7an2o",
+  "47wtlBeNIPw",
+  "55I-qks9qdI",
+  "7JaLtnvSFqM",
+  "F_bsbtESUHo",
+  "Ft-oCSzVdyI",
+  "I9Efble5Nnc",
+  "JkdaMBVG1CM",
+  "KHh13uguqf0",
+  "KYxypCKWh-E",
+  "Oc6yKA9PQj8",
+  "PY3LIEa1Wck",
+  "Sin7pQqHJLo",
+  "VrfOSHEbg4o",
+  "_sotzQjtl2A",
+  "doh6QR3qkAY",
+  "dwCMyiEttCw",
+  "hEw-LiuJHrM",
+  "k4aW1ytbOZ8",
+  "kUuUNY_Vbvk",
+  "llu35f-7RFk",
+  "s5btI1E0LdY",
+  "t5yxQTXbY6w",
+  "twbdjMD07No",
+  "vUaNIZU3eno",
+  "vXLlpmek7X8",
+  "wanC6B7TJyk"
+ ],
+ "army": {
+  "troops": {
+   "Dragon": 7,
+   "Dragon Rider": 5,
+   "Lava Hound": 1,
+   "Archer": 5,
+   "Rocket Balloon": 6,
+   "Minion": 2
+  },
+  "spells": {
+   "Totem Spell": 3,
+   "Earthquake Spell": 3,
+   "Freeze Spell": 2,
+   "Poison Spell": 1,
+   "Rage Spell": 1
+  },
+  "cc": {
+   "Inferno Dragon": 1,
+   "Super Dragon": 1,
+   "Overgrowth Spell": 1,
+   "Revive Spell": 1,
+   "Sky Wagon": 1
+  },
+  "heroes": [
+   "Minion Prince",
+   "Archer Queen",
+   "Grand Warden",
+   "Dragon Duke"
+  ],
+  "loadouts": {
+   "Minion Prince": [
+    "Meteor Staff",
+    "Dark Orb",
+    "Greedy Raven"
+   ],
+   "Archer Queen": [
+    "Giant Arrow",
+    "Action Figure",
+    "Frosty"
+   ],
+   "Grand Warden": [
+    "Eternal Tome",
+    "Healing Tome",
+    "Sneezy"
+   ],
+   "Dragon Duke": [
+    "Rocket Backpack",
+    "Fire Heart",
+    "Phoenix"
+   ]
+  }
+ },
+ "base_reading": [
+  {
+   "rule": "Clear flank buildings and defenses to make a narrow route that keeps the main air army together.",
+   "support": 24,
+   "cite": [
+    {
+     "video": "Ft-oCSzVdyI",
+     "t": 68.4,
+     "quote": "no troops are getting split,"
+    },
+    {
+     "video": "55I-qks9qdI",
+     "t": 168.4,
+     "quote": "Hydra spam portion between the two funnels."
+    }
+   ]
+  },
+  {
+   "rule": "Choose the Archer Queen's firing line to remove Air Defenses, Air Sweepers, or both while establishing the funnel.",
+   "support": 15,
+   "cite": [
+    {
+     "video": "55I-qks9qdI",
+     "t": 20.3,
+     "quote": "snipe air defenses and sweepers while staying on the outside"
+    }
+   ]
+  },
+  {
+   "rule": "Read Air Sweeper directions before choosing the Duke charge or main air entry; avoid their coverage or remove the obstructing Sweeper.",
+   "support": 13,
+   "cite": [
+    {
+     "video": "Ft-oCSzVdyI",
+     "t": 109,
+     "quote": "blown by the air sweeper, then actually"
+    },
+    {
+     "video": "t5yxQTXbY6w",
+     "t": 88.8,
+     "quote": "sweepers. So, I don't want to push my"
+    }
+   ]
+  },
+  {
+   "rule": "Check whether the Queen's funnel will lure defending Clan Castle troops, especially Ice Golems.",
+   "support": 4,
+   "cite": [
+    {
+     "video": "55I-qks9qdI",
+     "t": 26.3,
+     "quote": "mind to not lure out the clan castle"
+    },
+    {
+     "video": "F_bsbtESUHo",
+     "t": 273.3,
+     "quote": "careful when using your queen close to"
+    }
+   ]
+  },
+  {
+   "rule": "Keep the independently funneling Dragon Duke away from other air troops to retain his passives.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "55I-qks9qdI",
+     "t": 58.6,
+     "quote": "So long as he's away from other air troops"
+    },
+    {
+     "video": "2jY5eM7an2o",
+     "t": 197.3,
+     "quote": "to funnel additional defenses as you want him to remain alone"
+    }
+   ]
+  },
+  {
+   "rule": "For the Flame Flinger variant, check long-range defensive coverage first; use the Queen with Siege Barracks when Flame Flinger value is insufficient.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "2jY5eM7an2o",
+     "t": 170.6,
+     "quote": "focus on areas where you can get defenses down without fear."
+    },
+    {
+     "video": "Oc6yKA9PQj8",
+     "t": 394,
+     "quote": "find Flame Flinger value, use your Dragon Duke"
+    },
+    {
+     "video": "twbdjMD07No",
+     "t": 265.9,
+     "quote": "the siege barracks. We're going with the"
+    }
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "duke",
+   "action": "deploy",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "t": 0
+   },
+   "support": 20,
+   "cite": [
+    {
+     "video": "s5btI1E0LdY",
+     "t": 189.4,
+     "quote": "I deploy the duke at the top and use the"
+    }
+   ]
+  },
+  {
+   "id": "duke_ability",
+   "action": "ability",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "unit:Dragon Duke",
+   "group": "charge",
+   "when": {
+    "after": "duke",
+    "delay": 0
+   },
+   "support": 8,
+   "cite": [
+    {
+     "video": "s5btI1E0LdY",
+     "t": 191.6,
+     "quote": "rocket backpack to take down the upper air defense."
+    },
+    {
+     "video": "55I-qks9qdI",
+     "t": 135.7,
+     "quote": "and Dragon Duke, you're using the giant arrow and rocket backpack respectively"
+    }
+   ]
+  },
+  {
+   "id": "queen",
+   "action": "deploy",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "funnel",
+   "when": {
+    "after": "duke_ability",
+    "delay": 0
+   },
+   "support": 8,
+   "cite": [
+    {
+     "video": "55I-qks9qdI",
+     "t": 127.5,
+     "quote": "want to start by sniping air defenses"
+    },
+    {
+     "video": "vXLlpmek7X8",
+     "t": 163.8,
+     "quote": "archer queen with her giant arrow to"
+    }
+   ]
+  },
+  {
+   "id": "queen_ability",
+   "action": "ability",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "unit:Archer Queen",
+   "group": "funnel",
+   "when": {
+    "after": "queen",
+    "delay": 0
+   },
+   "support": 15,
+   "cite": [
+    {
+     "video": "KYxypCKWh-E",
+     "t": 544.8,
+     "quote": "ability instantly, she'll snipe right at"
+    }
+   ]
+  },
+  {
+   "id": "sky",
+   "action": "deploy",
+   "what": "Sky Wagon",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "queen_ability",
+      "delay": 0
+     },
+     {
+      "inside": "Dragon Duke"
+     }
+    ]
+   },
+   "support": 8,
+   "cite": [
+    {
+     "video": "47wtlBeNIPw",
+     "t": 220.8,
+     "quote": "actually, I put my sky wagon with my"
+    },
+    {
+     "video": "55I-qks9qdI",
+     "t": 293.8,
+     "quote": "prince and the grand warden alongside the sky wagon."
+    }
+   ]
+  },
+  {
+   "id": "hound",
+   "action": "deploy",
+   "what": "Lava Hound",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "sky",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "KYxypCKWh-E",
+     "t": 605,
+     "quote": "I'm going to go lava hound to lead."
+    }
+   ]
+  },
+  {
+   "id": "dragons",
+   "action": "deploy",
+   "what": "Dragon",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "hound",
+    "delay": 0
+   },
+   "support": 16,
+   "cite": [
+    {
+     "video": "55I-qks9qdI",
+     "t": 168.4,
+     "quote": "Hydra spam portion between the two funnels."
+    }
+   ]
+  },
+  {
+   "id": "riders",
+   "action": "deploy",
+   "what": "Dragon Rider",
+   "count": "all",
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "dragons",
+    "delay": 0
+   },
+   "support": 20,
+   "cite": [
+    {
+     "video": "55I-qks9qdI",
+     "t": 168.4,
+     "quote": "Hydra spam portion between the two funnels."
+    }
+   ]
+  },
+  {
+   "id": "warden",
+   "action": "deploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "riders",
+    "delay": 0
+   },
+   "support": 7,
+   "cite": [
+    {
+     "video": "55I-qks9qdI",
+     "t": 293.8,
+     "quote": "prince and the grand warden alongside the sky wagon."
+    }
+   ]
+  },
+  {
+   "id": "prince",
+   "action": "deploy",
+   "what": "Minion Prince",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 6,
+   "cite": [
+    {
+     "video": "55I-qks9qdI",
+     "t": 293.8,
+     "quote": "prince and the grand warden alongside the sky wagon."
+    }
+   ]
+  },
+  {
+   "id": "rage",
+   "action": "spell",
+   "what": "Rage Spell",
+   "count": 1,
+   "at": "group:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "group_inside": "main"
+     },
+     {
+      "any": [
+       {
+        "heavy_fire": "Dragon"
+       },
+       {
+        "heavy_fire": "Dragon Rider"
+       }
+      ]
+     }
+    ]
+   },
+   "support": 11,
+   "cite": [
+    {
+     "video": "55I-qks9qdI",
+     "t": 213.7,
+     "quote": "The rage spell should be used as the Hydra pushes into the core"
+    },
+    {
+     "video": "s5btI1E0LdY",
+     "t": 255.4,
+     "quote": "Now, I'm going to use a rage spell together with the Eternal Tome to"
+    }
+   ]
+  },
+  {
+   "id": "warden_ability",
+   "action": "ability",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "group:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "group_inside": "main"
+     },
+     {
+      "any": [
+       {
+        "heavy_fire": "Dragon"
+       },
+       {
+        "heavy_fire": "Dragon Rider"
+       }
+      ]
+     }
+    ]
+   },
+   "support": 20,
+   "cite": [
+    {
+     "video": "hEw-LiuJHrM",
+     "t": 203,
+     "quote": "the eternal tome and healing tome are great before going into high damage,"
+    },
+    {
+     "video": "KHh13uguqf0",
+     "t": 100.1,
+     "quote": "dragons, say they're getting low, well, just pop the eternal time, right?"
+    }
+   ]
+  },
+  {
+   "id": "prince_ability",
+   "action": "ability",
+   "what": "Minion Prince",
+   "count": 1,
+   "at": "group:main",
+   "group": "main",
+   "when": {
+    "group_inside": "main"
+   },
+   "support": 11,
+   "cite": [
+    {
+     "video": "JkdaMBVG1CM",
+     "t": 221.8,
+     "quote": "prince's dark orb to do so by slowing"
+    }
+   ]
+  },
+  {
+   "id": "overgrowth",
+   "action": "spell",
+   "what": "Overgrowth Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "group_inside": "main"
+     },
+     {
+      "any": [
+       {
+        "heavy_fire": "Dragon"
+       },
+       {
+        "heavy_fire": "Dragon Rider"
+       }
+      ]
+     }
+    ]
+   },
+   "support": 24,
+   "cite": [
+    {
+     "video": "JkdaMBVG1CM",
+     "t": 206.4,
+     "quote": "use an overgrowth spell to control their"
+    },
+    {
+     "video": "55I-qks9qdI",
+     "t": 223.8,
+     "quote": "over a problematic part of the base you wish to keep hidden until later on"
+    }
+   ]
+  },
+  {
+   "id": "totem",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "threat:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "group_inside": "main"
+     },
+     {
+      "any": [
+       {
+        "heavy_fire": "Dragon"
+       },
+       {
+        "heavy_fire": "Dragon Rider"
+       }
+      ]
+     }
+    ]
+   },
+   "support": 21,
+   "cite": [
+    {
+     "video": "55I-qks9qdI",
+     "t": 201.6,
+     "quote": "tone spells to redirect and distract defenses away from the Hydra"
+    }
+   ]
+  },
+  {
+   "id": "freeze",
+   "action": "spell",
+   "what": "Freeze Spell",
+   "count": 1,
+   "at": "building:inferno",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "group_inside": "main"
+     },
+     {
+      "any": [
+       {
+        "heavy_fire": "Dragon"
+       },
+       {
+        "heavy_fire": "Dragon Rider"
+       }
+      ]
+     }
+    ]
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "55I-qks9qdI",
+     "t": 208.4,
+     "quote": "free spells for multi-target defenses"
+    },
+    {
+     "video": "2jY5eM7an2o",
+     "t": 338.3,
+     "quote": "Free spells, on the other hand, are perfect for multi-target infernos"
+    }
+   ]
+  },
+  {
+   "id": "poison",
+   "action": "spell",
+   "what": "Poison Spell",
+   "count": 1,
+   "at": "defenders:main",
+   "group": "main",
+   "when": {
+    "defenders_near": "main"
+   },
+   "support": 9,
+   "cite": [
+    {
+     "video": "wanC6B7TJyk",
+     "t": 271.4,
+     "quote": "I poison the clan castle immediately"
+    },
+    {
+     "video": "47wtlBeNIPw",
+     "t": 1188.8,
+     "quote": "Poison on the enemy heroes."
+    }
+   ]
+  }
+ ],
+ "variants": [
+  {
+   "name": "Three-Earthquake opening and opposite Sky Wagon funnel",
+   "replaces": [
+    "duke",
+    "sky"
+   ],
+   "steps": [
+    {
+     "id": "quake_1",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "KYxypCKWh-E",
+       "t": 122.4,
+       "quote": "earthquakes on this rage tower"
+      },
+      {
+       "video": "KYxypCKWh-E",
+       "t": 76.2,
+       "quote": "The monolith, the CC, um, and the revenge tower,"
+      }
+     ]
+    },
+    {
+     "id": "quake_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "charge",
+     "when": {
+      "after": "quake_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "KYxypCKWh-E",
+       "t": 122.4,
+       "quote": "earthquakes on this rage tower"
+      }
+     ]
+    },
+    {
+     "id": "quake_3",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "charge",
+     "when": {
+      "after": "quake_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "KYxypCKWh-E",
+       "t": 122.4,
+       "quote": "earthquakes on this rage tower"
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "quake_3",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "KYxypCKWh-E",
+       "t": 126.5,
+       "quote": "dragon duke from the top side."
+      }
+     ]
+    },
+    {
+     "id": "sky",
+     "action": "deploy",
+     "what": "Sky Wagon",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "funnel",
+     "when": {
+      "after": "queen_ability",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "KYxypCKWh-E",
+       "t": 262.5,
+       "quote": "So to funnel this side, skywagon."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "KYxypCKWh-E",
+     "t": 122.4,
+     "quote": "earthquakes on this rage tower"
+    },
+    {
+     "video": "KYxypCKWh-E",
+     "t": 262.5,
+     "quote": "So to funnel this side, skywagon."
+    }
+   ]
+  },
+  {
+   "name": "Revenge Deck Duke charge with Ice Block",
+   "replaces": [
+    "duke_ability"
+   ],
+   "steps": [
+    {
+     "id": "duke_ability",
+     "action": "spell",
+     "what": "Ice Block Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "charge",
+     "when": {
+      "heavy_fire": "Dragon Duke"
+     },
+     "support": 8,
+     "cite": [
+      {
+       "video": "I9Efble5Nnc",
+       "t": 138.7,
+       "quote": "First ice blocks in, we're going to take care of"
+      },
+      {
+       "video": "VrfOSHEbg4o",
+       "t": 96.7,
+       "quote": "him to reflect damage with the revenge deck under an ice box spell."
+      }
+     ]
+    }
+   ],
+   "support": 8,
+   "cite": [
+    {
+     "video": "I9Efble5Nnc",
+     "t": 138.7,
+     "quote": "First ice blocks in, we're going to take care of"
+    },
+    {
+     "video": "hEw-LiuJHrM",
+     "t": 131.8,
+     "quote": "entry every so often to get damage on defenses while healing the Duke"
+    }
+   ]
+  },
+  {
+   "name": "Dragon Riders with Inferno Dragons",
+   "replaces": [
+    "dragons",
+    "riders"
+   ],
+   "steps": [
+    {
+     "id": "riders",
+     "action": "deploy",
+     "what": "Dragon Rider",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "hound",
+      "delay": 0
+     },
+     "support": 6,
+     "cite": [
+      {
+       "video": "VrfOSHEbg4o",
+       "t": 202.7,
+       "quote": "dragon riders and inferno dragons behind it"
+      }
+     ]
+    },
+    {
+     "id": "dragons",
+     "action": "deploy",
+     "what": "Inferno Dragon",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "riders",
+      "delay": 0
+     },
+     "support": 6,
+     "cite": [
+      {
+       "video": "VrfOSHEbg4o",
+       "t": 202.7,
+       "quote": "dragon riders and inferno dragons behind it"
+      },
+      {
+       "video": "2jY5eM7an2o",
+       "t": 291.2,
+       "quote": "Having the Inferno Dragons move in alongside"
+      }
+     ]
+    }
+   ],
+   "support": 6,
+   "cite": [
+    {
+     "video": "VrfOSHEbg4o",
+     "t": 202.7,
+     "quote": "dragon riders and inferno dragons behind it"
+    },
+    {
+     "video": "2jY5eM7an2o",
+     "t": 291.2,
+     "quote": "Having the Inferno Dragons move in alongside"
+    }
+   ]
+  },
+  {
+   "name": "Spirit Fox Duke Invisibility charge and Royal Champion funnel",
+   "replaces": [
+    "duke",
+    "duke_ability",
+    "queen",
+    "queen_ability",
+    "sky",
+    "hound",
+    "dragons",
+    "riders",
+    "rage"
+   ],
+   "steps": [
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "t5yxQTXbY6w",
+       "t": 98.9,
+       "quote": "9:00. Well, 6:00 looks good. So, if I"
+      },
+      {
+       "video": "Ft-oCSzVdyI",
+       "t": 198.4,
+       "quote": "maybe they just start the dragon duke on"
+      }
+     ]
+    },
+    {
+     "id": "duke_invisibility",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "charge",
+     "when": {
+      "t": 4
+     },
+     "every": 10,
+     "until": {
+      "spells_left": "Invisibility Spell",
+      "n": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "t5yxQTXbY6w",
+       "t": 182.4,
+       "quote": "invisibility at 2 minutes 56 seconds, 2 minutes 46 seconds,"
+      }
+     ]
+    },
+    {
+     "id": "royal_champion",
+     "action": "deploy",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "spells_left": "Invisibility Spell",
+      "n": 3
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "t5yxQTXbY6w",
+       "t": 234,
+       "quote": "Why did I start with my Royal Champion"
+      }
+     ]
+    },
+    {
+     "id": "rc_ability",
+     "action": "ability",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "unit:Royal Champion",
+     "group": "funnel",
+     "when": {
+      "after": "royal_champion",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "t5yxQTXbY6w",
+       "t": 607.9,
+       "quote": "Pop her ability automatically."
+      }
+     ]
+    },
+    {
+     "id": "baby_dragon",
+     "action": "deploy",
+     "what": "Baby Dragon",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "all": [
+       {
+        "after": "rc_ability",
+        "delay": 0
+       },
+       {
+        "inside": "Royal Champion"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "t5yxQTXbY6w",
+       "t": 278.8,
+       "quote": "baby dragon to start cooking."
+      }
+     ]
+    },
+    {
+     "id": "duke_ability",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "charge",
+     "when": {
+      "spells_left": "Invisibility Spell",
+      "n": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "t5yxQTXbY6w",
+       "t": 1019.7,
+       "quote": "I popped the Dragon Duke ability because I'm out of invisibilities,"
+      }
+     ]
+    },
+    {
+     "id": "hound",
+     "action": "deploy",
+     "what": "Lava Hound",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "baby_dragon",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "t5yxQTXbY6w",
+       "t": 490.6,
+       "quote": "Dragon Riders in behind, Inferno Dragons in behind that."
+      }
+     ]
+    },
+    {
+     "id": "riders",
+     "action": "deploy",
+     "what": "Dragon Rider",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "hound",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "t5yxQTXbY6w",
+       "t": 490.6,
+       "quote": "Dragon Riders in behind, Inferno Dragons in behind that."
+      }
+     ]
+    },
+    {
+     "id": "dragons",
+     "action": "deploy",
+     "what": "Inferno Dragon",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "riders",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "t5yxQTXbY6w",
+       "t": 490.6,
+       "quote": "Dragon Riders in behind, Inferno Dragons in behind that."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "t5yxQTXbY6w",
+     "t": 182.4,
+     "quote": "invisibility at 2 minutes 56 seconds, 2 minutes 46 seconds,"
+    },
+    {
+     "video": "t5yxQTXbY6w",
+     "t": 234,
+     "quote": "Why did I start with my Royal Champion"
+    }
+   ]
+  },
+  {
+   "name": "Rocket Spear Royal Champion charge before the Duke funnel",
+   "replaces": [
+    "duke",
+    "duke_ability",
+    "queen",
+    "queen_ability",
+    "sky",
+    "hound",
+    "dragons",
+    "riders",
+    "rage"
+   ],
+   "steps": [
+    {
+     "id": "royal_champion",
+     "action": "deploy",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vUaNIZU3eno",
+       "t": 130.6,
+       "quote": "use a short royal champion charge."
+      }
+     ]
+    },
+    {
+     "id": "rc_ability",
+     "action": "ability",
+     "what": "Royal Champion",
+     "count": 1,
+     "at": "unit:Royal Champion",
+     "group": "charge",
+     "when": {
+      "after": "royal_champion",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vUaNIZU3eno",
+       "t": 133.2,
+       "quote": "are using her rocket spears early to"
+      }
+     ]
+    },
+    {
+     "id": "rc_invisibility",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "unit:Royal Champion",
+     "group": "charge",
+     "when": {
+      "all": [
+       {
+        "after": "rc_ability",
+        "delay": 0
+       },
+       {
+        "inside": "Royal Champion"
+       }
+      ]
+     },
+     "every": 4,
+     "until": {
+      "spells_left": "Invisibility Spell",
+      "n": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vUaNIZU3eno",
+       "t": 142.3,
+       "quote": "want to start turning her invisible"
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "spells_left": "Invisibility Spell",
+      "n": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vUaNIZU3eno",
+       "t": 177.9,
+       "quote": "opposite side using our dragon duke."
+      }
+     ]
+    },
+    {
+     "id": "duke_ability",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "funnel",
+     "when": {
+      "heavy_fire": "Dragon Duke"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vUaNIZU3eno",
+       "t": 193.6,
+       "quote": "blaster, which can be used to stun"
+      }
+     ]
+    },
+    {
+     "id": "funnel_inferno",
+     "action": "deploy",
+     "what": "Inferno Dragon",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vUaNIZU3eno",
+       "t": 206.5,
+       "quote": "buildings behind the dragon duke to set"
+      }
+     ]
+    },
+    {
+     "id": "sky",
+     "action": "deploy",
+     "what": "Sky Wagon",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "all": [
+       {
+        "after": "funnel_inferno",
+        "delay": 0
+       },
+       {
+        "inside": "Dragon Duke"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vUaNIZU3eno",
+       "t": 220.3,
+       "quote": "dragon riders, inferno dragons, minion"
+      }
+     ]
+    },
+    {
+     "id": "riders",
+     "action": "deploy",
+     "what": "Dragon Rider",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "sky",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vUaNIZU3eno",
+       "t": 220.3,
+       "quote": "dragon riders, inferno dragons, minion"
+      }
+     ]
+    },
+    {
+     "id": "dragons",
+     "action": "deploy",
+     "what": "Inferno Dragon",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "riders",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vUaNIZU3eno",
+       "t": 220.3,
+       "quote": "dragon riders, inferno dragons, minion"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "vUaNIZU3eno",
+     "t": 130.6,
+     "quote": "use a short royal champion charge."
+    },
+    {
+     "video": "vUaNIZU3eno",
+     "t": 142.3,
+     "quote": "want to start turning her invisible"
+    },
+    {
+     "video": "vUaNIZU3eno",
+     "t": 220.3,
+     "quote": "dragon riders, inferno dragons, minion"
+    }
+   ]
+  },
+  {
+   "name": "Mass Dragons",
+   "replaces": [
+    "hound",
+    "dragons",
+    "riders"
+   ],
+   "steps": [
+    {
+     "id": "riders",
+     "action": "deploy",
+     "what": "Dragon",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "sky",
+      "delay": 0
+     },
+     "support": 4,
+     "cite": [
+      {
+       "video": "PY3LIEa1Wck",
+       "t": 223.7,
+       "quote": "need to go in with my dragons here."
+      },
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 172.2,
+       "quote": "Then it's just a beautiful spam attack."
+      }
+     ]
+    }
+   ],
+   "support": 4,
+   "cite": [
+    {
+     "video": "PY3LIEa1Wck",
+     "t": 223.7,
+     "quote": "need to go in with my dragons here."
+    },
+    {
+     "video": "k4aW1ytbOZ8",
+     "t": 148,
+     "quote": "this Rage Tower with the Dragons."
+    }
+   ]
+  },
+  {
+   "name": "Super Dragons after a Revenge Deck Duke funnel",
+   "replaces": [
+    "duke_ability",
+    "hound",
+    "dragons",
+    "riders",
+    "rage",
+    "poison",
+    "warden_ability",
+    "overgrowth",
+    "totem",
+    "freeze"
+   ],
+   "steps": [
+    {
+     "id": "duke_ability",
+     "action": "spell",
+     "what": "Ice Block Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "charge",
+     "when": {
+      "heavy_fire": "Dragon Duke"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vXLlpmek7X8",
+       "t": 147,
+       "quote": "also use your ice block spells here to"
+      }
+     ]
+    },
+    {
+     "id": "riders",
+     "action": "deploy",
+     "what": "Super Dragon",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "sky",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vXLlpmek7X8",
+       "t": 190.1,
+       "quote": "super dragons, minion prince, sky wagon"
+      }
+     ]
+    },
+    {
+     "id": "warden_ability",
+     "action": "ability",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "group:main",
+     "group": "main",
+     "when": {
+      "group_inside": "main"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vXLlpmek7X8",
+       "t": 210.6,
+       "quote": "as you reach the core,"
+      }
+     ]
+    },
+    {
+     "id": "overgrowth",
+     "action": "spell",
+     "what": "Overgrowth Spell",
+     "count": 1,
+     "at": "threat:main",
+     "group": "main",
+     "when": {
+      "group_inside": "main"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vXLlpmek7X8",
+       "t": 199.2,
+       "quote": "to control the pathing of your troops or"
+      }
+     ]
+    },
+    {
+     "id": "totem",
+     "action": "spell",
+     "what": "Totem Spell",
+     "count": 1,
+     "at": "threat:main",
+     "group": "main",
+     "when": {
+      "heavy_fire": "Super Dragon"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vXLlpmek7X8",
+       "t": 328.5,
+       "quote": "damage from some key defenses."
+      }
+     ]
+    },
+    {
+     "id": "freeze",
+     "action": "spell",
+     "what": "Freeze Spell",
+     "count": 1,
+     "at": "building:inferno",
+     "group": "main",
+     "when": {
+      "heavy_fire": "Super Dragon"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "vXLlpmek7X8",
+       "t": 324.5,
+       "quote": "We also have a few freeze and totem"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "vXLlpmek7X8",
+     "t": 190.1,
+     "quote": "super dragons, minion prince, sky wagon"
+    }
+   ]
+  },
+  {
+   "name": "Flame Flinger opening with a sixty-second lead",
+   "replaces": [
+    "duke",
+    "duke_ability",
+    "queen",
+    "queen_ability",
+    "sky",
+    "hound",
+    "dragons"
+   ],
+   "steps": [
+    {
+     "id": "sky",
+     "action": "deploy",
+     "what": "Flame Flinger",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "t": 0
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "twbdjMD07No",
+       "t": 80.4,
+       "quote": "place that flame finger over there just"
+      },
+      {
+       "video": "2jY5eM7an2o",
+       "t": 167.1,
+       "quote": "If you're using the flame slinger,"
+      }
+     ]
+    },
+    {
+     "id": "queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "sky",
+      "delay": 60
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "twbdjMD07No",
+       "t": 105,
+       "quote": "much means around 60 seconds. You can"
+      },
+      {
+       "video": "twbdjMD07No",
+       "t": 117.3,
+       "quote": "start with the arch queen. On this one,"
+      }
+     ]
+    },
+    {
+     "id": "queen_ability",
+     "action": "ability",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "funnel",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "twbdjMD07No",
+       "t": 125.1,
+       "quote": "the giant arrow and with that"
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "queen_ability",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "twbdjMD07No",
+       "t": 133.7,
+       "quote": "dragon duke supporting whichever flank."
+      }
+     ]
+    },
+    {
+     "id": "dragons",
+     "action": "deploy",
+     "what": "Dragon",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "twbdjMD07No",
+       "t": 139.9,
+       "quote": "dragons, dragon riders in there. And the"
+      }
+     ]
+    }
+   ],
+   "support": 3,
+   "cite": [
+    {
+     "video": "twbdjMD07No",
+     "t": 80.4,
+     "quote": "place that flame finger over there just"
+    },
+    {
+     "video": "twbdjMD07No",
+     "t": 105,
+     "quote": "much means around 60 seconds. You can"
+    }
+   ]
+  },
+  {
+   "name": "Siege Barracks with the Queen on the opposite flank",
+   "replaces": [
+    "sky"
+   ],
+   "steps": [
+    {
+     "id": "sky",
+     "action": "deploy",
+     "what": "Siege Barracks",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "all": [
+       {
+        "after": "queen_ability",
+        "delay": 0
+       },
+       {
+        "inside": "Dragon Duke"
+       }
+      ]
+     },
+     "support": 3,
+     "cite": [
+      {
+       "video": "2jY5eM7an2o",
+       "t": 246.7,
+       "quote": "the siege barracks and Archer Queen, where her giant arrow will still again"
+      }
+     ]
+    }
+   ],
+   "support": 3,
+   "cite": [
+    {
+     "video": "2jY5eM7an2o",
+     "t": 246.7,
+     "quote": "the siege barracks and Archer Queen, where her giant arrow will still again"
+    }
+   ]
+  },
+  {
+   "name": "Flame Blower Duke opening",
+   "replaces": [
+    "duke_ability"
+   ],
+   "steps": [
+    {
+     "id": "duke_ability",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "charge",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "PY3LIEa1Wck",
+       "t": 198.5,
+       "quote": "duke shot. Look at that, that's perfect."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "PY3LIEa1Wck",
+     "t": 198.5,
+     "quote": "duke shot. Look at that, that's perfect."
+    }
+   ]
+  },
+  {
+   "name": "Repeat Overgrowth on the Monolith compartment",
+   "replaces": [
+    "overgrowth"
+   ],
+   "steps": [
+    {
+     "id": "overgrowth",
+     "action": "spell",
+     "what": "Overgrowth Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "group_inside": "main"
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "PY3LIEa1Wck",
+       "t": 713.2,
+       "quote": "Should we go monolith and cake? I think so."
+      }
+     ]
+    },
+    {
+     "id": "overgrowth_again",
+     "action": "spell",
+     "what": "Overgrowth Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "after": "overgrowth",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "PY3LIEa1Wck",
+       "t": 613.4,
+       "quote": "second overgrowth exactly where you use the first overgrowth."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "PY3LIEa1Wck",
+     "t": 613.4,
+     "quote": "second overgrowth exactly where you use the first overgrowth."
+    }
+   ]
+  },
+  {
+   "name": "Giant Arrow and Rocket Backpack followed by zapquake",
+   "replaces": [
+    "duke",
+    "duke_ability",
+    "queen",
+    "queen_ability",
+    "sky",
+    "hound",
+    "dragons",
+    "riders",
+    "rage",
+    "overgrowth",
+    "totem",
+    "freeze",
+    "poison"
+   ],
+   "steps": [
+    {
+     "id": "queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "t": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "_sotzQjtl2A",
+       "t": 64.2,
+       "quote": "deploy the Queen at 12 o\u2019clock."
+      }
+     ]
+    },
+    {
+     "id": "queen_ability",
+     "action": "ability",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "funnel",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 35,
+       "quote": "Giant arrow through the base"
+      }
+     ]
+    },
+    {
+     "id": "duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "queen_ability",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "_sotzQjtl2A",
+       "t": 69.3,
+       "quote": "on the exact opposite side, I will deploy the DD,"
+      }
+     ]
+    },
+    {
+     "id": "duke_ability",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "charge",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 36.4,
+       "quote": "rocket backpack through the base,"
+      }
+     ]
+    },
+    {
+     "id": "zap_quake_1",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "after": "duke_ability",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 38.4,
+       "quote": "two earthquake spells take out high-value targets,"
+      }
+     ]
+    },
+    {
+     "id": "zap_quake_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:mono",
+     "group": "main",
+     "when": {
+      "after": "zap_quake_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 38.4,
+       "quote": "two earthquake spells take out high-value targets,"
+      }
+     ]
+    },
+    {
+     "id": "zap_quake_3",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:inferno",
+     "group": "main",
+     "when": {
+      "after": "zap_quake_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 39.6,
+       "quote": "then you've got two earthquake spells"
+      }
+     ]
+    },
+    {
+     "id": "zap_quake_4",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:inferno",
+     "group": "main",
+     "when": {
+      "after": "zap_quake_3",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 39.6,
+       "quote": "then you've got two earthquake spells"
+      }
+     ]
+    },
+    {
+     "id": "lightning_1",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:inferno",
+     "group": "main",
+     "when": {
+      "after": "zap_quake_4",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 41.1,
+       "quote": "six lightning to take out other high-value targets."
+      }
+     ]
+    },
+    {
+     "id": "lightning_2",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:inferno",
+     "group": "main",
+     "when": {
+      "after": "lightning_1",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 41.1,
+       "quote": "six lightning to take out other high-value targets."
+      }
+     ]
+    },
+    {
+     "id": "lightning_3",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:inferno",
+     "group": "main",
+     "when": {
+      "after": "lightning_2",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 41.1,
+       "quote": "six lightning to take out other high-value targets."
+      }
+     ]
+    },
+    {
+     "id": "lightning_4",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:inferno",
+     "group": "main",
+     "when": {
+      "after": "lightning_3",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 41.1,
+       "quote": "six lightning to take out other high-value targets."
+      }
+     ]
+    },
+    {
+     "id": "lightning_5",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:inferno",
+     "group": "main",
+     "when": {
+      "after": "lightning_4",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 41.1,
+       "quote": "six lightning to take out other high-value targets."
+      }
+     ]
+    },
+    {
+     "id": "lightning_6",
+     "action": "spell",
+     "what": "Lightning Spell",
+     "count": 1,
+     "at": "building:inferno",
+     "group": "main",
+     "when": {
+      "after": "lightning_5",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 41.1,
+       "quote": "six lightning to take out other high-value targets."
+      }
+     ]
+    },
+    {
+     "id": "riders",
+     "action": "deploy",
+     "what": "Dragon",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "lightning_6",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 172.2,
+       "quote": "Then it's just a beautiful spam attack."
+      }
+     ]
+    },
+    {
+     "id": "sky",
+     "action": "deploy",
+     "what": "Sky Wagon",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "riders",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "Sin7pQqHJLo",
+       "t": 150,
+       "quote": "Put it behind your main attack."
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "Sin7pQqHJLo",
+     "t": 35,
+     "quote": "Giant arrow through the base"
+    },
+    {
+     "video": "Sin7pQqHJLo",
+     "t": 41.1,
+     "quote": "six lightning to take out other high-value targets."
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "All 27 relevant dragon playbooks were read. 7JaLtnvSFqM supplies only Clan Castle contents and no executable steps; it remains in sources without increasing tactical support.",
+  "No complete army repeats. Among nine counted Hydra armies, seven Dragons with five Dragon Riders and eight Dragons with five Dragon Riders tie at two videos each. Seven Dragons is the most frequent Dragon count and five Dragon Riders is the most frequent Rider count. The army uses KYxypCKWh-E's seven/five composition, spells, payload and loadouts as the complete representative; 55I-qks9qdI shares its main troop core.",
+  "KYxypCKWh-E lists three owned Sky Wagons and two donated Sky Wagons as available inventory. They are removed from the troop inventory and normalized to the one Sky Wagon actually deployed per attack. Clan Castle entries are flattened to the required shape.",
+  "Other counted Hydra cores: 47wtlBeNIPw seven Dragons/seven Riders; KHh13uguqf0 and kUuUNY_Vbvk eight/five; _sotzQjtl2A five/eight; hEw-LiuJHrM six/five; s5btI1E0LdY eight/six; twbdjMD07No seven/six. F_bsbtESUHo, PY3LIEa1Wck and doh6QR3qkAY do not state complete counts.",
+  "Dragon Rider/Inferno Dragon alternatives: 2jY5eM7an2o seven/four; Ft-oCSzVdyI eight/four; I9Efble5Nnc eight/three; Oc6yKA9PQj8 nine/four; dwCMyiEttCw eight/two; t5yxQTXbY6w eight/three; wanC6B7TJyk eight/five. VrfOSHEbg4o and vUaNIZU3eno leave counts unspecified. Some of these describe only Rider deployment, so composition membership does not increase the Inferno deployment step's support.",
+  "Mass Dragon alternatives: k4aW1ytbOZ8 states 17 Dragons, llu35f-7RFk lists nine with extensive support troops, PY3LIEa1Wck leaves the count unspecified, and Sin7pQqHJLo leaves mass-Dragon counts unspecified while suggesting ten Dragons with an unspecified number of Riders. vXLlpmek7X8 leaves Super Dragon counts unspecified.",
+  "Support counts distinct videos describing the action and tactical role, once per video, including rules and policies; it does not claim agreement on every coordinate, equipment choice or trigger approximation. Combined troop or hero deployments are split into individual executable steps. Count all consumes the selected inventory without inventing a narrated batch size.",
+  "Zero delays preserve source ordering where no interval is stated. The sources do not establish a universal gap between Duke deployment, Rocket Backpack, Queen placement, Giant Arrow and the main wave. t=0 translates an explicitly described opening.",
+  "Funnel completion has no direct trigger: the default approximates it with Queen ability completion and Duke being inside. group_inside approximates approaching the core; heavy_fire approximates entering heavy damage or becoming low on health. This can react later than advice to protect troops before damage. Main spells share coarse cues because no finer common timing is stated.",
+  "threat:main approximates an unnamed dangerous defense or pathing compartment. building:inferno cannot distinguish single-target from multi-target Infernos. Exact spell footprints, the Giant Arrow line, Rocket Backpack landing and Dark Orb direction need the source's base-specific alignment; the supplied vocabulary cannot express all of them.",
+  "The default schedules one Totem and one Freeze. No unsupported recast interval is added for the remaining spells. Earthquakes are used by the three-Earthquake variant. Other support and cleanup troops remain unscheduled where the chosen common plan has no reliable cue.",
+  "Variants requiring different troops, spells, heroes, pets or equipment require the matching source army; the required variant schema has no army override. Revenge Deck variants replace Rocket Backpack with Revenge Deck and equip Fire Heart. Inferno variants replace the Dragon component with source-counted Inferno Dragons. Super Dragon totals are unknown and must not be invented.",
+  "t5yxQTXbY6w's Duke charge uses six Invisibility Spells, Fire Heart, Electro Fangs and Spirit Fox, with Seeking Shield/Rocket Spear Royal Champion instead of the Queen. t=4 and every=10 translate its 2:56, 2:46, 2:36 attack-clock schedule on a three-minute clock. It explicitly adjusts timing under Rage or early Spirit Fox loss; those conditions lack direct triggers. Royal Champion placement at three remaining spells is example-specific; inside Royal Champion approximates her funnel being finished.",
+  "vUaNIZU3eno's charge uses five Invisibility Spells, Rocket Spear/Electro Boots Royal Champion and Fire Heart/Stun Blaster/Angry Jelly Duke. inside Royal Champion approximates Rocket Spear shots being exhausted because no ammunition trigger exists. Its four-second interval is explicit and is not assigned to k4aW1ytbOZ8 or llu35f-7RFk, whose single/double/quadruple cycles have no stated seconds. Those mass-Dragon plans start with Royal Champion and send Duke after the main push.",
+  "Repeated Ice Blocks have no shared stated interval. The Ice Block variants encode an initial damage-triggered cast; additional casts and movement between them are unscheduled. 47wtlBeNIPw instead activates Rocket Backpack seven seconds after Phoenix activates; no Phoenix trigger exists, so that timing is not converted into an invented attack-clock time.",
+  "The Flame Flinger variant's approximately 60-second lead comes only from twbdjMD07No; the other Flame Flinger sources give no number. Use that source's Fire Heart/Stun Blaster/Angry Jelly Duke and Flame Flinger inventory. Siege Barracks is an alternative machine, not an additional simultaneous deployment. The Siege Barracks variant replaces the Sky Wagon and requires that source's siege inventory and payload.",
+  "The Flame Blower variant uses PY3LIEa1Wck's Flame Blower/Rocket Backpack/Angry Jelly Duke. That source also revises its army to two Overgrowth Spells by removing one Poison and one Freeze. The repeated-Overgrowth variant needs two spells; delay 0 is the required unspecified-delay placeholder because spell expiration has no trigger, and does not reproduce waiting for the first spell to expire.",
+  "Sin7pQqHJLo's zapquake variant needs four Earthquake and six Lightning Spells and uses Eternal Tome/Rage Gem Warden. Its Queen and Duke deployment ordering is supplied by _sotzQjtl2A because Sin7pQqHJLo narrates only their abilities. Monolith and Inferno anchors approximate its stated high-value target areas; zero-delay single casts preserve its two-plus-two Earthquake and six-Lightning counts.",
+  "Revive is carried and repeatedly recommended for fallen Duke, but no Revive step is scheduled: this executor resolves unit anchors only for living units, while the vocabulary supplies no fallen-hero anchor. Assigning an edge or group position would invent the corpse's location.",
+  "Town Hall entry is contested: KHh13uguqf0 recommends an early Town Hall entry after one failure but later succeeds through the Monolith; s5btI1E0LdY changes entry with Sweepers and hero concentrations, while wanC6B7TJyk generally finishes toward the Town Hall and defending heroes. No universal Town Hall-first rule is imposed.",
+  "Sources span TH16-TH18, and several have no fixed attacking Town Hall. The representative army comes from a TH18 link. Missing counts, unresolved names such as logger or cake, accidental casts, missed arrows and explicitly criticized ability timings are not promoted to new instructions. No recall, redeploy or manual siege-release timing is established."
+ ],
+ "check": {
+  "steps_kept": 17,
+  "steps_dropped": 0,
+  "reasons": {},
+  "dangling_after": []
+ }
+}
