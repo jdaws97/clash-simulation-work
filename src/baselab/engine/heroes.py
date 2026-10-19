@@ -68,12 +68,45 @@ class Kit:
         return self.levels[name]
 
 
+def _pet_level(battle, hero, loadout, plan, town_hall):
+    name = loadout.pet
+    if not name:
+        return None
+    if name not in stats.registry() or stats.record(name)["kind"] != "pet":
+        raise ValueError(f"{name} is not a pet")
+    # Pet House unlocks and level caps come from the individual pet pages.
+    maximum = stats.max_level(name, town_hall)
+    if maximum is None:
+        raise ValueError(f"{name} is unavailable at Town Hall {town_hall}")
+    level = (getattr(plan, "pet_levels", {}) or {}).get(name, maximum)
+    if level is None:
+        level = maximum
+    if (
+        not isinstance(level, int)
+        or isinstance(level, bool)
+        or not 1 <= level <= maximum
+    ):
+        raise ValueError(f"Illegal {name} level {level} at Town Hall {town_hall}")
+    stats.row(name, level)
+    for unit in battle.attackers + battle.portal_stash:
+        if unit is hero:
+            continue
+        if unit.kit is not None and unit.kit.pet_name == name:
+            raise ValueError(f"{name} is already assigned to {unit.name}")
+        if unit.kind == "pet" and unit.name == name and unit.owner is not hero:
+            raise ValueError(f"{name} is already assigned to another Hero")
+    if hero.pet is not None:
+        raise ValueError(f"{hero.name} already has a pet")
+    return level
+
+
 def equip(battle, u: Unit, plan):
     loadouts = getattr(plan, "loadouts", None) or {}
     lo = loadouts.get(u.name) or DEFAULT_LOADOUTS.get(u.name)
     if lo is None:
         return
     th = getattr(plan, "town_hall", battle.town_hall)
+    pet_level = _pet_level(battle, u, lo, plan, th)
     levels_override = getattr(plan, "equipment_levels", {}) or {}
     k = Kit()
     k.hero = u.name
@@ -134,9 +167,9 @@ def equip(battle, u: Unit, plan):
         u.range = _col("Noble Iron", lv, "attack range")
     hero_level = u.level
     k.hp_recovery += stats.get(u.name, hero_level, "Health Recovery", default=0.0)
-    if lo.pet and lo.pet in stats.registry():
+    if lo.pet:
         k.pet_name = lo.pet
-        k.pet_level = (getattr(plan, "pet_levels", {}) or {}).get(lo.pet) or stats.max_level(lo.pet, th)
+        k.pet_level = pet_level
         k.phoenix = lo.pet == "Phoenix"
         _spawn_pet(battle, u, k)
     if k.has("Meteor Staff"):
@@ -158,6 +191,7 @@ def _spawn_pet(battle, hero: Unit, k: Kit):
     dps = stats.get(name, lvl, "dps", "Damage per Second", "~damage per second", default=0.0)
     if name == "Unicorn":
         dps = 0.0
+    # Wiki: Spirit Fox L9's DPH conflicts with DPS; retain DPS-derived hits.
     interval = a.get("attack_interval") or a.get("attack_interval_ck") or 1.0
     battle._uid += 1
     from .specs import UnitSpec
@@ -173,7 +207,8 @@ def _spawn_pet(battle, hero: Unit, k: Kit):
         hp=hp,
         dmg=dps * interval,
         interval=interval,
-        range_=attack_range(name),
+        # Unicorn uses a separate label (wiki: Unicorn).
+        range_=stats.num(a.get("raw", {}).get("Healing Range")) or attack_range(name),
         speed=movement_speed(name),
         housing=0,
         flying=bool(a.get("is_flying")),
@@ -1039,7 +1074,14 @@ def _housing(unit):
 
 
 def _free_pet(unit, t):
-    return unit.kind == "pet" and (unit.extra.get("egg") or unit.attached(t))
+    # Sneezy travels free while her paired Hero can fight (wiki: Sneezy).
+    return unit.kind == "pet" and (
+        unit.extra.get("egg")
+        or unit.attached(t)
+        or unit.name == "Sneezy"
+        and unit.owner is not None
+        and unit.owner.alive
+    )
 
 
 def stash(battle, taken, bonuses):
@@ -1215,6 +1257,8 @@ def summon_spec(name, specification):
         return replace(specification, walls="fly")
     if name == "Lavaloon":
         return replace(specification, prefer="air_defense")
+    if name == "Booger":
+        return replace(specification, walls="fly")  # wiki: Sneezy/Booger
     if name == "Frostmite":
         return replace(
             specification, prefer="defense", walls="ignore", engages_units=False
@@ -1225,6 +1269,10 @@ def summon_spec(name, specification):
 def new_member(battle, unit):
     from .battle import BUCKET
 
+    if unit.name == "Frostmite":
+        unit.housing = 1  # wiki: Frosty/Frostmite
+    elif unit.name == "Booger":
+        unit.housing = 4  # wiki: Sneezy/Booger
     if hasattr(battle, "_bucket_grid"):
         cell = (int(unit.x / BUCKET), int(unit.y / BUCKET))
         members = battle._bucket_grid.setdefault(cell, [])

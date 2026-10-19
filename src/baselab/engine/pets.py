@@ -1,6 +1,8 @@
 """Pet targeting and support effects from the individual wiki pages."""
 
-from . import effects, spells, stats, units
+import math
+
+from . import effects, stats, units
 from .entities import Building, Unit, Wall, dist
 
 
@@ -20,19 +22,74 @@ def _nearest(pet, candidates):
     )
 
 
+def _hero(battle, pet):
+    hero = pet.extra.get("diggy_hero", pet.owner)
+    if (
+        pet.name == "Diggy"
+        and hero is not None
+        and not hero.alive
+        and "recalled" not in hero.extra
+    ):
+        # Seek another active Hero after defeat, not Recall (wiki: Diggy).
+        hero = _nearest(
+            pet,
+            [
+                ally
+                for ally in battle.attackers
+                if ally is not hero
+                and ally.kind == "hero"
+                and ally.alive
+                and "recalled" not in ally.extra
+                and not ally.extra.get("suspended")
+                and battle.t >= ally.active_at
+            ],
+        )
+        if hero is not None:
+            pet.extra["diggy_hero"] = hero
+    return hero
+
+
+def _independent(battle, pet, buildings, defenders):
+    from .battle import ENGAGE_RADIUS
+
+    target = pet.target
+    # Use ordinary defender awareness after owner loss (wiki: Pets).
+    if battle.t < pet.aware_until or battle._ally_under_attack(pet):
+        nearby = [
+            defender
+            for defender in defenders
+            if dist(pet.x, pet.y, defender.x, defender.y)
+            <= ENGAGE_RADIUS + units.effective_range(pet)
+        ]
+        defender = _nearest(pet, nearby)
+        if defender is not None:
+            return defender
+    if _valid(battle, pet, pet.wall_target):
+        return pet.wall_target
+    if target in buildings or target in defenders:
+        return target
+    target, _ = battle.choose_target(pet)
+    return target if _valid(battle, pet, target) else None
+
+
 def _target(battle, pet):
-    hero = pet.owner
+    hero = _hero(battle, pet)
     owner_present = hero is not None and hero.alive
     buildings = [b for b in battle.buildings if _valid(battle, pet, b)]
     defenders = [u for u in battle.defenders if _valid(battle, pet, u)]
     if pet.name == "Greedy Raven":
-        resources = [b for b in buildings if b.key in units.RESOURCE_KEYS]
+        resources = [
+            building
+            for building in battle.buildings
+            if building.alive
+            and (building.kind == "resource" or building.key in units.RESOURCE_KEYS)
+        ]
         if resources:
-            if owner_present:
-                resources = [
-                    b for b in resources if b.edge_distance(hero.x, hero.y) <= pet.range
-                ]
-            return _nearest(pet, resources)
+            # Prefer resources near the Hero; no hard leash is stated.
+            return _nearest(
+                hero if owner_present else pet,
+                [building for building in resources if _valid(battle, pet, building)],
+            )
     if pet.attached(battle.t):
         return _nearest(
             pet,
@@ -49,12 +106,10 @@ def _target(battle, pet):
             if source.edge_distance(pet.x, pet.y) <= pet.range:
                 return source
     if pet.name == "Poison Lizard":
-        # Defenders in the Hero's range take priority (wiki: Poison Lizard).
+        # About 6.5 tiles from the Hero (wiki: Poison Lizard).
         nearby = defenders
         if owner_present:
-            nearby = [
-                u for u in defenders if dist(u.x, u.y, hero.x, hero.y) <= hero.range
-            ]
+            nearby = [u for u in defenders if dist(u.x, u.y, hero.x, hero.y) <= 6.5]
         if nearby:
             return _nearest(pet, nearby)
     if pet.name == "Sneezy":
@@ -79,12 +134,15 @@ def _target(battle, pet):
                 if dist(target.x, target.y, hero.x, hero.y) <= radius
             ]
             return _nearest(pet, candidates)
-        if pet.name == "Diggy" and _valid(battle, pet, hero.wall_target):
+        # Owner-target pets follow the wall actually being attacked.
+        if _valid(battle, pet, hero.wall_target):
             return hero.wall_target
+        if pet.name == "Diggy" and isinstance(hero.target, Unit) and hero.target.flying:
+            return _nearest(pet, buildings)
         if _valid(battle, pet, hero.target):
             return hero.target
         return None
-    return _nearest(pet, buildings + defenders)
+    return _independent(battle, pet, buildings, defenders)
 
 
 def owner_defeated(battle, pet):
@@ -145,9 +203,24 @@ def _summon(battle, pet):
     return pet.name == "Sneezy"
 
 
+def _move(battle, pet, target):
+    if battle.t < pet.held_until:
+        return
+    previous = pet.x, pet.y
+    battle.move_towards(pet, target)
+    if pet.name == "Mighty Yak" and (pet.x, pet.y) != previous:
+        # Movement restarts the ram sequence (wiki: Mighty Yak).
+        pet.extra["yak_first"] = True
+        pet.cooldown = 0.0
+
+
 def act(battle, pet):
-    hero = pet.owner
+    hero = _hero(battle, pet)
     present = hero is not None and hero.alive
+    if pet.extra.get("hero_present", True) and not present:
+        # Abandon obsolete walls on knockout or Recall (wiki: L.A.S.S.I).
+        pet.target = pet.wall_target = None
+    pet.extra["hero_present"] = present
     t = battle.t
     passives(battle, pet)
     if pet.extra.get("egg"):
@@ -179,20 +252,25 @@ def act(battle, pet):
             # Heal at 2.5 tiles, including flying Heroes (wiki: Unicorn).
             if dist(pet.x, pet.y, target.x, target.y) <= 2.5:
                 pet.extra["healing_targets"] = {target}
-                effectiveness = units.heal_effectiveness(battle, pet, target)
-                target.heal(
-                    stats.get("Unicorn", pet.level, "Healing per Second")
-                    * battle.DT
-                    * effectiveness
-                )
+                due = pet.extra.get("heal_next", t)
+                if t >= due or math.isclose(t, due):
+                    # One-second pulses; first-pulse offset is unstated (wiki: Unicorn).
+                    effectiveness = units.heal_effectiveness(battle, pet, target)
+                    target.heal(
+                        stats.get("Unicorn", pet.level, "Healing per Pulse")
+                        * effectiveness
+                    )
+                    pet.extra["heal_next"] = t + stats.num(
+                        stats.attrs("Unicorn")["raw"]["Healing Speed"]
+                    )
             else:
-                battle.move_towards(pet, target)
+                _move(battle, pet, target)
         return
     if _summon(battle, pet):
         return
     if pet.name == "Sneezy" and not pet.extra.get("owner_defeated"):
         if present and dist(pet.x, pet.y, hero.x, hero.y) > pet.range:
-            battle.move_towards(pet, hero)
+            _move(battle, pet, hero)
         return
     target = _target(battle, pet)
     pet.target = target
@@ -200,7 +278,7 @@ def act(battle, pet):
         if pet.name == "Diggy":
             pet.underground = True
         if present and not pet.attached(t):
-            battle.move_towards(pet, hero)
+            _move(battle, pet, hero)
         return
     distance = (
         target.edge_distance(pet.x, pet.y)
@@ -211,9 +289,7 @@ def act(battle, pet):
         if pet.name == "Diggy":
             pet.underground = True
         if not pet.attached(t):
-            battle.move_towards(pet, target)
-            if pet.name == "Mighty Yak":
-                pet.extra["moved"] = True
+            _move(battle, pet, target)
         return
     if pet.name == "Diggy" and pet.underground:
         pet.underground = False
@@ -221,43 +297,46 @@ def act(battle, pet):
             target.stun_until = max(
                 target.stun_until, t + stats.get("Diggy", pet.level, "Stun Duration")
             )
-    if pet.cooldown > 0:
+    if pet.name == "Mighty Yak" and pet.extra.get("yak_first", True):
+        # Initial windup is 0.5 seconds (wiki: Mighty Yak).
+        pet.extra["yak_first"] = False
+        pet.cooldown = 0.5 / max(0.05, effects.slow_mult(pet, t))
+        pet.extra["yak_second"] = True
+    if pet.cooldown > 0 and not math.isclose(t + pet.cooldown, t):
         return
     with effects.damage_source(battle, pet, "attack"):
         units.strike(battle, pet, target)
     interval = pet.interval
-    if pet.name == "Mighty Yak" and pet.extra.pop("moved", False):
+    if pet.name == "Mighty Yak" and pet.extra.pop("yak_second", False):
         interval = 1.6  # Second strike after moving (wiki: Mighty Yak).
-    pet.cooldown += interval / max(0.05, effects.slow_mult(pet, t))
-    if pet.name == "Poison Lizard" and isinstance(target, Unit):
-        # The poison affects troops and Heroes only (wiki: Poison Lizard).
-        spells._poison(
-            battle,
-            target,
-            stats.get(pet.name, pet.level, "Poison Max Damage per Second"),
-            stats.get(pet.name, pet.level, "Poison Speed Decrease") / 100.0,
-            stats.get(pet.name, pet.level, "Poison Attack Rate Decrease") / 100.0,
-            1.0,
-            ramp=True,
-        )
+    delay = interval / max(0.05, effects.slow_mult(pet, t))
+    if pet.name == "Mighty Yak":
+        pet.cooldown = delay
+    else:
+        pet.cooldown += delay
+    # Poison Lizard toxin lifetime and ramp: NUMBER NOT STATED; no guessed timer.
     if pet.name == "Electro Owl":
         # Two targets, with 80% damage on the second (wiki: Electro Owl).
         candidates = [
-            target
-            for target in battle.buildings + battle.defenders
-            if target is not pet.target
-            and _valid(battle, pet, target)
-            and _owl_link(pet.target, target)
+            candidate
+            for candidate in battle.buildings + battle.defenders
+            if candidate is not target
+            and _valid(battle, pet, candidate)
+            and _owl_link(target, candidate)
         ]
-        second = min(
-            candidates, key=lambda a: dist(a.x, a.y, target.x, target.y), default=None
-        )
+        second = _nearest(target, candidates)
         if second is not None:
-            damage = pet.dmg * max(units.rage_boost(pet, t)[0], pet.aura_dmg) * 0.8
-            if isinstance(second, Unit):
-                battle.hit_unit(second, damage, attacker=pet, kind="chain")
-            else:
-                battle.hit_building(second, damage)
+            boost = max(
+                units.rage_boost(pet, t)[0],
+                pet.aura_dmg,
+                pet.extra.get("bell_damage", 1.0),
+            )
+            damage = pet.dmg * boost * 0.8
+            with effects.damage_source(battle, pet, "chain"):
+                if isinstance(second, Unit):
+                    battle.hit_unit(second, damage, attacker=pet, kind="chain")
+                else:
+                    battle.hit_building(second, damage)
 
 
 def _owl_link(first, second):
