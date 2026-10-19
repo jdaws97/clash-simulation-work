@@ -350,6 +350,56 @@ class PlaybookPlan(AttackPlan):
                     self.log_steps.append((round(t, 1), sid))
                 if rep:
                     self._next[sid] = t + rep
+        self._fallback_spells(battle)
+
+    # ------------------------------------------------- uncited spell fallback
+    def _step_kinds(self):
+        if not hasattr(self, "_step_spells"):
+            kinds = set()
+            for st in self.steps:
+                if st["action"] == "recall":
+                    kinds.add("recall")
+                elif st["action"] == "spell" and st.get("what") in SPELL_KEYS:
+                    kinds.add(SPELL_KEYS[st["what"]])
+            self._step_spells = kinds
+            # Revive: the playbook decides when it names it; otherwise fallen
+            # heroes are revived as the scripted plans do
+            self.auto_revive = "revive" not in kinds
+        return self._step_spells
+
+    def _have(self, kind):
+        if getattr(self, "_fallback", False) and kind in self._step_kinds():
+            # the playbook controls this spell until all its own steps for it
+            # have fired; copies left after that go to the fallback
+            mine = [st["id"] for st in self.steps if (st["action"] == "recall" and kind == "recall")
+                    or (st["action"] == "spell" and SPELL_KEYS.get(st.get("what")) == kind)]
+            if any(i not in self._done for i in mine) or any(st.get("every") and st["id"] in mine for st in self.steps):
+                return False
+        return super()._have(kind)
+
+    def _fallback_spells(self, battle):
+        """Spells the playbook never names are used by the general spell
+        logic of the scripted plans (Freeze heavy defenses on the push, Rage
+        when engaged, Heal under fire, Lightning on an Air Defense, Revive).
+        This is NOT from a source: the playbooks only narrate some spells, and
+        a real player does not finish an attack with half of them unused."""
+        self._step_kinds()
+        t = battle.t
+        if t < getattr(self, "_next_fallback", 0.0):
+            return
+        self._next_fallback = t + 0.5
+        main = self.main_units(battle)
+        if not main:
+            return
+        self._fallback = True
+        try:
+            if not self._zap_done and self.zap_ad != (0, 0):
+                self._zap(battle)
+            self.generic_spells(battle, main)
+        finally:
+            self._fallback = False
+        self.revive_knocked_out(battle)
+
 
 
 def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict) -> list:
