@@ -28,7 +28,8 @@ from baselab.evaluate import STRENGTH, attacker_trophies, pool, skill  # noqa: E
 from baselab.layout import Layout  # noqa: E402
 from baselab.meta_armies import library  # noqa: E402
 
-USER = [("custom:user-rr", 16), ("custom:user-air", 16), ("custom:user-druid-ruin", 16)]
+# the user rarely attacks with air (2026-10-19), so their air army is left out
+USER = [("custom:user-rr", 16), ("custom:user-druid-ruin", 16)]
 
 
 def _run(args):

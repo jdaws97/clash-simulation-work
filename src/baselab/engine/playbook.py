@@ -359,8 +359,27 @@ class PlaybookPlan(AttackPlan):
             heroes.activate(battle, u)
             return True
         if u.kit.has("Giant Arrow"):
-            if math.hypot(tgt.x - u.x, tgt.y - u.y) > self.P("arrow_reach"):
+            # of the buildings of that key in reach, the one whose arrow line
+            # (a straight shot through it) crosses the most of them: "line up
+            # these two air defenses with the giant arrow" (s5btI1E0LdY 6:04)
+            reach = self.P("arrow_reach")
+            cands = [b for b in battle.buildings if b.alive and b.key == key
+                     and math.hypot(b.x - u.x, b.y - u.y) <= reach]
+            if not cands:
                 return False
+
+            def crossed(c):
+                dx, dy = c.x - u.x, c.y - u.y
+                n = math.hypot(dx, dy) or 1.0
+                hits = 0
+                for o in battle.buildings:
+                    if o.alive and o.key == key:
+                        along = ((o.x - u.x) * dx + (o.y - u.y) * dy) / n
+                        off = abs((o.x - u.x) * dy - (o.y - u.y) * dx) / n
+                        hits += along > 0 and off <= o.half_hit + 1.0
+                return hits
+
+            tgt = max(cands, key=lambda c: (crossed(c), -math.hypot(c.x - u.x, c.y - u.y)))
             u.extra["aim_at"] = tgt
             self._fire_aimed(battle, u)
             return True
@@ -522,6 +541,43 @@ class PlaybookPlan(AttackPlan):
 
 
 
+def _usable(st, have, heroes_in):
+    w = st.get("what")
+    if st["action"] in ("deploy", "release_siege"):
+        return w in have
+    if st["action"] == "recall":
+        return "Recall Spell" in have
+    if st["action"] == "spell":
+        return w in have
+    if st["action"] == "ability":
+        return w in heroes_in
+    if st["action"] == "redeploy":
+        return w is None or w in heroes_in
+    return True
+
+
+def pick_variants(pb: dict, inventory: dict, heroes_in: list, spells: dict) -> list:
+    """The playbook's steps with its cited variants swapped in where the
+    army needs them: a variant that replaces steps this army cannot play
+    (e.g. a Flame Flinger it does not bring) with steps it can (its Log
+    Launcher) takes their place. Best-supported variant first; additive
+    variants (replacing nothing) are left out."""
+    have = set(inventory) | set(heroes_in) | {SPELL_NAMES[k] for k, c in spells.items() if c}
+    steps = [dict(x) for x in pb["steps"]]
+    for v in sorted(pb.get("variants", []), key=lambda v: -v.get("support", 0)):
+        repl = set(v.get("replaces") or [])
+        cur = [x for x in steps if x["id"] in repl]
+        if not repl or not cur or any(_usable(x, have, heroes_in) for x in cur):
+            continue
+        new = [dict(x, variant=v["name"]) for x in v.get("steps", [])]
+        if not new or not all(_usable(x, have, heroes_in) for x in new):
+            continue
+        i = min(n for n, x in enumerate(steps) if x["id"] in repl)
+        steps = [x for x in steps if x["id"] not in repl]
+        steps[i:i] = new
+    return steps
+
+
 def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict) -> list:
     """The playbook's steps for a particular army: steps for troops, heroes
     or spells the army does not carry are dropped, and any step triggered
@@ -671,7 +727,8 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
         inv[plan.siege] = 1
     plan.inventory = inv
     heroes_in = [h for h in build["heroes"] if h in heroes.HEROES]
-    plan.steps = fit_steps(pb["steps"], inv, heroes_in, dict(base._spells0, **{k: c for k, c in base.cc_spells.items()}))
+    sp = dict(base._spells0, **{k: c for k, c in base.cc_spells.items()})
+    plan.steps = fit_steps(pick_variants(pb, inv, heroes_in, sp), inv, heroes_in, sp)
     add_waits(plan.steps)
     # Invisibility cadence on a charging hero depends on her pet: the merged
     # playbooks' 10-second cycle relies on Spirit Fox covering the gaps; without
