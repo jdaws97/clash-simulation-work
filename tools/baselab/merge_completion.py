@@ -7,7 +7,7 @@ that video's transcript within 30 s of the stated time (check_playbook.locate).
 Cites that fail are dropped; a step left with no good cite is rejected.
 Merged steps carry "completion": true.
 
-Usage: python tools/baselab/merge_completion.py FAMILY [...] [--dry]
+Usage: python tools/baselab/merge_completion.py FAMILY [...] [--dry] [--from=completion-cc]
 """
 
 from __future__ import annotations
@@ -67,8 +67,8 @@ def place(steps: list) -> list:
     return base
 
 
-def merge(fam: str, dry: bool) -> str:
-    raw = SRC / "completion" / f"{fam}.raw"
+def merge(fam: str, dry: bool, folder: str = "completion") -> str:
+    raw = SRC / folder / f"{fam}.raw"
     if not raw.exists():
         return f"{fam}: no reply"
     rep = parse_reply(raw.read_text(encoding="utf-8", errors="replace"))
@@ -121,5 +121,6 @@ def merge(fam: str, dry: bool) -> str:
 
 if __name__ == "__main__":
     dry = "--dry" in sys.argv
+    folder = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--from=")), "completion")
     for fam in [a for a in sys.argv[1:] if not a.startswith("--")]:
-        print(merge(fam, dry))
+        print(merge(fam, dry, folder))

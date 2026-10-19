@@ -65,6 +65,10 @@ def action_time(act: str, n: int = 1) -> float:
     return scale * PACE_SWITCH
 
 
+# seconds a building-aimed ability waits to line up before firing anyway
+# (an assumption, not from a source)
+AIM_WAIT = 10.0
+
 # troops that go in as one stack even when several are dropped: Healers
 # follow whoever they are healing, Wall Breakers open one wall section
 LINE_EXEMPT = {"Healer", "Wall Breaker"}
@@ -318,11 +322,58 @@ class PlaybookPlan(AttackPlan):
         u = self._unit(battle, s["what"])
         if u is None or u.kit is None or u.ability_used:
             return False
+        if str(s.get("aim", "")).startswith("building:"):
+            if self._aim_building(battle, u, s["aim"].split(":", 1)[1]):
+                return True
+            # not lined up yet: keep trying; after AIM_WAIT s fire it normally
+            # rather than hold the ability all battle (an assumption)
+            since = self._aim_since.setdefault(s["id"], battle.t)
+            if battle.t - since >= AIM_WAIT:
+                heroes.activate(battle, u)
+                return True
+            return False
         if s.get("aim"):
             if self._aim(battle, u, s["aim"]):
                 self._fire_aimed(battle, u)
                 return True
             return False
+        heroes.activate(battle, u)
+        return True
+
+    @property
+    def _aim_since(self):
+        if not hasattr(self, "_aim_t"):
+            self._aim_t = {}
+        return self._aim_t
+
+    def _aim_building(self, battle, u, key):
+        """An ability aimed at a building (e.g. "arrow through the CC"). Giant
+        Arrow: fired at the building once it is within the arrow's reach.
+        Fireball: it always flies at the closest defense (wiki: Fireball), so
+        the Warden fires it once that defense is within the blast radius of
+        the building. The step waits until then; if the building is gone it
+        fires normally."""
+        tgt = min((b for b in battle.buildings if b.alive and b.key == key),
+                  key=lambda b: math.hypot(b.x - u.x, b.y - u.y), default=None)
+        if tgt is None:
+            heroes.activate(battle, u)
+            return True
+        if u.kit.has("Giant Arrow"):
+            if math.hypot(tgt.x - u.x, tgt.y - u.y) > self.P("arrow_reach"):
+                return False
+            u.extra["aim_at"] = tgt
+            self._fire_aimed(battle, u)
+            return True
+        if u.kit.has("Fireball"):
+            defs = heroes._targets(battle, defenses=True)
+            if not defs:
+                return False
+            near = min(defs, key=lambda b: heroes._distance(b, u.x, u.y))
+            radius = heroes._col("Fireball", u.kit.lv("Fireball"), "damage radius")
+            if tgt.edge_distance(near.x, near.y) > radius:
+                return False
+            heroes.activate(battle, u)
+            return True
         heroes.activate(battle, u)
         return True
 

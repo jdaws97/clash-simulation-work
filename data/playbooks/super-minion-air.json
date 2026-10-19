@@ -503,6 +503,63 @@
      "t": 951.6,
      "quote": "Okay, I'll just go for the wizard tower now"
     }
+   ],
+   "aim": "building:cc",
+   "aim_cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 619.4,
+     "quote": "get the clan castle and rage tower.",
+     "verified_t": 619.4
+    },
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 239.0,
+     "quote": "better. I get rid of the CC and the lava",
+     "verified_t": 239.0
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 53.2,
+     "quote": "the clan castle as well. So, let's see",
+     "verified_t": 53.2
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 941.6,
+     "quote": "the clan castle, like the expo or",
+     "verified_t": 941.6
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 336.9,
+     "quote": "fireball, uh get down the clan castle",
+     "verified_t": 336.9
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 1274.2,
+     "quote": "is the best fireball. Gets the CC and",
+     "verified_t": 1274.2
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 55.5,
+     "quote": "the fireball. Take it out before those",
+     "verified_t": 55.5
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 57.0,
+     "quote": "troops get dragged out.",
+     "verified_t": 57.0
+    },
+    {
+     "video": "yiUwu_vHfng",
+     "t": 479.6,
+     "quote": "gets the clan castle. The eagle. I just",
+     "verified_t": 479.6
+    }
    ]
   },
   {
@@ -803,6 +860,34 @@
    "completion": true
   },
   {
+   "id": "cc_fireball_finish_quake",
+   "action": "spell",
+   "what": "Earthquake Spell",
+   "count": 1,
+   "at": "building:cc",
+   "group": "charge",
+   "when": {
+    "after": "fireball",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 582.6,
+     "quote": "since I had to use an extra earthquake",
+     "verified_t": 582.6
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 584.6,
+     "quote": "to get that clan castle down, I only",
+     "verified_t": 584.6
+    }
+   ],
+   "completion": true
+  },
+  {
    "id": "redeploy_warden",
    "action": "redeploy",
    "what": "Grand Warden",
@@ -964,6 +1049,75 @@
      "video": "x5AiCcU008Y",
      "t": 97.1,
      "quote": "course the giant arrow with the dragon"
+    }
+   ],
+   "aim": "building:cc",
+   "aim_cite": [
+    {
+     "video": "HnEtYULN4Y0",
+     "t": 127.9,
+     "quote": "I'm going to arrow through that CC",
+     "verified_t": 127.9
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 692.1,
+     "quote": "let's take down the CC and the monolith",
+     "verified_t": 692.1
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 695.6,
+     "quote": "with the rocket backpack and the giant",
+     "verified_t": 695.6
+    },
+    {
+     "video": "O8of3SqwmUo",
+     "t": 697.9,
+     "quote": "arrow. Okay,",
+     "verified_t": 697.9
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 48.4,
+     "quote": "and then I will get the clan castle",
+     "verified_t": 48.4
+    },
+    {
+     "video": "b_kCBBnsuvo",
+     "t": 54.2,
+     "quote": "giant arrow backpack combo.",
+     "verified_t": 54.2
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 721.7,
+     "quote": "you angle your queen correctly, you can",
+     "verified_t": 721.7
+    },
+    {
+     "video": "dn6J46bW0ts",
+     "t": 723.6,
+     "quote": "get either the CC or the lava launcher.",
+     "verified_t": 723.6
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 789.4,
+     "quote": "revenge tower and clan castle even",
+     "verified_t": 789.4
+    },
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 808.1,
+     "quote": "the giant arrow gets everything down",
+     "verified_t": 808.1
+    },
+    {
+     "video": "tFITZCY8XhU",
+     "t": 385.2,
+     "quote": "CC with the jetack and arrow as well.",
+     "verified_t": 385.2
     }
    ]
   },

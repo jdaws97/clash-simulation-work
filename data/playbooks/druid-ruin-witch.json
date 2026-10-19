@@ -621,6 +621,41 @@
    ]
   },
   {
+   "id": "cc_freeze_defending_headhunters",
+   "action": "spell",
+   "what": "Freeze Spell",
+   "count": 1,
+   "at": "defenders:main",
+   "group": "main",
+   "when": {
+    "all": [
+     {
+      "after": "queen",
+      "delay": 0
+     },
+     {
+      "defenders_near": "main"
+     }
+    ]
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "8WfG8dKMBAw",
+     "t": 534.2,
+     "quote": "Oh, freeze the head hunters.",
+     "verified_t": 534.2
+    },
+    {
+     "video": "iBpk-396MQs",
+     "t": 696.2,
+     "quote": "head hunters right now. Let's freeze",
+     "verified_t": 696.2
+    }
+   ],
+   "completion": true
+  },
+  {
    "id": "ice_golem",
    "action": "deploy",
    "what": "Ice Golem",
