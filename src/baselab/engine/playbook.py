@@ -537,6 +537,18 @@ def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict) -> li
         if h not in mentioned:
             kept.append({"id": f"rest-{h}", "action": "deploy", "what": h, "count": 1, "at": "edge:main",
                          "group": "main", "when": anchor, "uncited": True, "cite": []})
+    # troops the steps name but only partly use (a step for 1 Super Minion
+    # when the army has 5): the rest follow that unit's last step, and no
+    # troop is still in the camp at 150 s (a player spends the army)
+    for n, c in inventory.items():
+        mine = [x for x in kept if x["action"] == "deploy" and x.get("what") == n and not x.get("uncited")]
+        if not c or n in heroes.HEROES or not mine or any(x.get("count") in (None, "all") for x in mine):
+            continue
+        if sum(int(x["count"]) for x in mine) >= c:
+            continue
+        kept.append({"id": f"rest2-{n}", "action": "deploy", "what": n, "count": "all", "at": "edge:main",
+                     "when": {"any": [{"after": mine[-1]["id"], "delay": 4.5}, {"t": 150.0}]},
+                     "uncited": True, "cite": []})
     return kept
 
 
