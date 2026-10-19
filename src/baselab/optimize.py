@@ -15,6 +15,7 @@ Two stages:
 from __future__ import annotations
 
 import math
+import os
 import random
 import time
 from dataclasses import dataclass
@@ -40,7 +41,10 @@ def objective(ev: Evaluation, mode: str, layout=None) -> float:
     never trades a hole for a lucky scenario set."""
     pen = 0.0
     if layout is not None:
-        pen = hole_tiles(layout) * (0.25 if mode == "ranked" else 0.8)
+        # BASELAB_HOLE_PENALTY overrides the per-tile penalty (the user wants
+        # no drop pockets at all: overnight searches set it high)
+        per = float(os.environ.get("BASELAB_HOLE_PENALTY") or (0.25 if mode == "ranked" else 0.8))
+        pen = hole_tiles(layout) * per
     if mode == "ranked":
         # expected trophies kept, tie-broken by lower destruction conceded
         return ev.ranked_trophies - 0.02 * ev.avg_destruction - pen
