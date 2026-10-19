@@ -34,6 +34,38 @@ def num(value, default=None):
 @lru_cache(maxsize=1)
 def registry() -> dict:
     data = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    # Wiki: Birthday Boom table; its historical TH-scaling formula conflicts.
+    data.setdefault(
+        "Birthday Boom",
+        {
+            "name": "Birthday Boom",
+            "kind": "spell",
+            "seasonal": True,
+            "attrs": {"housing": 2, "raw": {"Spell Factory Level Required": 1}},
+            "levels": [
+                {
+                    "level": 1,
+                    "wiki": {
+                        "Damage": 500,
+                        "Damage vs Town Hall": 350,
+                        "Radius": 2.5,
+                        "Freeze Duration": 2,
+                    },
+                }
+            ],
+        },
+    )
+    # Wiki: Yellow Card has one level and a 15-second suspension.
+    data.setdefault(
+        "Yellow Card",
+        {
+            "name": "Yellow Card",
+            "kind": "spell",
+            "seasonal": True,
+            "attrs": {"housing": 1, "raw": {"Spell Factory Level Required": 1}},
+            "levels": [{"level": 1, "wiki": {"Duration": 15, "Radius": 7}}],
+        },
+    )
     # Published level rows (wiki: Lavaloon/Lavaloon Pup).
     damage = (10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 42, 44)
     health = (10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70)

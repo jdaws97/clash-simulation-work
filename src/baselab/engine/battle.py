@@ -464,7 +464,11 @@ class Battle:
         if not b.alive or not b.counted and b.key not in ("th",):
             return False
         t = self.t
-        if t < b.overgrown_until or t < b.invisible_until:
+        if (
+            t < b.overgrown_until
+            or t < b.invisible_until
+            or t < b.extra.get("yellow_until", 0.0)
+        ):
             return False
         if b.key == "tesla" and not b.revealed:
             return False
@@ -530,14 +534,17 @@ class Battle:
             return 0.0
         if kind == "trap" and u.name == "Dragon Duke" and units.duke_alone(self, u):
             amount *= 0.8  # July 2026: trap reduction cut to ~20% while alone
+        # Wiki: Ice Block Spell, the strongest active damage reduction wins.
+        red = u.dmg_taken_mult if t < u.dmg_taken_until else 1.0
+        red = min(red, 1.0 - effects.torch_stats(u, t)[1])
+        if u.kit is not None:
+            red = min(red, heroes.damage_taken_mult(self, u))
         if t < u.iceblock_until:
-            amount *= 1.0 - u.iceblock_red  # does not stack with other reductions (wiki)
-        else:
-            red = u.dmg_taken_mult if t < u.dmg_taken_until else 1.0
-            red = min(red, 1.0 - effects.torch_stats(u, t)[1])
-            if u.kit is not None:
-                red = min(red, heroes.damage_taken_mult(self, u))
-            amount *= red
+            red = min(red, 1.0 - u.iceblock_red)
+        for reduction, until in u.extra.get("iceblocks", {}).values():
+            if t < until:
+                red = min(red, 1.0 - reduction)
+        amount *= red
         if (
             self.def_mult != 1.0
             and u.team == "atk"
@@ -545,12 +552,17 @@ class Battle:
             and effect not in ("death", "counter", "spell", "poison")
         ):
             amount *= self.def_mult
+        armor = u.extra.get("armor_hp", 0.0)
+        if armor > 0:
+            u.extra["armor_hp"] = max(0.0, armor - amount)
+            amount = min(armor, amount)
         if u.team == "atk":
             s = src or self._src
             self.damage_by_source[s] = self.damage_by_source.get(s, 0.0) + min(amount, u.hp)
-        remaining_bonus = u.extra.get("aura_hp", 0.0)
-        u.extra["aura_hp"] = max(0.0, remaining_bonus - amount)
-        u.hp -= amount
+        if armor <= 0:
+            remaining_bonus = u.extra.get("aura_hp", 0.0)
+            u.extra["aura_hp"] = max(0.0, remaining_bonus - amount)
+            u.hp -= amount
         u.last_hit = t
         u.extra["last_damage_source"] = source
         if (
@@ -716,6 +728,9 @@ class Battle:
         self.ended = True
 
     def run(self):
+        validate = getattr(self.plan, "require_legal", None)
+        if validate is not None:
+            validate()
         while not self.ended and (self.scouting or self.t < self.max_time):
             self.step()
             if self.scouting:
@@ -750,7 +765,19 @@ class Battle:
             return False
         if any(
             isinstance(p.actor, Unit) and p.actor.team == "atk" for p in self.pending
-        ) or any(f.kind in ("lightning", "quake", "revive_due") for f in self.fields):
+        ) or any(
+            f.kind
+            in (
+                "lightning",
+                "quake",
+                "revive_cast",
+                "revive_due",
+                "summon",
+                "santa",
+                "birthday",
+            )
+            for f in self.fields
+        ):
             return False
         return True
 
@@ -1332,7 +1359,7 @@ class Battle:
         )
         s += max(
             rage_speed,
-            u.haste_spd if t < u.haste_until else 0.0,
+            units.haste_speed(u, t),
             horse_speed,
             effects.torch_stats(u, t)[0],
         )

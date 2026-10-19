@@ -621,7 +621,7 @@ def _act_once(battle, w: Weapon):
         battle.hit_unit(tgt, dmg)
         best, bd = None, w.extra["bounce_range"]
         for a in battle.attackers_near(tgt.x, tgt.y, bd):
-            if a is not tgt and not a.flying and a.targetable(t):
+            if a is not tgt and not a.flying and a.indirect_targetable(t):
                 d = dist(a.x, a.y, tgt.x, tgt.y)
                 if d <= bd:
                     bd, best = d, a
@@ -1017,7 +1017,7 @@ def _super_wizard(battle, w, rage):
     for _ in range(w.extra["chain"]):
         nxt, nd = None, w.extra["chain_range"]
         for a in battle.attackers_near(tgt.x, tgt.y, nd):
-            if a.id not in hit and a.targetable(battle.t):
+            if a.id not in hit and a.indirect_targetable(battle.t):
                 d = dist(a.x, a.y, tgt.x, tgt.y)
                 if d <= nd:
                     nd, nxt = d, a
@@ -1066,7 +1066,7 @@ def _firespitter(battle, w, rage):
     battle.hit_unit(tgt, w.damage * rage)
     ang = math.atan2(tgt.y - b.y, tgt.x - b.x)
     for a in battle.attackers_near(tgt.x, tgt.y, 2.0):
-        if a is not tgt and a.targetable(t):
+        if a is not tgt and a.indirect_targetable(t):
             off = abs((math.atan2(a.y - b.y, a.x - b.x) - ang + math.pi) % (2 * math.pi) - math.pi)
             if off < 0.2 and dist(a.x, a.y, b.x, b.y) > dist(tgt.x, tgt.y, b.x, b.y):
                 battle.hit_unit(a, w.damage * rage)
@@ -1097,7 +1097,7 @@ def _revenge(battle, w, tgt, rage):
             (
                 unit
                 for unit in battle.attackers_near(current.x, current.y, 2.0)
-                if unit.id not in hit and unit.targetable(battle.t)
+                if unit.id not in hit and unit.indirect_targetable(battle.t)
             ),
             None,
         )

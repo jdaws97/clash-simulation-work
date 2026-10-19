@@ -34,6 +34,14 @@ def rage_boost(u, t):
     return damage, speed
 
 
+def haste_speed(u, t):
+    speed = u.haste_spd if t < u.haste_until else 0.0
+    for added, until in u.extra.get("haste_effects", {}).values():
+        if t < until:
+            speed = max(speed, added)
+    return speed
+
+
 def duke_alone(battle, u) -> bool:
     # Dragon Duke: Royal Rampage requires no other air units within 6 tiles.
     for a in battle.attackers_near(u.x, u.y, 6.0):
@@ -231,6 +239,9 @@ def smash_wall(battle, u, w):
 # ------------------------------------------------------------------ spawning
 
 def on_spawn(battle, u: Unit):
+    if u.name == "Spell Skeleton":
+        # Wiki: Skeleton Spell/Skeleton, 30 armor HP; overkill is discarded.
+        u.extra["armor_hp"] = 30.0
     sp = u.spec
     t = battle.t
     if "boosters" in sp.special:
@@ -350,7 +361,8 @@ def pre_tick(battle, u: Unit) -> bool:
         if not u.alive:
             return True
         if u.dash is not None:
-            heroes.dash_step(battle, u)
+            if t >= u.frozen_until and t >= u.stun_until:
+                heroes.dash_step(battle, u)
             return True
     if u.name == "Totem":
         return True
@@ -896,6 +908,7 @@ def inherit_clone(battle, parent, child):
     if not parent.extra.get("clone"):
         return
     child.extra["clone"] = True
+    child.extra["clone_casts"] = set(parent.extra.get("clone_casts", ()))
     # Wiki: Clone Spell says descendants are cloned; lifetime inheritance is unstated.
     # Preserve the parent's deadline rather than inventing a fresh lifetime.
     child.extra["expire_at"] = parent.extra["expire_at"]
@@ -1417,6 +1430,20 @@ def _mult_vs(u, target, battle=None):
     if isinstance(target, Wall):
         return sp.vs_walls
     if isinstance(target, Building):
+        if u.name in ("Spell Skeleton", "Bat") and target.key in (
+            "gs",
+            "es",
+            "ds",
+            "th",
+        ):
+            m *= 0.15  # Wiki: Skeleton Spell/Skeleton and Bat Spell/Bat.
+        if u.name == "Frostmite" and (
+            target.key in ("gs", "es", "ds")
+            or target.key == "th"
+            and battle is not None
+            and battle.is_defense_target(target)
+        ):
+            m *= 0.5  # Wiki: Frosty/Frostmite, half storage damage.
         if target.kind == "resource" or target.key in RESOURCE_KEYS:
             m *= sp.vs_resources
         defensive = target.is_defense
@@ -1460,7 +1487,7 @@ def strike(battle, u: Unit, target):
             # Compare fixed Vial and Rage bonuses (wiki: Rage Spell/Home Village).
             vial = u.extra["vial_bonus"] * battle.atk_hero_mult
             dmg = max(dmg, ordinary + vial)
-        dmg += heroes.strike_bonus(battle, u, target)
+        dmg = max(dmg, ordinary + heroes.strike_bonus(battle, u, target))
     if "long_shot" in sp.special and u.extra.get("long_shots", 0) > 0:
         u.extra["long_shots"] -= 1
     if u.name == "Frostmite":

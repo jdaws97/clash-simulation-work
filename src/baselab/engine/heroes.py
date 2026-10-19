@@ -487,6 +487,10 @@ def activate(battle, u: Unit):
     u.ability_used = True
     u.heal(k.hp_recovery)
     tgt = u.target
+    if isinstance(tgt, Building) and not battle.building_targetable(tgt):
+        tgt = None
+    elif isinstance(tgt, Unit) and not tgt.targetable(t):
+        tgt = None
     # Fireball precedes summons; Backpack fixes Flame Blower's facing (wiki).
     ordering = {"Fireball": 0, "Rocket Backpack": 1, "Lavaloon Puppet": 3}
     for e in sorted(k.equip, key=lambda name: ordering.get(name, 2)):
@@ -606,12 +610,14 @@ def activate(battle, u: Unit):
             target = (
                 min(candidates, key=lambda a: _distance(a, u.x, u.y))
                 if candidates
-                else u
+                else None
             )
+            # Wiki: Invisibility Spell and Overgrowth Spell, top-corner fallback.
+            x, y = (target.x, target.y) if target is not None else (0.0, 0.0)
             _blast(
                 battle,
-                target.x,
-                target.y,
+                x,
+                y,
                 _col(e, lv, "damage radius"),
                 _col(e, lv, "projectile damage"),
             )
@@ -634,6 +640,8 @@ def activate(battle, u: Unit):
                 if not candidates:
                     candidates = [a for a in _targets(battle) if a not in visited]
                 if not candidates:
+                    # Targetless Shield flies to the top corner (wiki: Overgrowth Spell).
+                    u.extra["shield_destination"] = (0.0, 0.0)
                     break
                 target = min(
                     candidates, key=lambda a: _distance(a, previous.x, previous.y)
@@ -654,7 +662,10 @@ def activate(battle, u: Unit):
             k.boots_until = 0.0  # passive aura (see hero_tick); nothing to start here
         elif e == "Haste Vial":
             dur = _col(e, lv, "ability duration", default=10.0)
-            u.haste_spd, u.haste_until = _col(e, lv, "speed increase") / 8.0, t + dur
+            u.extra.setdefault("haste_effects", {})[e] = (
+                _col(e, lv, "speed increase") / 8.0,
+                t + dur,
+            )
             u.extra["haste_attack_until"] = t + dur
             u.extra["haste_attack"] = (
                 1.0 + _col(e, lv, "ability attributes / attack speed increase") / 100.0
@@ -1070,7 +1081,7 @@ def _portal(battle, u, lv):
 
 def _housing(unit):
     # Recall interaction housing (wiki: Portal Pendant).
-    return 25 if unit.is_hero else 20 if unit.kind == "pet" else unit.housing
+    return spells.interaction_housing(unit)
 
 
 def _free_pet(unit, t):
@@ -1117,7 +1128,6 @@ def _resume_timers(unit, now):
         "torch_until",
         "haste_attack_until",
         "angry_until",
-        "brainwash_until",
     ):
         if key in unit.extra:
             unit.extra[key] += elapsed
@@ -1128,6 +1138,10 @@ def _resume_timers(unit, now):
     ):
         if source in ("Rage Vial", "Barbarian Puppet"):
             unit.extra["rage_effects"][source] = damage, speed, until + elapsed
+    haste = unit.extra.get("haste_effects", {})
+    if "Haste Vial" in haste:
+        speed, until = haste["Haste Vial"]
+        haste["Haste Vial"] = speed, until + elapsed
     until = unit.extra.get("equipment_invisible_until")
     if until is not None:
         unit.extra["equipment_invisible_until"] = until + elapsed
@@ -1165,7 +1179,11 @@ def portal_redeploy(battle, x, y):
         if unit not in battle.attackers:
             battle.attackers.append(unit)
         unit.heal(heal * unit.max_hp)
-        unit.haste_spd, unit.haste_until = speed, t + duration
+        if duration > 0:
+            unit.extra.setdefault("haste_effects", {})["Portal Pendant"] = (
+                speed,
+                t + duration,
+            )
         unit.target = unit.wall_target = None
         if unit.extra.get("clone") and unit not in battle._clones:
             battle._clones.append(unit)

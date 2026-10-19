@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import math
 
+from ..mechanics import WORLD
 from . import defense, effects, stats
 from .entities import Building, Field, Unit, Wall, dist
-from .specs import SUBTROOP_HOUSING
 
 LAND_DELAY = 0.5  # time for a spell bottle to land (assumed)
 STORAGES = {"gs", "es", "ds"}
@@ -42,14 +42,71 @@ def _affected(u: Unit) -> bool:
     return u.alive and u.kind not in ("siege", "siege_idle") and u.name != "Totem"
 
 
+def validate(plan, name, level, *, donated=False):
+    if type(level) is not int or level <= 0:
+        raise ValueError(f"Invalid {name} level {level}")
+    stats.row(name, level)
+    event = plan.event_ruleset
+    if name in (
+        "Santa's Surprise",
+        "Bag of Frostmites",
+        "Birthday Boom",
+        "Yellow Card",
+    ):
+        if not event.get("version") or name not in event.get("spells", ()):
+            raise ValueError(f"{name} requires an explicit event version")
+        if donated and name in ("Santa's Surprise", "Birthday Boom"):
+            raise ValueError(f"{name} cannot be donated")
+        # Wiki: Bag of Frostmites and Yellow Card event unlocks.
+        if name == "Bag of Frostmites" and event.get("sweet_elixir", 0) < 5500:
+            raise ValueError("Bag of Frostmites requires 5,500 Sweet Elixir")
+        if name == "Yellow Card" and event.get("event_currency", 0) < 3000:
+            raise ValueError("Yellow Card requires 3,000 event currency")
+        if name == "Birthday Boom" and event.get("birthday_damage") != "table":
+            raise ValueError("Select Birthday Boom's table interpretation explicitly")
+    if donated:
+        castle = plan._building_level("Clan Castle", plan.clan_castle_level)
+        lab = (
+            stats.get("Clan Castle", castle, "~laboratory level cap", default=0)
+            if castle
+            else 0
+        )
+        if not lab:
+            raise ValueError("Donated spells require a Clan Castle")
+        town_hall = stats.required_town_hall("Laboratory", int(lab))
+    else:
+        town_hall = plan.town_hall
+        lab = plan._building_level("Laboratory", plan.laboratory_level)
+        raw = stats.attrs(name).get("raw", {})
+        for factory, supplied in (
+            ("Spell Factory", plan.spell_factory_level),
+            ("Dark Spell Factory", plan.dark_spell_factory_level),
+        ):
+            required = stats.num(raw.get(factory + " Level Required"))
+            if (
+                required is not None
+                and plan._building_level(factory, supplied) < required
+            ):
+                raise ValueError(f"{name} requires {factory} level {required:g}")
+    stats.validate_level(name, level, town_hall)
+    if stats.get(name, level, "Laboratory Level Required", default=0) > lab:
+        raise ValueError(f"{name} level {level} exceeds Laboratory level {lab}")
+
+
 # ------------------------------------------------------------------- cast
-def cast(battle, name, x, y, level=None):
-    """Drop an attacking spell at (x, y)."""
+def cast(battle, name, x, y, level=None, *, origin=None):
+    """Spend one spell instance and drop it at (x, y)."""
+    return battle.plan.cast_spell(battle, name, x, y, level=level, origin=origin)
+
+
+def cast_effect(battle, name, x, y, level=None):
+    """Apply an unpaid spell effect for declared synthetic scenarios."""
     lv = _lvl(battle, name, level)
     battle.start_battle()
     if battle.first_deploy_t is None:
         battle.first_deploy_t = battle.t
-    t = battle.t + LAND_DELAY
+    # Wiki: Revive Spell has no falling bottle animation.
+    t = battle.t if name == "Revive Spell" else battle.t + LAND_DELAY
     if battle.record:
         battle.log.append((round(battle.t, 1), "spell", name, round(x, 1), round(y, 1)))
     f = None
@@ -57,11 +114,22 @@ def cast(battle, name, x, y, level=None):
         f = Field("lightning", x, y, _radius(name, lv, 2.0), t, value=stats.get(name, lv, "damage", "Damage", default=640.0))
     elif name == "Healing Spell":
         per = stats.get(name, lv, "Healing per Pulse", default=60.0)
-        f = Field("heal", x, y, 5.0, t + 12.3, value=per / 0.3)
+        # Wiki: Healing Spell/Home Village, 41 pulses including both endpoints.
+        f = Field(
+            "heal", x, y, 5.0, t + 12.0, value=per, extra={"pulses": 41, "gap": 0.3}
+        )
     elif name == "Rage Spell":
         inc = stats.get(name, lv, "Damage Increase", default=180.0) / 100.0
         spd = stats.get(name, lv, "Speed Increase", default=30.0) / 8.0
-        f = Field("rage", x, y, 5.0, t + 18.0, value=1.0 + inc, extra={"speed": spd})
+        f = Field(
+            "rage",
+            x,
+            y,
+            5.0,
+            t + 18.0,
+            value=1.0 + inc,
+            extra={"speed": spd, "pulses": 60, "gap": 0.3},
+        )  # Wiki: Rage Spell/Home Village.
     elif name == "Jump Spell":
         f = Field("jump", x, y, _radius(name, lv, 3.5), t + stats.get(name, lv, "duration", default=60.0), extra={"cleared": []})
     elif name == "Freeze Spell":
@@ -78,13 +146,45 @@ def cast(battle, name, x, y, level=None):
         dur = stats.get(name, lv, "Spell Duration", default=30.0)
         f = Field("haste", x, y, _radius(name, lv, 4.0), t + dur, extra={"speed": stats.get(name, lv, "Speed Increase", default=52.0) / 8.0})
     elif name == "Clone Spell":
-        f = Field("clone", x, y, 3.5, t + 18.0, value=stats.get(name, lv, "Cloned Capacity", default=42.0), extra={"done": set()})
+        f = Field(
+            "clone",
+            x,
+            y,
+            3.5,
+            t + 18.0,
+            value=stats.get(name, lv, "Cloned Capacity", default=42.0),
+        )
+    # Wiki: Skeleton Spell and Bat Spell give 3.5; ClashKing gives 2.2.
     elif name == "Skeleton Spell":
-        f = Field("summon", x, y, 2.2, t, value=stats.get(name, lv, "Skeletons generated", default=19.0), extra={"unit": "Spell Skeleton"})
+        f = Field(
+            "summon",
+            x,
+            y,
+            3.5,
+            t,
+            value=stats.get(name, lv, "Skeletons generated", default=19.0),
+            extra={"unit": "Spell Skeleton"},
+        )
     elif name == "Bat Spell":
-        f = Field("summon", x, y, 2.2, t, value=stats.get(name, lv, "Bats generated", default=22.0), extra={"unit": "Bat"})
+        f = Field(
+            "summon",
+            x,
+            y,
+            3.5,
+            t,
+            value=stats.get(name, lv, "Bats generated", default=22.0),
+            extra={"unit": "Bat"},
+        )
     elif name == "Bag of Frostmites":
-        f = Field("summon", x, y, 1.75, t, value=stats.get(name, lv, "Frostmites spawned", default=17.0), extra={"unit": "Frostmite"})
+        f = Field(
+            "summon",
+            x,
+            y,
+            1.75,
+            t,
+            value=stats.get(name, lv, "Frostmites spawned", default=17.0),
+            extra={"unit": "Frostmite", "freeze": stats.get(name, lv, "Freeze Time")},
+        )
     elif name == "Invisibility Spell":
         f = Field("invis", x, y, 4.0, t + stats.get(name, lv, "Duration", default=4.25))
     elif name == "Recall Spell":
@@ -101,14 +201,39 @@ def cast(battle, name, x, y, level=None):
     elif name == "Angry Spell":
         f = Field("angry", x, y, 6.0, t + stats.get(name, lv, "Duration", default=5.0), value=stats.get(name, lv, "Anger Duration", default=8.0))
     elif name == "Santa's Surprise":
-        f = Field("santa", x, y, 4.0, t, value=stats.get(name, lv, "Damage per Strike", default=370.0))
+        # Wiki: Santa's Surprise, five strikes at 0.1-second intervals.
+        f = Field(
+            "santa",
+            x,
+            y,
+            4.0,
+            t + 0.4,
+            value=stats.get(name, lv, "Damage per Strike", default=370.0),
+            extra={"pulses": 5, "gap": 0.1},
+        )
+    elif name == "Birthday Boom":
+        # Wiki: Birthday Boom, table interpretation; the scaling formula conflicts.
+        f = Field(
+            "birthday",
+            x,
+            y,
+            2.5,
+            t,
+            value=stats.get(name, lv, "Damage"),
+            extra={
+                "town_hall": stats.get(name, lv, "Damage vs Town Hall"),
+                "freeze": stats.get(name, lv, "Freeze Duration"),
+            },
+        )
+    elif name == "Yellow Card":
+        f = Field(
+            "yellow", x, y, 7.0, t, value=stats.get(name, lv, "Duration")
+        )  # Wiki: Yellow Card.
     else:
         raise KeyError(f"unknown spell {name}")
     f.started = t
     f.extra["name"] = name
     battle.fields.append(f)
-    # Wiki: Eagle Artillery, each spell housing space contributes five.
-    battle.deployed_housing += 5 * stats.attrs(name)["housing"]
     return f
 
 
@@ -116,7 +241,8 @@ def cast(battle, name, x, y, level=None):
 def tick(battle):
     t = battle.t
     keep = []
-    for f in battle.fields:
+    fields = tuple(battle.fields)
+    for f in fields:
         if t < f.started:
             keep.append(f)
             continue
@@ -132,7 +258,7 @@ def tick(battle):
             keep.append(f)
         else:
             _expire(battle, f)
-    battle.fields = keep
+    battle.fields = keep + battle.fields[len(fields) :]
     _poison_states(battle)
     _clone_expiry(battle)
 
@@ -142,9 +268,23 @@ def _apply(battle, f: Field) -> bool:
     t = battle.t
     dt = battle.DT
     k = f.kind
-    if k in ("poison", "def_poison", "def_rage", "def_burn") and t >= f.until:
+    if (
+        k
+        in (
+            "poison",
+            "def_poison",
+            "def_rage",
+            "def_burn",
+            "rage",
+            "haste",
+            "invis",
+            "def_invis",
+            "angry",
+        )
+        and t >= f.until
+    ):
         return False
-    if k in ("lightning", "freeze", "poison", "totem", "def_rage") or (
+    if k in ("lightning", "freeze", "poison", "def_rage") or (
         k == "rage" and f.team == "def"
     ):
         defense.builder_spell(battle, f)
@@ -191,24 +331,80 @@ def _apply(battle, f: Field) -> bool:
             u.stun_until = max(u.stun_until, t + duration)
             _retarget(u)
         return False
+    if k == "birthday":
+        for building in battle.buildings:
+            if (
+                building.alive
+                and not (building.key == "tesla" and not building.revealed)
+                and building.edge_distance(f.x, f.y) <= f.radius
+            ):
+                damage = f.extra["town_hall"] if building.key == "th" else f.value
+                battle.hit_building(building, damage)
+                building.frozen_until = max(
+                    building.frozen_until, t + f.extra["freeze"]
+                )
+                _retarget(building)
+        for wall in battle.walls.values():
+            if wall.alive and wall.edge_distance(f.x, f.y) <= f.radius:
+                battle.hit_building(wall, f.value)
+        for unit in battle.defenders_near(f.x, f.y, f.radius):
+            battle.hit_unit(unit, f.value)
+            unit.frozen_until = max(unit.frozen_until, t + f.extra["freeze"])
+            _retarget(unit)
+        return False
+    if k == "yellow":
+        targets = [
+            building
+            for building in battle.buildings
+            if building.alive
+            and building.weapon is not None
+            and building.weapon.kind != "bh_repair_only"
+            and not building.extra.get("unavailable")
+            and (building.key != "tesla" or building.revealed)
+            and (building.is_defense or building.key == "th")
+            and building.edge_distance(f.x, f.y) <= f.radius
+        ]
+        targets.extend(
+            unit for unit in battle.defenders_near(f.x, f.y, f.radius) if unit.is_hero
+        )
+        if targets:
+            target = min(
+                targets,
+                key=lambda target: (
+                    target.edge_distance(f.x, f.y)
+                    if isinstance(target, Building)
+                    else dist(target.x, target.y, f.x, f.y)
+                ),
+            )
+            # Overlap timing is unstated; retain the current suspension deadline.
+            if t >= target.extra.get("yellow_until", 0.0):
+                target.extra["yellow_until"] = t + f.value
+                _retarget(target)
+        return False
     if k == "santa":
-        for j in range(5):
+        for at in _pulses(f, t):
+            # The radial distribution and wall interaction are unstated.
+            # Keep the existing radial sampling and listed building/unit victims.
             ang = battle.rng.random() * 2 * math.pi
             r = battle.rng.random() * f.radius
             sx, sy = f.x + r * math.cos(ang), f.y + r * math.sin(ang)
-            for b in battle.buildings:
-                if b.alive and b.edge_distance(sx, sy) <= 1.0:
-                    battle.hit_building(b, f.value)
-            for u in battle.defenders_near(sx, sy, 1.0):
-                battle.hit_unit(u, f.value)
-        return False
+            for building in battle.buildings:
+                if building.alive and building.edge_distance(sx, sy) <= 1.0:
+                    battle.hit_building(building, f.value)
+            for unit in battle.defenders_near(sx, sy, 1.0):
+                battle.hit_unit(unit, f.value)
+        return f.extra.get("delivered", 0) < f.extra["pulses"]
     if k == "heal":
-        for u in battle.attackers_near(f.x, f.y, f.radius):
-            if _affected(u):
-                rate = f.value * (0.55 if u.is_hero else 1.0)  # heroes heal at 55% (wiki)
-                u.heal(rate * dt)
-        return True
+        for at in _pulses(f, t):
+            for unit in battle.attackers_near(f.x, f.y, f.radius):
+                if unit.alive and unit.kind not in ("siege", "siege_idle"):
+                    # Wiki: Healing Spell/Home Village, heroes receive 55%.
+                    unit.heal(f.value * (0.55 if unit.is_hero else 1.0))
+        return f.extra.get("delivered", 0) < f.extra["pulses"]
     if k == "rage":
+        pulses = _pulses(f, t) if "pulses" in f.extra else [t]
+        if not pulses:
+            return t < f.until
         pool = (
             battle.attackers_near(f.x, f.y, f.radius)
             if f.team == "atk"
@@ -224,7 +420,7 @@ def _apply(battle, f: Field) -> bool:
             from . import units
 
             # One-second lingering boost per field (wiki: Rage Spell/Home Village).
-            units.add_rage(u, id(f), 1.0 + inc, spd, t + 1.0)
+            units.add_rage(u, _source(battle, f), 1.0 + inc, spd, pulses[-1] + 1.0)
         if f.team == "def" and "defense_damage" in f.extra:
             # Wiki: Super Valkyrie; friendly defenses get +60%, separately.
             for b in battle.buildings:
@@ -270,15 +466,22 @@ def _apply(battle, f: Field) -> bool:
             # Wiki: Spell Tower, heroes receive half the damage and movement bonus.
             factor = 0.5 if u.is_hero else 1.0
             units.add_rage(
-                u, id(f), 1.0 + (f.value - 1.0) * factor, 30.0 / 8.0 * factor, until
+                u,
+                _source(battle, f),
+                1.0 + (f.value - 1.0) * factor,
+                30.0 / 8.0 * factor,
+                until,
             )
         return True
     if k == "haste":
         for u in battle.attackers_near(f.x, f.y, f.radius):
             if _affected(u):
                 spd = f.extra["speed"] * (0.5 if u.is_hero else 1.0)
-                u.haste_spd = max(u.haste_spd if t < u.haste_until else 0.0, spd)
-                u.haste_until = max(u.haste_until, t + 1.0)
+                # Haste Spell does not state linger timing; retain the existing policy.
+                u.extra.setdefault("haste_effects", {})[_source(battle, f)] = (
+                    spd,
+                    t + 1.0,
+                )
         return True
     if k == "jump":
         if t >= f.until:
@@ -310,7 +513,7 @@ def _apply(battle, f: Field) -> bool:
                 f.extra["atk"],
                 POISON_HERO_MULT if u.is_hero else 1.0,
                 ramp=True,
-                source=id(f),
+                source=_source(battle, f),
                 source_until=f.until,
             )
         return True
@@ -328,7 +531,7 @@ def _apply(battle, f: Field) -> bool:
                     1.0,
                     ramp=f.extra.get("ramp", False),
                     origin=f.extra.get("origin", "tower"),
-                    source=id(f),
+                    source=_source(battle, f),
                     source_until=f.until,
                 )
         return True
@@ -370,20 +573,33 @@ def _apply(battle, f: Field) -> bool:
             battle.attackers_near(f.x, f.y, f.radius), key=lambda unit: unit.spawned_at
         )
         for source in sources:
-            if not _affected(source) or source.is_hero or source.kind == "pet":
+            if (
+                not _affected(source)
+                or source.is_hero
+                or source.kind == "pet"
+                or _source(battle, f) in source.extra.get("clone_casts", ())
+            ):
                 continue
-            housing = max(1, source.housing)
+            housing = interaction_housing(source)
             while housing <= cap:
                 cap -= housing
+                # The random distribution is unstated; choose a free tile in the circle.
+                spots = _spawn_spots(battle, f.x, f.y, f.radius, flying=source.flying)
+                if not spots:
+                    return False
+                x, y = battle.rng.choice(spots)
                 child = battle.spawn(
                     source.name,
                     "atk",
-                    source.x + 0.3,
-                    source.y + 0.3,
+                    x,
+                    y,
                     level=source.level,
                     kind="summon",
                     group=source.group,
                 )
+                child.extra["clone_casts"] = source.extra.get("clone_casts", set()) | {
+                    _source(battle, f)
+                }
                 child.extra["clone"] = True
                 child.extra["expire_at"] = t + 30.0  # Wiki: Clone Spell.
                 if "start_rage" in child.spec.special:
@@ -395,15 +611,21 @@ def _apply(battle, f: Field) -> bool:
     if k == "summon":
         n = int(f.value)
         name = f.extra["unit"]
-        spots = _spawn_spots(battle, f.x, f.y, f.radius)
+        if "freeze" in f.extra:
+            freeze = Field(
+                "freeze", f.x, f.y, f.radius, t, value=f.extra["freeze"], started=t
+            )
+            _apply(battle, freeze)
+            battle.fields.append(freeze)
+        spots = _spawn_spots(battle, f.x, f.y, f.radius, flying=name == "Bat")
         if not spots:
             return False  # cast on walls: no free tiles, spell wasted (wiki)
         for j in range(n):
             sx, sy = spots[j % len(spots)]
-            battle.spawn(name, "atk", sx + 0.1 * (j % 3), sy + 0.1 * (j // 3 % 3), kind="summon", group="spell")
+            battle.spawn(name, "atk", sx, sy, kind="summon", group="spell")
         return False
     if k == "invis":
-        until = t + 2 * dt
+        until = _invisibility_until(f, t)
         for u in battle.attackers_near(f.x, f.y, f.radius):
             if u.kind not in ("siege", "siege_idle"):
                 u.invisible_until = max(u.invisible_until, until)
@@ -415,7 +637,7 @@ def _apply(battle, f: Field) -> bool:
                     b.invisible_until = max(b.invisible_until, until)
         return True
     if k == "def_invis":
-        until = t + 2 * dt
+        until = _invisibility_until(f, t)
         for b in battle.buildings:
             if b.alive and b.edge_distance(f.x, f.y) <= f.radius:
                 b.invisible_until = max(b.invisible_until, until)
@@ -440,9 +662,13 @@ def _apply(battle, f: Field) -> bool:
         return True
     if k == "iceblock":
         for u in battle.attackers_near(f.x, f.y, f.radius):
-            if _affected(u) and u.dash is None:
-                u.iceblock_red, u.iceblock_until = f.value, t + f.extra["time"]
-                u.frozen_until = max(u.frozen_until, t + f.extra["time"])
+            if _affected(u) and not u.underground:
+                until = t + f.extra["time"]
+                u.extra.setdefault("iceblocks", {})[_source(battle, f)] = (
+                    f.value,
+                    until,
+                )
+                u.frozen_until = max(u.frozen_until, until)
         return False
     if k == "totem":
         _totem(battle, f)
@@ -484,6 +710,33 @@ def quake_unit(battle, u, pct):
     u.extra["eq_n"] = n + 1
 
 
+def _source(battle, field):
+    source = field.extra.get("source")
+    if source is None:
+        battle._field_serial = getattr(battle, "_field_serial", 0) + 1
+        source = ("field", battle._field_serial)
+        field.extra["source"] = source
+    return source
+
+
+def _pulses(field, t):
+    delivered = field.extra.get("delivered", 0)
+    due = []
+    while delivered < field.extra["pulses"]:
+        at = field.started + delivered * field.extra["gap"]
+        if at > t and not math.isclose(at, t):
+            break
+        due.append(at)
+        delivered += 1
+    field.extra["delivered"] = delivered
+    return due
+
+
+def _invisibility_until(field, t):
+    # Wiki: Invisibility Spell, immediate coverage with successive 0.25-second effects.
+    return min(field.until, t + 0.25)
+
+
 def _expire(battle, f: Field):
     pass
 
@@ -497,12 +750,17 @@ def wall_jumped(battle, wall):
     )
 
 
-def _spawn_spots(battle, x, y, r):
+def _spawn_spots(battle, x, y, r, *, flying=False):
     spots = []
     for tx in range(int(x - r), int(x + r) + 1):
         for ty in range(int(y - r), int(y + r) + 1):
             cx, cy = tx + 0.5, ty + 0.5
             if dist(cx, cy, x, y) > r:
+                continue
+            if not (0 <= cx < WORLD and 0 <= cy < WORLD):
+                continue
+            if flying:
+                spots.append((cx, cy))
                 continue
             w = battle.walls.get((tx, ty))
             if w is not None and w.alive:
@@ -560,8 +818,10 @@ def _poison_states(battle):
     active = {}
     for key, state in battle._poison.items():
         unit = state["u"]
-        if not unit.alive or t >= state["until"]:
+        if t >= state["until"] or not unit.alive and "recalled" not in unit.extra:
             dead.append(key)
+            continue
+        if "recalled" in unit.extra:
             continue
         origin = state.get("origin", "spell")
         if unit.underground and origin != "town_hall":
@@ -696,6 +956,26 @@ def escape_poison(battle, unit):
 
 
 # ------------------------------------------------------------------- misc
+def interaction_housing(unit):
+    # Wiki: Clone Spell and Recall Spell, effective housing differs from training.
+    if unit.is_hero:
+        return 25
+    if unit.kind == "pet":
+        return 20
+    weights = {
+        "Skeleton": 1,
+        "Spell Skeleton": 1,
+        "Bat": 1,
+        "Frostmite": 1,
+        "Lava Pup": 2,
+        "Ice Pup": 2,
+        "Yetimite": 2,
+        "Golemite": 6,
+        "Big Boy": 10,
+    }
+    return weights.get(unit.name, max(1, unit.housing))
+
+
 def _retarget(target):
     from . import units
 
@@ -717,25 +997,18 @@ def _recall(battle, f):
     from . import heroes
 
     cap = f.value
-    cands = [
-        u
-        for u in battle.attackers_near(f.x, f.y, f.radius)
-        if u.alive
-        and (
-            u.kind in ("troop", "hero", "hero_clone", "pet")
-            or u.kind == "summon"
-            and (
-                u.name in SUBTROOP_HOUSING
-                or u.name == "Skeleton"
-                and u.owner is not None
-                and u.owner.name == "Witch Golem"
-            )
-        )
-    ]
-    cands.sort(key=lambda u: (not u.is_hero, -(25 if u.is_hero else 20 if u.kind == "pet" else u.housing), u.spawned_at))
+    cands = list(
+        {
+            unit.id: unit
+            for unit in battle.attackers_near(f.x, f.y, f.radius)
+            if _affected(unit)
+            and unit.kind in ("troop", "hero", "hero_clone", "pet", "summon")
+        }.values()
+    )
+    cands.sort(key=lambda u: (not u.is_hero, -interaction_housing(u), u.spawned_at))
     taken = []
     for u in cands:
-        h = 25 if u.is_hero else 20 if u.kind == "pet" else u.housing
+        h = interaction_housing(u)
         if heroes._free_pet(u, battle.t) or u in taken:
             continue
         if h > cap:
@@ -758,10 +1031,33 @@ def _recall(battle, f):
 def _totem(battle, f):
     from .specs import UnitSpec
 
+    # Wiki: Totem Spell, search an unoccupied tile in a 7x7 circle.
+    spots = _spawn_spots(battle, f.x, f.y, 7.0 / 2.0)
+    if not spots:
+        return
+    x, y = min(spots, key=lambda point: dist(*point, f.x, f.y))
+    defense.builder_spell(battle, f)
     battle._uid += 1
     sp = UnitSpec("Totem", prefer="none", walls="fly")
-    u = Unit(battle._uid, "Totem", "summon", "atk", f.x, f.y, hp=f.value, dmg=0.0, interval=1.0, range_=0.0, speed=0.0,
-             housing=0, flying=False, hits_air=False, hits_ground=False, spec=sp, level=1)
+    u = Unit(
+        battle._uid,
+        "Totem",
+        "summon",
+        "atk",
+        x,
+        y,
+        hp=f.value,
+        dmg=0.0,
+        interval=1.0,
+        range_=0.0,
+        speed=0.0,
+        housing=20,
+        flying=False,
+        hits_air=False,
+        hits_ground=False,
+        spec=sp,
+        level=1,
+    )
     u.decay = stats.num(stats.attrs("Totem Spell").get("raw", {}).get("Hitpoint Decay per Second"), 334.0)
     u.spawned_at = u.active_at = battle.t
     battle.attackers.append(u)
@@ -775,20 +1071,18 @@ def _totem(battle, f):
 
 
 def maybe_revive(battle, u):
-    """Called when an attacking hero is knocked out. Marks it revivable and,
-    if the plan carries Revive Spells, schedules one (the plan's delay)."""
+    """Mark an actual KO; the attacker policy decides whether to spend a spell."""
     if not u.is_hero or u.team != "atk" or u.extra.get("mirror_clone"):
         return
     u.extra["revivable"] = True
-    plan = battle.plan
-    left = getattr(plan, "revives_left", 0)
-    if left <= 0:
-        return
-    plan.revives_left = left - 1
-    lv = _lvl(battle, "Revive Spell", None)
-    pct = stats.get("Revive Spell", lv, "Hero Heal %", default=70.0) / 100.0
-    delay = getattr(plan, "revive_delay", 1.5)
-    battle.fields.append(Field("revive_due", u.x, u.y, 0.0, battle.t + delay, value=pct, extra={"hero": u}, started=battle.t + delay))
+    u.extra["ko_at"] = battle.t
+    # Wiki: Revive Spell, pets never recouple after their Hero is defeated.
+    if u.pet is not None:
+        u.pet.extra["rampage_detached"] = True
+        u.pet.owner = None
+        u.pet = None
+    if u.kit is not None:
+        u.kit.pet_unit = None
 
 
 def _revive(battle, u, pct):

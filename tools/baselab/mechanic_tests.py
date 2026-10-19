@@ -184,7 +184,7 @@ def t_spell_durations():
 
     def tick(bb):
         if not cast["done"] and bb.t >= 1.0:
-            spells.cast(bb, "Freeze Spell", 21.0 + MARGIN, 21.0 + MARGIN, level=lv)
+            spells.cast_effect(bb, "Freeze Spell", 21.0 + MARGIN, 21.0 + MARGIN, lv)
             cast["done"] = True
     b.plan.ticks.append(tick)
     orig = b.hit_unit

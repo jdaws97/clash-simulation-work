@@ -79,16 +79,41 @@ TANKS = {"Ice Golem", "Golem", "Lava Hound", "Ice Hound", "Giant", "Super Giant"
 
 HOUSING_CAP = {16: 320, 17: 340, 18: 352}
 CC_HOUSING = {16: 50, 17: 55, 18: 55}  # Clan Castle L12/13/14 (wiki)
-SPELL_CAP = {16: 11, 17: 11, 18: 12}
+SPELL_CAP = {16: 11, 17: 11, 18: 11}  # Wiki: Spell Factory and Dark Spell Factory.
 CC_SPELLS = {16: 3, 17: 3, 18: 4}  # Clan Castle L12/13/14 (wiki)
 
 SPELL_NAMES = {
-    "lightning": "Lightning Spell", "heal": "Healing Spell", "rage": "Rage Spell", "jump": "Jump Spell",
-    "freeze": "Freeze Spell", "clone": "Clone Spell", "invis": "Invisibility Spell", "recall": "Recall Spell",
-    "revive": "Revive Spell", "totem": "Totem Spell", "poison": "Poison Spell", "eq": "Earthquake Spell",
-    "haste": "Haste Spell", "skeleton": "Skeleton Spell", "bat": "Bat Spell", "overgrowth": "Overgrowth Spell",
-    "iceblock": "Ice Block Spell", "angry": "Angry Spell",
+    "lightning": "Lightning Spell",
+    "heal": "Healing Spell",
+    "rage": "Rage Spell",
+    "jump": "Jump Spell",
+    "freeze": "Freeze Spell",
+    "clone": "Clone Spell",
+    "invis": "Invisibility Spell",
+    "recall": "Recall Spell",
+    "revive": "Revive Spell",
+    "totem": "Totem Spell",
+    "poison": "Poison Spell",
+    "eq": "Earthquake Spell",
+    "haste": "Haste Spell",
+    "skeleton": "Skeleton Spell",
+    "bat": "Bat Spell",
+    "overgrowth": "Overgrowth Spell",
+    "iceblock": "Ice Block Spell",
+    "angry": "Angry Spell",
+    "santa": "Santa's Surprise",
+    "frostmites": "Bag of Frostmites",
+    "birthday": "Birthday Boom",
+    "yellow": "Yellow Card",
 }
+
+
+@dataclass
+class SpellStock:
+    name: str
+    origin: str
+    remaining: int
+    level: int | None = None
 
 
 @dataclass
@@ -162,10 +187,17 @@ class AttackPlan:
     loadouts: dict = field(default_factory=dict)
     troop_levels: dict = field(default_factory=dict)
     spell_levels: dict = field(default_factory=dict)
+    cc_spell_levels: dict = field(default_factory=dict)
+    spell_factory_level: int | None = None
+    dark_spell_factory_level: int | None = None
+    laboratory_level: int | None = None
+    clan_castle_level: int | None = None
+    event_ruleset: dict = field(default_factory=dict)
+    auto_revive: bool = True
     equipment_levels: dict = field(default_factory=dict)
     pet_levels: dict = field(default_factory=dict)
     hero_levels: dict = field(default_factory=dict)
-    revive_delay: float = 1.5
+    revive_delay: float = 1.5  # Attacker policy assumption; no wiki delay.
     freeze_first: tuple = ()  # building keys to Freeze before anything else
     pol: dict = field(default_factory=dict)  # learned policy values (POLICY keys)
     charge_hero: str | None = None  # Queen / Champion charge: this hero opens with Healers along the side
@@ -196,42 +228,214 @@ class AttackPlan:
         self._distracts = 0
         self._lured = False
         self.breakers = [list(b) for b in self.breakers]
-        self.revives_left = self.spells.pop("revive", 0)
         self._spells0 = dict(self.spells)
-        self._revives0 = self.revives_left
         self._cc_spells0 = dict(self.cc_spells)
-        for k, c in self.cc_spells.items():  # Clan Castle spells join the spell bar
-            if k == "revive":
-                self.revives_left += c
-            else:
-                self.spells[k] = self.spells.get(k, 0) + c
+        self._spell_stock = []
+        for origin, inventory in (
+            ("brewed", self._spells0),
+            ("donated", self._cc_spells0),
+        ):
+            for key, count in inventory.items():
+                if key not in SPELL_NAMES:
+                    raise ValueError(f"Unknown spell key {key}")
+                if type(count) is not int or count < 0:
+                    raise ValueError(f"Invalid {origin} spell count for {key}: {count}")
+                self._spell_stock.append(SpellStock(SPELL_NAMES[key], origin, count))
+        self.spells = {
+            key: self._spells0.get(key, 0) + self._cc_spells0.get(key, 0)
+            for key in self._spells0.keys() | self._cc_spells0.keys()
+        }
 
     # ----------------------------------------------------------- inventory
+    def _building_level(self, name, supplied):
+        return stats.max_level(name, self.town_hall) if supplied is None else supplied
+
+    def _spell_level(self, stock):
+        if stock.level is not None:
+            return stock.level
+        if stock.origin == "donated":
+            levels = self.cc_spell_levels
+            castle = self._building_level("Clan Castle", self.clan_castle_level)
+            # Wiki: Clan Castle, Laboratory Level Cap.
+            lab = (
+                stats.get("Clan Castle", castle, "~laboratory level cap", default=0)
+                if castle
+                else 0
+            )
+            candidates = [
+                row["level"]
+                for row in stats.record(stock.name)["levels"]
+                if isinstance(row["level"], int)
+                and stats.get(
+                    stock.name, row["level"], "Laboratory Level Required", default=0
+                )
+                <= lab
+                and stats.required_town_hall(stock.name, row["level"])
+                <= stats.required_town_hall("Laboratory", int(lab))
+            ]
+            default = max(candidates, default=None)
+        else:
+            levels = self.spell_levels
+            lab = self._building_level("Laboratory", self.laboratory_level)
+            candidates = [
+                row["level"]
+                for row in stats.record(stock.name)["levels"]
+                if isinstance(row["level"], int)
+                and stats.required_town_hall(stock.name, row["level"]) <= self.town_hall
+                and stats.get(
+                    stock.name, row["level"], "Laboratory Level Required", default=0
+                )
+                <= lab
+            ]
+            default = max(candidates, default=None)
+        return levels.get(stock.name, default)
+
     def housing(self) -> dict:
-        """Army housing by part, for validating compositions."""
+        """Army and spell capacity, including actual attacking building levels."""
         def h(name):
-            return 0 if name in heroes.HEROES else int(stats.attrs(name).get("housing_ck") or stats.attrs(name).get("housing") or 0)
+            if name in heroes.HEROES:
+                return 0
+            attrs = stats.attrs(name)
+            return int(attrs.get("housing_ck") or attrs.get("housing") or 0)
 
-        def sp_space(d):
-            return sum(int(stats.attrs(SPELL_NAMES[k]).get("housing") or 1) * c for k, c in d.items())
+        def sp_space(inventory):
+            return sum(
+                int(stats.attrs(SPELL_NAMES[key])["housing"]) * count
+                for key, count in inventory.items()
+            )
 
-        camp = sum(h(n) * c for n, c, _ in self.flank)
-        camp += sum(h(n) * c for w in self.main + self.support for n, c in w.units)
-        camp += sum(h(n) * c for n, c in self.cleanup) + sum(h(n) * c for n, c in self.breakers)
-        spells = sp_space(self._spells0) + int(stats.attrs("Revive Spell").get("housing") or 2) * self._revives0
-        th = self.town_hall
-        return {"camp": camp, "camp_cap": HOUSING_CAP[th], "cc": sum(h(n) for n in self.cc_troops), "cc_cap": CC_HOUSING[th],
-                "spells": spells, "spell_cap": SPELL_CAP[th], "cc_spells": sp_space(self._cc_spells0), "cc_spell_cap": CC_SPELLS[th],
-                "siege": self.siege}
+        camp = sum(h(name) * count for name, count, _ in self.flank)
+        camp += sum(
+            h(name) * count
+            for wave in self.main + self.support
+            for name, count in wave.units
+        )
+        camp += sum(h(name) * count for name, count in self.cleanup + self.breakers)
+        factory = self._building_level("Spell Factory", self.spell_factory_level)
+        dark = self._building_level("Dark Spell Factory", self.dark_spell_factory_level)
+        castle = self._building_level("Clan Castle", self.clan_castle_level)
+        # Wiki: Spell Factory, Dark Spell Factory and Clan Castle capacity tables.
+        capacity = sum(
+            stats.get(name, level, "Spell Storage Capacity")
+            for name, level in (
+                ("Spell Factory", factory),
+                ("Dark Spell Factory", dark),
+            )
+            if level
+        )
+        return {
+            "camp": camp,
+            "camp_cap": HOUSING_CAP[self.town_hall],
+            "cc": sum(
+                h(
+                    entry
+                    if isinstance(entry, str)
+                    else entry.get("name") or entry["type"]
+                )
+                * (1 if isinstance(entry, str) else entry.get("count", 1))
+                for entry in self.cc_troops
+            ),
+            "cc_cap": CC_HOUSING[self.town_hall],
+            "spells": sp_space(self._spells0),
+            "spell_cap": capacity,
+            "cc_spells": sp_space(self._cc_spells0),
+            "cc_spell_cap": (
+                stats.get("Clan Castle", castle, "Spell Capacity", default=0)
+                if castle
+                else 0
+            ),
+            "siege": self.siege,
+        }
 
     def legal(self) -> list:
-        """Problems with the loadout against the Town Hall's caps."""
-        h = self.housing()
+        """Problems with spell counts, levels, unlocks and army capacity."""
         out = []
-        for k, cap in (("camp", "camp_cap"), ("cc", "cc_cap"), ("spells", "spell_cap"), ("cc_spells", "cc_spell_cap")):
-            if h[k] > h[cap]:
-                out.append(f"{k} {h[k]} > {h[cap]}")
+        try:
+            quantities = [(name, count) for name, count, _ in self.flank]
+            quantities.extend(
+                (name, count)
+                for wave in self.main + self.support
+                for name, count in wave.units
+            )
+            quantities.extend(self.cleanup + self.breakers)
+            for name, count in quantities:
+                if type(count) is not int or count < 0:
+                    raise ValueError(f"Invalid troop count for {name}: {count}")
+            for name, supplied in (
+                ("Spell Factory", self.spell_factory_level),
+                ("Dark Spell Factory", self.dark_spell_factory_level),
+                ("Laboratory", self.laboratory_level),
+                ("Clan Castle", self.clan_castle_level),
+            ):
+                if supplied is not None:
+                    if type(supplied) is not int or supplied < 0:
+                        raise ValueError(f"Invalid {name} level {supplied}")
+                    if supplied:
+                        stats.validate_level(name, supplied, self.town_hall)
+            for stock in self._spell_stock:
+                if stock.remaining == 0 and stock.level is None:
+                    continue
+                level = self._spell_level(stock)
+                spells.validate(
+                    self, stock.name, level, donated=stock.origin == "donated"
+                )
+            housing = self.housing()
+            for key, cap in (
+                ("camp", "camp_cap"),
+                ("cc", "cc_cap"),
+                ("spells", "spell_cap"),
+                ("cc_spells", "cc_spell_cap"),
+            ):
+                if housing[key] > housing[cap]:
+                    out.append(f"{key} {housing[key]} > {housing[cap]}")
+        except (KeyError, TypeError, ValueError) as error:
+            out.append(str(error))
         return out
+
+    def require_legal(self):
+        problems = self.legal()
+        if problems:
+            raise ValueError("Illegal attack plan: " + "; ".join(problems))
+        for stock in self._spell_stock:
+            if stock.remaining:
+                stock.level = self._spell_level(stock)
+
+    def cast_spell(self, battle, name, x, y, *, level=None, origin=None):
+        self.require_legal()
+        stock = next(
+            (
+                entry
+                for entry in self._spell_stock
+                if entry.name == name
+                and entry.remaining > 0
+                and (origin is None or entry.origin == origin)
+                and (level is None or self._spell_level(entry) == level)
+            ),
+            None,
+        )
+        if stock is None:
+            raise ValueError(f"No matching {name} remaining")
+        selected_level = self._spell_level(stock)
+        field = spells.cast_effect(battle, name, x, y, selected_level)
+        stock.remaining -= 1
+        key = next(key for key, value in SPELL_NAMES.items() if value == name)
+        self.spells[key] -= 1
+        # Wiki: Eagle Artillery, five activation spaces per spell housing.
+        battle.deployed_housing += 5 * stats.attrs(name)["housing"]
+        self._cast_log.append((round(battle.t, 1), key))
+        return field
+
+    def revive_knocked_out(self, battle):
+        if not self.auto_revive:
+            return
+        for hero in battle.attackers:
+            if (
+                not hero.alive
+                and hero.extra.get("revivable")
+                and self._have("revive")
+                and battle.t >= hero.extra["ko_at"] + self.revive_delay
+            ):
+                self._use(battle, "revive", hero.x, hero.y)
 
     def _level(self, name):
         if name in heroes.HEROES:
@@ -308,6 +512,15 @@ class AttackPlan:
         return out
 
     def has_offensive_pending(self, battle):
+        if (
+            self.auto_revive
+            and self._have("revive")
+            and any(
+                not hero.alive and hero.extra.get("revivable")
+                for hero in battle.attackers
+            )
+        ):
+            return True
         if any(unit.name != "Healer" for unit in battle.portal_stash):
             return True
         if any(entry[1] != "Healer" for entry in self._later):
@@ -489,6 +702,7 @@ class AttackPlan:
 
     def on_tick(self, battle):
         t = battle.t
+        self.revive_knocked_out(battle)
         self._battle_portal = battle.portal_stash
         if self._later:
             due = [d for d in self._later if d[0] <= t]
@@ -634,9 +848,7 @@ class AttackPlan:
         return self.spells.get(kind, 0) > 0
 
     def _use(self, battle, kind, x, y):
-        self.spells[kind] -= 1
-        spells.cast(battle, SPELL_NAMES[kind], x, y)
-        self._cast_log.append((round(battle.t, 1), kind))
+        return spells.cast(battle, SPELL_NAMES[kind], x, y)
 
     def _last(self, kind):
         for t, k in reversed(self._cast_log):
@@ -819,7 +1031,7 @@ class AttackPlan:
 # Armies from real ranked attacks on the user's base (Clash API battle log,
 # decoded 2026-10-14), made legal per Town Hall:
 #   army camps 320 / 340 / 352, Clan Castle troops 50 / 55 / 55,
-#   spells 11 / 11 / 12, Clan Castle spells 3 / 3 / 4 (wiki).
+#   spells 11 / 11 / 11, Clan Castle spells 3 / 3 / 4 (wiki).
 # Clan Castle troops ride in the siege machine and come out where it breaks.
 # ==========================================================================
 def hydra(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
@@ -835,7 +1047,7 @@ def hydra(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
         push_heroes=["Grand Warden", "Minion Prince"],
         siege="Sky Wagon",
         cc_troops=["Dragon", "Dragon", "Baby Dragon"] if town_hall == 16 else ["Super Dragon", "Inferno Dragon"],
-        spells={"invis": 9 if town_hall < 18 else 10, "revive": 1},
+        spells={"invis": 9, "revive": 1},
         cc_spells={"freeze": 2, "invis": 1} if town_hall < 18 else {"freeze": 2, "invis": 2},
         ground=False,
         loadouts={
@@ -884,7 +1096,7 @@ def throwers(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
         cleanup=[("Archer", archers)],
         siege="Log Launcher",
         cc_troops=["Thrower", "Thrower", "Thrower", "Balloon", "Wall Breaker"],
-        spells={"invis": 4, "freeze": 2, "totem": 3 if town_hall == 17 else 4, "revive": 1},
+        spells={"invis": 4, "freeze": 2, "totem": 3, "revive": 1},
         cc_spells={"totem": 2, "freeze": 1} if town_hall == 17 else {"totem": 2, "freeze": 2},
         loadouts={
             "Archer Queen": L("Archer Queen", ("Healer Puppet", "Magic Mirror"), "Mighty Yak"),
@@ -909,7 +1121,7 @@ def edrag(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
         push_heroes=["Grand Warden", "Minion Prince"],
         siege="Log Launcher",
         cc_troops=["Super Witch", "Balloon", "Balloon"] if town_hall == 16 else ["Super Witch", "Super Hog Rider", "Sneaky Goblin"],
-        spells={"clone": 3, "haste": 2} if town_hall < 18 else {"clone": 3, "haste": 3},
+        spells={"clone": 3, "haste": 2},
         cc_spells={"eq": 1, "freeze": 1, "haste": 1} if town_hall < 18 else {"eq": 1, "freeze": 2, "haste": 1},
         ground=False,
         loadouts={
@@ -936,7 +1148,7 @@ def root_riders(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
         cleanup=[("Minion", minions), ("Archer", 2)],
         siege="Siege Barracks",
         cc_troops=["Super Hog Rider"] * 4 + ["Minion"] if town_hall == 16 else ["Super Hog Rider"] * 4 + ["Minion"] * 3 + ["Archer"],
-        spells={"invis": 5, "recall": 1, "freeze": 1, "poison": 1, "overgrowth": 1} if town_hall < 18 else {"invis": 6, "recall": 1, "freeze": 1, "poison": 1, "overgrowth": 1},
+        spells={"invis": 5, "recall": 1, "freeze": 1, "poison": 1, "overgrowth": 1},
         cc_spells={"rage": 1, "totem": 1} if town_hall < 18 else {"rage": 1, "totem": 2},
         loadouts={
             "Royal Champion": L("Royal Champion", ("Rocket Spear", "Electro Boots"), "Unicorn"),

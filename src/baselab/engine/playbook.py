@@ -46,6 +46,7 @@ SPELL_KEYS = {v: k for k, v in SPELL_NAMES.items()}
 
 @dataclass
 class PlaybookPlan(AttackPlan):
+    auto_revive: bool = False
     steps: list = field(default_factory=list)
     inventory: dict = field(default_factory=dict)  # troop/siege name -> count left
     flank_offset: float = 0.9  # radians between the main side and each flank (knob)
@@ -66,6 +67,20 @@ class PlaybookPlan(AttackPlan):
         return any(s["id"] not in self._done for s in self.steps if s["action"] in ("deploy", "redeploy"))
 
     def has_offensive_pending(self, battle):
+        if (
+            self._have("revive")
+            and any(
+                not hero.alive and hero.extra.get("revivable")
+                for hero in battle.attackers
+            )
+            and any(
+                step["id"] not in self._done
+                and step["action"] == "spell"
+                and step.get("what") == "Revive Spell"
+                for step in self.steps
+            )
+        ):
+            return True
         if any(unit.name != "Healer" for unit in battle.portal_stash):
             return True
         return any(
@@ -234,7 +249,14 @@ class PlaybookPlan(AttackPlan):
         k = SPELL_KEYS.get(s["what"])
         if k is None or not self._have(k):
             return False
-        self._use(battle, k, pos[0], pos[1])
+        self.cast_spell(
+            battle,
+            SPELL_NAMES[k],
+            pos[0],
+            pos[1],
+            level=s.get("level"),
+            origin=s.get("origin"),
+        )
         return True
 
     def _ability(self, battle, s):
@@ -316,6 +338,9 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
              "heroes": list(a["heroes"]), "loadouts": a.get("loadouts", {}), "own_levels": own_levels}
     base = compose(build, angle=angle, seed=seed)
     kw = {f.name: getattr(base, f.name) for f in fields(AttackPlan) if not f.name.startswith("_")}
+    kw["spells"] = dict(base._spells0)
+    kw["auto_revive"] = False
+    kw["event_ruleset"] = dict(pb.get("event_ruleset", base.event_ruleset))
     plan = PlaybookPlan(**kw)
     plan.build_id = getattr(base, "build_id", None)
     plan.pol = base.pol

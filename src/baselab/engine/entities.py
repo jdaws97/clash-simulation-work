@@ -64,7 +64,12 @@ class Building:
         return math.hypot(dx, dy)
 
     def disabled(self, t):
-        return t < self.frozen_until or t < self.stun_until or t < self.overgrown_until
+        return (
+            t < self.frozen_until
+            or t < self.stun_until
+            or t < self.overgrown_until
+            or t < self.extra.get("yellow_until", 0.0)
+        )
 
 
 class Wall:
@@ -202,8 +207,20 @@ class Unit:
     def can_act(self, t):
         return (
             not self.extra.get("suspended")
+            and t >= self.extra.get("yellow_until", 0.0)
             and t >= self.frozen_until
             and t >= self.stun_until
+            and t >= self.active_at
+        )
+
+    def indirect_targetable(self, t):
+        # Invisibility and Yellow Card prevent direct selection, not secondary hits.
+        return (
+            self.alive
+            and not self.extra.get("suspended")
+            and not self.underground
+            and not self.extra.get("leaping")
+            and not self.attached(t)
             and t >= self.active_at
         )
 
@@ -214,6 +231,7 @@ class Unit:
             and self.dash is None
             and not self.extra.get("leaping")
             and not self.attached(t)
+            and t >= self.extra.get("yellow_until", 0.0)
             and t >= self.invisible_until
             and not self.underground
             and t >= self.active_at

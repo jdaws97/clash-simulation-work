@@ -189,10 +189,11 @@ SPECS: dict[str, UnitSpec] = {
         S("Logger", attack="splash", splash=1.5, special=("guardian", "logger")),
         S("Ice Pup", walls="fly", special=("ice_chill",)),
         S("Meteormite", walls="ignore"),  # Wiki: Meteor Golem/Meteormite.
-        S("Frostmite"),
+        # Wiki: Frosty/Frostmite.
+        S("Frostmite", prefer="defense", walls="ignore"),
         S("Skeleton"),
         S("Spell Skeleton"),
-        S("Bat", prefer="defense", walls="fly"),
+        S("Bat", prefer="defense", walls="fly", engages_units=False),
         S("Snake", walls="ignore"),
         S("Super Rider", vs_walls=2.0),  # Wiki: Super Hog Rider/Super Rider.
         S("Super Hog", prefer="defense", walls="ignore"),
@@ -246,6 +247,9 @@ def generic_spec(name: str) -> UnitSpec:
 
 # Effective housing does not make these summons deployable or donatable.
 SUBTROOP_HOUSING = {
+    "Spell Skeleton": 1,  # Wiki: Skeleton Spell/Skeleton.
+    "Bat": 1,  # Wiki: Bat Spell/Bat.
+    "Frostmite": 1,  # Wiki: Clone Spell.
     "Yetimite": 2,  # Wiki: Yeti/Yetimite.
     "Meteormite": 20,  # Wiki: Meteor Golem/Meteormite.
     "Golemite": 6,  # Wiki: Golem/Golemite.
