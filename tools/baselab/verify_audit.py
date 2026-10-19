@@ -62,7 +62,9 @@ def main():
             cols = [c.strip() for c in line.strip().strip("|").split("|")]
             if len(cols) < 4:
                 continue
-            fix = re.search(r"\b(F\d+[a-z]?)\b", cols[-1])
+            # fix ids look like F12, P7, S1, N1; audits put them in the verdict
+            # column or at the start of the mechanic column
+            fix = re.search(r"\b([A-Z]{1,3}\d{1,3}[a-z]?)\b", cols[-1]) or re.search(r"\b([A-Z]{1,3}\d{1,3}[a-z]?)\b", cols[0])
             fid = f"{cat}:{fix.group(1)}" if fix else f"{cat}:row{len(rows)}"
             quotes = re.findall(r"[“\"]([^”\"]{6,})[”\"]", cols[1])
             ok = [q for q in quotes if norm(q) and norm(q) in text]
