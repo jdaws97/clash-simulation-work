@@ -107,7 +107,7 @@ def spell_rows(th):
             else:
                 x, y = tgt.x, tgt.y
             before = (b.destruction(), sum(u.hp for u in b.defenders if u.alive), len(b.attackers))
-            spells.cast(b, name, x, y)
+            spells.cast_effect(b, name, x, y)  # unpaid: the probe has no spell inventory
             for _ in range(80):
                 b.step()
             after = (b.destruction(), sum(u.hp for u in b.defenders if u.alive), len(b.attackers))
