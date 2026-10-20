@@ -8,7 +8,9 @@ A base's kind is four layout descriptors, three bins each (81 cells):
   wall compartments of 4+ tiles (open <= 6 / 7-14 / 15+; ranked-funnel1
     has 3, generated originals 7-21),
   defense spread (mean defense distance from the centroid).
-It starts from freshly generated originals only (no user or earlier bases).
+It starts from freshly generated originals only (no user or earlier bases):
+the compartment generators plus unconventional ones (open cram, onion,
+scatter; unconventional.py), so radically different designs compete too.
 Each batch makes children by mutating elites, crossing elites of different
 cells, and generating new originals; a child takes its cell if it beats the
 cell's elite on the quick battle set (the same seeds for everyone). At the
@@ -38,6 +40,7 @@ from baselab.evolve import crossover  # noqa: E402
 from baselab.layout import Layout  # noqa: E402
 from baselab.optimize import mutate  # noqa: E402
 from baselab.render import render  # noqa: E402
+from baselab.unconventional import STYLES, unconventional  # noqa: E402
 from funnel import KINDS, eval_many, own_levels  # noqa: E402
 
 DEF = {"inferno", "eagle", "scatter", "xbow", "mono", "ad", "mat", "ric", "wt", "bt", "mortar", "at", "cannon",
@@ -76,7 +79,10 @@ def _child(args):
     own = own_levels()
     try:
         if op == "new":
-            lay = design(rng.choice(KINDS), seed, zone=rng.choice(["center", "mid", "edge"]))
+            if rng.random() < 0.35:
+                lay = unconventional(rng.choice(STYLES), seed)  # open cram, onion, scatter
+            else:
+                lay = design(rng.choice(KINDS), seed, zone=rng.choice(["center", "mid", "edge"]))
         elif op == "cross":
             lay = crossover(Layout.from_json(a_json), Layout.from_json(b_json), rng)
             if lay is None:
