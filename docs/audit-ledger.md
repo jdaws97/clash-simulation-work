@@ -89,7 +89,7 @@ Findings from the Codex category audits (output/checks/audit-*.md). Quote check:
 | equipment-1:F10 | equipment-1 | Ground splash attacks, radius 2.5 tiles | MISSING | 2/2 | open |
 | equipment-1:F11 | equipment-1 | Buildings first, independently of King fighting a troop | MISMATCH | 1/1 | open |
 | equipment-1:F12 | equipment-1 | Invisibility/Overgrowth can route the ball | MISMATCH | 1/1 | open |
-| equipment-1:F13 | equipment-1 | Snakes cannot trigger traps, but can suffer their damage | MISMATCH | 1/1 | open |
+| equipment-1:F13 | equipment-1 | Snakes cannot trigger traps, but can suffer their damage | MISMATCH | 1/1 | rejected (4003a25): game data BK Equipment Snake.TriggersTraps=TRUE overrides the wiki strategy text |
 | equipment-1:F14 | equipment-1 | Passive effect begins on deployment | MISMATCH | 2/2 | open |
 | equipment-1:F15 | equipment-1 | Damage bonus is active for the timed ability window | MISMATCH | 1/1 | open |
 | equipment-1:F16 | equipment-1 | Rage and Vial damage choose the stronger bonus | MISMATCH | 1/1 | open |
@@ -242,7 +242,7 @@ Findings from the Codex category audits (output/checks/audit-*.md). Quote check:
 | pets:row423 | pets | Attack range | MISMATCH | 1/1 | open |
 | pets:row424 | pets | High Voltage: target count and decay | MISSING | 2/2 | open |
 | pets:row425 | pets | Chain spacing | MISSING | 1/1 | open |
-| pets:row426 | pets | Trap triggering | MISMATCH | 1/1 | open |
+| pets:row426 | pets | Trap triggering | MISMATCH | 1/1 | applied (in code before 4003a25; verified against game data v18.200.9): Electro Owl.TriggersTraps=FALSE |
 | pets:row427 | pets | Owner absent; wall retarget | MISMATCH | 2/2 | open |
 | pets:row428 | pets | Ground-only, single-target, range | MISMATCH | 3/3 | open |
 | pets:row429 | pets | Movement speed | MISMATCH | no quote | open |
@@ -334,8 +334,8 @@ Findings from the Codex category audits (output/checks/audit-*.md). Quote check:
 | pets:row515 | pets | Catalog | MISSING | 1/1 | open |
 | pets:row516 | pets | Air unit | MISMATCH | 1/1 | open |
 | pets:row517 | pets | Four housing spaces | MISMATCH | 1/1 | open |
-| pets:row518 | pets | Cannot trigger traps | MISMATCH | 1/1 | open |
-| pets:row519 | pets | Can take damage from independently triggered traps | MISMATCH | 1/1 | open |
+| pets:row518 | pets | Cannot trigger traps | MISMATCH | 1/1 | applied (in code before 4003a25; verified against game data v18.200.9): Booger.TriggersTraps=FALSE |
+| pets:row519 | pets | Can take damage from independently triggered traps | MISMATCH | 1/1 | applied (in code before 4003a25; verified against game data v18.200.9): Booger takes splash from traps others trigger |
 | pets:row520 | pets | Ten-second summon interval; two concurrent | MISSING | 2/2 | open |
 | pets:row521 | pets | Resource priority near hero | MISSING | 1/1 | open |
 | pets:row522 | pets | Fivefold resource damage | MISSING | 1/1 | open |
@@ -460,30 +460,30 @@ Findings from the Codex category audits (output/checks/audit-*.md). Quote check:
 | traps:F1 | traps | Independently upgraded trap instances | MISSING | 1/1 | open |
 | traps:F2 | traps | Hidden traps versus visible Giga Bomb | MISSING | 2/2 | open |
 | traps:F27 | traps | Traps under upgrade | MISSING | 2/2 | open |
-| traps:F7 | traps | Diggy’s underground state | MISSING | 1/1 | open |
-| traps:F3 | traps | Angry Jelly cannot be targeted by traps during Brainwash | MISSING | 1/1 | open |
-| traps:F4 | traps | Rocket Backpack prevents new trap activation | MISSING | 1/1 | open |
-| traps:F5 | traps | Duke isolation radius | MISMATCH | 1/1 | open |
-| traps:F6 | traps | Warden air/ground selection affects trap eligibility | MISSING | 1/1 | open |
-| traps:F8 | traps | Small-troop knockback | MISSING | 2/2 | open |
-| traps:F11 | traps | Fast troops can pass safely | MISMATCH | 2/2 | open |
-| traps:F9 | traps | Yetimites cannot initiate it | MISMATCH | 1/1 | open |
-| traps:F10 | traps | Druid must not become Bear | MISMATCH | 1/1 | open |
-| traps:F12 | traps | Tracks nearest flying troop | MISSING | 1/1 | open |
-| traps:F13 | traps | Aerial siege machines are valid | MISMATCH | 0/1 | open |
-| traps:F14 | traps | Seeks/intercepts target | MISSING | 1/1 | open |
-| traps:F15 | traps | Attack interval and per-hit damage | MISMATCH | no quote | open |
-| traps:F16 | traps | Retaliation after defenses are gone | MISSING | 2/2 | open |
-| traps:F17 | traps | Repeated Miner burrow/resurface interaction | MISSING | 1/1 | open |
-| traps:F20 | traps | Total damage, L1–3 | MISMATCH | no quote | open |
-| traps:F18 | traps | Siege weight and displacement | MISMATCH | 1/1 | open |
-| traps:F19 | traps | Air units are spun more strongly | MISSING | 1/1 | open |
-| traps:F21 | traps | Farther ground units are knocked farther | MISMATCH | 1/1 | open |
-| traps:F22 | traps | Proximity explosion | MISSING | 1/1 | open |
-| traps:F23 | traps | Five randomly placed explosive presents | MISSING | 2/2 | open |
-| traps:F24 | traps | Trigger/effect radii, targets | MISSING | 3/3 | open |
-| traps:F25 | traps | Trigger/effect radii, targets | MISSING | 3/3 | open |
-| traps:F26 | traps | Spawns one defending Royal Ghost | MISSING | 1/1 | open |
+| traps:F7 | traps | Diggy’s underground state | MISSING | 1/1 | applied (in code before 4003a25): Diggy underground while moving |
+| traps:F3 | traps | Angry Jelly cannot be targeted by traps during Brainwash | MISSING | 1/1 | applied (in code before 4003a25; verified against game data v18.200.9): Angry Jelly brainwash attachment |
+| traps:F4 | traps | Rocket Backpack prevents new trap activation | MISSING | 1/1 | applied (in code before 4003a25; verified against game data v18.200.9): DragonDukeDeadlyDash*.TriggersTraps=FALSE; pet suspended |
+| traps:F5 | traps | Duke isolation radius | MISMATCH | 1/1 | applied (in code before 4003a25; verified against game data v18.200.9): DragonDukeRageWhenAlone.ActiveWhileAloneRadius=600 |
+| traps:F6 | traps | Warden air/ground selection affects trap eligibility | MISSING | 1/1 | applied (in code before 4003a25; verified against game data v18.200.9): Grand Warden.AltModeFlying=TRUE, mode set at deploy |
+| traps:F8 | traps | Small-troop knockback | MISSING | 2/2 | applied (4003a25): 2 tiles, Bomb/Giant Bomb Pushback=100 as Mortar; less push for 2-3 housing not stated |
+| traps:F11 | traps | Fast troops can pass safely | MISMATCH | 2/2 | open: EjectRadius=200 and ActionFrame=5 (0.21 s) contradict the wiki's pass-through; 0.3 s kept |
+| traps:F9 | traps | Yetimites cannot initiate it | MISMATCH | 1/1 | applied (4003a25): Yetimite.TriggersTraps=FALSE now applies to every trap; Totem victim weight 20 |
+| traps:F10 | traps | Druid must not become Bear | MISMATCH | 1/1 | applied (in code before 4003a25; verified against game data v18.200.9): Druid.DontSpawnSecondaryWhenEjected=TRUE |
+| traps:F12 | traps | Tracks nearest flying troop | MISSING | 1/1 | applied (4003a25): AirTrapBalloon DontTrackTarget=TRUE, Speed=250; opening ActionFrame=7 |
+| traps:F13 | traps | Aerial siege machines are valid | MISMATCH | 0/1 | applied (in code before 4003a25): aerial sieges explicitly eligible (wiki) |
+| traps:F14 | traps | Seeks/intercepts target | MISSING | 1/1 | applied (in code before 4003a25; verified against game data v18.200.9): LargeDarkElixirBalloon Speed=350, tracks |
+| traps:F15 | traps | Attack interval and per-hit damage | MISMATCH | no quote | applied (4003a25): Trap Skeleton stats match Characters.csv; SpawnInitialDelayMs=600, 150 ms apart |
+| traps:F16 | traps | Retaliation after defenses are gone | MISSING | 2/2 | open: attacker AI, outside trap scope |
+| traps:F17 | traps | Repeated Miner burrow/resurface interaction | MISSING | 1/1 | open: Miner AI, outside trap scope |
+| traps:F20 | traps | Total damage, L1–3 | MISMATCH | no quote | applied (in code before 4003a25; verified against game data v18.200.9): NumberOfHits 39/47/55, TimeBetweenHitsMS=128 |
+| traps:F18 | traps | Siege weight and displacement | MISMATCH | 1/1 | applied (in code before 4003a25; verified against game data v18.200.9): TORNADO_SIEGE_FORCE_TIER=1 |
+| traps:F19 | traps | Air units are spun more strongly | MISSING | 1/1 | applied, partial (4003a25): TornadoForce/TornadoForceAir by weight; rotation not modelled; wall capture kept |
+| traps:F21 | traps | Farther ground units are knocked farther | MISMATCH | 1/1 | applied, partial (4003a25): 2-tile radial throw (RadialThrowDistance=200); distance scaling not stated |
+| traps:F22 | traps | Proximity explosion | MISSING | 1/1 | deferred: event trap, not in the TH16-18 inventory |
+| traps:F23 | traps | Five randomly placed explosive presents | MISSING | 2/2 | deferred: event trap, not in the TH16-18 inventory |
+| traps:F24 | traps | Trigger/effect radii, targets | MISSING | 3/3 | deferred: event trap, not in the TH16-18 inventory |
+| traps:F25 | traps | Trigger/effect radii, targets | MISSING | 3/3 | deferred: event trap, not in the TH16-18 inventory |
+| traps:F26 | traps | Spawns one defending Royal Ghost | MISSING | 1/1 | deferred: campaign trap, not in the TH16-18 inventory |
 | troops-dark:N1 | troops-dark | **N1 — Range** | MISMATCH | 1/1 | applied (reviewed patch, 2026-10-18) |
 | troops-dark:T4 | troops-dark | **T4 — Escaping Air Bombs** | MISSING | 1/1 | open |
 | troops-dark:N2 | troops-dark | **N2 — Sky Wagon summons** | MISMATCH | 1/1 | applied (reviewed patch, 2026-10-18) |
