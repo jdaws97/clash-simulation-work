@@ -158,7 +158,9 @@ _POOL = None
 def pool():
     global _POOL
     if _POOL is None:
-        _POOL = ProcessPoolExecutor(max_workers=max(1, (os.cpu_count() or 2) - 1))
+        # BASELAB_WORKERS caps the pool when several jobs share the machine
+        n = int(os.environ.get("BASELAB_WORKERS") or max(1, (os.cpu_count() or 2) - 1))
+        _POOL = ProcessPoolExecutor(max_workers=n)
     return _POOL
 
 
