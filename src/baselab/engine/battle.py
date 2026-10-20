@@ -535,7 +535,10 @@ class Battle:
         if "recalled" in u.extra:
             return 0.0
         if kind == "trap" and u.name == "Dragon Duke" and units.duke_alone(self, u):
-            amount *= 0.8  # July 2026: trap reduction cut to ~20% while alone
+            # Wiki: Dragon Duke, 20% (history: 50% -> 40% May 26 2026 -> 20%
+            # July 14 2026). game data v18.200.9 DragonDukeRageWhenAlone.
+            # TrapShieldProtectionPercent=50 predates both changes.
+            amount *= 0.8
         # Wiki: Ice Block Spell, the strongest active damage reduction wins.
         red = u.dmg_taken_mult if t < u.dmg_taken_until else 1.0
         red = min(red, 1.0 - effects.torch_stats(u, t)[1])
@@ -949,6 +952,8 @@ class Battle:
                     team=pending.team,
                     falloff=pending.falloff,
                     src=pending.src,
+                    # Air Bomb shells are trap damage (Dragon Duke reduction).
+                    kind="trap" if str(pending.src).startswith("trap:") else "normal",
                 )
                 if pending.extra.get("push"):
                     for unit in self.attackers_near(x, y, pending.radius):

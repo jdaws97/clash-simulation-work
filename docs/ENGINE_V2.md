@@ -170,3 +170,28 @@ Problems caught in review and fixed by hand:
 - Clan Castle cargo ordering missed an import. Fixed.
 
 Rage is additive (wiki: "a level 1 Rage Spell do 130% more damage"), so the level-4 Super Valkyrie death Rage is x2.6.
+
+## 2026-10-20: traps checked against game data v18.200.9
+
+Every TH16-18 trap rule was checked against data/gamecsv/v18.200.9 first (Traps.csv, Projectiles.csv, Spells.csv for the Tornado, Characters/Heroes/Pets.csv for TriggersTraps and housing), then the wiki. Damage, trigger and damage radii, capacities, Seeking's 5-housing minimum, the Giga Bomb's 18-housing sum, hero (25) and pet (20) housing, Spring's highest-housing pick, 18-housing ejection and half damage to heroes/pets/sieges, projectile speeds and the Tornado pulses already matched. Spring at TH16 (level 11) ejects Throwers, Druids and Yetis (16-18 housing) and does 1,200 to Root Riders and bigger units (checked in a staged battle).
+
+| Rule | Before | Now | Source |
+|---|---|---|---|
+| Giant Bomb / Giga Bomb delay | 0.5 s | 1.59 s / 1.63 s | Traps.csv ActionFrame 37/38, scaled by the Bomb's 35 frames = 1.5 s (wiki: Bomb) |
+| Air Bomb / Seeking Air Mine opening | 0.5 s | 0.3 s | ActionFrame=7 |
+| Tornado Trap start | instant | 0.34 s | ActionFrame=8 |
+| Skeleton Trap spawn | instant, all at once | 0.6 s, then one every 0.15 s | SpawnInitialDelayMs=600, TimeBetweenSpawnsMs=150 |
+| Units that cannot trigger traps | Yetimite only for Spring; Electromite, Firemite, Frostmite, Poison Lizard could trigger; Snake Bracelet snakes could not | all of these follow TriggersTraps | Characters.csv / Pets.csv TriggersTraps |
+| Bomb / Giant Bomb knockback | flag only | housing 3 or less pushed 2 tiles | Pushback=100, PushbackHousingLimit=3, same as the Mortar (wiki: 2 tiles) |
+| Giga Bomb knockback | retarget only | survivors thrown 2 tiles (sieges, Totem exempt) | RadialThrowDistance=200, RadialThrowRadius=450 |
+| Tornado pull | 3 tiles/s divided by weight, to 0.3 tiles | TornadoForce 4/3/2/1/1 (ground), 5/4/3/2/1.5 (air) tiles/s by weight, 100% inside 0.7 tiles to 65% at the edge | Spells.csv Tornado Trap |
+| Air Bomb on Dragon Duke | no trap reduction | 20% reduction | shells now count as trap damage |
+| Trap damage label | stayed set after a trap fired | restored | later hits were credited to the trap |
+
+Kept, with the reason in a code comment:
+- Dragon Duke trap reduction 20%: game data says 50%, but the wiki history cuts it to 40% (May 26, 2026) and then 20% (July 14, 2026), so v18.200.9 is older.
+- Giant Bomb level 12 (490 damage, 4.2 tiles) at TH18 is wiki-only; v18.200.9 stops at level 11.
+- Spring delay 0.3 s and victim radius 1 tile: ActionFrame=5 (0.21 s) and EjectRadius=200 would stop any fast troop passing, which contradicts the wiki (speed 32+ passes). Still open (traps:F11).
+- Not stated anywhere: the smaller push for 2-3 housing troops, Giga's longer throw for farther units, the Tornado's rotation and how its force combines with a unit's own walking, Spring's stun length (1 s assumed), Tornado field radius (trap DamageRadius 3 tiles is kept; the Tornado spell row says Radius=400).
+
+Ledger: traps F3-F10, F12-F15, F18-F21, pets row426/518/519 applied; equipment-1:F13 (snakes) rejected by game data; F22-F26 deferred (event traps); F1, F2, F11, F16, F17, F27 open.
