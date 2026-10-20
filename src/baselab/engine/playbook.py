@@ -698,13 +698,46 @@ def add_waits(steps: list) -> None:
             st["when"] = fix(st.get("when"), st.get("group", "main"))
 
 
+def apply_overrides(steps: list, overrides: dict | None) -> None:
+    """Per-base choices a player makes inside the playbook's own steps
+    (redteam.py searches them): {step id: {field: value}} with fields
+      at     the step's anchor (e.g. which defense a Rocket Balloon snipe or
+             an Earthquake targets)
+      aim    an ability's target, "building:<key>"; None fires it normally
+      every  repeat interval of a repeating spell
+      delay  the wait of the step's "after" trigger (top level or inside "all")
+    Unknown step ids are ignored (the army may not play that step)."""
+    if not overrides:
+        return
+    for st in steps:
+        o = overrides.get(st["id"])
+        if not o:
+            continue
+        for k, v in o.items():
+            if k == "delay":
+                w = st.get("when")
+                if isinstance(w, dict) and "after" in w:
+                    st["when"] = {**w, "delay": float(v)}
+                elif isinstance(w, dict) and "all" in w:
+                    st["when"] = {**w, "all": [{**x, "delay": float(v)} if isinstance(x, dict) and "after" in x else x
+                                               for x in w["all"]]}
+            elif k == "aim" and v is None:
+                st.pop("aim", None)
+            elif k in ("at", "aim", "every"):
+                st[k] = v
+            else:
+                raise ValueError(f"unknown override field {k}")
+
+
 def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own_levels: bool = False,
-                  flank_offset: float = 0.9, charge_side: str = "left", build: dict | None = None) -> PlaybookPlan:
+                  flank_offset: float = 0.9, charge_side: str = "left", build: dict | None = None,
+                  overrides: dict | None = None) -> PlaybookPlan:
     """A PlaybookPlan for a playbook dict (data/playbooks/*.json). With
     `build` (a meta or custom army), that army is played through the
     playbook's steps (fit_steps); otherwise the playbook's example army.
     Levels, loadouts, spells and Clan Castle handling come from
-    meta_armies.compose so every army path in the sim shares one setup."""
+    meta_armies.compose so every army path in the sim shares one setup.
+    `overrides` sets per-step choices (apply_overrides)."""
     from dataclasses import fields
 
     from ..meta_armies import compose
@@ -742,5 +775,6 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
             if hero in heroes.HEROES and (lo is None or lo.pet != "Spirit Fox"):
                 st["every"] = 4.0
                 st.setdefault("cite", []).append({"video": "L_LKqcL56NE", "t": 63.8, "quote": "invisibility spells every 4 seconds to"})
+    apply_overrides(plan.steps, overrides)
     plan.flank_offset, plan.charge_side = flank_offset, charge_side
     return plan

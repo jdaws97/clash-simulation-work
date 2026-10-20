@@ -318,6 +318,16 @@ class Evaluation:
 
 def evaluate(layout: Layout, scenarios, *, strength=None, parallel=True) -> Evaluation:
     strength = strength or STRENGTH
+    if os.environ.get("BASELAB_REDTEAM") == "1" and ENGINE != "v1":
+        # opt-in: playbook armies attack with their red-team best attack
+        # (redteam.py, docs/REDTEAM.md); a few hundred battles per army
+        from .redteam import redteam_rows
+
+        rt_sc, rt_r, scenarios, _found = redteam_rows(layout, scenarios, strength)
+        lj = layout.to_json()
+        jobs = [(lj, sc, strength.get(sc.army, 1.0)) for sc in scenarios]
+        results = run_batch(jobs, parallel=parallel) if jobs else []
+        return summarise(rt_sc + list(scenarios), rt_r + [tuple(r) for r in results])
     lj = layout.to_json()
     jobs = [(lj, sc, strength.get(sc.army, 1.0)) for sc in scenarios]
     results = run_batch(jobs, parallel=parallel)

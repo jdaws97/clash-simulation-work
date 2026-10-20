@@ -19,3 +19,4 @@ Notes:
 - Ground truth is scarce. Checks 5 and 6 get stronger every day as `clash-battlelog-snapshot` adds battles to `data/live/battles.jsonl`. Record every base change in `data/live/base-history.json`, so replays use the right layout.
 - A check is never passed by tuning against the test data itself. Calibration uses the reference bases; replays are held out.
 - Anything taken from Codex or a transcript is verified before it changes the engine (quote check, wiki, or game data).
+- Check 7 with a red-team attacker (docs/REDTEAM.md: the best cited attack per base, scored on fresh seeds; 2026-10-20). Root Riders: hole-free is weaker than funnel1 (39.4 vs 36.2 trophies). Druids: funnel1 looks weaker (29.1 vs 25.5) once it is attacked well. Neither army picks the Eagle side of hole-free.
