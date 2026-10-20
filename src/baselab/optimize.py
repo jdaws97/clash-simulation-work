@@ -466,20 +466,25 @@ CC_OPTIONS = [
     ("2ice-furnace-hh", ["Ice Golem", "Ice Golem", "Furnace", "Headhunter", "Archer"]),
     ("lava-furnace", ["Lava Hound", "Furnace", "Archer", "Archer", "Archer"]),
 ]
-CC_CAP = 55  # engine/plans.py CC_HOUSING at TH16
-
-
 def cc_presets():
-    """The CC options that fit the castle (housing from the engine's data)."""
+    """The CC options that fit the user's defending Castle: capacity from game
+    data for their Castle level (level 11 holds 50), housing as the engine
+    counts it. Options for bigger castles are left out, not trimmed."""
     global _CC_OK
     if "_CC_OK" not in globals():
+        import json
+        from pathlib import Path
+
         from .engine import stats
+
+        lv = json.loads((Path(__file__).resolve().parents[2] / "data" / "your-levels.json").read_text())["levels"]
+        cap = stats.get("Clan Castle", lv.get("cc", 11), "Troop Capacity")
 
         def h(n):
             a = stats.attrs(n)
             return int(a.get("housing_ck") or a.get("housing") or 0)
 
-        _CC_OK = [(nm, tr) for nm, tr in CC_OPTIONS if 0 < sum(h(t) for t in tr) <= CC_CAP]
+        _CC_OK = [(nm, tr) for nm, tr in CC_OPTIONS if 0 < sum(h(t) for t in tr) <= cap]
     return _CC_OK
 
 
