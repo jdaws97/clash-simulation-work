@@ -258,8 +258,7 @@ def guided_move(new: Layout, rng: random.Random, diag):
     if r < 0.3 and new.traps:
         i = rng.randrange(len(new.traps))
         t = new.traps[i]
-        kind = "air" if t.key in AIR_TRAPS or (t.key == "skeleton" and t.mode == "air") else "ground"
-        hot = diag.hot_tiles(kind, 60)
+        hot = diag.trap_tiles(t.key, getattr(t, "mode", None), 60) if hasattr(diag, "trap_tiles") else             diag.hot_tiles("air" if t.key in AIR_TRAPS or (t.key == "skeleton" and t.mode == "air") else "ground", 60)
         if not hot:
             return None
         tiles, weights = zip(*hot)
@@ -432,6 +431,11 @@ def mutate(lay: Layout, rng: random.Random, diag=None) -> tuple[Layout, str]:
     if r < 0.92:
         # skeleton trap air/ground or CC composition tweak
         sk = [t for t in new.traps if t.key == "skeleton"]
+        if rng.random() < 0.5 and cc_presets():
+            name, troops = rng.choice(cc_presets())
+            if list(new.cc_troops) != troops:
+                new.cc_troops = list(troops)
+                return new, f"cc {name}"
         if sk:
             t = rng.choice(sk)
             t.mode = "air" if t.mode != "air" else "ground"
@@ -450,6 +454,33 @@ def mutate(lay: Layout, rng: random.Random, diag=None) -> tuple[Layout, str]:
             new.walls.add(dst)
             return new, "wall"
     return new, "noop"
+
+
+# Defending Clan Castle compositions top builders use (docs/BASE_DESIGN_PRINCIPLES.md 5.2,
+# Blueprint CoC CC guide 2026-04-15 and TH16-18 legend bases), plus the user's own
+CC_OPTIONS = [
+    ("user", ["Dragon", "Dragon", "Headhunter", "Archer", "Archer", "Archer", "Archer"]),
+    ("furnace-2ice", ["Furnace", "Ice Golem", "Ice Golem", "Archer", "Archer"]),
+    ("3ice", ["Ice Golem"] * 3 + ["Archer"] * 5),
+    ("furnace-rockets-ice-hh", ["Furnace", "Rocket Balloon", "Rocket Balloon", "Ice Golem", "Headhunter"]),
+    ("2ice-furnace-hh", ["Ice Golem", "Ice Golem", "Furnace", "Headhunter", "Archer"]),
+    ("lava-furnace", ["Lava Hound", "Furnace", "Archer", "Archer", "Archer"]),
+]
+CC_CAP = 55  # engine/plans.py CC_HOUSING at TH16
+
+
+def cc_presets():
+    """The CC options that fit the castle (housing from the engine's data)."""
+    global _CC_OK
+    if "_CC_OK" not in globals():
+        from .engine import stats
+
+        def h(n):
+            a = stats.attrs(n)
+            return int(a.get("housing_ck") or a.get("housing") or 0)
+
+        _CC_OK = [(nm, tr) for nm, tr in CC_OPTIONS if 0 < sum(h(t) for t in tr) <= CC_CAP]
+    return _CC_OK
 
 
 # ----------------------------------------------------------------- search
