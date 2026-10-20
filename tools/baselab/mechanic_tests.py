@@ -212,7 +212,79 @@ def t_spell_durations():
     check("Freeze: defense silent for the duration", gap - cannon.weapon.interval, want, 0.6, f"Freeze Spell level {lv}", "s")
 
 
-TESTS = [t_inferno_ramp, t_healer_troop, t_healer_hero, t_root_rider_wall, t_spell_durations]
+def _trap_battle(traps_, drops, max_time):
+    """Traps on an empty lawn (one far storage); dropped units stand still
+    with huge HP. Returns the battle and a log of (t, unit, damage, src)."""
+    from baselab.layout import TrapPlacement
+
+    lay = layout([("gs", 2, 2, None)])
+    lay.traps = [TrapPlacement(k, x, y, m) for k, x, y, m in traps_]
+    hits = []
+    b = Battle(lay, Stage(drops), seed=0, town_hall=16)
+    orig_d, orig_h = b.deploy, b.hit_unit
+
+    def deploy(d):
+        u = orig_d(d)
+        u.hp = u.max_hp = u.base_max_hp = 1e6
+        u.speed = 0.0
+        return u
+
+    def hit(u, amount, **kw):
+        r = orig_h(u, amount, **kw)
+        if r > 0:
+            hits.append((b.t, u, r, kw.get("src") or b._src))
+        return r
+    b.deploy, b.hit_unit = deploy, hit
+    b.max_time = max_time
+    b.run()
+    return b, hits
+
+
+def t_bomb_and_giant_bomb():
+    """Bomb detonates 1.5 s after a troop comes within 1 tile (wiki: Bomb
+    history, "Reduced detonation delay from 2 seconds to 1.5 seconds"). A
+    Giant Bomb hits every ground troop within its damage radius for its
+    level's damage and none outside (wiki: Giant Bomb statistics)."""
+    b, hits = _trap_battle([("bomb", 20, 20, None)], [(0.0, "Golem", 20.5, 20.5, None)], 4.0)
+    first = next((t for t, u, r, s in hits if s == "trap:bomb"), 99.0)
+    check("Bomb: detonation delay", first, 1.5, 0.15, "Bomb", "s")
+    from baselab.engine import traps as trapmod
+    from baselab.layout import TrapPlacement
+
+    probe = Battle(layout([("gs", 2, 2, None)]), Stage([]), seed=0, town_hall=16)
+    tr = trapmod.make_trap(probe, TrapPlacement("giant", 20, 20))
+    c = 21.0  # 2x2 Giant Bomb at (20,20): centre (21,21) in tile coordinates
+    drops = [
+        (0.0, "Valkyrie", c + 1.0, c, None),
+        (0.0, "Valkyrie", c, c - 1.0, None),
+        (0.5, "Valkyrie", c + tr.radius - 0.1, c, None),
+        (0.5, "Valkyrie", c, c + tr.radius + 0.2, None),
+    ]
+    b, hits = _trap_battle([("giant", 20, 20, None)], drops, 4.0)
+    per = {}
+    for t, u, r, s in hits:
+        if s == "trap:giant":
+            per[id(u)] = per.get(id(u), 0.0) + r
+    valks = [u for u in b.attackers if u.name == "Valkyrie"]
+    inside = [per.get(id(u), 0.0) for u in valks[:3]]
+    outside = per.get(id(valks[3]), 0.0) if len(valks) > 3 else -1.0
+    check("Giant Bomb: damage to Valkyries inside", min(inside), tr.damage, 0.5, f"Giant Bomb level {tr.level}, radius {tr.radius}")
+    check("Giant Bomb: no damage just outside radius", outside, 0.0, 0.0, "Giant Bomb")
+
+
+def t_seeking_threshold():
+    """Seeking Air Mine: a Balloon (5 housing) triggers it and takes the
+    mine's damage; a Minion (2 housing) neither triggers nor is hit (wiki:
+    Seeking Air Mine; game data MinTriggerHousingLimit=5)."""
+    drops = [(0.0, "Balloon", 10.5, 10.5, None), (0.0, "Minion", 30.5, 30.5, None)]
+    b, hits = _trap_battle([("seeking", 10, 10, None), ("seeking", 30, 30, None)], drops, 4.0)
+    loon = sum(r for t, u, r, s in hits if u.name == "Balloon" and s == "trap:seeking")
+    minion = sum(r for t, u, r, s in hits if u.name == "Minion" and s == "trap:seeking")
+    check("Seeking Air Mine: Balloon takes the mine", loon, b.traps[0].damage, 0.5, f"Seeking Air Mine level {b.traps[0].level}")
+    check("Seeking Air Mine: Minion cannot trigger", minion + (0.0 if b.traps[1].armed else 1.0), 0.0, 0.0, "Seeking Air Mine")
+
+
+TESTS = [t_inferno_ramp, t_healer_troop, t_healer_hero, t_root_rider_wall, t_spell_durations, t_bomb_and_giant_bomb, t_seeking_threshold]
 
 
 def main():
