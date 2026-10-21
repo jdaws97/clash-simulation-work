@@ -131,6 +131,74 @@ def skill(seed: int) -> float:
     return math.exp(SKILL_SPREAD * _Z[seed % len(_Z)])
 
 
+# Skill belongs to the attacker, not to the side: every side one scouting
+# group compares is played at the same quantile, so "best of SCOUT sides"
+# picks the best side, not the luckier attacker. (Before 2026-10-20 the seed
+# was s * 7 + k, so the 8 sides of one group ran at mixed quantiles and the
+# scout partly picked the stronger attacker.) The quantile now varies between
+# groups. The battle seed is 5 * m + q with m = s * n_sides + k (distinct per
+# side and seed; m % 2 still alternates the playbook charge flank with the
+# side) and q the group's quantile, so seed % 5 is still the skill.
+SKILL_ORDER = (1, 3, 2, 0, 4)  # 2 or 3 consecutive entries average to the median
+_Z_VAR = sum(z * z for z in _Z) / len(_Z)
+
+
+def group_seed(j: int, s: int, k: int, n: int) -> int:
+    """Seed of side k (of n) in group j (equal-weight groups, e.g. one build
+    against several bases): the quantile cycles through SKILL_ORDER."""
+    return 5 * (s * n + k) + SKILL_ORDER[j % len(SKILL_ORDER)]
+
+
+def _skill_patterns(n: int) -> list:
+    """Quantile multisets for the n groups of one army: symmetric around the
+    median (mean z 0) when n >= 2, any single quantile when n == 1."""
+    import itertools
+
+    q = len(_Z)
+    if n == 1:
+        return [(i,) for i in range(q)]
+    return [p for p in itertools.combinations_with_replacement(range(q), n)
+            if all(p.count(i) == p.count(q - 1 - i) for i in range(q // 2))]
+
+
+def _assign_skill(scenarios):
+    """Scenario seeds come in as m = s * n_sides + k; each scouting group
+    (army, Town Hall, modifier, group) gets one quantile q and every seed
+    becomes 5 * m + q. The groups of one army take a set of quantiles
+    symmetric around the median, so no army is played systematically weak
+    or strong; armies are placed heaviest first on the set that keeps the
+    weighted quantile shares closest to 1/5 each, with the weighted mean and
+    variance of z closest to those of the five quantiles. Ties rotate with
+    the seed."""
+    armies: dict = {}
+    for sc in scenarios:
+        g = armies.setdefault((sc.army, sc.town_hall, sc.modifier), {})
+        g.setdefault(sc.group, [0.0, sc.seed])[0] += sc.weight
+    tot = sum(w for g in armies.values() for w, _m in g.values()) or 1.0
+    fill = [0.0] * len(_Z)
+    q_of = {}
+    for key in sorted(armies, key=lambda a: (-sum(w for w, _m in armies[a].values()), str(a))):
+        gs = sorted(armies[key])
+        ws = [armies[key][g][0] / tot for g in gs]
+
+        def cost(p):
+            f = list(fill)
+            for q, w in zip(p, ws):
+                f[q] += w
+            mean = sum(x * z for x, z in zip(f, _Z))
+            spread = sum(x * (z * z - _Z_VAR) for x, z in zip(f, _Z))
+            return round(sum((x - 1 / len(_Z)) ** 2 for x in f) + mean ** 2 + spread ** 2, 12)
+
+        pats = _skill_patterns(len(gs))
+        r = armies[key][gs[0]][1] % len(pats)
+        pats = pats[r:] + pats[:r]
+        p = min(pats, key=cost)
+        for g, q, w in zip(gs, p, ws):
+            fill[q] += w
+            q_of[key + (g,)] = q
+    return [replace(sc, seed=5 * sc.seed + q_of[(sc.army, sc.town_hall, sc.modifier, sc.group)]) for sc in scenarios]
+
+
 # Engine v2 (src/baselab/engine) is the default; BASELAB_ENGINE=v1 runs the
 # legacy sim.py for comparison.
 ENGINE = os.environ.get("BASELAB_ENGINE", "v2")
@@ -199,8 +267,8 @@ def ranked_scenarios(n_angles=8, seeds=(0,), mix=None, angle_offset=0.0):
     for (army, th), w in mix.items():
         for k, a in enumerate(angles(n_angles, offset=0.37 * th + 0.11 * len(army) + angle_offset)):
             for s in seeds:
-                out.append(Scenario(army, th, a, s * 7 + k, w / (n_angles * len(seeds)), group=s))
-    return out
+                out.append(Scenario(army, th, a, s * n_angles + k, w / (n_angles * len(seeds)), group=s))
+    return _assign_skill(out)
 
 
 def target_scenarios(town_hall: int, n_angles=8, seeds=(0,), modifier=None):
@@ -212,8 +280,8 @@ def target_scenarios(town_hall: int, n_angles=8, seeds=(0,), modifier=None):
     for army, w in mix.items():
         for k, a in enumerate(angles(n_angles, offset=0.23 * len(army) + 0.1 * town_hall)):
             for s in seeds:
-                out.append(Scenario(army, town_hall, a, s * 7 + k, w / tot / (n_angles * len(seeds)), modifier, group=s))
-    return out
+                out.append(Scenario(army, town_hall, a, s * n_angles + k, w / tot / (n_angles * len(seeds)), modifier, group=s))
+    return _assign_skill(out)
 
 
 def meta_scenarios(mode="ranked", n_angles=8, seeds=(0,), modifier=None, th_mix=None, techniques_on=False, angle_offset=0.0):
@@ -224,7 +292,8 @@ def meta_scenarios(mode="ranked", n_angles=8, seeds=(0,), modifier=None, th_mix=
     The approach angles depend only on the build and `n_angles`, not on the
     seeds, so a hold-out set needs `angle_offset` (e.g. half an angle step)
     to face sides the search never saw; the seed alone changes only the
-    skill quantile (seed % 5), the charge flank (seed % 2) and jitter."""
+    skill quantile (seed % 5, one per build and seed: _assign_skill), the
+    charge flank (seed % 2) and jitter."""
     from .meta_armies import library
 
     th_mix = th_mix or ({18: 0.65, 17: 0.35} if mode == "ranked" else {16: 1.0})
@@ -236,8 +305,8 @@ def meta_scenarios(mode="ranked", n_angles=8, seeds=(0,), modifier=None, th_mix=
             for k, a in enumerate(angles(n_angles, offset=0.31 * th + 0.07 * len(bid) + angle_offset)):
                 for s in seeds:
                     for tech in techs:
-                        out.append(Scenario(bid, th, a, s * 7 + k, tw * w / (n_angles * len(seeds) * len(techs)), modifier, group=s, charge=tech))
-    return out
+                        out.append(Scenario(bid, th, a, s * n_angles + k, tw * w / (n_angles * len(seeds) * len(techs)), modifier, group=s, charge=tech))
+    return _assign_skill(out)
 
 
 def with_modifier(scenarios, modifier):
@@ -266,8 +335,8 @@ def side_scenarios(armies, seeds, share, n_sides=8, charge="Royal Champion", cha
                     v[NAMES.index("charge_pick")] = CHARGE_OPTIONS.index(charge) + 0.5
                     v[NAMES.index("charge_healers")] = 0.5
                     v[NAMES.index("charge_len")] = charge_len
-                out.append(Scenario(army, th, float(v[0]), s * 13 + k, share / (len(armies) * len(seeds) * n_sides), None, g, tuple(map(float, v))))
-    return out
+                out.append(Scenario(army, th, float(v[0]), s * n_sides + k, share / (len(armies) * len(seeds) * n_sides), None, g, tuple(map(float, v))))
+    return _assign_skill(out)
 
 
 def adaptive_scenarios(archive, mode, seeds, share, weights=None):
@@ -308,8 +377,8 @@ def war_scenarios(n_angles=8, seeds=(0,), angle_offset=0.0):
     for (army, th), w in mix.items():
         for k, a in enumerate(angles(n_angles, offset=0.29 * len(army) + angle_offset)):
             for s in seeds:
-                out.append(Scenario(army, th, a, s * 7 + k, w / tot / (n_angles * len(seeds)), group=s))
-    return out
+                out.append(Scenario(army, th, a, s * n_angles + k, w / tot / (n_angles * len(seeds)), group=s))
+    return _assign_skill(out)
 
 
 @dataclass
