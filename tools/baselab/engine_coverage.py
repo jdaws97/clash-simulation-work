@@ -4,6 +4,9 @@ For each troop, super troop, siege, summon, hero, spell, equipment and pet
 the tool runs a short battle against a real reference base and records
 whether the entity spawned/cast/activated without error and whether it did
 anything measurable (damage dealt, buildings destroyed, effect applied).
+Spells, equipment and pets are compared with the same battle without the
+cast or item: "ok" means the end state differs from that baseline, "no
+measurable effect" means it ran but changed nothing measured.
 
 Usage: python tools/baselab/engine_coverage.py [--th 18] [--out output/coverage.json]
 """
@@ -86,33 +89,69 @@ def unit_rows(th):
     return out
 
 
+# What a spell, equipment or pet row measures at the end of its trial. The
+# battle is deterministic (fixed seed), so the same trial without the cast
+# (or without the item) is the baseline and the difference is the effect.
+STATE = ("destruction", "building_hp", "defender_hp", "attackers", "attacker_dealt", "attacker_hp")
+# spells that act on the attackers are cast on an attacking troop, those
+# that disable defenses on the defense nearest it, the rest on the weakest
+# defense
+FRIENDLY = {"Healing Spell", "Rage Spell", "Jump Spell", "Haste Spell", "Clone Spell", "Invisibility Spell",
+            "Recall Spell", "Ice Block Spell", "Angry Spell", "Totem Spell"}
+DISABLE = {"Freeze Spell", "Overgrowth Spell", "Yellow Card"}
+
+
+def _state(b):
+    return (b.destruction(), sum(x.hp for x in b.buildings if x.alive), sum(u.hp for u in b.defenders if u.alive),
+            len(b.attackers), sum(u.damage_dealt for u in b.attackers), sum(u.hp for u in b.attackers if u.alive))
+
+
+def _effect(with_item, baseline):
+    eff = {k: round(a - c, 1) for k, a, c in zip(STATE, with_item, baseline)}
+    return eff, ("ok" if any(abs(v) >= 0.1 for v in eff.values()) else "no measurable effect")
+
+
+def _spell_trial(name, th, cast=True):
+    b = _battle(["Barbarian King", "Archer Queen"] + ["Valkyrie"] * 4 + ["Dragon"] * 2, th, max_time=30.0)
+    for _ in range(60):
+        b.step()
+    tgt = min((x for x in b.buildings if x.alive and x.is_defense), key=lambda x: x.hp)
+    if name == "Revive Spell":
+        q = next(u for u in b.attackers if u.is_hero)
+        b.kill(q)
+        x, y = q.x, q.y
+    elif name == "Poison Spell" and b.defenders:
+        d = next((u for u in b.defenders if u.alive), None)
+        x, y = (d.x, d.y) if d else (tgt.x, tgt.y)
+    elif name in FRIENDLY or name in DISABLE:
+        # on the most damaged troop (the group is spread out by now), or on
+        # the defense nearest it (one that is likely firing)
+        u = min((u for u in b.attackers if u.alive and not u.is_hero and u.kind != "pet"), key=lambda u: u.hp / u.max_hp)
+        x, y = u.x, u.y
+        if name in DISABLE:
+            d = min((d for d in b.buildings if d.alive and d.is_defense), key=lambda d: (d.x - x) ** 2 + (d.y - y) ** 2)
+            x, y = d.x, d.y
+    else:
+        x, y = tgt.x, tgt.y
+    if cast:
+        spells.cast_effect(b, name, x, y)  # unpaid: the probe has no spell inventory
+    for _ in range(80):
+        b.step()
+    return _state(b)
+
+
 def spell_rows(th):
     out = {}
+    base: dict = {}  # no-spell baselines (Revive kills a hero first)
     for name, rec in stats.registry().items():
         if rec["kind"] != "spell":
             continue
         row = {"kind": "spell"}
         try:
-            b = _battle(["Barbarian King", "Archer Queen"] + ["Valkyrie"] * 4 + ["Dragon"] * 2, th, max_time=30.0)
-            for _ in range(60):
-                b.step()
-            tgt = min((x for x in b.buildings if x.alive and x.is_defense), key=lambda x: x.hp)
-            if name == "Revive Spell":
-                q = next(u for u in b.attackers if u.is_hero)
-                b.kill(q)
-                x, y = q.x, q.y
-            elif name == "Poison Spell" and b.defenders:
-                d = next((u for u in b.defenders if u.alive), None)
-                x, y = (d.x, d.y) if d else (tgt.x, tgt.y)
-            else:
-                x, y = tgt.x, tgt.y
-            before = (b.destruction(), sum(u.hp for u in b.defenders if u.alive), len(b.attackers))
-            spells.cast_effect(b, name, x, y)  # unpaid: the probe has no spell inventory
-            for _ in range(80):
-                b.step()
-            after = (b.destruction(), sum(u.hp for u in b.defenders if u.alive), len(b.attackers))
-            row["status"] = "ok"
-            row["delta"] = [round(a - c, 1) for a, c in zip(after, before)]
+            key = name == "Revive Spell"
+            if key not in base:
+                base[key] = _spell_trial(name, th, cast=False)
+            row["effect"], row["status"] = _effect(_spell_trial(name, th), base[key])
         except Exception as e:  # noqa: BLE001
             row["status"] = "error"
             row["error"] = "".join(traceback.format_exception_only(type(e), e)).strip()[:200]
@@ -120,9 +159,30 @@ def spell_rows(th):
     return out
 
 
+def _hero_trial(hero, th, loadout, item=None):
+    """A lone hero with a loadout: 8 s in, its ability is activated, 10 s
+    more. Returns (end state, hero unit, battle), or None for the state when
+    `item` (equipment) is not in the kit."""
+    b = _battle([hero], th, loadouts={hero: loadout}, max_time=40.0)
+    for _ in range(80):
+        b.step()
+    u = next(x for x in b.attackers if x.is_hero)
+    if item is not None and (u.kit is None or item not in u.kit.equip):
+        return None, u, b
+    if u.alive:
+        heroes.activate(b, u)
+    for _ in range(100):
+        b.step()
+    return _state(b), u, b
+
+
 def equipment_rows(th):
+    """Equipment: the hero with only that item vs the hero with none, both
+    activated at the same moment. Pets: the Queen with Giant Arrow and the
+    pet vs without a pet."""
     out = {}
     reg = stats.registry()
+    base: dict = {}
     for name, rec in reg.items():
         if rec["kind"] not in ("equipment", "pet"):
             continue
@@ -134,24 +194,18 @@ def equipment_rows(th):
                     row["status"] = "unknown hero"
                     out[name] = row
                     continue
-                lo = {hero: HeroLoadout(hero, (name,), None)}
+                lo, lo0 = HeroLoadout(hero, (name,), None), HeroLoadout(hero, (), None)
             else:
                 hero = "Archer Queen"
-                lo = {hero: HeroLoadout(hero, ("Giant Arrow",), name)}
-            b = _battle([hero], th, loadouts=lo, max_time=40.0)
-            for _ in range(80):
-                b.step()
-            u = next(x for x in b.attackers if x.is_hero)
-            if u.kit is None or (rec["kind"] == "equipment" and name not in u.kit.equip):
+                lo, lo0 = HeroLoadout(hero, ("Giant Arrow",), name), HeroLoadout(hero, ("Giant Arrow",), None)
+            st, u, b = _hero_trial(hero, th, lo, name if rec["kind"] == "equipment" else None)
+            if st is None or u.kit is None:
                 row["status"] = "not equipped"
             else:
-                d0 = b.destruction()
-                if u.alive:
-                    heroes.activate(b, u)
-                for _ in range(100):
-                    b.step()
-                row["status"] = "ok"
-                row["destruction_gain"] = round(b.destruction() - d0, 1)
+                key = (rec["kind"], hero)
+                if key not in base:
+                    base[key] = _hero_trial(hero, th, lo0)[0]
+                row["effect"], row["status"] = _effect(st, base[key])
                 if rec["kind"] == "pet":
                     # the pet stays in battle.attackers even after its hero is
                     # knocked out (which clears kit.pet_unit)
@@ -170,6 +224,9 @@ def main():
     ap.add_argument("--th", type=int, default=18)
     ap.add_argument("--out", default=str(ROOT / "output" / "coverage.json"))
     args = ap.parse_args()
+    # the baselines are only meaningful if a repeated trial is identical
+    if _spell_trial("Rage Spell", args.th, cast=False) != _spell_trial("Rage Spell", args.th, cast=False):
+        print("WARNING: repeated no-spell trials differ; spell/equipment effects include noise")
     report = {"units": unit_rows(args.th), "spells": spell_rows(args.th), "equipment": equipment_rows(args.th)}
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(report, indent=1))
