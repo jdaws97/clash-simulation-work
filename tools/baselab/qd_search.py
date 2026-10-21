@@ -17,7 +17,11 @@ cell's elite on the quick battle set (the same seeds for everyone). At the
 end the best elites get the full battle set, then a hold-out comparison with
 the reference bases.
 
-Usage: python tools/baselab/qd_search.py --out output/qd --batches 30 [--batch 64] [--mode ranked]
+Two-stage scoring: a quick 44-battle set prunes, an independent 176-battle
+set decides (elites are compared on it). Run with BASELAB_HOLE_PENALTY=0 to
+score pure defense trophies. --seed-files adds starting layouts.
+
+Usage: python tools/baselab/qd_search.py --out output/qd --batches 30 [--batch 64] [--mode ranked] [--seed-files A.json ...]
 """
 
 from __future__ import annotations
@@ -110,12 +114,19 @@ def main():
     ap.add_argument("--init", type=int, default=192)
     ap.add_argument("--final", type=int, default=16, help="elites given the full battle set")
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--margin", type=float, default=1.0, help="stage-1 slack below the elite's quick score")
+    ap.add_argument("--seed-files", nargs="*", default=[], help="layouts to start from (e.g. digitized builder bases)")
     args = ap.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     rng = random.Random(args.seed)
     quick = meta_scenarios(args.mode, 2 if args.mode == "ranked" else 4, (0,))
-    archive: dict = {}  # cell -> (score, layout_json, summary)
+    # second stage: an independent, larger set (other seeds, other sides).
+    # The quick set only prunes; a child takes a cell only on this score, so
+    # a design that got lucky on 44 battles cannot win (the first run's
+    # quick-set "best" of 11.1 trophies fell to 5.3 on the full set).
+    confirm = meta_scenarios(args.mode, 4, (1, 2), angle_offset=math.pi / 4)
+    archive: dict = {}  # cell -> (confirm score, layout_json, summary, quick score)
     t0 = time.time()
     log = open(out / "progress.log", "a", encoding="utf-8")
 
@@ -131,15 +142,32 @@ def main():
         if not lays:
             return 0
         scored = eval_many([l for l, _ in lays], quick, args.mode)
+        # stage 1: a child goes on if its cell is empty or it comes within
+        # `margin` of the elite's quick score
+        keep = [(l, d, qs) for (l, d), (qs, _) in zip(lays, scored)
+                if d not in archive or qs >= archive[d][3] - args.margin]
+        if not keep:
+            return 0
+        full = eval_many([l for l, _, _ in keep], confirm, args.mode)
         won = 0
-        for (l, d), (s, ev) in zip(lays, scored):
-            if d not in archive or s > archive[d][0]:
-                archive[d] = (s, l.to_json(), ev.summary())
+        for (l, d, qs), (cs, ev) in zip(keep, full):
+            if d not in archive or cs > archive[d][0]:
+                archive[d] = (cs, l.to_json(), ev.summary(), qs)
                 won += 1
         return won
 
     jobs = [("new", args.seed * 1_000_000 + i, None, None) for i in range(args.init)]
-    won = offer(list(pool().map(_child, jobs, chunksize=4)))
+    seeds_json = []
+    own_lv = own_levels()
+    for f in args.seed_files:
+        l = Layout.load(Path(f))
+        if l.problems():
+            say(f"skipping seed {f}: {l.problems()[:3]}")
+            continue
+        l.levels, l.wall_level, l.hero_levels = dict(own_lv["levels"]), own_lv["wall_level"], dict(own_lv["hero_levels"])
+        l.name = "seed-" + Path(f).stem
+        seeds_json.append(l.to_json())
+    won = offer(seeds_json + list(pool().map(_child, jobs, chunksize=4)))
     say(f"init: {len(archive)} cells filled ({won} entries) t={time.time() - t0:.0f}s")
     for bt in range(args.batches):
         cells = list(archive)
@@ -159,7 +187,7 @@ def main():
                 jobs.append(("mutate", seed, archive[c][1], None))
         won = offer(list(pool().map(_child, jobs, chunksize=4)))
         best = max(archive.values(), key=lambda v: v[0])
-        say(f"batch {bt}: {won} improvements, {len(archive)} cells, best quick {best[0]:.2f} | {best[2]}  t={time.time() - t0:.0f}s")
+        say(f"batch {bt}: {won} improvements, {len(archive)} cells, best confirmed {best[0]:.2f} | {best[2]}  t={time.time() - t0:.0f}s")
         json.dump({str(k): v[:2] for k, v in archive.items()}, open(out / "archive.json", "w"))
 
     # full battle set for the best elites, then hold-out against the references
