@@ -284,7 +284,32 @@ def t_seeking_threshold():
     check("Seeking Air Mine: Minion cannot trigger", minion + (0.0 if b.traps[1].armed else 1.0), 0.0, 0.0, "Seeking Air Mine")
 
 
-TESTS = [t_inferno_ramp, t_healer_troop, t_healer_hero, t_root_rider_wall, t_spell_durations, t_bomb_and_giant_bomb, t_seeking_threshold]
+def t_life_gem_radius():
+    """Grand Warden Life Gem: +min(%, cap) max HP within 9 tiles (game data
+    Life Gem Aura.Radius=900), nothing beyond."""
+    from baselab.loadouts import HeroLoadout
+
+    lv = stats.max_level("Life Gem", 16)
+    pct = stats.get("Life Gem", lv, "~% hp increase") / 100.0
+    cap = stats.get("Life Gem", lv, "~max hp increase")
+    stage = Stage([(0.0, "Grand Warden", 38.0, 38.0, None), (0.0, "Golem", 29.5, 38.0, None), (0.0, "Golem", 38.0, 28.5, None)])
+    stage.loadouts = {"Grand Warden": HeroLoadout("Grand Warden", ("Life Gem",), None)}
+    b = Battle(layout([("gs", 2, 2, None)]), stage, seed=0, town_hall=16)
+    orig = b.deploy
+
+    def deploy(d):
+        u = orig(d)
+        u.speed = 0.0
+        return u
+    b.deploy = deploy
+    b.max_time = 1.0
+    b.run()
+    inside, outside = [u for u in b.attackers if u.name == "Golem"]
+    check("Life Gem: bonus HP at 8.5 tiles", inside.max_hp - inside.base_max_hp, min(pct * inside.base_max_hp, cap), 0.5, f"Life Gem level {lv}")
+    check("Life Gem: no bonus at 9.5 tiles", outside.max_hp - outside.base_max_hp, 0.0, 0.0, "Life Gem Aura radius 9")
+
+
+TESTS = [t_inferno_ramp, t_healer_troop, t_healer_hero, t_root_rider_wall, t_spell_durations, t_bomb_and_giant_bomb, t_seeking_threshold, t_life_gem_radius]
 
 
 def main():

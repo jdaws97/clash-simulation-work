@@ -395,7 +395,8 @@ def pre_tick(battle, u: Unit) -> bool:
             pool = battle.defenders if u.team == "atk" else battle.attackers
             for foe in list(pool):
                 if foe.alive and dist(u.x, u.y, foe.x, foe.y) <= 3.5:
-                    battle.hit_unit(foe, damage)
+                    # game data v18.200.9: Electro Titan Aura.HeroDamageMultiplier=25 -> heroes take 25%.
+                    battle.hit_unit(foe, damage * 0.25 if foe.is_hero else damage)
             if u.team == "atk":
                 for building in battle.buildings:
                     if (
@@ -635,16 +636,13 @@ def on_damaged(battle, u: Unit, amount: float):
         u.extra["next_mite_damage"] = threshold
         return
     if "yetimites" in sp.special:
+        # game data v18.200.9: YetiSpawnYetiMites.SpawnnedTroopsPerDamage=600 -> one per 600 damage.
         u.extra["mite_dmg"] += amount
-        first = 600.0 if "yetimites" in sp.special else 400.0
-        step = 600.0 if "yetimites" in sp.special else 800.0
-        mite = "Yetimite" if "yetimites" in sp.special else "Electromite"
-        while u.extra["mites"] > 0 and u.extra["mite_dmg"] >= first:
-            u.extra["mite_dmg"] -= step
-            first = step
+        while u.extra["mites"] > 0 and u.extra["mite_dmg"] >= 600.0:
+            u.extra["mite_dmg"] -= 600.0
             u.extra["mites"] -= 1
             battle.spawn(
-                mite,
+                "Yetimite",
                 u.team,
                 u.x + 0.4,
                 u.y + 0.4,
@@ -661,14 +659,11 @@ def on_death(battle, u: Unit):
     sp = u.spec
     t = battle.t
     if sp.death_damage and not u.extra.get("suicided"):
-        # Wiki: Super Miner/Home Village and Super Wall Breaker are ground-only.
-        death_air = u.name not in (
-            "Wall Breaker",
-            "Balloon",
-            "Super Miner",
-            "Super Wall Breaker",
-        )
-        # Rocket Balloon's death air mask is NUMBER NOT STATED; retain it.
+        # Death damage hits ground only unless the unit sets DieDamageAffectsAir,
+        # which only the Longshot does (Golem, Lava Hound, Dragon Rider, Rocket
+        # Balloon, Stone Slammer leave it unset; wiki: Balloon, ground only).
+        # game data v18.200.9: Longshot.DieDamageAffectsAir=TRUE -> also hits air.
+        death_air = u.name == "Longshot"
         dmg = stats.get(u.name, u.level, sp.death_damage, default=0.0)
         if dmg:
             if u.team == "atk":
@@ -684,7 +679,6 @@ def on_death(battle, u: Unit):
                     u.x, u.y, sp.death_radius or 1.2, dmg, death_air, True, team="atk"
                 )
     if sp.death_freeze:
-        # Ice Hound freeze radii: NUMBER NOT STATED; retain existing assumptions.
         secs = stats.get(u.name, u.level, sp.death_freeze, default=0.0)
         if u.team == "def":
             secs = stats.get(u.name, u.level, sp.death_freeze.replace("On Offense", "On Defense"), default=secs / 2.5)
@@ -694,6 +688,18 @@ def on_death(battle, u: Unit):
                 return
             # Wiki: Ice Golem has separate offense/defense freeze radii.
             r = 7.5 if u.team == "atk" else 5.5
+        elif u.name == "Ice Hound":
+            if u.team == "atk":
+                # game data v18.200.9: IceHoundFreeze.Radius=650 -> 6.5 tiles.
+                r = 6.5
+            else:
+                # A defending Ice Hound casts the defensive Ice Golem freeze:
+                # game data v18.200.9: IceHoundOnDeathDEF.SelfSpell=IceGolemFreeze_DEF
+                # game data v18.200.9: IceGolemFreeze_DEF.Radius=550 -> 5.5 tiles.
+                r = 5.5
+                # Its spell level is 1 to Ice Hound level 5, then 2 (2.25 s):
+                # game data v18.200.9: IceGolemFreeze_DEF.FreezeTimeMS=2000 -> 2 s at level 1.
+                secs = 2.0 if u.level <= 5 else 2.25
         if u.team == "atk":
             for b in battle.buildings:
                 if b.alive and b.edge_distance(u.x, u.y) <= r:
@@ -701,9 +707,7 @@ def on_death(battle, u: Unit):
             for f in battle.defenders_near(u.x, u.y, r):
                 f.frozen_until = max(f.frozen_until, t + secs)
         else:
-            for a in battle.attackers_near(
-                u.x, u.y, r if u.name == "Ice Golem" else r * 0.6
-            ):
+            for a in battle.attackers_near(u.x, u.y, r):
                 a.frozen_until = max(a.frozen_until, t + secs)
     if sp.death_spawn:
         name, count = sp.death_spawn
@@ -1284,37 +1288,41 @@ def _attack_targets(battle, u, walls=False):
     return targets
 
 
+def _frost(battle, target, factor, seconds):
+    """The frost effect: slower attacks, and for troops slower movement too
+    (wiki: Ice Hound/Ice Pup, "affected targets will have reduced movement
+    and attack speed"). The strongest active frost wins."""
+    t = battle.t
+    target.atk_slow = min(target.atk_slow if t < target.atk_slow_until else 1.0, factor)
+    target.atk_slow_until = max(target.atk_slow_until, t + seconds)
+    if isinstance(target, Unit):
+        target.move_slow = min(target.move_slow if t < target.move_slow_until else 1.0, factor)
+        target.move_slow_until = max(target.move_slow_until, t + seconds)
+
+
 def _chill(battle, u, target):
     if u.extra.get("bouncing_frostmite"):
         # game data v18.200.9: BouncingFrostmite.FrostOnHitPercent=30 -> 30% slow.
-        target.atk_slow = min(
-            target.atk_slow if battle.t < target.atk_slow_until else 1.0, 0.7
-        )
         # game data v18.200.9: BouncingFrostmite.FrostOnHitTime=3000 -> 3 s.
-        target.atk_slow_until = max(target.atk_slow_until, battle.t + 3.0)
+        _frost(battle, target, 0.7, 3.0)
         return
     if u.name in ("Frosty", "Frostmite"):
         # game data v18.200.9: Frosty.FrostOnHitPercent=50 -> 50% slow.
         # game data v18.200.9: Icemite.FrostOnHitPercent=50 -> 50% slow.
         # game data v18.200.9: Frosty.FrostOnHitTime=4000 -> 4 s.
         # game data v18.200.9: Icemite.FrostOnHitTime=4000 -> 4 s.
-        target.atk_slow = min(
-            target.atk_slow if battle.t < target.atk_slow_until else 1.0, 0.5
-        )
-        target.atk_slow_until = max(target.atk_slow_until, battle.t + 4.0)
+        _frost(battle, target, 0.5, 4.0)
         return
     if not any(tag in u.spec.special for tag in ("ice_chill", "chill")):
         return
+    # game data v18.200.9: Ice Golem.FrostOnHitPercent=50 -> 50% slow.
+    # game data v18.200.9: Ice Golem.FrostOnHitTime=2000 -> 2 s.
     # game data v18.200.9: Ice Hound.FrostOnHitPercent=50 -> 50% slow.
     # game data v18.200.9: Defensive Ice Hound.FrostOnHitPercent=50 -> 50% slow.
     # game data v18.200.9: Ice Hound.FrostOnHitTime=2000 -> 2 s.
     # game data v18.200.9: Ice Hound Pup.FrostOnHitPercent=50 -> 50% slow.
     # game data v18.200.9: Ice Hound Pup.FrostOnHitTime=2000 -> 2 s.
-    # Ice Golem keeps its existing chill; these units share its numeric values.
-    target.atk_slow = min(
-        target.atk_slow if battle.t < target.atk_slow_until else 1.0, 0.5
-    )
-    target.atk_slow_until = max(target.atk_slow_until, battle.t + 2.0)
+    _frost(battle, target, 0.5, 2.0)
 
 
 def _hit_target(battle, u, target, damage):
@@ -1445,7 +1453,7 @@ def _spatial_strike(battle, u, target, damage):
         _hit_target(battle, u, target, damage)
         dx, dy = target.x - u.x, target.y - u.y
         length = math.hypot(dx, dy) or 1.0
-        # Arrow width: NUMBER NOT STATED; retain the existing 0.3 approximation.
+        # game data v18.200.9: Super Archer.PenetratingRadius=30 -> 0.3 tiles either side.
         # Wiki: Walls/Home Village supports penetration through walls.
         for v in _attack_targets(battle, u, walls=True):
             if v is target:
@@ -1461,17 +1469,13 @@ def _spatial_strike(battle, u, target, damage):
             if _dragon_footprint(v, target.x, target.y):
                 _hit_target(battle, u, v, damage)
     elif sp.attack == "spin":
-        if u.name == "Valkyrie":
-            # Wiki: Valkyrie spins around herself with radius one, including walls.
-            _area_hit(
-                battle, u, u.x, u.y, sp.splash, damage, walls=True, primary=target
-            )
-            return
-        # Super Valkyrie's radius is not stated; retain the existing spec radius.
-        _hit_target(battle, u, target, damage)
-        for v in _attack_targets(battle, u):
-            if v is not target and target_distance(u, v) <= sp.splash:
-                _hit_target(battle, u, v, damage)
+        # Wiki: Valkyrie spins around herself with radius one, including walls.
+        # The Super Valkyrie has the same area flags:
+        # game data v18.200.9: Super Valkyrie.SelfAsAoeCenter=TRUE -> centred on herself.
+        # game data v18.200.9: Super Valkyrie.DamageRadius=100 -> 1 tile.
+        _area_hit(
+            battle, u, u.x, u.y, sp.splash, damage, walls=True, primary=target
+        )
     else:
         # Rocket Balloon/Super Witch/Witch Golem attack radii: NUMBER NOT STATED.
         # Retain their existing radii; Rocket death radius is a separate value.
@@ -1670,7 +1674,7 @@ def projectile_impact(battle, pending):
             px, py = victim.x - ox, victim.y - oy
             along = px * dx + py * dy
             half = getattr(victim, "half_hit", 0.0)
-            # Retain the existing 0.3-tile arrow-width approximation.
+            # game data v18.200.9: Super Archer.PenetratingRadius=30 -> 0.3 tiles either side.
             if (
                 along + half >= previous
                 and along - half <= travel
@@ -1687,13 +1691,14 @@ def projectile_impact(battle, pending):
     if mode == "rocket":
         from . import heroes
 
-        # Empowered hit and 0.8-tile splash (wiki: Rocket Spear).
+        # Empowered hit and splash (wiki: Rocket Spear says 0.8 tiles).
+        # game data v18.200.9: RocketSpears.DamageRadius=90 -> 0.9 tiles.
         target = pending.target
         if target.alive and (
             not isinstance(target, Unit) or target.indirect_targetable(battle.t)
         ):
             heroes._damage(battle, target, pending.damage)
-            heroes._blast(battle, x, y, 0.8, pending.damage, exclude=target)
+            heroes._blast(battle, x, y, 0.9, pending.damage, exclude=target)
         return
     if mode == "longshot":
         for victim in _attack_targets(battle, u):
@@ -1764,7 +1769,10 @@ def strike(battle, u: Unit, target):
     if speed is not None:
         launch_projectile(battle, u, target, dmg, speed)
         return
-    if u.name in SPATIAL_TROOPS:
+    # Every area attack type goes through the spatial code; the building-only
+    # copies of these attacks that used to follow had drifted from it and
+    # were unreachable.
+    if u.name in SPATIAL_TROOPS or sp.attack in ("suicide", "spin", "chain", "bounce", "pierce"):
         _spatial_strike(battle, u, target, dmg)
         if u.name == "Valkyrie" and not target.alive:
             u.target = u.wall_target = None
@@ -1779,15 +1787,6 @@ def strike(battle, u: Unit, target):
     if u.kit is not None:
         # Percentage damage ignores Rage and difficulty (wiki: Monolith Arrow).
         dmg += heroes.monolith_bonus(battle, u, target)
-    if sp.attack == "suicide":
-        if isinstance(target, Wall) and "mega_bomb" in sp.special:
-            battle.kill(u)  # Mega Bomb: the death blast is the attack (wiki)
-            return
-        if isinstance(target, Wall):
-            battle.splash_buildings(target.x, target.y, sp.splash, u.dmg, wall_mult=sp.vs_walls)
-            u.extra["suicided"] = True
-            battle.kill(u)
-            return
     if u.kit is not None and t < u.extra.get("gauntlet_until", 0.0):
         _gauntlet_hit(battle, u, target, dmg)
         heroes.on_hit_extra(battle, u, target)
@@ -1806,50 +1805,7 @@ def strike(battle, u: Unit, target):
     if team_def:
         return
     u.damage_dealt += dmg
-    if sp.attack == "spin":
-        battle.splash_buildings(u.x, u.y, sp.splash + 0.5, dmg, walls=False)
-        for f in battle.defenders_near(u.x, u.y, sp.splash + 0.5):
-            if battle.can_hit(u, f):
-                battle.hit_unit(f, dmg)
-    elif sp.attack == "chain":
-        battle.hit_building(target, dmg)
-        battle._effect = "chain"
-        hit = {target.id}
-        cur = target
-        amt = dmg
-        for _ in range(sp.chain):
-            amt *= sp.chain_decay
-            src = target if sp.chain_from_primary else cur
-            nxt, nd = None, sp.chain_range + 0.01
-            for b in battle.buildings:
-                if b.alive and b.counted and b.id not in hit:
-                    d = b.edge_distance(src.x, src.y)
-                    if d < nd or (d == nd and nxt is not None and b.max_hp > nxt.max_hp):
-                        nd, nxt = d, b
-            if nxt is None:
-                break
-            hit.add(nxt.id)
-            battle.hit_building(nxt, amt)
-            cur = nxt
-    elif sp.attack == "bounce":
-        battle.splash_buildings(target.x, target.y, sp.splash, dmg, walls=False)
-        dx, dy = target.x - u.x, target.y - u.y
-        d = math.hypot(dx, dy) or 1.0
-        for k in range(1, sp.bounces + 1):
-            px = target.x + dx / d * sp.bounce_gap * k
-            py = target.y + dy / d * sp.bounce_gap * k
-            battle.splash_buildings(px, py, sp.splash, dmg, walls=False)
-    elif sp.attack == "pierce":
-        dx, dy = target.x - u.x, target.y - u.y
-        d = math.hypot(dx, dy) or 1.0
-        for b in battle.buildings:
-            if not b.alive or not b.counted:
-                continue
-            px, py = b.x - u.x, b.y - u.y
-            along = (px * dx + py * dy) / d
-            if 0 < along <= sp.pierce and abs(px * dy - py * dx) / d <= b.half_hit + 0.3:
-                battle.hit_building(b, dmg)
-    elif sp.attack == "splash":
+    if sp.attack == "splash":
         battle.hit_building(target, dmg)
         if sp.splash > 0:
             for b in battle.buildings:
@@ -1859,8 +1815,6 @@ def strike(battle, u: Unit, target):
         battle.hit_building(target, dmg)
     if isinstance(target, Building):
         _chill(battle, u, target)
-    if "chill" in sp.special and isinstance(target, Building):
-        target.atk_slow, target.atk_slow_until = 0.5, t + 2.0  # Ice Golem hits halve fire rate 2 s (wiki)
     if u.kit is not None:
         from . import heroes
 
@@ -1912,8 +1866,7 @@ def _after_unit_hit(battle, u, target, dmg):
                 battle._nudge(v, dx * push, dy * push)
                 v.target = v.wall_target = None
                 reset_beam(v)
-    if "chill" in sp.special:
-        _chill(battle, u, target)
+    # Frost is applied by the callers (strike, _hit_target) after this.
     if "hh_poison" in sp.special and not (
         target.kind == "guardian" and target.extra.get("waiting")
     ):
