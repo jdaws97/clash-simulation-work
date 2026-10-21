@@ -34,6 +34,13 @@ BUCKET = 4.0
 ENGAGE_RADIUS = 7.0
 # game data v18.200.9: ALLIANCE_ALERT_RADIUS.NumberValue=700 -> 7 tiles.
 AWARE_RADIUS = 7.0
+# game data v18.200.9: Town Hall.CombatActivationDelay=500 -> the TH12-17
+# weapon starts fighting 0.5 s after it is triggered (TH damaged or 51%).
+TH_ACTIVATION_DELAY = 0.5
+# game data v18.200.9: CLAN_CASTLE_RADIUS.NumberValue=13 -> 13 tiles (whole
+# tiles, like CHAR_VS_CHAR_RADIUS_FOR_ATTACKER=7). The wiki Clan Castle
+# infobox also gives "Trigger Radius 13 tiles"; its prose says 12.
+CC_TRIGGER_RADIUS = 13.0
 # Path goals are half-tile cells whose centres lie at least 0.25 tiles from a
 # hitbox edge and up to 0.35 from a point, so a shorter reach left no goal
 # cell and the unit never moved (Bear, wiki range 0.2, made 0 attacks in
@@ -51,6 +58,56 @@ MODIFIERS = {
     "legend2": (0.15, 0.15, 0.10, 0.10),
     "legend1": (0.20, 0.20, 0.20, 0.20),
 }
+
+
+def _research_name(name: str) -> str:
+    """The researched troop behind a Super Troop's level (wiki: Clan Castle,
+    Super Troops need the base troop's level)."""
+    if stats.record(name)["kind"] == "super_troop":
+        for column in stats.attrs(name).get("raw", {}):
+            base = column.removesuffix(" Level Required")
+            if (
+                column.endswith(" Level Required")
+                and base in stats.registry()
+                and stats.record(base)["kind"] == "troop"
+            ):
+                return base
+    return name
+
+
+def _required_lab(research_name: str, level: int):
+    # Wiki: troop research tables (Laboratory Level Required).
+    required = stats.get(research_name, level, "Laboratory Level Required")
+    if required is None:
+        th = stats.required_town_hall(research_name, level)
+        required = stats.max_level("Laboratory", int(th)) if th is not None else None
+    return required
+
+
+def donated_level(name: str, level: int | None, castle_level: int | None) -> int:
+    """Level of a troop donated to a Clan Castle of castle_level.
+
+    Wiki: Clan Castle, the Laboratory level cap restricts donated units to
+    the highest level that Laboratory level allows; reinforcements come at
+    the maximum the Castle allows. Higher donations are reduced, not refused.
+    level None = the best donor level (the troop's maximum)."""
+    if level is None:
+        level = stats.max_level(name, 18) or 1
+    lab_cap = (
+        stats.get("Clan Castle", castle_level, "~Laboratory Level Cap")
+        if castle_level
+        else None
+    )
+    research = _research_name(name)
+    required = _required_lab(research, level)
+    if lab_cap is None or required is None:
+        return level  # no cap data: keep the level as given
+    while required > lab_cap and level > 1:
+        level -= 1
+        required = _required_lab(research, level)
+        if required is None:
+            break
+    return level
 
 
 class Battle:
@@ -120,7 +177,7 @@ class Battle:
         self.cc_queue: list = []
         self.cc_released = False
         self.th = None
-        self.th_active = False
+        self._th_on_at = None  # when the Town Hall weapon fights (None: dormant)
         # explicit levels win; otherwise the layout's owner's levels; else max
         self.defense_levels = {**(layout.levels or {}), **(defense_levels or {})}
         self.hero_levels = {**(layout.hero_levels or {}), **(hero_levels or {})}
@@ -138,9 +195,34 @@ class Battle:
         self.destroyed_counted = 0
         self.no_deploy = self._no_deploy_tiles(layout)
         self.plan = plan
+        self._onboard_cargo = self._attack_cargo(plan)
         self.deployments = sorted(plan.deployments(self), key=lambda d: d.time)
         self._next_deploy = 0
         self._bucket_grid: dict = {}
+
+    # ======================================================= town hall weapon
+    @property
+    def th_active(self) -> bool:
+        """The Town Hall weapon fights and counts as a defense."""
+        return self._th_on_at is not None and self.t >= self._th_on_at
+
+    @th_active.setter
+    def th_active(self, value: bool):
+        # Direct assignment: always-on weapons (TH17 Inferno Artillery) and
+        # unavailable Town Halls; triggers go through trigger_th().
+        self._th_on_at = -math.inf if value else None
+
+    def trigger_th(self):
+        """The Giga weapon emerges (wiki: Town Hall Giga Weapons, when the
+        Town Hall is damaged or 51% is destroyed) and fights after
+        TH_ACTIVATION_DELAY; it used to fight in the same tick."""
+        if (
+            self._th_on_at is None
+            and self.th is not None
+            and self.th.weapon is not None
+            and not self.th.extra.get("unavailable")
+        ):
+            self._th_on_at = self.t + TH_ACTIVATION_DELAY
 
     # ================================================================ setup
     def level_of(self, key: str, name: str) -> int:
@@ -234,42 +316,36 @@ class Battle:
                 raise ValueError(
                     f"Defending Clan Castle housing {housing} exceeds {capacity}"
                 )
-            lab_cap = stats.get(
-                "Clan Castle", self.cc_building.level, "~Laboratory Level Cap"
-            )
             for entry in self.cc_queue:
-                name, level = entry["name"], entry["level"]
+                name = entry["name"]
                 if stats.record(name)["kind"] not in ("troop", "super_troop"):
                     raise ValueError(f"{name} cannot be donated to a Clan Castle")
-                stats.row(name, level)
-                research_name = name
-                if stats.record(name)["kind"] == "super_troop":
-                    for column in stats.attrs(name).get("raw", {}):
-                        base = column.removesuffix(" Level Required")
-                        if (
-                            column.endswith(" Level Required")
-                            and base in stats.registry()
-                            and stats.record(base)["kind"] == "troop"
-                        ):
-                            research_name = base
-                            break
-                # Wiki: troop research tables and Clan Castle donation laboratory cap.
-                required_lab = stats.get(
-                    research_name, level, "Laboratory Level Required"
+                stats.row(name, entry["level"])
+                entry["level"] = donated_level(
+                    name, entry["level"], self.cc_building.level
                 )
-                if required_lab is None:
-                    required_th = stats.required_town_hall(research_name, level)
-                    required_lab = stats.max_level("Laboratory", int(required_th))
-                if lab_cap is None or required_lab is None:
-                    continue  # no cap data: keep the level as given
-                # donated troops above the Clan Castle's cap are reduced to the
-                # highest level it allows (wiki: Clan Castle), not refused
-                while required_lab > lab_cap and level > 1:
-                    level -= 1
-                    required_lab = stats.get(research_name, level, "Laboratory Level Required")
-                    if required_lab is None:
-                        required_lab = stats.max_level("Laboratory", int(stats.required_town_hall(research_name, level)))
-                entry["level"] = level
+
+    def _attack_cargo(self, plan) -> list:
+        """The attacker's Clan Castle troops (released by a siege or the
+        Castle drop), at levels the attacker's own Castle allows (wiki: Clan
+        Castle, Laboratory level cap). They used to take the defending Town
+        Hall's maximum level. Read by units.onboard_cargo."""
+        castle = getattr(plan, "clan_castle_level", None)
+        if castle is None:
+            castle = stats.max_level(
+                "Clan Castle", getattr(plan, "town_hall", None) or self.town_hall
+            )
+        given = getattr(plan, "cc_levels", None) or {}
+        entries = []
+        for entry in getattr(plan, "cc_troops", None) or []:
+            item = {"name": entry} if isinstance(entry, str) else dict(entry)
+            name = item.get("name") or item["type"]
+            # a given level is only reduced to the cap
+            item["level"] = donated_level(
+                name, item.get("level") or given.get(name), castle
+            )
+            entries.append(item)
+        return units.cargo_entries(self, entries)
 
     def _no_deploy_tiles(self, layout: Layout) -> set:
         """No-spawn zone: one tile around every structure (wiki: Walls);
@@ -635,13 +711,8 @@ class Battle:
                         weapon.extra.setdefault("hit_triggers", {}).setdefault(
                             source, self.t
                         )
-            if (
-                b is self.th
-                and b.weapon is not None
-                and not b.extra.get("unavailable")
-                and not self.th_active
-            ):
-                self.th_active = True
+            if b is self.th:
+                self.trigger_th()
         b.hp -= amount
         if b.hp <= 0:
             self.destroy(b)
@@ -662,11 +733,7 @@ class Battle:
                 self.first_destroy_t = self.t
         defense.on_destroyed(self, b)
         if self.destruction() >= 51.0:
-            self.th_active = (
-                self.th is not None
-                and self.th.weapon is not None
-                and not self.th.extra.get("unavailable")
-            )
+            self.trigger_th()
             for o in self.buildings:
                 if o.key == "tesla":
                     defense.reveal_tesla(self, o)
@@ -734,7 +801,14 @@ class Battle:
         return self.result()
 
     def offense_finished(self):
-        # Wiki: Healer permits continued attacks with Lightning or Earthquake.
+        # Wiki: Healer, the battle ends once no non-healing troops are alive
+        # or left to deploy and no Lightning or Earthquake Spells are left
+        # to deploy. So a plan that never casts its spare Lightning or
+        # Earthquake runs to max_time after a wipe (a player would cast them
+        # or end the battle). Stars and destruction are unchanged, and a
+        # 3-star ends at 100% first, so the time to 3-star is not affected;
+        # only `time` of failed attacks reads 180 (tools/baselab/ab_test.py
+        # counts those as timeouts, not wipes).
         if any(
             u.alive
             and u.name not in ("Healer", "Unicorn", "Totem")
@@ -1058,11 +1132,9 @@ class Battle:
             or self.t < getattr(self, "_next_cc_exit", 0.0)
         ):
             return
-        # game data v18.200.9: CLAN_CASTLE_RADIUS.NumberValue=13 -> 13 tiles.
-        radius = 13.0
         intruders = [
             unit
-            for unit in self.attackers_near(castle.x, castle.y, radius)
+            for unit in self.attackers_near(castle.x, castle.y, CC_TRIGGER_RADIUS)
             if unit.name not in spells.NO_TRIGGER
             and unit.targetable(self.t)
             and unit.dash is None
@@ -1129,8 +1201,17 @@ class Battle:
             elif (
                 u.target_kind == "building"
                 and not self.building_targetable(target)
-                and sp.prefer != "th"
+                and (sp.prefer != "th" or not self._siege_blocks(target))
             ):
+                target = None
+            elif (
+                sp.prefer == "th"
+                and u.target_kind == "destination"
+                and not u.flying
+                and t >= u.extra.get("next_blocker_check", 0.0)
+            ):
+                # A building that turns visible again can stand in the way.
+                u.extra["next_blocker_check"] = t + 0.5
                 target = None
             elif u.target_kind == "unit" and not target.targetable(t):
                 target = None
@@ -1188,6 +1269,10 @@ class Battle:
             u.wall_target = None
             target, u.target_kind = self.choose_target(u)
         if u.name == "Dragon" and target is not None and not isinstance(target, Unit):
+            # Wiki: Dragon, Dragons attack the Barbarian King and Clan Castle
+            # troops that cannot target air "if these troops are the closest
+            # target", so this needs no awareness (such a foe can never make
+            # them aware); foes that can hit air make them aware anyway.
             foe = self._nearest_defender(u, ENGAGE_RADIUS)
             if foe is not None and units.target_distance(
                 u, foe
@@ -1251,7 +1336,11 @@ class Battle:
             if not u.flying:
                 blockers = []
                 for blocker in list(self.buildings) + list(self.walls.values()):
-                    if blocker is self.th or not blocker.alive:
+                    if (
+                        blocker is self.th
+                        or not blocker.alive
+                        or not self._siege_blocks(blocker)
+                    ):
                         continue
                     entry = units.segment_entry(u.x, u.y, self.th.x, self.th.y, blocker)
                     if entry is not None:
@@ -1308,6 +1397,22 @@ class Battle:
             if d < bd:
                 bd, best = d, b
         return (best, "building") if best is not None else (None, None)
+
+    def _siege_blocks(self, b) -> bool:
+        """Whether a Town Hall-bound ground siege stops to attack b.
+
+        Overgrown buildings still stop it (wiki: Overgrowth Spell, the Wall
+        Wrecker and Log Launcher attack them for no damage and get stuck).
+        Invisible buildings do not (wiki: Invisibility Spell, untargetable
+        by anything; Town Hall-targeting Siege Machines continue their
+        advance), nor does a Hidden Tesla that has not popped up (it pops up
+        once the siege comes near; defense.reveal_tesla then retargets).
+        Yellow Card suspension is unstated for sieges and still blocks."""
+        if isinstance(b, Wall):
+            return True
+        if b.key == "tesla" and not b.revealed:
+            return False
+        return self.t >= b.invisible_until
 
     def _path_target(self, u: Unit, pool):
         """Ground troops pick the building that is cheapest to reach, walls
@@ -1413,6 +1518,12 @@ class Battle:
             # v18.200.9: Wall Wrecker AttackRange=150, Log Launcher 100); it
             # used to walk through the hitbox to the exact centre first.
             if u.flying:
+                # Wiki: Battle Blimp breaks apart when it "reaches the Town
+                # Hall (or its remains)". Its AttackRange=150 is the bomb
+                # drop, not a stop distance, and a flyer can hover over the
+                # hitbox; no source gives the break point, so it stays the
+                # Town Hall centre (game data: Battle Blimp
+                # PreferredMovementTarget=Town Hall, no break distance).
                 arrived = u.x == target.x and u.y == target.y
             else:
                 arrived = target.edge_distance(u.x, u.y) <= u.range
