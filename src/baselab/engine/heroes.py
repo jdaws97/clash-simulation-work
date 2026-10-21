@@ -299,14 +299,27 @@ def tick(battle, u: Unit):
         ]
         if candidates:
             target = min(candidates, key=lambda b: dist(b.x, b.y, u.x, u.y))
-            # Radius and cooldown from Meteor Staff; flight time is unstated.
+            # Radius and cooldown from Meteor Staff. The meteor falls for the
+            # spell's deploy time (its pre-deploy effect is the projectile, the
+            # deploy effect the impact) and lands where the target stood, so
+            # it is wasted on a defense destroyed meanwhile (wiki: Meteor
+            # Staff). ChargingTimeMS=300 may add to the fall; not applied.
+            # game data v18.200.9: MPMeteorStaffSpell.DeployTimeMS=800 -> impact 0.8 s after the cast.
             with effects.damage_source(battle, u, "meteor"):
-                _blast(
-                    battle,
-                    target.x,
-                    target.y,
-                    stats.attrs("Meteor Staff")["radius"],
-                    _col("Meteor Staff", k.lv("Meteor Staff"), "damage per hit"),
+                battle.add_pending(
+                    Pending(
+                        t + 0.8,
+                        target.x,
+                        target.y,
+                        stats.attrs("Meteor Staff")["radius"],
+                        _col("Meteor Staff", k.lv("Meteor Staff"), "damage per hit"),
+                        True,
+                        True,
+                        u.name,
+                        extra={"hero_impact": "blast"},
+                        actor=u,
+                        effect="meteor",
+                    )
                 )
         k.next_meteor = t + _col("Meteor Staff", k.lv("Meteor Staff"), "cooldown time")
     if k.has("Electro Boots"):
@@ -545,6 +558,11 @@ def activate(battle, u: Unit):
 
         elif e == "Earthquake Boots":
             # Damage percentages and eight-tile radius (wiki: Earthquake Boots).
+            # All five hits apply at once, as for the Earthquake Spell. The
+            # spell row spaces them 0.4 s apart after ChargingTimeMS=300 and
+            # HitTimeMS=400, but how those two combine into a first-hit time
+            # is not stated, so the timing is left instant.
+            # game data v18.200.9: Earthquake Boots Spell.TimeBetweenHitsMS=400 -> 0.4 s between hits.
             pct = _col(e, lv, "building damage %") / 100.0
             for b in battle.buildings:
                 if b.alive and b.counted and b.edge_distance(u.x, u.y) <= 8.0:
@@ -1348,14 +1366,11 @@ def summon_tick(battle, unit):
     # Bomb cadence is the attack interval (wiki: Lavaloon Puppet/Lavaloon).
     due = unit.extra.get("bomb_next", unit.spawned_at + unit.interval)
     if battle.t >= due:
-        # Direct hits are known; bomb splash radius and initial phase are unstated.
-        for building in battle.buildings:
-            if (
-                building.alive
-                and building.counted
-                and building.edge_distance(unit.x, unit.y) == 0.0
-            ):
-                battle.hit_building(building, unit.dmg)
+        # Each bomb splashes ground targets around the Lavaloon itself; the
+        # initial phase is unstated.
+        # game data v18.200.9: GW Equipment Lavaloon.DamageRadius=180 -> 1.8 tiles.
+        # game data v18.200.9: GW Equipment Lavaloon.SelfAsAoeCenter=TRUE -> centred on itself.
+        units._area_hit(battle, unit, unit.x, unit.y, 1.8, unit.dmg, walls=True)
         battle.spawn(
             "Lavaloon Pup",
             unit.team,

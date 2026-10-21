@@ -56,8 +56,16 @@ SPECS: dict[str, UnitSpec] = {
         S("Archer"),
         S("Giant", prefer="defense"),
         S("Goblin", prefer="resource", vs_resources=2.0),
-        S("Wall Breaker", prefer="wall", attack="suicide", splash=2.0, vs_walls=40.0, death_damage="Damage when destroyed", death_radius=2.0),
-        S("Balloon", prefer="defense", walls="fly", attack="splash", splash=1.2, splash_ground_only=True, engages_units=False, death_damage="Damage Upon Death", death_radius=1.2),
+        # The wiki's 2-tile "Damage Radius" is the one wiki radius that does not
+        # copy the game data (Balloon, Valkyrie, Golem, Dragon Rider, Super Wall
+        # Breaker, Super Bowler, Stone Slammer... all equal Radius/100). The blast
+        # is centred on the target wall (no SelfAsAoeCenter); radii reach target
+        # edges, so 0.8 covers the target wall and its eight neighbours.
+        # game data v18.200.9: Wall Breaker.DamageRadius=80 -> 0.8 tiles around the target.
+        # game data v18.200.9: Wall Breaker.DieDamageRadius=150 -> 1.5 tiles around himself.
+        S("Wall Breaker", prefer="wall", attack="suicide", splash=0.8, vs_walls=40.0, death_damage="Damage when destroyed", death_radius=1.5),
+        # game data v18.200.9: Balloon.DieDamageDelay=416 -> the death bomb lands 0.416 s later.
+        S("Balloon", prefer="defense", walls="fly", attack="splash", splash=1.2, splash_ground_only=True, engages_units=False, death_damage="Damage Upon Death", death_radius=1.2, death_delay=0.416),
         S("Wizard", attack="splash", splash=0.3),
         S("Healer", prefer="support", walls="fly", attack="heal", splash=1.5, engages_units=False),
         S("Dragon", walls="fly", attack="splash", splash=0.3),
@@ -66,7 +74,8 @@ SPECS: dict[str, UnitSpec] = {
         S("Miner", walls="ignore", special=("burrow",)),
         S("Electro Dragon", walls="fly", attack="chain", chain=4, chain_range=3.0, chain_decay=0.8, special=("death_bolts",)),
         S("Yeti", special=("yetimites",)),
-        S("Dragon Rider", prefer="defense", walls="fly", engages_units=False, death_damage="Damage Upon Death", death_radius=2.0),
+        # game data v18.200.9: Dragon Rider.DieDamageDelay=600 -> death damage 0.6 s after death.
+        S("Dragon Rider", prefer="defense", walls="fly", engages_units=False, death_damage="Damage Upon Death", death_radius=2.0, death_delay=0.6),
         S("Electro Titan", special=("titan_aura",)),
         S("Root Rider", prefer="defense", walls="smash", engages_units=False),
         S("Thrower"),
@@ -94,6 +103,11 @@ SPECS: dict[str, UnitSpec] = {
         S("Ice Golem", prefer="defense", engages_units=False, death_freeze="Freeze Time After Death / On Offense", death_freeze_radius=7.5, special=("chill",)),
         S("Headhunter", prefer="heroes", walls="ignore", vs_heroes=4.0, special=("hh_poison",)),
         S("Apprentice Warden", prefer="follow", walls="ignore", special=("life_aura",)),
+        # Wiki: Druid, "bounce between up to 4 targets" (chain=3 extra). The
+        # game data's count does not settle it: ProjectileBounces is the
+        # total impact count for the Bowler (2 -> two hits) and Super Bowler
+        # (3 -> three), which would make the Druid's 3 three recipients.
+        # game data v18.200.9: Druid.ProjectileBounces=3 -> 3 (meaning unresolved).
         S("Druid", prefer="support", walls="ignore", attack="heal_chain", chain=3, heal_air=True, engages_units=False, special=("bear_after",)),
         S("Furnace", prefer="none", attack="none", engages_units=False, special=("furnace",)),
         # Wiki: Meteor Golem deals fivefold damage to walls.
@@ -107,10 +121,22 @@ SPECS: dict[str, UnitSpec] = {
         S("Ruin Witch", prefer="rubble", attack="none", engages_units=False, special=("ruin_witch",)),
         # ---------------- Super troops
         S("Super Barbarian", special=("start_rage",)),
+        # Pierce reach left at the wiki's 11.5 tiles ("arrow range of 11.5
+        # tiles", infobox "12 (Projectile)"). The game data gives
+        # AttackRange 600 + PenetratingExtraRange 400; whether the extra range
+        # runs from the archer's 6-tile reach (10 tiles to a footprint edge,
+        # i.e. 11.5 to a 3x3 centre) or from the target centre is not stated,
+        # and the wiki also says the arrow travels a fixed distance.
+        # game data v18.200.9: Super Archer.PenetratingExtraRange=400 -> 4 tiles past attack range.
         S("Super Archer", attack="pierce", pierce=11.5),
         S("Super Giant", prefer="defense", vs_walls=5.0),
         S("Sneaky Goblin", prefer="resource", vs_resources=2.0, special=("cloak",)),
-        S("Super Wall Breaker", prefer="wall", attack="suicide", splash=1.6, vs_walls=40.0, death_damage="Damage when destroyed", death_radius=1.6, special=("mega_bomb",)),
+        # The wiki's 1.6 tiles is the Mega Bomb (death) radius; the arrival
+        # blast is the Wall Breaker's, centred on the target wall.
+        # game data v18.200.9: Super Wall Breaker.DamageRadius=80 -> 0.8 tiles around the target.
+        # game data v18.200.9: Super Wall Breaker.DieDamageRadius=160 -> 1.6 tiles around himself.
+        S("Super Wall Breaker", prefer="wall", attack="suicide", splash=0.8, vs_walls=40.0, death_damage="Damage when destroyed", death_radius=1.6, special=("mega_bomb",)),
+        # game data v18.200.9: Rocket Balloon.DieDamageDelay=416 -> the death bomb lands 0.416 s later.
         S(
             "Rocket Balloon",
             prefer="defense",
@@ -120,10 +146,15 @@ SPECS: dict[str, UnitSpec] = {
             splash_ground_only=True,
             death_damage="Damage Upon Death",
             death_radius=1.2,
+            death_delay=0.416,
             special=("boosters",),
         ),
         S("Super Wizard", attack="chain", chain=9, chain_range=3.0, chain_decay=0.4, chain_from_primary=True),
-        S("Super Dragon", walls="fly", attack="splash", splash=1.0, special=("burst",)),
+        # The wiki's "about 1-tile radius" with its 21-tile shape (5x5 less the
+        # corners) is exactly a 1.6 radius from a tile centre measured to tile
+        # edges; units.py applies that footprint (_dragon_footprint).
+        # game data v18.200.9: Super Dragon.DamageRadius=160 -> 1.6 tiles.
+        S("Super Dragon", walls="fly", attack="splash", splash=1.6, special=("burst",)),
         S("Inferno Dragon", walls="fly", attack="beam"),
         S("Super Minion", walls="fly", special=("long_shot",)),
         S("Super Valkyrie", attack="spin", splash=1.0, special=("death_rage",)),
@@ -138,22 +169,28 @@ SPECS: dict[str, UnitSpec] = {
             special=("ice_chill",),
         ),
         S("Super Bowler", attack="bounce", splash=0.6, bounces=2, bounce_gap=3.0),
-        S("Super Miner", walls="ignore", attack="beam", special=("burrow",), death_damage="Damage when Destroyed", death_radius=2.0),
+        # game data v18.200.9: Super Miner.DieDamageDelay=1000 -> death damage 1 s after death.
+        S("Super Miner", walls="ignore", attack="beam", special=("burrow",), death_damage="Damage when Destroyed", death_radius=2.0, death_delay=1.0),
         S("Super Hog Rider", prefer="defense", walls="ignore", special=("hog_split",)),
         S("Super Yeti", special=("electromites",)),
         # ---------------- Siege machines
         S("Wall Wrecker", prefer="th", vs_walls=10.0, engages_units=False, special=("siege_cc",)),
         S("Battle Blimp", prefer="th", walls="fly", attack="none", engages_units=False, special=("siege_cc", "blimp_bombs")),
+        # Two hitboxes (wiki: "1 and 3 tile Radius"); units.py applies both.
+        # game data v18.200.9: Stone Slammer.DamageRadius=100 -> 1-tile primary hitbox.
+        # game data v18.200.9: Stone Slammer.Damage2Radius=300 -> 3-tile secondary hitbox.
         # game data v18.200.9: Stone Slammer.DieDamageRadius=300 -> 3 tiles.
+        # game data v18.200.9: Stone Slammer.DieDamageDelay=416 -> death damage 0.416 s after death.
         S(
             "Stone Slammer",
             prefer="defense",
             walls="fly",
             attack="splash",
-            splash=3.0,
+            splash=1.0,
             engages_units=False,
             death_damage="Damage when Destroyed",
             death_radius=3.0,
+            death_delay=0.416,
             special=("siege_cc",),
         ),
         S("Siege Barracks", prefer="none", attack="none", engages_units=False, special=("siege_cc", "siege_barracks")),
@@ -165,7 +202,10 @@ SPECS: dict[str, UnitSpec] = {
             engages_units=False,
             special=("siege_cc", "logs"),
         ),
-        S("Flame Flinger", prefer="defense", attack="splash", splash=1.5, engages_units=False, special=("siege_cc", "flinger")),
+        # Impact splash (the 22 s flame field is a separate spell, not modelled).
+        # game data v18.200.9: Flame Flinger.DamageRadius=100 -> 1 tile around the target.
+        # game data v18.200.9: Flame Flinger.DamageMultiplierPercent=800 -> x8 to walls.
+        S("Flame Flinger", prefer="defense", attack="splash", splash=1.0, vs_walls=8.0, engages_units=False, special=("siege_cc", "flinger")),
         S("Battle Drill", prefer="defense", walls="ignore", engages_units=False, special=("siege_cc", "burrow", "drill_stun")),
         S("Troop Launcher", prefer="none", attack="none", engages_units=False, special=("siege_cc", "troop_launcher")),
         S("Sky Wagon", prefer="defense", walls="fly", attack="none", engages_units=False, special=("siege_cc", "sky_wagon")),
@@ -199,7 +239,8 @@ SPECS: dict[str, UnitSpec] = {
         ),  # Wiki: Furnace/Firemite.
         S("Bear", prefer="defense"),
         # ---------------- TH18 Guardians (defend from the Town Hall)
-        S("Longshot", attack="splash", splash=1.0, death_damage="Damage Upon Death", death_radius=3.5, special=("guardian",)),
+        # game data v18.200.9: Longshot.DieDamageDelay=200 -> death damage 0.2 s after death.
+        S("Longshot", attack="splash", splash=1.0, death_damage="Damage Upon Death", death_radius=3.5, death_delay=0.2, special=("guardian",)),
         S("Smasher", attack="splash", splash=2.5, special=("guardian", "smasher")),
         S("Logger", attack="splash", splash=1.5, special=("guardian", "logger")),
         S("Ice Pup", walls="fly", special=("ice_chill",)),
@@ -214,7 +255,11 @@ SPECS: dict[str, UnitSpec] = {
         S("Super Rider", vs_walls=2.0),  # Wiki: Super Hog Rider/Super Rider.
         S("Super Hog", prefer="defense", walls="ignore"),
         S("Henchman", walls="ignore"),
-        S("Lavaloon", prefer="defense", walls="fly", attack="splash", splash=1.2, engages_units=False),
+        # The engine's "Lavaloon" is the Lavaloon Puppet summon (heroes.py);
+        # the event troop's row has the same radius. Bombs: heroes.summon_tick.
+        # game data v18.200.9: GW Equipment Lavaloon.DamageRadius=180 -> 1.8 tiles.
+        # game data v18.200.9: GW Equipment Lavaloon.SelfAsAoeCenter=TRUE -> centred on itself.
+        S("Lavaloon", prefer="defense", walls="fly", attack="splash", splash=1.8, engages_units=False),
         S("Booger"),
         # game data v18.200.9: Giant Giant.DamageRadius=150 -> 1.5 tiles.
         S(
@@ -380,6 +425,11 @@ def unit_numbers(name: str, level: int) -> dict:
     if name == "Booger":
         # game data v18.200.9: Booger.AttackRange=90 -> 0.9 tiles.
         rng = 0.9
+    if name == "Bear":
+        # The wiki's 0.2 tiles is out of line with every other melee reach,
+        # which copies AttackRange/100 (Super Barbarian 0.6, Hog Rider 0.6).
+        # game data v18.200.9: Bear.AttackRange=60 -> 0.6 tiles.
+        rng = 0.6
     if name == "Healer":
         # Wiki: Healer gives 5 tiles; ClashKing's 450/100 gives 4.5.
         rng = 5.0
