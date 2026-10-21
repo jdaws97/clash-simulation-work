@@ -52,7 +52,8 @@ def locate(lines, quote):
     hits = []
     for i in range(len(lines)):
         window = norm(" ".join(t for _, t in lines[i:i + 4]))
-        if q in window:
+        # whole words only: "ice the queen" must not match "twice the queen"
+        if f" {q} " in f" {window} ":
             hits.append(lines[i][0])
     return hits
 

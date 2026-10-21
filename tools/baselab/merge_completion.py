@@ -3,7 +3,8 @@ the verified steps into data/playbooks/<family>.json.
 
 A step is kept only if every field is in the executor vocabulary, its id is
 new, its "after" references exist, and at least one cite quote is found in
-that video's transcript within 30 s of the stated time (check_playbook.locate).
+that video's transcript within 30 s of the stated time (check_playbook.locate);
+the video must be one of the family playbook's sources.
 Cites that fail are dropped; a step left with no good cite is rejected.
 Merged steps carry "completion": true.
 
@@ -77,6 +78,9 @@ def merge(fam: str, dry: bool, folder: str = "completion") -> str:
     path = ROOT / "data" / "playbooks" / f"{fam}.json"
     pb = json.loads(path.read_text(encoding="utf-8"))
     ids = {s["id"] for s in pb["steps"]}
+    # a cite must come from one of this family's source videos: a quote
+    # found in some other army's video is not evidence for this playbook
+    sources = {s.get("video") if isinstance(s, dict) else s for s in pb.get("sources", [])}
     kept, rejected = [], []
     for st in rep.get("add_steps", []):
         why = []
@@ -95,7 +99,7 @@ def merge(fam: str, dry: bool, folder: str = "completion") -> str:
         good = []
         for c in st.get("cite", []):
             tr = SRC / "transcripts" / f"{c.get('video')}.json"
-            if not tr.exists():
+            if not tr.exists() or (sources and c.get("video") not in sources):
                 continue
             hits = locate(json.loads(tr.read_text(encoding="utf-8"))["lines"], c.get("quote", ""))
             if hits and (c.get("t") is None or any(abs(h - float(c["t"])) <= 30 for h in hits)):

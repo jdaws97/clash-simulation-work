@@ -11,7 +11,11 @@ stars and destruction next to what really happened, and summary errors:
   mean absolute error on destruction %
   calibration: mean predicted 3-star vs real 3-star rate
 
-Usage: python tools/baselab/replay_log.py BATTLELOG.json --base data/reference-bases/your-base.json
+Each defense is replayed on the layout that was up that day, from
+data/live/base-history.json (days with no known layout are skipped and
+listed); --base replays every defense on one layout instead.
+
+Usage: python tools/baselab/replay_log.py BATTLELOG.json [--base data/reference-bases/your-base.json]
        [--since 20261012] [--until 20261016] [--seeds 3] [--techniques] [--strength calibrated|raw]
 """
 
@@ -55,12 +59,20 @@ def to_build(army: dict, th: int, n: int) -> tuple[dict, list]:
         cc[t] = cc.get(t, 0) + c
     heroes, loadouts = [], {}
     for h in army.get("heroes", []):
+        if h["hero"].startswith(("hero#", "unparsed:")):
+            unknown.append(h["hero"])
+            continue
         heroes.append(h["hero"])
         eq = [e for e in h.get("equipment", []) if not e.startswith("equipment#")]
+        unknown += [e for e in h.get("equipment", []) if e.startswith("equipment#")]
+        pet = h.get("pet")
+        if pet and pet.startswith("pet#"):
+            unknown.append(pet)
+            pet = None
         # the log is the truth: a hero shown without equipment or pet gets
         # none, never the sim's default loadout (it could clash with another
         # hero's real pet)
-        loadouts[h["hero"]] = (eq + [None, None])[:2] + [h.get("pet")]
+        loadouts[h["hero"]] = (eq + [None, None])[:2] + [pet]
     for t in troops:
         if t.startswith("troop#"):
             unknown.append(t)
@@ -102,10 +114,24 @@ def family_strength(build) -> float:
     return sum(vals) / len(vals) if vals else 1.0
 
 
+HISTORY = ROOT / "data" / "live" / "base-history.json"
+
+
+def base_for_day(periods: list, day: str):
+    """The layout up on a battle day ("YYYYMMDD", the log's UTC date) from
+    the base-history periods (inclusive; "to": null = still up). None when
+    no period covers the day or its layout is unknown."""
+    d = f"{day[:4]}-{day[4:6]}-{day[6:8]}"
+    for p in periods:
+        if p["from"] <= d and (p.get("to") is None or d <= p["to"]):
+            return p.get("layout")
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("log")
-    ap.add_argument("--base", default=str(ROOT / "data" / "reference-bases" / "your-base.json"))
+    ap.add_argument("--base", help="replay every defense on this layout (default: the layout up that day, base-history.json)")
     ap.add_argument("--since", default="00000000")
     ap.add_argument("--until", default="99999999")
     ap.add_argument("--seeds", type=int, default=3)
@@ -114,10 +140,20 @@ def main():
     ap.add_argument("--strength", choices=["calibrated", "raw"], default="calibrated")
     ap.add_argument("--out")
     args = ap.parse_args()
+    if args.angles < SCOUT:
+        ap.error(f"--angles must be at least SCOUT={SCOUT} (the attacker scouts that many sides)")
     own = json.loads((ROOT / "data" / "your-levels.json").read_text())
-    lay = Layout.load(Path(args.base))
-    lay.levels, lay.wall_level, lay.hero_levels = dict(own["levels"]), own["wall_level"], dict(own["hero_levels"])
-    lj = lay.to_json()
+    periods = None if args.base else json.loads(HISTORY.read_text(encoding="utf-8"))["periods"]
+    layouts: dict = {}
+
+    def layout_json(path):
+        if path not in layouts:
+            lay = Layout.load(Path(path) if Path(path).is_absolute() else ROOT / path)
+            lay.levels, lay.wall_level, lay.hero_levels = dict(own["levels"]), own["wall_level"], dict(own["hero_levels"])
+            layouts[path] = lay.to_json()
+        return layouts[path]
+
+    skipped = []
     text = Path(args.log).read_text(encoding="utf-8")
     # a battle log file from the API, or the growing archive (snapshot_log.py)
     items = [json.loads(x) for x in text.splitlines() if x.strip()] if args.log.endswith(".jsonl") else json.loads(text)["items"]
@@ -128,6 +164,11 @@ def main():
         day = b["battleTimestamp"][:8]
         if not args.since <= day <= args.until:
             continue
+        base = args.base or base_for_day(periods, day)
+        if base is None:
+            skipped.append(day)
+            continue
+        lj = layout_json(base)
         build, unknown = to_build(decode(b.get("armyShareCode", "")), b["opponentTownHallLevel"], n)
         st = family_strength(build) if args.strength == "calibrated" else 1.0
         techs = techniques(build) if args.techniques else [None]
@@ -155,11 +196,13 @@ def main():
         sim_t3 = float(np.mean(t3)) if t3 else None
         main_troop = max(build["troops"].items(), key=lambda kv: kv[1])[0] if build["troops"] else "?"
         row = dict(n=n, day=day, th=b["opponentTownHallLevel"], army=main_troop, real_stars=b["stars"], real_pct=b["destructionPercentage"],
-                   p3=p3, stars=es, pct=ep, strength=round(st, 2), unknown=unknown,
+                   p3=p3, stars=es, pct=ep, strength=round(st, 2), unknown=unknown, base=base,
                    real_time=b.get("battleTime"), sim_time_3star=sim_t3)
         rows.append(row)
         print(f"{day} TH{row['th']} {main_troop:16s} real {b['stars']}* {b['destructionPercentage']:3d}% | sim P(3*) {p3:4.0%} "
               f"E[stars] {es:.2f} E[%] {ep:5.1f}  time real {b.get('battleTime')}s sim-3* {sim_t3 or 0:.0f}s  str {st:.2f} {'unknown: ' + ','.join(unknown) if unknown else ''}", flush=True)
+    if skipped:
+        print(f"== skipped {len(skipped)} defenses with no known layout in {HISTORY.name}: {', '.join(skipped)}", flush=True)
     if rows:
         brier = np.mean([(r["p3"] - (r["real_stars"] >= 3)) ** 2 for r in rows])
         mae = np.mean([abs(r["pct"] - r["real_pct"]) for r in rows])

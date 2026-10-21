@@ -55,10 +55,11 @@ def _key(name: str) -> str:
 
 
 def _rows(ents: dict, cited: str):
-    """Rows for a cited entity, tolerant of how citations are written:
-    an optional file prefix ("Traps.csv SkeletonTrap"), names with or
-    without spaces, "Bomb/GiantBomb" (every one must exist) and a trailing
-    "*" wildcard (any entity with that prefix)."""
+    """Row groups (one per entity) for a cited entity, tolerant of how
+    citations are written: an optional file prefix ("Traps.csv
+    SkeletonTrap"), names with or without spaces, "Bomb/GiantBomb" (every
+    one must exist) and a trailing "*" wildcard (every entity with that
+    prefix). None when a named entity is missing."""
     name = re.sub(r"^\S+\.csv\s+", "", cited.strip())
     index = getattr(_rows, "_index", None)
     if index is None or index[0] is not ents:
@@ -70,29 +71,46 @@ def _rows(ents: dict, cited: str):
     for part in name.split("/"):
         k = _key(part)
         if k.endswith("*"):
-            hit = [r for kk, rs in index[1].items() if kk.startswith(k[:-1]) for r in rs]
+            hit = [rs for kk, rs in index[1].items() if kk.startswith(k[:-1])]
         else:
-            hit = index[1].get(k, [])
+            hit = [index[1][k]] if index[1].get(k) else []
         if not hit:
             return None
         out += hit
     return out
 
 
+def _holds(groups, field, val) -> bool:
+    """A cite holds when every cited entity that sets the field has the
+    value in some level row (not just one of "Bomb/GiantBomb"), and at
+    least one does."""
+    sets = [{r.get(field) for r in g} - {None, ""} for g in groups]
+    return any(sets) and all(val in s for s in sets if s)
+
+
 def cmd_cites(folder: Path, out: list) -> int:
     ents = tables(folder)
     bad = checked = 0
+    unparsed = []
     for f in sorted((ROOT / "src").rglob("*.py")):
         for n, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
-            for _, ent, field, val in CITE.findall(line):
+            found = CITE.findall(line)
+            if not found and "game data v" in line:
+                unparsed.append(f"{f.relative_to(ROOT)}:{n}")
+            for _, ent, field, val in found:
                 checked += 1
-                rows = _rows(ents, ent)
-                vals = {r.get(field) for r in rows} if rows else set()
-                if val.rstrip(".") not in vals:
+                groups = _rows(ents, ent)
+                if not groups or not _holds(groups, field, val.rstrip(".")):
                     bad += 1
-                    now = sorted(v for v in vals if v not in (None, ""))[:6] if rows else "entity not found"
+                    vals = set().union(*({r.get(field) for r in g} for g in groups)) if groups else set()
+                    now = sorted(v for v in vals if v not in (None, ""))[:6] if groups else "entity not found"
                     out.append(f"| {f.relative_to(ROOT)}:{n} | {ent.strip()}.{field} | cited {val} | now {now} |")
     out.insert(0, f"Hard-coded values checked: {checked}, stale or not found: {bad}\n\n| where | field | cited | in {Path(folder).name} |\n|---|---|---|---|")
+    if unparsed:
+        # prose cites ("game data vX Traps.csv ActionFrame ... Bomb=35") the
+        # pattern cannot read: listed so a patch day checks them by hand
+        out.append(f"\nLines citing game data in a form this check cannot read ({len(unparsed)}, check by hand): "
+                   + ", ".join(unparsed))
     return bad
 
 

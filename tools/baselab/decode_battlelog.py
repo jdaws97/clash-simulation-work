@@ -41,13 +41,18 @@ def decode(code: str) -> dict:
     if "h" in sections:
         heroes = []
         for part in sections["h"].split("-"):
-            m = re.match(r"(\d+)(?:p(\d+))?(?:e([\d_]+))?", part)
+            # hero, then optional mode (the Grand Warden's "m1", e.g.
+            # "2m1p2e4_34"), pet and equipment; the whole part must parse,
+            # or pet and equipment after an unknown letter would be lost
+            m = re.fullmatch(r"(\d+)(?:m(\d+))?(?:p(\d+))?(?:e([\d_]+))?", part)
             if not m:
+                heroes.append({"hero": f"unparsed:{part}", "pet": None, "equipment": []})
                 continue
-            h, p, e = m.groups()
+            h, mode, p, e = m.groups()
             heroes.append(
                 {
                     "hero": name("hero", int(h)),
+                    "mode": int(mode) if mode else None,
                     "pet": name("pet", int(p)) if p else None,
                     "equipment": [name("equipment", int(x)) for x in e.split("_")] if e else [],
                 }
