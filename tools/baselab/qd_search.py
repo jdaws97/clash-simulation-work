@@ -173,7 +173,9 @@ def main():
     say("== full battle set (TH zone, Eagle depth, compartments, spread)")
     for l, (s, ev) in order:
         say(f"  {l.name}  {s:6.2f}  {ev.summary()}")
-    hold = meta_scenarios(args.mode, 8, (21, 22, 23))
+    # fresh battles: sides halfway between the full set's 8 (same angles
+    # would repeat it; seed group 21 alone has group 1's skill and flank)
+    hold = meta_scenarios(args.mode, 8, (21, 22, 23), angle_offset=math.pi / 8)
     own = own_levels()
     refs = []
     for f in [ROOT / "output/winners/ranked-funnel1.json", ROOT / "data/reference-bases/your-base.json"]:

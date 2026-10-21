@@ -299,8 +299,60 @@ def build(bp: Blueprint) -> Layout:
                 raise RuntimeError(f"could not place {key}")
     _orient_sweepers(lay)
     _orient_firespitters(lay)
+    top_up_walls(lay, board.occ, rng)  # the rings and spokes may leave walls unused
     _place_traps(lay, board, rng, bp)
     return lay
+
+
+def top_up_walls(lay: Layout, occ: set, rng: random.Random, target: int = WALL_COUNT, close_gaps: bool = False) -> int:
+    """Place walls until the layout has `target` of them: every wall the
+    player owns must be on the map. `occ` holds the tiles already taken
+    (walls, buildings, traps) and is updated. With `close_gaps`, one-tile
+    gaps between two walls in line are closed first (a crossover seam);
+    then short dead-end spikes grow off existing walls, then single walls
+    go next to a wall. Returns how many walls were added."""
+    added = 0
+
+    def free(t):
+        return 0 <= t[0] < VILLAGE and 0 <= t[1] < VILLAGE and t not in occ
+
+    def put(t):
+        nonlocal added
+        lay.walls.add(t)
+        occ.add(t)
+        added += 1
+
+    if close_gaps:
+        gaps = sorted({(x + dx, y + dy) for x, y in lay.walls for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))})
+        rng.shuffle(gaps)
+        for x, y in gaps:
+            if len(lay.walls) >= target:
+                break
+            w = lay.walls
+            if free((x, y)) and (((x - 1, y) in w and (x + 1, y) in w) or ((x, y - 1) in w and (x, y + 1) in w)):
+                put((x, y))
+    wl = sorted(lay.walls)
+    for _ in range(300 if wl else 0):
+        left = target - len(lay.walls)
+        if left < 2:
+            break
+        wx, wy = rng.choice(wl)
+        dx, dy = rng.choice(((1, 0), (-1, 0), (0, 1), (0, -1)))
+        n = rng.randint(2, min(4, left))
+        seg = [(wx + dx * k, wy + dy * k) for k in range(1, n + 1)]
+        end = (wx + dx * (n + 1), wy + dy * (n + 1))
+        if all(free(t) for t in seg) and end not in lay.walls:
+            for t in seg:
+                put(t)
+    if len(lay.walls) < target:
+        near = sorted({(x + dx, y + dy) for x, y in lay.walls for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))})
+        rng.shuffle(near)
+        for t in near + [(x, y) for x in range(VILLAGE) for y in range(VILLAGE)]:
+            if len(lay.walls) >= target:
+                break
+            if free(t):
+                put(t)
+    return added
 
 
 def _orient_sweepers(lay: Layout):
@@ -373,5 +425,9 @@ def _place_traps(lay: Layout, board: _Board, rng: random.Random, bp: Blueprint):
             x, y = rng.randrange(VILLAGE), rng.randrange(VILLAGE)
             if board.fits(x, y, size):
                 board.take(x, y, size)
-                lay.traps.append(TrapPlacement(key, x, y, "ground" if key == "skeleton" else None))
+                mode = None
+                if key == "skeleton":  # same air/ground split as the planned spots
+                    mode = "air" if sk_air > 0 else "ground"
+                    sk_air -= 1
+                lay.traps.append(TrapPlacement(key, x, y, mode))
                 placed += 1

@@ -33,7 +33,7 @@ import random
 from collections import deque
 
 from .deploy import inside_holes, outside
-from .generator import Blueprint, _Board, _orient_sweepers, _place_traps
+from .generator import Blueprint, _Board, _orient_sweepers, _place_traps, top_up_walls
 from .layout import Layout, Placement
 from .mechanics import BUILDING_TYPES, INVENTORY, VILLAGE, WALL_COUNT
 
@@ -471,6 +471,8 @@ def design(kind: str, seed: int, town_hall: int = 16, zone: str | None = None) -
             b.mode = rng.choice(["cake", "candle", "hunter"])
     if kind == "organic":
         _spikes(lay, board, rng)
+    # every wall must be placed: the styled plans can leave up to ~90 unused
+    top_up_walls(lay, board.occ, rng)
     _orient_sweepers(lay)
     _place_traps(lay, board, rng, Blueprint(town_hall=town_hall, skeleton_air=rng.randint(1, 3), seed=seed))
     lay.notes = f"Original {kind} design (seed {seed}), wall plan first; not derived from any existing base."

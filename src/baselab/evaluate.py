@@ -175,7 +175,7 @@ def angles(n: int, offset: float = 0.0):
     return [offset + 2 * math.pi * k / n for k in range(n)]
 
 
-def ranked_scenarios(n_angles=8, seeds=(0,), mix=None):
+def ranked_scenarios(n_angles=8, seeds=(0,), mix=None, angle_offset=0.0):
     """TH17/TH18 attackers, weighted by the real ranked meta."""
     mix = mix or {
         ("hydra", 18): 0.27,
@@ -189,7 +189,7 @@ def ranked_scenarios(n_angles=8, seeds=(0,), mix=None):
     }
     out = []
     for (army, th), w in mix.items():
-        for k, a in enumerate(angles(n_angles, offset=0.37 * th + 0.11 * len(army))):
+        for k, a in enumerate(angles(n_angles, offset=0.37 * th + 0.11 * len(army) + angle_offset)):
             for s in seeds:
                 out.append(Scenario(army, th, a, s * 7 + k, w / (n_angles * len(seeds)), group=s))
     return out
@@ -208,10 +208,15 @@ def target_scenarios(town_hall: int, n_angles=8, seeds=(0,), modifier=None):
     return out
 
 
-def meta_scenarios(mode="ranked", n_angles=8, seeds=(0,), modifier=None, th_mix=None, techniques_on=False):
+def meta_scenarios(mode="ranked", n_angles=8, seeds=(0,), modifier=None, th_mix=None, techniques_on=False, angle_offset=0.0):
     """Scenarios from the real meta builds (meta_armies.py). Ranked: TH18 and
     TH17 attackers (65/35 by default); war: TH16. Within a Town Hall each build
-    is weighted by archetype share x build share."""
+    is weighted by archetype share x build share.
+
+    The approach angles depend only on the build and `n_angles`, not on the
+    seeds, so a hold-out set needs `angle_offset` (e.g. half an angle step)
+    to face sides the search never saw; the seed alone changes only the
+    skill quantile (seed % 5), the charge flank (seed % 2) and jitter."""
     from .meta_armies import library
 
     th_mix = th_mix or ({18: 0.65, 17: 0.35} if mode == "ranked" else {16: 1.0})
@@ -220,7 +225,7 @@ def meta_scenarios(mode="ranked", n_angles=8, seeds=(0,), modifier=None, th_mix=
         for b, w in library(th):
             bid = f"meta:{b['archetype']}-{b['th']}-{b['build']}"
             techs = techniques(b) if techniques_on else [None]
-            for k, a in enumerate(angles(n_angles, offset=0.31 * th + 0.07 * len(bid))):
+            for k, a in enumerate(angles(n_angles, offset=0.31 * th + 0.07 * len(bid) + angle_offset)):
                 for s in seeds:
                     for tech in techs:
                         out.append(Scenario(bid, th, a, s * 7 + k, tw * w / (n_angles * len(seeds) * len(techs)), modifier, group=s, charge=tech))
@@ -287,13 +292,13 @@ def blend(scripted, adaptive, share):
             for sc in scripted] + list(adaptive)
 
 
-def war_scenarios(n_angles=8, seeds=(0,)):
+def war_scenarios(n_angles=8, seeds=(0,), angle_offset=0.0):
     """TH16 attackers (war/CWL is mostly same-TH), TH16 same-TH meta weights."""
     mix = {("hydra", 16): 0.375, ("edrag", 16): 0.257, ("rootrider", 16): 0.146, ("throwers", 16): 0.061}
     tot = sum(mix.values())
     out = []
     for (army, th), w in mix.items():
-        for k, a in enumerate(angles(n_angles, offset=0.29 * len(army))):
+        for k, a in enumerate(angles(n_angles, offset=0.29 * len(army) + angle_offset)):
             for s in seeds:
                 out.append(Scenario(army, th, a, s * 7 + k, w / tot / (n_angles * len(seeds)), group=s))
     return out

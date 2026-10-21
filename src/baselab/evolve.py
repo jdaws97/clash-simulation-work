@@ -16,6 +16,7 @@ import random
 from collections import Counter
 
 from .deploy import outside
+from .generator import top_up_walls
 from .layout import Layout, Placement, TrapPlacement
 from .mechanics import BUILDING_TYPES, INVENTORY, TRAP_INVENTORY, VILLAGE, WALL_COUNT
 from .optimize import _fill_hole, _fits, _occupied
@@ -47,7 +48,11 @@ def _place_near(occ, key, size, prefer, region, rng):
 
 def crossover(a: Layout, b: Layout, rng: random.Random) -> Layout | None:
     cx, cy = 22 + rng.uniform(-6, 6), 22 + rng.uniform(-6, 6)
-    side = _side(cx, cy, rng.uniform(0, 2 * math.pi))
+    ang = rng.uniform(0, 2 * math.pi)
+    side = _side(cx, cy, ang)
+
+    def seam_dist(p):
+        return abs((p.x + p.size / 2 - cx) * math.cos(ang) + (p.y + p.size / 2 - cy) * math.sin(ang))
     child = a.copy()
     child.name = "child"
     child.walls = {t for t in a.walls if side(t[0] + 0.5, t[1] + 0.5)} | {t for t in b.walls if not side(t[0] + 0.5, t[1] + 0.5)}
@@ -74,7 +79,7 @@ def crossover(a: Layout, b: Layout, rng: random.Random) -> Layout | None:
     for key, n in counts.items():
         extra = n - inv.get(key, 0)
         if extra > 0:
-            mine = sorted([q for q in picked if q[0].key == key], key=lambda q: abs((q[0].x - cx) + (q[0].y - cy)))
+            mine = sorted([q for q in picked if q[0].key == key], key=lambda q: seam_dist(q[0]))
             for q in mine[:extra]:
                 picked.remove(q)
     child.buildings = [p for p, _ in picked]
@@ -129,6 +134,9 @@ def crossover(a: Layout, b: Layout, rng: random.Random) -> Layout | None:
                 return None
             child.traps.append(TrapPlacement(key, pos[0], pos[1], mode))
             occ.update((pos[0] + i, pos[1] + j) for i in range(size) for j in range(size))
+    # every wall stays placed: the seam and the buildings dropped on B's
+    # walls lose some, so close the seam's one-tile gaps and add the rest
+    top_up_walls(child, occ, rng, target=min(WALL_COUNT, max(len(a.walls), len(b.walls))), close_gaps=True)
     # wall budget: trim seam-most walls
     if len(child.walls) > WALL_COUNT:
         ws = sorted(child.walls, key=lambda t: math.hypot(t[0] - cx, t[1] - cy))

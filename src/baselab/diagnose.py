@@ -50,7 +50,13 @@ def _trace_one(args):
     ground, air = Counter(), Counter()
     cls = {c: Counter() for c in TRAFFIC}
     k = 0
-    while b.t < b.max_time:
+    # the same loop and end rules as Battle.run, so the traced battle is the
+    # battle evaluate() scores (it ends with Healers alone or lingers for
+    # unspent Lightning / Earthquake exactly as run() does)
+    validate = getattr(b.plan, "require_legal", None)
+    if validate is not None:
+        validate()
+    while not b.ended and (b.scouting or b.t < b.max_time):
         b.step()
         k += 1
         if k % 5 == 0:
@@ -67,11 +73,13 @@ def _trace_one(args):
                             cls["healer"][t] += 1
                         else:
                             cls["air_mass" if u.flying else "ground_mass"][t] += getattr(u, "housing", 1) or 1
+        if b.scouting:
+            continue
         if b.destroyed_counted >= b.total_counted:
             break
-        if b._next_deploy >= len(b.deployments) and not b.plan.has_pending():
-            if not any(u.alive and u.name != "Totem" and u.kind != "siege_idle" for u in b.attackers) and not b.pending:
-                break
+        if b.offense_finished():
+            break
+    b.ended = True
     r = b.result()
     walls = [(x - MARGIN, y - MARGIN) for (x, y), w in b.walls.items() if not w.alive]
     return r.stars, r.destruction, b.t, fell, walls, dict(ground), dict(air), {c: dict(v) for c, v in cls.items()}

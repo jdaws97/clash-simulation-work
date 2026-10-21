@@ -120,18 +120,32 @@ def _wall_runs(walls):
     return runs
 
 
+def _keep_count(cut_run, seg, n_cut):
+    """Walls a move took out of `cut_run` (in run order) that go back so the
+    wall count is unchanged: every wall must stay placed. The new segment may
+    reuse cut tiles; the rest of the shortfall is refilled from one end of
+    the cut, leaving the opening at the other end."""
+    seg = set(seg)
+    short = n_cut - len(seg)
+    if short <= 0:
+        return set()
+    return set([t for t in cut_run if t not in seg][:short])
+
+
 def _rewire(new: Layout, rng: random.Random):
     """Freeform wall move: take a short stretch out of a wall run and use
     those walls to build a new straight wall from one wall to another through
     open ground (splitting a compartment). Merges, splits and reshapes
-    compartments without any style template."""
+    compartments without any style template. The wall count never drops:
+    walls the new segment does not use go back into the cut."""
     runs = _wall_runs(new.walls)
     if not runs:
         return None
     run, _axis = rng.choice(runs)
     n = rng.randint(2, min(7, len(run)))
     a = rng.randrange(0, len(run) - n + 1)
-    cut = set(run[a:a + n])
+    cut_run = run[a:a + n]
+    cut = set(cut_run)
     walls = new.walls - cut
     occ = _occupied(new) - cut
     budget = WALL_COUNT - len(walls)
@@ -145,8 +159,11 @@ def _rewire(new: Layout, rng: random.Random):
             seg.append((x, y))
             x, y = x + dx, y + dy
         if (x, y) in walls and 2 <= len(seg) <= budget and set(seg) != cut:
-            new.walls = walls | set(seg)
-            return f"rewire wall ({n} out, {len(seg)} in)"
+            back = _keep_count(cut_run, seg, n)
+            if set(seg) | back == cut:
+                continue  # the same walls again
+            new.walls = walls | set(seg) | back
+            return f"rewire wall ({n - len(back)} out, {len(seg)} in)"
     return None
 
 
@@ -315,6 +332,7 @@ def guided_move(new: Layout, rng: random.Random, diag):
     tx, ty = _centre(th)
     walls = set(new.walls)
     removed: set = set()
+    removed_run: list = []
     if WALL_COUNT - len(walls) < 3:
         runs = _wall_runs(walls)
         if not runs:
@@ -326,7 +344,8 @@ def guided_move(new: Layout, rng: random.Random, diag):
         run, _ = rng.choice(sorted(runs, key=lambda ra: quiet(ra[0]))[:5])
         n = rng.randint(3, min(6, len(run)))
         a = rng.randrange(0, len(run) - n + 1)
-        removed = set(run[a:a + n])
+        removed_run = run[a:a + n]
+        removed = set(removed_run)
         walls -= removed
     budget = WALL_COUNT - len(walls)
     occ = _occupied(new) - removed
@@ -346,8 +365,10 @@ def guided_move(new: Layout, rng: random.Random, diag):
             mx = sum(p[0] for p in seg) / len(seg)
             my = sum(p[1] for p in seg) / len(seg)
             if math.hypot(mx - bx, my - by) <= 6:
-                new.walls = walls | set(seg)
-                return f"guided wall at breach ({len(removed)} out, {len(seg)} in)"
+                # walls the new segment does not use go back (none are lost)
+                back = _keep_count(removed_run, seg, len(removed_run))
+                new.walls = walls | set(seg) | back
+                return f"guided wall at breach ({len(removed) - len(back)} out, {len(seg)} in)"
     return None
 
 
@@ -404,7 +425,7 @@ def mutate(lay: Layout, rng: random.Random, diag=None) -> tuple[Layout, str]:
             d = rng.choice(defs)
             x = d.x + rng.randint(-3, d.size + 2)
             y = d.y + rng.randint(-3, d.size + 2)
-            if _fits(occ, x, y, t.size):
+            if (x, y) != (t.x, t.y) and _fits(occ, x, y, t.size):
                 t.x, t.y = x, y
                 return new, f"trap {t.key}"
         return new, "noop"

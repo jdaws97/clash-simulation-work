@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import random
 import sys
 import time
@@ -51,10 +52,12 @@ from baselab.render import render  # noqa: E402
 META = False
 
 
-def scen(mode, n, seeds):
+def scen(mode, n, seeds, angle_offset=0.0):
     if META:
-        return meta_scenarios(mode, n, seeds)
-    return ranked_scenarios(n_angles=n, seeds=seeds) if mode == "ranked" else war_scenarios(n_angles=n, seeds=seeds)
+        return meta_scenarios(mode, n, seeds, angle_offset=angle_offset)
+    if mode == "ranked":
+        return ranked_scenarios(n_angles=n, seeds=seeds, angle_offset=angle_offset)
+    return war_scenarios(n_angles=n, seeds=seeds, angle_offset=angle_offset)
 
 
 class Ind:
@@ -101,7 +104,9 @@ def main():
     global META
     META = args.meta
     search0 = scen(args.mode, args.search_angles, tuple(range(args.search_seeds)))
-    validate0 = scen(args.mode, 6, (8, 9))
+    # validation and hold-out face sides the search never uses (the angles
+    # depend on the angle count and offset only, not on the seeds)
+    validate0 = scen(args.mode, 6, (8, 9), math.pi / 4)
     holdout_extra = []
     if args.rr_sides > 0:
         from baselab.evaluate import side_scenarios
@@ -121,7 +126,7 @@ def main():
         attackers = [(f"meta:{b['archetype']}-{b['th']}-{b['build']}", th_a) for b, _ in lib]
         weights = {a: w for (a, _), (_, w) in zip(attackers, lib)}
     guide = scen(args.mode, 4, (0,))
-    holdout = scen(args.mode, 8, (1, 2, 3))
+    holdout = scen(args.mode, 8, (21, 22, 23), math.pi / 8)  # seed 1 is a search seed
     if holdout_extra:
         holdout = blend(holdout, holdout_extra, args.rr_sides)
     own = json.loads((ROOT / "data" / "your-levels.json").read_text())
