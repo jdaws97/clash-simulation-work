@@ -87,8 +87,16 @@ CHARGE_HEALERS = {"Royal Champion": 0, "Archer Queen": 4, "Dragon Duke": 0}
 
 def techniques(build: dict) -> list:
     """The plays a player picks from after scouting: the scripted plan, plus a
-    hero charge with each charge hero the build brings."""
+    hero charge with each charge hero the build brings.
+
+    A build played from its cited playbook (BASELAB_PLAYBOOKS=1) has only its
+    own plan: PlaybookPlan.setup_charge is a no-op (the playbook carries its
+    cited charges), so a charge scenario would replay the same battle."""
+    from .meta_armies import _playbook, family_of, playbooks_on
+
     out = [None]
+    if playbooks_on() and (fam := family_of(build)) and _playbook(fam) is not None:
+        return out
     for hero, healers in CHARGE_HEALERS.items():
         if hero in build.get("heroes", []):
             out.append((hero, min(healers, int(build.get("troops", {}).get("Healer", 0)))))
