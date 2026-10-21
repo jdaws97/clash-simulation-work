@@ -82,6 +82,10 @@ TANKS = {"Ice Golem", "Golem", "Lava Hound", "Ice Hound", "Giant", "Super Giant"
 # (Oct 2026) brings 340 camp + 55 Clan Castle and every TH17 one 352, so a
 # later update raised them: the observed values win. TH18 is unobserved.
 HOUSING_CAP = {16: 340, 17: 352, 18: 352}
+# Clan Castle troop capacity when the attacker's Castle level is unknown:
+# observed like HOUSING_CAP (TH16/17 attackers in the log bring up to 55,
+# above game data's 50 for a TH16 Castle L12). A plan that gives
+# clan_castle_level uses that level's capacity (AttackPlan._cc_capacity).
 CC_HOUSING = {16: 55, 17: 55, 18: 55}
 SPELL_CAP = {16: 11, 17: 11, 18: 11}  # Wiki: Spell Factory and Dark Spell Factory.
 CC_SPELLS = {16: 3, 17: 3, 18: 4}  # Clan Castle L12/13/14 (wiki)
@@ -254,6 +258,17 @@ class AttackPlan:
     def _building_level(self, name, supplied):
         return stats.max_level(name, self.town_hall) if supplied is None else supplied
 
+    def _cc_capacity(self, castle):
+        """Clan Castle troop housing for this attack (uses CC_HOUSING)."""
+        if self.clan_castle_level is None:
+            return CC_HOUSING[self.town_hall]
+        if not castle:
+            return 0
+        # game data v18.200.9: Clan Castle.HousingSpace=50 -> troop capacity
+        # 50 at Castle L11 (the user's; L12 also 50, L13-14 55). The user's
+        # logged attacks bring at most 50, matching.
+        return int(stats.get("Clan Castle", castle, "Troop Capacity"))
+
     def _spell_level(self, stock):
         if stock.level is not None:
             return stock.level
@@ -339,7 +354,7 @@ class AttackPlan:
                 * (1 if isinstance(entry, str) else entry.get("count", 1))
                 for entry in self.cc_troops
             ),
-            "cc_cap": CC_HOUSING[self.town_hall],
+            "cc_cap": self._cc_capacity(castle),
             "spells": sp_space(self._spells0),
             "spell_cap": capacity,
             "cc_spells": sp_space(self._cc_spells0),

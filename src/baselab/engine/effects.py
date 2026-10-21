@@ -84,6 +84,11 @@ def record_death(battle, victim):
     ):
         return
     # Heroes and pets contribute 25 and 20 (wiki: Dark Crown).
+    # A Phoenix-saved hero is counted once, at the fall that hatches the
+    # Phoenix (battle.kill); its final knock-out after the revival
+    # (heroes.tick) does not come through here. The wiki counts a hero
+    # again "if the Hero is revived and defeated again" (Revive Spell) but
+    # does not say whether the Phoenix revival is such a defeat.
     housing = 25 if victim.is_hero else 20 if victim.kind == "pet" else victim.housing
     if victim.name == "Totem":
         housing = 20  # wiki: Totem Spell
