@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools" / "baselab"))
 
-from check_playbook import locate, parse_reply  # noqa: E402
+from check_playbook import parse_reply, verified_time  # noqa: E402
 
 SRC = ROOT / "output" / "sources"
 ACTIONS = {"deploy", "spell", "ability", "recall", "redeploy", "release_siege"}
@@ -32,9 +32,7 @@ def cite_ok(c, cache):
         return False
     if vid not in cache:
         cache[vid] = json.loads(p.read_text(encoding="utf-8"))["lines"]
-    hits = locate(cache[vid], c.get("quote", ""))
-    t = c.get("t")
-    return bool(hits) and (t is None or any(abs(h - float(t)) <= 30 for h in hits))
+    return verified_time(cache[vid], c.get("quote", ""), c.get("t")) is not None
 
 
 def trigger_ok(w):
