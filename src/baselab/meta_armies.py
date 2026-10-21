@@ -111,14 +111,28 @@ def compose(build: dict, angle: float = 0.0, seed: int = 0) -> AttackPlan:
         main_min=10.0 if air else 8.0, main_max=20.0 if air else 18.0,
     )
     plan.build_id = f"{build['archetype']}-{build['th']}-{build['build']}"
+    # a siege from the Clan Castle is a reinforcement, not the attacker's own
+    # (Monolith counts only the own siege: battle.deploy)
+    plan.siege_donated = bool(siege) and siege not in build["troops"]
     if build.get("own_levels") or build["archetype"].startswith("user-"):
         # the user's own armies attack at the account's live levels
         # (data/your-levels.json, from the API), not the Town Hall max
         own = user_levels()
         plan.hero_levels = dict(own.get("hero_levels", {}))
-        plan.troop_levels = {n: l for n, l in own.get("attack_levels", {}).items()}
+        attack = own.get("attack_levels", {})
+        # spells are cast at their own researched levels (AttackPlan reads
+        # spell_levels; troop_levels never reached the spells)
+        plan.spell_levels = {n: l for n, l in attack.items() if n in SPELL_KEYS}
+        plan.troop_levels = {n: l for n, l in attack.items() if n not in SPELL_KEYS
+                             and not (plan.siege_donated and n == siege)}  # a donated siege is the donor's
         plan.equipment_levels = dict(own.get("equipment_levels", {}))
         plan.pet_levels = dict(own.get("pet_levels", {}))
+        # the account's Clan Castle caps donated spell levels (wiki: Clan Castle)
+        buildings = own.get("levels", {})
+        for attr, key in (("clan_castle_level", "cc"), ("laboratory_level", "lab"),
+                          ("dark_spell_factory_level", "dsf"), ("spell_factory_level", "sf")):
+            if isinstance(buildings.get(key), int):
+                setattr(plan, attr, buildings[key])
     from .policy import for_army
 
     plan.pol = {**for_army(build["archetype"]), **build.get("pol", {})}  # adopted policy + per-army plays
