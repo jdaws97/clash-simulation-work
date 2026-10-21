@@ -1517,16 +1517,12 @@ class Battle:
             # so it arrives within its attack range of the edge (game data
             # v18.200.9: Wall Wrecker AttackRange=150, Log Launcher 100); it
             # used to walk through the hitbox to the exact centre first.
-            if u.flying:
-                # Wiki: Battle Blimp breaks apart when it "reaches the Town
-                # Hall (or its remains)". Its AttackRange=150 is the bomb
-                # drop, not a stop distance, and a flyer can hover over the
-                # hitbox; no source gives the break point, so it stays the
-                # Town Hall centre (game data: Battle Blimp
-                # PreferredMovementTarget=Town Hall, no break distance).
-                arrived = u.x == target.x and u.y == target.y
-            else:
-                arrived = target.edge_distance(u.x, u.y) <= u.range
+            # The Battle Blimp too: video of real attacks shows it stopping
+            # 1-2 tiles outside the Town Hall's edge and blowing up there
+            # (docs/VIDEO_MEASUREMENTS.md, XtLqXV-ab6U @174.5), i.e. within
+            # its game data AttackRange=150 of the edge, like the ground
+            # machines (it used to fly to the exact centre).
+            arrived = target.edge_distance(u.x, u.y) <= u.range
             if arrived:
                 self.kill(u)
             else:

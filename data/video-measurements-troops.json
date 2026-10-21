@@ -1,0 +1,129 @@
+[
+  {
+    "item": "11a troop deploy interval (holding a troop slot / drag line)",
+    "engine_value": "0.15 s per troop",
+    "value": 0.133,
+    "unit": "s per troop",
+    "samples": [
+      {"video_id": "dMcpXZ_wc8Q", "video_time_s": 124.05, "game_time_s": "~2:46 left (timer 2m41s at 116 s -> 2m25s at ~131.5 s)", "frames": [8, 8, 8, 8, 8], "fps": 60, "speed_factor": 1.0, "value": 0.133, "note": "6 Super Yetis held out of one slot; slot counter decrements at 124.050/124.183/124.317/124.450/124.583/124.717 (automatic region-difference detector, +-1 frame)"},
+      {"video_id": "w4RTiOi6C_w", "video_time_s": 88.4, "game_time_s": "2m24s-2m23s left (timer 2m29s at 84 s -> 2m20s at 93 s)", "frames": [8, 7, 8, 9, 8, 7], "fps": 60, "speed_factor": 1.0, "value": 0.131, "note": "7 Super Yetis x7 -> x0, every counter frame checked by eye at native fps; total 47 frames for 6 intervals"},
+      {"video_id": "w4RTiOi6C_w", "video_time_s": 183.15, "game_time_s": "2m51s-2m50s left (timer 2m59s at 175 s -> 2m51s at 183 s)", "frames": [8, 8, 8, 7, 7, 8, 9, 7, 9], "fps": 60, "speed_factor": 1.0, "value": 0.131, "note": "10 Electro Dragons x10 -> x0, checked by eye at native fps; total 71 frames for 9 intervals"}
+    ],
+    "median": 0.133,
+    "spread": "7-9 frames at 60 fps = 0.117-0.150 s per interval; per-sample means 0.131-0.133 s (n=3 samples, 20 intervals)",
+    "confidence": "high",
+    "note": "Interval is very stable at 8 frames (60 fps), i.e. 0.133 s, across two players and two troop types. The engine's 0.15 s is ~13% slow. Players can also tap faster or slower; this is the hold-to-deploy rate."
+  },
+  {
+    "item": "11b spell drop interval (several spells of one slot in a row)",
+    "engine_value": "not separately modelled (0.15 s per unit assumed)",
+    "value": 0.133,
+    "unit": "s per spell",
+    "samples": [
+      {"video_id": "w4RTiOi6C_w", "video_time_s": 52.7, "game_time_s": "~2m59s-2m57s left", "frames": [4, 10, 8, 9, 8, 8], "fps": 60, "speed_factor": 1.0, "value": 0.133, "note": "8 Earthquake spells x8 -> x0 in two bursts of 4 (0.87 s pause between bursts, not counted); median 8 frames"},
+      {"video_id": "XtLqXV-ab6U", "video_time_s": 141.65, "game_time_s": "replay, ~2m50s left", "frames": [10, 10, 11, 11, 9], "fps": 59.94, "speed_factor": 1.0, "value": 0.170, "note": "6 Lightning spells; automatic detector, +-1 frame; replay played at 1x (timer 2m3s at 187 s -> 1m55s at ~195.5 s in the same replay). Looks like separate taps rather than a hold"}
+    ],
+    "median": 0.15,
+    "spread": "0.133 (hold) - 0.170 (taps); n=2",
+    "confidence": "medium",
+    "note": "A held spell slot drops at the same 8-frame (0.133 s) cadence as troops; tap-casting is slower (~0.17 s)."
+  },
+  {
+    "item": "11c slot switch time",
+    "engine_value": "0.6 s per switch",
+    "value": null,
+    "unit": "s",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured",
+    "note": "Not measured: switch gaps are set by the player's hand, not the game, and vary from <0.3 s to several seconds in the footage."
+  },
+  {
+    "item": "10a melee troop arrival -> first hit",
+    "engine_value": "first hit on arrival",
+    "value": 0.33,
+    "unit": "s",
+    "samples": [
+      {"video_id": "AAawYGfV-AE", "video_time_s": 352.03, "game_time_s": "~2m12s left (timer 2m18s at 346 s -> 2m11s at ~353.5 s)", "frames": 20, "fps": 59.94, "speed_factor": 1.0, "value": 0.33, "note": "Super Yeti reaching a cannon. Arrival = crown position stops advancing (352.03 +-0.07 s, from pixel tracking of the cyan crown); first hit = cannon's purple HP bar appears (352.37 s, frame exact). The yeti's lunge animation sits between the two. Crowded line of yetis, so arrival is uncertain"}
+    ],
+    "median": 0.33,
+    "spread": "+-0.1 s (single sample)",
+    "confidence": "low",
+    "note": "n=1. Suggests a short wind-up (~0.3 s) rather than an instant hit, but needs clean single-troop footage to confirm."
+  },
+  {
+    "item": "10b ranged troop entering range -> first hit",
+    "engine_value": "first hit on arrival",
+    "value": null,
+    "unit": "s",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured",
+    "note": "Tried Electro Dragon lines (XtLqXV-ab6U @ ~190, w4RTiOi6C_w @ ~183): 10 overlapping dragons, cannot tell which bolt belongs to which dragon or when each stopped."
+  },
+  {
+    "item": "12 Battle Blimp at the Town Hall: stop point and death blast",
+    "engine_value": "breaks over TH centre, no death blast",
+    "value": "stops ~1-2 tiles outside the TH edge (not over the centre); area blast on breaking",
+    "unit": "qualitative + s",
+    "samples": [
+      {"video_id": "XtLqXV-ab6U", "video_time_s": 174.45, "game_time_s": "replay, ~2m14s left", "frames": 21, "fps": 59.94, "speed_factor": 1.0, "value": "stops at 174.45 +-0.1 s with its centre over the TH compartment wall, ~1-2 tiles outside the TH's near (west) edge; blast at 174.80 s (same frame: ~12 purple HP bars appear on walls, the TH and nearby buildings within ~2-3 tiles, plus a fire burst); blimp sinks onto the TH and its CC troops appear at ~175.95 s", "note": "Blimp HP bar still almost full when the blast happens, so it was not shot down. Still: docs/video-evidence/12-XtLqXV-ab6U-174.jpg"},
+      {"video_id": "w4RTiOi6C_w", "video_time_s": 330.5, "game_time_s": "2m30s-2m28s left", "frames": null, "fps": 60, "speed_factor": 1.0, "value": "blimp ended in the compartment next to the TH (not over it) and released its troops there; many building HP bars appear around it at the same moment", "note": "Zoomed out and covered by spells; cannot tell whether it reached its target range or was shot down. Supports 'not over the centre' only weakly"},
+      {"video_id": "kCIDOAubL28", "video_time_s": 455, "game_time_s": "~2m35s left", "frames": null, "fps": 30, "speed_factor": 1.0, "value": "inconclusive", "note": "Blimp too small and hidden among rocket balloons"}
+    ],
+    "median": "stops at range (~1.5 tiles) from the TH edge; blast ~0.35 s after stopping",
+    "spread": "n=1 clean sample",
+    "confidence": "medium (clean sample n=1; matches game data)",
+    "note": "Cross-check with data/gamecsv/v18.200.9/characters.csv, Battle Blimp: AttackRange 150 (1.5 tiles), DieDamage 700-1100, DieDamageRadius 300 (3 tiles), DieDamageDelay 700 ms. The video is consistent with this: the blimp stops at 1.5-tile range, not over the TH centre, and its breaking does area damage. The engine's 'over TH centre, no death blast' looks wrong on both counts."
+  },
+  {
+    "item": "14 Earthquake Boots: activation -> first shock, shock interval",
+    "engine_value": "instant",
+    "value": null,
+    "unit": "s",
+    "samples": [
+      {"video_id": "dMcpXZ_wc8Q", "video_time_s": 830.63, "game_time_s": "~1m45s left", "frames": null, "fps": 60, "speed_factor": 1.0, "value": null, "note": "Activation (king card change) at 830.63. Wall regions near the king change at +0.47 s and +1.0 s, but troops, spells and a star banner cover the area; cannot separate shocks from other effects"},
+      {"video_id": "AAawYGfV-AE", "video_time_s": 379.37, "game_time_s": "1m44s left", "frames": null, "fps": 59.94, "speed_factor": 1.0, "value": null, "note": "Activation at 379.37 s; camera pans away immediately"},
+      {"video_id": "yI1ZdPZswNM", "video_time_s": 358.0, "game_time_s": "1m18s left", "frames": null, "fps": 30, "speed_factor": 1.0, "value": null, "note": "30 fps, fully zoomed out; effect not visible"}
+    ],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured",
+    "note": "In every sample the boots fire inside a pile of yetis/spells and the camera moves; needs a clean recording."
+  },
+  {
+    "item": "15 Druid heal chain: units reached per heal",
+    "engine_value": "4",
+    "value": null,
+    "unit": "units",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured",
+    "note": "Druids seen in dMcpXZ_wc8Q @ ~131 and AAawYGfV-AE @ ~362-370, but heal links are too small and mixed with other effects at YouTube resolution."
+  },
+  {
+    "item": "16 Wall Breaker blowing a wall next to a building: building damaged?",
+    "engine_value": "no",
+    "value": null,
+    "unit": "yes/no",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured",
+    "note": "Tried dMcpXZ_wc8Q @ 974 and JEM-kTBTmz4 @ 490-520 (regular Wall Breakers): too zoomed out, the breakers are not visible. A Super Wall Breaker was seen in w4RTiOi6C_w @ ~89 but it is a different unit and the blast area was covered."
+  },
+  {
+    "item": "extra: Rocket Balloon speed burst duration / Super Barbarian initial rage",
+    "engine_value": "~4 s / -",
+    "value": null,
+    "unit": "s",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured",
+    "note": "Rocket Balloons seen in kCIDOAubL28 @ ~426-460 but too small at 30 fps to track speed; no Super Barbarian deploy found in the clips used."
+  }
+]

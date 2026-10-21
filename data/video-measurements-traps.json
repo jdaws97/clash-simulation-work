@@ -1,0 +1,133 @@
+[
+  {
+    "item": "09 Ice Golem death freeze: outer ring thaws earlier than centre",
+    "engine_value": "uniform freeze",
+    "value": 1.0,
+    "unit": "s earlier at the edge than at the centre (edge/centre duration ratio ~0.90)",
+    "samples": [
+      {
+        "video_id": "pHPMdLcXveY",
+        "video_time_s": 1216.2,
+        "game_time_s": "timer 1m51s at 1216.0, 1m43s at 1224.0, 1m32s at 1235.0",
+        "frames": 64,
+        "fps": 60,
+        "speed_factor": 1.0,
+        "value": 1.07,
+        "note": "Onset (first blue field) 1216.15-1216.28; walls on the left edge of the field thaw at 1224.81; last blue at the centre gone 1225.88 (sampled at 7.5 fps, +-0.13 s each). Centre duration ~9.66 s, edge ~8.59 s, ratio 0.89. Duration ~9.5 s identifies it as an Ice Golem death freeze (L9 offense 9 s per wiki), commentator says 'Ice golem freezes early'. Camera pans slowly during the freeze; edge/centre assignment is by eye, not by measured tile distance."
+      },
+      {
+        "video_id": "pHPMdLcXveY",
+        "video_time_s": 199.34,
+        "game_time_s": "timer 2m32s at 198.0, 2m21s at 209.0; 2m24s at 207.0, 2m20s at 210.75",
+        "frames": 50,
+        "fps": 60,
+        "speed_factor": 1.0,
+        "value": 0.84,
+        "note": "Onset 199.343 (first blue frame, +-1 frame); the building at the field edge (top right) loses its ice at 207.80 (+-0.08 s; a small camera pan happens between 207.72 and 207.80, so this could be up to ~0.1 s early); blue at the centre gone 208.64. Centre ~9.30 s, edge ~8.46 s, ratio 0.91. Evidence still: docs/video-evidence/icegolem-freeze-pHPMdLcXveY-207.jpg (left: 206.8 s, walls still frozen; right: 207.9 s, edge thawed, centre still blue)."
+      },
+      {
+        "video_id": "pHPMdLcXveY",
+        "video_time_s": 862.1,
+        "game_time_s": "timer 1m52s at 856.5, 1m37s at 871.5",
+        "frames": null,
+        "fps": 60,
+        "speed_factor": 1.0,
+        "value": 1.0,
+        "note": "Automatic blue-pixel count over the game area (not frame-checked by eye): the second of two overlapping freeze fields starts at 862.1 and its area shrinks gradually from 870.5 to 871.6 rather than vanishing in one step; total ~9.4 s. Supports a shrinking (outer-first) thaw but the edge/centre split is not measured directly. Low weight."
+      }
+    ],
+    "median": 1.0,
+    "spread": "0.84-1.07 s (ratio 0.89-0.91)",
+    "confidence": "low-medium: 2 frame-checked samples + 1 automatic; edge vs centre position judged by eye. Matches the game data pattern for the Freeze Spell (spells.csv FreezeOuterTimeMS = 90% of FreezeTimeMS), which suggests the Ice Golem uses the same 90% outer ring."
+  },
+  {
+    "item": "08 Freeze Spell: outer ring thaws earlier than centre",
+    "engine_value": "uniform freeze",
+    "value": null,
+    "unit": "s",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured from video: every long freeze field examined lasted ~9 s (Ice Golem, not a spell), and no clean single Freeze Spell was found. Game data (data/gamecsv/v18.200.9/spells.csv) already answers it: FreezeOuterTimeMS = 0.9 x FreezeTimeMS (L7 5500/4950 ms), i.e. the outer ring thaws 0.55 s earlier at L7."
+  },
+  {
+    "item": "01 Bomb trigger -> blast",
+    "engine_value": 1.5,
+    "value": null,
+    "unit": "s",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured: no explosion was found where the triggering contact and the pop-up of a small Bomb were both visible (blasts seen were projectiles, or the trap sat at a frame edge during a camera pan)."
+  },
+  {
+    "item": "02 Giant Bomb trigger -> blast",
+    "engine_value": 1.59,
+    "value": null,
+    "unit": "s",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured: candidates were iK1yGLjF2Us @ ~820 s (Giant Bomb on an invisible RC, hidden under spell effects) and aRUj8A45u4A @ 556 s (game window too small in the stream layout). The trigger frame could not be found."
+  },
+  {
+    "item": "03 Air Bomb / Seeking Air Mine trigger -> hit",
+    "engine_value": 0.3,
+    "value": null,
+    "unit": "s",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured: the Lalo/air sources were sped up and pillarboxed (tzEdvQFz8b0), had a small streamer layout, or were not reached in the time available."
+  },
+  {
+    "item": "04 Tornado Trap trigger -> first pull",
+    "engine_value": 0.34,
+    "value": null,
+    "unit": "s",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured: a swirl appears in pHPMdLcXveY at 1205.81 (faint) / 1206.01 (full), but the trigger moment is invisible and the effect could not be confirmed as a Tornado Trap rather than a spell."
+  },
+  {
+    "item": "05 Spring Trap vs fast troops",
+    "engine_value": "trigger picks within 1 tile",
+    "value": null,
+    "unit": "tiles",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured: no spring launch was seen clearly enough in the frames inspected."
+  },
+  {
+    "item": "06 Scattershot lock-on -> first shot, shot interval",
+    "engine_value": "instant first shot, 3.2 s interval",
+    "value": null,
+    "unit": "s",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured: no Scattershot was found firing repeatedly in a fixed camera view."
+  },
+  {
+    "item": "07 Air Sweeper puff angle / push distance",
+    "engine_value": "+-5 degrees",
+    "value": null,
+    "unit": "degrees / tiles",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured: one puff was seen (ahiJ-bgdmSE @ ~251 s, 29.97 fps), but the video was deleted before the angle could be measured."
+  },
+  {
+    "item": "13 Firespitter reach past target",
+    "engine_value": 2,
+    "value": null,
+    "unit": "tiles",
+    "samples": [],
+    "median": null,
+    "spread": null,
+    "confidence": "not measured."
+  }
+]

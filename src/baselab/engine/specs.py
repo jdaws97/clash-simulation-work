@@ -175,7 +175,13 @@ SPECS: dict[str, UnitSpec] = {
         S("Super Yeti", special=("electromites",)),
         # ---------------- Siege machines
         S("Wall Wrecker", prefer="th", vs_walls=10.0, engages_units=False, special=("siege_cc",)),
-        S("Battle Blimp", prefer="th", walls="fly", attack="none", engages_units=False, special=("siege_cc", "blimp_bombs")),
+        # Death blast when it breaks at the Town Hall or is shot down: game data
+        # v18.200.9: Battle Blimp.DieDamageRadius=300 -> 3 tiles,
+        # DieDamageDelay=700 -> 0.7 s, DieDamage=700 (L1, the wiki's "Damage
+        # when Destroyed" column per level); seen in video, ~12 buildings
+        # and walls hit at once (docs/VIDEO_MEASUREMENTS.md).
+        S("Battle Blimp", prefer="th", walls="fly", attack="none", engages_units=False, special=("siege_cc", "blimp_bombs"),
+          death_damage="Damage when Destroyed", death_radius=3.0, death_delay=0.7),
         # Two hitboxes (wiki: "1 and 3 tile Radius"); units.py applies both.
         # game data v18.200.9: Stone Slammer.DamageRadius=100 -> 1-tile primary hitbox.
         # game data v18.200.9: Stone Slammer.Damage2Radius=300 -> 3-tile secondary hitbox.

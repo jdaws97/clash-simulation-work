@@ -54,7 +54,10 @@ SPELL_KEYS = {v: k for k, v in SPELL_NAMES.items()}
 # These are assumptions (no source gives human input rates). BASELAB_PACE
 # scales them (default 1.0); it is NOT tuned to the real battle times, which
 # stay a held-out test (docs/SIM_ACCURACY.md check 6).
-PACE_TAP, PACE_SWITCH, PACE_ABILITY = 0.15, 0.6, 0.3
+# PACE_TAP is measured: 0.133 s between troops when a slot is held (60 fps
+# video, 20 intervals, two players; docs/VIDEO_MEASUREMENTS.md). The switch
+# and ability times remain assumptions.
+PACE_TAP, PACE_SWITCH, PACE_ABILITY = 0.133, 0.6, 0.3
 
 
 def action_time(act: str, n: int = 1) -> float:
