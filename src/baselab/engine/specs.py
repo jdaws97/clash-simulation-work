@@ -76,14 +76,16 @@ SPECS: dict[str, UnitSpec] = {
         S("Valkyrie", attack="spin", splash=1.0),
         S("Golem", prefer="defense", engages_units=False, death_damage="Damage Upon Death", death_radius=1.5, death_spawn=("Golemite", "Golemites spawned Upon Death")),
         S("Witch", attack="splash", splash=0.3, special=("witch_skeletons",)),
-        # Wiki: Lava Hound states a 3.5-tile death radius.
+        # The wiki mirror states no death radius ("a small amount of damage in
+        # the area"; the earlier 3.5 had no source).
+        # game data v18.200.9: Lava Hound.DieDamageRadius=120 -> 1.2 tiles.
         S(
             "Lava Hound",
             prefer="air_defense",
             walls="fly",
             engages_units=False,
             death_damage="Damage Upon Death",
-            death_radius=3.5,
+            death_radius=1.2,
             death_spawn=("Lava Pup", "Lava Pups Spawned (After Death) / On Offense"),
         ),
         # game data v18.200.9: Bowler.DamageRadius=30 -> 0.3 tiles.
