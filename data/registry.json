@@ -16353,8 +16353,7 @@
      "Hitpoints": "14,500",
      "Upgrade Cost": "N/A",
      "Upgrade Time": "N/A",
-     "Laboratory Level Required": "N/A",
-     "Town Hall Level Required": "6"
+     "Laboratory Level Required": "N/A"
     }
    },
    {
@@ -16367,8 +16366,7 @@
      "Hitpoints": "16,000",
      "Upgrade Cost": "28,000,000",
      "Upgrade Time": "14d",
-     "Laboratory Level Required": "15",
-     "Town Hall Level Required": "7"
+     "Laboratory Level Required": "15"
     }
    },
    {
@@ -16381,99 +16379,8 @@
      "Hitpoints": "17,500",
      "Upgrade Cost": "30,000,000",
      "Upgrade Time": "16d",
-     "Laboratory Level Required": "16",
-     "Town Hall Level Required": "8"
+     "Laboratory Level Required": "16"
     }
-   },
-   {
-    "level": 4,
-    "wiki": {
-     "Damage": "254",
-     "Hitpoints": "7,000",
-     "Town Hall Level Required": "9"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 5,
-    "wiki": {
-     "Damage": "282",
-     "Hitpoints": "8,000",
-     "Town Hall Level Required": "10"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 6,
-    "wiki": {
-     "Damage": "310",
-     "Hitpoints": "8,500",
-     "Town Hall Level Required": "11"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 7,
-    "wiki": {
-     "Damage": "338",
-     "Hitpoints": "9,000",
-     "Town Hall Level Required": "12"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 8,
-    "wiki": {
-     "Damage": "366",
-     "Hitpoints": "10,000",
-     "Town Hall Level Required": "13"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 9,
-    "wiki": {
-     "Damage": "394",
-     "Hitpoints": "11,000",
-     "Town Hall Level Required": "14"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 10,
-    "wiki": {
-     "Damage": "430",
-     "Hitpoints": "12,000",
-     "Town Hall Level Required": "15"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 11,
-    "wiki": {
-     "Damage": "465",
-     "Hitpoints": "13,000",
-     "Town Hall Level Required": "16"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 12,
-    "wiki": {
-     "Damage": "500",
-     "Hitpoints": "14,500",
-     "Town Hall Level Required": "17"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 13,
-    "wiki": {
-     "Damage": "550",
-     "Hitpoints": "16,000",
-     "Town Hall Level Required": "18"
-    },
-    "wiki_only": true
    }
   ],
   "conflicts": [],
@@ -59679,96 +59586,6 @@
      "Damage per Second": "230",
      "Damage per Attack": "345",
      "Hitpoints": "8,750"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 4,
-    "wiki": {
-     "Damage per Second": "101",
-     "Damage per Attack": "151.5",
-     "Hitpoints": "3,500"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 5,
-    "wiki": {
-     "Damage per Second": "112",
-     "Damage per Attack": "168",
-     "Hitpoints": "4,000"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 6,
-    "wiki": {
-     "Damage per Second": "123",
-     "Damage per Attack": "184.5",
-     "Hitpoints": "4,250"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 7,
-    "wiki": {
-     "Damage per Second": "134",
-     "Damage per Attack": "201",
-     "Hitpoints": "4,500"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 8,
-    "wiki": {
-     "Damage per Second": "145",
-     "Damage per Attack": "217.5",
-     "Hitpoints": "5,000"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 9,
-    "wiki": {
-     "Damage per Second": "156",
-     "Damage per Attack": "234",
-     "Hitpoints": "5,500"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 10,
-    "wiki": {
-     "Damage per Second": "172",
-     "Damage per Attack": "258",
-     "Hitpoints": "6,000"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 11,
-    "wiki": {
-     "Damage per Second": "180",
-     "Damage per Attack": "270",
-     "Hitpoints": "6,500"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 12,
-    "wiki": {
-     "Damage per Second": "200",
-     "Damage per Attack": "300",
-     "Hitpoints": "7,250"
-    },
-    "wiki_only": true
-   },
-   {
-    "level": 13,
-    "wiki": {
-     "Damage per Second": "220",
-     "Damage per Attack": "330",
-     "Hitpoints": "8,000"
     },
     "wiki_only": true
    }

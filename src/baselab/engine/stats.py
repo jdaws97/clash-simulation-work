@@ -180,30 +180,33 @@ def get(name: str, level, *keys, default=None):
     substring match allowed with a leading '~')."""
     r = row(name, level)
     lower = {k.lower(): v for k, v in r.items()}
-    # Wiki columns override extracted aliases (individual statistics pages).
-    wiki = next(
-        entry.get("wiki", {})
-        for entry in record(name)["levels"]
-        if entry.get("level") == level
-    )
-    aliases = {"hitpoints": "hitpoints"}
-    aliases["dps"] = next(
-        (
-            column
-            for column in (
-                "damage per second",
-                "damage per second*",
-                "base damage per second",
-            )
-            if any(key.lower() == column for key in wiki)
-        ),
-        "damage per second",
-    )
-    for alias, column in aliases.items():
+    entry = next(e for e in record(name)["levels"] if e.get("level") == level)
+    wiki = entry.get("wiki", {})
+    # Game data wins for hitpoints and DPS where it has them (registry.py:
+    # "ClashKing (game files) is authoritative for numbers it has"; checked
+    # against game data v18.200.9 Characters.csv/Heroes.csv, e.g. Lavaloon L1
+    # 1080 HP / 50 DPS, Flame Flinger L1 127 DPS, Barbarian King L1 102 DPS,
+    # where the wiki columns read 970/45, 124 and 51). The wiki column is the
+    # fallback for rows without game data. Without this the wiki "Hitpoints"
+    # column (same lowercase key) silently replaced the game value.
+    for alias, columns in (
+        ("hitpoints", ("hitpoints",)),
+        ("dps", ("damage per second", "damage per second*", "base damage per second")),
+    ):
+        game = entry.get(alias)
+        if num(game) is not None:
+            lower[alias] = game
+            continue
         value = next(
-            (value for key, value in wiki.items() if key.lower() == column), None
+            (
+                v
+                for column in columns
+                for k, v in wiki.items()
+                if k.lower() == column and num(v) is not None
+            ),
+            None,
         )
-        if num(value) is not None:
+        if value is not None:
             lower[alias] = value
     for key in keys:
         if key.startswith("~"):

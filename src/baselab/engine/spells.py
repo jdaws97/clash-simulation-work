@@ -156,25 +156,34 @@ def cast_effect(battle, name, x, y, level=None):
             value=stats.get(name, lv, "Cloned Capacity", default=42.0),
         )
     # Wiki: Skeleton Spell and Bat Spell give 3.5; ClashKing gives 2.2.
+    # Both summon over time (wiki: Bat Spell, "summons several Bats on the
+    # battlefield over time (its method of spawning is similar to a Skeleton
+    # Spell)"); a first group lands at once, the rest follow one at a time.
     elif name == "Skeleton Spell":
+        n = stats.get(name, lv, "Skeletons generated", default=19.0)
+        # game data v18.200.9: Skeleton Spell.SpawnFirstGroupSize=3 -> 3 on landing.
+        # game data v18.200.9: Skeleton Spell.SpawnDuration=19000 -> 19 s for 19 (1 s each, every level).
         f = Field(
             "summon",
             x,
             y,
             3.5,
-            t,
-            value=stats.get(name, lv, "Skeletons generated", default=19.0),
-            extra={"unit": "Spell Skeleton"},
+            t + (n - 3) * 1.0,
+            value=n,
+            extra={"unit": "Spell Skeleton", "first": 3, "gap": 1.0},
         )
     elif name == "Bat Spell":
+        n = stats.get(name, lv, "Bats generated", default=22.0)
+        # game data v18.200.9: Bat Spell.SpawnFirstGroupSize=1 -> 1 on landing.
+        # game data v18.200.9: Bat Spell.SpawnDuration=15000 -> 15 s for 25 (0.6 s each, every level).
         f = Field(
             "summon",
             x,
             y,
             3.5,
-            t,
-            value=stats.get(name, lv, "Bats generated", default=22.0),
-            extra={"unit": "Bat"},
+            t + (n - 1) * 0.6,
+            value=n,
+            extra={"unit": "Bat", "first": 1, "gap": 0.6},
         )
     elif name == "Bag of Frostmites":
         f = Field(
@@ -462,12 +471,17 @@ def _apply(battle, f: Field) -> bool:
                 or u.id not in f.extra.get("victims", ())
             ):
                 continue
+            # default: attackers_near compares squared distances, so a unit
+            # on the rim can fail this hypot test and leave the max empty
             damage = max(
-                field.value
-                for field in battle.fields
-                if field.kind == "def_burn"
-                and field.started <= t < field.until
-                and dist(u.x, u.y, field.x, field.y) <= field.radius
+                (
+                    field.value
+                    for field in battle.fields
+                    if field.kind == "def_burn"
+                    and field.started <= t < field.until
+                    and dist(u.x, u.y, field.x, field.y) <= field.radius
+                ),
+                default=f.value,
             )
             u.extra["burn_tick"] = t
             battle.hit_unit(u, damage * dt, src="th")
@@ -557,7 +571,7 @@ def _apply(battle, f: Field) -> bool:
                     f.value,
                     f.extra["slow"],
                     f.extra.get("atk", 0.0),
-                    1.0,
+                    f.extra.get("hero_mult", 1.0) if u.is_hero else 1.0,
                     ramp=f.extra.get("ramp", False),
                     origin=f.extra.get("origin", "tower"),
                     source=_source(battle, f),
@@ -644,17 +658,30 @@ def _apply(battle, f: Field) -> bool:
     if k == "summon":
         n = int(f.value)
         name = f.extra["unit"]
-        if "freeze" in f.extra:
-            freeze = Field(
-                "freeze", f.x, f.y, f.radius, t, value=f.extra["freeze"], started=t
+        spots = f.extra.get("spots")
+        if spots is None:
+            if "freeze" in f.extra:
+                freeze = Field(
+                    "freeze", f.x, f.y, f.radius, t, value=f.extra["freeze"], started=t
+                )
+                _apply(battle, freeze)
+                battle.fields.append(freeze)
+            # Spawn tiles are fixed on landing: Walls broken midway add none
+            # (wiki: Skeleton Spell).
+            spots = f.extra["spots"] = _spawn_spots(
+                battle, f.x, f.y, f.radius, flying=name == "Bat"
             )
-            _apply(battle, freeze)
-            battle.fields.append(freeze)
-        spots = _spawn_spots(battle, f.x, f.y, f.radius, flying=name == "Bat")
         if not spots:
             return False  # cast on walls: no free tiles, spell wasted (wiki)
-        for j in range(n):
+        first, gap = f.extra.get("first", n), f.extra.get("gap", 0.0)
+        j = f.extra.get("delivered", 0)
+        while j < n:
+            at = f.started + max(0, j - first + 1) * gap
+            if at > t and not math.isclose(at, t):
+                break
             sx, sy = spots[j % len(spots)]
+            j += 1
+            f.extra["delivered"] = j
             child = battle.spawn(name, "atk", sx, sy, kind="summon", group="spell")
             if f.extra.get("name") == "Bag of Frostmites":
                 from dataclasses import replace
@@ -662,7 +689,7 @@ def _apply(battle, f: Field) -> bool:
                 child.extra["bouncing_frostmite"] = True
                 # game data v18.200.9: BouncingFrostmite.DamageRadius=80 -> 0.8 tiles.
                 child.spec = replace(child.spec, splash=0.8)
-        return False
+        return j < n
     if k == "invis":
         until = _invisibility_until(f, t)
         for u in battle.attackers_near(f.x, f.y, f.radius):
@@ -919,6 +946,7 @@ def add_defensive_poison(battle, x, y, cfg, *, origin="tower"):
             "atk": cfg.get("atk", 0.0),
             "ramp": cfg.get("ramp", False),
             "origin": origin,
+            "hero_mult": cfg.get("hero_mult", 1.0),
         },
         started=battle.t,
     )
@@ -956,7 +984,10 @@ def tower_cast(battle, b: Building, mode, near=None):
                 "slow": 0.35,
                 "atk": 0.25,
                 "radius": 5.0,
-                "ramp": True,
+                # game data v18.200.9: Spell Tower Poison.PoisonIncreaseSlowly=FALSE -> full DPS at once.
+                "ramp": False,
+                # game data v18.200.9: Spell Tower Poison.HeroDamageMultiplier=20 -> 0.2x damage to Heroes.
+                "hero_mult": 0.2,
             },
         )
     elif mode == "invis":
