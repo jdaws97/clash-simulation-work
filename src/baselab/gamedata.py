@@ -1,9 +1,10 @@
 """Load game statistics from ClashKing's game-file extraction.
 
-Units are converted to simulator units on the way out:
+``raw()`` is the whole export (registry.py builds data/registry.json from
+it); ``building()`` gives a building's stats at a Town Hall (used by
+mechanics.weapon_spec), converted to simulator units:
 
-* distances (ranges, radii) in tiles; the raw data uses hundredths of a tile;
-* movement speed in tiles per second (raw value / 100);
+* distances (ranges) in tiles; the raw data uses hundredths of a tile;
 * attack intervals in seconds (raw value is milliseconds).
 
 The raw file was cross-checked against the independent chiefpansancolt catalog
@@ -40,21 +41,6 @@ def _index(section: str) -> dict[str, dict]:
 @lru_cache(maxsize=None)
 def buildings() -> dict[str, dict]:
     return _index("buildings")
-
-
-@lru_cache(maxsize=None)
-def troops() -> dict[str, dict]:
-    return _index("troops")
-
-
-@lru_cache(maxsize=None)
-def heroes() -> dict[str, dict]:
-    return _index("heroes")
-
-
-@lru_cache(maxsize=None)
-def traps() -> dict[str, dict]:
-    return _index("traps")
 
 
 def _max_level_for_th(levels: list[dict], town_hall: int) -> dict:
@@ -103,67 +89,3 @@ def building(name: str, town_hall: int = 16) -> BuildingStats:
         attack_range=(row.get("attack_range") or 0) / 100.0,
         min_range=(row.get("min_range") or 0) / 100.0,
     )
-
-
-@dataclass(frozen=True)
-class UnitStats:
-    name: str
-    level: int
-    hitpoints: float
-    dps: float
-    attack_interval: float
-    attack_range: float
-    speed: float
-    housing: int
-    flying: bool
-    hits_air: bool
-    hits_ground: bool
-
-
-def _unit(entry: dict, row: dict) -> UnitStats:
-    return UnitStats(
-        name=entry["name"],
-        level=row["level"],
-        hitpoints=float(row["hitpoints"]),
-        dps=float(row.get("dps") or 0),
-        attack_interval=(entry.get("attack_speed") or 1000) / 1000.0,
-        attack_range=(entry.get("attack_range") or 0) / 100.0,
-        speed=(entry.get("movement_speed") or 0) / 100.0,
-        housing=int(entry.get("housing_space") or 0),
-        flying=bool(entry.get("is_flying")),
-        hits_air=bool(entry.get("is_air_targeting")),
-        hits_ground=bool(entry.get("is_ground_targeting")),
-    )
-
-
-def troop(name: str, *, town_hall: int | None = None, level: int | None = None) -> UnitStats:
-    entry = troops()[name]
-    if level is not None:
-        row = _level(entry["levels"], level)
-    else:
-        row = _max_level_for_th(entry["levels"], town_hall or 16)
-    return _unit(entry, row)
-
-
-def hero(name: str, *, town_hall: int | None = None, level: int | None = None) -> UnitStats:
-    entry = heroes()[name]
-    if level is not None:
-        row = _level(entry["levels"], level)
-    else:
-        row = _max_level_for_th(entry["levels"], town_hall or 16)
-    return _unit(entry, row)
-
-
-def trap(name: str, town_hall: int = 16) -> dict:
-    entry = traps()[name]
-    row = _max_level_for_th(entry["levels"], town_hall)
-    return {
-        "name": name,
-        "level": row["level"],
-        "damage": float(row.get("damage") or 0),
-        "width": int(entry.get("width") or 1),
-        "trigger_radius": (entry.get("trigger_radius") or 0) / 100.0,
-        "damage_radius": (entry.get("damage_radius") or 0) / 100.0,
-        "air": bool(entry.get("air_trigger")),
-        "ground": bool(entry.get("ground_trigger")),
-    }

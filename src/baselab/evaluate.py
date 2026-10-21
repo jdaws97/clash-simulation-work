@@ -12,7 +12,6 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, replace
 
-from .armies import ARMIES
 from .layout import Layout
 
 # Per-army strength multipliers on attacking unit HP and DPS, fitted so that
@@ -199,23 +198,13 @@ def _assign_skill(scenarios):
     return [replace(sc, seed=5 * sc.seed + q_of[(sc.army, sc.town_hall, sc.modifier, sc.group)]) for sc in scenarios]
 
 
-# Engine v2 (src/baselab/engine) is the default; BASELAB_ENGINE=v1 runs the
-# legacy sim.py for comparison.
-ENGINE = os.environ.get("BASELAB_ENGINE", "v2")
-
-
 def _run_one(args):
+    from .engine.battle import Battle
+    from .meta_armies import make_plan
+
     layout_json, sc, strength = args
     layout = Layout.from_json(layout_json)
-    if ENGINE == "v1":
-        from .sim import Battle
-
-        plan = ARMIES[sc.army](angle=sc.angle, town_hall=sc.town_hall, seed=sc.seed)
-    else:
-        from .engine.battle import Battle
-        from .meta_armies import make_plan
-
-        plan = make_plan(sc.army, sc.angle, sc.town_hall, sc.seed)
+    plan = make_plan(sc.army, sc.angle, sc.town_hall, sc.seed)
     if sc.tactic is not None:
         from .tactics import apply
 
@@ -223,8 +212,7 @@ def _run_one(args):
     if sc.charge is not None:
         apply_charge(plan, sc.charge)
     plan.strength = strength * skill(sc.seed)
-    kw = {"modifier": sc.modifier} if ENGINE != "v1" else {}
-    r = Battle(layout, plan, seed=sc.seed, town_hall=layout.town_hall, **kw).run()
+    r = Battle(layout, plan, seed=sc.seed, town_hall=layout.town_hall, modifier=sc.modifier).run()
     return (r.stars, r.destruction, r.th_destroyed, r.time)
 
 
@@ -400,7 +388,7 @@ class Evaluation:
 
 def evaluate(layout: Layout, scenarios, *, strength=None, parallel=True) -> Evaluation:
     strength = strength or STRENGTH
-    if os.environ.get("BASELAB_REDTEAM") == "1" and ENGINE != "v1":
+    if os.environ.get("BASELAB_REDTEAM") == "1":
         # opt-in: playbook armies attack with their red-team best attack
         # (redteam.py, docs/REDTEAM.md); a few hundred battles per army
         from .redteam import redteam_rows

@@ -1,10 +1,10 @@
 # Engine v2: how the simulator works and how far to trust it
 
-Engine v2 (`src/baselab/engine/`) replaced the patched v1 `sim.py`. Every number
-comes from `data/registry.json`. That file merges ClashKing's game-file export
-with the Fandom wiki level tables, mirrored 2026-10-15. Each behaviour cites the
-wiki page it implements. `BASELAB_ENGINE=v1` still runs the old engine for
-comparison.
+Engine v2 (`src/baselab/engine/`) is the only battle engine (the old v1
+`sim.py` was removed on 2026-10-20). Every number comes from
+`data/registry.json`. That file merges ClashKing's game-file export with the
+Fandom wiki level tables, mirrored 2026-10-15. Each behaviour cites the wiki
+page it implements.
 
 ## Layout
 
@@ -19,6 +19,8 @@ comparison.
 | `spells.py` | All 20 spells, Spell Tower casts (rage, poison, invisibility, earthquake), defensive poison and Inferno Artillery flame pools |
 | `traps.py` | All 8 traps, including the TH17+ Giga Bomb (18-housing trigger) |
 | `plans.py` | Attack plans: armies taken from real attacks on your base, plus the attacker brain |
+| `playbook.py` | Cited real-player playbooks as attack plans (`BASELAB_PLAYBOOKS=1`) |
+| `result.py` | `Result`, the outcome of one battle |
 
 ## Checks that passed
 
