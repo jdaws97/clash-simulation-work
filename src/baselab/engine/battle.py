@@ -858,7 +858,7 @@ class Battle:
         return False
 
     def result(self):
-        from ..sim import Result
+        from .result import Result
 
         if self.record and getattr(self, "_onboard_cargo", None):
             self.log.append((round(self.t, 1), "onboard_cc", list(self._onboard_cargo)))

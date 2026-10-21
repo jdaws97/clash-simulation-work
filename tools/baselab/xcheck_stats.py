@@ -6,6 +6,12 @@ ClashKing with what the engine actually reads (stats.get, where a wiki
 column overrides the game-data value) and, separately, with the wiki
 column itself (the independent second source).
 
+A registry entry that was not built from ClashKing (source.clashking false)
+is a different unit that only shares the name, e.g. the registry's
+"Lavaloon" is the Lavaloon Puppet summon (Characters.csv "GW Equipment
+Lavaloon", about 10% weaker), while ClashKing's "Lavaloon" is the seasonal
+troop. Those pairs are listed, not compared.
+
 Usage: python tools/baselab/xcheck_stats.py
 """
 import json
@@ -28,7 +34,7 @@ def close(a, b):
 tally = Counter()
 engine_bad = defaultdict(list)
 wiki_bad = defaultdict(list)
-missing, dupes = [], []
+missing, dupes, other_unit = [], [], []
 reg = stats.registry()
 for cat in ("troops", "heroes", "buildings", "spells", "pets", "traps", "guardians"):
     entries: dict = {}
@@ -41,6 +47,9 @@ for cat in ("troops", "heroes", "buildings", "spells", "pets", "traps", "guardia
     for name, e in entries.items():
         if name not in reg:
             missing.append((cat, name))
+            continue
+        if not reg[name].get("source", {}).get("clashking"):
+            other_unit.append((cat, name, reg[name].get("kind")))
             continue
         for lv in e.get("levels", []):
             L = lv.get("level")
@@ -73,6 +82,8 @@ print(f"engine differs from game data: {sum(map(len, engine_bad.values()))} leve
 for k, v in sorted(engine_bad.items()):
     print("  ", k, len(v), "e.g. (level, game data, engine)", v[:3])
 print(f"wiki differs from game data: {sum(map(len, wiki_bad.values()))} level rows (engine uses the wiki value there)")
+if other_unit:
+    print("same name, different unit (registry entry not from ClashKing; not compared):", other_unit)
 if dupes:
     print("ClashKing names listed twice (last one used):", sorted(set(dupes)))
 print("not in engine:", [n for c, n in missing if c in ("troops", "heroes", "pets", "guardians")][:60])

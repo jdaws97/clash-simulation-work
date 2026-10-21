@@ -1,7 +1,7 @@
 """Red team vs scouting on real bases (docs/REDTEAM.md).
 
 For each base and army: the scouting baseline of playbook_check.py (8 sides
-x 2 charge flanks, best mean trophies on 4 seeds) and the red team
+x 2 charge flanks, best mean trophies on 5 seeds) and the red team
 (src/baselab/redteam.py). Both picks are replayed on the same 20 fresh
 seeds, so neither number carries winner's-curse optimism.
 
@@ -34,7 +34,7 @@ ARMIES = ["custom:user-rr", "custom:user-druid-ruin", "meta:mass-dragons-17-1"]
 def scouting(lay, army):
     ev = _Evaluator(lay.to_json(), army, STRENGTH.get(army, 1.0))
     cands = [Attack(2 * math.pi * k / 8 + 0.1, side) for k in range(8) for side in ("left", "right")]
-    seeds = tuple(range(700, 704))
+    seeds = tuple(range(700, 705))  # one seed per skill quantile (seed % 5)
     ev.run(cands, seeds)
     best = max(cands, key=lambda a: ev.score(a, seeds))
     insample = ev.score(best, seeds)[0]

@@ -25,7 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from baselab.evaluate import SCOUT, apply_charge, attacker_trophies, pool, skill, techniques  # noqa: E402
+from baselab.evaluate import SCOUT, apply_charge, attacker_trophies, group_seed, pool, skill, techniques  # noqa: E402
 from baselab.layout import Layout  # noqa: E402
 from baselab.meta_armies import compose, data, plan_for_build  # noqa: E402
 
@@ -55,7 +55,7 @@ def rate(lays, build, strength, angles, seeds):
         for k in range(angles):
             for s in seeds:
                 for tech in techs:
-                    jobs.append((lj, build, 2 * math.pi * k / angles + 0.13 * bi, s * 11 + k, strength, tech))
+                    jobs.append((lj, build, 2 * math.pi * k / angles + 0.13 * bi, group_seed(bi + s, s, k, angles), strength, tech))
                     keys.append((bi, s, k))
     res = list(pool().map(_run, jobs, chunksize=2))
     sides: dict = {}

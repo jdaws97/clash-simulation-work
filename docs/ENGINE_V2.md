@@ -1,10 +1,10 @@
 # Engine v2: how the simulator works and how far to trust it
 
-Engine v2 (`src/baselab/engine/`) replaced the patched v1 `sim.py`. Every number
-comes from `data/registry.json`. That file merges ClashKing's game-file export
-with the Fandom wiki level tables, mirrored 2026-10-15. Each behaviour cites the
-wiki page it implements. `BASELAB_ENGINE=v1` still runs the old engine for
-comparison.
+Engine v2 (`src/baselab/engine/`) is the only battle engine (the old v1
+`sim.py` was removed on 2026-10-20). Every number comes from
+`data/registry.json`. That file merges ClashKing's game-file export with the
+Fandom wiki level tables, mirrored 2026-10-15. Each behaviour cites the wiki
+page it implements.
 
 ## Layout
 
@@ -19,6 +19,8 @@ comparison.
 | `spells.py` | All 20 spells, Spell Tower casts (rage, poison, invisibility, earthquake), defensive poison and Inferno Artillery flame pools |
 | `traps.py` | All 8 traps, including the TH17+ Giga Bomb (18-housing trigger) |
 | `plans.py` | Attack plans: armies taken from real attacks on your base, plus the attacker brain |
+| `playbook.py` | Cited real-player playbooks as attack plans (`BASELAB_PLAYBOOKS=1`) |
+| `result.py` | `Result`, the outcome of one battle |
 
 ## Checks that passed
 
@@ -195,3 +197,12 @@ Kept, with the reason in a code comment:
 - Not stated anywhere: the smaller push for 2-3 housing troops, Giga's longer throw for farther units, the Tornado's rotation and how its force combines with a unit's own walking, Spring's stun length (1 s assumed), Tornado field radius (trap DamageRadius 3 tiles is kept; the Tornado spell row says Radius=400).
 
 Ledger: traps F3-F10, F12-F15, F18-F21, pets row426/518/519 applied; equipment-1:F13 (snakes) rejected by game data; F22-F26 deferred (event traps); F1, F2, F11, F16, F17, F27 open.
+
+## 2026-10-20: scoring and check fixes (these change scores)
+
+- **Attacker skill no longer depends on the side.** Each scenario seed picks one of five skill quantiles (`seed % 5`). The seed used to be `s * 7 + k` for side k, so the 8 sides of one scouting group were played at mixed skills, and "best of 2 sides" partly picked the stronger attacker instead of the weaker side. Now every side of a group has the same quantile; seeds are `5 * (s * n_sides + k) + q` (`evaluate._assign_skill`). The quantile varies between groups instead: each army's groups take a set symmetric around the median, and armies are placed (heaviest first) so the weighted quantile shares stay near 1/5 each. This applies to `meta_scenarios`, `ranked_scenarios`, `war_scenarios`, `target_scenarios` and `side_scenarios`, and to the scouting in `calibrate_meta.py` and `replay_log.py`.
+  - The old seeds were not even either: `meta_scenarios(n_angles=2, seeds=(0,))` (the funnel and QD quick screens) played every attacker at the two lowest quantiles (mean z −0.90), and 8 angles × 1 seed at mean z −0.23. The new assignment gives mean z within ±0.07 of 0 for every set checked (single-seed sets with few armies cannot cover all quantiles evenly; use 5 seeds for that).
+  - All results move, because every battle seed changed. The r7 calibration (`data/meta-calibration-r7.json`) was fitted with the coupled skills; refit it before comparing new scores with old ones.
+- **No duplicate charge battles in playbook mode.** With `BASELAB_PLAYBOOKS=1`, `techniques()` returns only the plan for builds with a cited playbook (its charges are in its steps; `PlaybookPlan.setup_charge` is a no-op). `techniques_on=True` used to run 384 ranked battles per 8 angles where 136 were distinct.
+- **Check 7 (`playbook_check.py`)** picks the side and flank on seeds 700-704 and scores the pick on seeds 800-809. Before, both used 700-703, which inflated the best-side rate and covered only skill quantiles 0-3.
+- **`engine_coverage.py`** compares every spell, equipment piece and pet with the same battle without it; "ok" now means the end state changed.

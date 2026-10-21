@@ -34,7 +34,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tools" / "baselab"))
 
-from baselab.evaluate import SCOUT, STRENGTH, apply_charge, attacker_trophies, pool, skill, techniques  # noqa: E402
+from baselab.evaluate import SCOUT, STRENGTH, apply_charge, attacker_trophies, group_seed, pool, skill, techniques  # noqa: E402
 from baselab.layout import Layout  # noqa: E402
 from baselab.meta_armies import SPELL_KEYS  # noqa: E402
 from decode_battlelog import decode  # noqa: E402
@@ -176,7 +176,7 @@ def main():
         for k in range(args.angles):
             for s in range(args.seeds):
                 for tech in techs:
-                    jobs.append((lj, build, 2 * math.pi * k / args.angles + 0.21, 1000 + n * 31 + s * 7 + k, st, tech))
+                    jobs.append((lj, build, 2 * math.pi * k / args.angles + 0.21, 5000 * (n + 1) + group_seed(n + s, s, k, args.angles), st, tech))
                     keys.append((s, k))
         res = list(pool().map(_run, jobs, chunksize=2))
         sides: dict = {}

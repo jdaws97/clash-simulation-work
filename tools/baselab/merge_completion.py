@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools" / "baselab"))
 
-from check_playbook import locate, parse_reply  # noqa: E402
+from check_playbook import parse_reply, verified_time  # noqa: E402
 
 SRC = ROOT / "output" / "sources"
 ACTIONS = {"deploy", "spell", "ability", "recall", "redeploy", "release_siege"}
@@ -101,9 +101,9 @@ def merge(fam: str, dry: bool, folder: str = "completion") -> str:
             tr = SRC / "transcripts" / f"{c.get('video')}.json"
             if not tr.exists() or (sources and c.get("video") not in sources):
                 continue
-            hits = locate(json.loads(tr.read_text(encoding="utf-8"))["lines"], c.get("quote", ""))
-            if hits and (c.get("t") is None or any(abs(h - float(c["t"])) <= 30 for h in hits)):
-                good.append({**c, "verified_t": min(hits, key=lambda h: abs(h - float(c.get("t") or h)))})
+            vt = verified_time(json.loads(tr.read_text(encoding="utf-8"))["lines"], c.get("quote", ""), c.get("t"))
+            if vt is not None:
+                good.append({**c, "verified_t": vt})
         if not good:
             why.append("no verified quote")
         if why:

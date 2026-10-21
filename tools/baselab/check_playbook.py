@@ -44,18 +44,33 @@ def parse_reply(text: str):
 
 
 def locate(lines, quote):
-    """Times (s) where the normalised quote occurs, searching a sliding
-    window of caption lines (quotes often span line breaks)."""
+    """Times (s) of the caption lines where the normalised quote starts,
+    searching a window of 4 lines from each line (quotes often span line
+    breaks). A hit counts only for the line the quote starts in, so the time
+    is that line's, not the time of a line up to 3 lines earlier."""
     q = norm(quote)
     if len(q) < 6:
         return []
+    texts = [norm(t) for _, t in lines]
     hits = []
     for i in range(len(lines)):
-        window = norm(" ".join(t for _, t in lines[i:i + 4]))
+        if not texts[i]:
+            continue
+        window = " ".join(x for x in texts[i:i + 4] if x)
         # whole words only: "ice the queen" must not match "twice the queen"
-        if f" {q} " in f" {window} ":
+        p = f" {window} ".find(f" {q} ")
+        if 0 <= p < len(texts[i]):
             hits.append(lines[i][0])
     return hits
+
+
+def verified_time(lines, quote, t=None, tol=30.0):
+    """The located time of a quote closest to its stated time t (within
+    tol seconds), or None if it is not in the transcript there."""
+    hits = locate(lines, quote)
+    if t is not None:
+        hits = [h for h in hits if abs(h - float(t)) <= tol]
+    return min(hits, key=lambda h: abs(h - float(t if t is not None else h))) if hits else None
 
 
 def check(vid: str) -> dict | None:
@@ -72,11 +87,9 @@ def check(vid: str) -> dict | None:
         for key in ("base_reading", "steps", "rules", "spell_policy", "ability_policy"):
             good = []
             for item in pb.get(key) or []:
-                hits = locate(lines, item.get("quote", ""))
-                t = item.get("t")
-                ok = bool(hits) and (t is None or any(abs(h - float(t)) <= 30 for h in hits))
-                if ok:
-                    item["verified_t"] = min(hits, key=lambda h: abs(h - float(t or h)))
+                vt = verified_time(lines, item.get("quote", ""), item.get("t"))
+                if vt is not None:
+                    item["verified_t"] = vt
                     good.append(item)
                     kept += 1
                 else:
