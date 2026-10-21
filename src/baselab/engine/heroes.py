@@ -32,8 +32,8 @@ def _col(name, level, *frags, default=0.0):
 
 class Kit:
     __slots__ = ("hero", "equip", "levels", "pet_name", "pet_level", "pet_unit", "regen", "hp_recovery", "phoenix", "doomed_at",
-                 "spear_shots", "spear_bonus", "boots_until", "boots_dps", "reduction_until", "reduction", "heal_until", "heal_rate",
-                 "next_meteor", "fox_next", "diggy_next", "crown_stage", "vamp", "frozen_arrow", "mono_arrow")
+                 "spear_shots", "spear_bonus", "reduction_until", "reduction", "heal_until", "heal_rate",
+                 "next_meteor", "crown_stage", "vamp", "frozen_arrow", "mono_arrow")
 
     def __init__(self):
         self.equip = []
@@ -47,15 +47,11 @@ class Kit:
         self.doomed_at = None
         self.spear_shots = 0
         self.spear_bonus = 0.0
-        self.boots_until = 0.0
-        self.boots_dps = 0.0
         self.reduction_until = 0.0
         self.reduction = 0.0
         self.heal_until = 0.0
         self.heal_rate = 0.0
         self.next_meteor = 0.0
-        self.fox_next = 0.0
-        self.diggy_next = 0.0
         self.crown_stage = 0
         self.vamp = 0.0
         self.frozen_arrow = None
@@ -286,9 +282,10 @@ def tick(battle, u: Unit):
             u.invuln_until = 0.0
             u.alive = False
             u.hp = 0.0
-            from . import spells
-
             spells.maybe_revive(battle, u)
+            if battle.record:
+                # The Phoenix revival ended: the hero is knocked out for good.
+                battle.log.append((round(t, 1), "dies", u.name, u.team))
             return
     heal = k.regen
     pet = k.pet_unit
@@ -315,13 +312,17 @@ def tick(battle, u: Unit):
     if k.has("Electro Boots"):
         due = u.extra.get("boots_next", t)
         if t >= due or math.isclose(t, due):
-            # Five tiles, one pulse per 0.4 seconds (wiki: Electro Boots).
+            # One pulse per 0.4 seconds (wiki: Electro Boots). The wiki says
+            # 5 tiles; the game data (as for the Electro Titan's aura) says:
+            # game data v18.200.9: Electro Boots Aura.Radius=450 -> 4.5 tiles.
+            # game data v18.200.9: Electro Boots Aura.HeroDamageMultiplier=25 -> heroes take 25%.
             _blast(
                 battle,
                 u.x,
                 u.y,
-                5.0,
+                4.5,
                 _col("Electro Boots", k.lv("Electro Boots"), "aura damage per hit"),
+                hero_mult=0.25,
             )
             u.extra["boots_next"] = t + 0.4
     if t < k.heal_until:
@@ -552,7 +553,19 @@ def activate(battle, u: Unit):
             for key, w in list(battle.walls.items()):
                 if w.alive and dist(w.x, w.y, u.x, u.y) <= 8.0:
                     battle.hit_building(w, 1e9)  # boots destroy walls instantly (wiki)
-            troop_pct = _col(e, lv, "troop damage %") / 100.0
+            # The wiki's troop column is half the building column, but the
+            # game data agrees with it only at level 1. Five hits per quake:
+            # game data v18.200.9: Earthquake Boots Spell.NumberOfHits=5 -> five hits.
+            # Per-hit troop permil by spell level, keyed by the per-hit building
+            # permil (the building column matches the wiki at every level):
+            # game data v18.200.9: Earthquake Boots Spell.BuildingDamagePermil=80 -> 8% per hit at level 7.
+            # game data v18.200.9: Earthquake Boots Spell.TroopDamagePermil=20 -> 2% per hit at level 7.
+            troop_permil = {20: 10, 40: 12, 60: 14, 68: 14, 72: 16, 76: 18, 80: 20}.get(round(pct * 200))
+            troop_pct = (
+                troop_permil * 5 / 1000.0
+                if troop_permil is not None
+                else _col(e, lv, "troop damage %") / 100.0
+            )
             for f in battle.defenders_near(u.x, u.y, 8.0):
                 if f.flying:
                     continue
@@ -674,9 +687,6 @@ def activate(battle, u: Unit):
             if "spear_base_range" not in u.extra:
                 u.extra["spear_base_range"] = u.range
             u.range = SPEAR_RANGE
-        elif e == "Electro Boots":
-            k.boots_dps = _col(e, lv, "aura damage per second")
-            k.boots_until = 0.0  # passive aura (see hero_tick); nothing to start here
         elif e == "Haste Vial":
             dur = _col(e, lv, "ability duration", default=10.0)
             u.extra.setdefault("haste_effects", {})[e] = (
@@ -711,6 +721,7 @@ def activate(battle, u: Unit):
             length = math.hypot(dx, dy) or 1.0
             # game data v18.200.9: vfx_projectile_DarkOrb.Speed=1250 -> 12.5 tiles/s.
             # game data v18.200.9: vfx_projectile_DarkOrb.MaxTravelTime=1250 -> 1.25 s.
+            # game data v18.200.9: MinionAttackAbility.PenetratingRadius=500 -> 5 tiles.
             battle.add_pending(
                 Pending(
                     t,
@@ -970,6 +981,13 @@ def dash_step(battle, u):
         if b.alive and b.id not in dsh["hit"] and b.edge_distance(u.x, u.y) <= 1.5:
             dsh["hit"].add(b.id)
             battle.hit_building(b, dsh["damage"])
+    # The dash also hits defending troops and heroes, ground and air:
+    # game data v18.200.9: DragonDukeDeadlyDashMapCenter.ActAsPenetratingRadius=150 -> 1.5 tiles.
+    # game data v18.200.9: DragonDukeDeadlyDashMapCenter.ActAsPenetratingAirTargets=TRUE -> air too.
+    for f in battle.defenders_near(u.x, u.y, 1.5):
+        if ("unit", f.id) not in dsh["hit"] and f.alive and not f.underground:
+            dsh["hit"].add(("unit", f.id))
+            battle.hit_unit(f, dsh["damage"], attacker=u)
     if battle.t + battle.DT >= dsh["until"]:
         u.x, u.y = dsh["end"]
         end_dash(battle, u)
@@ -1000,7 +1018,7 @@ def _damage(battle, target, damage):
         battle.hit_building(target, damage)
 
 
-def _blast(battle, x, y, radius, damage, *, exclude=None):
+def _blast(battle, x, y, radius, damage, *, exclude=None, hero_mult=1.0):
     # Secondary blasts retain Overgrowth immunity, including enemy troops.
     for target in list(battle.buildings) + list(battle.defenders):
         if (
@@ -1013,7 +1031,8 @@ def _blast(battle, x, y, radius, damage, *, exclude=None):
         if isinstance(target, Building) and not target.counted:
             continue
         if _distance(target, x, y) <= radius:
-            _damage(battle, target, damage)
+            hero = isinstance(target, Unit) and target.is_hero
+            _damage(battle, target, damage * hero_mult if hero else damage)
 
 
 def _moving_auras(battle, warden, members=None):
@@ -1062,7 +1081,12 @@ def apply_auras(battle):
                 stats.get("Apprentice Warden", warden.level, "Aura HP Increase") / 100.0
             )
             cap, rage = math.inf, 0.0
+            # game data v18.200.9: Apprentice Aura.Radius=700 -> 7 tiles.
+            radius = 7.0
         else:
+            # game data v18.200.9: Life Gem Aura.Radius=900 -> 9 tiles.
+            # game data v18.200.9: Rage Gem Aura.Radius=900 -> 9 tiles.
+            radius = 9.0
             kit = warden.kit
             percentage = cap = rage = 0.0
             _moving_auras(battle, warden)
@@ -1073,10 +1097,10 @@ def apply_auras(battle):
                 cap = _col("Life Gem", kit.lv("Life Gem"), "max hp increase")
             if kit is not None and kit.has("Rage Gem"):
                 rage = _col("Rage Gem", kit.lv("Rage Gem"), "% damage increase") / 100.0
-        # Wiki: Apprentice Warden grants its seven-tile aura on either team.
+        # Wiki: Apprentice Warden grants its aura on either team.
         allies = battle.attackers if warden.team == "atk" else battle.defenders
         for ally in allies:
-            if not ally.alive or dist(ally.x, ally.y, warden.x, warden.y) > 7.0:
+            if not ally.alive or dist(ally.x, ally.y, warden.x, warden.y) > radius:
                 continue
             if (
                 ally is warden

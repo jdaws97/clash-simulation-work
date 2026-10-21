@@ -7,6 +7,12 @@ equipment 18, epic 27, pets at their max level.
 
 Only the effects that matter for base evaluation are modelled; each item lists
 what is approximated.
+
+The v2 engine (src/baselab/engine) uses only HeroLoadout from this module; its
+equipment and pet numbers come from data/registry.json. The tables below
+(EQUIPMENT, PETS, SIEGES, APPRENTICE_AURA, REVIVE_PCT, COMMON_LOADOUTS) feed
+only the old v1 engine (sim.py via hero_kit.py), so editing them changes
+nothing in v2.
 """
 
 from __future__ import annotations
