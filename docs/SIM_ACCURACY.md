@@ -6,7 +6,7 @@ The sim counts as matching only when every check below passes. Each line is meas
 
 | # | Check | Target | How it is measured | Status (2026-10-19, round 7) |
 |---|---|---|---|---|
-| 1 | Unit, building, spell and equipment numbers | Agree with two independent sources | ClashKing game data vs engine, plus wiki for anything ClashKing lacks (`$TEMP/xcheck.py`, to move into `tools/baselab/xcheck_stats.py`) | 3,699 match, 0 open |
+| 1 | Unit, building, spell and equipment numbers | Agree with two independent sources | ClashKing game data vs engine, plus wiki for anything ClashKing lacks (`$TEMP/xcheck.py`, to move into `tools/baselab/xcheck_stats.py`) | Corrected 2026-10-20: the old check compared ClashKing with its own copy. Against what the engine reads, 103 level rows differ (wiki columns overriding game data: Lavaloon ~10% low, Flame Flinger, Super Hog Rider, Barbarian King L1, event troops); fix in progress |
 | 2 | Mechanics | Every mechanic used by meta armies passes a wiki-fact test | `tools/baselab/mechanic_tests.py`: small staged battles with a known wiki answer (time to kill, damage per hit, heal rate, trigger rules) | 7/7 pass (Inferno ramp, Healer on troops and heroes, Root Rider wall break, Freeze); 13 Codex category audits running |
 | 3 | Attack plays | Every scripted step cites a real player's description | Playbooks in `output/sources/playbooks/`, every step quote-checked against its transcript | extraction running (211 transcripts) |
 | 4 | Army strength without fudge | Every calibrated TH16 build within 0.85–1.15 | `tools/baselab/calibrate_meta.py --techniques` | Round 7: Throwers 1.01 pass / 1.17; Dragons 0.88 pass; Root Riders 1.17 / 1.17 (just outside) |
