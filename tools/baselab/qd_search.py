@@ -206,7 +206,7 @@ def main():
     hold = meta_scenarios(args.mode, 8, (21, 22, 23), angle_offset=math.pi / 8)
     own = own_levels()
     refs = []
-    for f in [ROOT / "output/winners/ranked-funnel1.json", ROOT / "data/reference-bases/your-base.json"]:
+    for f in [ROOT / "data/reference-bases/your-base.json"]:
         if f.exists():
             l = Layout.load(f)
             l.levels, l.wall_level, l.hero_levels = dict(own["levels"]), own["wall_level"], dict(own["hero_levels"])
