@@ -34,6 +34,12 @@ BUCKET = 4.0
 ENGAGE_RADIUS = 7.0
 # game data v18.200.9: ALLIANCE_ALERT_RADIUS.NumberValue=700 -> 7 tiles.
 AWARE_RADIUS = 7.0
+# Path goals are half-tile cells whose centres lie at least 0.25 tiles from a
+# hitbox edge and up to 0.35 from a point, so a shorter reach left no goal
+# cell and the unit never moved (Bear, wiki range 0.2, made 0 attacks in
+# 4 Druid battles). Goals use at least the half-cell diagonal; the last
+# stretch is walked straight and the attack still checks the true range.
+GOAL_REACH_MIN = math.sqrt(0.5) / RES + 1e-6
 # Wall path costs retain their existing heuristic.
 WALL_COST = {"normal": 12.0, "smash": 1.2, "ignore": 0.0, "fly": 0.0}
 
@@ -1330,7 +1336,7 @@ class Battle:
         xs = np.fromiter((b.x for b in pool), dtype=np.float64, count=len(pool))
         ys = np.fromiter((b.y for b in pool), dtype=np.float64, count=len(pool))
         hs = np.fromiter((b.half_hit for b in pool), dtype=np.float64, count=len(pool))
-        reach = units.effective_range(u)
+        reach = max(units.effective_range(u), GOAL_REACH_MIN)
         costs = self.navigation_grid(u).building_costs(
             u.x, u.y, WALL_COST["normal"] / RES, xs, ys, hs, reach
         )
@@ -1499,6 +1505,7 @@ class Battle:
             return
         # Coordinate goals cover one grid cell; attack reach stays exact.
         reach = units.effective_range(u) if position is None else 1.0 / RES
+        reach = max(reach, GOAL_REACH_MIN)
         grid = self.navigation_grid(u)
         half = getattr(target, "half_hit", 0.0) if position is None else 0.0
         identity = ("unit", target.id) if isinstance(target, Unit) else target.id
@@ -1506,7 +1513,12 @@ class Battle:
         field_ = grid.field(key, tx, ty, half, reach, WALL_COST[mode] / RES)
         nx, ny, is_wall, at_goal = grid.next_step(field_, u.x, u.y)
         if at_goal:
-            if field_[grid.cell(u.x, u.y)] == 0.0:
+            cell = grid.cell(u.x, u.y)
+            # On a goal cell, close the last bit straight. A unit standing
+            # inside a hitbox (cargo or a drop over a building or Hidden
+            # Tesla) has no path value at all and used to freeze there
+            # until that building fell; it walks straight out instead.
+            if field_[cell] == 0.0 or grid.blocked[cell]:
                 self.move_straight(u, tx, ty, step)
             return
         if is_wall and mode in ("ignore",):
