@@ -225,8 +225,8 @@ class Grid:
             return entry[1]
         goal = _goal_mask(self.n, cx, cy, half, reach)
         dist = None
-        # the key rounds the reach, so the goal area can differ by requester:
-        # repair only when it matches (keeps results identical to a recompute)
+        # repair only when the goal area still matches (keeps results
+        # identical to a recompute)
         if entry is not None and np.array_equal(entry[2], goal):
             dist = self._repair(entry, wall_extra)
         if dist is None:
@@ -242,13 +242,15 @@ class Grid:
         if entry is not None and entry[0] == self.version:
             return entry[1]
         dist = None
+        goal = np.zeros((self.n, self.n), dtype=np.bool_)
+        goal[i, j] = True
         # the key is per tile but the source cell is a half-tile: repair only
-        # for the same source cell (keeps results identical to a recompute)
+        # for the same source cell (keeps results identical to a recompute).
+        # The source is passed as the goal so a source inside a hitbox that
+        # has since fallen restarts at 0; without it the field stayed all-INF.
         if entry is not None and entry[2] == (i, j):
-            dist = self._repair((entry[0], entry[1], None), wall_extra)
+            dist = self._repair((entry[0], entry[1], goal), wall_extra)
         if dist is None:
-            goal = np.zeros((self.n, self.n), dtype=np.bool_)
-            goal[i, j] = True
             dist = _dijkstra(goal, self.blocked, self.wall, np.float32(wall_extra), _NEIGHBORS, _STEP)
         self._cache[key] = (self.version, dist, (i, j))
         return dist

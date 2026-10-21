@@ -34,8 +34,14 @@ BUCKET = 4.0
 ENGAGE_RADIUS = 7.0
 # game data v18.200.9: ALLIANCE_ALERT_RADIUS.NumberValue=700 -> 7 tiles.
 AWARE_RADIUS = 7.0
-# Wall path costs retain their existing heuristic.
-WALL_COST = {"normal": 12.0, "smash": 1.2, "ignore": 0.0, "fly": 0.0}
+# Path goals are half-tile cells whose centres lie at least 0.25 tiles from a
+# hitbox edge and up to 0.35 from a point, so a shorter reach left no goal
+# cell and the unit never moved (Bear, wiki range 0.2, made 0 attacks in
+# 4 Druid battles). Goals use at least the half-cell diagonal; the last
+# stretch is walked straight and the attack still checks the true range.
+GOAL_REACH_MIN = math.sqrt(0.5) / RES + 1e-6
+# Wall path costs retain their existing heuristic ("smash" walks as "ignore").
+WALL_COST = {"normal": 12.0, "ignore": 0.0, "fly": 0.0}
 
 # Ranked difficulty modifiers (wiki "Ranked Battles"): defense DPS bonus,
 # defending hero DPS/HP bonus, Guardian DPS/HP bonus, attacking hero penalty.
@@ -44,25 +50,6 @@ MODIFIERS = {
     "legend3": (0.10, 0.10, 0.05, 0.05),
     "legend2": (0.15, 0.15, 0.10, 0.10),
     "legend1": (0.20, 0.20, 0.20, 0.20),
-}
-
-# Defending heroes stay within their territory around the banner (wiki:
-# "only defends his territory around his banner and will retreat if lured
-# too far out"). Radius assumed equal to the hero's search radius.
-DEFAULT_TERRITORY = 9.0
-
-STORAGES = {"gs", "es", "ds"}
-PREFERRED_TROOPS = {
-    "Super Giant",
-    "Sneaky Goblin",
-    "Super Wall Breaker",
-    "Giant Skeleton",
-    "Witch Golem",
-    "Electromite",
-    "Rocket Balloon",
-    "Ice Hound",
-    "Super Hog Rider",
-    "Super Hog",
 }
 
 
@@ -134,7 +121,6 @@ class Battle:
         self.cc_released = False
         self.th = None
         self.th_active = False
-        self.th_weapon_was_active = False
         # explicit levels win; otherwise the layout's owner's levels; else max
         self.defense_levels = {**(layout.levels or {}), **(defense_levels or {})}
         self.hero_levels = {**(layout.hero_levels or {}), **(hero_levels or {})}
@@ -1330,7 +1316,7 @@ class Battle:
         xs = np.fromiter((b.x for b in pool), dtype=np.float64, count=len(pool))
         ys = np.fromiter((b.y for b in pool), dtype=np.float64, count=len(pool))
         hs = np.fromiter((b.half_hit for b in pool), dtype=np.float64, count=len(pool))
-        reach = units.effective_range(u)
+        reach = max(units.effective_range(u), GOAL_REACH_MIN)
         costs = self.navigation_grid(u).building_costs(
             u.x, u.y, WALL_COST["normal"] / RES, xs, ys, hs, reach
         )
@@ -1383,7 +1369,12 @@ class Battle:
         )
         if not fields:
             return self.grid
-        key = (self.grid.version, tuple(id(field) for field in fields))
+        # id() alone can repeat once an expired field is freed, which would
+        # reuse the old spell's jumped walls; the field's place and time cannot.
+        key = (
+            self.grid.version,
+            tuple((id(f), f.x, f.y, f.radius, f.started) for f in fields),
+        )
         if getattr(self, "_jump_grid_key", None) != key:
             grid = Grid(WORLD)
             grid.blocked[:] = self.grid.blocked
@@ -1416,7 +1407,16 @@ class Battle:
         if (target.x, target.y) != (u.x, u.y):
             u.extra["facing"] = (target.x - u.x, target.y - u.y)
         if u.target_kind == "destination":
-            if u.x == target.x and u.y == target.y:
+            # Wiki: Wall Wrecker/Log Launcher break apart on reaching the Town
+            # Hall (or its remains). A ground machine cannot enter the hitbox,
+            # so it arrives within its attack range of the edge (game data
+            # v18.200.9: Wall Wrecker AttackRange=150, Log Launcher 100); it
+            # used to walk through the hitbox to the exact centre first.
+            if u.flying:
+                arrived = u.x == target.x and u.y == target.y
+            else:
+                arrived = target.edge_distance(u.x, u.y) <= u.range
+            if arrived:
                 self.kill(u)
             else:
                 self.move_straight(u, target.x, target.y, self.speed_of(u) * DT)
@@ -1485,6 +1485,7 @@ class Battle:
             return
         # Coordinate goals cover one grid cell; attack reach stays exact.
         reach = units.effective_range(u) if position is None else 1.0 / RES
+        reach = max(reach, GOAL_REACH_MIN)
         grid = self.navigation_grid(u)
         half = getattr(target, "half_hit", 0.0) if position is None else 0.0
         identity = ("unit", target.id) if isinstance(target, Unit) else target.id
@@ -1492,7 +1493,12 @@ class Battle:
         field_ = grid.field(key, tx, ty, half, reach, WALL_COST[mode] / RES)
         nx, ny, is_wall, at_goal = grid.next_step(field_, u.x, u.y)
         if at_goal:
-            if field_[grid.cell(u.x, u.y)] == 0.0:
+            cell = grid.cell(u.x, u.y)
+            # On a goal cell, close the last bit straight. A unit standing
+            # inside a hitbox (cargo or a drop over a building or Hidden
+            # Tesla) has no path value at all and used to freeze there
+            # until that building fell; it walks straight out instead.
+            if field_[cell] == 0.0 or grid.blocked[cell]:
                 self.move_straight(u, tx, ty, step)
             return
         if is_wall and mode in ("ignore",):
@@ -1512,7 +1518,21 @@ class Battle:
                 u.stuck = 0.0
             return
         u.stuck = 0.0
+        left = step - math.hypot(nx - u.x, ny - u.y)
         self.move_straight(u, nx, ny, step)
+        # A tick's movement used to end at the next half-tile waypoint, which
+        # capped path-following ground units at 5 tiles/s and cost 5-30% of
+        # speed from 3.5 tiles/s up (raged or hasted troops); the rest of the
+        # step now continues along the path. Walls stop it for the next tick.
+        for _ in range(4):
+            if left <= 1e-9 or u.x != nx or u.y != ny:
+                break
+            nx, ny, is_wall, at_goal = grid.next_step(field_, u.x, u.y)
+            if at_goal or is_wall and mode != "ignore" or (nx == u.x and ny == u.y):
+                break
+            d = math.hypot(nx - u.x, ny - u.y)
+            self.move_straight(u, nx, ny, left)
+            left -= d
 
     def move_straight(self, u, tx, ty, step):
         if self.t < u.extra.get("tornado_wall_until", 0.0):
