@@ -161,6 +161,12 @@ def wiki_level_rows(tables: list[dict]) -> dict:
     for t in tables:
         if t.get("kind") != "stats":
             continue
+        if t.get("heading") == "As Temporary Troop":
+            # Wiki: Meteor Golem and Meteor Golem/Meteormite, the event-troop
+            # table (levels by Town Hall) is a different unit; merging it gave
+            # the troop levels 1-3 "Town Hall Level Required" 6-8 and fake
+            # levels 4-13.
+            continue
         cols = t["columns"]
         first = cols[0].lower()
         if first not in ("level", "charge", "charge level"):

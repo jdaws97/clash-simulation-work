@@ -818,13 +818,16 @@ def _hunter_hit(battle, w, tgt, rage):
 
 
 def _scatter(battle, w, tgt, dmg, rage):
-    """Primary hit plus a 90-degree cone behind the target; units within 1 tile
-    take the max splash, 1-5 tiles fall off to the min (wiki)."""
+    """Primary hit plus a 90-degree cone behind the target with two falloff
+    hitboxes (wiki: Scattershot, table footnotes): within 1 tile the shot's
+    damage falls from the primary's maximum to the listed minimum at 1 tile;
+    from 1 to 5 tiles the splash falls from its maximum to its minimum."""
     b = w.owner
     battle.hit_unit(tgt, dmg)
     ax, ay = tgt.x - b.x, tgt.y - b.y
     ang = math.atan2(ay, ax)
     smax, smin = w.extra["splash_max"] * rage, w.extra["splash_min"] * rage
+    inner_min = w.extra.get("inner_min", w.extra["splash_max"]) * rage
     for a in battle.attackers_near(tgt.x, tgt.y, 5.0):
         if a is tgt or a.flying != tgt.flying or not a.alive or a.underground:
             continue
@@ -834,7 +837,12 @@ def _scatter(battle, w, tgt, dmg, rage):
             off = abs((math.atan2(dy, dx) - ang + math.pi) % (2 * math.pi) - math.pi)
             if off > math.pi / 4:
                 continue
-        amt = smax if d <= 1.0 else smax - (smax - smin) * (d - 1.0) / 4.0
+        if d <= 1.0:
+            # Wiki: Scattershot, "The minimum damage listed affects targets
+            # 1 tile behind the point of impact" (Damage per Shot* footnote).
+            amt = dmg - (dmg - inner_min) * d
+        else:
+            amt = smax - (smax - smin) * (d - 1.0) / 4.0
         battle.hit_unit(a, amt)
 
 
