@@ -1383,7 +1383,12 @@ class Battle:
         )
         if not fields:
             return self.grid
-        key = (self.grid.version, tuple(id(field) for field in fields))
+        # id() alone can repeat once an expired field is freed, which would
+        # reuse the old spell's jumped walls; the field's place and time cannot.
+        key = (
+            self.grid.version,
+            tuple((id(f), f.x, f.y, f.radius, f.started) for f in fields),
+        )
         if getattr(self, "_jump_grid_key", None) != key:
             grid = Grid(WORLD)
             grid.blocked[:] = self.grid.blocked
@@ -1416,7 +1421,16 @@ class Battle:
         if (target.x, target.y) != (u.x, u.y):
             u.extra["facing"] = (target.x - u.x, target.y - u.y)
         if u.target_kind == "destination":
-            if u.x == target.x and u.y == target.y:
+            # Wiki: Wall Wrecker/Log Launcher break apart on reaching the Town
+            # Hall (or its remains). A ground machine cannot enter the hitbox,
+            # so it arrives within its attack range of the edge (game data
+            # v18.200.9: Wall Wrecker AttackRange=150, Log Launcher 100); it
+            # used to walk through the hitbox to the exact centre first.
+            if u.flying:
+                arrived = u.x == target.x and u.y == target.y
+            else:
+                arrived = target.edge_distance(u.x, u.y) <= u.range
+            if arrived:
                 self.kill(u)
             else:
                 self.move_straight(u, target.x, target.y, self.speed_of(u) * DT)
@@ -1512,7 +1526,21 @@ class Battle:
                 u.stuck = 0.0
             return
         u.stuck = 0.0
+        left = step - math.hypot(nx - u.x, ny - u.y)
         self.move_straight(u, nx, ny, step)
+        # A tick's movement used to end at the next half-tile waypoint, which
+        # capped path-following ground units at 5 tiles/s and cost 5-30% of
+        # speed from 3.5 tiles/s up (raged or hasted troops); the rest of the
+        # step now continues along the path. Walls stop it for the next tick.
+        for _ in range(4):
+            if left <= 1e-9 or u.x != nx or u.y != ny:
+                break
+            nx, ny, is_wall, at_goal = grid.next_step(field_, u.x, u.y)
+            if at_goal or is_wall and mode != "ignore" or (nx == u.x and ny == u.y):
+                break
+            d = math.hypot(nx - u.x, ny - u.y)
+            self.move_straight(u, nx, ny, left)
+            left -= d
 
     def move_straight(self, u, tx, ty, step):
         if self.t < u.extra.get("tornado_wall_until", 0.0):

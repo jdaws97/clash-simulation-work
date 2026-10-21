@@ -284,7 +284,27 @@ def t_seeking_threshold():
     check("Seeking Air Mine: Minion cannot trigger", minion + (0.0 if b.traps[1].armed else 1.0), 0.0, 0.0, "Seeking Air Mine")
 
 
-TESTS = [t_inferno_ramp, t_healer_troop, t_healer_hero, t_root_rider_wall, t_spell_durations, t_bomb_and_giant_bomb, t_seeking_threshold]
+def t_raged_walk():
+    """A raged Hog Rider walks at its speed plus the Rage Spell's speed
+    increase (wiki: Rage Spell, speed in wiki units / 8 tiles per second);
+    path movement once stopped at each half-tile waypoint (capped 5 t/s)."""
+    from baselab.engine import units
+
+    lv = OWN.get("attack_levels", {}).get("Rage Spell") or stats.max_level("Rage Spell", 16)
+    boost = stats.get("Rage Spell", lv, "Speed Increase") / 8.0
+    b = Battle(layout([("gs", 40, 20, None)]), Stage([(0.0, "Hog Rider", 4.0, 21.5, None)]), seed=0, town_hall=16)
+    b.step()
+    hog = unit_named(b, "Hog Rider")
+    units.add_rage(hog, "test", 1.0, boost, 1e9)
+    b.step()
+    x0 = hog.x
+    for _ in range(20):
+        b.step()
+    want = b.speed_of(hog)
+    check("Raged Hog Rider: walking speed", (hog.x - x0) / 2.0, want, 0.1, f"Rage Spell level {lv}, +{boost:.2f} t/s", " t/s")
+
+
+TESTS = [t_inferno_ramp, t_healer_troop, t_healer_hero, t_root_rider_wall, t_spell_durations, t_bomb_and_giant_bomb, t_seeking_threshold, t_raged_walk]
 
 
 def main():
