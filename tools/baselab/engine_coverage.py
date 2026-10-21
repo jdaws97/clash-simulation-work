@@ -153,7 +153,11 @@ def equipment_rows(th):
                 row["status"] = "ok"
                 row["destruction_gain"] = round(b.destruction() - d0, 1)
                 if rec["kind"] == "pet":
-                    row["pet_spawned"] = u.kit.pet_unit is not None
+                    # the pet stays in battle.attackers even after its hero is
+                    # knocked out (which clears kit.pet_unit)
+                    row["pet_spawned"] = any(x.kind == "pet" and x.name == name for x in b.attackers)
+                    if not row["pet_spawned"]:
+                        row["status"] = "pet not spawned"
         except Exception as e:  # noqa: BLE001
             row["status"] = "error"
             row["error"] = "".join(traceback.format_exception_only(type(e), e)).strip()[:200]
