@@ -251,6 +251,15 @@ def on_spawn(battle, u: Unit):
         u.extra["armor_hp"] = 30.0
     sp = u.spec
     t = battle.t
+    # Speed boosts stay at the wiki's +52 and +16 (wiki units / 8). The
+    # abilities' own SpeedBoost (318, 150) has no proven unit: it is neither
+    # wiki units nor hundredths of a tile per second. The spell rows
+    # TroopHaste (52, 4000 ms) and TroopRage (16, +70%, 8000 ms at level 2)
+    # match the wiki exactly, but no game-data row links them to these troops.
+    # game data v18.200.9: RocketBallonAbility.SpeedBoost=318 -> unit unresolved.
+    # game data v18.200.9: RocketBallonAbility.DeactivateAfterTime=4000 -> 4 s.
+    # game data v18.200.9: Super Barbarian Ability.SpeedBoost=150 -> unit unresolved.
+    # game data v18.200.9: Super Barbarian Ability.DeactivateAfterTime=8000 -> 8 s.
     if "boosters" in sp.special:
         u.haste_spd = 52 / 8.0  # first 4 s, like a L5 Haste (wiki)
         u.haste_until = t + 4.0
@@ -616,13 +625,16 @@ def _roll_log(battle, u):
 def on_damaged(battle, u: Unit, amount: float):
     sp = u.spec
     if "electromites" in sp.special:
-        # Wiki: Super Yeti gives cumulative 400, 1200, 2000... thresholds.
-        # Super Yeti/Electromite instead says every 400; follow the parent.
+        # One Electromite per 400 damage taken (wiki: Super Yeti/Electromite).
+        # The Super Yeti page's "400, then every 800" has no game-data
+        # counterpart: the ability row has the same layout as the Yeti's, whose
+        # SpawnnedTroopsPerDamage=600 is the wiki's "for every 600 damage".
+        # game data v18.200.9: SuperYetiSpawnYetiMites.SpawnnedTroopsPerDamage=400 -> one per 400 damage.
         u.extra["mite_dmg"] += amount
         threshold = u.extra.get("next_mite_damage", 400.0)
         while u.extra["mites"] > 0 and u.extra["mite_dmg"] >= threshold:
             u.extra["mites"] -= 1
-            threshold += 800.0
+            threshold += 400.0
             battle.spawn(
                 "Electromite",
                 u.team,
@@ -665,7 +677,27 @@ def on_death(battle, u: Unit):
         # game data v18.200.9: Longshot.DieDamageAffectsAir=TRUE -> also hits air.
         death_air = u.name == "Longshot"
         dmg = stats.get(u.name, u.level, sp.death_damage, default=0.0)
-        if dmg:
+        if dmg and sp.death_delay > 0:
+            # Delayed death damage (DieDamageDelay, cited per unit in specs.py)
+            # lands where the unit died. Only the Wall Breakers, which have no
+            # delay, carry a separate wall column.
+            battle.add_pending(
+                Pending(
+                    t + sp.death_delay,
+                    u.x,
+                    u.y,
+                    sp.death_radius or 1.2,
+                    dmg,
+                    death_air,
+                    True,
+                    u.name,
+                    team="def" if u.team == "atk" else "atk",
+                    extra={"buildings": dmg if u.team == "atk" else 0.0},
+                    actor=u,
+                    effect="death",
+                )
+            )
+        elif dmg:
             if u.team == "atk":
                 # Wall Breakers killed early still blast walls at x40 (wiki
                 # "Damage when destroyed vs. Walls")
@@ -688,6 +720,17 @@ def on_death(battle, u: Unit):
                 return
             # Wiki: Ice Golem has separate offense/defense freeze radii.
             r = 7.5 if u.team == "atk" else 5.5
+            # Every target gets the full freeze. The spells also carry a
+            # shorter FreezeOuterTimeMS, but no game-data field or wiki text
+            # says where the outer ring starts, so it is not applied.
+            # game data v18.200.9: IceGolemFreeze.FreezeOuterTimeMS=6500 -> outer ring 6.5 s at level 9 (ring unknown).
+            if u.team == "def":
+                # The wiki's 3.5 s at levels 7-9 is not what the game data
+                # chains to: the defensive Ice Golem's ability stops at level 6.
+                # game data v18.200.9: Defensive Ice Golem.SpecialAbilitiesLevel=6 -> ability level 6 at troop levels 6-9.
+                # game data v18.200.9: IceGolemOnDeathDEF.SelfSpell=IceGolemFreeze_DEF -> the defensive freeze spell.
+                # game data v18.200.9: IceGolemFreeze_DEF.FreezeTimeMS=3250 -> 3.25 s at spell level 6.
+                secs = (2.0, 2.25, 2.5, 2.75, 3.0, 3.25)[min(max(u.level, 1), 6) - 1]
         elif u.name == "Ice Hound":
             if u.team == "atk":
                 # game data v18.200.9: IceHoundFreeze.Radius=650 -> 6.5 tiles.
@@ -1371,10 +1414,15 @@ def _spatial_strike(battle, u, target, damage):
         _area_hit(
             battle, u, target.x, target.y, 1.0, damage, walls=True, primary=target
         )
-        secondary = stats.text(u.name, u.level, "Damage per Hit / Hitbox 2*")
-        if secondary and "?" not in secondary:
-            bounds = secondary.replace("–", "-").split("-")
-            minimum, maximum = stats.num(bounds[0]), stats.num(bounds[-1])
+        # Secondary hitbox maximum/minimum by level. Levels 1-5 equal the
+        # wiki's "100-200" ... "300-600"; level 6 settles its "350?-700?".
+        # game data v18.200.9: Stone Slammer.Damage2=700 -> 700 within two tiles at level 6.
+        # game data v18.200.9: Stone Slammer.Damage2Min=350 -> 350 at three tiles at level 6.
+        # game data v18.200.9: Stone Slammer.Damage2FalloffStart=200 -> falloff from 2 tiles.
+        # game data v18.200.9: Stone Slammer.Damage2FalloffEnd=300 -> to 3 tiles.
+        pair = {1: (100, 200), 2: (150, 300), 3: (200, 400), 4: (250, 500), 5: (300, 600), 6: (350, 700)}.get(u.level)
+        if pair is not None:
+            minimum, maximum = pair
             boost = damage / stats.get(u.name, u.level, "Damage per Hit / Hitbox 1")
             for victim in _attack_targets(battle, u, walls=True):
                 distance = target_distance(target, victim)
@@ -1385,7 +1433,6 @@ def _spatial_strike(battle, u, target, damage):
                     if isinstance(victim, Wall):
                         amount *= 25.0  # Wiki: Stone Slammer, outer wall multiplier.
                     _hit_target(battle, u, victim, amount)
-        # Level-six secondary values remain unresolved.
     elif u.name in ("Yetimite", "Firemite"):
         u.extra["leaping"] = True
         # Wiki: Yeti/Yetimite and Furnace/Firemite have one 0.8-radius impact.
@@ -1398,13 +1445,20 @@ def _spatial_strike(battle, u, target, damage):
     elif u.name == "Flame Flinger":
         # Wiki: Flame Flinger fires three shots per burst.
         # Offsets, flight and flame geometry are not stated; impacts stay immediate.
+        # The impact splash reaches walls (x8, specs.py); the flame field's
+        # own wall bonus (wiki) belongs to the unmodelled field.
         for _ in range(3):
-            _area_hit(battle, u, target.x, target.y, sp.splash, damage, primary=target)
+            _area_hit(battle, u, target.x, target.y, sp.splash, damage, walls=True, primary=target)
     elif sp.attack == "suicide":
         # Wiki: Super Wall Breaker; arrival applies normal and death damage.
-        _area_hit(battle, u, u.x, u.y, sp.splash, damage, walls=True, primary=target)
+        # The blast is centred on the target (no SelfAsAoeCenter, unlike the
+        # Balloon's), the death damage on the breaker (on_death).
+        _area_hit(battle, u, target.x, target.y, sp.splash, damage, walls=True, primary=target)
         if u.name == "Wall Breaker":
-            # Additional contact-death payload is unverified; retain normal damage only.
+            # No death damage when a Wall Breaker reaches his wall: the wiki's
+            # level-12 example gives 110 to a building (his Damage alone, not
+            # 110 + 66). The game data's flag would allow it:
+            # game data v18.200.9: Wall Breaker.DieDamage=6 -> death damage set; NoDieDamageForSuicide unset.
             u.extra["suicided"] = True
         battle.kill(u)
     elif sp.attack == "chain":
@@ -2067,6 +2121,9 @@ def act_healer(battle, u: Unit):
         current = target
         for _ in range(sp.chain):
             # Wiki: Druid bounces at most three tiles, to four recipients total.
+            # The projectile row allows longer bounces; whether that cap is
+            # the heal chain's link distance is not stated, so 3 stays.
+            # game data v18.200.9: BattleDruidProjectile.MaxBounceDistance=450 -> 4.5 tiles (role unresolved).
             candidates = [
                 ally
                 for ally in allies

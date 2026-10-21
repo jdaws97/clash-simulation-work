@@ -375,10 +375,20 @@ def act(battle, pet):
 
 
 def _owl_link(first, second):
+    # game data v18.200.9: Electro Owl.ChainAttackDistance=300 -> 3 tiles.
+    # The chain has no building-only flag and the Owl hits ground and air
+    # units (wiki: like the Electro Dragon's and Mega Tesla's chains), so it
+    # also links to and from troops: unit centre to building edge or centre.
+    # game data v18.200.9: Electro Owl.ChainAttackDepth=2 -> two targets.
+    if isinstance(first, Unit) or isinstance(second, Unit):
+        if not isinstance(second, Unit):
+            first, second = second, first
+        if isinstance(first, Unit):
+            return dist(first.x, first.y, second.x, second.y) <= 3.0
+        return first.edge_distance(second.x, second.y) <= 3.0
     if not isinstance(first, Building) or not isinstance(second, Building):
         return False
-    # game data v18.200.9: Electro Owl.ChainAttackDistance=300 -> 3 tiles.
-    # Keep the existing building-edge geometry and eligibility.
+    # Keep the existing building-edge geometry between two buildings.
     dx = max(0.0, abs(first.x - second.x) - (first.size + second.size) / 2.0)
     dy = max(0.0, abs(first.y - second.y) - (first.size + second.size) / 2.0)
     return (dx * dx + dy * dy) ** 0.5 < 3.0
