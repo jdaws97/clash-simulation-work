@@ -1,0 +1,1203 @@
+{
+ "created": "2026-10-21",
+ "town_hall": 16,
+ "notes": "Scouted TH16 layout candidates for digitizing. 'clean' = top-down layout-editor image with building pads and no watermark; only the Blueprint ranked base meets that bar. Clash Champs images are full-village screenshots with a centre watermark and ~16 px per tile half-width; AllClash images are cropped at the left/right corners. Every candidate has an in-game layout link: the most reliable way to get a usable image is to open the link in game and take a layout-editor screenshot plus a trap-view screenshot (user action). Excluded: TH17/18 bases, farm/progress bases, AllClash Dec 2025 bases and the Jan 2026 AllClash entries whose links are TH17. Clash Champs 'Pro' is the site's style tag, not a builder credential; builders there are community uploaders.",
+ "counts": {
+  "total": 47,
+  "usable": 43,
+  "clean_images": 1,
+  "full_village_images": 17,
+  "no_image": 5
+ },
+ "candidates": [
+  {
+   "id": "bp-ranked-2026-06",
+   "source": "Blueprint CoC",
+   "source_url": "https://blueprintcoc.com/blogs/town-hall-16/best-th16-trophy-base",
+   "builder": "Blueprint CoC builder team (article by Loki)",
+   "date": "2026-06-22",
+   "name": "Best TH16 Ranked Mode/Trophy Base 2026",
+   "purpose": "ranked / Legend trophy; tested vs RC-walk Root Riders, Clone Hydra, Super Archer spam, Bat Witches",
+   "image_url": "https://cdn.shopify.com/s/files/1/0472/7265/7051/files/TH16_ranked.jpg",
+   "extra_images": {
+    "trap_view": "https://cdn.shopify.com/s/files/1/0472/7265/7051/files/th16_trap_view.jpg"
+   },
+   "image_size": [
+    2880,
+    1620
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAQgAAAAJUMcThgSfkw1SX7Qoe6MuZ",
+   "image_quality": {
+    "view": "layout editor, top-down isometric, cyan building pads",
+    "all_buildings": true,
+    "walls": "all visible except the bottom corner (x+y >= ~80) and a few behind tall buildings",
+    "traps": "separate trap-view image; traps stacked too densely to read tile by tile",
+    "watermark": false,
+    "clean": true
+   },
+   "inspected": true,
+   "status": "DIGITIZED: data/builder-bases/blueprint-ranked-2026-06.json"
+  },
+  {
+   "id": "bp-top5-2026-03-1",
+   "source": "Blueprint CoC",
+   "source_url": "https://blueprintcoc.com/blogs/town-hall-16/best-th16-base-layouts",
+   "builder": "Blueprint CoC base builders (article by Loki)",
+   "date": "2026-03-11",
+   "name": "Toxic Ring Control Base",
+   "purpose": "war / anti-Root Rider",
+   "image_url": null,
+   "image_size": null,
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAVQAAAAHsVvtVl8MaGJXDkIdmvYn_",
+   "image_quality": {
+    "view": null,
+    "clean": false,
+    "note": "no image on the page (only a YouTube video); needs an in-game screenshot of the layout link"
+   },
+   "inspected": true,
+   "status": "no image"
+  },
+  {
+   "id": "bp-top5-2026-03-2",
+   "source": "Blueprint CoC",
+   "source_url": "https://blueprintcoc.com/blogs/town-hall-16/best-th16-base-layouts",
+   "builder": "Blueprint CoC base builders (article by Loki)",
+   "date": "2026-03-11",
+   "name": "Toxic Box Anti-RC Base",
+   "purpose": "anti-Root Rider / anti-Royal-Champion",
+   "image_url": null,
+   "image_size": null,
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAVQAAAAHsVyc3R7qQOntzSA2uadGy",
+   "image_quality": {
+    "view": null,
+    "clean": false,
+    "note": "no image on the page (only a YouTube video); needs an in-game screenshot of the layout link"
+   },
+   "inspected": true,
+   "status": "no image"
+  },
+  {
+   "id": "bp-top5-2026-03-3",
+   "source": "Blueprint CoC",
+   "source_url": "https://blueprintcoc.com/blogs/town-hall-16/best-th16-base-layouts",
+   "builder": "Blueprint CoC base builders (article by Loki)",
+   "date": "2026-03-11",
+   "name": "Hybrid Diamond Disruptor",
+   "purpose": "hybrid",
+   "image_url": null,
+   "image_size": null,
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAVQAAAAHsWRjDM0UPS3RMZb1VPdwi",
+   "image_quality": {
+    "view": null,
+    "clean": false,
+    "note": "no image on the page (only a YouTube video); needs an in-game screenshot of the layout link"
+   },
+   "inspected": true,
+   "status": "no image"
+  },
+  {
+   "id": "bp-top5-2026-03-4",
+   "source": "Blueprint CoC",
+   "source_url": "https://blueprintcoc.com/blogs/town-hall-16/best-th16-base-layouts",
+   "builder": "Blueprint CoC base builders (article by Loki)",
+   "date": "2026-03-11",
+   "name": "Symmetrical Control War Base",
+   "purpose": "war",
+   "image_url": null,
+   "image_size": null,
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAVQAAAAHsWVCPV7-IOqPLsrCLNAyL",
+   "image_quality": {
+    "view": null,
+    "clean": false,
+    "note": "no image on the page (only a YouTube video); needs an in-game screenshot of the layout link"
+   },
+   "inspected": true,
+   "status": "no image"
+  },
+  {
+   "id": "bp-top5-2026-03-5",
+   "source": "Blueprint CoC",
+   "source_url": "https://blueprintcoc.com/blogs/town-hall-16/best-th16-base-layouts",
+   "builder": "Blueprint CoC base builders (article by Loki)",
+   "date": "2026-03-11",
+   "name": "Anti-Three Star Trap Base",
+   "purpose": "hybrid / anti-3-star",
+   "image_url": null,
+   "image_size": null,
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAVQAAAAHsWYW2cp9my0xkR3ED5vNQ",
+   "image_quality": {
+    "view": null,
+    "clean": false,
+    "note": "no image on the page (only a YouTube video); needs an in-game screenshot of the layout link"
+   },
+   "inspected": true,
+   "status": "no image"
+  },
+  {
+   "id": "allclash-war-2026-09",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-09-01",
+   "name": "TH16 War / CWL Base, September 2026",
+   "purpose": "war / CWL",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/08/th16-war-base-september-2026-9a8hwsezfn.webp",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAK6VHL4q391",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-war-2026-08",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-08-01",
+   "name": "TH16 War / CWL Base, August 2026",
+   "purpose": "war / CWL",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/07/th16-war-base-august-2026-oa9wcituvwe.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAK6VRsxBGS2C9gn78TXetKq",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-war-2026-07",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-07-01",
+   "name": "TH16 War / CWL Base, July 2026",
+   "purpose": "war / CWL",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/06/th16-war-base-july-2026-an90g3.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAK1yqNSTLF0HLwJk0bxSec4",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-war-2026-06",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-06-01",
+   "name": "TH16 War / CWL Base, June 2026",
+   "purpose": "war / CWL",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/05/th16-war-base-june-2026-a9h8seh3.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAKwZnBOqJVYwM2xCVXpq1Ds",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-war-2026-05",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-05-01",
+   "name": "TH16 War / CWL Base, May 2026",
+   "purpose": "war / CWL",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/04/th16-war-base-may-2025-a8envsurowa.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAJwAAAAKqddoKH7rtn7sgCShk7KI_",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-war-2026-04",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-04-01",
+   "name": "TH16 War / CWL Base, April 2026",
+   "purpose": "war / CWL",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/02/th16-war-base-april-2026-ih8s8fgz.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAKqC2CUlLKA3pLylKzBM-jT",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-war-2026-03",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-03-01",
+   "name": "TH16 War / CWL Base, March 2026",
+   "purpose": "war / CWL",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/01/th16-war-base-march-2026-as89jefz.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAKm223IcB07VFGiDzMLNJw7",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-war-2026-02",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-02-01",
+   "name": "TH16 War / CWL Base, February 2026",
+   "purpose": "war / CWL",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2025/12/th16-war-base-february-2026-hioaesfzn23e.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAKgAAAAKCmzAjhy7f2QHgJKKZmPYi",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-war-2026-01",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-01-01",
+   "name": "TH16 War / CWL Base, January 2026",
+   "purpose": "war / CWL",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2025/11/th16-war-base-January-2026-9s8cufmw.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH17%3AWB%3AAAAAFAAAAAKnEwPqbHNa0A0VpkOOXwLZ",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "exclude: TH17 layout link"
+  },
+  {
+   "id": "allclash-war-2025-12",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2025-12-01",
+   "name": "TH16 War / CWL Base, December 2025",
+   "purpose": "war / CWL",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2025/11/th16-war-base-december-2025-onsd8cfuwqe.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAKcguq2g8RQq24HfmjKEBnc",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "exclude: 2025"
+  },
+  {
+   "id": "allclash-trophy-2026-09",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-09-01",
+   "name": "TH16 Trophy Base, September 2026",
+   "purpose": "trophy / ranked",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/08/th16-ranked-base-september-2026-9a8hwsezfn.webp",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAK6rcOPDoEp8_ifT8eaEZWR",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-trophy-2026-08",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-08-01",
+   "name": "TH16 Trophy Base, August 2026",
+   "purpose": "trophy / ranked",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/07/th16-ranked-base-august-2026-oa9wcituvwe.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAK6VqLzBRBn5jE4b32ELRml",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-trophy-2026-07",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-07-01",
+   "name": "TH16 Trophy Base, July 2026",
+   "purpose": "trophy / ranked",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/06/th16-ranked-base-july-2026-an90g3.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAAAAAAAMepYA641Lp5hgZv_QMCGO3",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-trophy-2026-06",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-06-01",
+   "name": "TH16 Trophy Base, June 2026",
+   "purpose": "trophy / ranked",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/05/th16-ranked-base-june-2026-a9h8seh3.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAJwAAAAKqddwgEo3TbAy8iznGt76P",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-trophy-2026-05",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-05-01",
+   "name": "TH16 Trophy Base, May 2026",
+   "purpose": "trophy / ranked",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/04/th16-trophy-base-may-2025-a8envsurowa.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAKvL9RSyF1K_oJG0bhWx66O",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-trophy-2026-04",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-04-01",
+   "name": "TH16 Trophy Base, April 2026",
+   "purpose": "trophy / ranked",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/02/th16-trophy-base-april-2026-ih8s8fgz.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAKqCVXULG_3E4xyCgIquV0S",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-trophy-2026-03",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-03-01",
+   "name": "TH16 Trophy Base, March 2026",
+   "purpose": "trophy / ranked",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2026/01/th16-ranked-trophy-base-march-2026-as89jefz.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAKgAAAAKGr2lN5tqP0zweW3-fYH9O",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-trophy-2026-02",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-02-01",
+   "name": "TH16 Trophy Base, February 2026",
+   "purpose": "trophy / ranked",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2025/12/th16-ranked-base-february-2026-hioaesfzn23e.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAKjST4Sby1PswXuBc-viopD",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "candidate (low image quality)"
+  },
+  {
+   "id": "allclash-trophy-2026-01",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2026-01-01",
+   "name": "TH16 Trophy Base, January 2026",
+   "purpose": "trophy / ranked",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2025/11/th16-ranked-base-January-2026-9s8cufmw.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH17%3AWB%3AAAAAPgAAAAI9oRB5X-OzIm9FrqDuyYCL",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "exclude: TH17 layout link"
+  },
+  {
+   "id": "allclash-trophy-2025-12",
+   "source": "AllClash",
+   "source_url": "https://www.allclash.com/the-best-th16-war-trophy-farming-base-layouts/",
+   "builder": "AllClash PRO base (site staff; individual builder not named)",
+   "date": "2025-12-01",
+   "name": "TH16 Trophy Base, December 2025",
+   "purpose": "trophy / ranked",
+   "image_url": "https://www.allclash.com/wp-content/uploads/2025/11/th16-ranked-trophy-base-december-2025-onsd8cfuwqe.jpg",
+   "image_size": [
+    940,
+    636
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAGwAAAAKfJlgi6t7H7dN9FU6WW4I2",
+   "image_quality": {
+    "view": "village screenshot, zoomed in",
+    "all_buildings": false,
+    "walls": "most",
+    "traps": "not checked",
+    "watermark": "diagonal AllClash watermark",
+    "clean": false,
+    "note": "left and right village corners and part of the outer ring are cropped; ~13 px per tile half-width"
+   },
+   "inspected": true,
+   "status": "exclude: 2025"
+  },
+  {
+   "id": "clashchamps-101661",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "Brunios",
+   "date": "2026-09-11",
+   "name": "Clash Champs base #101661",
+   "purpose": "War (Clash Champs tag; 563 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/fec6e581-58f8-42f5-014b-01b3a910a900/image1920",
+   "image_size": [
+    1884,
+    1080
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAARQAAAAJNQ6gNgZpSLnypTdMjHOEr",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, dark pirate scenery, good contrast, 1884x1080; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-96154",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "Reyferro",
+   "date": "2026-04-09",
+   "name": "Clash Champs base #96154",
+   "purpose": "War (Clash Champs tag; 508 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/16f1bfd6-09bb-4f3f-1381-6360ebf79300/image1920",
+   "image_size": [
+    1318,
+    927
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAANgAAAAJ3uN1e1oa-yquUjHQGjLSA",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, dark green, 1318x927; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-99548",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "yokoyamidel",
+   "date": "2026-07-14",
+   "name": "Clash Champs base #99548",
+   "purpose": "Pro (Clash Champs tag; 438 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/012f5bc7-1d8f-4b7d-fa9c-c0038e969c00/image1920",
+   "image_size": [
+    1318,
+    927
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAASwAAAAILcKSWp0U9YGFMxYvYclhJ",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, lava, 1318x927; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-98476",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "Reyferro",
+   "date": "2026-06-05",
+   "name": "Clash Champs base #98476",
+   "purpose": "Pro (Clash Champs tag; 433 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/f48510bd-d103-4560-096f-9f6513b84700/image1920",
+   "image_size": [
+    1318,
+    927
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAANgAAAAJ9wUG1r7AFilrIJoyjG4v2",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, lava, 1318x927; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-101332",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "Reyferro",
+   "date": "2026-08-27",
+   "name": "Clash Champs base #101332",
+   "purpose": "Pro (Clash Champs tag; 386 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/94d93a04-2abc-4d56-5b10-8140fdabdc00/image1920",
+   "image_size": [
+    1318,
+    927
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAFQAAAALIhJEW8ep9gZuuokZ2xa9F",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, green with lake, 1318x927; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-100088",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "tommcauley",
+   "date": "2026-07-30",
+   "name": "Clash Champs base #100088",
+   "purpose": "War (Clash Champs tag; 383 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/aba07508-968a-47f5-0238-3b4eb978e100/image1920",
+   "image_size": [
+    1920,
+    893
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAWAAAAAHyCnw1orNds5XapyjemLlA",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, lava, 1920x893; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-101710",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "Xyclone",
+   "date": "2026-09-20",
+   "name": "Clash Champs base #101710",
+   "purpose": "War (Clash Champs tag; 324 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/07bf6609-2096-479e-a182-1a1127d20e00/image1920",
+   "image_size": [
+    1696,
+    1080
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAAgAAAAMsw6CYYkXhOjHU6sR8_2CQ",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, green, 1696x1080; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-101184",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "akuntv",
+   "date": "2026-08-24",
+   "name": "Clash Champs base #101184",
+   "purpose": "Pro (Clash Champs tag; 255 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/515af1e6-4f4b-4ee3-f143-c2218de2de00/image1920",
+   "image_size": [
+    1318,
+    758
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAQgAAAAJa1m71i9jzLTKrwiCKHNPX",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": false,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "scouted (attack-view) screenshot - no traps, lava, 1318x758; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-92137",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "optamus",
+   "date": "2026-01-11",
+   "name": "Clash Champs base #92137",
+   "purpose": "War (Clash Champs tag; 232 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/423478a7-8945-421b-4cde-36c25e69cb00/image1920",
+   "image_size": [
+    1920,
+    916
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAASgAAAAIW6g-oB81tWplvl9H0o1mR",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, lava, 1920x916; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-92583",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "loay samy",
+   "date": "2026-01-20",
+   "name": "Clash Champs base #92583",
+   "purpose": "War (Clash Champs tag; 223 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/25ddce48-024b-43fa-a475-f9504b587e00/image1920",
+   "image_size": [
+    1765,
+    1080
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAAwAAAAMHJgg9ByUtmsVYo0Zx5wYM",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, green, 1765x1080; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-93040",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "yusufolcer",
+   "date": "2026-01-24",
+   "name": "Clash Champs base #93040",
+   "purpose": "Trophy (Clash Champs tag; 213 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/a1f230ce-195d-4093-e8cd-e85721c22100/image1920",
+   "image_size": [
+    1920,
+    894
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAIgAAAAKhYrjT8G4Mzi9iCrsOE2nD",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, green, hex ring, 1920x894; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-101110",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "beli",
+   "date": "2026-08-22",
+   "name": "Clash Champs base #101110",
+   "purpose": "Pro (Clash Champs tag; 195 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/b294ae36-57f7-48d9-ebd2-c848f92d7100/image1920",
+   "image_size": [
+    1318,
+    758
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAMQAAAAKMDwZ0aDetmwUb_hxmhaxW",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, lava, side icons, 1318x758; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-101729",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "bergmund",
+   "date": "2026-09-24",
+   "name": "Clash Champs base #101729",
+   "purpose": "War (Clash Champs tag; 190 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/da855a41-3467-4bd8-cc85-f305b4e1ad00/image1920",
+   "image_size": [
+    1920,
+    916
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAABgAAAAMMFX5CsBNp-YNFWfFyZNvo",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": false,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "lava, bottom edge slightly cut, 1920x916; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-100863",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "Born To Play",
+   "date": "2026-08-13",
+   "name": "Clash Champs base #100863",
+   "purpose": "Pro (Clash Champs tag; 180 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/0bb321d0-2ca9-4ca0-dd40-8b22eae30800/image1920",
+   "image_size": [
+    1442,
+    821
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAVAAAAAH44eLun3tWgSSkHgQbQ2hP",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "arena scenery, full village, 1442x821; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-101170",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "artemici",
+   "date": "2026-08-24",
+   "name": "Clash Champs base #101170",
+   "purpose": "Pro (Clash Champs tag; 130 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/7ab1e6e2-77d3-448a-a544-6c7076ee8e00/image1920",
+   "image_size": [
+    1318,
+    758
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAQgAAAAJa1kqcl8RaxNY7daur52-t",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": false,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "scouted (attack-view) screenshot - no traps, lava, 1318x758; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-102126",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "#thakur",
+   "date": "2026-10-15",
+   "name": "Clash Champs base #102126",
+   "purpose": "Trophy (Clash Champs tag; 70 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/1ae76bb8-eabc-4927-a247-45ee4c794f00/image1920",
+   "image_size": [
+    1920,
+    886
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAALgAAAAKly2iycEy344Nymnygj_jR",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": false,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "PILOT 2: bottom corner cut (x+y >= ~70), traps visible, unmerged (7 cannons), 1920x886; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "DIGITIZED (draft, low confidence): data/builder-bases/thakur-trophy-2026-10-draft.json"
+  },
+  {
+   "id": "clashchamps-102027",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "gregorio55504",
+   "date": "2026-10-12",
+   "name": "Clash Champs base #102027",
+   "purpose": "Trophy (Clash Champs tag; 27 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/7dfd9f25-bc62-4473-307d-dbf32e578800/image1920",
+   "image_size": [
+    1660,
+    768
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAANAAAAAKEhW-ksJUWuCjqJ4DKjaBC",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, cartoon scenery, 1660x768; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-102108",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "rionpanda",
+   "date": "2026-10-14",
+   "name": "Clash Champs base #102108",
+   "purpose": "Pro (Clash Champs tag; 40 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/71c4e786-96ba-44ba-5ccc-6304bba68200/image1920",
+   "image_size": [
+    1920,
+    897
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAARwAAAAJRyZJCFmb-XJAv2CeiE7xc",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": false,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "green, top edge cut, 1920x897; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-98958",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "Xyclone",
+   "date": "2026-06-18",
+   "name": "Clash Champs base #98958",
+   "purpose": "War (Clash Champs tag; 306 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/2a1c5b6a-7144-44b3-2523-c608d61db100/image1920",
+   "image_size": [
+    1421,
+    1080
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAAAgAAAAMg-sQ_vNSrZmeFjIIvahI6",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, lava, 1421x1080; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-99655",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "bergmund",
+   "date": "2026-07-21",
+   "name": "Clash Champs base #99655",
+   "purpose": "War (Clash Champs tag; 261 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/5b598334-e7c3-424c-7b7a-4a800e394700/image1920",
+   "image_size": [
+    1920,
+    916
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AWB%3AAAAABgAAAAMD7vXrVftl5MVtWeWgXcoo",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "full village, lava, 1920x916; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  },
+  {
+   "id": "clashchamps-99253",
+   "source": "Clash Champs (community upload)",
+   "source_url": "https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1",
+   "builder": "joeyjoey",
+   "date": "2026-07-04",
+   "name": "Clash Champs base #99253",
+   "purpose": "CWL (Clash Champs tag; 259 downloads on 2026-10-21)",
+   "image_url": "https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/a03a15f2-0986-4d6a-4368-b5f8e3bc9d00/image1920",
+   "image_size": [
+    1920,
+    916
+   ],
+   "layout_link": "https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAWwAAAAHuPeF03l0QuqvZawPKvbKg",
+   "image_quality": {
+    "view": "village screenshot (no building pads)",
+    "all_buildings": true,
+    "walls": "visible; auto-detection weakened under the watermark",
+    "traps": "visible in own-village screenshots, not in scouted ones",
+    "watermark": "large Clash Champs logo over the centre",
+    "clean": false,
+    "note": "arena scenery, full village, 1920x916; merge status (Ricochet/Multi-Archer vs 7 Cannons/8 ATs) not checked"
+   },
+   "inspected": true,
+   "status": "candidate"
+  }
+ ]
+}
