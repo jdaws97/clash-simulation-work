@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -31,10 +32,10 @@ from baselab.layout import Layout  # noqa: E402
 from baselab.optimize import _fits, _occupied, objective  # noqa: E402
 
 
-def scen(mode, n, seeds):
+def scen(mode, n, seeds, angle_offset=0.0):
     if os.environ.get("BASELAB_PLAYBOOKS") == "1" or mode == "ranked":
-        return meta_scenarios(mode, n, seeds)
-    return war_scenarios(n_angles=n, seeds=seeds)
+        return meta_scenarios(mode, n, seeds, angle_offset=angle_offset)
+    return war_scenarios(n_angles=n, seeds=seeds, angle_offset=angle_offset)
 
 
 def main():
@@ -51,7 +52,9 @@ def main():
     lay = Layout.load(Path(args.base))
     lay.levels, lay.wall_level, lay.hero_levels = dict(own["levels"]), own["wall_level"], dict(own["hero_levels"])
     search = scen(args.mode, args.angles, (0, 1))
-    holdout = scen(args.mode, args.angles, (11, 12, 13))
+    # fresh sides halfway between the search's (same angles with seed 11
+    # would replay seed 1: same skill quantile and charge flank)
+    holdout = scen(args.mode, args.angles, (11, 12, 13), math.pi / args.angles)
 
     def score(layout):
         return objective(evaluate(layout, search), args.mode, layout)

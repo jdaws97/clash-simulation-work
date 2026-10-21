@@ -1,42 +1,78 @@
-"""Cross-check every engine stat against ClashKing game data (two independent
-sources). Usage: python tools/baselab/xcheck_stats.py"""
-import json, sys
+"""Cross-check engine hitpoints and DPS against ClashKing game data.
+
+The registry copies ClashKing's own "hitpoints"/"dps" into every level row,
+so comparing those keys with ClashKing only tests the copy. This compares
+ClashKing with what the engine actually reads (stats.get, where a wiki
+column overrides the game-data value) and, separately, with the wiki
+column itself (the independent second source).
+
+Usage: python tools/baselab/xcheck_stats.py
+"""
+import json
+import sys
+from collections import Counter, defaultdict
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from baselab.engine import stats
-ck = json.load(open(Path(__file__).resolve().parents[2] / "data" / "clashking-static-data.json", encoding="utf-8"))
-bad, ok, missing = [], 0, []
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "src"))
+from baselab.engine import stats  # noqa: E402
+
+ck = json.load(open(ROOT / "data" / "clashking-static-data.json", encoding="utf-8"))
+WIKI = {"hitpoints": "Hitpoints", "dps": "Damage per Second"}
+
+
+def close(a, b):
+    return abs(a - b) <= max(1.0, 0.02 * abs(a))
+
+
+tally = Counter()
+engine_bad = defaultdict(list)
+wiki_bad = defaultdict(list)
+missing, dupes = [], []
+reg = stats.registry()
 for cat in ("troops", "heroes", "buildings", "spells", "pets", "traps", "guardians"):
+    entries: dict = {}
     for e in ck[cat]:
-        if e.get("village") not in (None, "home"):
+        if e.get("village", "home") != "home":
             continue
-        name = e["name"]
-        try:
-            assert any(stats.row(name, lv["level"]) for lv in e.get("levels", []))
-        except Exception:
-            missing.append((cat, name)); continue
+        if e["name"] in entries:
+            dupes.append((cat, e["name"]))
+        entries[e["name"]] = e  # the registry keeps the last entry of a name
+    for name, e in entries.items():
+        if name not in reg:
+            missing.append((cat, name))
+            continue
         for lv in e.get("levels", []):
             L = lv.get("level")
             try:
-                r = stats.row(name, L) or {}
-            except Exception:
+                r = stats.row(name, L)
+            except KeyError:
+                tally["level not in registry"] += 1
                 continue
-            for key in ("hitpoints", "dps"):
-                a, b = lv.get(key), r.get(key)
-                if a in (None, 0) or b in (None, ""):
+            for key, col in WIKI.items():
+                a = lv.get(key)
+                if a in (None, 0):
                     continue
-                try:
-                    b = float(b)
-                except Exception:
-                    continue
-                if abs(a - b) > max(1.0, 0.02 * abs(a)):
-                    bad.append((cat, name, L, key, a, b))
+                eng = stats.get(name, L, key)
+                if eng is None:
+                    tally[f"{key}: engine has none"] += 1
+                elif close(a, eng):
+                    tally[f"{key}: engine = game data"] += 1
                 else:
-                    ok += 1
-print("agree", ok, "disagree", len(bad))
-from collections import defaultdict
-g = defaultdict(list)
-for x in bad: g[(x[0], x[1], x[3])].append(x)
-for k, v in sorted(g.items()):
-    print(k, len(v), "e.g.", [(x[2], x[4], x[5]) for x in v[:4]])
-print("not in engine:", [n for c, n in missing if c in ("troops","heroes","pets","guardians")][:60])
+                    engine_bad[(cat, name, key)].append((L, a, eng))
+                w = stats.num(r.get(col))
+                if w is None:
+                    tally[f"{key}: no wiki value"] += 1
+                elif close(a, w):
+                    tally[f"{key}: wiki = game data"] += 1
+                else:
+                    wiki_bad[(cat, name, key)].append((L, a, w))
+for k in sorted(tally):
+    print(f"{k:32s} {tally[k]}")
+print(f"engine differs from game data: {sum(map(len, engine_bad.values()))} level rows")
+for k, v in sorted(engine_bad.items()):
+    print("  ", k, len(v), "e.g. (level, game data, engine)", v[:3])
+print(f"wiki differs from game data: {sum(map(len, wiki_bad.values()))} level rows (engine uses the wiki value there)")
+if dupes:
+    print("ClashKing names listed twice (last one used):", sorted(set(dupes)))
+print("not in engine:", [n for c, n in missing if c in ("troops", "heroes", "pets", "guardians")][:60])

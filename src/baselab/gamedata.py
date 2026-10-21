@@ -57,11 +57,6 @@ def traps() -> dict[str, dict]:
     return _index("traps")
 
 
-@lru_cache(maxsize=None)
-def spells() -> dict[str, dict]:
-    return {entry["name"]: entry for entry in raw()["spells"]}
-
-
 def _max_level_for_th(levels: list[dict], town_hall: int) -> dict:
     eligible = [lvl for lvl in levels if (lvl.get("required_townhall") or 0) <= town_hall]
     if not eligible:
@@ -157,10 +152,6 @@ def hero(name: str, *, town_hall: int | None = None, level: int | None = None) -
     else:
         row = _max_level_for_th(entry["levels"], town_hall or 16)
     return _unit(entry, row)
-
-
-def spell_level(name: str, town_hall: int) -> dict:
-    return _max_level_for_th(spells()[name]["levels"], town_hall)
 
 
 def trap(name: str, town_hall: int = 16) -> dict:
