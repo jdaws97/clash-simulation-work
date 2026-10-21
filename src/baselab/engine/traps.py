@@ -21,7 +21,10 @@ from .entities import Field, Pending, Trap, dist
 # GiantBomb=37, GigaBomb=38, AirBomb=7, SeekingAirMine=7, TornadoTrap=8,
 # SpringTrap=5. The wiki states only the Bomb's delay ("approximately 1.5
 # seconds", wiki: Bomb), so frames are converted at that rate (1.5 s / 35
-# frames, about 24 frames/s). Skeleton Trap gives its delay in ms instead.
+# frames, about 23.3 frames/s). No table states the frame rate: globals.csv
+# (all 677 constants) and the other v18.200.9 tables have no frame-rate or
+# FPS field, so the Bomb-derived rate stays. Skeleton Trap gives its delay in
+# ms instead.
 _FRAME_S = 1.5 / 35
 FUSE = {
     "bomb": 35 * _FRAME_S,
@@ -355,7 +358,11 @@ def tornado_tick(battle, f: Field):
             battle.t = at
             for u in battle.attackers_near(f.x, f.y, f.radius):
                 if not u.underground:
-                    battle.hit_unit(u, 1.0, src="trap:tornado", kind="trap")
+                    # Wiki: Ranked Battles, the defense damage bonus skips
+                    # "Damage of Traps, with the exception of the Tornado Trap".
+                    battle.hit_unit(
+                        u, 1.0 * battle.def_mult, src="trap:tornado", kind="trap"
+                    )
         finally:
             battle.t = t
         delivered += 1

@@ -85,6 +85,80 @@ INFERNO_ARTILLERY = dict(
 )
 
 
+# Eagle Artillery group targeting.
+# game data v18.200.9: Eagle Artillery.TargetGroups=TRUE -> it aims at groups.
+# game data v18.200.9: Eagle Artillery.TargetGroupsRadius=500 -> each candidate scores units within 5 tiles.
+# The score is the sum of each unit's Characters/Heroes/Pets.csv
+# EnemyGroupWeight (the weight a unit carries for enemy group targeting):
+# game data v18.200.9: Barbarian King.EnemyGroupWeight=2500 -> 2500.
+# game data v18.200.9: Archer Queen.EnemyGroupWeight=500 -> 500.
+# game data v18.200.9: Golem.EnemyGroupWeight=3000 -> 3000.
+# game data v18.200.9: Giant Giant.EnemyGroupWeight=3400 -> 3400.
+# game data v18.200.9: Mighty Yak.EnemyGroupWeight=400 -> 400 (every pet).
+# Wiki: Eagle Artillery agrees
+# ("targets the area with the largest density of hitpoints"; it "will most
+# likely lock onto the Barbarian King"). Engine names mapped to the CSV rows
+# (P.E.K.K.A = PEKKA, Bat = Spell Bat, Ice Pup = Ice Hound Pup, ...); units
+# with no matching row use 100, the most common value.
+EAGLE_GROUP_RADIUS = 5.0
+EAGLE_GROUP_WEIGHT = {
+    "Apprentice Warden": 100, "Archer": 100, "Archer Queen": 500,
+    "Azure Dragon": 5000, "Baby Dragon": 1000, "Balloon": 500, "Barbarian": 100,
+    "Barbarian Kicker": 400, "Barbarian King": 2500, "Barcher": 200,
+    "Bat": 100, "Battle Blimp": 100, "Battle Drill": 100, "Battle Ram": 500,
+    "Bear": 1600, "Big Boy": 800, "Booger": 300, "Bowler": 500,
+    "Broom Witch": 2000, "C.O.O.K.I.E": 1000, "Debt Collector": 50,
+    "Dragon": 2000, "Dragon Duke": 2500, "Dragon Rider": 2500, "Druid": 1600,
+    "Electro Dragon": 2000, "Electro Titan": 3000, "Electromite": 50,
+    "Firecracker": 800, "Firemite": 50, "Flame Flinger": 100, "Frostmite": 100,
+    "Furnace": 1800, "Giant": 500, "Giant Giant": 3400, "Giant Skeleton": 2000,
+    "Giant Thrower": 600, "Goblin": 50, "Golem": 3000, "Golemite": 600,
+    "Grand Warden": 500, "Headhunter": 100, "Healer": 30, "Henchman": 800,
+    "Hog Rider": 500, "Hog Wizard": 600, "Ice Golem": 500, "Ice Hound": 1800,
+    "Ice Minion": 100, "Ice Pup": 100, "Ice Wizard": 200, "Inferno Dragon": 1500,
+    "K.A.N.E": 6000, "Lava Hound": 3000, "Lava Pup": 100, "Lavaloon": 1500,
+    "Log Launcher": 100, "M.E.C.H.A": 1000, "Meteor Golem": 3000,
+    "Meteormite": 1500, "Miner": 500, "Minion": 100, "Minion Prince": 2500,
+    "P.E.K.K.A": 2000, "Party Wizard": 200, "Phoenix Egg": 0,
+    "Pumpkin Barbarian": 100, "Ram Rider": 1000, "Rocket Balloon": 500,
+    "Root Rider": 2000, "Royal Champion": 1000, "Royal Ghost": 100,
+    "Siege Barracks": 100, "Skeleton": 100, "Skeleton Barrel": 500, "Snake": 100,
+    "Snake Barrel": 500, "Sneaky Goblin": 200, "Spell Skeleton": 100,
+    "Stone Slammer": 100, "Super Archer": 600, "Super Barbarian": 400,
+    "Super Bowler": 2500, "Super Dragon": 4000, "Super Giant": 800,
+    "Super Hog": 500, "Super Hog Rider": 1200, "Super Miner": 2400,
+    "Super Minion": 1000, "Super Rider": 500, "Super Valkyrie": 1500,
+    "Super Wall Breaker": 50, "Super Witch": 2500, "Super Wizard": 1000,
+    "Super Yeti": 3500, "The Disarmer": 4000, "Thrower": 700, "Totem": 100,
+    "Troop Launcher": 100, "Valkyrie": 500, "Wall Breaker": 50,
+    "Wall Wrecker": 100, "Witch": 200, "Witch Golem": 4000, "Wizard": 200,
+    "YEETer": 2500, "Yeti": 1800, "Yetimite": 50,
+}
+
+
+def _group_weight(unit):
+    if unit.kind == "pet" and unit.name not in EAGLE_GROUP_WEIGHT:
+        return 400
+    return EAGLE_GROUP_WEIGHT.get(unit.name, 100)
+
+
+def _eagle_pick(battle, w, pool):
+    """Candidate whose 5-tile neighbourhood carries the most group weight;
+    ties go to the nearest (the tie rule is not stated)."""
+    b = w.owner
+    t = battle.t
+
+    def score(unit):
+        return sum(
+            _group_weight(other)
+            for other in battle.attackers_near(unit.x, unit.y, EAGLE_GROUP_RADIUS)
+            if other.targetable(t)
+            and dist(other.x, other.y, unit.x, unit.y) <= EAGLE_GROUP_RADIUS
+        )
+
+    return max(pool, key=lambda a: (score(a), -dist(a.x, a.y, b.x, b.y)))
+
+
 def _dmg(name, level, interval):
     d = stats.get(name, level, "Damage per Shot", "Damage per Hit", "Damage per Attack", default=None)
     if d is None:
@@ -229,6 +303,13 @@ def attach_weapon(battle, b: Building):
         per = stats.get(name, lvl, "Damage per Hit", "Damage per Shot")
         b.weapon = W(b, "multi_archer", range_=10.0, interval=0.6, damage=per)
     elif key == "ric":
+        # One bounce to the nearest other ground unit within 3.5 tiles of the
+        # target, in any direction (no direction field exists).
+        # game data v18.200.9: Ricochet Cannon.ProjectileBounces=1 -> one bounce.
+        # game data v18.200.9: MergedCannonProjectile.MaxBounceDistance=350 -> 3.5 tiles.
+        # game data v18.200.9: MergedCannonProjectile.BounceDamageReductionPercent=30 -> 70%.
+        # Wiki: Ricochet Cannon, the bounce may go to "a different unit closer
+        # to the initial target".
         b.weapon = W(b, "ricochet", targets="ground", range_=9.0, interval=0.8, damage=stats.get(name, lvl, "Damage per Shot (Primary Target)", default=312.0),
                      extra={"bounce": stats.get(name, lvl, "Secondary Chain Damage", default=218.4), "bounce_range": 3.5})
     elif key == "bt":
@@ -276,6 +357,16 @@ def attach_weapon(battle, b: Building):
         b.weapon = W(b, "eagle", range_=50.0, min_range=7.0, interval=10.0, damage=stats.get(name, lvl, "Damage per Hit", default=525.0),
                      extra={"activation": 200, "shells": 3, "gap": 0.75, "shock": stats.get(name, lvl, "Shockwave Damage", default=50.0), "splash": 0.75, "shock_radius": 3.0})
     elif key == "scatter":
+        # Unresolved, first shot kept instant; these fields are not modelled:
+        # game data v18.200.9: Scattershot.NewTargetAttackDelay=2200 -> 2.2 s on a new target.
+        # game data v18.200.9: Scattershot.CoolDownOverride=1500 -> meaning unstated.
+        # Neither table nor wiki says whether the 2.2 s applies to the first
+        # target only or to every new one, or how it combines with AttackSpeed
+        # 3228 and the cooldown. CoolDownOverride is also set, unmodelled, on
+        # Air Sweeper (4800), Eagle Artillery (6992), Monolith (750) and Super
+        # Wizard Tower (700); so are Inferno Tower AlternatePickNewTargetDelay=50
+        # and Air Sweeper PrepareSpeed=600. Wiki: Scattershot, "the actual
+        # attack speed is just 3.2 seconds".
         b.weapon = W(b, "scatter", range_=10.0, min_range=3.0, interval=3.2, damage=stats.get(name, lvl, "Damage per Shot*", default=576.0),
                      extra={"splash_max": 420.0, "splash_min": 150.0})
         hi = stats.text(name, lvl, "Damage per Shot*")
@@ -306,6 +397,13 @@ def attach_weapon(battle, b: Building):
             position = battle.builder_starts.get(b.id, position)
         battle.builders.append(Builder(b, *position))
     elif key == "st":
+        # Wiki: Spell Tower, per-mode infoboxes give Range 9 tiles (Rage, Poison,
+        # Earthquake) and 4.5 tiles (Invisibility). Unresolved, kept at 9:
+        # game data v18.200.9: Spell Tower.AttackRange=800 -> 8 tiles, matching no mode.
+        # The modes are separate weapon-mode rows (UnlockWeaponMode=SpellTowerRage)
+        # missing from the extracted tables, and every spell radius the wiki
+        # gives matches spells.csv (Spell Tower Rage/Poison Radius=500,
+        # Invisibility 450, Earthquake 470).
         b.weapon = W(b, "spell_tower", range_=9.0, interval=70.0)
         b.weapon.mode = b.mode or "rage"
         unlocks = {
@@ -342,6 +440,10 @@ def attach_weapon(battle, b: Building):
             raise ValueError("Firespitter facing must be N, E, S or W")
         b.weapon.facing = FACINGS[b.mode or "E"]
     elif key == "swt":
+        # game data v18.200.9: Super Wizard Tower.ChainAttackDistance=400 -> 4 tiles.
+        # game data v18.200.9: Super Wizard Tower.ChainAttackFactor=15 -> 15 chained units.
+        # game data v18.200.9: Super Wizard Tower.ChainAttackDepth=1 -> every chain starts at the primary.
+        # ChainAttackDelay=128 (0.128 s between chain hits) is not modelled.
         b.weapon = W(b, "super_wizard", range_=8.0, interval=1.3, damage=stats.get(name, lvl, "Damage per Hit (Primary)", default=416.0),
                      extra={"secondary": stats.get(name, lvl, "Damage per Hit (Secondary)", default=166.4), "chain": 15, "chain_range": 4.0})
     elif key == "revenge":
@@ -860,18 +962,18 @@ def _eagle(battle, w: Weapon):
         ]
         if not pool:
             return
-        # The wiki does not state the HP-density kernel or Giant Giant's weight.
-        w.target = min(pool, key=lambda a: dist(a.x, a.y, b.x, b.y))
+        # Wiki: Eagle Artillery, it "recalculates its targets each volley".
+        w.target = _eagle_pick(battle, w, pool)
         w.burst_left = w.extra["shells"]
     target = w.target
     if target is None or not target.alive:
         # the burst's target was cleared mid-burst (Totem or Invisibility
-        # retargeting, or it died): pick the nearest visible unit, or stop
+        # retargeting, or it died): pick again by group weight, or stop
         pool = [unit for unit in _visible(battle, w, w.range) if unit.name != "Yetimite"]
         if not pool:
             w.burst_left = 0
             return
-        w.target = target = min(pool, key=lambda a: dist(a.x, a.y, b.x, b.y))
+        w.target = target = _eagle_pick(battle, w, pool)
     # Launch only the current shell; disabling the tower pauses later launches.
     # game data v18.200.9: Artillery Ammo7.FixedTravelTime=5000 -> 5 s.
     for radius, damage, shock in (
@@ -912,6 +1014,14 @@ def _sweeper(battle, w: Weapon):
         return
     b = w.owner
     # swivels up to 45 degrees either side; the puff covers ~10 degrees (wiki)
+    # Unresolved, kept: the wiki gives a 10, 30 or 60 degree puff (Air Sweeper
+    # page, three places) and a 90 or 120 degree sector.
+    # game data v18.200.9: Air Sweeper.ShockwaveArcLength=700 -> 7 tiles of arc (angle depends on distance).
+    # game data v18.200.9: Air Sweeper.ShockwaveExpandRadius=250 -> meaning unstated.
+    # game data v18.200.9: Air Sweeper.TargetingConeAngle=105 -> 105 degrees of targeting cone.
+    # Read as 7 tiles of arc at 14-15 tiles, that is about 27-29 degrees (the
+    # wiki's "30-degree angle"), but whether the arc stays 7 tiles as the wave
+    # expands (so wider near the Sweeper) is not stated.
     cands = []
     for a in battle.attackers_near(b.x, b.y, w.range):
         if not a.flying or a.name == "Totem" or not a.targetable(battle.t):
@@ -1127,10 +1237,23 @@ def _super_wizard(battle, w, rage):
     if w.cooldown > 0:
         return
     b = w.owner
-    pool = _visible(battle, w, w.range)
-    if not pool:
-        return
-    tgt = min(pool, key=lambda a: dist(a.x, a.y, b.x, b.y))
+    tgt = w.target
+    if tgt is not None and (
+        not tgt.alive
+        or not tgt.targetable(battle.t)
+        or dist(tgt.x, tgt.y, b.x, b.y) > w.range
+    ):
+        tgt = None
+    if tgt is None:
+        pool = _visible(battle, w, w.range)
+        if not pool:
+            w.target = None
+            return
+        # game data v18.200.9: Super Wizard Tower.RandomizeTarget=TRUE -> a new
+        # target is drawn at random from the units in range (uniform: no
+        # weighting is stated); it is kept while valid like other defenses.
+        pool.sort(key=lambda a: a.id)
+        tgt = w.target = battle.rng.choice(pool)
     battle.hit_unit(tgt, w.damage * rage)
     hit = {tgt.id}
     for _ in range(w.extra["chain"]):
@@ -1181,17 +1304,32 @@ def _firespitter(battle, w, rage):
         w.target = tgt
     if w.burst_left <= 0:
         w.burst_left = w.extra["shots"]
-    # each ball pierces to the next unit behind the target on the same line
+    # Each ball flies in a straight line through the target and hits the
+    # first two units on its path, in path order, so a unit in front of the
+    # target is hit first (and two in front spare the target).
+    # game data v18.200.9: Firespitter.PenetratingProjectile=TRUE -> the ball passes through units.
+    # game data v18.200.9: GatlingGunAmmo.MaxHitObjects=2 -> two units per ball (also wiki: Firespitter).
+    # game data v18.200.9: Firespitter.PenetratingRadius=50 -> units within 0.5 tiles of the line.
     # game data v18.200.9: GatlingGunAmmo.Speed=2000 -> 20 tiles/s.
     # game data v18.200.9: GatlingGunAmmo.StartOffset=170 -> 1.7 tiles.
-    _projectile(battle, w, tgt, w.damage * rage, 20.0, offset=1.7)
-    ang = math.atan2(tgt.y - b.y, tgt.x - b.x)
-    for a in battle.attackers_near(tgt.x, tgt.y, 2.0):
-        if a is not tgt and a.indirect_targetable(t):
-            off = abs((math.atan2(a.y - b.y, a.x - b.x) - ang + math.pi) % (2 * math.pi) - math.pi)
-            if off < 0.2 and dist(a.x, a.y, b.x, b.y) > dist(tgt.x, tgt.y, b.x, b.y):
-                _projectile(battle, w, a, w.damage * rage, 20.0, offset=1.7)
-                break
+    # Unresolved, kept: the reach past the target stays 2 tiles, because
+    # game data v18.200.9: Firespitter.PenetratingExtraRange=100 -> 1 tile past the target or past the range.
+    # GatlingGunAmmo TargetPosRandomRadius=768 (aim scatter, unit unclear) is
+    # not modelled.
+    length = dist(tgt.x, tgt.y, b.x, b.y)
+    ux, uy = (tgt.x - b.x) / max(length, 1e-9), (tgt.y - b.y) / max(length, 1e-9)
+    path = [(length, tgt.id, tgt)]
+    for a in battle.attackers_near(b.x, b.y, length + 2.0):
+        if a is tgt or not a.indirect_targetable(t):
+            continue
+        along = (a.x - b.x) * ux + (a.y - b.y) * uy
+        if not 1.7 <= along <= length + 2.0:
+            continue
+        if abs((a.x - b.x) * uy - (a.y - b.y) * ux) > 0.5:
+            continue
+        path.append((along, a.id, a))
+    for _, _, a in sorted(path, key=lambda p: p[:2])[:2]:
+        _projectile(battle, w, a, w.damage * rage, 20.0, offset=1.7)
     w.burst_left -= 1
     w.cooldown += w.extra["gap"] if w.burst_left > 0 else w.interval
 

@@ -134,6 +134,12 @@ def cast_effect(battle, name, x, y, level=None):
     elif name == "Jump Spell":
         f = Field("jump", x, y, _radius(name, lv, 3.5), t + stats.get(name, lv, "duration", default=60.0), extra={"cleared": []})
     elif name == "Freeze Spell":
+        # Unresolved, kept: one radius and the full Freeze Time.
+        # game data v18.200.9: Freeze.FreezeOuterTimeMS=4950 -> a 90% "outer" freeze (L7, FreezeTimeMS=5500).
+        # game data v18.200.9: Freeze.Radius=350 -> 3.5 tiles, the only radius.
+        # No table gives an outer radius (RandomRadius=400 is graphics only,
+        # RandomRadiusAffectsOnlyGfx=TRUE). The wiki (Freeze Spell, Ice Golem)
+        # quotes FreezeTimeMS only, so who gets the outer time is not stated.
         f = Field("freeze", x, y, 3.5, t, value=stats.get(name, lv, "Freeze Time", default=2.0 + 0.5 * lv))
     elif name == "Poison Spell":
         dur = stats.num(stats.attrs(name).get("raw", {}).get("Spell Duration"), 16.0)
@@ -692,6 +698,8 @@ def _apply(battle, f: Field) -> bool:
         return j < n
     if k == "invis":
         until = _invisibility_until(f, t)
+        if until is None:
+            return True
         for u in battle.attackers_near(f.x, f.y, f.radius):
             if u.kind not in ("siege", "siege_idle"):
                 u.invisible_until = max(u.invisible_until, until)
@@ -704,6 +712,8 @@ def _apply(battle, f: Field) -> bool:
         return True
     if k == "def_invis":
         until = _invisibility_until(f, t)
+        if until is None:
+            return True
         for b in battle.buildings:
             if b.alive and b.edge_distance(f.x, f.y) <= f.radius:
                 b.invisible_until = max(b.invisible_until, until)
@@ -809,8 +819,19 @@ def _pulses(field, t):
 
 
 def _invisibility_until(field, t):
-    # Wiki: Invisibility Spell, immediate coverage with successive 0.25-second effects.
-    return min(field.until, t + 0.25)
+    """Invisibility deadline granted by this tick's hit, or None between hits.
+    Hits land every 0.25 s while the field lasts (Duration = NumberOfHits x
+    0.25 s), and each hit grants 0.6 s, so units that leave stay invisible
+    for up to 0.6 s and coverage ends 0.35 s after the field.
+    game data v18.200.9: Invisibility.TimeBetweenHitsMS=250 -> a hit every 0.25 s.
+    game data v18.200.9: Invisibility.InvisibilityTime=600 -> each hit grants 0.6 s.
+    game data v18.200.9: Spell Tower Invisibility.InvisibilityTime=600 -> the same for the tower.
+    Wiki: Invisibility Spell describes "a 0.25 second effect one after
+    another". It disagrees on the effect length; the named game-data field
+    is followed."""
+    # game data v18.200.9: Spell Tower Invisibility.TimeBetweenHitsMS=250 -> 0.25 s.
+    hit = _application(field, t, 0.25)
+    return None if hit is None else hit + 0.6
 
 
 def _expire(battle, f: Field):
@@ -893,6 +914,12 @@ def _poison_states(battle):
     t = battle.t
     dead = []
     active = {}
+    live = []
+    # Wiki: Poison Spell, "Multiple stacked Poisons Spells will speed up the
+    # scaling process but will not increase the maximum damage per second":
+    # the ramp runs on the summed exposure to every ramping poison, and the
+    # damage stays capped at the strongest one.
+    exposure = {}
     for key, state in battle._poison.items():
         unit = state["u"]
         if t >= state["until"] or not unit.alive and "recalled" not in unit.extra:
@@ -903,10 +930,14 @@ def _poison_states(battle):
         origin = state.get("origin", "spell")
         if unit.underground and origin != "town_hall":
             continue
+        live.append(state)
+        if state["ramp"]:
+            exposure[unit.id] = exposure.get(unit.id, 0.0) + t - state["since"] + battle.DT
+    for state in live:
+        unit = state["u"]
+        origin = state.get("origin", "spell")
         fraction = (
-            min(1.0, (t - state["since"] + battle.DT) / POISON_RAMP)
-            if state["ramp"]
-            else 1.0
+            min(1.0, exposure[unit.id] / POISON_RAMP) if state["ramp"] else 1.0
         )
         damage = state["dps"] * fraction
         previous = active.get(unit.id)
@@ -987,12 +1018,20 @@ def tower_cast(battle, b: Building, mode, near=None):
                 # game data v18.200.9: Spell Tower Poison.PoisonIncreaseSlowly=FALSE -> full DPS at once.
                 "ramp": False,
                 # game data v18.200.9: Spell Tower Poison.HeroDamageMultiplier=20 -> 0.2x damage to Heroes.
+                # Pets take full damage: spells.csv has no pet multiplier, and
+                # Spell Tower Poison sets no AffectsSiegeMachines, so sieges are
+                # spared (_affected), like the Earthquake tower below.
                 "hero_mult": 0.2,
             },
         )
     elif mode == "invis":
         battle.fields.append(Field("def_invis", b.x, b.y, 4.5, t + 4.5, team="def", started=t))
     elif mode in ("eq", "quake", "earthquake"):
+        # Sieges are skipped (_affected). Spell Tower Earthquake sets no
+        # AffectsSiegeMachines; spells that reach sieges say so (e.g.
+        # game data v18.200.9: Freeze.AffectsSiegeMachines=TRUE -> reaches sieges).
+        # game data v18.200.9: Spell Tower Earthquake.TroopDamagePermil=60 -> 6% per hit.
+        # game data v18.200.9: Spell Tower Earthquake.NumberOfHits=5 -> five hits, 30% in all.
         battle.fields.append(
             Field(
                 "def_quake", x, y, 4.7, t + 0.3, team="def", value=0.30, started=t + 0.3
