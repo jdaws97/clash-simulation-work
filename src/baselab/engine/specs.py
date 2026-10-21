@@ -328,26 +328,26 @@ def attack_range(name):
 def unit_numbers(name: str, level: int) -> dict:
     """Read wiki numbers first, using game data only for missing values."""
     a = stats.attrs(name)
-    # Wiki level columns retain their page names in the registry. The wiki's
-    # Inferno Dragon table repeats level 11, so levels 11-12 use the game
-    # data's unambiguous rows (lowercase keys) instead.
-    game_first = name == "Inferno Dragon" and level in (11, 12)
-    hp = stats.get(name, level, *(("hitpoints", "Hitpoints") if game_first else ("Hitpoints", "hitpoints")), default=0.0)
+    # Game data first for hitpoints and DPS (stats.get prefers it under the
+    # lowercase keys; the wiki columns are the fallback). This also covers the
+    # wiki's Inferno Dragon table, which repeats level 11.
+    hp = stats.get(name, level, "hitpoints", "Hitpoints", default=0.0)
     interval = a.get("attack_interval")
     if interval is None:
         interval = a.get("attack_interval_ck")
     if interval is None:
         interval = 1.0
-    dps = stats.get(name, level, "dps", default=None) if game_first else None
-    dps = dps if dps is not None else stats.get(
+    wiki_dps = stats.get(
         name,
         level,
         "Damage per Second",
         "Damage per Second / Initial",
         "~damage per second",
-        "dps",
         default=None,
     )
+    dps = stats.get(name, level, "dps", default=None)
+    if dps is None:
+        dps = wiki_dps
     dmg = stats.get(
         name,
         level,
@@ -363,6 +363,17 @@ def unit_numbers(name: str, level: int) -> dict:
     )
     if dmg is None and dps is not None:
         dmg = abs(dps) * interval
+    elif (
+        dmg is not None
+        and dps is not None
+        and wiki_dps
+        and dps > 0
+        and abs(dps - wiki_dps) > max(1.0, 0.02 * dps)
+    ):
+        # The wiki's per-hit column belongs to its DPS column; where game
+        # data's DPS differs (e.g. Flame Flinger L1 127 vs 124, Barbarian King
+        # L1 102 vs 51) scale the hit so damage per second follows game data.
+        dmg *= dps / wiki_dps
     if dps is not None and dps < 0:  # healers carry negative DPS in game data
         dmg = 0.0
     rng = attack_range(name)
