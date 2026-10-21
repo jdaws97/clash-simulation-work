@@ -225,8 +225,8 @@ class Grid:
             return entry[1]
         goal = _goal_mask(self.n, cx, cy, half, reach)
         dist = None
-        # the key rounds the reach, so the goal area can differ by requester:
-        # repair only when it matches (keeps results identical to a recompute)
+        # repair only when the goal area still matches (keeps results
+        # identical to a recompute)
         if entry is not None and np.array_equal(entry[2], goal):
             dist = self._repair(entry, wall_extra)
         if dist is None:

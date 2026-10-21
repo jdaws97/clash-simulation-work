@@ -40,8 +40,8 @@ AWARE_RADIUS = 7.0
 # 4 Druid battles). Goals use at least the half-cell diagonal; the last
 # stretch is walked straight and the attack still checks the true range.
 GOAL_REACH_MIN = math.sqrt(0.5) / RES + 1e-6
-# Wall path costs retain their existing heuristic.
-WALL_COST = {"normal": 12.0, "smash": 1.2, "ignore": 0.0, "fly": 0.0}
+# Wall path costs retain their existing heuristic ("smash" walks as "ignore").
+WALL_COST = {"normal": 12.0, "ignore": 0.0, "fly": 0.0}
 
 # Ranked difficulty modifiers (wiki "Ranked Battles"): defense DPS bonus,
 # defending hero DPS/HP bonus, Guardian DPS/HP bonus, attacking hero penalty.
@@ -50,25 +50,6 @@ MODIFIERS = {
     "legend3": (0.10, 0.10, 0.05, 0.05),
     "legend2": (0.15, 0.15, 0.10, 0.10),
     "legend1": (0.20, 0.20, 0.20, 0.20),
-}
-
-# Defending heroes stay within their territory around the banner (wiki:
-# "only defends his territory around his banner and will retreat if lured
-# too far out"). Radius assumed equal to the hero's search radius.
-DEFAULT_TERRITORY = 9.0
-
-STORAGES = {"gs", "es", "ds"}
-PREFERRED_TROOPS = {
-    "Super Giant",
-    "Sneaky Goblin",
-    "Super Wall Breaker",
-    "Giant Skeleton",
-    "Witch Golem",
-    "Electromite",
-    "Rocket Balloon",
-    "Ice Hound",
-    "Super Hog Rider",
-    "Super Hog",
 }
 
 
@@ -140,7 +121,6 @@ class Battle:
         self.cc_released = False
         self.th = None
         self.th_active = False
-        self.th_weapon_was_active = False
         # explicit levels win; otherwise the layout's owner's levels; else max
         self.defense_levels = {**(layout.levels or {}), **(defense_levels or {})}
         self.hero_levels = {**(layout.hero_levels or {}), **(hero_levels or {})}
