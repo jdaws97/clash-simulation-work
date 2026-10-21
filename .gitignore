@@ -18,3 +18,4 @@ private/
 output/
 data/wiki/
 data/*-pre-*.json
+.claude/worktrees/
