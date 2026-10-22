@@ -1,6 +1,6 @@
 {
  "name": "loay-samy-cc92583-seed",
- "notes": "ROUGH: digitized from a watermarked web image for use as a search seed, not a benchmark.\nSource: https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1 (Clash Champs base #92583, community upload by \"loay samy\", uploaded 2026-01-20, site tag War, 223 downloads on 2026-10-21). Image: https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/25ddce48-024b-43fa-a475-f9504b587e00/image1920 (1765x1080 own-village screenshot, green scenery, Clash Champs watermark over the centre). Layout link: https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAAwAAAAMHJgg9ByUtmsVYo0Zx5wYM .\nDigitized 2026-10-21. Grid: tile size and phase fitted to the wall-cap lines (projection of the light-blue cap pixels onto both lattice directions: a 15.803, b 11.858 px, ratio 0.750; cap lattice cx 850.33, top 20.48). Ground offset (cap lift 21.7 px) and whole-tile anchoring from the four Army Camp ring centres (each lands on a tile vertex with the right parity; camp pairs symmetric about cx within 0.3 px); the village boundary (x=0 / y=0 / x=44 / y=44 lines) matches the edge of the lighter lawn. Ground lattice: cx 850.33, top 42.2. Whole village visible except the bottom tip (x+y >= ~85).\nMERGED: 4 Archer Towers (purple boxes) + 2 Multi-Archer Towers, 3 Cannons + 2 Ricochet Cannons -> no merge conversion needed.\nBuildings: positions read from the sprite centre (u = x - y) and the lowest visible point of the base, snapped with the x+y parity rule; expect +-1 tile on many (tile half-width is only 16 px). Mirror pairs about the x=y axis (the design is close to symmetric) were averaged. Overlaps resolved by nudging lower-priority buildings 1-2 tiles (sweepers, an Elixir Storage, 2 Gold Storages, Workshop, Pet House, B.O.B's Hut, 3 Gold Mines, 3 DE Drills).\nIMPUTED (2): Clan Castle (no castle sprite identified; placed at the nearest free spot to the Town Hall, 24,26) and Laboratory (placed at the nearest free spot, 1,2, to a grey machine next to the Workshop that may be the Lab).\nIdentity uncertainties (guesses, flagged): the 5 small black/gold chest sprites read as Hidden Teslas; the 5 blue pyramid-roof towers with gold arrow triangles (4) plus a small dark roofed hut read as Builder's Huts; the two purple box towers at 16,31 / 31,16 read as Bomb Towers; purple base with pink crystal (st near 8,19) and the orange skull orb (st near 20,24) read as Spell Towers; two flat purple/gold contraptions (xbow-like) read as Scattershots; two dark/gold pillars beside the top Wizard Towers read as Air Sweepers; the double purple barrel read as the 4th Mortar (could be a Cannon); red platform with grey hammer arm read as Workshop; dark tower beside the Blacksmith read as Dark Barracks; teal-roof hut with chimney read as B.O.B's Hut and the orange domed hut as Helper Hut; gold base with blue basin read as Dark Spell Factory; the 7th Gold Mine is mostly hidden by the bottom frame. Small purple dome sprites, red balloons, black skull balloons and bomb clusters were treated as traps. Decorations (cakes, trees, purple/white shrines) ignored.\nWalls: automatic detection (light-blue cap pixels + dark wall-body pixels at the cap position, isolated tiles dropped, straight gaps of up to 3 free tiles closed): 177 walls. Detection is weak under the watermark and on some rings, so roughly 120-150 walls of the real design are missing (325 at TH16); the main ring structure is present but has gaps.\nTraps: visible in the screenshot but NOT transcribed. Modes assumed: infernos single, x-bows both. Levels not set.\nSEED COMPLETION (from loay-samy-cc92583.json): walls 177 -> 325: 148 walls ADDED by baselab.generator.top_up_walls (dead-end spikes / single posts next to existing walls, not the builder's design): 2,38 2,39 2,40 2,41 3,42 4,42 4,43 5,43 6,43 7,11 9,14 9,15 9,18 9,19 10,14 10,15 10,20 10,21 10,22 11,14 11,15 12,14 12,15 12,25 12,36 13,9 13,15 13,25 13,36 14,9 14,10 14,11 14,22 14,25 14,36 14,40 14,41 14,42 14,43 15,4 15,5 15,6 15,7 15,9 15,10 15,20 16,11 16,12 16,13 16,20 16,35 16,36 17,11 17,12 17,13 17,22 17,23 17,24 19,26 19,27 19,28 19,29 19,31 19,32 19,33 19,35 19,36 20,10 20,15 20,16 20,17 21,10 21,11 21,27 21,28 21,29 22,10 22,14 22,16 22,18 22,19 23,14 24,30 25,30 26,11 26,12 26,13 26,14 26,16 26,17 26,18 26,19 26,24 26,25 26,30 27,11 27,12 27,13 27,14 27,30 27,32 27,33 27,34 27,35 28,13 28,14 28,24 28,25 28,26 28,27 29,18 29,19 29,20 30,23 31,43 32,4 32,5 32,6 32,7 32,36 32,43 33,16 33,36 33,43 34,15 34,16 34,23 34,27 34,36 34,43 35,15 35,16 35,23 35,27 35,34 35,35 35,36 36,11 36,13 36,14 36,16 36,23 37,23 38,9 38,14 38,28 39,9 39,14. Traps: 44 ADDED on free tiles inside the walled area (0 enclosed free tiles), spread by farthest-point sampling (not the builder's trap layout; the search's trap placer is expected to move them; skeleton traps set to ground): giant 27,17; giant 0,42; giant 0,0; giant 42,42; giant 42,0; giant 21,41; giant 6,23; bomb 20,0; bomb 43,25; bomb 11,10; bomb 32,33; bomb 20,28; bomb 43,13; bomb 31,4; bomb 11,36; spring 0,11; spring 0,32; spring 16,19; spring 10,0; spring 36,19; spring 22,9; spring 30,42; spring 41,33; spring 35,11; airbomb 29,25; airbomb 9,43; airbomb 0,19; airbomb 13,26; airbomb 38,5; airbomb 7,16; airbomb 37,38; seeking 6,5; seeking 18,34; seeking 26,0; seeking 16,5; seeking 43,19; seeking 15,42; seeking 0,25; seeking 27,36; skeleton 6,33; skeleton 28,9; skeleton 19,14; skeleton 35,0; tornado 11,21.",
+ "notes": "ROUGH: digitized from a watermarked web image for use as a search seed, not a benchmark.\nSource: https://www.clashchamps.com/i-need-a-base/?search_player_townhalls=16&order_by=1 (Clash Champs base #92583, community upload by \"loay samy\", uploaded 2026-01-20, site tag War, 223 downloads on 2026-10-21). Image: https://clashchamps.com/cdn-cgi/imagedelivery/m4td0QhRkBTnwv62pP40vA/25ddce48-024b-43fa-a475-f9504b587e00/image1920 (1765x1080 own-village screenshot, green scenery, Clash Champs watermark over the centre). Layout link: https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAAwAAAAMHJgg9ByUtmsVYo0Zx5wYM .\nDigitized 2026-10-21. Grid: tile size and phase fitted to the wall-cap lines (projection of the light-blue cap pixels onto both lattice directions: a 15.803, b 11.858 px, ratio 0.750; cap lattice cx 850.33, top 20.48). Ground offset (cap lift 21.7 px) and whole-tile anchoring from the four Army Camp ring centres (each lands on a tile vertex with the right parity; camp pairs symmetric about cx within 0.3 px); the village boundary (x=0 / y=0 / x=44 / y=44 lines) matches the edge of the lighter lawn. Ground lattice: cx 850.33, top 42.2. Whole village visible except the bottom tip (x+y >= ~85).\nMERGED: 4 Archer Towers (purple boxes) + 2 Multi-Archer Towers, 3 Cannons + 2 Ricochet Cannons -> no merge conversion needed.\nBuildings: positions read from the sprite centre (u = x - y) and the lowest visible point of the base, snapped with the x+y parity rule; expect +-1 tile on many (tile half-width is only 16 px). Mirror pairs about the x=y axis (the design is close to symmetric) were averaged. Overlaps resolved by nudging lower-priority buildings 1-2 tiles (sweepers, an Elixir Storage, 2 Gold Storages, Workshop, Pet House, B.O.B's Hut, 3 Gold Mines, 3 DE Drills).\nIMPUTED (2): Clan Castle (no castle sprite identified; placed at the nearest free spot to the Town Hall, 24,26) and Laboratory (placed at the nearest free spot, 1,2, to a grey machine next to the Workshop that may be the Lab).\nIdentity uncertainties (guesses, flagged): the 5 small black/gold chest sprites read as Hidden Teslas; the 5 blue pyramid-roof towers with gold arrow triangles (4) plus a small dark roofed hut read as Builder's Huts; the two purple box towers at 16,31 / 31,16 read as Bomb Towers; purple base with pink crystal (st near 8,19) and the orange skull orb (st near 20,24) read as Spell Towers; two flat purple/gold contraptions (xbow-like) read as Scattershots; two dark/gold pillars beside the top Wizard Towers read as Air Sweepers; the double purple barrel read as the 4th Mortar (could be a Cannon); red platform with grey hammer arm read as Workshop; dark tower beside the Blacksmith read as Dark Barracks; teal-roof hut with chimney read as B.O.B's Hut and the orange domed hut as Helper Hut; gold base with blue basin read as Dark Spell Factory; the 7th Gold Mine is mostly hidden by the bottom frame. Small purple dome sprites, red balloons, black skull balloons and bomb clusters were treated as traps. Decorations (cakes, trees, purple/white shrines) ignored.\nWalls: automatic detection (light-blue cap pixels + dark wall-body pixels at the cap position, isolated tiles dropped, straight gaps of up to 3 free tiles closed), minus 14 false hits at the village edge (frosty Christmas-tree decorations match the cap colour): 163 walls. Detection is weak under the watermark and on some rings, so roughly 162 walls of the real design are missing (325 at TH16); the main ring structure is present but has gaps.\nTraps: visible in the screenshot but NOT transcribed. Modes assumed: infernos single, x-bows both. Levels not set.\nSEED COMPLETION (from loay-samy-cc92583.json): walls 163 -> 325: 162 walls ADDED by baselab.generator.top_up_walls (dead-end spikes / single posts next to existing walls, not the builder's design): 1,32 2,32 2,33 3,32 4,32 5,32 7,12 7,15 7,16 9,7 9,9 9,12 9,15 9,16 9,36 10,7 10,9 10,15 10,16 10,20 10,21 10,36 11,10 11,15 11,16 11,31 11,32 11,33 11,36 12,10 12,15 12,16 12,32 12,36 13,10 13,25 13,27 13,28 14,2 14,3 14,4 14,5 14,9 14,10 14,11 14,18 14,19 14,22 14,23 14,25 14,27 14,28 15,6 15,10 15,11 15,30 15,34 15,35 15,39 16,9 16,20 16,22 16,24 16,34 17,22 17,23 17,24 17,29 18,19 18,20 18,23 18,24 18,29 18,34 19,20 19,23 19,29 19,34 20,18 20,19 20,20 21,24 21,25 21,26 21,27 21,29 22,14 22,16 22,26 22,27 22,28 23,14 23,16 23,17 23,41 23,42 24,14 24,16 24,17 24,21 24,30 24,40 25,14 25,30 26,14 26,16 26,17 26,22 26,29 26,30 27,14 27,17 27,20 27,21 27,22 28,14 28,20 28,27 28,30 29,19 29,20 29,27 30,13 30,23 30,27 31,19 31,23 31,37 32,10 32,19 32,27 32,36 33,27 33,31 33,32 33,36 34,31 34,32 34,36 35,15 35,27 35,31 35,36 36,12 36,13 36,14 36,16 37,18 38,10 38,14 38,28 39,14 39,15 39,28 40,14 40,27 40,28 41,22 41,23 41,28 42,23 43,23. Traps: 44 ADDED on free tiles inside the convex hull of the digitized walls (279 free tiles; the wall ring has gaps so 'enclosed' is not well defined), spread by farthest-point sampling (not the builder's trap layout; the search's trap placer is expected to move them; skeleton traps set to ground): giant 13,14; giant 31,33; giant 31,11; giant 14,31; giant 36,22; giant 26,24; giant 10,25; bomb 22,7; bomb 19,39; bomb 18,22; bomb 25,16; bomb 7,34; bomb 38,15; bomb 15,7; bomb 21,28; spring 27,38; spring 9,19; spring 19,15; spring 38,27; spring 19,33; spring 33,17; spring 13,36; spring 33,28; spring 27,29; airbomb 25,11; airbomb 30,22; airbomb 11,9; airbomb 17,11; airbomb 36,11; airbomb 16,26; airbomb 7,28; seeking 28,8; seeking 22,19; seeking 15,19; seeking 36,31; seeking 9,13; seeking 29,18; seeking 39,19; seeking 27,34; skeleton 21,11; skeleton 28,13; skeleton 7,23; skeleton 33,24; tornado 26,20.",
  "buildings": [
   {
    "key": "camp",
@@ -502,72 +502,36 @@
  ],
  "walls": [
   [
-   0,
+   1,
+   32
+  ],
+  [
+   2,
+   32
+  ],
+  [
+   2,
    33
   ],
   [
-   1,
-   33
-  ],
-  [
-   1,
-   34
-  ],
-  [
-   2,
-   38
-  ],
-  [
-   2,
-   39
-  ],
-  [
-   2,
-   40
-  ],
-  [
-   2,
-   41
-  ],
-  [
-   2,
-   42
-  ],
-  [
-   2,
-   43
-  ],
-  [
    3,
-   42
-  ],
-  [
-   3,
-   43
+   32
   ],
   [
    4,
-   42
-  ],
-  [
-   4,
-   43
+   32
   ],
   [
    5,
-   43
+   32
   ],
   [
    6,
    32
   ],
   [
-   6,
-   43
-  ],
-  [
    7,
-   11
+   12
   ],
   [
    7,
@@ -576,6 +540,14 @@
   [
    7,
    14
+  ],
+  [
+   7,
+   15
+  ],
+  [
+   7,
+   16
   ],
   [
    7,
@@ -619,6 +591,14 @@
   ],
   [
    9,
+   7
+  ],
+  [
+   9,
+   9
+  ],
+  [
+   9,
    10
   ],
   [
@@ -627,11 +607,15 @@
   ],
   [
    9,
-   14
+   12
   ],
   [
    9,
    15
+  ],
+  [
+   9,
+   16
   ],
   [
    9,
@@ -639,15 +623,11 @@
   ],
   [
    9,
-   18
-  ],
-  [
-   9,
-   19
-  ],
-  [
-   9,
    32
+  ],
+  [
+   9,
+   36
   ],
   [
    9,
@@ -655,15 +635,23 @@
   ],
   [
    10,
+   7
+  ],
+  [
+   10,
+   9
+  ],
+  [
+   10,
    10
   ],
   [
    10,
-   14
+   15
   ],
   [
    10,
-   15
+   16
   ],
   [
    10,
@@ -687,15 +675,15 @@
   ],
   [
    10,
-   22
-  ],
-  [
-   10,
    31
   ],
   [
    10,
    32
+  ],
+  [
+   10,
+   36
   ],
   [
    10,
@@ -711,19 +699,31 @@
   ],
   [
    11,
-   14
+   10
   ],
   [
    11,
    15
   ],
   [
-   12,
-   0
+   11,
+   16
   ],
   [
-   12,
-   1
+   11,
+   31
+  ],
+  [
+   11,
+   32
+  ],
+  [
+   11,
+   33
+  ],
+  [
+   11,
+   36
   ],
   [
    12,
@@ -735,7 +735,7 @@
   ],
   [
    12,
-   14
+   10
   ],
   [
    12,
@@ -743,7 +743,11 @@
   ],
   [
    12,
-   25
+   16
+  ],
+  [
+   12,
+   32
   ],
   [
    12,
@@ -759,11 +763,7 @@
   ],
   [
    13,
-   9
-  ],
-  [
-   13,
-   15
+   10
   ],
   [
    13,
@@ -775,11 +775,31 @@
   ],
   [
    13,
-   29
+   27
   ],
   [
    13,
-   36
+   28
+  ],
+  [
+   13,
+   29
+  ],
+  [
+   14,
+   2
+  ],
+  [
+   14,
+   3
+  ],
+  [
+   14,
+   4
+  ],
+  [
+   14,
+   5
   ],
   [
    14,
@@ -807,6 +827,14 @@
   ],
   [
    14,
+   18
+  ],
+  [
+   14,
+   19
+  ],
+  [
+   14,
    20
   ],
   [
@@ -819,15 +847,23 @@
   ],
   [
    14,
+   23
+  ],
+  [
+   14,
    25
   ],
   [
    14,
-   29
+   27
   ],
   [
    14,
-   36
+   28
+  ],
+  [
+   14,
+   29
   ],
   [
    14,
@@ -842,488 +878,500 @@
    39
   ],
   [
-   14,
+   15,
+   6
+  ],
+  [
+   15,
+   8
+  ],
+  [
+   15,
+   10
+  ],
+  [
+   15,
+   11
+  ],
+  [
+   15,
+   21
+  ],
+  [
+   15,
+   22
+  ],
+  [
+   15,
+   23
+  ],
+  [
+   15,
+   24
+  ],
+  [
+   15,
+   25
+  ],
+  [
+   15,
+   26
+  ],
+  [
+   15,
+   27
+  ],
+  [
+   15,
+   28
+  ],
+  [
+   15,
+   29
+  ],
+  [
+   15,
+   30
+  ],
+  [
+   15,
+   34
+  ],
+  [
+   15,
+   35
+  ],
+  [
+   15,
+   36
+  ],
+  [
+   15,
+   37
+  ],
+  [
+   15,
+   39
+  ],
+  [
+   16,
+   9
+  ],
+  [
+   16,
+   10
+  ],
+  [
+   16,
+   20
+  ],
+  [
+   16,
+   21
+  ],
+  [
+   16,
+   22
+  ],
+  [
+   16,
+   24
+  ],
+  [
+   16,
+   29
+  ],
+  [
+   16,
+   34
+  ],
+  [
+   16,
+   37
+  ],
+  [
+   17,
+   9
+  ],
+  [
+   17,
+   10
+  ],
+  [
+   17,
+   21
+  ],
+  [
+   17,
+   22
+  ],
+  [
+   17,
+   23
+  ],
+  [
+   17,
+   24
+  ],
+  [
+   17,
+   29
+  ],
+  [
+   17,
+   33
+  ],
+  [
+   17,
+   34
+  ],
+  [
+   17,
+   37
+  ],
+  [
+   18,
+   10
+  ],
+  [
+   18,
+   19
+  ],
+  [
+   18,
+   20
+  ],
+  [
+   18,
+   21
+  ],
+  [
+   18,
+   23
+  ],
+  [
+   18,
+   24
+  ],
+  [
+   18,
+   29
+  ],
+  [
+   18,
+   34
+  ],
+  [
+   18,
+   37
+  ],
+  [
+   19,
+   10
+  ],
+  [
+   19,
+   20
+  ],
+  [
+   19,
+   21
+  ],
+  [
+   19,
+   23
+  ],
+  [
+   19,
+   29
+  ],
+  [
+   19,
+   30
+  ],
+  [
+   19,
+   34
+  ],
+  [
+   19,
+   37
+  ],
+  [
+   20,
+   14
+  ],
+  [
+   20,
+   18
+  ],
+  [
+   20,
+   19
+  ],
+  [
+   20,
+   20
+  ],
+  [
+   20,
+   21
+  ],
+  [
+   20,
+   22
+  ],
+  [
+   20,
+   23
+  ],
+  [
+   20,
+   30
+  ],
+  [
+   20,
+   37
+  ],
+  [
+   21,
+   13
+  ],
+  [
+   21,
+   14
+  ],
+  [
+   21,
+   15
+  ],
+  [
+   21,
+   16
+  ],
+  [
+   21,
+   17
+  ],
+  [
+   21,
+   18
+  ],
+  [
+   21,
+   19
+  ],
+  [
+   21,
+   20
+  ],
+  [
+   21,
+   21
+  ],
+  [
+   21,
+   22
+  ],
+  [
+   21,
+   23
+  ],
+  [
+   21,
+   24
+  ],
+  [
+   21,
+   25
+  ],
+  [
+   21,
+   26
+  ],
+  [
+   21,
+   27
+  ],
+  [
+   21,
+   29
+  ],
+  [
+   21,
+   30
+  ],
+  [
+   21,
+   37
+  ],
+  [
+   22,
+   14
+  ],
+  [
+   22,
+   15
+  ],
+  [
+   22,
+   16
+  ],
+  [
+   22,
+   20
+  ],
+  [
+   22,
+   21
+  ],
+  [
+   22,
+   26
+  ],
+  [
+   22,
+   27
+  ],
+  [
+   22,
+   28
+  ],
+  [
+   22,
+   29
+  ],
+  [
+   22,
+   30
+  ],
+  [
+   22,
+   37
+  ],
+  [
+   23,
+   14
+  ],
+  [
+   23,
+   15
+  ],
+  [
+   23,
+   16
+  ],
+  [
+   23,
+   17
+  ],
+  [
+   23,
+   20
+  ],
+  [
+   23,
+   21
+  ],
+  [
+   23,
+   26
+  ],
+  [
+   23,
+   27
+  ],
+  [
+   23,
+   28
+  ],
+  [
+   23,
+   29
+  ],
+  [
+   23,
+   30
+  ],
+  [
+   23,
+   31
+  ],
+  [
+   23,
+   32
+  ],
+  [
+   23,
+   33
+  ],
+  [
+   23,
+   34
+  ],
+  [
+   23,
+   35
+  ],
+  [
+   23,
+   36
+  ],
+  [
+   23,
+   37
+  ],
+  [
+   23,
+   38
+  ],
+  [
+   23,
+   39
+  ],
+  [
+   23,
    40
   ],
   [
-   14,
+   23,
    41
   ],
   [
-   14,
+   23,
    42
   ],
   [
-   14,
-   43
-  ],
-  [
-   15,
-   4
-  ],
-  [
-   15,
-   5
-  ],
-  [
-   15,
-   6
-  ],
-  [
-   15,
-   7
-  ],
-  [
-   15,
-   8
-  ],
-  [
-   15,
-   9
-  ],
-  [
-   15,
-   10
-  ],
-  [
-   15,
-   20
-  ],
-  [
-   15,
-   21
-  ],
-  [
-   15,
-   22
-  ],
-  [
-   15,
-   23
-  ],
-  [
-   15,
-   24
-  ],
-  [
-   15,
-   25
-  ],
-  [
-   15,
-   26
-  ],
-  [
-   15,
-   27
-  ],
-  [
-   15,
-   28
-  ],
-  [
-   15,
-   29
-  ],
-  [
-   15,
-   36
-  ],
-  [
-   15,
-   37
-  ],
-  [
-   16,
-   10
-  ],
-  [
-   16,
-   11
-  ],
-  [
-   16,
-   12
-  ],
-  [
-   16,
-   13
-  ],
-  [
-   16,
-   20
-  ],
-  [
-   16,
-   21
-  ],
-  [
-   16,
-   29
-  ],
-  [
-   16,
-   35
-  ],
-  [
-   16,
-   36
-  ],
-  [
-   16,
-   37
-  ],
-  [
-   17,
-   9
-  ],
-  [
-   17,
-   10
-  ],
-  [
-   17,
-   11
-  ],
-  [
-   17,
-   12
-  ],
-  [
-   17,
-   13
-  ],
-  [
-   17,
-   21
-  ],
-  [
-   17,
-   22
-  ],
-  [
-   17,
-   23
-  ],
-  [
-   17,
-   24
-  ],
-  [
-   17,
-   33
-  ],
-  [
-   17,
-   34
-  ],
-  [
-   17,
-   37
-  ],
-  [
-   18,
-   10
-  ],
-  [
-   18,
-   21
-  ],
-  [
-   18,
-   37
-  ],
-  [
-   19,
-   10
-  ],
-  [
-   19,
-   21
-  ],
-  [
-   19,
-   26
-  ],
-  [
-   19,
-   27
-  ],
-  [
-   19,
-   28
-  ],
-  [
-   19,
-   29
-  ],
-  [
-   19,
-   30
-  ],
-  [
-   19,
-   31
-  ],
-  [
-   19,
-   32
-  ],
-  [
-   19,
-   33
-  ],
-  [
-   19,
-   35
-  ],
-  [
-   19,
-   36
-  ],
-  [
-   19,
-   37
-  ],
-  [
-   20,
-   10
-  ],
-  [
-   20,
+   24,
    14
   ],
   [
-   20,
+   24,
    15
   ],
   [
-   20,
+   24,
    16
   ],
   [
-   20,
+   24,
    17
   ],
   [
-   20,
+   24,
    21
   ],
   [
-   20,
-   22
-  ],
-  [
-   20,
-   23
-  ],
-  [
-   20,
+   24,
    30
   ],
   [
-   20,
-   37
-  ],
-  [
-   21,
-   10
-  ],
-  [
-   21,
-   11
-  ],
-  [
-   21,
-   13
-  ],
-  [
-   21,
-   14
-  ],
-  [
-   21,
-   15
-  ],
-  [
-   21,
-   16
-  ],
-  [
-   21,
-   17
-  ],
-  [
-   21,
-   18
-  ],
-  [
-   21,
-   19
-  ],
-  [
-   21,
-   20
-  ],
-  [
-   21,
-   21
-  ],
-  [
-   21,
-   22
-  ],
-  [
-   21,
-   23
-  ],
-  [
-   21,
-   27
-  ],
-  [
-   21,
-   28
-  ],
-  [
-   21,
-   29
-  ],
-  [
-   21,
-   30
-  ],
-  [
-   21,
-   37
-  ],
-  [
-   22,
-   10
-  ],
-  [
-   22,
-   14
-  ],
-  [
-   22,
-   15
-  ],
-  [
-   22,
-   16
-  ],
-  [
-   22,
-   18
-  ],
-  [
-   22,
-   19
-  ],
-  [
-   22,
-   20
-  ],
-  [
-   22,
-   21
-  ],
-  [
-   22,
-   29
-  ],
-  [
-   22,
-   30
-  ],
-  [
-   22,
-   37
-  ],
-  [
-   23,
-   14
-  ],
-  [
-   23,
-   15
-  ],
-  [
-   23,
-   20
-  ],
-  [
-   23,
-   21
-  ],
-  [
-   23,
-   26
-  ],
-  [
-   23,
-   27
-  ],
-  [
-   23,
-   28
-  ],
-  [
-   23,
-   29
-  ],
-  [
-   23,
-   30
-  ],
-  [
-   23,
-   31
-  ],
-  [
-   23,
-   32
-  ],
-  [
-   23,
-   33
-  ],
-  [
-   23,
-   34
-  ],
-  [
-   23,
-   35
-  ],
-  [
-   23,
-   36
-  ],
-  [
-   23,
-   37
-  ],
-  [
-   23,
-   38
-  ],
-  [
-   23,
-   39
-  ],
-  [
-   23,
+   24,
    40
   ],
   [
-   24,
-   15
-  ],
-  [
-   24,
-   30
+   25,
+   14
   ],
   [
    25,
@@ -1332,18 +1380,6 @@
   [
    25,
    30
-  ],
-  [
-   26,
-   11
-  ],
-  [
-   26,
-   12
-  ],
-  [
-   26,
-   13
   ],
   [
    26,
@@ -1363,11 +1399,7 @@
   ],
   [
    26,
-   18
-  ],
-  [
-   26,
-   19
+   22
   ],
   [
    26,
@@ -1375,27 +1407,11 @@
   ],
   [
    26,
-   24
-  ],
-  [
-   26,
-   25
+   29
   ],
   [
    26,
    30
-  ],
-  [
-   27,
-   11
-  ],
-  [
-   27,
-   12
-  ],
-  [
-   27,
-   13
   ],
   [
    27,
@@ -1407,37 +1423,29 @@
   ],
   [
    27,
-   23
+   17
   ],
   [
    27,
-   30
+   20
+  ],
+  [
+   27,
+   21
+  ],
+  [
+   27,
+   22
+  ],
+  [
+   27,
+   23
   ],
   [
    27,
    31
   ],
   [
-   27,
-   32
-  ],
-  [
-   27,
-   33
-  ],
-  [
-   27,
-   34
-  ],
-  [
-   27,
-   35
-  ],
-  [
-   28,
-   13
-  ],
-  [
    28,
    14
   ],
@@ -1447,19 +1455,11 @@
   ],
   [
    28,
+   20
+  ],
+  [
+   28,
    23
-  ],
-  [
-   28,
-   24
-  ],
-  [
-   28,
-   25
-  ],
-  [
-   28,
-   26
   ],
   [
    28,
@@ -1467,6 +1467,10 @@
   ],
   [
    28,
+   30
+  ],
+  [
+   28,
    31
   ],
   [
@@ -1488,10 +1492,6 @@
   [
    29,
    17
-  ],
-  [
-   29,
-   18
   ],
   [
    29,
@@ -1511,11 +1511,15 @@
   ],
   [
    29,
-   37
+   27
   ],
   [
    29,
-   43
+   37
+  ],
+  [
+   30,
+   13
   ],
   [
    30,
@@ -1539,11 +1543,19 @@
   ],
   [
    30,
-   37
+   27
   ],
   [
    30,
-   43
+   37
+  ],
+  [
+   31,
+   19
+  ],
+  [
+   31,
+   23
   ],
   [
    31,
@@ -1563,23 +1575,7 @@
   ],
   [
    31,
-   43
-  ],
-  [
-   32,
-   4
-  ],
-  [
-   32,
-   5
-  ],
-  [
-   32,
-   6
-  ],
-  [
-   32,
-   7
+   37
   ],
   [
    32,
@@ -1591,63 +1587,59 @@
   ],
   [
    32,
-   36
+   10
   ],
   [
    32,
-   43
+   19
+  ],
+  [
+   32,
+   27
+  ],
+  [
+   32,
+   36
   ],
   [
    33,
-   16
+   27
+  ],
+  [
+   33,
+   31
+  ],
+  [
+   33,
+   32
   ],
   [
    33,
    36
   ],
   [
-   33,
-   43
+   34,
+   31
   ],
   [
    34,
-   15
-  ],
-  [
-   34,
-   16
-  ],
-  [
-   34,
-   23
-  ],
-  [
-   34,
-   27
+   32
   ],
   [
    34,
    36
   ],
   [
-   34,
-   43
-  ],
-  [
    35,
    15
   ],
   [
    35,
-   16
-  ],
-  [
-   35,
-   23
-  ],
-  [
-   35,
    27
+  ],
+  [
+   35,
+   31
   ],
   [
    35,
@@ -1656,14 +1648,6 @@
   [
    35,
    33
-  ],
-  [
-   35,
-   34
-  ],
-  [
-   35,
-   35
   ],
   [
    35,
@@ -1683,7 +1667,7 @@
   ],
   [
    36,
-   11
+   12
   ],
   [
    36,
@@ -1700,10 +1684,6 @@
   [
    36,
    16
-  ],
-  [
-   36,
-   23
   ],
   [
    36,
@@ -1735,7 +1715,7 @@
   ],
   [
    37,
-   23
+   18
   ],
   [
    37,
@@ -1755,7 +1735,7 @@
   ],
   [
    38,
-   9
+   10
   ],
   [
    38,
@@ -1771,261 +1751,281 @@
   ],
   [
    39,
-   9
-  ],
-  [
-   39,
    14
   ],
   [
    39,
+   15
+  ],
+  [
+   39,
    23
+  ],
+  [
+   39,
+   28
+  ],
+  [
+   40,
+   14
   ],
   [
    40,
    23
   ],
   [
-   43,
-   5
-  ],
-  [
-   43,
-   6
-  ],
-  [
-   43,
-   26
-  ],
-  [
-   43,
+   40,
    27
+  ],
+  [
+   40,
+   28
+  ],
+  [
+   41,
+   22
+  ],
+  [
+   41,
+   23
+  ],
+  [
+   41,
+   28
+  ],
+  [
+   42,
+   23
+  ],
+  [
+   43,
+   23
   ]
  ],
  "traps": [
   {
    "key": "giant",
-   "x": 27,
-   "y": 17
+   "x": 13,
+   "y": 14
   },
   {
    "key": "giant",
-   "x": 0,
-   "y": 42
+   "x": 31,
+   "y": 33
   },
   {
    "key": "giant",
-   "x": 0,
-   "y": 0
+   "x": 31,
+   "y": 11
   },
   {
    "key": "giant",
-   "x": 42,
-   "y": 42
+   "x": 14,
+   "y": 31
   },
   {
    "key": "giant",
-   "x": 42,
-   "y": 0
+   "x": 36,
+   "y": 22
   },
   {
    "key": "giant",
-   "x": 21,
-   "y": 41
+   "x": 26,
+   "y": 24
   },
   {
    "key": "giant",
-   "x": 6,
-   "y": 23
-  },
-  {
-   "key": "bomb",
-   "x": 20,
-   "y": 0
-  },
-  {
-   "key": "bomb",
-   "x": 43,
+   "x": 10,
    "y": 25
   },
   {
    "key": "bomb",
-   "x": 11,
-   "y": 10
+   "x": 22,
+   "y": 7
   },
   {
    "key": "bomb",
-   "x": 32,
-   "y": 33
+   "x": 19,
+   "y": 39
   },
   {
    "key": "bomb",
-   "x": 20,
+   "x": 18,
+   "y": 22
+  },
+  {
+   "key": "bomb",
+   "x": 25,
+   "y": 16
+  },
+  {
+   "key": "bomb",
+   "x": 7,
+   "y": 34
+  },
+  {
+   "key": "bomb",
+   "x": 38,
+   "y": 15
+  },
+  {
+   "key": "bomb",
+   "x": 15,
+   "y": 7
+  },
+  {
+   "key": "bomb",
+   "x": 21,
    "y": 28
   },
   {
-   "key": "bomb",
-   "x": 43,
-   "y": 13
+   "key": "spring",
+   "x": 27,
+   "y": 38
   },
   {
-   "key": "bomb",
-   "x": 31,
-   "y": 4
+   "key": "spring",
+   "x": 9,
+   "y": 19
   },
   {
-   "key": "bomb",
-   "x": 11,
+   "key": "spring",
+   "x": 19,
+   "y": 15
+  },
+  {
+   "key": "spring",
+   "x": 38,
+   "y": 27
+  },
+  {
+   "key": "spring",
+   "x": 19,
+   "y": 33
+  },
+  {
+   "key": "spring",
+   "x": 33,
+   "y": 17
+  },
+  {
+   "key": "spring",
+   "x": 13,
    "y": 36
   },
   {
    "key": "spring",
-   "x": 0,
+   "x": 33,
+   "y": 28
+  },
+  {
+   "key": "spring",
+   "x": 27,
+   "y": 29
+  },
+  {
+   "key": "airbomb",
+   "x": 25,
    "y": 11
   },
   {
-   "key": "spring",
-   "x": 0,
-   "y": 32
+   "key": "airbomb",
+   "x": 30,
+   "y": 22
   },
   {
-   "key": "spring",
-   "x": 16,
-   "y": 19
-  },
-  {
-   "key": "spring",
-   "x": 10,
-   "y": 0
-  },
-  {
-   "key": "spring",
-   "x": 36,
-   "y": 19
-  },
-  {
-   "key": "spring",
-   "x": 22,
+   "key": "airbomb",
+   "x": 11,
    "y": 9
   },
   {
-   "key": "spring",
-   "x": 30,
-   "y": 42
-  },
-  {
-   "key": "spring",
-   "x": 41,
-   "y": 33
-  },
-  {
-   "key": "spring",
-   "x": 35,
+   "key": "airbomb",
+   "x": 17,
    "y": 11
   },
   {
    "key": "airbomb",
-   "x": 29,
-   "y": 25
+   "x": 36,
+   "y": 11
   },
   {
    "key": "airbomb",
-   "x": 9,
-   "y": 43
-  },
-  {
-   "key": "airbomb",
-   "x": 0,
-   "y": 19
-  },
-  {
-   "key": "airbomb",
-   "x": 13,
+   "x": 16,
    "y": 26
   },
   {
    "key": "airbomb",
-   "x": 38,
-   "y": 5
-  },
-  {
-   "key": "airbomb",
    "x": 7,
-   "y": 16
-  },
-  {
-   "key": "airbomb",
-   "x": 37,
-   "y": 38
+   "y": 28
   },
   {
    "key": "seeking",
-   "x": 6,
-   "y": 5
+   "x": 28,
+   "y": 8
   },
   {
    "key": "seeking",
-   "x": 18,
-   "y": 34
-  },
-  {
-   "key": "seeking",
-   "x": 26,
-   "y": 0
-  },
-  {
-   "key": "seeking",
-   "x": 16,
-   "y": 5
-  },
-  {
-   "key": "seeking",
-   "x": 43,
+   "x": 22,
    "y": 19
   },
   {
    "key": "seeking",
    "x": 15,
-   "y": 42
+   "y": 19
   },
   {
    "key": "seeking",
-   "x": 0,
-   "y": 25
+   "x": 36,
+   "y": 31
+  },
+  {
+   "key": "seeking",
+   "x": 9,
+   "y": 13
+  },
+  {
+   "key": "seeking",
+   "x": 29,
+   "y": 18
+  },
+  {
+   "key": "seeking",
+   "x": 39,
+   "y": 19
   },
   {
    "key": "seeking",
    "x": 27,
-   "y": 36
+   "y": 34
   },
   {
    "key": "skeleton",
-   "x": 6,
-   "y": 33,
+   "x": 21,
+   "y": 11,
    "mode": "ground"
   },
   {
    "key": "skeleton",
    "x": 28,
-   "y": 9,
+   "y": 13,
    "mode": "ground"
   },
   {
    "key": "skeleton",
-   "x": 19,
-   "y": 14,
+   "x": 7,
+   "y": 23,
    "mode": "ground"
   },
   {
    "key": "skeleton",
-   "x": 35,
-   "y": 0,
+   "x": 33,
+   "y": 24,
    "mode": "ground"
   },
   {
    "key": "tornado",
-   "x": 11,
-   "y": 21
+   "x": 26,
+   "y": 20
   }
  ],
  "cc_troops": [
