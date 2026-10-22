@@ -59,7 +59,9 @@ def main():
     import baselab.meta_armies  # noqa: F401
 
     ap = argparse.ArgumentParser()
-    ap.add_argument("--armies", nargs="+", required=True)
+    ap.add_argument("--armies", nargs="+", default=[])
+    ap.add_argument("--stage", type=int, help="trace rust_export.py parity scenarios of this stage instead")
+    ap.add_argument("--scenarios", type=int, default=12)
     ap.add_argument("--sides", type=int, default=4)
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
@@ -82,6 +84,17 @@ def main():
 
     t0 = time.time()
     n = 0
+    if args.stage:
+        from rust_export import scenario
+
+        for k in range(args.scenarios):
+            b = scenario(args.stage, k)
+            sys.settrace(tracer)
+            try:
+                b.run()
+            finally:
+                sys.settrace(None)
+            n += 1
     for army in args.armies:
         for base in BASES:
             for k in range(args.sides):
@@ -98,7 +111,7 @@ def main():
         fns = []
         for name, lo, hi in functions(f):
             ran = sorted(x for x in hits[f] if lo < x <= hi)  # body lines only
-            fns.append({"name": name, "lines": [lo, hi], "ran": bool(ran), "lines_run": len(ran)})
+            fns.append({"name": name, "lines": [lo, hi], "ran": bool(ran), "lines_run": len(ran), "executed": ran})
         report[rel] = {"lines_run": len(hits[f]), "functions": fns}
     Path(args.out).write_text(json.dumps({"armies": args.armies, "battles": n, "files": report}, indent=1))
     print(f"{n} battles traced in {time.time() - t0:.0f}s -> {args.out}")
