@@ -228,6 +228,7 @@ pub fn build(
         nd_version: None,
         no_deploy: HashSet::new(),
         nd_cache: HashSet::new(),
+        nd_bitmap: Vec::new(),
         dt_version: None,
         dt_cache: Vec::new(),
         onboard_cargo: Vec::new(),

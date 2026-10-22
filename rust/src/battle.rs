@@ -174,36 +174,69 @@ impl Battle {
     // banners remain occupied, while Hidden Teslas never create a red line.
     pub fn live_no_deploy(&mut self) -> &std::collections::HashSet<(i32, i32)> {
         if self.nd_version == Some(self.grid.version) {
+            // An exported current-version set is authoritative; materialize
+            // its bitmap without recomputing the exported red line.
+            if self.nd_bitmap.is_empty() {
+                self.rebuild_no_deploy_bitmap();
+            }
             return &self.nd_cache;
         }
-        let mut occupied = self.banner_tiles.clone();
-        for b in &self.buildings {
-            if !b.alive || b.key == "tesla" || b.key == "banner" {
-                continue;
-            }
-            let x0 = round_half_even(b.x - b.size as f64 / 2.0) as i32;
-            let y0 = round_half_even(b.y - b.size as f64 / 2.0) as i32;
-            for dx in 0..b.size as i32 {
-                for dy in 0..b.size as i32 {
-                    occupied.insert((x0 + dx, y0 + dy));
-                }
-            }
-        }
-        for w in &self.walls {
-            if w.alive {
-                occupied.insert((w.tx, w.ty));
-            }
-        }
         self.nd_cache.clear();
-        for (tx, ty) in occupied {
+        for &(tx, ty) in &self.banner_tiles {
             for dx in -1..=1 {
                 for dy in -1..=1 {
                     self.nd_cache.insert((tx + dx, ty + dy));
                 }
             }
         }
+        for b in &self.buildings {
+            if !b.alive || b.key == "tesla" || b.key == "banner" || b.size == 0 {
+                continue;
+            }
+            let x0 = round_half_even(b.x - b.size as f64 / 2.0) as i32;
+            let y0 = round_half_even(b.y - b.size as f64 / 2.0) as i32;
+            // Dilating a square footprint by one cell is another square.
+            // Insert its union directly instead of hashing each cell 9 times.
+            for dx in -1..=b.size as i32 {
+                for dy in -1..=b.size as i32 {
+                    self.nd_cache.insert((x0 + dx, y0 + dy));
+                }
+            }
+        }
+        for w in &self.walls {
+            if w.alive {
+                for dx in -1..=1 {
+                    for dy in -1..=1 {
+                        self.nd_cache.insert((w.tx + dx, w.ty + dy));
+                    }
+                }
+            }
+        }
         self.nd_version = Some(self.grid.version);
+        self.rebuild_no_deploy_bitmap();
         &self.nd_cache
+    }
+
+    fn rebuild_no_deploy_bitmap(&mut self) {
+        let world = self.catalog.world;
+        self.nd_bitmap.resize(world * world, false);
+        self.nd_bitmap.fill(false);
+        for &(x, y) in &self.nd_cache {
+            if x >= 0 && y >= 0 && (x as usize) < world && (y as usize) < world {
+                self.nd_bitmap[x as usize * world + y as usize] = true;
+            }
+        }
+    }
+
+    // Call live_no_deploy first. Out-of-world red-line cells still matter to
+    // playbook.inside, and remain represented by the original set.
+    pub fn no_deploy_tile(&self, x: i32, y: i32) -> bool {
+        let world = self.catalog.world;
+        if x >= 0 && y >= 0 && (x as usize) < world && (y as usize) < world {
+            self.nd_bitmap[x as usize * world + y as usize]
+        } else {
+            self.nd_cache.contains(&(x, y))
+        }
     }
 
     pub fn can_deploy(&mut self, x: f64, y: f64) -> bool {
@@ -211,7 +244,10 @@ impl Battle {
         if !(0.0 <= x && x < world && 0.0 <= y && y < world) {
             return false;
         }
-        !self.live_no_deploy().contains(&(x as i32, y as i32))
+        if self.nd_version != Some(self.grid.version) || self.nd_bitmap.is_empty() {
+            self.live_no_deploy();
+        }
+        !self.nd_bitmap[x as usize * self.catalog.world + y as usize]
     }
 
     pub fn deploy_tiles(&mut self) -> &[(f64, f64)] {
@@ -222,7 +258,7 @@ impl Battle {
         self.dt_cache.clear();
         for x in 0..self.catalog.world as i32 {
             for y in 0..self.catalog.world as i32 {
-                if !self.nd_cache.contains(&(x, y)) {
+                if !self.no_deploy_tile(x, y) {
                     self.dt_cache.push((x as f64 + 0.5, y as f64 + 0.5));
                 }
             }
@@ -259,7 +295,7 @@ impl Battle {
         for x in 0..world {
             for y in 0..world {
                 let tile = (x, y);
-                if !seen.contains(&tile) && !self.nd_cache.contains(&tile) && !walls.contains(&tile) {
+                if !seen.contains(&tile) && !self.no_deploy_tile(x, y) && !walls.contains(&tile) {
                     spots.push((x as f64 + 0.5, y as f64 + 0.5));
                 }
             }

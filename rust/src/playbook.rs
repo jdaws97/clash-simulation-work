@@ -2,6 +2,7 @@
 
 use std::rc::Rc;
 
+use crate::fast_hash::FastMap;
 use crate::geom::py_hypot;
 use crate::heroes;
 use crate::json::Json;
@@ -415,8 +416,10 @@ impl PlaybookPlan {
     fn inside(&self, battle: &mut Battle, unit: UnitRef) -> bool {
         let u = battle.unit(unit);
         let (x, y) = (u.x as i32, u.y as i32);
-        let blocked = battle.live_no_deploy();
-        [-2, 0, 2].iter().all(|dx| [-2, 0, 2].iter().all(|dy| blocked.contains(&(x + dx, y + dy))))
+        battle.live_no_deploy();
+        [-2, 0, 2].iter().all(|dx| {
+            [-2, 0, 2].iter().all(|dy| battle.no_deploy_tile(x + dx, y + dy))
+        })
     }
 
     // playbook.py:233-239.
@@ -531,7 +534,11 @@ impl PlaybookPlan {
                     };
                     battle.t - *since >= 3.0
                 } else {
-                    self.hurt.retain(|(k, _)| *k != key);
+                    // Avoid cloning every HP history through SharedVec when
+                    // the engagement clock is already absent.
+                    if self.hurt.iter().any(|(k, _)| *k == key) {
+                        self.hurt.retain(|(k, _)| *k != key);
+                    }
                     false
                 }
             }
@@ -806,14 +813,23 @@ impl PlaybookPlan {
     pub fn on_tick(&mut self, battle: &mut Battle) {
         let t = battle.t;
         if (t * 10.0) as i64 % 5 == 0 {
+            // Histories keep their Python dictionary order. This lookup-only
+            // index lasts through the sampling pass, which never removes keys.
+            let mut indices: FastMap<UnitId, usize> = FastMap::default();
+            for (index, (key, _)) in self.hurt.iter().enumerate() {
+                if let HurtKey::Unit(id) = key {
+                    indices.entry(*id).or_insert(index);
+                }
+            }
             for u in battle.attackers_pool() {
                 if u.alive && (u.is_hero || u.housing >= 5) {
-                    let key = HurtKey::Unit(u.id);
-                    let index = if let Some(index) = self.hurt.iter().position(|(k, _)| *k == key) {
+                    let index = if let Some(&index) = indices.get(&u.id) {
                         index
                     } else {
-                        self.hurt.push((key, HurtValue::History(Vec::new())));
-                        self.hurt.len() - 1
+                        let index = self.hurt.len();
+                        self.hurt.push((HurtKey::Unit(u.id), HurtValue::History(Vec::new())));
+                        indices.insert(u.id, index);
+                        index
                     };
                     let HurtValue::History(history) = &mut self.hurt[index].1 else {
                         panic!("unit HP history")

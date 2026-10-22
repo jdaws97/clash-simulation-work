@@ -1277,6 +1277,8 @@ pub struct Battle {
     pub nd_version: Option<u64>,
     pub no_deploy: HashSet<(i32, i32)>,
     pub nd_cache: HashSet<(i32, i32)>,
+    // Derived from nd_cache at nd_version; filled lazily for loaded exports.
+    pub nd_bitmap: Vec<bool>,
     pub dt_version: Option<u64>,
     pub dt_cache: Vec<(f64, f64)>,
     pub onboard_cargo: Vec<CargoEntry>,

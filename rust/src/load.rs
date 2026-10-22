@@ -1659,6 +1659,7 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
         banner_tiles: tiles(s.field("_banner_tiles")),
         nd_version,
         nd_cache: no_deploy.clone(),
+        nd_bitmap: Vec::new(),
         no_deploy,
         dt_version: None,
         dt_cache: Vec::new(),

@@ -366,6 +366,27 @@ pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
 
 // units.py:331-542: sourced("aura") restores actor/effect, but never src.
 pub fn pre_tick(battle: &mut Battle, unit: UnitRef) -> bool {
+    let u = battle.unit(unit);
+    if u.extra.leaping {
+        return true;
+    }
+    // Ordinary troops usually have no upkeep. These checks are read-only;
+    // only enter the aura source context when the original body has work.
+    // Keep this predicate in sync with the early work in pre_tick_effect.
+    let upkeep = !u.spec.special.is_empty()
+        || u.spec.attack == Tag::Beam && u.target.is_some()
+        || u.name_id == Name::Meteormite
+        || u.extra.mirror_clone && battle.t >= u.extra.expire_at
+        || battle.t >= u.extra.expires_at
+        || u.name_id == Name::RootRider && unit.team == Team::Atk
+        || u.name_id == Name::Totem
+        || u.decay > 0.0
+        || u.kind == Tag::Pet
+        || u.kit.is_some()
+        || u.name_id == Name::GiantGiant && !u.extra.enraged && u.hp <= 0.5 * u.max_hp;
+    if !upkeep {
+        return false;
+    }
     effects::damage_source(battle, Some(EntityRef::Unit(unit)), Tag::Aura, |battle| {
         pre_tick_effect(battle, unit)
     })
@@ -373,14 +394,18 @@ pub fn pre_tick(battle: &mut Battle, unit: UnitRef) -> bool {
 
 fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
     let t = battle.t;
-    let sp = Arc::clone(&battle.unit(unit).spec);
+    // Capture the same original spec properties without atomic Arc traffic.
+    let (beam, special) = {
+        let spec = &battle.unit(unit).spec;
+        (spec.attack == Tag::Beam, spec.special)
+    };
     if battle.unit(unit).extra.leaping {
         return true;
     }
     if battle.unit(unit).name_id == Name::Meteormite {
         todo!("stage 2: units.py:338 Meteormite merging");
     }
-    if sp.attack == Tag::Beam {
+    if beam {
         if let Some(target) = battle.unit(unit).target {
             if target_distance(battle, EntityRef::Unit(unit), target)
                 > effective_range(battle.unit(unit))
@@ -473,17 +498,17 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         u.rage_until = t + 20.0;
     }
     let u = battle.unit(unit);
-    if sp.special.is_empty() {
+    if special.is_empty() {
         return false;
     }
-    if sp.has_special(Special::TitanAura) {
+    if special.contains(Special::TitanAura) {
         todo!("stage 2: units.py:399 Electro Titan aura");
     }
     if u.name_id == Name::Druid && t >= u.extra.bear_at {
         transform_bear(battle, unit);
         return true;
     }
-    if sp.has_special(Special::RuinWitch) && unit.team == Team::Atk {
+    if special.contains(Special::RuinWitch) && unit.team == Team::Atk {
         if let Some((rubble, started)) = battle.unit(unit).extra.vacuum {
             if !battle.unit(unit).extra.delivery_committed && t >= started + 4.0 {
                 battle.building_mut(rubble).extra.rubble_taken = true;
@@ -562,13 +587,13 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         }
     }
     let u = battle.unit(unit);
-    if sp.has_special(Special::WitchSkeletons) && u.can_act(t) && t >= u.extra.next_summon {
+    if special.contains(Special::WitchSkeletons) && u.can_act(t) && t >= u.extra.next_summon {
         todo!("stage 2: units.py:469 Witch skeleton summons");
     }
-    if sp.has_special(Special::BigBoy) && t >= u.extra.next_summon {
+    if special.contains(Special::BigBoy) && t >= u.extra.next_summon {
         todo!("stage 2: units.py:491 Super Witch Big Boy summons");
     }
-    if sp.has_special(Special::Furnace)
+    if special.contains(Special::Furnace)
         && unit.team == Team::Def
         && !battle
             .attackers_pool()
@@ -576,10 +601,10 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
     {
         todo!("stage 2: units.py:496 idle defending Furnace summon clock");
     }
-    if sp.has_special(Special::Furnace) && t >= u.extra.next_mite && u.extra.mites > 0 {
+    if special.contains(Special::Furnace) && t >= u.extra.next_mite && u.extra.mites > 0 {
         todo!("stage 2: units.py:502 Furnace Firemite summons");
     }
-    if sp.has_special(Special::SiegeBarracks) && t >= u.extra.next && !u.extra.queue.is_empty() {
+    if special.contains(Special::SiegeBarracks) && t >= u.extra.next && !u.extra.queue.is_empty() {
         let name = battle.unit_mut(unit).extra.queue.remove(0);
         let level = match battle.plan.researched_level(&name) {
             Some(level) => level.clone(),
@@ -607,19 +632,19 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         battle.unit_mut(unit).extra.next = t + 30.0 / 14.0;
     }
     let u = battle.unit(unit);
-    if sp.has_special(Special::Logs) && u.can_act(t) && t >= u.extra.next_log {
+    if special.contains(Special::Logs) && u.can_act(t) && t >= u.extra.next_log {
         roll_log(battle, unit);
         battle.unit_mut(unit).extra.next_log = t + 3.0;
     }
     let u = battle.unit(unit);
-    if sp.has_special(Special::TroopLauncher)
+    if special.contains(Special::TroopLauncher)
         && u.can_act(t)
         && t >= u.extra.next
         && u.extra.barrels > 0
     {
         todo!("stage 2: units.py:528 Troop Launcher barrel release");
     }
-    if sp.has_special(Special::BlimpBombs) && u.can_act(t) && t >= u.extra.next_bomb {
+    if special.contains(Special::BlimpBombs) && u.can_act(t) && t >= u.extra.next_bomb {
         todo!("stage 2: units.py:538 Battle Blimp bomb drops");
     }
     false

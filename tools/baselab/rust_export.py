@@ -396,7 +396,30 @@ def scenario_inputs(stage, k):
         plan = make_plan(army, angle, 16, seed)
         plan.strength = STRENGTH.get(army, 1.0) * skill(seed)
         return lay, plan, {"seed": seed, "town_hall": 16}
+    if stage == 5:
+        # the ranked meta armies the base scorer uses (evaluate.meta_scenarios),
+        # each with its real playbook plan, set up exactly like a scored battle
+        from baselab.evaluate import STRENGTH, skill
+        from baselab.meta_armies import make_plan
+
+        armies = meta_armies()
+        n_sides = 8
+        army = armies[k % len(armies)]
+        base = STAGE4_BASES[(k // len(armies)) % len(STAGE4_BASES)]
+        side = k // (len(armies) * len(STAGE4_BASES)) % n_sides
+        angle, seed = 2 * math.pi * side / n_sides + 0.1, 500 + k
+        lay = own_layout(base)
+        plan = make_plan(army, angle, 16, seed)
+        plan.strength = STRENGTH.get(army, 1.0) * skill(seed)
+        return lay, plan, {"seed": seed, "town_hall": 16}
     raise ValueError(f"no stage {stage}")
+
+
+def meta_armies():
+    """The armies of the ranked scoring mix (evaluate.meta_scenarios)."""
+    from baselab.evaluate import meta_scenarios
+
+    return sorted({s.army for s in meta_scenarios("ranked", 4, (0,))})
 
 
 def scenario(stage, k):

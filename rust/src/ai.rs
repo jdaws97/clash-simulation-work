@@ -558,19 +558,27 @@ impl Battle {
                 f64::INFINITY
             };
             let u = self.unit(reference);
+            // Python asks about all attackers, including heroes outside this
+            // defender's leash. The answer is constant during this scan.
+            let prefer_heroes = u.spec.prefer == Tag::Heroes
+                && self.attackers_pool().any(|hero| {
+                    hero.is_hero
+                        && hero.targetable(self)
+                        && self.can_hit(reference, hero.reference())
+                });
             let (mut best, mut distance) = (None, f64::INFINITY);
             for a in self.attackers_pool() {
-                if crate::geom::py_hypot(center.0 - a.x, center.1 - a.y) > radius {
-                    continue;
-                }
                 if !a.targetable(self) || !self.can_hit(reference, a.reference()) {
                     continue;
                 }
-                if u.spec.prefer == Tag::Heroes
-                    && self.attackers_pool().any(|hero| hero.is_hero
-                    && hero.targetable(self)
-                    && self.can_hit(reference, hero.reference()))
-                    && !a.is_hero {
+                if prefer_heroes && !a.is_hero {
+                    continue;
+                }
+                // With no leash this comparison can never reject a target.
+                // Filter ineligible attackers before calling CPython hypot.
+                if radius != f64::INFINITY
+                    && crate::geom::py_hypot(center.0 - a.x, center.1 - a.y) > radius
+                {
                     continue;
                 }
                 let d = a.dist(u.x, u.y);
