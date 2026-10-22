@@ -165,6 +165,18 @@ STAGE1_ARMIES = [
 STAGE1_BASES = ["data/reference-bases/your-base.json", "data/reference-bases/real-l6x.json"]
 
 
+# Stage 2: the rest of the user's armies' troops, their summons, and siege
+# machines releasing attacker Clan Castle cargo (fixed drops, no heroes or
+# spells): (army drops, siege, cargo).
+STAGE2_ARMIES = [
+    ([("Ice Golem", 2), ("Root Rider", 4), ("Valkyrie", 8), ("Healer", 5), ("Apprentice Warden", 1)],
+     "Siege Barracks", ["Super Hog Rider"] * 4 + ["Minion"]),
+    ([("Ice Golem", 1), ("Druid", 2), ("Ruin Witch", 2), ("Root Rider", 2), ("Valkyrie", 3), ("Healer", 5), ("Archer", 3)],
+     "Log Launcher", ["Ice Golem", "Ice Golem", "Root Rider"]),
+    ([("Rocket Balloon", 6), ("Super Minion", 3), ("Balloon", 4), ("Minion", 6), ("Super Hog Rider", 4)], None, []),
+]
+
+
 def scenario(stage, k):
     """Python Battle for parity scenario k of a stage (not yet run)."""
     from baselab.engine.battle import Battle
@@ -179,6 +191,18 @@ def scenario(stage, k):
         lay = own_layout(base)
         lay.heroes = []
         return Battle(lay, Stage(edge_drops(army, angle, seed)), seed=seed, town_hall=16)
+    if stage == 2:
+        n_sides = 4
+        army, siege, cargo = STAGE2_ARMIES[k % len(STAGE2_ARMIES)]
+        base = STAGE1_BASES[(k // len(STAGE2_ARMIES)) % len(STAGE1_BASES)]
+        side = k // (len(STAGE2_ARMIES) * len(STAGE1_BASES)) % n_sides
+        angle, seed = 2 * math.pi * side / n_sides + 0.1 + 0.37 * k, 300 + k
+        lay = own_layout(base)
+        lay.heroes = []
+        drops = edge_drops(army + ([(siege, 1)] if siege else []), angle, seed)
+        plan = Stage(drops)
+        plan.cc_troops = list(cargo)  # read by Battle._attack_cargo
+        return Battle(lay, plan, seed=seed, town_hall=16)
     raise ValueError(f"no stage {stage}")
 
 
