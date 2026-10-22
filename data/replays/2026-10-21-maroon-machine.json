@@ -1,0 +1,1111 @@
+{
+ "battle": {
+  "battleTimestamp": "20261021T183738.000Z",
+  "battleType": "ranked",
+  "defender": "jdawzzy",
+  "attacker": "Maroon_Machine",
+  "attacker_th": 17,
+  "result": {
+   "stars": 3,
+   "destruction": 100,
+   "battleTime": 83
+  },
+  "armyShareCode": "h1p3e2_16-4p0e40_13-6p7e49_43-7p4e59_52i1x87-3x5-2x8d2x5-1x2u17x8-3x6s9x5-1x2",
+  "army": "17 Dragon, 3 Wizard, 9 Freeze, 1 Rage; Queen (Archer Puppet, Monolith Arrow, Unicorn), Champion (Electro Boots, Rocket Spear, L.A.S.S.I), Minion Prince (Meteor Staff, Dark Orb, Poison Lizard), Dragon Duke (Electro Fangs, Fire Heart, Phoenix); CC: Log Launcher with 3 Balloon + 2 Dragon, 2 Freeze + 1 Rage"
+ },
+ "source": {
+  "video": "Z:/clash_videos/Recording 2026-10-21 181246.mp4",
+  "fps": 30,
+  "size": "2512x1096",
+  "speed": "2x for the whole battle: the Replay-ends-in countdown drops 1 s every 15 video frames from frame ~200 to the end (1 s per 30 frames only in the first ~6.7 s of video, before any deployment, i.e. the 2x button was pressed then).",
+  "time_base": "battle t = (video frame - 212) / 15; frame 212 = first Dragon. Check: countdown 0 and 100% at frame 1460 -> t = 83.2 s vs battleTime 83 s. Resolution 1/15 s.",
+  "layout": "data/reference-bases/your-base-2026-10-21.json",
+  "tile_coords": "layout tiles 0..43 (x down-right, y down-left from the top corner); drops outside the base have x or y outside 0..43"
+ },
+ "deployments": [
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 0.1,
+   "x": 44.0,
+   "y": 19.0,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 0.3,
+   "x": 44.0,
+   "y": 19.6,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 0.3,
+   "x": 44.0,
+   "y": 20.1,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 0.5,
+   "x": 44.0,
+   "y": 20.7,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 0.5,
+   "x": 44.0,
+   "y": 21.3,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 0.7,
+   "x": 44.0,
+   "y": 21.9,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 0.9,
+   "x": 44.0,
+   "y": 22.4,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 0.9,
+   "x": 44.0,
+   "y": 23.0,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 1.1,
+   "x": 44.0,
+   "y": 23.6,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 1.3,
+   "x": 44.0,
+   "y": 24.1,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 1.3,
+   "x": 44.0,
+   "y": 24.7,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 1.5,
+   "x": 44.0,
+   "y": 25.3,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 1.7,
+   "x": 44.0,
+   "y": 25.9,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 1.9,
+   "x": 44.0,
+   "y": 26.4,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 1.9,
+   "x": 44.0,
+   "y": 27.0,
+   "pos_quality": "approx (+-2 tiles): drag line along the east edge, about (44,19) to (44,27)"
+  },
+  {
+   "unit": "Log Launcher",
+   "count": 1,
+   "source": "clan castle (carries 3 Balloon, 2 Dragon)",
+   "t": 4.5,
+   "x": 44.5,
+   "y": 24.0,
+   "pos_quality": "approx (+-2)"
+  },
+  {
+   "unit": "Dragon Duke",
+   "count": 1,
+   "t": 8.9,
+   "x": 42.0,
+   "y": 25.0,
+   "pet": "Phoenix",
+   "pos_quality": "approx (+-2)"
+  },
+  {
+   "unit": "Minion Prince",
+   "count": 1,
+   "t": 10.1,
+   "x": 42.0,
+   "y": 22.5,
+   "pet": "Poison Lizard",
+   "pos_quality": "approx (+-2)"
+  },
+  {
+   "unit": "Archer Queen",
+   "count": 1,
+   "t": 10.9,
+   "x": 41.8,
+   "y": 24.9,
+   "pet": "Unicorn",
+   "pos_quality": "approx (+-2)"
+  },
+  {
+   "unit": "Royal Champion",
+   "count": 1,
+   "t": 12.3,
+   "x": 43.3,
+   "y": 25.0,
+   "pet": "L.A.S.S.I",
+   "pos_quality": "approx (+-2)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 21.8,
+   "x": 44.0,
+   "y": 22.0,
+   "pos_quality": "unknown (time exact, not located; assumed east edge)"
+  },
+  {
+   "unit": "Dragon",
+   "count": 1,
+   "t": 22.0,
+   "x": 44.0,
+   "y": 22.0,
+   "pos_quality": "unknown (time exact, not located; assumed east edge)"
+  },
+  {
+   "unit": "Wizard",
+   "count": 1,
+   "t": 62.3,
+   "x": -1.5,
+   "y": 10.0,
+   "pos_quality": "unknown (time exact; position inferred: the last buildings standing were on the north-west edge)"
+  },
+  {
+   "unit": "Wizard",
+   "count": 1,
+   "t": 62.5,
+   "x": -1.5,
+   "y": 11.0,
+   "pos_quality": "unknown (inferred as above)"
+  },
+  {
+   "unit": "Wizard",
+   "count": 1,
+   "t": 62.7,
+   "x": -1.5,
+   "y": 12.0,
+   "pos_quality": "unknown (inferred as above)"
+  }
+ ],
+ "spells": [
+  {
+   "spell": "Freeze Spell",
+   "origin": "clan castle",
+   "t": 6.8,
+   "x": 35.5,
+   "y": 13.5,
+   "target": "Multi-Archer Tower (34,12)",
+   "pos_quality": "approx (+-2)"
+  },
+  {
+   "spell": "Freeze Spell",
+   "origin": "clan castle",
+   "t": 7.1,
+   "x": 35.0,
+   "y": 22.0,
+   "target": "Eagle Artillery (33,20) (icy in crops t=10.9-12.2)",
+   "pos_quality": "approx (+-3)"
+  },
+  {
+   "spell": "Freeze Spell",
+   "origin": "army",
+   "t": 7.2,
+   "x": 30.5,
+   "y": 31.5,
+   "target": "X-Bow (29,30) (icy in crops t=8.9-13.5)",
+   "pos_quality": "approx (+-3)"
+  },
+  {
+   "spell": "Rage Spell",
+   "origin": "clan castle",
+   "t": 15.5,
+   "x": 25.0,
+   "y": 21.0,
+   "target": "core push (Infernos, Scattershots)",
+   "pos_quality": "rough (+-4)"
+  },
+  {
+   "spell": "Freeze Spell",
+   "origin": "army",
+   "t": 17.4,
+   "x": 27.0,
+   "y": 24.0,
+   "target": "Inferno (26,23)",
+   "pos_quality": "approx (+-2)"
+  },
+  {
+   "spell": "Freeze Spell",
+   "origin": "army",
+   "t": 17.7,
+   "x": 27.0,
+   "y": 20.0,
+   "target": "Inferno (26,19)",
+   "pos_quality": "approx (+-3)"
+  },
+  {
+   "spell": "Freeze Spell",
+   "origin": "army",
+   "t": 23.8,
+   "x": 25.0,
+   "y": 21.0,
+   "target": "core (Infernos)",
+   "pos_quality": "rough (+-4)"
+  },
+  {
+   "spell": "Freeze Spell",
+   "origin": "army",
+   "t": 27.3,
+   "x": 23.5,
+   "y": 23.0,
+   "target": "Town Hall / Scattershot (23,24)",
+   "pos_quality": "rough (+-3)"
+  },
+  {
+   "spell": "Freeze Spell",
+   "origin": "army",
+   "t": 31.5,
+   "x": 23.0,
+   "y": 22.0,
+   "target": "Town Hall / Scattershots",
+   "pos_quality": "rough (+-3)"
+  },
+  {
+   "spell": "Freeze Spell",
+   "origin": "army",
+   "t": 38.3,
+   "x": 20.5,
+   "y": 24.0,
+   "target": "Town Hall side",
+   "pos_quality": "approx (+-2)"
+  },
+  {
+   "spell": "Rage Spell",
+   "origin": "army",
+   "t": 41.4,
+   "x": 21.0,
+   "y": 20.0,
+   "target": "Town Hall push",
+   "pos_quality": "rough (+-4)"
+  },
+  {
+   "spell": "Freeze Spell",
+   "origin": "army",
+   "t": 44.1,
+   "x": 20.0,
+   "y": 22.0,
+   "target": "Town Hall (18,20) (icy in crops t=42.9-46.9)",
+   "pos_quality": "approx (+-2)"
+  },
+  {
+   "spell": "Freeze Spell",
+   "origin": "army",
+   "t": 56.9,
+   "x": 11.5,
+   "y": 22.5,
+   "target": "Monolith (10,21) (icy in crops t=58.2-59.5)",
+   "pos_quality": "approx (+-2)"
+  }
+ ],
+ "hero_abilities": [
+  {
+   "hero": "Dragon Duke",
+   "t": 9.3,
+   "evidence": "hero card turns grey 6 frames (0.4 s) after the deploy"
+  },
+  {
+   "hero": "Royal Champion",
+   "t": 12.7,
+   "evidence": "hero card grey 0.4 s after the deploy"
+  },
+  {
+   "hero": "Minion Prince",
+   "t": 13.1,
+   "evidence": "card glows pink after the deploy, grey from this frame"
+  },
+  {
+   "hero": "Archer Queen",
+   "t": 13.1,
+   "evidence": "card glows pink from t=12.1, grey from this frame"
+  }
+ ],
+ "key_defense_falls": [
+  {
+   "name": "Eagle Artillery",
+   "key": "eagle",
+   "x": 33,
+   "y": 20,
+   "t": 14.5,
+   "plus_minus_s": 1.0
+  },
+  {
+   "name": "Inferno",
+   "key": "inferno",
+   "x": 26,
+   "y": 23,
+   "t": 24.0,
+   "plus_minus_s": 1.5
+  },
+  {
+   "name": "X-Bow",
+   "key": "xbow",
+   "x": 29,
+   "y": 30,
+   "t": 24.5,
+   "plus_minus_s": 2.0
+  },
+  {
+   "name": "Inferno",
+   "key": "inferno",
+   "x": 26,
+   "y": 19,
+   "t": 26.0,
+   "plus_minus_s": 3.0
+  },
+  {
+   "name": "Scattershot",
+   "key": "scatter",
+   "x": 23,
+   "y": 24,
+   "t": 30.0,
+   "plus_minus_s": 1.0
+  },
+  {
+   "name": "Air Defense",
+   "key": "ad",
+   "x": 20,
+   "y": 32,
+   "t": 30.6,
+   "plus_minus_s": 0.5
+  },
+  {
+   "name": "X-Bow",
+   "key": "xbow",
+   "x": 29,
+   "y": 11,
+   "t": 31.5,
+   "plus_minus_s": 1.0
+  },
+  {
+   "name": "Scattershot",
+   "key": "scatter",
+   "x": 23,
+   "y": 17,
+   "t": 44.0,
+   "plus_minus_s": 1.0
+  },
+  {
+   "name": "Town Hall",
+   "key": "th",
+   "x": 18,
+   "y": 20,
+   "t": 47.3,
+   "plus_minus_s": 0.2
+  },
+  {
+   "name": "X-Bow",
+   "key": "xbow",
+   "x": 8,
+   "y": 29,
+   "t": 49.5,
+   "plus_minus_s": 1.0
+  },
+  {
+   "name": "Inferno",
+   "key": "inferno",
+   "x": 21,
+   "y": 16,
+   "t": 50.5,
+   "plus_minus_s": 2.0
+  },
+  {
+   "name": "Air Defense",
+   "key": "ad",
+   "x": 20,
+   "y": 9,
+   "t": 52.0,
+   "plus_minus_s": 0.7
+  },
+  {
+   "name": "Monolith",
+   "key": "mono",
+   "x": 10,
+   "y": 21,
+   "t": 60.2,
+   "plus_minus_s": 0.7
+  },
+  {
+   "name": "Air Defense",
+   "key": "ad",
+   "x": 4,
+   "y": 27,
+   "t": 61.5,
+   "plus_minus_s": 0.7
+  },
+  {
+   "name": "X-Bow",
+   "key": "xbow",
+   "x": 8,
+   "y": 12,
+   "t": 74.0,
+   "plus_minus_s": 3.0
+  },
+  {
+   "name": "Air Defense",
+   "key": "ad",
+   "x": 4,
+   "y": 14,
+   "t": 78.0,
+   "plus_minus_s": 1.5
+  }
+ ],
+ "stars": [
+  {
+   "star": 1,
+   "t": 40.3,
+   "pct": 51,
+   "why": "50% reached"
+  },
+  {
+   "star": 2,
+   "t": 47.3,
+   "pct": 63,
+   "why": "Town Hall destroyed"
+  },
+  {
+   "star": 3,
+   "t": 83.2,
+   "pct": 100,
+   "why": "100%"
+  }
+ ],
+ "destruction_steps": [
+  {
+   "frame": 220,
+   "t": 0.5,
+   "pct": 0
+  },
+  {
+   "frame": 240,
+   "t": 1.9,
+   "pct": 2
+  },
+  {
+   "frame": 251,
+   "t": 2.6,
+   "pct": 3
+  },
+  {
+   "frame": 259,
+   "t": 3.1,
+   "pct": 4
+  },
+  {
+   "frame": 314,
+   "t": 6.8,
+   "pct": 5
+  },
+  {
+   "frame": 319,
+   "t": 7.1,
+   "pct": 6
+  },
+  {
+   "frame": 325,
+   "t": 7.5,
+   "pct": 7
+  },
+  {
+   "frame": 346,
+   "t": 8.9,
+   "pct": 8
+  },
+  {
+   "frame": 351,
+   "t": 9.3,
+   "pct": 9
+  },
+  {
+   "frame": 403,
+   "t": 12.7,
+   "pct": 10
+  },
+  {
+   "frame": 407,
+   "t": 13.0,
+   "pct": 13
+  },
+  {
+   "frame": 416,
+   "t": 13.6,
+   "pct": 14
+  },
+  {
+   "frame": 437,
+   "t": 15.0,
+   "pct": 15
+  },
+  {
+   "frame": 441,
+   "t": 15.3,
+   "pct": 16
+  },
+  {
+   "frame": 470,
+   "t": 17.2,
+   "pct": 18
+  },
+  {
+   "frame": 480,
+   "t": 17.9,
+   "pct": 19
+  },
+  {
+   "frame": 490,
+   "t": 18.5,
+   "pct": 20
+  },
+  {
+   "frame": 515,
+   "t": 20.2,
+   "pct": 23
+  },
+  {
+   "frame": 533,
+   "t": 21.4,
+   "pct": 24
+  },
+  {
+   "frame": 540,
+   "t": 21.9,
+   "pct": 25
+  },
+  {
+   "frame": 551,
+   "t": 22.6,
+   "pct": 26
+  },
+  {
+   "frame": 576,
+   "t": 24.3,
+   "pct": 29
+  },
+  {
+   "frame": 596,
+   "t": 25.6,
+   "pct": 30
+  },
+  {
+   "frame": 600,
+   "t": 25.9,
+   "pct": 31
+  },
+  {
+   "frame": 607,
+   "t": 26.3,
+   "pct": 32
+  },
+  {
+   "frame": 614,
+   "t": 26.8,
+   "pct": 33
+  },
+  {
+   "frame": 619,
+   "t": 27.1,
+   "pct": 34
+  },
+  {
+   "frame": 646,
+   "t": 28.9,
+   "pct": 35
+  },
+  {
+   "frame": 652,
+   "t": 29.3,
+   "pct": 36
+  },
+  {
+   "frame": 660,
+   "t": 29.9,
+   "pct": 37
+  },
+  {
+   "frame": 663,
+   "t": 30.1,
+   "pct": 38
+  },
+  {
+   "frame": 667,
+   "t": 30.3,
+   "pct": 39
+  },
+  {
+   "frame": 671,
+   "t": 30.6,
+   "pct": 40
+  },
+  {
+   "frame": 708,
+   "t": 33.1,
+   "pct": 42
+  },
+  {
+   "frame": 711,
+   "t": 33.3,
+   "pct": 43
+  },
+  {
+   "frame": 726,
+   "t": 34.3,
+   "pct": 44
+  },
+  {
+   "frame": 743,
+   "t": 35.4,
+   "pct": 45
+  },
+  {
+   "frame": 766,
+   "t": 36.9,
+   "pct": 46
+  },
+  {
+   "frame": 784,
+   "t": 38.1,
+   "pct": 47
+  },
+  {
+   "frame": 793,
+   "t": 38.7,
+   "pct": 48
+  },
+  {
+   "frame": 804,
+   "t": 39.5,
+   "pct": 49
+  },
+  {
+   "frame": 813,
+   "t": 40.1,
+   "pct": 51
+  },
+  {
+   "frame": 849,
+   "t": 42.5,
+   "pct": 53
+  },
+  {
+   "frame": 857,
+   "t": 43.0,
+   "pct": 55
+  },
+  {
+   "frame": 864,
+   "t": 43.5,
+   "pct": 56
+  },
+  {
+   "frame": 875,
+   "t": 44.2,
+   "pct": 57
+  },
+  {
+   "frame": 882,
+   "t": 44.7,
+   "pct": 58
+  },
+  {
+   "frame": 907,
+   "t": 46.3,
+   "pct": 60
+  },
+  {
+   "frame": 912,
+   "t": 46.7,
+   "pct": 62
+  },
+  {
+   "frame": 919,
+   "t": 47.1,
+   "pct": 63
+  },
+  {
+   "frame": 929,
+   "t": 47.8,
+   "pct": 65
+  },
+  {
+   "frame": 932,
+   "t": 48.0,
+   "pct": 68
+  },
+  {
+   "frame": 937,
+   "t": 48.3,
+   "pct": 69
+  },
+  {
+   "frame": 976,
+   "t": 50.9,
+   "pct": 71
+  },
+  {
+   "frame": 984,
+   "t": 51.5,
+   "pct": 72
+  },
+  {
+   "frame": 1020,
+   "t": 53.9,
+   "pct": 73
+  },
+  {
+   "frame": 1026,
+   "t": 54.3,
+   "pct": 76
+  },
+  {
+   "frame": 1050,
+   "t": 55.9,
+   "pct": 77
+  },
+  {
+   "frame": 1062,
+   "t": 56.7,
+   "pct": 78
+  },
+  {
+   "frame": 1088,
+   "t": 58.4,
+   "pct": 79
+  },
+  {
+   "frame": 1094,
+   "t": 58.8,
+   "pct": 80
+  },
+  {
+   "frame": 1100,
+   "t": 59.2,
+   "pct": 82
+  },
+  {
+   "frame": 1110,
+   "t": 59.9,
+   "pct": 83
+  },
+  {
+   "frame": 1123,
+   "t": 60.7,
+   "pct": 84
+  },
+  {
+   "frame": 1154,
+   "t": 62.8,
+   "pct": 85
+  },
+  {
+   "frame": 1175,
+   "t": 64.2,
+   "pct": 86
+  },
+  {
+   "frame": 1194,
+   "t": 65.5,
+   "pct": 87
+  },
+  {
+   "frame": 1216,
+   "t": 66.9,
+   "pct": 88
+  },
+  {
+   "frame": 1225,
+   "t": 67.5,
+   "pct": 89
+  },
+  {
+   "frame": 1237,
+   "t": 68.3,
+   "pct": 90
+  },
+  {
+   "frame": 1264,
+   "t": 70.1,
+   "pct": 91
+  },
+  {
+   "frame": 1301,
+   "t": 72.6,
+   "pct": 92
+  },
+  {
+   "frame": 1309,
+   "t": 73.1,
+   "pct": 94
+  },
+  {
+   "frame": 1327,
+   "t": 74.3,
+   "pct": 95
+  },
+  {
+   "frame": 1345,
+   "t": 75.5,
+   "pct": 96
+  },
+  {
+   "frame": 1350,
+   "t": 75.9,
+   "pct": 97
+  },
+  {
+   "frame": 1380,
+   "t": 77.9,
+   "pct": 98
+  },
+  {
+   "frame": 1424,
+   "t": 80.8,
+   "pct": 99
+  },
+  {
+   "frame": 1460,
+   "t": 83.2,
+   "pct": 100
+  }
+ ],
+ "destruction_every_2s": [
+  {
+   "t": 0,
+   "pct": 0
+  },
+  {
+   "t": 2,
+   "pct": 2
+  },
+  {
+   "t": 4,
+   "pct": 4
+  },
+  {
+   "t": 6,
+   "pct": 4
+  },
+  {
+   "t": 8,
+   "pct": 7
+  },
+  {
+   "t": 10,
+   "pct": 9
+  },
+  {
+   "t": 12,
+   "pct": 9
+  },
+  {
+   "t": 14,
+   "pct": 14
+  },
+  {
+   "t": 16,
+   "pct": 16
+  },
+  {
+   "t": 18,
+   "pct": 19
+  },
+  {
+   "t": 20,
+   "pct": 20
+  },
+  {
+   "t": 22,
+   "pct": 25
+  },
+  {
+   "t": 24,
+   "pct": 26
+  },
+  {
+   "t": 26,
+   "pct": 31
+  },
+  {
+   "t": 28,
+   "pct": 34
+  },
+  {
+   "t": 30,
+   "pct": 37
+  },
+  {
+   "t": 32,
+   "pct": 40
+  },
+  {
+   "t": 34,
+   "pct": 43
+  },
+  {
+   "t": 36,
+   "pct": 45
+  },
+  {
+   "t": 38,
+   "pct": 46
+  },
+  {
+   "t": 40,
+   "pct": 49
+  },
+  {
+   "t": 42,
+   "pct": 51
+  },
+  {
+   "t": 44,
+   "pct": 56
+  },
+  {
+   "t": 46,
+   "pct": 58
+  },
+  {
+   "t": 48,
+   "pct": 68
+  },
+  {
+   "t": 50,
+   "pct": 69
+  },
+  {
+   "t": 52,
+   "pct": 72
+  },
+  {
+   "t": 54,
+   "pct": 73
+  },
+  {
+   "t": 56,
+   "pct": 77
+  },
+  {
+   "t": 58,
+   "pct": 78
+  },
+  {
+   "t": 60,
+   "pct": 83
+  },
+  {
+   "t": 62,
+   "pct": 84
+  },
+  {
+   "t": 64,
+   "pct": 85
+  },
+  {
+   "t": 66,
+   "pct": 87
+  },
+  {
+   "t": 68,
+   "pct": 89
+  },
+  {
+   "t": 70,
+   "pct": 90
+  },
+  {
+   "t": 72,
+   "pct": 91
+  },
+  {
+   "t": 74,
+   "pct": 94
+  },
+  {
+   "t": 76,
+   "pct": 97
+  },
+  {
+   "t": 78,
+   "pct": 98
+  },
+  {
+   "t": 80,
+   "pct": 98
+  },
+  {
+   "t": 82,
+   "pct": 99
+  },
+  {
+   "t": 84,
+   "pct": 100
+  }
+ ],
+ "notes": "Deployment, spell and ability times are exact to 1/15 s (troop-bar counters and card colour). Positions come from frame inspection and are approximate as marked. Key-defense fall times come from 96x96 crops every 5 frames read by eye (rubble appears), +- as given. Defending heroes: King 92, Queen 93, Minion Prince 73, Dragon Duke 13 (level labels).",
+ "observed_levels": {
+  "note": "level badges on the attacker's troop-bar cards in the replay (TH18-max values, although the battle log says TH17); equipment and CC troop levels are not shown",
+  "Dragon": 13,
+  "Wizard": 14,
+  "Log Launcher": 5,
+  "Archer Queen": 110,
+  "Royal Champion": 55,
+  "Minion Prince": 95,
+  "Dragon Duke": 25,
+  "Phoenix": 10,
+  "Unicorn": 15,
+  "L.A.S.S.I": 15,
+  "Poison Lizard": 15,
+  "Freeze Spell": 8,
+  "Rage Spell": 7
+ }
+}
