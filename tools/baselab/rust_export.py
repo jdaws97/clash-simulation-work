@@ -162,6 +162,8 @@ STAGE1_ARMIES = [
     [("Dragon", 10), ("Balloon", 10), ("Minion", 12)],
     [("Giant", 10), ("Valkyrie", 12), ("Dragon", 6), ("Wizard", 10), ("Barbarian", 12)],
 ]
+STAGE4_BASES = ["data/reference-bases/your-base.json", "data/reference-bases/real-l6x.json",
+                "data/reference-bases/real-l1x.json", "data/reference-bases/real-l3x.json"]
 STAGE1_BASES = ["data/reference-bases/your-base.json", "data/reference-bases/real-l6x.json"]
 
 
@@ -241,6 +243,21 @@ def scenario(stage, k):
         angle, seed = 2 * math.pi * side / n_sides + 0.1 + 0.37 * k, 400 + k
         lay = own_layout(base)  # defending heroes stay on their banners
         return Battle(lay, hero_stage(army, angle, seed), seed=seed, town_hall=16)
+    if stage == 4:
+        # the user's real armies with their playbook plans and spells, set up
+        # exactly like a scored battle (tools/baselab/fingerprint.py run_one)
+        from baselab.evaluate import STRENGTH, skill
+        from baselab.meta_armies import make_plan
+
+        n_sides = 8
+        army = STAGE3_ARMIES[k % len(STAGE3_ARMIES)]
+        base = STAGE4_BASES[(k // len(STAGE3_ARMIES)) % len(STAGE4_BASES)]
+        side = k // (len(STAGE3_ARMIES) * len(STAGE4_BASES)) % n_sides
+        angle, seed = 2 * math.pi * side / n_sides + 0.1, 11 + k
+        lay = own_layout(base)
+        plan = make_plan(army, angle, 16, seed)
+        plan.strength = STRENGTH.get(army, 1.0) * skill(seed)
+        return Battle(lay, plan, seed=seed, town_hall=16)
     raise ValueError(f"no stage {stage}")
 
 
