@@ -8,6 +8,7 @@ against replays.
 from __future__ import annotations
 
 import math
+import os
 
 import numpy as np
 
@@ -1259,6 +1260,54 @@ def target_distance(u, target):
     return target.edge_distance(u.x, u.y)
 
 
+WINDUP = os.environ.get("BASELAB_WINDUP", "1") != "0"
+_NTAD: dict | None = None
+
+
+def _new_target_delays():
+    """NewTargetAttackDelay (ms) per unit from game data v18.200.9
+    (characters.csv, heroes.csv): set for a few units (Balloon 2250, Rocket
+    Balloon 2250, Valkyrie 600, Bowler 1100, Icemite 500 ...), always shorter
+    than their attack interval."""
+    global _NTAD
+    if _NTAD is None:
+        import csv
+        from pathlib import Path
+
+        _NTAD = {}
+        root = Path(__file__).resolve().parents[3] / "data" / "gamecsv" / "v18.200.9"
+        for f in ("characters.csv", "heroes.csv"):
+            rows = list(csv.reader(open(root / f, encoding="utf-8", errors="replace")))
+            head = rows[0]
+            if "NewTargetAttackDelay" not in head:
+                continue
+            i = head.index("NewTargetAttackDelay")
+            name = None
+            for r in rows[2:]:
+                if r and r[0]:
+                    name = r[0]
+                if name and name not in _NTAD and len(r) > i and r[i].strip():
+                    _NTAD[name] = int(r[i]) / 1000.0
+    return _NTAD
+
+
+def new_target_windup(u):
+    """A unit that picks a new target waits before its first hit on it: the
+    game data's NewTargetAttackDelay where the unit has one, else one attack
+    interval. The wait counts down while the unit moves, so a troop that
+    walked a long way still hits on arrival. Evidence: real defense replay
+    2026-10-21 (docs/VIDEO_MEASUREMENTS.md): a Dragon's first breath comes
+    1.67 s after it is dropped and 0.6-0.9 s after it reaches range (its
+    interval is 1.25 s); the engine used to hit on the same tick. The game
+    data sets NewTargetAttackDelay only below the attack interval (Balloon
+    2.25 vs 3.0 s, Valkyrie 0.6 vs 1.8 s), i.e. as a shortening of a default
+    wait. BASELAB_WINDUP=0 turns this off."""
+    if not WINDUP or not u.interval:
+        return
+    delay = _new_target_delays().get(u.name, u.interval)
+    u.cooldown = max(u.cooldown, delay)
+
+
 def attack_interval(u, battle=None):
     if battle is not None and tantrum(battle, u):
         # Wiki: Baby Dragon gains 50% attack rate during Tantrum.
@@ -2081,16 +2130,16 @@ def act_healer(battle, u: Unit):
     if u.name == "Healer":
         # Wiki: Healer ignores groups of at most two housing.
         # Use the stated healing area; no wider clustering radius is known.
+        # (eligibility is computed once per pulse, not once per candidate)
+        weighted = [
+            (ally.x, ally.y, 25 if ally.is_hero else ally.housing)
+            for ally in allies
+            if _heal_eligible(battle, u, ally)
+        ]
         eligible = [
             target
             for target in eligible
-            if sum(
-                25 if ally.is_hero else ally.housing
-                for ally in allies
-                if _heal_eligible(battle, u, ally)
-                and dist(target.x, target.y, ally.x, ally.y) <= sp.splash
-            )
-            > 2
+            if sum(w for x, y, w in weighted if dist(target.x, target.y, x, y) <= sp.splash) > 2
         ]
     target = u.target if u.target in eligible else None
     if u.follow in eligible:

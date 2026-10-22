@@ -8,6 +8,8 @@ from the unit's wiki page (mirrored 2026-10-15; see docs/WIKI_DIGEST.md).
 
 from __future__ import annotations
 
+import os as _os
+
 from dataclasses import dataclass, field
 
 from . import stats
@@ -376,6 +378,26 @@ def attack_range(name):
     return None
 
 
+_GAME_RANGES: dict | None = None
+
+
+def _game_ranges():
+    """AttackRange (tiles) per unit from game data v18.200.9 characters.csv."""
+    global _GAME_RANGES
+    if _GAME_RANGES is None:
+        import csv
+        from pathlib import Path
+
+        _GAME_RANGES = {}
+        f = Path(__file__).resolve().parents[3] / "data" / "gamecsv" / "v18.200.9" / "characters.csv"
+        rows = list(csv.reader(open(f, encoding="utf-8", errors="replace")))
+        i = rows[0].index("AttackRange")
+        for r in rows[2:]:
+            if r and r[0] and r[0] not in _GAME_RANGES and len(r) > i and r[i].strip():
+                _GAME_RANGES[r[0]] = int(r[i]) / 100.0
+    return _GAME_RANGES
+
+
 def unit_numbers(name: str, level: int) -> dict:
     """Read wiki numbers first, using game data only for missing values."""
     a = stats.attrs(name)
@@ -457,6 +479,16 @@ def unit_numbers(name: str, level: int) -> dict:
     if name == "Yetimite":
         # Wiki: Yeti/Yetimite explicitly attacks both air and ground.
         hits_air = hits_ground = True
+    if flying and _os.environ.get("BASELAB_FLYER_RANGE", "gamedata") == "gamedata":
+        # The wiki ranges are 0.5 tile longer than game data AttackRange for
+        # every flying troop (Dragon 3.0 vs 2.5, Minion 2.75 vs 2.25, Healer 5
+        # vs 4.5 ...). Game data wins; the real defense replay of 2026-10-21
+        # agrees (TH16 Dragons: 3rd star 72.6 s with game-data ranges vs
+        # 61.9 s with wiki ranges; real 83.2 s; docs/VIDEO_MEASUREMENTS.md).
+        # BASELAB_FLYER_RANGE=wiki restores the wiki values.
+        gd = _game_ranges().get(name)
+        if gd is not None:
+            rng = gd
     return {
         "hp": float(0.0 if hp is None else hp),
         "dmg": float(0.0 if dmg is None else dmg),

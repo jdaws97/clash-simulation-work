@@ -1278,6 +1278,8 @@ class Battle:
                 u, foe
             ) < units.target_distance(u, target):
                 target, u.target_kind = foe, "unit"
+        if target is not None and target is not u.target:
+            units.new_target_windup(u)
         u.target = target
         units.update_burrow(self, u, target)
         if target is None:
@@ -1712,6 +1714,8 @@ class Battle:
                 if d < bd:
                     bd, best = d, a
             target = best
+        if target is not None and target is not u.target:
+            units.new_target_windup(u)
         u.target = target
         if target is None:
             units.interrupt_attack(u)
