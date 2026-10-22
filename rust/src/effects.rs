@@ -111,16 +111,17 @@ pub fn record_death(battle: &mut Battle, victim: UnitRef) {
         return;
     }
     for prince in battle.attackers_pool() {
-        if prince.kit.is_some() {
-            todo!("stage 3: effects.py:96 Dark Crown death housing");
+        if prince.kit.as_ref().is_some_and(|kit| kit.has("Dark Crown"))
+            && prince.reference() != victim && prince.extra.recalled.is_none() {
+            todo!("stage 3+: effects.py:96 Dark Crown death housing");
         }
     }
 }
 
 // effects.py:108-124.
 pub fn crown_buff(unit: &mut Unit) -> f64 {
-    if unit.kit.is_none() {
+    if !unit.kit.as_ref().is_some_and(|kit| kit.has("Dark Crown")) {
         return 0.0;
     }
-    todo!("stage 3: effects.py:110 Dark Crown equipment buff");
+    todo!("stage 3+: effects.py:110 Dark Crown equipment buff");
 }

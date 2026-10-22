@@ -40,10 +40,10 @@ pub fn housing(unit: &Unit) -> i64 {
         todo!("stage 4: traps.py:115 Totem trap housing");
     }
     if unit.is_hero {
-        todo!("stage 3: traps.py:119 hero trap housing");
+        return 25;
     }
     if unit.kind == "pet" {
-        todo!("stage 3: traps.py:121 pet trap housing");
+        return 20;
     }
     0.max(unit.housing)
 }
@@ -73,7 +73,7 @@ pub fn eligible(battle: &Battle, trap: TrapId, unit: &Unit, t: f64) -> bool {
         return false;
     }
     if unit.name == "Dragon Duke" && unit.dash.is_some() {
-        todo!("stage 3: traps.py:137 Dragon Duke dash trap exclusion");
+        return false;
     }
     if battle.traps[trap.0].key == "seeking" {
         if matches!(unit.kind.as_str(), "siege" | "siege_idle") && unit.flying {
@@ -496,12 +496,10 @@ pub fn tornado_tick(battle: &mut Battle, field: &mut Field) {
             unit.name.as_str(),
             "Miner" | "Super Miner" | "Diggy" | "Battle Drill"
         ) {
-            todo!(
-                "stage 2: traps.py:379 burrowing Tornado displacement exemptions (Diggy stage 3)"
-            );
+            continue;
         }
         let weight = if unit.is_hero || unit.kind == "pet" {
-            todo!("stage 3: traps.py:383 hero/pet Tornado force tier");
+            5
         } else if matches!(unit.kind.as_str(), "siege" | "siege_idle") {
             if unit.speed <= 0.0 {
                 continue;

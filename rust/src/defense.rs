@@ -71,7 +71,7 @@ pub fn group_weight(unit: &Unit) -> i64 {
         | "Stone Slammer" | "Totem" | "Troop Launcher" | "Wall Wrecker" => 100,
         _ => {
             if unit.kind == "pet" {
-                todo!("stage 3: defense.py:140 pet Eagle group weight");
+                return 400;
             }
             100
         }
@@ -374,13 +374,13 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
         if t < w.idle_until {
             return;
         }
-        let pool = visible(battle, owner, w.range);
+        let mut pool = visible(battle, owner, w.range);
         if pool.is_empty() {
             weapon_mut(battle, owner).idle_until = t + 0.25;
             return;
         }
         if kind == "hunter" && pool.iter().any(|unit| battle.unit(*unit).is_hero) {
-            todo!("stage 3: defense.py:695 Hero Hunter hero priority");
+            pool.retain(|unit| battle.unit(*unit).is_hero);
         }
         target = nearest(battle, &pool, bx, by);
         let actual = weapon_mut(battle, owner);
@@ -738,10 +738,8 @@ pub fn cake(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
 // defense.py:910-919.
 pub fn hunter_hit(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage: f64) {
     let w = weapon(battle, owner).clone();
-    if battle.unit(target).is_hero {
-        todo!("stage 3: defense.py:913 Hero Hunter double hero damage");
-    }
-    battle.hit_unit(target, w.damage * damage_rage * 1.0, None, "normal", None);
+    let multiplier = if battle.unit(target).is_hero { 2.0 } else { 1.0 };
+    battle.hit_unit(target, w.damage * damage_rage * multiplier, None, "normal", None);
     let level = Level::Int(w.extra.poison_level as i64);
     let movement = battle
         .catalog
@@ -1401,12 +1399,44 @@ fn revenge(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage:
     };
 }
 
-// defense.py:1373-1409: no defending heroes are present in stage 1.
+// defense.py:1373-1409: health rescales immediately; damage lingers one second.
 pub fn bell_tick(battle: &mut Battle) {
-    for hero in battle.defenders_pool() {
-        if !hero.alive || !hero.is_hero {
-            continue;
+    let bells: Vec<_> = battle.buildings.iter().filter(|building| {
+        building.alive && building.name == "Hero Bell" && battle.t >= 2.2
+    }).map(|building| building.id).collect();
+    let heroes: Vec<_> = battle.defenders_pool().filter(|hero| hero.alive && hero.is_hero)
+        .map(Unit::reference).collect();
+    for hero in heroes {
+        let (mut damage_boost, mut health_boost) = (0.0_f64, 0.0_f64);
+        for &bell in &bells {
+            let building = battle.building(bell);
+            let unit = battle.unit(hero);
+            if dist(unit.x, unit.y, building.x, building.y)
+                > battle.catalog.stats.attrs("Hero Bell").at("range").f64() {
+                continue;
+            }
+            let level = building.level.as_ref().expect("Hero Bell level");
+            let damage_level = battle.defense_levels.iter().find(|(key, _)| key == "crafting:damage")
+                .map_or(level, |(_, level)| level);
+            let health_level = battle.defense_levels.iter().find(|(key, _)| key == "crafting:health")
+                .map_or(level, |(_, level)| level);
+            damage_boost = damage_boost.max(battle.catalog.stats.get("Hero Bell", damage_level,
+                &["Hero DPS Boost"], None).expect("Hero Bell damage boost") / 100.0);
+            health_boost = health_boost.max(battle.catalog.stats.get("Hero Bell", health_level,
+                &["Hero HP Boost"], None).expect("Hero Bell health boost") / 100.0);
         }
-        todo!("stage 3: defense.py:1384 Hero Bell defending hero boosts");
+        let t = battle.t;
+        let unit = battle.unit_mut(hero);
+        let previous = unit.extra.bell_health;
+        let multiplier = 1.0 + health_boost;
+        unit.hp *= multiplier / previous;
+        unit.max_hp *= multiplier / previous;
+        unit.extra.bell_health = multiplier;
+        if damage_boost != 0.0 {
+            unit.extra.bell_damage = 1.0 + damage_boost;
+            unit.extra.bell_damage_until = t + 1.0;
+        } else if t >= unit.extra.bell_damage_until {
+            unit.extra.bell_damage = 1.0;
+        }
     }
 }

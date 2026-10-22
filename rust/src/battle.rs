@@ -93,7 +93,10 @@ impl Battle {
     pub fn rebuild_buckets(&mut self) {
         self.buckets.clear();
         self.bucket_indices.clear();
-        for unit in self.attackers.iter().filter(|unit| unit.in_pool && unit.alive) {
+        let attackers: Vec<_> = self.attackers_pool().filter(|unit| unit.alive)
+            .map(Unit::reference).collect();
+        for reference in attackers {
+            let unit = self.unit(reference);
             let cell = ((unit.x / BUCKET) as i32, (unit.y / BUCKET) as i32);
             let index = match self.bucket_indices.get(&cell) {
                 Some(index) => *index,
@@ -104,7 +107,7 @@ impl Battle {
                     index
                 }
             };
-            self.buckets[index].1.push(unit.reference());
+            self.buckets[index].1.push(reference);
         }
         self.buckets_initialized = true;
         heroes::apply_auras(self);
@@ -317,6 +320,9 @@ impl Battle {
         };
         self.unit_indices.insert(unit.id, (team, pool.len()));
         pool.push(unit);
+        if team == Team::Atk {
+            self.attacker_order.push(reference);
+        }
         units::on_spawn(self, reference);
         if team == Team::Atk {
             heroes::new_member(self, reference);
@@ -383,8 +389,17 @@ impl Battle {
             unit.dmg *= strength;
         }
         if unit.is_hero {
-            todo!("stage 3: battle.py:482 attacking hero equipment and league penalty");
+            heroes::equip(self, reference);
+            let multiplier = self.atk_hero_mult;
+            if multiplier != 1.0 {
+                let unit = self.unit_mut(reference);
+                unit.hp *= multiplier;
+                unit.max_hp *= multiplier;
+                unit.base_max_hp *= multiplier;
+                unit.dmg *= multiplier;
+            }
         }
+        let unit = self.unit_mut(reference);
         let is_hero = unit.is_hero;
         let housing = unit.housing;
         unit.extra.deployment_source = Some(deployment.source.clone());

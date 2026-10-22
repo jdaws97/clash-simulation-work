@@ -8,6 +8,26 @@ use crate::{defense, traps, units};
 
 pub const NO_TRIGGER: &[&str] = &["Spell Skeleton", "Skeleton", "Bat", "Totem"];
 
+// spells.py:1199-1211: marking a KO does not cast a Revive Spell.
+pub fn maybe_revive(battle: &mut Battle, hero: UnitRef) {
+    let unit = battle.unit(hero);
+    if !unit.is_hero || hero.team != Team::Atk || unit.extra.mirror_clone {
+        return;
+    }
+    let t = battle.t;
+    let unit = battle.unit_mut(hero);
+    unit.extra.revivable = true;
+    unit.extra.ko_at = Some(t);
+    if let Some(pet) = unit.pet.take() {
+        let pet = battle.unit_mut(pet);
+        pet.extra.rampage_detached = true;
+        pet.owner = None;
+    }
+    if let Some(kit) = &mut battle.unit_mut(hero).kit {
+        kit.pet_unit = None;
+    }
+}
+
 // spells.py:42-43.
 fn affected(unit: &Unit) -> bool {
     unit.alive && !matches!(unit.kind.as_str(), "siege" | "siege_idle") && unit.name != "Totem"

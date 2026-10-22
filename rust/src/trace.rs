@@ -222,8 +222,12 @@ pub fn write_trace(battle: &mut Battle, out: &mut impl Write) -> io::Result<()> 
     while !battle.ended && battle.t < battle.max_time {
         writeln!(out, "T {:016x}", battle.t.to_bits())?;
         battle.step();
-        for (team, pool) in [("atk", &battle.attackers), ("def", &battle.defenders)] {
-            for unit in pool.iter().filter(|unit| unit.in_pool && unit.alive) {
+        let pools: [(&str, Vec<_>); 2] = [
+            ("atk", battle.attackers_pool().collect()),
+            ("def", battle.defenders_pool().collect()),
+        ];
+        for (team, pool) in pools {
+            for unit in pool.into_iter().filter(|unit| unit.alive) {
                 writeln!(out, "U {team} {} {} {:016x} {:016x} {:016x}",
                     unit.id.0, unit.name.replace(' ', "_"),
                     unit.x.to_bits(), unit.y.to_bits(), unit.hp.to_bits())?;

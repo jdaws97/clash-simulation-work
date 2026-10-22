@@ -220,7 +220,8 @@ impl<'a> Node<'a> {
 
 fn known_type(name: &str) -> bool {
     matches!(name, "Building" | "Wall" | "Unit" | "UnitSpec" | "Weapon" | "Trap"
-        | "Field" | "Pending" | "Builder" | "Deployment" | "Stage" | "BuildingType")
+        | "Field" | "Pending" | "Builder" | "Deployment" | "Stage" | "BuildingType"
+        | "HeroLoadout" | "Kit")
 }
 
 fn status_source(key: &str) -> StatusSource {
@@ -377,21 +378,13 @@ impl Resolver {
                     match tag.string().as_str() {
                         "Building" | "Wall" | "Unit" | "UnitSpec" | "Weapon" | "Trap"
                         | "Field" | "Pending" | "Builder" | "Deployment" | "Stage"
-                        | "BuildingType" => {
+                        | "BuildingType" | "HeroLoadout" | "Kit" => {
                         }
                         _ => tag.fail("unknown $type"),
                     }
                 }
                 Value::Map(self.map(n))
             }
-        }
-    }
-
-    fn optional_value(&self, n: Node<'_>) -> Option<Value> {
-        if n.value.is_null() {
-            None
-        } else {
-            Some(self.value(n))
         }
     }
 
@@ -557,6 +550,24 @@ impl Resolver {
         let mut extra = UnitExtra::default();
         for (key, v) in n.object() {
             match key.as_str() {
+                "boots_next" => extra.boots_next = v.optional_number(),
+                "spear_base_range" => extra.spear_base_range = v.optional_number(),
+                "equipment_invisible_until" => extra.equipment_invisible_until = v.number(),
+                "tome_until" => extra.tome_until = v.number(),
+                "torch_until" => extra.torch_until = v.number(),
+                "torch_speed" => extra.torch_speed = v.number(),
+                "torch_reduction" => extra.torch_reduction = v.number(),
+                "fire_heart_done" => extra.fire_heart_done = v.boolean(),
+                "egg" => extra.egg = v.boolean(),
+                "phoenix_until" => extra.phoenix_until = v.number(),
+                "fox_next" => extra.fox_next = v.number(),
+                "hero_present" => extra.hero_present = v.boolean(),
+                "owner_defeated" => extra.owner_defeated = v.boolean(),
+                "rampage_detached" => extra.rampage_detached = v.boolean(),
+                "bomb_next" => extra.bomb_next = v.optional_number(),
+                "revivable" => extra.revivable = v.boolean(),
+                "ko_at" => extra.ko_at = v.optional_number(),
+                "children" => extra.children = v.array().into_iter().map(|n| self.unit_ref(n)).collect(),
                 "yellow_until" => extra.yellow_until = v.number(),
                 "brainwash_until" => extra.brainwash_until = v.number(),
                 "armor_hp" => extra.armor_hp = v.number(),
@@ -974,6 +985,45 @@ impl Resolver {
         result
     }
 
+    fn kit(&self, n: Node<'_>) -> Option<crate::heroes::Kit> {
+        if n.value.is_null() {
+            return None;
+        }
+        n.require_type("Kit");
+        let mut kit = crate::heroes::Kit::new(&n.field("hero").string());
+        kit.equip = n.field("equip").array().iter().map(Node::string).collect();
+        kit.levels = levels(n.field("levels"));
+        kit.pet_name = n.field("pet_name").optional_string();
+        kit.pet_level = n.field("pet_level").optional_level();
+        kit.pet_unit = self.optional_unit_ref(n.field("pet_unit"));
+        kit.regen = n.field("regen").number();
+        kit.hp_recovery = n.field("hp_recovery").number();
+        kit.phoenix = n.field("phoenix").boolean();
+        kit.doomed_at = n.field("doomed_at").optional_number();
+        kit.spear_shots = n.field("spear_shots").integer();
+        kit.spear_bonus = n.field("spear_bonus").number();
+        kit.reduction_until = n.field("reduction_until").number();
+        kit.reduction = n.field("reduction").number();
+        kit.heal_until = n.field("heal_until").number();
+        kit.heal_rate = n.field("heal_rate").number();
+        kit.next_meteor = n.field("next_meteor").number();
+        kit.crown_stage = n.field("crown_stage").usize();
+        kit.vamp = n.field("vamp").number();
+        kit.frozen_arrow = n.field("frozen_arrow").optional_pair();
+        if !n.field("mono_arrow").value.is_null() {
+            let (first, second, third) = n.field("mono_arrow").triple();
+            kit.mono_arrow = Some([first, second, third]);
+        }
+        Some(kit)
+    }
+
+    fn dash(&self, n: Node<'_>) -> Option<crate::heroes::Dash> {
+        if n.value.is_null() {
+            return None;
+        }
+        n.fail("stage 3+: loading an already active Rocket Backpack dash")
+    }
+
     fn unit(&self, n: Node<'_>) -> Unit {
         n.require_type("Unit");
         n.keys(&[
@@ -1096,7 +1146,7 @@ impl Resolver {
             last_hit: n.field("last_hit").number(),
             poison_stack: n.field("poison_stack").usize(),
             is_hero: n.field("is_hero").boolean(),
-            kit: self.optional_value(n.field("kit")),
+            kit: self.kit(n.field("kit")),
             pet: self.optional_unit_ref(n.field("pet")),
             owner: self.optional_unit_ref(n.field("owner")),
             follow: self.optional_unit_ref(n.field("follow")),
@@ -1104,7 +1154,7 @@ impl Resolver {
             leash: n.field("leash").number(),
             ability_used: n.field("ability_used").boolean(),
             decay: n.field("decay").number(),
-            dash: self.optional_value(n.field("dash")),
+            dash: self.dash(n.field("dash")),
             extra: self.unit_extra(n.field("extra")),
             damage_dealt: n.field("damage_dealt").number(),
             in_pool: true,
@@ -1289,6 +1339,12 @@ fn levels(n: Node<'_>) -> Vec<(String, Level)> {
     n.object().into_iter().map(|(key, value)| (key, value.level())).collect()
 }
 
+fn optional_levels(node: Option<Node<'_>>) -> Vec<(String, Option<Level>)> {
+    node.filter(|n| !n.value.is_null()).map_or_else(Vec::new, |n| {
+        n.object().into_iter().map(|(name, level)| (name, level.optional_level())).collect()
+    })
+}
+
 pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
     let root = Node::new(value, path);
     root.keys(&[
@@ -1316,7 +1372,7 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         .map(|(index, n)| resolver.wall(n, WallId(index))).collect();
     let traps = root.field("traps").array().into_iter().enumerate()
         .map(|(index, n)| resolver.trap(n, TrapId(index))).collect();
-    let attackers = root.field("attackers").array().into_iter()
+    let attackers: Vec<_> = root.field("attackers").array().into_iter()
         .map(|n| resolver.unit(n)).collect();
     let defenders = root.field("defenders").array().into_iter()
         .map(|n| resolver.unit(n)).collect();
@@ -1345,6 +1401,12 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         "cc_levels",
         "_cc_released",
         "troop_levels",
+        "hero_levels",
+        "equipment_levels",
+        "pet_levels",
+        "clan_castle_level",
+        "auto_ability_on_ko",
+        "observed",
     ]);
     if let Some(cargo) = p.optional("cc_troops") {
         // Battle construction already normalizes this inventory into _onboard_cargo.
@@ -1365,9 +1427,8 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         parts[3].number();
         let _ = parts[4].optional_level();
     }
-    if !p.field("ticks").array().is_empty() || !p.field("loadouts").object().is_empty()
-        || p.field("revives_left").integer() != 0 {
-        p.fail("Stage callbacks, hero loadouts and revives are unsupported in stage 1");
+    if !p.field("ticks").array().is_empty() || p.field("revives_left").integer() != 0 {
+        p.fail("stage 4: Stage callbacks and revives are unsupported");
     }
     let plan = Plan::Stage {
         deployments: deployments.clone(),
@@ -1383,6 +1444,20 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
                     .collect()
             }),
         cc_released: p.optional("_cc_released").is_some_and(|n| n.boolean()),
+        loadouts: p.field("loadouts").object().into_iter().map(|(name, n)| {
+            n.require_type("HeroLoadout");
+            n.keys(&["hero", "equipment", "pet"]);
+            (name, crate::heroes::HeroLoadout {
+                hero: n.field("hero").string(),
+                equipment: n.field("equipment").array().iter().map(Node::string).collect(),
+                pet: n.field("pet").optional_string(),
+            })
+        }).collect(),
+        hero_levels: optional_levels(p.optional("hero_levels")),
+        equipment_levels: optional_levels(p.optional("equipment_levels")),
+        pet_levels: optional_levels(p.optional("pet_levels")),
+        auto_ability_on_ko: p.optional("auto_ability_on_ko").map_or(true, |n| n.boolean()),
+        observed: p.optional("observed").is_some_and(|n| n.boolean()),
     };
     let mut grid = Grid::new(catalog.world);
     // battle.py:248-281: dead banners never block. Walls are restored in file order.
@@ -1449,6 +1524,7 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         buildings,
         walls,
         traps,
+        attacker_order: attackers.iter().map(Unit::reference).collect(),
         attackers,
         defenders,
         fields,

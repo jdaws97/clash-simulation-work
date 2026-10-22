@@ -328,6 +328,26 @@ pub struct UnitExtra {
     pub waiting: bool,
     pub clone_casts: Vec<(String, i64)>,
     pub poison_exit: Option<(u64, Vec<u64>, (f64, f64))>,
+    // heroes.py:103-1078; pets.py:147-412: absent-key defaults.
+    pub boots_next: Option<f64>,
+    pub spear_base_range: Option<f64>,
+    pub equipment_invisible_until: f64,
+    pub tome_until: f64,
+    pub torch_until: f64,
+    pub torch_speed: f64,
+    pub torch_reduction: f64,
+    pub revenge_cd: Vec<(EntityRef, f64)>,
+    pub fire_heart_done: bool,
+    pub egg: bool,
+    pub phoenix_until: f64,
+    pub fox_next: f64,
+    pub hero_present: bool,
+    pub owner_defeated: bool,
+    pub rampage_detached: bool,
+    pub children: Vec<UnitRef>,
+    pub bomb_next: Option<f64>,
+    pub revivable: bool,
+    pub ko_at: Option<f64>,
     pub unknown: ExtraMap,
 }
 
@@ -422,6 +442,25 @@ impl Default for UnitExtra {
             waiting: false,
             clone_casts: Vec::new(),
             poison_exit: None,
+            boots_next: None,
+            spear_base_range: None,
+            equipment_invisible_until: 0.0,
+            tome_until: 0.0,
+            torch_until: 0.0,
+            torch_speed: 0.0,
+            torch_reduction: 0.0,
+            revenge_cd: Vec::new(),
+            fire_heart_done: false,
+            egg: false,
+            phoenix_until: 0.0,
+            fox_next: 0.0,
+            hero_present: true,
+            owner_defeated: false,
+            rampage_detached: false,
+            children: Vec::new(),
+            bomb_next: None,
+            revivable: false,
+            ko_at: None,
             unknown: Vec::new(),
         }
     }
@@ -676,7 +715,7 @@ pub struct Unit {
     pub last_hit: f64,
     pub poison_stack: usize,
     pub is_hero: bool,
-    pub kit: Option<Value>,
+    pub kit: Option<crate::heroes::Kit>,
     pub pet: Option<UnitRef>,
     pub owner: Option<UnitRef>,
     pub follow: Option<UnitRef>,
@@ -684,7 +723,7 @@ pub struct Unit {
     pub leash: f64,
     pub ability_used: bool,
     pub decay: f64,
-    pub dash: Option<Value>,
+    pub dash: Option<crate::heroes::Dash>,
     pub extra: UnitExtra,
     pub damage_dealt: f64,
     // battle.py:940-947: tombstones preserve references after list pruning.
@@ -858,8 +897,8 @@ impl Unit {
         if !self.alive || self.extra.recalled.is_some() {
             return 0.0;
         }
-        if self.kit.is_some() {
-            todo!("stage 3: entities.py:187 Phoenix healing restriction");
+        if self.kit.as_ref().is_some_and(|kit| kit.doomed_at.is_some()) {
+            return 0.0;
         }
         let gained = 0.0_f64.max(amount.min(self.max_hp - self.hp));
         self.hp += gained;
@@ -914,10 +953,55 @@ pub enum Plan {
         strength: f64,
         troop_levels: Vec<(String, Option<Level>)>,
         cc_released: bool,
+        loadouts: Vec<(String, crate::heroes::HeroLoadout)>,
+        hero_levels: Vec<(String, Option<Level>)>,
+        equipment_levels: Vec<(String, Option<Level>)>,
+        pet_levels: Vec<(String, Option<Level>)>,
+        auto_ability_on_ko: bool,
+        observed: bool,
     },
 }
 
 impl Plan {
+    pub fn loadout(&self, name: &str) -> Option<&crate::heroes::HeroLoadout> {
+        match self {
+            Self::Stage { loadouts, .. } => loadouts
+                .iter()
+                .find(|(hero, _)| hero == name)
+                .map(|(_, loadout)| loadout),
+        }
+    }
+
+    pub fn equipment_level(&self, name: &str) -> Option<&Level> {
+        match self {
+            Self::Stage { equipment_levels, .. } => equipment_levels
+                .iter()
+                .find(|(key, _)| key == name)
+                .and_then(|(_, level)| level.as_ref()),
+        }
+    }
+
+    pub fn pet_level(&self, name: &str) -> Option<&Level> {
+        match self {
+            Self::Stage { pet_levels, .. } => pet_levels
+                .iter()
+                .find(|(key, _)| key == name)
+                .and_then(|(_, level)| level.as_ref()),
+        }
+    }
+
+    pub fn auto_ability_on_ko(&self) -> bool {
+        match self {
+            Self::Stage { auto_ability_on_ko, .. } => *auto_ability_on_ko,
+        }
+    }
+
+    pub fn observed(&self) -> bool {
+        match self {
+            Self::Stage { observed, .. } => *observed,
+        }
+    }
+
     pub fn town_hall(&self) -> i64 {
         match self {
             Self::Stage { town_hall, .. } => *town_hall,
@@ -1047,6 +1131,8 @@ pub struct Battle {
     pub walls: Vec<Wall>,
     pub traps: Vec<Trap>,
     pub attackers: Vec<Unit>,
+    // Python list order, independent of stable Unit storage during pet dashes.
+    pub attacker_order: Vec<UnitRef>,
     pub defenders: Vec<Unit>,
     pub fields: Vec<Field>,
     pub pending: Vec<Pending>,
@@ -1150,7 +1236,10 @@ impl Battle {
     }
 
     pub fn attackers_pool(&self) -> impl Iterator<Item = &Unit> {
-        self.attackers.iter().filter(|unit| unit.in_pool)
+        self.attacker_order
+            .iter()
+            .map(move |reference| self.unit(*reference))
+            .filter(|unit| unit.in_pool)
     }
 
     pub fn defenders_pool(&self) -> impl Iterator<Item = &Unit> {

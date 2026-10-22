@@ -319,17 +319,17 @@ impl Grid {
     }
 
     pub fn prune(&mut self) {
-        // Drop stale entries instead of retaining them for repair. Keep live
-        // source fields so whole-tile hits still use the first caller's cell.
-        let mut index = 0;
-        while index < self.cache.len() {
-            if self.cache[index].version != self.version {
-                let mut entry = self.cache.swap_remove(index);
-                entry.frontier.clear();
-                self.spare_fields.push(entry);
-            } else {
-                index += 1;
-            }
+        // pathing.py:261-267: preserve dictionary insertion order, including
+        // stale keys. A stable version sort chooses the same retained fields
+        // on ties. Evicting a live source key can change the first half-cell
+        // reused for that tile, so this is observable simulation state.
+        if self.cache.len() <= 600 {
+            return;
+        }
+        self.cache.sort_by(|first, second| second.version.cmp(&first.version));
+        for mut entry in self.cache.drain(400..) {
+            entry.frontier.clear();
+            self.spare_fields.push(entry);
         }
         self.spare_fields.truncate(400);
         self.cache_indices.clear();

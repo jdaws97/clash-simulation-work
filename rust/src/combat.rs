@@ -80,8 +80,8 @@ impl Battle {
         if u.extra.recalled.is_some() {
             return 0.0;
         }
-        if kind == "trap" && u.name == "Dragon Duke" {
-            todo!("stage 3: battle.py:608 Dragon Duke trap shield");
+        if kind == "trap" && u.name == "Dragon Duke" && units::duke_alone(self, victim) {
+            amount *= 0.8;
         }
         let mut red = if t < u.dmg_taken_until {
             u.dmg_taken_mult
@@ -90,7 +90,7 @@ impl Battle {
         };
         red = red.min(1.0 - effects::torch_stats(u, t).1);
         if u.kit.is_some() {
-            todo!("stage 3: battle.py:617 equipment damage reduction");
+            red = red.min(heroes::damage_taken_mult(self, victim));
         }
         if t < u.iceblock_until {
             red = red.min(1.0 - u.iceblock_red);
@@ -137,7 +137,15 @@ impl Battle {
         units::on_damaged(self, victim, amount);
         let u = self.unit(victim);
         if u.kit.is_some() && u.alive {
-            todo!("stage 3: battle.py:658 hero damage reaction and automatic KO ability");
+            heroes::on_damaged(self, victim, amount, source, &effect);
+        }
+        let u = self.unit(victim);
+        if u.hp <= 0.0 && victim.team == Team::Atk && u.is_hero && u.kit.is_some()
+            && !u.ability_used && u.alive && self.plan.auto_ability_on_ko() {
+            self.unit_mut(victim).hp = 1.0;
+            heroes::activate(self, victim);
+            let name = self.unit(victim).name.clone();
+            self.log_event(vec![round_decimal(self.t, 1).into(), "ability".into(), name.into(), "on KO".into()]);
         }
         if self.unit(victim).hp <= 0.0 {
             if victim.team == Team::Atk {
@@ -160,8 +168,8 @@ impl Battle {
             return;
         }
         effects::record_death(self, victim);
-        if self.unit(victim).kit.is_some() {
-            todo!("stage 3: battle.py:682 hero equipment death prevention");
+        if self.unit(victim).kit.is_some() && heroes::on_death(self, victim) {
+            return;
         }
         let u = self.unit_mut(victim);
         u.alive = false;
@@ -170,9 +178,9 @@ impl Battle {
         units::on_death(self, victim);
         let u = self.unit(victim);
         if u.is_hero && u.team == Team::Atk {
-            todo!("stage 4: battle.py:689 hero revive spell");
+            spells::maybe_revive(self, victim);
         }
-        let name = u.name.clone();
+        let name = self.unit(victim).name.clone();
         self.log_event(vec![round_decimal(self.t, 1).into(), "dies".into(), name.into(), victim.team.as_str().into()]);
     }
 
@@ -393,7 +401,8 @@ impl Battle {
 
     fn resolve_impact(&mut self, p: Pending) {
         if p.extra.hero_impact.is_some() {
-            todo!("stage 3: battle.py:981 hero projectile impact");
+            heroes::projectile_impact(self, p);
+            return;
         }
         if p.extra.direct {
             let target = p.target.expect("direct pending target");

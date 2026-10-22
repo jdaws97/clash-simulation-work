@@ -9,6 +9,7 @@ pub mod effects;
 pub mod geom;
 pub mod grid;
 pub mod heroes;
+pub mod pets;
 pub mod json;
 pub mod load;
 pub mod movement;

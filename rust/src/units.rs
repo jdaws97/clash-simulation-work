@@ -6,6 +6,7 @@ use std::collections::{HashMap, HashSet};
 use crate::battle::SpawnOptions;
 use crate::combat::{SplashBuildingsOptions, SplashUnitsOptions};
 use crate::effects;
+use crate::heroes;
 use crate::geom;
 use crate::spells;
 use crate::grid::TargetIdentity;
@@ -17,11 +18,30 @@ use crate::stats::Level;
 pub const RESOURCE_KEYS: &[&str] = &["gm", "ec", "dd", "gs", "es", "ds", "th", "cc"];
 
 // Python math.isclose defaults: relative tolerance 1e-9, no absolute tolerance.
-fn isclose(a: f64, b: f64) -> bool {
+pub fn isclose(a: f64, b: f64) -> bool {
     a == b
         || a.is_finite()
             && b.is_finite()
             && ((a - b).abs() <= (1e-9 * b).abs() || (a - b).abs() <= (1e-9 * a).abs())
+}
+
+// units.py:46-57: own pets count only after detachment, except a live revival.
+pub fn duke_alone(battle: &Battle, unit: UnitRef) -> bool {
+    let duke = battle.unit(unit);
+    for ally in battle.attackers_near(duke.x, duke.y, 6.0) {
+        let ally_unit = battle.unit(ally);
+        if ally == unit || !ally_unit.flying || ally_unit.name == "Totem" {
+            continue;
+        }
+        if ally_unit.kind == "pet" && ally_unit.owner == Some(unit) {
+            let phoenix = duke.kit.as_ref().is_some_and(|kit| kit.doomed_at.is_some());
+            if !ally_unit.extra.rampage_detached || phoenix {
+                continue;
+            }
+        }
+        return false;
+    }
+    true
 }
 
 // units.py:1170-1197: membership only; attack order comes from attack_targets.
@@ -365,7 +385,10 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         }
     }
     if battle.unit(unit).extra.mirror_clone && t >= battle.unit(unit).extra.expire_at {
-        todo!("stage 3: units.py:344 Magic Mirror clone expiry");
+        let unit = battle.unit_mut(unit);
+        unit.alive = false;
+        unit.hp = 0.0;
+        return true;
     }
     if t >= battle.unit(unit).extra.expires_at {
         battle.kill(unit);
@@ -400,15 +423,37 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         }
     }
     if battle.unit(unit).kind == "pet" {
-        todo!("stage 3: units.py:371 pet passives and actions");
+        heroes::pet_passives(battle, unit);
+        if battle.unit(unit).can_act(t) {
+            let dt = battle.dt;
+            let pet = battle.unit_mut(unit);
+            pet.cooldown = (pet.cooldown - dt).max(-dt);
+            heroes::act_pet(battle, unit);
+        }
+        return true;
     }
     if battle.unit(unit).kit.is_some() {
-        todo!("stage 3: units.py:379 hero equipment tick and dash");
+        heroes::tick(battle, unit);
+        if !battle.unit(unit).alive {
+            return true;
+        }
+        let hero = battle.unit(unit);
+        if hero.dash.is_some() {
+            if t >= hero.frozen_until && t >= hero.stun_until {
+                heroes::dash_step(battle, unit);
+            }
+            return true;
+        }
     }
     let u = battle.unit(unit);
     if u.name == "Giant Giant" && !u.extra.enraged && u.hp <= 0.5 * u.max_hp {
-        todo!("stage 2: units.py:392 Giant Giant enrage");
+        let u = battle.unit_mut(unit);
+        u.extra.enraged = true;
+        u.rage_dmg = 1.5;
+        u.rage_spd = 12.0 / 8.0;
+        u.rage_until = t + 20.0;
     }
+    let u = battle.unit(unit);
     if sp.special.is_empty() {
         return false;
     }
@@ -737,10 +782,7 @@ fn on_death_effect(battle: &mut Battle, unit: UnitRef) {
     if let Some(key) = sp.death_damage.as_deref().filter(|key| !key.is_empty()) {
         if !battle.unit(unit).extra.suicided {
             let u = battle.unit(unit);
-            if u.name == "Longshot" {
-                todo!("stage 3: units.py:679 Longshot air death damage");
-            }
-            let death_air = false;
+            let death_air = u.name == "Longshot";
             let damage = battle
                 .catalog
                 .stats
@@ -1237,14 +1279,16 @@ pub fn frost(battle: &mut Battle, target: EntityRef, factor: f64, seconds: f64) 
 pub fn chill(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     let u = battle.unit(unit);
     if u.extra.bouncing_frostmite {
-        todo!("stage 3: units.py:1396 equipment Bouncing Frostmite frost");
+        frost(battle, target, 0.7, 3.0);
+        return;
     }
     if u.name == "Frostmite" {
         frost(battle, target, 0.5, 4.0);
         return;
     }
     if u.name == "Frosty" {
-        todo!("stage 3: units.py:1401 Frosty frost");
+        frost(battle, target, 0.5, 4.0);
+        return;
     }
     if !u.spec.has_special("ice_chill") && !u.spec.has_special("chill") {
         return;
@@ -1327,12 +1371,9 @@ pub fn spatial_strike(battle: &mut Battle, unit: UnitRef, target: EntityRef, dam
         let (x, y, radius) = (u.x, u.y, sp.splash);
         area_hit(battle, unit, x, y, radius, damage, true, Some(target));
     } else {
-        if u.name == "Phoenix" {
-            todo!("stage 3: units.py:1582 Phoenix area attack");
-        }
         if !matches!(
             u.name.as_str(),
-            "Wizard" | "Dragon" | "Balloon" | "Rocket Balloon"
+            "Wizard" | "Dragon" | "Balloon" | "Rocket Balloon" | "Phoenix" | "Giant Giant"
         ) {
             todo!("stage 2: units.py:1582 other special troop area attacks");
         }
@@ -1388,13 +1429,13 @@ fn level_between(unit: &Unit, low: i64, high: i64) -> bool {
 
 pub fn projectile_speed(unit: &Unit) -> Option<f64> {
     if unit.name == "Royal Champion" {
-        todo!("stage 3: units.py:1632 Royal Champion projectile speed");
+        return Some(12.0);
     }
     if unit.name == "Minion Prince" {
-        todo!("stage 3: units.py:1635 Minion Prince projectile speed");
+        return Some(10.0);
     }
     if unit.name == "Longshot" {
-        todo!("stage 3: units.py:1638 Longshot projectile speed");
+        return Some(15.0);
     }
     if unit.name == "Wizard" && level_between(unit, 1, 3) {
         return Some(5.0);
@@ -1439,7 +1480,7 @@ pub fn projectile_speed(unit: &Unit) -> Option<f64> {
         todo!("stage 2: units.py:1683 Firemite leap speed");
     }
     if unit.name == "Lavaloon Pup" && level_between(unit, 1, 11) {
-        todo!("stage 3: units.py:1686 equipment Lavaloon Pup projectile speed");
+        return Some(3.0);
     }
     None
 }
@@ -1477,9 +1518,10 @@ pub fn launch_projectile(
         track = None;
     }
     if rocket {
-        todo!("stage 3: units.py:1737 launch Rocket Spear projectile");
+        mode = "rocket";
     } else if name == "Longshot" {
-        todo!("stage 3: units.py:1739 launch Longshot projectile");
+        mode = "longshot";
+        track = Some(target);
     }
     let mut pending = Pending::new(
         battle.t + length / speed,
@@ -1515,10 +1557,30 @@ pub fn projectile_impact(battle: &mut Battle, pending: Pending) {
         todo!("stage 2: units.py:1766 piercing projectile travel and requeue");
     }
     if mode == "rocket" {
-        todo!("stage 3: units.py:1794 Rocket Spear impact");
+        let target = pending.target.expect("Rocket Spear target");
+        if battle.entity_alive(target) && match target {
+            EntityRef::Unit(victim) => battle.unit(victim).indirect_targetable(battle),
+            _ => true,
+        } {
+            heroes::damage_target(battle, target, pending.damage);
+            heroes::blast(battle, x, y, 0.9, pending.damage, Some(target), 1.0);
+        }
+        return;
     }
     if mode == "longshot" {
-        todo!("stage 3: units.py:1806 Longshot same-height splash");
+        let Some(EntityRef::Unit(target)) = pending.target else {
+            panic!("Longshot target must be a unit");
+        };
+        let flying = battle.unit(target).flying;
+        for victim in attack_targets(battle, unit, false) {
+            if let EntityRef::Unit(reference) = victim {
+                let victim_unit = battle.unit(reference);
+                if victim_unit.flying == flying && geom::dist(victim_unit.x, victim_unit.y, x, y) <= pending.radius {
+                    hit_target(battle, unit, victim, pending.damage);
+                }
+            }
+        }
+        return;
     }
     if mode == "single" {
         let target = pending.target.expect("single projectile target");
@@ -1565,9 +1627,9 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     let (mut rage, _) = rage_boost(battle.unit(unit), t);
     let u = battle.unit(unit);
     rage = rage.max(u.aura_dmg).max(u.extra.bell_damage);
-    let multiplier = 1.0;
-    if sp.has_special("royal_rampage") && unit.team == Team::Atk {
-        todo!("stage 3: units.py:1843 Dragon Duke Royal Rampage damage");
+    let mut multiplier = 1.0;
+    if sp.has_special("royal_rampage") && unit.team == Team::Atk && duke_alone(battle, unit) {
+        multiplier *= 2.0;
     }
     if tantrum(battle, unit) {
         rage = rage.max(2.0);
@@ -1579,13 +1641,23 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     if sp.attack == "beam" {
         todo!("stage 2: units.py:1852 Inferno Dragon and Super Miner beam damage");
     }
+    let ordinary = damage;
     damage *= rage;
+    let rocket = battle.unit(unit).kit.as_ref()
+        .is_some_and(|kit| kit.has("Rocket Spear") && kit.spear_shots > 0);
     if battle.unit(unit).kit.is_some() {
-        // This guard also covers the later Monolith Arrow, Gauntlet and on-hit
-        // equipment branches at units.py:1890-1902,1921-1924.
-        todo!("stage 3: units.py:1856 hero equipment strike bonuses and effects");
+        let u = battle.unit(unit);
+        if t < u.extra.vial_until {
+            let vial = u.extra.vial_bonus * battle.atk_hero_mult;
+            damage = damage.max(ordinary + vial);
+        }
+        damage = damage.max(ordinary + heroes::strike_bonus(battle, unit));
     }
     let speed = projectile_speed(battle.unit(unit));
+    if rocket {
+        launch_projectile(battle, unit, target, damage, 12.0, true);
+        return;
+    }
     if sp.has_special("long_shot") && battle.unit(unit).extra.long_shots > 0 {
         battle.unit_mut(unit).extra.long_shots -= 1;
     }
@@ -1614,10 +1686,19 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
         return;
     }
     damage *= mult_vs(battle, unit, target);
+    if battle.unit(unit).kit.is_some() {
+        damage += heroes::monolith_bonus(battle, unit, target);
+        if t < battle.unit(unit).extra.gauntlet_until {
+            todo!("stage 3+: Giant Gauntlet strike");
+        }
+    }
     if let EntityRef::Unit(victim) = target {
         battle.hit_unit(victim, damage, None, "normal", Some(EntityRef::Unit(unit)));
         after_unit_hit(battle, unit, victim, damage);
         chill(battle, unit, target);
+        if battle.unit(unit).kit.is_some() {
+            heroes::on_hit_extra(battle, unit, target);
+        }
         if matches!(battle.unit(unit).name.as_str(), "Miner" | "Super Miner")
             && unit.team == Team::Atk
             && !battle.entity_alive(target)
@@ -1649,6 +1730,9 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     }
     if matches!(target, EntityRef::Building(_)) {
         chill(battle, unit, target);
+    }
+    if battle.unit(unit).kit.is_some() {
+        heroes::on_hit_extra(battle, unit, target);
     }
 }
 
@@ -1796,7 +1880,7 @@ fn heal_eligible(battle: &Battle, healer: UnitRef, ally: UnitRef, primary: bool)
 }
 
 // units.py:2095-2114: registration precedes the pulse-clock check.
-fn heal_effectiveness(battle: &mut Battle, healer: UnitRef, recipient: UnitRef) -> f64 {
+pub fn heal_effectiveness(battle: &mut Battle, healer: UnitRef, recipient: UnitRef) -> f64 {
     let mut sources = Vec::new();
     for &(source, since) in &battle.unit(recipient).extra.healing_sources {
         let s = battle.unit(source);

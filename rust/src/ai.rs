@@ -464,8 +464,8 @@ impl Battle {
                 if self.t < u.extra.haste_attack_until {
                     interval /= u.extra.haste_attack;
                 }
-                if u.name == "Dragon Duke" {
-                    todo!("stage 3: battle.py:1582 Dragon Duke Royal Rampage cadence");
+                if u.name == "Dragon Duke" && units::duke_alone(self, reference) {
+                    interval /= 1.5;
                 }
                 self.unit_mut(reference).cooldown += interval / 0.05_f64.max(slow);
             }
@@ -483,8 +483,16 @@ impl Battle {
         let t = self.t;
         let u = self.unit(reference);
         if u.name == "Barbarian King" && u.home.is_some() {
-            todo!("stage 3: battle.py:1675 defending King leash clamp");
+            let (x, y) = u.home.expect("King home");
+            let distance = crate::geom::dist(u.x, u.y, x, y);
+            if distance > u.leash {
+                let leash = u.leash;
+                let u = self.unit_mut(reference);
+                u.x = x + (u.x - x) * leash / distance;
+                u.y = y + (u.y - y) * leash / distance;
+            }
         }
+        let u = self.unit(reference);
         if t < u.active_at {
             return;
         }
@@ -519,7 +527,11 @@ impl Battle {
             target = None;
         }
         if u.name == "Barbarian King" && target.is_some() {
-            todo!("stage 3: battle.py:1697 defending King target leash");
+            let (x, y) = u.home.expect("King home");
+            let target_unit = self.unit(target.expect("King target"));
+            if crate::geom::dist(target_unit.x, target_unit.y, x, y) > u.leash {
+                target = None;
+            }
         }
         if target.is_none() || u.name != "Barbarian King" && t >= u.extra.next_retarget {
             let u = self.unit_mut(reference);
