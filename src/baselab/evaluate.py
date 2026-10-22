@@ -59,8 +59,10 @@ def attacker_trophies(stars: int, pct: float) -> int:
         # Wiki: Ranked Battles, 16 at 50%, +1 per 3% above 50%, 32 at 98%.
         return 16 + max(0, int((pct - 50) // 3))
     if stars == 1:
-        # Wiki: Ranked Battles, one-star attacks award between 5 and 15 trophies.
-        return min(15, 5 + int(pct // 9))
+        # Wiki: Ranked Battles, "A 1% 1-star will earn 5 trophies, with one
+        # trophy awarded for every 9% earned" (91% -> 15), counted above 1%
+        # like the 2-star rule counts above 50%.
+        return min(15, 5 + int(max(0.0, pct - 1) // 9))
     return min(4, int(pct // 10))
 
 
