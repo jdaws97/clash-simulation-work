@@ -1039,7 +1039,7 @@ impl PlaybookPlan {
         self.step_spells = Some(Rc::new(kinds));
     }
 
-    // playbook.py:635-681. Revive runs before fallback reservation mode.
+    // playbook.py:659-715: Revive precedes fallback reservations; each cast paces.
     fn fallback_spells(&mut self, battle: &mut Battle) {
         self.step_kinds();
         let t = battle.t;
@@ -1058,6 +1058,8 @@ impl PlaybookPlan {
                     && t >= u.extra.ko_at.expect("KO time") + self.attack.revive_delay {
                     let (x, y) = (u.x, u.y);
                     self.attack.use_spell(battle, "revive", x, y);
+                    self.busy_until = t + action_time(battle, Action::Spell, 1);
+                    return;
                 }
             }
         }
@@ -1095,21 +1097,28 @@ impl PlaybookPlan {
         }).collect();
         let have = |attack: &AttackPlan, kind: &str| count(&attack.spells, kind) > count(&reservations, kind);
         let left = self.attack.spells.iter()
-            .chain(&self.attack.cc_spells)
             .map(|(_, n)| n)
             .sum::<i64>();
-        if !self.attack.zap_done && self.attack.zap_ad != (0, 0) {
-            self.attack.zap(battle, &have);
+        if !self.attack.fallback_quakes.is_empty() {
+            let (x, y) = self.attack.fallback_quakes.remove(0);
+            if have(&self.attack, "eq") {
+                self.attack.use_spell(battle, "eq", x, y);
+            }
+        } else if !self.attack.zap_done && self.attack.zap_ad != (0, 0) {
+            self.attack.zap(battle, &have, true);
         }
-        self.attack
-            .generic_spells(battle, &units, &have, Some(&mut self.inventory));
-        let cast = left - self.attack.spells.iter()
-            .map(|(_, n)| n)
-            .sum::<i64>() - self.attack.cc_spells.iter()
-            .map(|(_, n)| n)
-            .sum::<i64>();
-        if cast > 0 {
-            self.busy_until = t + cast as f64 * action_time(battle, Action::Spell, 1);
+        if self.attack.spells.iter().map(|(_, n)| n).sum::<i64>() == left {
+            self.attack.generic_spells(
+                battle,
+                &units,
+                &have,
+                Some(&mut self.inventory),
+                true,
+            );
+        }
+        if self.attack.spells.iter().map(|(_, n)| n).sum::<i64>() < left {
+            self.busy_until = t + action_time(battle, Action::Spell, 1);
+            return;
         }
         let held: Vec<_> = battle.attackers_pool().filter(|u| {
             u.alive && u.is_hero && !u.ability_used && self.steps.iter()

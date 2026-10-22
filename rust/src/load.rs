@@ -480,6 +480,9 @@ impl Resolver {
         let mut extra = BuildingExtra::default();
         for (key, v) in n.object() {
             match key.as_str() {
+                "frost_effects" => {
+                    extra.frost_effects = v.array().iter().map(Node::pair).collect();
+                }
                 "unavailable" => extra.unavailable = v.boolean(),
                 "yellow_until" => extra.yellow_until = v.number(),
                 "rubble_taken" => extra.rubble_taken = v.boolean(),
@@ -572,7 +575,10 @@ impl Resolver {
                 "boots_next" => extra.boots_next = v.optional_number(),
                 "spear_base_range" => extra.spear_base_range = v.optional_number(),
                 "shield_destination" => extra.shield_destination = v.optional_pair(),
-                "attack_lock_until" => extra.attack_lock_until = v.number(),
+                "attack_lock_until" => {
+                    extra.attack_lock_until = v.number();
+                    extra.paused_timers.attack_lock_until = true;
+                }
                 "equipment_invisible_until" => {
                     extra.equipment_invisible_until = v.number();
                     extra.paused_timers.equipment_invisible_until = true;
@@ -635,7 +641,10 @@ impl Resolver {
                     extra.paused_timers.vial_until = true;
                 }
                 "vial_bonus" => extra.vial_bonus = v.number(),
-                "gauntlet_until" => extra.gauntlet_until = v.number(),
+                "gauntlet_until" => {
+                    extra.gauntlet_until = v.number();
+                    extra.paused_timers.gauntlet_until = true;
+                }
                 "gauntlet_radius" => extra.gauntlet_radius = v.number(),
                 "bell_health" => extra.bell_health = v.number(),
                 "bell_damage" => extra.bell_damage = v.number(),
@@ -749,6 +758,16 @@ impl Resolver {
                         .map(|(key, value)| (status_source(&key), value.triple()))
                         .collect();
                 }
+                "rage_auras" => {
+                    extra.rage_auras = v
+                        .object()
+                        .into_iter()
+                        .map(|(key, value)| (status_source(&key), value.pair()))
+                        .collect();
+                }
+                "frost_effects" => {
+                    extra.frost_effects = v.array().iter().map(Node::pair).collect();
+                }
                 "haste_effects" => {
                     extra.haste_effects = v.object().into_iter()
                         .map(|(key, value)| (status_source(&key), value.pair()))
@@ -850,6 +869,14 @@ impl Resolver {
                 "speed" => extra.speed = v.optional_number(),
                 "slow" => extra.slow = v.number(),
                 "ramp" => extra.ramp = v.boolean(),
+                "burn_tick" => extra.burn_tick = v.optional_number(),
+                "hits_air" => extra.hits_air = v.boolean(),
+                "hits_ground" => extra.hits_ground = v.boolean(),
+                "buildings" => extra.buildings = v.boolean(),
+                "walls" => extra.walls = v.boolean(),
+                "wall_mult" => extra.wall_mult = v.number(),
+                "actor" => extra.actor = Some(self.unit_ref(v)),
+                "src" => extra.src = Some(v.string().into()),
                 "origin" => extra.origin = v.optional_string(),
                 "hero_mult" => extra.hero_mult = v.number(),
                 "next_apply" => extra.next_apply = v.optional_number(),

@@ -30,7 +30,7 @@ pub fn add_slow(unit: &mut Unit, source: StatusSource, movement: f64, attack: f6
     }
 }
 
-// effects.py:35-44: the moving-unit form of the shared Python rule.
+// effects.py:36-50: unit movement and attacks also use independent frost.
 pub fn slow_mult(unit: &Unit, t: f64, movement: bool) -> f64 {
     let mut result = if movement {
         if t < unit.move_slow_until {
@@ -52,10 +52,10 @@ pub fn slow_mult(unit: &Unit, t: f64, movement: bool) -> f64 {
             };
         }
     }
-    result
+    result * crate::units::frost_mult(&unit.extra.frost_effects, t)
 }
 
-// effects.py:35-44; defense.py:597-598: building callers use attack slowdown.
+// effects.py:36-50; defense.py:597-598: building callers use attack slowdown.
 pub fn building_slow_mult(building: &Building, t: f64) -> f64 {
     let mut result = if t < building.atk_slow_until {
         building.atk_slow
@@ -67,7 +67,7 @@ pub fn building_slow_mult(building: &Building, t: f64) -> f64 {
             result *= *attack;
         }
     }
-    result
+    result * crate::units::frost_mult(&building.extra.frost_effects, t)
 }
 
 // effects.py:47-50.

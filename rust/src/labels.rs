@@ -314,6 +314,7 @@ text_tags! {
     Bounce => "bounce",
     Building => "building",
     Burst => "burst",
+    Burn => "burn",
     Cake => "cake",
     Candle => "candle",
     Cc => "cc",

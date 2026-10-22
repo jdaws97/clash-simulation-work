@@ -218,7 +218,7 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
             | "Eternal Tome" | "Rage Gem" | "Fireball" | "Rocket Backpack"
             | "Spiky Ball" | "Earthquake Boots" | "Dark Orb" | "Meteor Staff"
             | "Barbarian Puppet" | "Archer Puppet" | "Hog Rider Puppet" | "Healer Puppet"
-            | "Lavaloon Puppet" | "Seeking Shield" | "Haste Vial" => {}
+            | "Lavaloon Puppet" | "Seeking Shield" | "Haste Vial" | "Heroic Torch" => {}
             _ => todo!("stage 3+: equip {equipment}"),
         }
     }
@@ -824,7 +824,18 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
             "Barbarian Puppet" | "Archer Puppet" | "Hog Rider Puppet" | "Healer Puppet"
             | "Lavaloon Puppet" => puppet(battle, hero, &name, &level, 0, None),
             "Eternal Tome" => {
-                let duration = col(battle, &name, &level, &["ability duration"], 8.0);
+                // heroes.py:678-682: emission excludes the recipient's shield tail.
+                let ability = battle.catalog.game_data(
+                    "special_abilities",
+                    "GrandWardenInvulnerability",
+                    Some(&level),
+                );
+                let duration = ability
+                    .at("DeactivateAfterTime")
+                    .str()
+                    .parse::<f64>()
+                    .expect("Tome emission duration")
+                    / 1000.0;
                 battle.unit_mut(hero).extra.tome_until = t + duration;
                 battle.unit_mut(hero).extra.paused_timers.tome_until = true;
                 moving_auras(battle, hero, None);
@@ -851,8 +862,43 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 pending.extra.hero_impact = Some("blast".to_owned());
                 battle.add_pending(pending);
             }
+            "Heroic Torch" => {
+                // heroes.py:710-723: the ability level advances every three equipment levels.
+                let Level::Int(equipment_level) = &level else {
+                    panic!("integer Heroic Torch level");
+                };
+                let ability_level = Level::Int(equipment_level.div_euclid(3) + 1);
+                let ability = battle.catalog.game_data(
+                    "special_abilities",
+                    "GWHeroicTorch",
+                    Some(&ability_level),
+                );
+                let duration = ability
+                    .at("DeactivateAfterTime")
+                    .str()
+                    .parse::<f64>()
+                    .expect("Torch emission duration")
+                    / 1000.0;
+                let reduction =
+                    col(battle, &name, &level, &["incoming damage reduction"], 0.0) / 100.0;
+                let speed = col(
+                    battle,
+                    &name,
+                    &level,
+                    &["ability attributes / speed increase"],
+                    0.0,
+                ) / 8.0;
+                let unit = battle.unit_mut(hero);
+                unit.extra.torch_until = t + duration;
+                unit.extra.paused_timers.torch_until = true;
+                unit.extra.torch_reduction = reduction;
+                unit.extra.torch_speed = speed;
+                moving_auras(battle, hero, None);
+            }
             "Seeking Shield" => {
-                battle.unit_mut(hero).extra.attack_lock_until = t + 1.2;
+                let unit = battle.unit_mut(hero);
+                unit.extra.attack_lock_until = t + 1.2;
+                unit.extra.paused_timers.attack_lock_until = true;
                 let unit = battle.unit(hero);
                 let mut pending = Pending::new(
                     t + 0.933,
@@ -1240,7 +1286,7 @@ fn puppet(
                 &["archer invisibility duration"],
                 6.0,
             );
-            battle.unit_mut(summon).invisible_until = t + duration;
+            invisible(battle.unit_mut(summon), t + duration);
         }
         if equipment == "Barbarian Puppet" {
             let damage = 1.0
@@ -1455,7 +1501,7 @@ pub fn blast(
     }
 }
 
-// heroes.py:1056-1078: one second of persistence, capped by the ability expiry.
+// heroes.py:1202-1229: recipient tails last one second after the final aura tick.
 fn moving_auras(battle: &mut Battle, warden: UnitRef, members: Option<&[UnitRef]>) {
     let t = battle.t;
     let unit = battle.unit(warden);
@@ -1478,9 +1524,9 @@ fn moving_auras(battle: &mut Battle, warden: UnitRef, members: Option<&[UnitRef]
         }
         if t < tome {
             if let Some((_, until)) = unit.extra.tomes.iter_mut().find(|(key, _)| *key == source) {
-                *until = tome.min(t + 1.0);
+                *until = t + 1.0;
             } else {
-                unit.extra.tomes.push((source.clone(), tome.min(t + 1.0)));
+                unit.extra.tomes.push((source.clone(), t + 1.0));
             }
         }
         if t < torch && !matches!(unit.kind, Tag::Siege | Tag::SiegeIdle) {
@@ -1489,7 +1535,7 @@ fn moving_auras(battle: &mut Battle, warden: UnitRef, members: Option<&[UnitRef]
             } else {
                 speed
             };
-            let value = (torch.min(t + 1.0), speed, reduction);
+            let value = (t + 1.0, speed, reduction);
             if let Some((_, old)) = unit.extra.torches.iter_mut().find(|(key, _)| *key == source) {
                 *old = value;
             } else {
@@ -1501,6 +1547,7 @@ fn moving_auras(battle: &mut Battle, warden: UnitRef, members: Option<&[UnitRef]
 
 // heroes.py:1082-1140: all combatants reset before any strongest-buff selection.
 pub fn apply_auras(battle: &mut Battle) {
+    let t = battle.t;
     let mut combatants = std::mem::take(&mut battle.actor_scratch);
     combatants.clear();
     combatants.extend(battle.attackers_pool().chain(battle.defenders_pool()).map(Unit::reference));
@@ -1510,6 +1557,11 @@ pub fn apply_auras(battle: &mut Battle) {
         let unit = battle.unit_mut(reference);
         let boost = effects::crown_buff(unit);
         unit.aura_dmg = 1.0 + boost;
+        for (_, (until, increase)) in &unit.extra.rage_auras {
+            if t < *until {
+                unit.aura_dmg = unit.aura_dmg.max(1.0 + increase);
+            }
+        }
         if boost != 0.0 {
             want.push((reference, (boost, f64::INFINITY)));
         }
@@ -1564,6 +1616,20 @@ pub fn apply_auras(battle: &mut Battle) {
             }
             let increase = if unit.is_hero { rage / 2.0 } else { rage };
             let unit = battle.unit_mut(ally);
+            if increase != 0.0 {
+                let source = StatusSource::Name(reference.id.0.to_string());
+                let value = (t + 1.0, increase);
+                if let Some((_, old)) = unit
+                    .extra
+                    .rage_auras
+                    .iter_mut()
+                    .find(|(key, _)| *key == source)
+                {
+                    *old = value;
+                } else {
+                    unit.extra.rage_auras.push((source, value));
+                }
+            }
             unit.aura_dmg = unit.aura_dmg.max(1.0 + increase);
         }
     }
@@ -1590,7 +1656,7 @@ pub fn guardians_tick(battle: &mut Battle) {
 // heroes.py:1348-1350: defenders have no abilities or equipment in Python.
 pub fn defending_hero_ability(_battle: &mut Battle, _unit: UnitRef) {}
 
-// heroes.py:1357-1387.
+// heroes.py:1532-1571: Lavaloon bombs share troop damage and attack modifiers.
 pub fn summon_tick(battle: &mut Battle, unit: UnitRef) -> bool {
     if battle.unit(unit).name_id != Name::Lavaloon {
         return false;
@@ -1606,10 +1672,17 @@ pub fn summon_tick(battle: &mut Battle, unit: UnitRef) -> bool {
         unit.target = target;
         unit.target_kind = kind;
     }
+    let mut interval = units::attack_interval(battle, unit);
     let u = battle.unit(unit);
-    let due = u.extra.bomb_next.unwrap_or(u.spawned_at + u.interval);
+    if battle.t < u.extra.haste_attack_until {
+        interval /= u.extra.haste_attack;
+    }
+    interval /= 0.05_f64.max(effects::slow_mult(u, battle.t, false));
+    let due = u.extra.bomb_next.unwrap_or(u.spawned_at + interval);
     if battle.t >= due {
-        let (x, y, damage) = (u.x, u.y, u.dmg);
+        let (rage, _) = units::rage_boost(u, battle.t);
+        let damage = u.dmg * rage.max(u.aura_dmg).max(u.extra.bell_damage);
+        let (x, y) = (u.x, u.y);
         units::area_hit(battle, unit, x, y, 1.8, damage, true, None);
         let u = battle.unit(unit);
         battle.spawn("Lavaloon Pup", unit.team, u.x, u.y, SpawnOptions {
@@ -1619,7 +1692,7 @@ pub fn summon_tick(battle: &mut Battle, unit: UnitRef) -> bool {
             group: u.group.clone(),
             ..Default::default()
         });
-        let next = battle.t + battle.unit(unit).interval;
+        let next = battle.t + interval;
         battle.unit_mut(unit).extra.bomb_next = Some(next);
     }
     let u = battle.unit(unit);
@@ -1757,12 +1830,14 @@ pub fn stash(battle: &mut Battle, mut taken: Vec<UnitRef>, bonuses: (f64, f64, f
     battle.portal_ready_at = t;
 }
 
-// heroes.py:1271-1311: only explicitly named timers pause during Recall.
+// heroes.py:1429-1488: only explicitly named timers pause during Recall.
 fn resume_timers(unit: &mut Unit, now: f64) {
     let recalled = unit.extra.recalled.take().expect("recalled unit needs a recall time");
     let elapsed = now - recalled;
     let e = &mut unit.extra;
     for (present, deadline) in [
+        (e.paused_timers.gauntlet_until, &mut e.gauntlet_until),
+        (e.paused_timers.attack_lock_until, &mut e.attack_lock_until),
         (e.paused_timers.horse_until, &mut e.horse_until),
         (e.paused_timers.vial_until, &mut e.vial_until),
         (e.paused_timers.tome_until, &mut e.tome_until),
@@ -1776,8 +1851,20 @@ fn resume_timers(unit: &mut Unit, now: f64) {
             *deadline += elapsed;
         }
     }
-    if e.clone {
+    if let Some(until) = &mut e.boots_next {
+        *until += elapsed;
+    }
+    if e.clone || e.mirror_clone {
         e.expire_at += elapsed;
+    }
+    for (_, until) in &mut e.tomes {
+        *until += elapsed;
+    }
+    for (_, (until, _, _)) in &mut e.torches {
+        *until += elapsed;
+    }
+    for (_, until) in &mut e.revenge_cd {
+        *until += elapsed;
     }
     for (source, (_, _, until)) in &mut e.rage_effects {
         if matches!(source, StatusSource::Name(name) if name == "Rage Vial" || name == "Barbarian Puppet") {
@@ -1785,7 +1872,7 @@ fn resume_timers(unit: &mut Unit, now: f64) {
         }
     }
     for (source, (_, until)) in &mut e.haste_effects {
-        if *source == StatusSource::Name("Haste Vial".to_owned()) {
+        if matches!(source, StatusSource::Name(name) if name == "Haste Vial" || name == "Portal Pendant") {
             *until += elapsed;
         }
     }
@@ -1803,6 +1890,9 @@ fn resume_timers(unit: &mut Unit, now: f64) {
         }
         if kit.heal_until != 0.0 {
             kit.heal_until += elapsed;
+        }
+        if kit.next_meteor != 0.0 {
+            kit.next_meteor += elapsed;
         }
         if let Some(until) = &mut kit.doomed_at {
             *until += elapsed;

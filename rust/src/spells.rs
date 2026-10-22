@@ -86,8 +86,20 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
     let t = battle.t;
     let dt = battle.dt;
     let kind = f.kind.clone();
-    if matches!(kind, Tag::Poison | Tag::DefPoison | Tag::DefRage | Tag::DefBurn | Tag::Rage | Tag::Haste | Tag::Invis | Tag::DefInvis | Tag::Angry)
-        && t >= f.until {
+    if matches!(
+        kind,
+        Tag::Poison
+            | Tag::DefPoison
+            | Tag::DefRage
+            | Tag::DefBurn
+            | Tag::Burn
+            | Tag::Rage
+            | Tag::Haste
+            | Tag::Invis
+            | Tag::DefInvis
+            | Tag::Angry
+    ) && t >= f.until
+    {
         return false;
     }
     if matches!(kind, Tag::Lightning | Tag::Freeze | Tag::Poison)
@@ -125,6 +137,7 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
         Tag::Santa => santa(battle, f),
         Tag::Heal => heal(battle, f),
         Tag::Rage => rage(battle, f),
+        Tag::Burn => burn(battle, f),
         // spells.py:465-494: pool damage does not stack or gain defense difficulty.
         Tag::DefBurn => {
             if !f.extra.has_pulses || !pulses(f, t).is_empty() {
@@ -273,6 +286,123 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
         },
         _ => false,
     }
+}
+
+// spells.py:479-542: the first active pool accounts for all attacking fire.
+// The Vec is Python's insertion-ordered target dictionary: replacing a
+// stronger source retains the target's original position.
+fn burn(battle: &mut Battle, current: &mut Field) -> bool {
+    let t = battle.t;
+    if current.extra.burn_tick == Some(t) {
+        return true;
+    }
+    let mut damage_by_target: Vec<(EntityRef, f64, usize)> = Vec::new();
+    for index in 0..battle.fields.len() {
+        let field = &battle.fields[index];
+        if field.kind != Tag::Burn || !(field.started <= t && t < field.until) {
+            continue;
+        }
+        let mut field = field.clone();
+        field.extra.burn_tick = Some(t);
+        if !field.extra.has_pulses || !pulses(&mut field, t).is_empty() {
+            field.extra.victims = battle
+                .defenders_near(field.x, field.y, field.radius)
+                .into_iter()
+                .map(|unit| battle.unit(unit).id)
+                .collect();
+        }
+        let fraction = if field.extra.ramp {
+            1.0_f64.min((t - field.started) / battle.catalog.poison_ramp)
+        } else {
+            1.0
+        };
+        let damage = field.value * fraction;
+        let mut targets = Vec::new();
+        if field.extra.buildings {
+            targets.extend(
+                battle.buildings.iter()
+                    .filter(|building| {
+                        building.alive
+                            && building.edge_distance(field.x, field.y) <= field.radius
+                    })
+                    .map(|building| EntityRef::Building(building.id)),
+            );
+        }
+        if field.extra.walls {
+            targets.extend(
+                battle.walls.iter()
+                    .filter(|wall| {
+                        wall.alive && wall.edge_distance(field.x, field.y) <= field.radius
+                    })
+                    .map(|wall| EntityRef::Wall(wall.id)),
+            );
+        }
+        targets.extend(
+            battle.defenders_near(field.x, field.y, field.radius)
+                .into_iter()
+                .map(|unit| battle.unit(unit))
+                .filter(|unit| {
+                    unit.indirect_targetable(battle)
+                        && field.extra.victims.contains(&unit.id)
+                        && (!unit.flying || field.extra.hits_air)
+                })
+                .map(|unit| EntityRef::Unit(unit.reference())),
+        );
+        for target in targets {
+            let amount = if matches!(target, EntityRef::Wall(_)) {
+                damage * field.extra.wall_mult
+            } else {
+                damage
+            };
+            if let Some((_, previous, source)) = damage_by_target
+                .iter_mut()
+                .find(|(key, _, _)| *key == target)
+            {
+                if amount > *previous {
+                    *previous = amount;
+                    *source = index;
+                }
+            } else {
+                damage_by_target.push((target, amount, index));
+            }
+        }
+        // tick() owns a clone of its current slot; keep its pulse state in
+        // sync so the callback's writeback preserves this shared update.
+        if field.identity == current.identity {
+            *current = field.clone();
+        }
+        battle.fields[index] = field;
+    }
+    for (target, damage, index) in damage_by_target {
+        let field = &battle.fields[index];
+        let actor = field.extra.actor.expect("attacking burn actor");
+        let src = field.extra.src.clone().expect("attacking burn source");
+        effects::damage_source(
+            battle,
+            Some(EntityRef::Unit(actor)),
+            Tag::Attack,
+            |battle| {
+                if let EntityRef::Unit(unit) = target {
+                    battle.hit_unit(
+                        unit,
+                        damage * battle.dt,
+                        Some(&src),
+                        "normal",
+                        Some(EntityRef::Unit(actor)),
+                    );
+                } else {
+                    let dealt = battle.hit_building(
+                        target,
+                        damage * battle.dt,
+                        Some(&src),
+                        "normal",
+                    );
+                    battle.unit_mut(actor).damage_dealt += dealt;
+                }
+            },
+        );
+    }
+    true
 }
 
 // spells.py:789-795: one persistent source identity per field.
@@ -450,7 +580,7 @@ pub fn poison_states(battle: &mut Battle) {
     let mut active: Vec<(UnitRef, f64, String, f64, f64)> = Vec::new();
     for state in live {
         let fraction = if state.ramp {
-            1.0_f64.min(exposure.iter().find(|(id, _)| *id == state.unit.id).expect("poison exposure").1 / 4.0)
+            1.0_f64.min(exposure.iter().find(|(id, _)| *id == state.unit.id).expect("poison exposure").1 / battle.catalog.poison_ramp)
         } else {
             1.0
         };
@@ -669,7 +799,13 @@ pub fn clone_expiry(battle: &mut Battle) {
 }
 
 // spells.py:27-43,103-254. The stock's already resolved level wins.
-pub fn cast_effect(battle: &mut Battle, name: &str, x: f64, y: f64, level: Option<crate::stats::Level>) {
+pub fn cast_effect(
+    battle: &mut Battle,
+    name: &str,
+    x: f64,
+    y: f64,
+    level: Option<crate::stats::Level>,
+) -> usize {
     use crate::stats::{self, Level};
     let level = level.filter(|lv| *lv != Level::Int(0)).or_else(|| {
         if let Plan::Playbook(p) = &battle.plan {
@@ -846,7 +982,9 @@ pub fn cast_effect(battle: &mut Battle, name: &str, x: f64, y: f64, level: Optio
     };
     f.started = t;
     f.extra.name = Some(name.to_owned());
+    let index = battle.fields.len();
     battle.fields.push(f);
+    index
 }
 
 // spells.py:1102-1114.

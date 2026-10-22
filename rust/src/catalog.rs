@@ -136,6 +136,7 @@ impl UnitSpec {
 #[derive(Clone, Copy, Debug)]
 pub struct UnitNumbers {
     pub hp: f64,
+    /// specs.py:546-557: exported per-hit damage already includes DPS correction.
     pub dmg: f64,
     pub dps: f64,
     pub interval: f64,
@@ -201,7 +202,7 @@ pub struct Catalog {
     pub building_types: Vec<(String, BuildingType)>,
     pub trap_names: Vec<(String, String)>,
     pub trap_sizes: Vec<(String, usize)>,
-    /// units.py _new_target_delays: NewTargetAttackDelay seconds per unit.
+    /// units.py _new_target_delays: seconds per unit, including summon aliases.
     pub new_target_delays: HashMap<String, f64>,
     /// specs.py _game_ranges: AttackRange tiles per unit.
     pub game_ranges: HashMap<String, f64>,
@@ -211,6 +212,8 @@ pub struct Catalog {
     pub game_data: HashMap<String, HashMap<String, Vec<Json>>>,
     /// units.py warden_weights(): data/warden-weights.json as read.
     pub warden_weights: Json,
+    /// spells.py:22: shared field-age/exposure ramp duration.
+    pub poison_ramp: f64,
     pub world: usize,
     pub margin: f64,
     /// Static setup tables exported from the Python reference after each patch.
@@ -238,6 +241,7 @@ impl Catalog {
             "trap_sizes",
             "new_target_delays",
             "warden_weights",
+            "poison_ramp",
             "game_ranges",
             "pet_spawn_ranges",
             "game_data",
@@ -322,6 +326,7 @@ impl Catalog {
                 })
                 .collect(),
             warden_weights: n.field("warden_weights").value.clone(),
+            poison_ramp: n.field("poison_ramp").number(),
             world: n.field("world").usize(),
             margin: n.field("margin").number(),
             setup: n.optional("setup").map_or(Json::Null, |v| v.value.clone()),

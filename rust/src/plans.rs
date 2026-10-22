@@ -1,6 +1,8 @@
 //! Ports plans.py:140-157,227-229,423-463,581-598,713-721,791-1047.
 //! Python constructs the inventory; runtime dictionaries retain insertion order.
 
+use std::rc::Rc;
+
 use crate::geom::{py_cos, py_hypot, py_sin, round_half_even};
 use crate::heroes::{self, HeroLoadout};
 use crate::json::Json;
@@ -134,6 +136,61 @@ pub struct SpellStock {
     pub level: Option<Level>,
 }
 
+#[derive(Clone, Copy, PartialEq)]
+enum ZapCast {
+    Pending(usize),
+    Field(usize),
+}
+
+struct ZapTarget {
+    id: BuildingId,
+    hp: f64,
+    eq_hits: usize,
+}
+
+// plans.py:930-945: estimate damage without changing any live battle state.
+fn account_zap(
+    battle: &Battle,
+    field: &Field,
+    hits: f64,
+    cast: ZapCast,
+    targets: &mut [ZapTarget],
+    cast_hits: &mut Vec<(ZapCast, BuildingId, usize)>,
+) {
+    for target in targets {
+        let building = battle.building(target.id);
+        if building.edge_distance(field.x, field.y) > field.radius {
+            continue;
+        }
+        if field.kind == Tag::Lightning {
+            target.hp -= field.value;
+        } else {
+            let count = if let Some((_, _, count)) = cast_hits
+                .iter()
+                .find(|(key, id, _)| *key == cast && *id == target.id)
+            {
+                *count
+            } else {
+                let previous = field
+                    .extra
+                    .quake_hits
+                    .iter()
+                    .find(|(key, _)| *key == EntityRef::Building(target.id))
+                    .map(|(_, count)| *count);
+                let count = if let Some(count) = previous {
+                    count
+                } else {
+                    target.eq_hits += 1;
+                    target.eq_hits
+                };
+                cast_hits.push((cast, target.id, count));
+                count
+            };
+            target.hp -= building.max_hp * field.value * hits / (2 * count - 1) as f64;
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct AttackPlan {
     pub angle: f64,
@@ -157,6 +214,8 @@ pub struct AttackPlan {
     pub freeze_first: SharedVec<String>,
     pub zap_ad: (i64, i64),
     pub zap_done: bool,
+    pub zap_left: Option<[i64; 2]>,
+    pub fallback_quakes: SharedVec<(f64, f64)>,
     pub cc_released: bool,
     pub siege_donated: bool,
     pub main_at: f64,
@@ -227,6 +286,18 @@ impl AttackPlan {
             freeze_first: p.at("freeze_first").arr().iter().map(|v| v.str().to_owned()).collect(),
             zap_ad: (p.at("zap_ad").arr()[0].i64(), p.at("zap_ad").arr()[1].i64()),
             zap_done: flag(p, "_zap_done"),
+            zap_left: p
+                .get("_zap_left")
+                .map(|v| [v.arr()[0].i64(), v.arr()[1].i64()]),
+            fallback_quakes: p.get("_fallback_quakes").map_or_else(
+                SharedVec::default,
+                |v| {
+                    v.arr()
+                        .iter()
+                        .map(|point| (point.arr()[0].f64(), point.arr()[1].f64()))
+                        .collect()
+                },
+            ),
             cc_released: flag(p, "_cc_released"),
             siege_donated: flag(p, "siege_donated"),
             main_at: number(p, "_main_at", 0.0),
@@ -291,7 +362,7 @@ impl AttackPlan {
         y: f64,
         level: Option<&Level>,
         origin: Option<&str>,
-    ) {
+    ) -> usize {
         let index = self.stock.iter().position(|s| {
             s.name == name && s.remaining > 0
                 && origin.is_none_or(|origin| s.origin == origin)
@@ -301,17 +372,18 @@ impl AttackPlan {
             .level
             .clone()
             .expect("live spell stock needs its exported level");
-        spells::cast_effect(battle, name, x, y, Some(selected));
+        let field = spells::cast_effect(battle, name, x, y, Some(selected));
         self.stock[index].remaining -= 1;
         let key = spell_key(name).expect("spell name");
         let remaining = count(&self.spells, key) - 1;
         set(&mut self.spells, key.to_owned(), remaining);
         battle.deployed_housing += 5 * battle.catalog.stats.attrs(name).at("housing").i64();
         self.cast_log.push((round_decimal(battle.t, 1), key.to_owned()));
+        field
     }
 
-    pub fn use_spell(&mut self, battle: &mut Battle, kind: &str, x: f64, y: f64) {
-        self.cast_spell(battle, spell_name(kind), x, y, None, None);
+    pub fn use_spell(&mut self, battle: &mut Battle, kind: &str, x: f64, y: f64) -> usize {
+        self.cast_spell(battle, spell_name(kind), x, y, None, None)
     }
 
     // plans.py:581-598. Jitter consumes x before y, even when deployment relocates.
@@ -499,43 +571,102 @@ impl AttackPlan {
         best.map(|(_, _, id)| id)
     }
 
-    // plans.py:852-865.
-    pub fn zap(&mut self, battle: &mut Battle, allowed: &impl Fn(&Self, &str) -> bool) {
-        self.zap_done = true;
+    // plans.py:911-975: budget falling bottles and unresolved quake impacts.
+    pub fn zap(
+        &mut self,
+        battle: &mut Battle,
+        allowed: &impl Fn(&Self, &str) -> bool,
+        single_cast: bool,
+    ) {
+        if self.zap_done {
+            return;
+        }
+        self.zap_left.get_or_insert([self.zap_ad.0, self.zap_ad.1]);
         let (ex, ey) = edge_point(battle, self.angle, 0.0);
-        let mut best = None;
-        let mut closest = f64::INFINITY;
-        for b in &battle.buildings {
-            if b.alive && b.key == "ad" {
-                let d = b.dist(ex, ey);
-                if best.is_none() || d < closest {
-                    best = Some((b.x, b.y));
-                    closest = d;
+        let mut targets: Vec<_> = battle
+            .buildings
+            .iter()
+            .filter(|b| b.alive && b.key == "ad")
+            .map(|b| ZapTarget {
+                id: b.id,
+                hp: b.hp,
+                eq_hits: b.eq_hits,
+            })
+            .collect();
+        targets.sort_by(|a, b| {
+            battle.building(a.id).dist(ex, ey)
+                .total_cmp(&battle.building(b.id).dist(ex, ey))
+        });
+        if targets.is_empty() {
+            self.zap_done = true;
+            return;
+        }
+        let mut cast_hits = Vec::new();
+        for pending in &battle.pending {
+            if let Some(shared) = &pending.extra.quake {
+                let field = shared.borrow();
+                if field.kind == Tag::Quake {
+                    let cast = ZapCast::Pending(Rc::as_ptr(shared) as usize);
+                    account_zap(battle, &field, 1.0, cast, &mut targets, &mut cast_hits);
                 }
             }
         }
-        let Some((x, y)) = best else {
-            return;
-        };
-        for _ in 0..self.zap_ad.1 {
-            if allowed(self, "eq") {
-                self.use_spell(battle, "eq", x, y);
+        for (index, field) in battle.fields.iter().enumerate() {
+            if matches!(field.kind, Tag::Lightning | Tag::Quake) {
+                let hits = if field.kind == Tag::Quake { 5.0 } else { 1.0 };
+                account_zap(
+                    battle,
+                    field,
+                    hits,
+                    ZapCast::Field(index),
+                    &mut targets,
+                    &mut cast_hits,
+                );
             }
         }
-        for _ in 0..self.zap_ad.0 {
-            if allowed(self, "lightning") {
-                self.use_spell(battle, "lightning", x, y);
+        while self.zap_left.expect("zap budget").iter().any(|n| *n != 0) {
+            let Some(target) = targets.iter().find(|target| target.hp > 1e-9) else {
+                break;
+            };
+            let (index, kind) = if self.zap_left.expect("zap budget")[1] != 0 {
+                (1, "eq")
+            } else {
+                (0, "lightning")
+            };
+            if !allowed(self, kind) {
+                self.zap_left.as_mut().expect("zap budget")[index] = 0;
+                continue;
+            }
+            let b = battle.building(target.id);
+            let (x, y) = (b.x, b.y);
+            let field_index = self.use_spell(battle, kind, x, y);
+            self.zap_left.as_mut().expect("zap budget")[index] -= 1;
+            let hits = if kind == "eq" { 5.0 } else { 1.0 };
+            account_zap(
+                battle,
+                &battle.fields[field_index],
+                hits,
+                ZapCast::Field(field_index),
+                &mut targets,
+                &mut cast_hits,
+            );
+            if single_cast {
+                self.zap_done = self.zap_left.expect("zap budget").iter().all(|n| *n == 0)
+                    || targets.iter().all(|target| target.hp <= 1e-9);
+                return;
             }
         }
+        self.zap_done = true;
     }
 
-    // plans.py:899-923: breakers precede Jump and Earthquake.
+    // plans.py:1007-1040: breakers precede Jump and paced Earthquakes.
     fn breach(
         &mut self,
         battle: &mut Battle,
         units: &[UnitRef],
         have: &impl Fn(&Self, &str) -> bool,
         inventory: Option<&mut Vec<(String, i64)>>,
+        single_cast: bool,
     ) {
         let stuck: Vec<_> = units.iter()
             .copied()
@@ -579,27 +710,36 @@ impl AttackPlan {
             self.use_spell(battle, "jump", w.x, w.y);
             self.cast_log.push((round_decimal(battle.t, 1), "breach".to_owned()));
         } else if count(&self.spells, "eq") >= 4 {
-            for _ in 0..4 {
+            if single_cast {
+                self.fallback_quakes = vec![(w.x, w.y); 3].into();
+            }
+            let casts = if single_cast { 1 } else { 4 };
+            for _ in 0..casts {
                 self.use_spell(battle, "eq", w.x, w.y);
             }
             self.cast_log.push((round_decimal(battle.t, 1), "breach".to_owned()));
         }
     }
 
-    // plans.py:925-989. 'have' implements PlaybookPlan's fallback reservations.
+    // plans.py:1042-1131. 'have' implements PlaybookPlan's fallback reservations.
     pub fn generic_spells(
         &mut self,
         battle: &mut Battle,
         units: &[UnitRef],
         have: &impl Fn(&Self, &str) -> bool,
         inventory: Option<&mut Vec<(String, i64)>>,
+        single_cast: bool,
     ) {
         if units.is_empty() {
             return;
         }
         let t = battle.t;
         if t - self.last("breach") > 3.0 {
-            self.breach(battle, units, have, inventory);
+            let before = self.cast_log.len();
+            self.breach(battle, units, have, inventory, single_cast);
+            if single_cast && self.cast_log.len() > before {
+                return;
+            }
         }
         let (cx, cy) = centroid(battle, units);
         let avg_hp = units.iter().map(|r| {
@@ -640,6 +780,9 @@ impl AttackPlan {
                     }
                     let (x, y) = (b.x, b.y);
                     self.use_spell(battle, "freeze", x, y);
+                    if single_cast {
+                        return;
+                    }
                     break;
                 }
             }
@@ -655,6 +798,9 @@ impl AttackPlan {
                     .map(|(b, _)| battle.building(*b).y)
                     .sum::<f64>() / hot.len() as f64;
                 self.use_spell(battle, "totem", cx + (fx - cx) * 0.5, cy + (fy - cy) * 0.5);
+                if single_cast {
+                    return;
+                }
             }
         }
         if have(self, "overgrowth") {
@@ -677,6 +823,9 @@ impl AttackPlan {
                     let b = battle.building(id);
                     let (x, y) = (b.x, b.y);
                     self.use_spell(battle, "overgrowth", x, y);
+                    if single_cast {
+                        return;
+                    }
                 }
             }
         }
@@ -684,11 +833,17 @@ impl AttackPlan {
             .max((units.len() as f64 * self.p("rage_engaged")) as usize)
             && t - self.last("rage") > self.p("rage_gap") {
             self.use_spell(battle, "rage", cx, cy);
+            if single_cast {
+                return;
+            }
         }
         if have(self, "heal")
             && avg_hp < self.p("heal_hp")
             && t - self.last("heal") > 6.0 {
             self.use_spell(battle, "heal", cx, cy);
+            if single_cast {
+                return;
+            }
         }
         if have(self, "invis")
             && t - self.last("invis") > self.p("invis_gap") {
@@ -699,6 +854,9 @@ impl AttackPlan {
             }).count();
             if avg_hp < self.p("invis_hp") || hot as f64 >= self.p("invis_hot") {
                 self.use_spell(battle, "invis", cx, cy);
+                if single_cast {
+                    return;
+                }
             }
         }
         if have(self, "recall")
@@ -708,6 +866,9 @@ impl AttackPlan {
                 .any(|b| b.alive && b.counted && b.edge_distance(cx, cy) < 7.0);
             if units.len() >= 6 && (!work || avg_hp < self.p("recall_hp")) {
                 self.use_spell(battle, "recall", cx, cy);
+                if single_cast {
+                    return;
+                }
             }
         }
         if have(self, "clone")
@@ -720,15 +881,24 @@ impl AttackPlan {
             if !big.is_empty() {
                 let (x, y) = centroid(battle, &big);
                 self.use_spell(battle, "clone", x, y);
+                if single_cast {
+                    return;
+                }
             }
         }
         if have(self, "haste")
             && t - self.main_at > self.p("haste_after")
             && t - self.last("haste") > self.p("haste_gap") {
             self.use_spell(battle, "haste", cx, cy);
+            if single_cast {
+                return;
+            }
         }
         if have(self, "iceblock") && avg_hp < 0.45 && t - self.last("iceblock") > 8.0 {
             self.use_spell(battle, "iceblock", cx, cy);
+            if single_cast {
+                return;
+            }
         }
         if have(self, "poison") {
             let foes: Vec<_> = battle.defenders_pool()
@@ -740,12 +910,15 @@ impl AttackPlan {
                 let x = foes.iter().map(|r| battle.unit(*r).x).sum::<f64>() / foes.len() as f64;
                 let y = foes.iter().map(|r| battle.unit(*r).y).sum::<f64>() / foes.len() as f64;
                 self.use_spell(battle, "poison", x, y);
+                if single_cast {
+                    return;
+                }
             }
         }
-        self.learned_plays(battle, units, cx, cy, have);
+        self.learned_plays(battle, units, cx, cy, have, single_cast);
     }
 
-    // plans.py:991-1034: optional policy branches are preserved in full.
+    // plans.py:1133-1190: learned casts share the one-action fallback limit.
     fn learned_plays(
         &mut self,
         battle: &mut Battle,
@@ -753,6 +926,7 @@ impl AttackPlan {
         cx: f64,
         cy: f64,
         have: &impl Fn(&Self, &str) -> bool,
+        single_cast: bool,
     ) {
         let t = battle.t;
         if self.p("angry_min") > 0.0
@@ -768,6 +942,9 @@ impl AttackPlan {
             if astray.len() as f64 >= self.p("angry_min") {
                 let (x, y) = centroid(battle, &astray);
                 self.use_spell(battle, "angry", x, y);
+                if single_cast {
+                    return;
+                }
             }
         }
         if self.p("skeleton_on") > 0.5
@@ -779,6 +956,9 @@ impl AttackPlan {
                 if threat(&b.key, 0.0) >= 5.0 && w.target.is_some() && w.multi.is_empty() {
                     let (x, y) = (b.x + (cx - b.x) * 0.25, b.y + (cy - b.y) * 0.25);
                     self.use_spell(battle, "skeleton", x, y);
+                    if single_cast {
+                        return;
+                    }
                     break;
                 }
             }
@@ -795,6 +975,9 @@ impl AttackPlan {
                     .map(|(b, _)| battle.building(*b).y)
                     .sum::<f64>() / hot.len() as f64;
                 self.use_spell(battle, "bat", x, y);
+                if single_cast {
+                    return;
+                }
             }
         }
         let d_core = self.p("eq_core_dist");
@@ -805,10 +988,17 @@ impl AttackPlan {
             if let Some(th) = battle.th.map(|id| battle.building(id)).filter(|b| b.alive) {
                 if th.dist(cx, cy) <= d_core + 4.0 {
                     let (x, y) = (cx + (th.x - cx) * 0.6, cy + (th.y - cy) * 0.6);
-                    for _ in 0..n_eq {
+                    if single_cast {
+                        self.fallback_quakes = vec![(x, y); (n_eq - 1).max(0) as usize].into();
+                    }
+                    let casts = if single_cast { 1 } else { n_eq };
+                    for _ in 0..casts {
                         self.use_spell(battle, "eq", x, y);
                     }
                     self.cast_log.push((round_decimal(t, 1), "eq_core".to_owned()));
+                    if single_cast {
+                        return;
+                    }
                 }
             }
         }

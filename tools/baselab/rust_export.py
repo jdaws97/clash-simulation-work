@@ -61,7 +61,16 @@ def dump(obj, depth=0):
 # ------------------------------------------------------------------ catalog
 def catalog():
     from baselab import mechanics
-    from baselab.engine import battle, defense, heroes, playbook, specs, stats, traps
+    from baselab.engine import (
+        battle,
+        defense,
+        heroes,
+        playbook,
+        specs,
+        spells,
+        stats,
+        traps,
+    )
     from baselab.engine import units as engine_units
 
     reg = stats.registry()
@@ -119,6 +128,7 @@ def catalog():
         # tables the engine reads from data files mid-battle
         "new_target_delays": engine_units._new_target_delays(),
         "warden_weights": engine_units.warden_weights(),
+        "poison_ramp": spells.POISON_RAMP,
         "game_ranges": specs._game_ranges(),
         "pet_spawn_ranges": pet_spawn_ranges,
         "trap_names": dump(mechanics.TRAP_NAMES),

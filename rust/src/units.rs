@@ -1958,39 +1958,26 @@ pub fn attack_targets(battle: &mut Battle, unit: UnitRef, walls: bool) -> Vec<En
     targets
 }
 
-// units.py:1383-1392: generic frost accounting; callers exclude walls.
+// units.py:1502-1514: strongest active frost, with independent expiries.
+pub fn frost_mult(effects: &[(f64, f64)], t: f64) -> f64 {
+    effects
+        .iter()
+        .filter(|(_, until)| t < *until)
+        .map(|(factor, _)| *factor)
+        .reduce(f64::min)
+        .unwrap_or(1.0)
+}
+
+// units.py:1517-1530: frost remains separate from all other slow sources.
 pub fn frost(battle: &mut Battle, target: EntityRef, factor: f64, seconds: f64) {
     let t = battle.t;
-    match target {
-        EntityRef::Building(id) => {
-            let target = battle.building_mut(id);
-            let current = if t < target.atk_slow_until {
-                target.atk_slow
-            } else {
-                1.0
-            };
-            target.atk_slow = current.min(factor);
-            target.atk_slow_until = target.atk_slow_until.max(t + seconds);
-        }
-        EntityRef::Unit(id) => {
-            let target = battle.unit_mut(id);
-            let current = if t < target.atk_slow_until {
-                target.atk_slow
-            } else {
-                1.0
-            };
-            target.atk_slow = current.min(factor);
-            target.atk_slow_until = target.atk_slow_until.max(t + seconds);
-            let current = if t < target.move_slow_until {
-                target.move_slow
-            } else {
-                1.0
-            };
-            target.move_slow = current.min(factor);
-            target.move_slow_until = target.move_slow_until.max(t + seconds);
-        }
+    let active = match target {
+        EntityRef::Building(id) => &mut battle.building_mut(id).extra.frost_effects,
+        EntityRef::Unit(id) => &mut battle.unit_mut(id).extra.frost_effects,
         _ => panic!("frost requires a building or unit"),
-    }
+    };
+    active.retain(|(_, until)| t < *until);
+    active.push((factor, t + seconds));
 }
 
 // units.py:1395-1417.
@@ -2601,42 +2588,80 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
             pending.extra.meteor_small
         );
     }
-    if mode == "leap" {
-        if battle.unit(unit).name == "Firemite" && unit.team == Team::Def {
-            // units.py:2015-2037: resolve the defensive projectile's burn spell.
+    let u = battle.unit(unit);
+    if (mode == "leap" && u.name_id == Name::Firemite) || u.name_id == Name::FlameFlinger {
+        // units.py:2040-2094: each impact resolves its projectile's HitSpell.
+        let projectile = if unit.team == Team::Def && u.name_id == Name::Firemite {
             let row = battle.catalog.game_data(
                 "characters",
                 "Firemite Spawn_DEF",
-                battle.unit(unit).level.as_ref(),
+                u.level.as_ref(),
             );
-            let projectile = battle.catalog.game_data(
+            battle.catalog.game_data(
                 "projectiles",
                 row.at("Projectile").str(),
                 None,
-            );
-            let level = Level::Int(game_int(projectile, "HitSpellLevel", 0));
-            let spell = battle.catalog.game_data(
-                "spells",
-                projectile.at("HitSpell").str(),
-                Some(&level),
-            );
-            let hits = game_int(spell, "NumberOfHits", 0);
-            let gap = game_int(spell, "TimeBetweenHitsMS", 0) as f64 / 1000.0;
-            let radius = game_int(spell, "Radius", 0) as f64 / 100.0;
-            let damage = spell
-                .at("PoisonDPS")
-                .str()
-                .parse::<f64>()
-                .expect("Firemite burn DPS");
-            let mut field = Field::new("def_burn", x, y, radius, battle.t + hits as f64 * gap);
-            field.team = Team::Def;
-            field.value = damage;
-            field.extra.pulses = hits as usize;
-            field.extra.has_pulses = true;
-            field.extra.gap = Some(gap);
-            field.started = battle.t;
-            battle.fields.push(field);
-        }
+            )
+        } else {
+            projectile_data(battle, u)
+        };
+        let level = Level::Int(game_int(projectile, "HitSpellLevel", 0));
+        let spell = battle.catalog.game_data(
+            "spells",
+            projectile.at("HitSpell").str(),
+            Some(&level),
+        );
+        let hits = game_int(spell, "NumberOfHits", 0);
+        let gap = game_int(spell, "TimeBetweenHitsMS", 0) as f64 / 1000.0;
+        let radius = game_int(spell, "Radius", 0) as f64 / 100.0;
+        let damage = spell
+            .at("PoisonDPS")
+            .str()
+            .parse::<f64>()
+            .expect("burn DPS");
+        let strength = if unit.team == Team::Atk {
+            u.extra.strength
+        } else {
+            1.0
+        };
+        let kind = if unit.team == Team::Atk {
+            "burn"
+        } else {
+            "def_burn"
+        };
+        let mut field = Field::new(kind, x, y, radius, battle.t + hits as f64 * gap);
+        field.team = unit.team;
+        field.value = damage * strength;
+        field.extra.pulses = hits as usize;
+        field.extra.has_pulses = true;
+        field.extra.gap = Some(gap);
+        field.extra.ramp = spell
+            .get("PoisonIncreaseSlowly")
+            .is_some_and(|v| v.str() == "TRUE");
+        field.extra.hits_air = spell
+            .get("PoisonAffectAir")
+            .is_some_and(|v| v.str() == "TRUE");
+        field.extra.hits_ground = true;
+        field.extra.buildings = unit.team == Team::Atk;
+        field.extra.walls = !spell
+            .get("ImmunityWalls")
+            .is_some_and(|v| v.str() == "TRUE");
+        field.extra.wall_mult = if spell
+            .get("PreferredTarget")
+            .is_some_and(|v| v.str() == "Wall")
+        {
+            spell.get("PreferredTargetDamageMod").map_or(1.0, |v| {
+                v.str().parse::<f64>().expect("wall damage multiplier")
+            })
+        } else {
+            1.0
+        };
+        field.extra.actor = Some(unit);
+        field.extra.src = Some(u.source.clone());
+        field.started = battle.t;
+        battle.fields.push(field);
+    }
+    if mode == "leap" {
         let u = battle.unit_mut(unit);
         u.x = x;
         u.y = y;
