@@ -221,7 +221,7 @@ impl<'a> Node<'a> {
 fn known_type(name: &str) -> bool {
     matches!(name, "Building" | "Wall" | "Unit" | "UnitSpec" | "Weapon" | "Trap"
         | "Field" | "Pending" | "Builder" | "Deployment" | "Stage" | "BuildingType"
-        | "HeroLoadout" | "Kit")
+        | "HeroLoadout" | "Kit" | "PlaybookPlan" | "SpellStock" | "Wave")
 }
 
 fn status_source(key: &str) -> StatusSource {
@@ -375,12 +375,8 @@ impl Resolver {
                     return Value::Ref(self.reference(n));
                 }
                 if let Some(tag) = n.optional("$type") {
-                    match tag.string().as_str() {
-                        "Building" | "Wall" | "Unit" | "UnitSpec" | "Weapon" | "Trap"
-                        | "Field" | "Pending" | "Builder" | "Deployment" | "Stage"
-                        | "BuildingType" | "HeroLoadout" | "Kit" => {
-                        }
-                        _ => tag.fail("unknown $type"),
+                    if !known_type(&tag.string()) {
+                        tag.fail("unknown $type");
                     }
                 }
                 Value::Map(self.map(n))
@@ -552,14 +548,26 @@ impl Resolver {
             match key.as_str() {
                 "boots_next" => extra.boots_next = v.optional_number(),
                 "spear_base_range" => extra.spear_base_range = v.optional_number(),
-                "equipment_invisible_until" => extra.equipment_invisible_until = v.number(),
-                "tome_until" => extra.tome_until = v.number(),
-                "torch_until" => extra.torch_until = v.number(),
+                "equipment_invisible_until" => {
+                    extra.equipment_invisible_until = v.number();
+                    extra.paused_timers.equipment_invisible_until = true;
+                }
+                "tome_until" => {
+                    extra.tome_until = v.number();
+                    extra.paused_timers.tome_until = true;
+                }
+                "torch_until" => {
+                    extra.torch_until = v.number();
+                    extra.paused_timers.torch_until = true;
+                }
                 "torch_speed" => extra.torch_speed = v.number(),
                 "torch_reduction" => extra.torch_reduction = v.number(),
                 "fire_heart_done" => extra.fire_heart_done = v.boolean(),
                 "egg" => extra.egg = v.boolean(),
-                "phoenix_until" => extra.phoenix_until = v.number(),
+                "phoenix_until" => {
+                    extra.phoenix_until = v.number();
+                    extra.paused_timers.phoenix_until = true;
+                }
                 "fox_next" => extra.fox_next = v.number(),
                 "hero_present" => extra.hero_present = v.boolean(),
                 "owner_defeated" => extra.owner_defeated = v.boolean(),
@@ -576,15 +584,27 @@ impl Resolver {
                 "next_engage" => extra.next_engage = v.number(),
                 "next_retarget" => extra.next_retarget = v.number(),
                 "tornado_wall_until" => extra.tornado_wall_until = v.number(),
-                "angry_until" => extra.angry_until = v.number(),
+                "angry_until" => {
+                    extra.angry_until = v.number();
+                    extra.paused_timers.angry_until = true;
+                }
                 "jump_until" => extra.jump_until = v.number(),
-                "horse_until" => extra.horse_until = v.number(),
+                "horse_until" => {
+                    extra.horse_until = v.number();
+                    extra.paused_timers.horse_until = true;
+                }
                 "horse_speed" => extra.horse_speed = v.number(),
                 "horse_interval" => extra.horse_interval = v.number(),
                 "horse_attack" => extra.horse_attack = v.number(),
-                "haste_attack_until" => extra.haste_attack_until = v.number(),
+                "haste_attack_until" => {
+                    extra.haste_attack_until = v.number();
+                    extra.paused_timers.haste_attack_until = true;
+                }
                 "haste_attack" => extra.haste_attack = v.number(),
-                "vial_until" => extra.vial_until = v.number(),
+                "vial_until" => {
+                    extra.vial_until = v.number();
+                    extra.paused_timers.vial_until = true;
+                }
                 "vial_bonus" => extra.vial_bonus = v.number(),
                 "gauntlet_until" => extra.gauntlet_until = v.number(),
                 "gauntlet_radius" => extra.gauntlet_radius = v.number(),
@@ -607,7 +627,8 @@ impl Resolver {
                 "facing" => extra.facing = v.pair(),
                 "heading" => extra.heading = v.optional_pair(),
                 "deployment_source" => extra.deployment_source = v.optional_string(),
-                "recalled" => extra.recalled = Some(self.value(v)),
+                "recalled" => extra.recalled = Some(v.number()),
+                "portal" => extra.portal = Some(v.triple()),
                 "last_damage_source" => extra.last_damage_source = self.optional_ref(v),
                 "pushed_at" => extra.pushed_at = v.optional_number(),
                 "patrol_state" => extra.patrol_state = v.optional_string(),
@@ -762,6 +783,15 @@ impl Resolver {
                 "victims" => extra.victims = v.array().iter().map(|n| UnitId(n.usize())).collect(),
                 "boost_time" => extra.boost_time = v.number(),
                 "defense_damage" => extra.defense_damage = v.optional_number(),
+                "name" => extra.name = v.optional_string(),
+                "troop" => extra.troop = v.number(),
+                "time" => extra.time = v.number(),
+                "freeze" => extra.freeze = v.optional_number(),
+                "town_hall" => extra.town_hall = v.number(),
+                "unit" => extra.unit = v.optional_string(),
+                "first" => extra.first = Some(v.usize()),
+                "spots" => extra.spots = Some(v.array().iter().map(Node::pair).collect()),
+                "hero" => extra.hero = Some(self.unit_ref(v)),
                 _ => extra.unknown.push((key, self.value(v))),
             }
         }
@@ -1213,6 +1243,7 @@ impl Resolver {
         n.require_type("Field");
         n.keys(&["kind", "x", "y", "radius", "until", "team", "value", "extra", "started"]);
         let result = Field {
+            identity: 0,
             kind: n.field("kind").string(),
             x: n.field("x").number(),
             y: n.field("y").number(),
@@ -1386,78 +1417,81 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         root.field("deployments").fail("deployments must retain Python's stable time order");
     }
     let p = root.field("plan");
-    if root.field("plan_type").string() != "Stage" {
-        root.field("plan_type").fail("unsupported plan (TASK 1a supports Stage)");
-    }
-    p.require_type("Stage");
-    p.keys(&[
-        "drops",
-        "ticks",
-        "town_hall",
-        "strength",
-        "loadouts",
-        "revives_left",
-        "cc_troops",
-        "cc_levels",
-        "_cc_released",
-        "troop_levels",
-        "hero_levels",
-        "equipment_levels",
-        "pet_levels",
-        "clan_castle_level",
-        "auto_ability_on_ko",
-        "observed",
-    ]);
-    if let Some(cargo) = p.optional("cc_troops") {
-        // Battle construction already normalizes this inventory into _onboard_cargo.
-        for entry in cargo.array() {
-            resolver.value(entry);
+    let plan = match root.field("plan_type").string().as_str() {
+        "PlaybookPlan" => Plan::Playbook(Box::new(crate::playbook::PlaybookPlan::load(p.value))),
+        "Stage" => {
+            p.require_type("Stage");
+            p.keys(&[
+                "drops",
+                "ticks",
+                "town_hall",
+                "strength",
+                "loadouts",
+                "revives_left",
+                "cc_troops",
+                "cc_levels",
+                "_cc_released",
+                "troop_levels",
+                "hero_levels",
+                "equipment_levels",
+                "pet_levels",
+                "clan_castle_level",
+                "auto_ability_on_ko",
+                "observed",
+            ]);
+            if let Some(cargo) = p.optional("cc_troops") {
+                // Battle construction already normalizes this inventory into _onboard_cargo.
+                for entry in cargo.array() {
+                    resolver.value(entry);
+                }
+            }
+            if let Some(levels) = p.optional("cc_levels") {
+                for (_, level) in levels.object() {
+                    let _ = level.optional_level();
+                }
+            }
+            for drop in p.field("drops").array() {
+                let parts = drop.tuple(5);
+                parts[0].number();
+                parts[1].string();
+                parts[2].number();
+                parts[3].number();
+                let _ = parts[4].optional_level();
+            }
+            if !p.field("ticks").array().is_empty() || p.field("revives_left").integer() != 0 {
+                p.fail("stage 4: Stage callbacks and revives are unsupported");
+            }
+            Plan::Stage {
+                deployments: deployments.clone(),
+                town_hall: p.field("town_hall").integer(),
+                strength: p.field("strength").number(),
+                troop_levels: p
+                    .optional("troop_levels")
+                    .map_or_else(Vec::new, |levels| {
+                        levels
+                            .object()
+                            .into_iter()
+                            .map(|(name, level)| (name, level.optional_level()))
+                            .collect()
+                    }),
+                cc_released: p.optional("_cc_released").is_some_and(|n| n.boolean()),
+                loadouts: p.field("loadouts").object().into_iter().map(|(name, n)| {
+                    n.require_type("HeroLoadout");
+                    n.keys(&["hero", "equipment", "pet"]);
+                    (name, crate::heroes::HeroLoadout {
+                        hero: n.field("hero").string(),
+                        equipment: n.field("equipment").array().iter().map(Node::string).collect(),
+                        pet: n.field("pet").optional_string(),
+                    })
+                }).collect(),
+                hero_levels: optional_levels(p.optional("hero_levels")),
+                equipment_levels: optional_levels(p.optional("equipment_levels")),
+                pet_levels: optional_levels(p.optional("pet_levels")),
+                auto_ability_on_ko: p.optional("auto_ability_on_ko").map_or(true, |n| n.boolean()),
+                observed: p.optional("observed").is_some_and(|n| n.boolean()),
+            }
         }
-    }
-    if let Some(levels) = p.optional("cc_levels") {
-        for (_, level) in levels.object() {
-            let _ = level.optional_level();
-        }
-    }
-    for drop in p.field("drops").array() {
-        let parts = drop.tuple(5);
-        parts[0].number();
-        parts[1].string();
-        parts[2].number();
-        parts[3].number();
-        let _ = parts[4].optional_level();
-    }
-    if !p.field("ticks").array().is_empty() || p.field("revives_left").integer() != 0 {
-        p.fail("stage 4: Stage callbacks and revives are unsupported");
-    }
-    let plan = Plan::Stage {
-        deployments: deployments.clone(),
-        town_hall: p.field("town_hall").integer(),
-        strength: p.field("strength").number(),
-        troop_levels: p
-            .optional("troop_levels")
-            .map_or_else(Vec::new, |levels| {
-                levels
-                    .object()
-                    .into_iter()
-                    .map(|(name, level)| (name, level.optional_level()))
-                    .collect()
-            }),
-        cc_released: p.optional("_cc_released").is_some_and(|n| n.boolean()),
-        loadouts: p.field("loadouts").object().into_iter().map(|(name, n)| {
-            n.require_type("HeroLoadout");
-            n.keys(&["hero", "equipment", "pet"]);
-            (name, crate::heroes::HeroLoadout {
-                hero: n.field("hero").string(),
-                equipment: n.field("equipment").array().iter().map(Node::string).collect(),
-                pet: n.field("pet").optional_string(),
-            })
-        }).collect(),
-        hero_levels: optional_levels(p.optional("hero_levels")),
-        equipment_levels: optional_levels(p.optional("equipment_levels")),
-        pet_levels: optional_levels(p.optional("pet_levels")),
-        auto_ability_on_ko: p.optional("auto_ability_on_ko").map_or(true, |n| n.boolean()),
-        observed: p.optional("observed").is_some_and(|n| n.boolean()),
+        _ => root.field("plan_type").fail("unsupported plan"),
     };
     let mut grid = Grid::new(catalog.world);
     // battle.py:248-281: dead banners never block. Walls are restored in file order.
@@ -1490,6 +1524,10 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         catalog,
         rng: Some(PyRandom::from_state(&words)),
         dt,
+        pace: env.optional("pace").map_or(1.0, |v| v.number()),
+        pace_tap: env.optional("pace_tap").map_or(0.133, |v| v.number()),
+        pace_switch: env.optional("pace_switch").map_or(0.6, |v| v.number()),
+        pace_ability: env.optional("pace_ability").map_or(0.3, |v| v.number()),
         windup: env.field("windup").boolean(),
         fast_end: env.field("fast_end").boolean(),
         modifier: s.field("modifier").optional_string(),
@@ -1521,6 +1559,8 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         log: Vec::new(),
         frames: Vec::new(),
         grid,
+        jump_grid: None,
+        jump_grid_key: None,
         buildings,
         walls,
         traps,
@@ -1578,6 +1618,7 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         deployments,
         next_deploy: s.field("_next_deploy").usize(),
         next_cc_exit: s.optional("_next_cc_exit").map_or(0.0, |n| n.number()),
+        field_identity: 0,
         field_serial: s.optional("_field_serial").map_or(0, |n| n.integer()),
         plan,
         building_indices: resolver.buildings.clone(),

@@ -580,6 +580,7 @@ pub fn on_death(battle: &mut Battle, hero: UnitRef) -> bool {
         pet.invisible_until = 0.0;
         pet.invuln_until = until;
         pet.extra.phoenix_until = until;
+        pet.extra.paused_timers.phoenix_until = true;
         return true;
     }
     false
@@ -638,6 +639,7 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
             "Eternal Tome" => {
                 let duration = col(battle, &name, &level, &["ability duration"], 8.0);
                 battle.unit_mut(hero).extra.tome_until = t + duration;
+                battle.unit_mut(hero).extra.paused_timers.tome_until = true;
                 moving_auras(battle, hero, None);
             }
             "Fireball" => {
@@ -856,7 +858,7 @@ pub fn distance(battle: &Battle, target: EntityRef, x: f64, y: f64) -> f64 {
     }
 }
 
-fn targets(battle: &Battle, defenses: bool) -> Vec<EntityRef> {
+pub fn targets(battle: &Battle, defenses: bool) -> Vec<EntityRef> {
     let mut result: Vec<_> = battle.buildings.iter().filter(|building| {
         battle.building_targetable(building.id) && (!defenses || battle.is_defense_target(building.id))
     }).map(|building| EntityRef::Building(building.id)).collect();
@@ -1113,6 +1115,7 @@ pub fn summon_death(battle: &mut Battle, unit: UnitRef) {
 fn invisible(unit: &mut Unit, until: f64) {
     unit.invisible_until = unit.invisible_until.max(until);
     unit.extra.equipment_invisible_until = unit.extra.equipment_invisible_until.max(until);
+    unit.extra.paused_timers.equipment_invisible_until = true;
 }
 
 // heroes.py:1435-1449: also preprocessed in the exported catalog.
@@ -1167,4 +1170,146 @@ pub fn pet_passives(battle: &mut Battle, unit: UnitRef) {
 }
 pub fn act_pet(battle: &mut Battle, unit: UnitRef) {
     pets::act(battle, unit);
+}
+
+// heroes.py:1237-1245: these pets travel free with their paired hero.
+pub fn free_pet(battle: &Battle, reference: UnitRef) -> bool {
+    let u = battle.unit(reference);
+    u.kind == "pet"
+        && (u.extra.egg
+            || u.attached(battle)
+            || u.name == "Sneezy" && u.owner.is_some_and(|owner| battle.unit(owner).alive))
+}
+
+// heroes.py:1248-1268: Recall and Portal Pendant share the same stash path.
+pub fn stash(battle: &mut Battle, mut taken: Vec<UnitRef>, bonuses: (f64, f64, f64)) {
+    for reference in taken.clone() {
+        if battle.unit(reference).dash.is_some() {
+            end_dash(battle, reference);
+        }
+        if let Some(pet) = battle.unit(reference).pet {
+            if battle.unit(pet).alive && free_pet(battle, pet) && !taken.contains(&pet) {
+                taken.push(pet);
+            }
+        }
+    }
+    let t = battle.t;
+    for reference in taken {
+        let u = battle.unit_mut(reference);
+        if u.extra.recalled.is_some() {
+            continue;
+        }
+        u.extra.recalled = Some(t);
+        u.extra.portal = Some(bonuses);
+        u.alive = false;
+        battle.portal_stash.push(Value::Ref(EntityRef::Unit(reference)));
+    }
+    battle.portal_ready_at = t;
+}
+
+// heroes.py:1271-1311: only explicitly named timers pause during Recall.
+fn resume_timers(unit: &mut Unit, now: f64) {
+    let recalled = unit.extra.recalled.take().expect("recalled unit needs a recall time");
+    let elapsed = now - recalled;
+    let e = &mut unit.extra;
+    for (present, deadline) in [
+        (e.paused_timers.horse_until, &mut e.horse_until),
+        (e.paused_timers.vial_until, &mut e.vial_until),
+        (e.paused_timers.tome_until, &mut e.tome_until),
+        (e.paused_timers.torch_until, &mut e.torch_until),
+        (e.paused_timers.haste_attack_until, &mut e.haste_attack_until),
+        (e.paused_timers.angry_until, &mut e.angry_until),
+    ] {
+        if present {
+            *deadline += elapsed;
+        }
+    }
+    if e.clone {
+        e.expire_at += elapsed;
+    }
+    for (source, (_, _, until)) in &mut e.rage_effects {
+        if matches!(source, StatusSource::Name(name) if name == "Rage Vial" || name == "Barbarian Puppet") {
+            *until += elapsed;
+        }
+    }
+    for (source, (_, until)) in &mut e.haste_effects {
+        if *source == StatusSource::Name("Haste Vial".to_owned()) {
+            *until += elapsed;
+        }
+    }
+    if e.paused_timers.equipment_invisible_until {
+        e.equipment_invisible_until += elapsed;
+        unit.invisible_until = unit.invisible_until.max(e.equipment_invisible_until);
+    }
+    if e.paused_timers.phoenix_until {
+        e.phoenix_until += elapsed;
+        unit.invuln_until = unit.invuln_until.max(e.phoenix_until);
+    }
+    if let Some(kit) = &mut unit.kit {
+        if kit.reduction_until != 0.0 {
+            kit.reduction_until += elapsed;
+        }
+        if kit.heal_until != 0.0 {
+            kit.heal_until += elapsed;
+        }
+        if let Some(until) = &mut kit.doomed_at {
+            *until += elapsed;
+            unit.invuln_until = *until;
+        }
+    }
+}
+
+// heroes.py:1314-1345: stable housing/time order, reuse existing unit identities.
+pub fn portal_redeploy(battle: &mut Battle, x: f64, y: f64) {
+    assert!(battle.can_deploy(x, y), "Portal redeployment requires a legal deployment tile");
+    let t = battle.t;
+    let mut ordered = battle.portal_units();
+    ordered.sort_by(|a, b| {
+        let a = battle.unit(*a);
+        let b = battle.unit(*b);
+        (-spells::interaction_housing(a)).cmp(&(-spells::interaction_housing(b)))
+            .then_with(|| a.spawned_at.total_cmp(&b.spawned_at))
+    });
+    let n = ordered.len();
+    for reference in ordered {
+        let u = battle.unit_mut(reference);
+        resume_timers(u, t);
+        if u.extra.mirror_clone && t >= u.extra.expire_at {
+            u.hp = 0.0;
+            continue;
+        }
+        let (heal, duration, speed) = u.extra.portal.take().expect("portal bonuses");
+        u.x = x;
+        u.y = y;
+        u.alive = true;
+        let was_in_pool = u.in_pool;
+        u.in_pool = true;
+        u.heal(heal * u.max_hp);
+        if duration > 0.0 {
+            crate::plans::set(
+                &mut u.extra.haste_effects,
+                StatusSource::Name("Portal Pendant".to_owned()),
+                (speed, t + duration),
+            );
+        }
+        u.target = None;
+        u.wall_target = None;
+        let clone = u.extra.clone;
+        if !was_in_pool {
+            battle.attacker_order.retain(|r| *r != reference);
+            battle.attacker_order.push(reference);
+        }
+        if clone && !battle.clones.contains(&reference) {
+            battle.clones.push(reference);
+        }
+    }
+    battle.log_event(vec![
+        round_decimal(t, 1).into(),
+        "portal".into(),
+        crate::trace::LogValue::Int(n as i64),
+        round_decimal(x, 1).into(),
+        round_decimal(y, 1).into(),
+    ]);
+    battle.portal_stash.clear();
+    battle.rebuild_buckets();
 }

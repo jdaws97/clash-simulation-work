@@ -276,7 +276,7 @@ pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
     let sp = battle.unit(unit).spec.clone();
     let t = battle.t;
     if name == "Spell Skeleton" {
-        todo!("stage 4: units.py:250 Spell Skeleton armor");
+        battle.unit_mut(unit).extra.armor_hp = 30.0;
     }
     if sp.has_special("boosters") {
         let u = battle.unit_mut(unit);
@@ -411,10 +411,7 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
             .wall_pulses
             .retain(|(id, _)| contacts.contains(id));
     }
-    if battle.unit(unit).name == "Totem" {
-        todo!("stage 4: units.py:366 Totem decay and inactivity");
-    }
-    if battle.unit(unit).decay > 0.0 {
+    if battle.unit(unit).name == "Totem" || battle.unit(unit).decay > 0.0 {
         let decay = battle.unit(unit).decay * battle.dt;
         battle.unit_mut(unit).hp -= decay;
         if battle.unit(unit).hp <= 0.0 {
@@ -999,11 +996,18 @@ pub fn release_cc_at(battle: &mut Battle, x: f64, y: f64, group: &str, siege: bo
 }
 
 // units.py:984-992: ordinary spawned descendants do not enter clone bookkeeping.
-pub fn inherit_clone(battle: &mut Battle, owner: UnitRef, _child: UnitRef) {
+pub fn inherit_clone(battle: &mut Battle, owner: UnitRef, child: UnitRef) {
     if !battle.unit(owner).extra.clone {
         return;
     }
-    todo!("stage 4: units.py:987 Clone Spell descendant inheritance");
+    let parent = battle.unit(owner);
+    let casts = parent.extra.clone_casts.clone();
+    let deadline = parent.extra.expire_at;
+    let u = battle.unit_mut(child);
+    u.extra.clone = true;
+    u.extra.clone_casts = casts;
+    u.extra.expire_at = deadline;
+    battle.clones.push(child);
 }
 
 // units.py:1152-1165.
@@ -1396,7 +1400,7 @@ pub fn mult_vs(battle: &Battle, unit: UnitRef, target: EntityRef) -> f64 {
         if matches!(u.name.as_str(), "Spell Skeleton" | "Bat")
             && matches!(target.key.as_str(), "gs" | "es" | "ds" | "th")
         {
-            todo!("stage 4: units.py:1603 spell summon storage damage reduction");
+            multiplier *= 0.15;
         }
         if u.name == "Frostmite"
             && (matches!(target.key.as_str(), "gs" | "es" | "ds")
@@ -2082,5 +2086,18 @@ pub fn act_healer(battle: &mut Battle, unit: UnitRef) {
         pending.effect = Some("heal".to_owned());
         pending.target = Some(EntityRef::Unit(ally));
         battle.add_pending(pending);
+    }
+}
+
+// battle.py:858-869: the first live matching siege is manually released.
+pub fn release_siege(battle: &mut Battle, name: Option<&str>) -> bool {
+    let unit = battle.attackers_pool().find(|u| {
+        u.alive && u.kind == "siege" && name.is_none_or(|name| u.name == name)
+    }).map(Unit::reference);
+    if let Some(unit) = unit {
+        battle.kill(unit);
+        true
+    } else {
+        false
     }
 }

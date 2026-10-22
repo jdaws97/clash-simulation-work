@@ -1,4 +1,4 @@
-//! Ports spells.py:258-280,283-779 (defensive fields),798-847,873-1078,1226-1238.
+//! Ports spells.py:32-43,109-1238. Setup validation stays in Python.
 
 use crate::effects;
 use crate::geom::py_hypot;
@@ -30,16 +30,24 @@ pub fn maybe_revive(battle: &mut Battle, hero: UnitRef) {
 
 // spells.py:42-43.
 fn affected(unit: &Unit) -> bool {
-    unit.alive && !matches!(unit.kind.as_str(), "siege" | "siege_idle") && unit.name != "Totem"
+    unit.alive
+        && !matches!(unit.kind.as_str(), "siege" | "siege_idle")
+        && unit.name != "Totem"
 }
 
 // spells.py:258-280: snapshot original fields, preserve fields appended mid-tick.
 pub fn tick(battle: &mut Battle) {
     let t = battle.t;
+    for field in &mut battle.fields {
+        if field.identity == 0 {
+            battle.field_identity += 1;
+            field.identity = battle.field_identity;
+        }
+    }
     let fields = battle.fields.clone();
     let count = fields.len();
     let mut keep = Vec::new();
-    for mut field in fields {
+    for (index, mut field) in fields.into_iter().enumerate() {
         if t < field.started {
             keep.push(field);
             continue;
@@ -50,6 +58,9 @@ pub fn tick(battle: &mut Battle) {
             continue;
         }
         let alive = apply(battle, &mut field);
+        // Python mutates the original object while it remains in fields.
+        // Later fields (and Tesla reveal callbacks) must see the new kind.
+        battle.fields[index] = field.clone();
         if alive && t < field.until {
             keep.push(field);
         } else {
@@ -62,7 +73,7 @@ pub fn tick(battle: &mut Battle) {
     clone_expiry(battle);
 }
 
-// spells.py:283-779: every later-stage field fails explicitly on entry.
+// spells.py:283-779: snapshot order and instantaneous field mutations.
 pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
     let t = battle.t;
     let dt = battle.dt;
@@ -99,16 +110,19 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             true
         }
-        "lightning" => todo!("stage 4: spells.py:325 Lightning field"),
-        "birthday" => todo!("stage 4: spells.py:351 Birthday field"),
-        "yellow" => todo!("stage 4: spells.py:372 Yellow Card field"),
-        "santa" => todo!("stage 4: spells.py:401 Santa field"),
-        "heal" => todo!("stage 4: spells.py:415 Healing field"),
-        "rage" => todo!("stage 2: spells.py:422 Super Valkyrie rage field (attacker spell stage 4)"),
+        "lightning" => damaging_field(battle, f, false),
+        "birthday" => damaging_field(battle, f, true),
+        "yellow" => yellow(battle, f),
+        "santa" => santa(battle, f),
+        "heal" => heal(battle, f),
+        "rage" => rage(battle, f),
         // spells.py:465-494: pool damage does not stack or gain defense difficulty.
         "def_burn" => {
             if !f.extra.has_pulses || !pulses(f, t).is_empty() {
-                f.extra.victims = battle.attackers_near(f.x, f.y, f.radius).iter().map(|unit| unit.id).collect();
+                f.extra.victims = battle.attackers_near(f.x, f.y, f.radius)
+                    .iter()
+                    .map(|unit| unit.id)
+                    .collect();
             }
             for reference in battle.attackers_near(f.x, f.y, f.radius) {
                 let u = battle.unit(reference);
@@ -158,10 +172,10 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             true
         }
-        "haste" => todo!("stage 4: spells.py:518 Haste field"),
-        "jump" => todo!("stage 4: spells.py:532 Jump field"),
-        "freeze" => todo!("stage 4: spells.py:542 Freeze field"),
-        "poison" => todo!("stage 4: spells.py:552 attacking Poison field"),
+        "haste" => haste(battle, f),
+        "jump" => jump(battle, f),
+        "freeze" => freeze(battle, f),
+        "poison" => attacker_poison(battle, f),
         // spells.py:566-587.
         "def_poison" => {
             let gap = f.extra.gap.unwrap_or(dt);
@@ -192,7 +206,7 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             true
         }
-        "quake" => todo!("stage 4: spells.py:588 Earthquake field"),
+        "quake" => quake(battle, f),
         // spells.py:612-618: defensive Earthquake tower uses existing unit state.
         "def_quake" => {
             for reference in battle.attackers_near(f.x, f.y, f.radius) {
@@ -205,9 +219,9 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             false
         }
-        "clone" => todo!("stage 4: spells.py:619 Clone field"),
-        "summon" => todo!("stage 4: spells.py:664 attacking spell summons"),
-        "invis" => todo!("stage 4: spells.py:699 attacking Invisibility field"),
+        "clone" => clone_field(battle, f),
+        "summon" => summon(battle, f),
+        "invis" => invis(battle, f),
         // spells.py:713-725: each pulse grants 0.6 seconds of invisibility.
         "def_invis" => {
             let Some(until) = invisibility_until(f, t) else {
@@ -230,13 +244,20 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             true
         }
-        "recall" => todo!("stage 4: spells.py:726 Recall field"),
-        "overgrowth" => todo!("stage 4: spells.py:729 Overgrowth field"),
-        "iceblock" => todo!("stage 4: spells.py:740 Ice Block field"),
-        "totem" => todo!("stage 4: spells.py:752 Totem field"),
-        "angry" => todo!("stage 4: spells.py:755 Angry field"),
-        "revive_cast" => todo!("stage 4: spells.py:768 Revive cast field"),
-        "revive_due" => todo!("stage 4: spells.py:776 delayed Revive field"),
+        "recall" => recall(battle, f),
+        "overgrowth" => overgrowth(battle, f),
+        "iceblock" => iceblock(battle, f),
+        "totem" => totem(battle, f),
+        "angry" => angry(battle, f),
+        "revive_cast" => revive_cast(battle, f),
+        "revive_due" => {
+            let hero = f.extra.hero.expect("delayed Revive hero");
+            let u = battle.unit(hero);
+            if !u.alive && u.extra.revivable {
+                revive(battle, hero, f.value);
+            }
+            false
+        },
         _ => false,
     }
 }
@@ -254,7 +275,11 @@ fn source(battle: &mut Battle, field: &mut Field) -> StatusSource {
 
 // spells.py:798-805: Python math.isclose defaults rel_tol=1e-9, abs_tol=0.
 fn close(a: f64, b: f64) -> bool {
-    a == b || (a.is_finite() && b.is_finite() && ((a - b).abs() <= (1e-9 * b).abs() || (a - b).abs() <= (1e-9 * a).abs()))
+    a == b
+        || (a.is_finite()
+        && b.is_finite()
+        && ((a - b).abs() <= (1e-9 * b).abs()
+        || (a - b).abs() <= (1e-9 * a).abs()))
 }
 
 pub fn application(field: &mut Field, t: f64, gap: f64) -> Option<f64> {
@@ -297,7 +322,11 @@ pub fn expire(_battle: &mut Battle, _field: &Field) {
 // spells.py:841-847.
 pub fn wall_jumped(battle: &Battle, wall: WallId) -> bool {
     let w = &battle.walls[wall.0];
-    battle.fields.iter().any(|field| field.kind == "jump" && field.started <= battle.t && battle.t < field.until && py_hypot(w.x - field.x, w.y - field.y) <= field.radius)
+    battle.fields.iter()
+        .any(|field| field.kind == "jump"
+        && field.started <= battle.t
+        && battle.t < field.until
+        && py_hypot(w.x - field.x, w.y - field.y) <= field.radius)
 }
 
 // spells.py:873-879.
@@ -328,7 +357,7 @@ pub fn poison(
     attack: f64,
     multiplier: f64,
     options: PoisonOptions<'_>,
-) {
+    ) {
     let u = battle.unit(reference);
     if u.kind == "guardian" && u.extra.waiting {
         return;
@@ -347,7 +376,10 @@ pub fn poison(
     if let Some(source_until) = options.source_until {
         until = until.min(source_until + linger);
     }
-    let index = battle.poison.iter().position(|state| state.unit == reference && state.origin == options.origin && state.source == options.source);
+    let index = battle.poison.iter()
+        .position(|state| state.unit == reference
+        && state.origin == options.origin
+        && state.source == options.source);
     let index = match index {
         Some(index) => index,
         None => {
@@ -427,7 +459,7 @@ pub fn poison_states(battle: &mut Battle) {
         } else {
             "poison"
         }
-        .to_owned();
+            .to_owned();
         let kind = if origin == "town_hall" {
             "th_poison"
         } else {
@@ -453,7 +485,7 @@ pub fn add_defensive_poison(
     y: f64,
     mut config: PoisonConfig,
     origin: &str,
-) {
+    ) {
     if origin == "town_hall" && battle.town_hall == 16 {
         config.atk = Some(0.5);
     }
@@ -463,12 +495,13 @@ pub fn add_defensive_poison(
         ramp: config.ramp,
         origin: Some(origin.to_owned()),
         hero_mult: config.hero_mult,
-        ..Default::default()
+            ..Default::default()
     };
     if origin == "tower" {
         extra.gap = Some(0.4);
     }
     battle.fields.push(Field {
+        identity: 0,
         kind: "def_poison".to_owned(),
         x,
         y,
@@ -492,7 +525,8 @@ pub fn tower_cast(battle: &mut Battle, owner: BuildingId, mode: &str, near: Opti
     if let Some(near) = near {
         for &reference in near {
             let unit = battle.unit(reference);
-            if matches!(mode, "eq" | "quake" | "earthquake") && unit.flying {
+            if matches!(mode, "eq" | "quake" | "earthquake")
+                && unit.flying {
                 continue;
             }
             let d = unit.dist(bx, by);
@@ -523,6 +557,7 @@ pub fn tower_cast(battle: &mut Battle, owner: BuildingId, mode: &str, near: Opti
         _ => return,
     };
     battle.fields.push(Field {
+        identity: 0,
         kind: kind.to_owned(),
         x,
         y,
@@ -535,23 +570,68 @@ pub fn tower_cast(battle: &mut Battle, owner: BuildingId, mode: &str, near: Opti
     });
 }
 
-// spells.py:1042-1078: the flee branch requires attacking Poison Spell fields.
+// spells.py:1042-1078: source-field cost and tuple-min x/y tie breaking.
 pub fn escape_poison(battle: &mut Battle, reference: UnitRef) -> bool {
+    use crate::grid::{INF, RES};
     let u = battle.unit(reference);
-    if u.is_hero || matches!(u.name.as_str(), "Healer" | "Druid") || u.speed <= 0.0 {
+    if u.is_hero
+        || matches!(u.name.as_str(), "Healer" | "Druid")
+        || u.speed <= 0.0 {
         return false;
     }
-    if battle.fields.iter().any(|field| field.kind == "poison"
-        && field.started <= battle.t
-        && battle.t < field.until
-        && u.dist(field.x, field.y) <= field.radius) {
-        todo!("stage 4: spells.py:1058 idle defender escapes attacker Poison Spell");
+    let (ux, uy, flying) = (u.x, u.y, u.flying);
+    let saved = u.extra.poison_exit.clone();
+    let clouds: Vec<_> = battle.fields.iter().filter(|f| {
+        f.kind == "poison" && f.started <= battle.t && battle.t < f.until
+    }).map(|f| (f.identity as u64, f.x, f.y, f.radius)).collect();
+    if !clouds.iter().any(|(_, x, y, radius)| py_hypot(ux - x, uy - y) <= *radius) {
+        battle.unit_mut(reference).extra.poison_exit = None;
+        return false;
     }
-    battle.unit_mut(reference).extra.poison_exit = None;
-    false
+    let identities: Vec<_> = clouds.iter().map(|(id, _, _, _)| *id).collect();
+    let grid = battle.navigation_grid(reference);
+    let version = grid.version;
+    let destination = if let Some((_, _, point)) = saved.filter(|(v, ids, _)| *v == version
+        && *ids == identities) {
+        point
+    } else {
+        let costs = (!flying).then(|| grid.source_field(ux, uy, 0.0));
+        let mut best: Option<(f64, f64, f64)> = None;
+        for i in 0..grid.n {
+            for j in 0..grid.n {
+                let cell = grid.index(i, j);
+                let cost = if let Some(costs) = costs {
+                    if grid.blocked[cell] {
+                        continue;
+                    }
+                    let cost = grid.distance(costs, cell);
+                    if cost >= INF {
+                        continue;
+                    }
+                    Some(cost as f64)
+                } else {
+                    None
+                };
+                let (x, y) = ((i as f64 + 0.5) / RES as f64, (j as f64 + 0.5) / RES as f64);
+                if clouds.iter().all(|(_, cx, cy, radius)| py_hypot(x - cx, y - cy) > *radius) {
+                    let candidate = (cost.unwrap_or_else(|| py_hypot(ux - x, uy - y)), x, y);
+                    if best.is_none_or(|previous| candidate < previous) {
+                        best = Some(candidate);
+                    }
+                }
+            }
+        }
+        let Some((_, x, y)) = best else {
+            return false;
+        };
+        (x, y)
+    };
+    battle.unit_mut(reference).extra.poison_exit = Some((version, identities, destination));
+    battle.move_towards(reference, EntityRef::Unit(reference), Some(destination));
+    true
 }
 
-// spells.py:1226-1238: clone expiration only needs existing stage-1 unit state.
+// spells.py:1226-1238: recalled clones pause expiry; others vanish without death effects.
 pub fn clone_expiry(battle: &mut Battle) {
     if battle.clones.is_empty() {
         return;
@@ -563,9 +643,923 @@ pub fn clone_expiry(battle: &mut Battle) {
             keep.push(reference);
         } else if u.alive && battle.t >= u.extra.expire_at {
             battle.unit_mut(reference).alive = false;
-        } else if u.alive || battle.portal_stash.iter().any(|value| matches!(value, Value::Ref(EntityRef::Unit(unit)) if *unit == reference)) {
+        } else if u.alive || battle.portal_stash.iter()
+            .any(|value| matches!(value, Value::Ref(EntityRef::Unit(unit)) if *unit == reference)) {
             keep.push(reference);
         }
     }
     battle.clones = keep;
+}
+
+// spells.py:27-43,103-254. The stock's already resolved level wins.
+pub fn cast_effect(battle: &mut Battle, name: &str, x: f64, y: f64, level: Option<crate::stats::Level>) {
+    use crate::stats::{self, Level};
+    let level = level.filter(|lv| *lv != Level::Int(0)).or_else(|| {
+        if let Plan::Playbook(p) = &battle.plan {
+            p.attack.spell_levels.iter()
+                .find(|(key, _)| key == name)
+                .and_then(|(_, lv)| lv.clone())
+        } else {
+            None
+        }
+    }).unwrap_or_else(|| Level::Int(battle.catalog.stats.max_level(name, battle.plan.town_hall()).expect("spell max level")));
+    battle.start_battle();
+    if battle.first_deploy_t.is_none() {
+        battle.first_deploy_t = Some(battle.t);
+    }
+    let t = if name == "Revive Spell" {
+        battle.t
+    } else {
+        battle.t + 0.5
+    };
+    battle.log_event(vec![round_decimal(battle.t, 1).into(), "spell".into(), name.into(), round_decimal(x, 1).into(), round_decimal(y, 1).into()]);
+    let stats = &battle.catalog.stats;
+    let get = |keys: &[&str], default: f64| stats.get(name, &level, keys, Some(default))
+        .expect("spell number");
+    let raw = |key: &str, default: f64| stats.attrs(name)
+        .get("raw")
+        .and_then(|r| r.get(key))
+        .map_or(default, |v| stats::num(v, Some(default)).unwrap_or(default));
+    let radius = |default: f64| {
+        let r = stats.get(name, &level, &["radius", "Radius"], None)
+            .filter(|v| *v != 0.0)
+            .unwrap_or_else(|| raw("Radius", default));
+        if r == 0.0 {
+            default
+        } else {
+            r
+        }
+    };
+    let mut f = match name {
+        "Lightning Spell" => {
+            let mut f = Field::new("lightning", x, y, radius(2.0), t);
+            f.value = get(&["damage", "Damage"], 640.0);
+            f
+        }
+        "Healing Spell" => {
+            let mut f = Field::new("heal", x, y, 5.0, t + 12.0);
+            f.value = get(&["Healing per Pulse"], 60.0);
+            f.extra.pulses = 41;
+            f.extra.has_pulses = true;
+            f.extra.gap = Some(0.3);
+            f
+        }
+        "Rage Spell" => {
+            let mut f = Field::new("rage", x, y, 5.0, t + 18.0);
+            f.value = 1.0 + get(&["Damage Increase"], 180.0) / 100.0;
+            f.extra.speed = Some(get(&["Speed Increase"], 30.0) / 8.0);
+            f.extra.pulses = 60;
+            f.extra.has_pulses = true;
+            f.extra.gap = Some(0.3);
+            f
+        }
+        "Jump Spell" => Field::new("jump", x, y, radius(3.5), t + get(&["duration"], 60.0)),
+        "Freeze Spell" => {
+            let lv = if let Level::Int(lv) = &level {
+                *lv as f64
+            } else {
+                panic!("integer Freeze level")
+            };
+            let mut f = Field::new("freeze", x, y, 3.5, t);
+            f.value = get(&["Freeze Time"], 2.0 + 0.5 * lv);
+            f
+        }
+        "Poison Spell" => {
+            let mut f = Field::new("poison", x, y, 4.0, t + raw("Spell Duration", 16.0));
+            f.value = get(&["Max damage per second"], 340.0);
+            f.extra.slow = get(&["Speed Decrease"], 50.0) / 100.0;
+            f.extra.atk = get(&["Attack Rate Decrease"], 72.0) / 100.0;
+            f
+        }
+        "Earthquake Spell" => {
+            let mut f = Field::new("quake", x, y, radius(4.7), t);
+            f.value = get(&["Building Damage %"], 29.0) / 100.0;
+            f.extra.troop = get(&["Troop Damage %"], 0.0) / 100.0;
+            f
+        }
+        "Haste Spell" => {
+            let mut f = Field::new("haste", x, y, radius(4.0), t + get(&["Spell Duration"], 30.0));
+            f.extra.speed = Some(get(&["Speed Increase"], 52.0) / 8.0);
+            f
+        }
+        "Clone Spell" => {
+            let mut f = Field::new("clone", x, y, 3.5, t + 18.0);
+            f.value = get(&["Cloned Capacity"], 42.0);
+            f
+        }
+        "Skeleton Spell" | "Bat Spell" => {
+            let (unit, n, first, gap) = if name == "Skeleton Spell" {
+                ("Spell Skeleton", get(&["Skeletons generated"], 19.0), 3, 1.0)
+            } else {
+                ("Bat", get(&["Bats generated"], 22.0), 1, 0.6)
+            };
+            let mut f = Field::new("summon", x, y, 3.5, t + (n - first as f64) * gap);
+            f.value = n;
+            f.extra.unit = Some(unit.to_owned());
+            f.extra.first = Some(first);
+            f.extra.gap = Some(gap);
+            f
+        }
+        "Bag of Frostmites" => {
+            let mut f = Field::new("summon", x, y, 1.75, t);
+            f.value = get(&["Frostmites spawned"], 17.0);
+            f.extra.unit = Some("Frostmite".to_owned());
+            f.extra.freeze = stats.get(name, &level, &["Freeze Time"], None);
+            f
+        }
+        "Invisibility Spell" => Field::new("invis", x, y, 4.0, t + get(&["Duration"], 4.25)),
+        "Recall Spell" => {
+            let mut f = Field::new("recall", x, y, 5.0, t);
+            f.value = get(&["Recalled Capacity"], 107.0);
+            f
+        }
+        "Overgrowth Spell" => {
+            let mut f = Field::new("overgrowth", x, y, 6.0, t);
+            f.value = get(&["Duration"], 25.0);
+            f
+        }
+        "Revive Spell" => {
+            let mut f = Field::new("revive_cast", x, y, 8.0, t);
+            f.value = get(&["Hero Heal %"], 70.0) / 100.0;
+            f
+        }
+        "Ice Block Spell" => {
+            let mut f = Field::new("iceblock", x, y, 5.0, t);
+            f.value = get(&["Incoming Damage Reduction"], 92.0) / 100.0;
+            f.extra.time = get(&["Duration"], 7.0);
+            f
+        }
+        "Totem Spell" => {
+            let mut f = Field::new("totem", x, y, 5.0, t);
+            f.value = get(&["Totem Hitpoints"], 11000.0);
+            f
+        }
+        "Angry Spell" => {
+            let mut f = Field::new("angry", x, y, 6.0, t + get(&["Duration"], 5.0));
+            f.value = get(&["Anger Duration"], 8.0);
+            f
+        }
+        "Santa's Surprise" => {
+            let mut f = Field::new("santa", x, y, 1.0, t + 0.4);
+            f.value = get(&["Damage per Strike"], 370.0);
+            f.extra.pulses = 5;
+            f.extra.has_pulses = true;
+            f.extra.gap = Some(0.1);
+            f
+        }
+        "Birthday Boom" => {
+            let mut f = Field::new("birthday", x, y, 2.5, t);
+            f.value = get(&["Damage"], 0.0);
+            f.extra.town_hall = get(&["Damage vs Town Hall"], 0.0);
+            f.extra.freeze = Some(get(&["Freeze Duration"], 0.0));
+            f
+        }
+        "Yellow Card" => {
+            let mut f = Field::new("yellow", x, y, 7.0, t);
+            f.value = get(&["Duration"], 0.0);
+            f
+        }
+        _ => panic!("unknown spell {name}"),
+    };
+    f.started = t;
+    f.extra.name = Some(name.to_owned());
+    battle.fields.push(f);
+}
+
+// spells.py:1102-1114.
+fn retarget(battle: &mut Battle, target: EntityRef) {
+    match target {
+        EntityRef::Building(id) => {
+            if let Some(w) = &mut battle.building_mut(id).weapon {
+                w.target = None;
+                w.multi.clear();
+                w.lock_time = 0.0;
+                w.burst_left = 0;
+            }
+        }
+        EntityRef::Unit(reference) => {
+            let u = battle.unit_mut(reference);
+            u.target = None;
+            u.wall_target = None;
+            units::interrupt_attack(battle, reference);
+        }
+        _ => panic!("spell retarget expects a building or unit"),
+    }
+}
+
+// spells.py:325-350,351-371.
+fn damaging_field(battle: &mut Battle, f: &Field, birthday: bool) -> bool {
+    let t = battle.t;
+    if !birthday {
+        battle.src = "spell".to_owned();
+    }
+    let stun = if birthday {
+        0.0
+    } else {
+        let raw = battle.catalog.stats.attrs("Lightning Spell")
+            .at("raw")
+            .at("Stun Time");
+        crate::stats::num(raw, None).expect("Lightning stun time")
+    };
+    for index in 0..battle.buildings.len() {
+        let b = &battle.buildings[index];
+        if !b.alive
+            || b.key == "tesla"
+            && !b.revealed
+            || b.edge_distance(f.x, f.y) > f.radius
+
+            || !birthday
+
+
+            && matches!(b.key.as_str(), "gs" | "es" | "ds" | "th" | "cc") {
+            continue;
+        }
+        let id = b.id;
+        let damage = if birthday && b.key == "th" {
+            f.extra.town_hall
+        } else {
+            f.value
+        };
+        battle.hit_building(EntityRef::Building(id), damage, None, "normal");
+        let b = battle.building_mut(id);
+        if birthday {
+            b.frozen_until = b.frozen_until.max(t + f.extra.freeze.expect("Birthday freeze"));
+            retarget(battle, EntityRef::Building(id));
+        } else if b.weapon.is_some() {
+            b.stun_until = b.stun_until.max(t + stun);
+            retarget(battle, EntityRef::Building(id));
+        }
+    }
+    for index in 0..battle.walls.len() {
+        let w = &battle.walls[index];
+        if w.alive && w.edge_distance(f.x, f.y) <= f.radius {
+            battle.hit_building(EntityRef::Wall(w.id), f.value, None, "normal");
+        }
+    }
+    for reference in battle.defenders_near(f.x, f.y, f.radius) {
+        battle.hit_unit(reference, f.value, None, "normal", None);
+        let u = battle.unit_mut(reference);
+        if birthday {
+            u.frozen_until = u.frozen_until.max(t + f.extra.freeze.expect("Birthday freeze"));
+        } else {
+            u.stun_until = u.stun_until.max(t + stun);
+        }
+        retarget(battle, EntityRef::Unit(reference));
+    }
+    false
+}
+
+// spells.py:372-400: building candidates precede defending heroes.
+fn yellow(battle: &mut Battle, f: &Field) -> bool {
+    let mut candidates: Vec<_> = battle.buildings.iter().filter(|b| {
+        b.alive && b.weapon.as_ref().is_some_and(|w| w.kind != "bh_repair_only")
+            && !b.extra.unavailable && (b.key != "tesla" || b.revealed)
+            && (b.is_defense || b.key == "th") && b.edge_distance(f.x, f.y) <= f.radius
+    }).map(|b| EntityRef::Building(b.id)).collect();
+    candidates.extend(battle.defenders_near(f.x, f.y, f.radius).into_iter().filter(|r| battle.unit(*r).is_hero).map(EntityRef::Unit));
+    let mut best = None;
+    let mut closest = f64::INFINITY;
+    for target in candidates {
+        let d = crate::heroes::distance(battle, target, f.x, f.y);
+        if best.is_none() || d < closest {
+            best = Some(target);
+            closest = d;
+        }
+    }
+    if let Some(target) = best {
+        let t = battle.t;
+        let until = match target {
+            EntityRef::Building(id) => &mut battle.building_mut(id).extra.yellow_until,
+            EntityRef::Unit(r) => &mut battle.unit_mut(r).extra.yellow_until,
+            _ => unreachable!(),
+        };
+        if t >= *until {
+            *until = t + f.value;
+            retarget(battle, target);
+        }
+    }
+    false
+}
+
+// spells.py:401-414.
+fn santa(battle: &mut Battle, f: &mut Field) -> bool {
+    for _ in pulses(f, battle.t) {
+        let angle = battle.rng.as_mut()
+            .expect("battle rng")
+            .random() * 2.0 * std::f64::consts::PI;
+        let radius = battle.rng.as_mut().expect("battle rng").random() * f.radius;
+        let (x, y) = (f.x + radius * crate::geom::py_cos(angle), f.y + radius * crate::geom::py_sin(angle));
+        for index in 0..battle.buildings.len() {
+            let b = &battle.buildings[index];
+            if b.alive && b.edge_distance(x, y) <= 1.5 {
+                battle.hit_building(EntityRef::Building(b.id), f.value, None, "normal");
+            }
+        }
+        for unit in battle.defenders_near(x, y, 1.5) {
+            battle.hit_unit(unit, f.value, None, "normal", None);
+        }
+    }
+    f.extra.delivered < f.extra.pulses
+}
+
+// spells.py:415-421.
+fn heal(battle: &mut Battle, f: &mut Field) -> bool {
+    for _ in pulses(f, battle.t) {
+        for unit in battle.attackers_near(f.x, f.y, f.radius) {
+            let u = battle.unit_mut(unit);
+            if u.alive && !matches!(u.kind.as_str(), "siege" | "siege_idle") {
+                u.heal(f.value * if u.is_hero {
+                    0.55
+                } else {
+                    1.0
+                });
+            }
+        }
+    }
+    f.extra.delivered < f.extra.pulses
+}
+
+// spells.py:422-464.
+fn rage(battle: &mut Battle, f: &mut Field) -> bool {
+    let due = if f.extra.has_pulses {
+        pulses(f, battle.t)
+    } else {
+        vec![battle.t]
+    };
+    let Some(&last) = due.last() else {
+        return battle.t < f.until;
+    };
+    let pool = if f.team == Team::Atk {
+        battle.attackers_near(f.x, f.y, f.radius)
+    } else {
+        battle.defenders_near(f.x, f.y, f.radius)
+    };
+    for reference in pool {
+        let u = battle.unit(reference);
+        if !affected(u) {
+            continue;
+        }
+        let mut inc = f.value - 1.0;
+        let mut speed = f.extra.speed.expect("Rage speed");
+        if u.is_hero {
+            inc *= 0.5;
+            speed *= 0.5;
+        }
+        let key = source(battle, f);
+        units::add_rage(battle.unit_mut(reference), key, 1.0 + inc, speed, last + f.extra.boost_time);
+    }
+    if f.team == Team::Def {
+        if let Some(damage) = f.extra.defense_damage {
+            for b in &mut battle.buildings {
+                if b.alive && b.weapon.is_some() && b.edge_distance(f.x, f.y) <= f.radius {
+                    b.rage_mult = (if battle.t < b.rage_until {
+                        b.rage_mult
+                    } else {
+                        1.0
+                    }).max(damage);
+                    b.rage_until = b.rage_until.max(last + f.extra.boost_time);
+                }
+            }
+        }
+    }
+    true
+}
+
+// spells.py:518-531.
+fn haste(battle: &mut Battle, f: &mut Field) -> bool {
+    let Some(pulse) = application(f, battle.t, 0.25) else {
+        return true;
+    };
+    for reference in battle.attackers_near(f.x, f.y, f.radius) {
+        let u = battle.unit(reference);
+        if affected(u) {
+            let speed = f.extra.speed.expect("Haste speed") * if u.is_hero {
+                0.5
+            } else {
+                1.0
+            };
+            let key = source(battle, f);
+            crate::plans::set(&mut battle.unit_mut(reference).extra.haste_effects, key, (speed, pulse + 1.0));
+        }
+    }
+    true
+}
+
+// spells.py:532-540.
+fn jump(battle: &mut Battle, f: &Field) -> bool {
+    if battle.t >= f.until {
+        return false;
+    }
+    let until = battle.t + 1.0;
+    for reference in battle.attackers_near(f.x, f.y, f.radius) {
+        let u = battle.unit_mut(reference);
+        if affected(u) && !u.flying {
+            u.extra.jump_until = u.extra.jump_until.max(until);
+            u.wall_target = None;
+        }
+    }
+    true
+}
+
+// spells.py:542-551.
+fn freeze(battle: &mut Battle, f: &mut Field) -> bool {
+    let until = battle.t + f.value;
+    for b in &mut battle.buildings {
+        if b.alive
+            && b.weapon.is_some()
+            && b.edge_distance(f.x, f.y) <= f.radius
+            && !(b.key == "tesla"
+            && !b.revealed) {
+            b.frozen_until = b.frozen_until.max(until);
+        }
+    }
+    for reference in battle.defenders_near(f.x, f.y, f.radius) {
+        let u = battle.unit_mut(reference);
+        u.frozen_until = u.frozen_until.max(until);
+    }
+    f.kind = "tesla_freeze".to_owned();
+    f.until = until;
+    true
+}
+
+// spells.py:552-565.
+fn attacker_poison(battle: &mut Battle, f: &mut Field) -> bool {
+    for reference in battle.defenders_near(f.x, f.y, f.radius) {
+        let multiplier = if battle.unit(reference).is_hero {
+            0.05
+        } else {
+            1.0
+        };
+        let StatusSource::Field(serial) = source(battle, f) else {
+            unreachable!()
+        };
+        poison(battle, reference, f.value, f.extra.slow, f.extra.atk, multiplier, PoisonOptions {
+            ramp: true,
+            origin: "spell",
+            source: Some(("field".to_owned(), serial)),
+            source_until: Some(f.until),
+            refresh: 0.2,
+        });
+    }
+    true
+}
+
+// spells.py:588-610,782-786. In particular Python's **2 is C-runtime pow.
+fn quake(battle: &mut Battle, f: &Field) -> bool {
+    for index in 0..battle.buildings.len() {
+        let b = &mut battle.buildings[index];
+        if b.alive
+            && b.counted
+            && !matches!(b.key.as_str(), "gs" | "es" | "ds")
+
+            && !(b.key == "tesla"
+            && !b.revealed)
+            && b.edge_distance(f.x, f.y) <= f.radius {
+            b.eq_hits += 1;
+            let damage = b.max_hp * f.value / (2 * b.eq_hits - 1) as f64;
+            let id = b.id;
+            battle.hit_building(EntityRef::Building(id), damage, None, "normal");
+        }
+    }
+    for index in 0..battle.walls.len() {
+        let w = &mut battle.walls[index];
+        if w.alive && w.edge_distance(f.x, f.y) <= f.radius {
+            w.eq_hits += 1;
+            let n = w.eq_hits as f64;
+            let damage = w.max_hp * (f.value / n + 0.05 * crate::geom::py_pow(n - 1.0, 2.0));
+            let id = w.id;
+            battle.hit_building(EntityRef::Wall(id), damage, None, "normal");
+        }
+    }
+    if f.extra.troop != 0.0 {
+        for reference in battle.defenders_near(f.x, f.y, f.radius) {
+            let u = battle.unit(reference);
+            if !u.flying {
+                let n = u.extra.eq_n;
+                let damage = u.max_hp * f.extra.troop / (2 * n + 1) as f64;
+                battle.hit_unit(reference, damage, None, "normal", None);
+                battle.unit_mut(reference).extra.eq_n = n + 1;
+            }
+        }
+    }
+    false
+}
+
+// spells.py:850-870: x-major free tile order, int truncation at bounds.
+fn spawn_spots(battle: &Battle, x: f64, y: f64, radius: f64, flying: bool) -> Vec<(f64, f64)> {
+    let mut spots = Vec::new();
+    for tx in (x - radius) as i32..=(x + radius) as i32 {
+        for ty in (y - radius) as i32..=(y + radius) as i32 {
+            let (cx, cy) = (tx as f64 + 0.5, ty as f64 + 0.5);
+            if py_hypot(cx - x, cy - y) > radius {
+                continue;
+            }
+            let world = battle.catalog.world as f64;
+            if !(0.0 <= cx && cx < world && 0.0 <= cy && cy < world) {
+                continue;
+            }
+            if flying {
+                spots.push((cx, cy));
+                continue;
+            }
+            if battle.wall_indices.get(&(tx, ty))
+                .is_some_and(|id| battle.walls[id.0].alive) {
+                continue;
+            }
+            let (i, j) = battle.grid.cell(cx, cy);
+            if battle.grid.blocked[battle.grid.index(i, j)] {
+                continue;
+            }
+            spots.push((cx, cy));
+        }
+    }
+    spots
+}
+
+// spells.py:619-662.
+fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
+    if application(f, battle.t, 0.3).is_none() {
+        return true;
+    }
+    let mut capacity = f.value;
+    let mut sources = battle.attackers_near(f.x, f.y, f.radius);
+    sources.sort_by(|a, b| battle.unit(*a).spawned_at.total_cmp(&battle.unit(*b).spawned_at));
+    for reference in sources {
+        let u = battle.unit(reference);
+        if !affected(u) || u.is_hero || u.kind == "pet" {
+            continue;
+        }
+        let StatusSource::Field(serial) = source(battle, f) else {
+            unreachable!()
+        };
+        let key = ("field".to_owned(), serial);
+        let u = battle.unit(reference);
+        if u.extra.clone_casts.contains(&key) {
+            continue;
+        }
+        let housing = interaction_housing(u) as f64;
+        let (name, level, group, flying, casts) = (u.name.clone(), u.level.clone(), u.group.clone(), u.flying, u.extra.clone_casts.clone());
+        while housing <= capacity {
+            capacity -= housing;
+            let spots = spawn_spots(battle, f.x, f.y, f.radius, flying);
+            if spots.is_empty() {
+                return false;
+            }
+            let index = battle.rng.as_mut().expect("battle rng").below(spots.len());
+            let (x, y) = spots[index];
+            let child = battle.spawn(&name, Team::Atk, x, y, crate::battle::SpawnOptions {
+                level: level.clone(),
+                kind: "summon".to_owned(),
+                group: group.clone(),
+                    ..Default::default()
+            });
+            let t = battle.t;
+            let u = battle.unit_mut(child);
+            u.extra.clone_casts = casts.clone();
+            if !u.extra.clone_casts.contains(&key) {
+                u.extra.clone_casts.push(key.clone());
+            }
+            u.extra.clone = true;
+            u.extra.expire_at = t + 30.0;
+            if u.spec.has_special("start_rage") {
+                u.extra.rage_effects.retain(|(source, _)| *source != StatusSource::Name("innate".to_owned()));
+            }
+            battle.clones.push(child);
+        }
+    }
+    f.value = capacity;
+    capacity > 0.0
+}
+
+// spells.py:664-698.
+fn summon(battle: &mut Battle, f: &mut Field) -> bool {
+    let n = f.value as usize;
+    let name = f.extra.unit.as_deref().expect("spell summon name").to_owned();
+    if f.extra.spots.is_none() {
+        if let Some(duration) = f.extra.freeze {
+            let mut freeze = Field::new("freeze", f.x, f.y, f.radius, battle.t);
+            freeze.started = battle.t;
+            freeze.value = duration;
+            apply(battle, &mut freeze);
+            battle.fields.push(freeze);
+        }
+        f.extra.spots = Some(spawn_spots(battle, f.x, f.y, f.radius, name == "Bat"));
+    }
+    let spots = f.extra.spots.as_ref().expect("summon spots");
+    if spots.is_empty() {
+        return false;
+    }
+    let first = f.extra.first.unwrap_or(n);
+    let gap = f.extra.gap.unwrap_or(0.0);
+    let mut j = f.extra.delivered;
+    while j < n {
+        let at = f.started + (j as i64 - first as i64 + 1).max(0) as f64 * gap;
+        if at > battle.t && !close(at, battle.t) {
+            break;
+        }
+        let (x, y) = spots[j % spots.len()];
+        j += 1;
+        f.extra.delivered = j;
+        let child = battle.spawn(&name, Team::Atk, x, y, crate::battle::SpawnOptions {
+            kind: "summon".to_owned(),
+            group: "spell".to_owned(),
+                ..Default::default()
+        });
+        if f.extra.name.as_deref() == Some("Bag of Frostmites") {
+            let u = battle.unit_mut(child);
+            u.extra.bouncing_frostmite = true;
+            u.spec.splash = 0.8;
+        }
+    }
+    j < n
+}
+
+// spells.py:699-712.
+fn invis(battle: &mut Battle, f: &mut Field) -> bool {
+    let Some(until) = invisibility_until(f, battle.t) else {
+        return true;
+    };
+    for reference in battle.attackers_near(f.x, f.y, f.radius) {
+        let u = battle.unit_mut(reference);
+        if !matches!(u.kind.as_str(), "siege" | "siege_idle") {
+            u.invisible_until = u.invisible_until.max(until);
+        }
+    }
+    for reference in battle.defenders_near(f.x, f.y, f.radius) {
+        let u = battle.unit_mut(reference);
+        u.invisible_until = u.invisible_until.max(until);
+    }
+    if f.team == Team::Atk {
+        for b in &mut battle.buildings {
+            if b.alive && b.edge_distance(f.x, f.y) <= f.radius {
+                b.invisible_until = b.invisible_until.max(until);
+            }
+        }
+    }
+    true
+}
+
+// spells.py:1082-1099.
+pub fn interaction_housing(unit: &Unit) -> i64 {
+    if unit.is_hero {
+        return 25;
+    }
+    if unit.kind == "pet" {
+        return 20;
+    }
+    match unit.name.as_str() {
+        "Skeleton" | "Spell Skeleton" | "Bat" | "Frostmite" => 1,
+        "Lava Pup" | "Ice Pup" | "Yetimite" => 2,
+        "Golemite" => 6,
+        "Big Boy" => 10,
+        _ => unit.housing.max(1),
+    }
+}
+
+// spells.py:1117-1151.
+fn recall(battle: &mut Battle, f: &Field) -> bool {
+    let mut capacity = f.value;
+    let mut candidates = Vec::new();
+    for reference in battle.attackers_near(f.x, f.y, f.radius) {
+        let u = battle.unit(reference);
+        if affected(u)
+
+
+            && matches!(u.kind.as_str(), "troop" | "hero" | "hero_clone" | "pet" | "summon")
+            && !candidates.contains(&reference) {
+            candidates.push(reference);
+        }
+    }
+    candidates.sort_by(|a, b| {
+        let a = battle.unit(*a);
+        let b = battle.unit(*b);
+        (!a.is_hero, -interaction_housing(a))
+            .cmp(&(!b.is_hero, -interaction_housing(b)))
+            .then_with(|| a.spawned_at.total_cmp(&b.spawned_at))
+    });
+    let mut taken = Vec::new();
+    for reference in candidates {
+        let u = battle.unit(reference);
+        let housing = interaction_housing(u) as f64;
+        if crate::heroes::free_pet(battle, reference)
+            || taken.contains(&reference)
+            || housing > capacity {
+            continue;
+        }
+        capacity -= housing;
+        taken.push(reference);
+        if u.is_hero {
+            if let Some(pet) = u.pet {
+                let p = battle.unit(pet);
+                if p.alive && (p.extra.egg || p.attached(battle)) && !taken.contains(&pet) {
+                    taken.push(pet);
+                }
+            }
+        }
+    }
+    crate::heroes::stash(battle, taken, (0.0, 0.0, 0.0));
+    false
+}
+
+// spells.py:729-739.
+fn overgrowth(battle: &mut Battle, f: &mut Field) -> bool {
+    let until = battle.t + f.value;
+    for b in &mut battle.buildings {
+        if b.alive
+            && !(b.key == "tesla"
+            && !b.revealed)
+            && b.edge_distance(f.x, f.y) <= f.radius {
+            b.overgrown_until = b.overgrown_until.max(until);
+        }
+    }
+    f.kind = "tesla_overgrowth".to_owned();
+    f.until = until;
+    true
+}
+
+// spells.py:740-751.
+fn iceblock(battle: &mut Battle, f: &mut Field) -> bool {
+    let until = battle.t + f.extra.time;
+    for reference in battle.attackers_near(f.x, f.y, f.radius) {
+        let u = battle.unit(reference);
+        if affected(u) && !u.underground {
+            let key = source(battle, f);
+            let u = battle.unit_mut(reference);
+            crate::plans::set(&mut u.extra.iceblocks, key, (f.value, until));
+            u.frozen_until = u.frozen_until.max(until);
+        }
+    }
+    false
+}
+
+// spells.py:755-767.
+fn angry(battle: &mut Battle, f: &Field) -> bool {
+    let t = battle.t;
+    for reference in battle.attackers_near(f.x, f.y, f.radius) {
+        let u = battle.unit(reference);
+        let sp = &u.spec;
+        if !u.alive || matches!(sp.attack.as_str(), "heal" | "heal_chain")
+
+            || matches!(sp.prefer.as_str(), "defense" | "air_defense")
+            && !matches!(u.name.as_str(), "Lava Hound" | "Ice Hound")
+
+            || matches!(u.name.as_str(), "Ruin Witch" | "Totem")
+            || matches!(u.kind.as_str(), "siege" | "siege_idle") {
+            continue;
+        }
+        if !u.extra.paused_timers.angry_until || u.extra.angry_until < t + f.value - 0.5 {
+            let defense = u.target_kind.as_deref() == Some("building")
+                && u.target.is_some_and(|r| crate::plans::entity_is_defense(battle, r));
+            let u = battle.unit_mut(reference);
+            u.extra.angry_until = t + f.value;
+            u.extra.paused_timers.angry_until = true;
+            if !defense {
+                u.target = None;
+            }
+        }
+    }
+    true
+}
+
+// spells.py:768-775.
+fn revive_cast(battle: &mut Battle, f: &Field) -> bool {
+    let mut best = None;
+    let mut closest = f.radius;
+    for u in battle.attackers_pool() {
+        if u.is_hero && !u.alive && u.extra.revivable {
+            let d = u.dist(f.x, f.y);
+            // Python intentionally replaces the previous hero on equal distance.
+            if d <= closest {
+                best = Some(u.reference());
+                closest = d;
+            }
+        }
+    }
+    if let Some(hero) = best {
+        revive(battle, hero, f.value);
+    }
+    false
+}
+
+// spells.py:1214-1223.
+fn revive(battle: &mut Battle, hero: UnitRef, percentage: f64) {
+    let u = battle.unit_mut(hero);
+    u.alive = true;
+    u.extra.revivable = false;
+    u.hp = u.max_hp * percentage;
+    u.target = None;
+    u.wall_target = None;
+    u.cooldown = 0.0;
+    u.frozen_until = 0.0;
+    u.stun_until = 0.0;
+    let name = u.name.clone();
+    battle.log_event(vec![round_decimal(battle.t, 1).into(), "revive".into(), name.into()]);
+}
+
+// spells.py:1154-1196: Totem bypasses ordinary spawn/equipment hooks.
+fn totem(battle: &mut Battle, f: &Field) -> bool {
+    let spots = spawn_spots(battle, f.x, f.y, 7.0 / 2.0, false);
+    let mut best = None;
+    let mut distance = f64::INFINITY;
+    for point in spots {
+        let d = py_hypot(point.0 - f.x, point.1 - f.y);
+        if best.is_none() || d < distance {
+            best = Some(point);
+            distance = d;
+        }
+    }
+    let Some((x, y)) = best else {
+        return false;
+    };
+    defense::builder_spell(battle, f);
+    battle.uid += 1;
+    let spec = crate::catalog::UnitSpec::totem();
+    let decay = crate::traps::raw(battle, "Totem Spell", "Hitpoint Decay per Second", Some(334.0)).expect("Totem decay");
+    let unit = Unit {
+        id: UnitId(battle.uid),
+        name: "Totem".to_owned(),
+        kind: "summon".to_owned(),
+        team: Team::Atk,
+        level: Some(crate::stats::Level::Int(1)),
+        x,
+        y,
+        hp: f.value,
+        max_hp: f.value,
+        base_max_hp: f.value,
+        dmg: 0.0,
+        interval: 1.0,
+        range: 0.0,
+        speed: 0.0,
+        housing: 20,
+        flying: false,
+        hits_air: false,
+        hits_ground: false,
+        spec,
+        alive: true,
+        cooldown: 0.0,
+        target: None,
+        target_kind: None,
+        wall_target: None,
+        group: "main".to_owned(),
+        spawned_at: battle.t,
+        active_at: battle.t,
+        stuck: 0.0,
+        frozen_until: 0.0,
+        stun_until: 0.0,
+        held_until: 0.0,
+        invisible_until: 0.0,
+        invuln_until: 0.0,
+        move_slow: 1.0,
+        move_slow_until: 0.0,
+        atk_slow: 1.0,
+        atk_slow_until: 0.0,
+        rage_dmg: 1.0,
+        rage_spd: 0.0,
+        rage_until: 0.0,
+        haste_spd: 0.0,
+        haste_until: 0.0,
+        iceblock_red: 0.0,
+        iceblock_until: 0.0,
+        dmg_taken_mult: 1.0,
+        dmg_taken_until: 0.0,
+        aura_bonus: 0.0,
+        aura_dmg: 1.0,
+        underground: false,
+        aware_until: 0.0,
+        last_hit: -100.0,
+        poison_stack: 0,
+        is_hero: false,
+        kit: None,
+        pet: None,
+        owner: None,
+        follow: None,
+        home: None,
+        leash: 0.0,
+        ability_used: false,
+        decay,
+        dash: None,
+        extra: UnitExtra::default(),
+        damage_dealt: 0.0,
+        in_pool: true,
+    };
+
+    let reference = unit.reference();
+    battle.unit_indices.insert(unit.id, (Team::Atk, battle.attackers.len()));
+    battle.attackers.push(unit);
+    battle.attacker_order.push(reference);
+    let until = battle.t + 0.2;
+    for index in 0..battle.buildings.len() {
+        let b = &mut battle.buildings[index];
+        if b.alive && b.weapon.is_some() && b.edge_distance(f.x, f.y) <= f.radius {
+            b.stun_until = b.stun_until.max(until);
+            let id = b.id;
+            retarget(battle, EntityRef::Building(id));
+        }
+    }
+    for reference in battle.defenders_near(f.x, f.y, f.radius) {
+        let u = battle.unit_mut(reference);
+        u.stun_until = u.stun_until.max(until);
+        retarget(battle, EntityRef::Unit(reference));
+    }
+    false
 }

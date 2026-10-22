@@ -74,6 +74,10 @@ def dump(obj, depth=0):
     if dataclasses.is_dataclass(obj):
         out = {"$type": type(obj).__name__}
         out.update({f.name: dump(getattr(obj, f.name), depth + 1) for f in dataclasses.fields(obj)})
+        # Runtime plan state such as _spell_stock is created in __post_init__.
+        for name, value in getattr(obj, "__dict__", {}).items():
+            if name not in out:
+                out[name] = dump(value, depth + 1)
         return out
     slots = getattr(type(obj), "__slots__", None)
     if slots is not None or hasattr(obj, "__dict__"):
@@ -263,6 +267,9 @@ def scenario(stage, k):
 
 def battle_state(b):
     """Starting state of a constructed, not yet stepped Battle."""
+    validate = getattr(b.plan, "require_legal", None)
+    if validate is not None:
+        validate()  # Resolve constructed spell-stock levels before the export.
     skip = {"plan", "log", "frames", "grid", "rng", "_bucket_grid", "deployments", "_dt_cache", "_nd_cache"}
     scalars = {}
     for k, v in vars(b).items():
@@ -296,6 +303,9 @@ def battle_state(b):
 def trace(b, max_ticks=10**9):
     lines, last_b, last_w, nlog = [], {}, {}, 0
     b.record = True
+    validate = getattr(b.plan, "require_legal", None)
+    if validate is not None:
+        validate()  # Battle.run() does this before the first step
     ticks = 0
     while not b.ended and b.t < b.max_time and ticks < max_ticks:
         lines.append(f"T {fbits(b.t)}")
@@ -341,7 +351,7 @@ def parity(stage, n, start=0):
         py.write_text("\n".join(trace(scenario(stage, k))) + "\n")
         run = subprocess.run([str(exe), "trace", str(bj), str(rs)], capture_output=True, text=True)
         if run.returncode != 0:
-            msg = (run.stderr.strip().splitlines() or ["?"])[-1]
+            msg = " | ".join(l for l in run.stderr.strip().splitlines() if "RUST_BACKTRACE" not in l)[-300:] or "?"
             print(f"  {k:3d}  RUST FAILED: {msg[:200]}")
             continue
         diff = first_difference(py.read_text().split("\n"), rs.read_text().split("\n"))

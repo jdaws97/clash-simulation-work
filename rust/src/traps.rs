@@ -37,7 +37,7 @@ pub fn raw(battle: &Battle, name: &str, key: &str, default: Option<f64>) -> Opti
 // traps.py:114-123.
 pub fn housing(unit: &Unit) -> i64 {
     if unit.name == "Totem" {
-        todo!("stage 4: traps.py:115 Totem trap housing");
+        return 20;
     }
     if unit.is_hero {
         return 25;
@@ -490,7 +490,7 @@ pub fn tornado_tick(battle: &mut Battle, field: &mut Field) {
             continue;
         }
         if unit.name == "Totem" {
-            todo!("stage 4: traps.py:379 Totem Tornado displacement exemption");
+            continue;
         }
         if matches!(
             unit.name.as_str(),

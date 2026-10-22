@@ -1032,12 +1032,19 @@ pub fn builder_spell(battle: &mut Battle, field: &Field) {
         let builder = &mut battle.builders[index];
         match field.kind.as_str() {
             "tesla_freeze" => {
-                todo!("stage 4: defense.py:1122 residual Freeze on Builder");
+                builder.frozen_until = builder.frozen_until.max(field.until);
             }
-            "freeze" => todo!("stage 4: defense.py:1124 Freeze on Builder"),
-            "poison" => todo!("stage 4: defense.py:1126 attacking Poison on Builder"),
+            "freeze" => {
+                builder.frozen_until = builder.frozen_until.max(t + field.value);
+            }
+            "poison" => {
+                builder.repair_slow = 1.0 - field.extra.atk;
+                builder.slow_until = field.until.min(t + battle.dt);
+            }
             "lightning" | "totem" => {
-                todo!("stage 4: defense.py:1129 Lightning/Totem Builder stun");
+                builder.target = None;
+                let duration = if field.kind == "lightning" { 0.1 } else { 0.2 };
+                builder.stun_until = builder.stun_until.max(t + duration);
             }
             "def_rage" | "rage" if field.kind == "def_rage" || field.team == Team::Def => {
                 builder.repair_boost = 2.0;

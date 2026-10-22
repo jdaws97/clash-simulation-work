@@ -275,3 +275,40 @@ impl Catalog {
             .unwrap_or_else(|| panic!("catalog.units[{name:?}]: missing unit spec"))
     }
 }
+
+impl UnitSpec {
+    // spells.py:1163 and specs.py:19-48: a dynamically constructed UnitSpec.
+    pub fn totem() -> Self {
+        Self {
+            name: "Totem".to_owned(),
+            prefer: "none".to_owned(),
+            walls: "fly".to_owned(),
+            attack: "single".to_owned(),
+            splash: 0.0,
+            splash_ground_only: false,
+            chain: 0,
+            chain_range: 3.0,
+            chain_decay: 0.8,
+            chain_from_primary: false,
+            bounces: 0,
+            bounce_gap: 3.0,
+            pierce: 0.0,
+            vs_walls: 1.0,
+            vs_resources: 1.0,
+            vs_defenses: 1.0,
+            vs_heroes: 1.0,
+            vs_buildings: 1.0,
+            engages_units: true,
+            death_damage: None,
+            death_radius: 0.0,
+            death_delay: 0.0,
+            death_freeze: None,
+            death_freeze_radius: 0.0,
+            death_spawn: Vec::new(),
+            special: Vec::new(),
+            heal_air: false,
+            flying_override: None,
+            notes: String::new(),
+        }
+    }
+}

@@ -237,8 +237,22 @@ impl Default for WeaponExtra {
 
 // entities.py:182-237; battle.py:445-1737; units.py:1200-1253,2003-2037; effects.py:31-74:
 // Python extra keys and their absent-key defaults.
+// heroes.py:1274-1305: presence matters when pausing exported extra timers.
+#[derive(Clone, Debug, Default)]
+pub struct PausedTimers {
+    pub horse_until: bool,
+    pub vial_until: bool,
+    pub tome_until: bool,
+    pub torch_until: bool,
+    pub haste_attack_until: bool,
+    pub angry_until: bool,
+    pub equipment_invisible_until: bool,
+    pub phoenix_until: bool,
+}
+
 #[derive(Clone, Debug)]
 pub struct UnitExtra {
+    pub paused_timers: PausedTimers,
     pub yellow_until: f64,
     pub brainwash_until: f64,
     pub armor_hp: f64,
@@ -278,7 +292,8 @@ pub struct UnitExtra {
     pub facing: (f64, f64),
     pub heading: Option<(f64, f64)>,
     pub deployment_source: Option<String>,
-    pub recalled: Option<Value>,
+    pub recalled: Option<f64>,
+    pub portal: Option<(f64, f64, f64)>,
     pub last_damage_source: Option<EntityRef>,
     pub pushed_at: Option<f64>,
     pub patrol_state: Option<String>,
@@ -354,6 +369,7 @@ pub struct UnitExtra {
 impl Default for UnitExtra {
     fn default() -> Self {
         Self {
+            paused_timers: PausedTimers::default(),
             yellow_until: 0.0,
             brainwash_until: 0.0,
             armor_hp: 0.0,
@@ -394,6 +410,7 @@ impl Default for UnitExtra {
             heading: None,
             deployment_source: None,
             recalled: None,
+            portal: None,
             last_damage_source: None,
             pushed_at: None,
             patrol_state: None,
@@ -516,6 +533,15 @@ pub struct FieldExtra {
     pub boost_time: f64,
     pub defense_damage: Option<f64>,
     pub has_pulses: bool,
+    pub name: Option<String>,
+    pub troop: f64,
+    pub time: f64,
+    pub freeze: Option<f64>,
+    pub town_hall: f64,
+    pub unit: Option<String>,
+    pub first: Option<usize>,
+    pub spots: Option<Vec<(f64, f64)>>,
+    pub hero: Option<UnitRef>,
     pub unknown: ExtraMap,
 }
 
@@ -537,6 +563,15 @@ impl Default for FieldExtra {
             boost_time: 1.0,
             defense_damage: None,
             has_pulses: false,
+            name: None,
+            troop: 0.0,
+            time: 0.0,
+            freeze: None,
+            town_hall: 0.0,
+            unit: None,
+            first: None,
+            spots: None,
+            hero: None,
             unknown: Vec::new(),
         }
     }
@@ -751,6 +786,7 @@ pub struct Trap {
 
 #[derive(Clone, Debug)]
 pub struct Field {
+    pub identity: usize,
     pub kind: String,
     pub x: f64,
     pub y: f64,
@@ -833,6 +869,7 @@ impl Field {
     // entities.py:262-274: the default field belongs to the attacker.
     pub fn new(kind: &str, x: f64, y: f64, radius: f64, until: f64) -> Self {
         Self {
+            identity: 0,
             kind: kind.to_owned(),
             x,
             y,
@@ -947,6 +984,7 @@ pub struct CargoEntry {
 
 #[derive(Clone, Debug)]
 pub enum Plan {
+    Playbook(Box<crate::playbook::PlaybookPlan>),
     Stage {
         deployments: Vec<Deployment>,
         town_hall: i64,
@@ -965,6 +1003,7 @@ pub enum Plan {
 impl Plan {
     pub fn loadout(&self, name: &str) -> Option<&crate::heroes::HeroLoadout> {
         match self {
+            Self::Playbook(p) => p.attack.loadouts.iter().find(|(hero, _)| hero == name).map(|(_, loadout)| loadout),
             Self::Stage { loadouts, .. } => loadouts
                 .iter()
                 .find(|(hero, _)| hero == name)
@@ -974,6 +1013,7 @@ impl Plan {
 
     pub fn equipment_level(&self, name: &str) -> Option<&Level> {
         match self {
+            Self::Playbook(p) => p.attack.equipment_levels.iter().find(|(key, _)| key == name).and_then(|(_, lv)| lv.as_ref()),
             Self::Stage { equipment_levels, .. } => equipment_levels
                 .iter()
                 .find(|(key, _)| key == name)
@@ -983,6 +1023,7 @@ impl Plan {
 
     pub fn pet_level(&self, name: &str) -> Option<&Level> {
         match self {
+            Self::Playbook(p) => p.attack.pet_levels.iter().find(|(key, _)| key == name).and_then(|(_, lv)| lv.as_ref()),
             Self::Stage { pet_levels, .. } => pet_levels
                 .iter()
                 .find(|(key, _)| key == name)
@@ -992,24 +1033,28 @@ impl Plan {
 
     pub fn auto_ability_on_ko(&self) -> bool {
         match self {
+            Self::Playbook(p) => p.attack.auto_ability_on_ko,
             Self::Stage { auto_ability_on_ko, .. } => *auto_ability_on_ko,
         }
     }
 
     pub fn observed(&self) -> bool {
         match self {
+            Self::Playbook(p) => p.attack.observed,
             Self::Stage { observed, .. } => *observed,
         }
     }
 
     pub fn town_hall(&self) -> i64 {
         match self {
+            Self::Playbook(p) => p.attack.town_hall,
             Self::Stage { town_hall, .. } => *town_hall,
         }
     }
 
     pub fn researched_level(&self, name: &str) -> Option<&Option<Level>> {
         match self {
+            Self::Playbook(p) => p.attack.troop_levels.iter().find(|(key, _)| key == name).map(|(_, lv)| lv),
             Self::Stage { troop_levels, .. } => troop_levels
                 .iter()
                 .find(|(key, _)| key == name)
@@ -1019,18 +1064,21 @@ impl Plan {
 
     pub fn cc_released(&self) -> bool {
         match self {
+            Self::Playbook(p) => p.attack.cc_released,
             Self::Stage { cc_released, .. } => *cc_released,
         }
     }
 
     pub fn release_cc(&mut self) {
         match self {
+            Self::Playbook(p) => p.attack.cc_released = true,
             Self::Stage { cc_released, .. } => *cc_released = true,
         }
     }
 
     pub fn strength(&self) -> f64 {
         match self {
+            Self::Playbook(p) => p.attack.strength,
             Self::Stage {
                 strength,
                 ..
@@ -1042,6 +1090,7 @@ impl Plan {
     // mechanic_tests.py:43-48: Stage has no pending work and no exported callbacks.
     pub fn has_pending(&self) -> bool {
         match self {
+            Self::Playbook(p) => p.has_pending(),
             Self::Stage {
                 ..
             }
@@ -1098,6 +1147,10 @@ pub struct Battle {
     // battle.py:148 random.Random(seed), restored from the exported state.
     pub rng: Option<PyRandom>,
     pub dt: f64,
+    pub pace: f64,
+    pub pace_tap: f64,
+    pub pace_switch: f64,
+    pub pace_ability: f64,
     pub windup: bool,
     pub fast_end: bool,
     pub modifier: Option<String>,
@@ -1127,6 +1180,8 @@ pub struct Battle {
     pub log: Vec<Vec<LogValue>>,
     pub frames: Vec<Snapshot>,
     pub grid: Grid,
+    pub jump_grid: Option<Grid>,
+    pub jump_grid_key: Option<(u64, Vec<(usize, u64, u64, u64, u64)>)>,
     pub buildings: Vec<Building>,
     pub walls: Vec<Wall>,
     pub traps: Vec<Trap>,
@@ -1168,6 +1223,7 @@ pub struct Battle {
     pub next_deploy: usize,
     pub next_cc_exit: f64,
     pub field_serial: i64,
+    pub field_identity: usize,
     pub plan: Plan,
     // Hash maps are used only for lookup. Python-order iteration uses the Vecs.
     pub building_indices: HashMap<BuildingId, usize>,
@@ -1181,6 +1237,15 @@ pub struct Battle {
 }
 
 impl Battle {
+    pub fn portal_units(&self) -> Vec<UnitRef> {
+        self.portal_stash.iter().map(|value| {
+            let Value::Ref(EntityRef::Unit(unit)) = value else {
+                panic!("portal stash contains a non-unit");
+            };
+            *unit
+        }).collect()
+    }
+
     pub fn entity_position(&self, entity: EntityRef) -> (f64, f64) {
         match entity {
             EntityRef::Building(id) => (self.building(id).x, self.building(id).y),

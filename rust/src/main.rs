@@ -17,6 +17,8 @@ pub mod pyrandom;
 pub mod state;
 pub mod stats;
 pub mod spells;
+pub mod plans;
+pub mod playbook;
 pub mod trace;
 pub mod traps;
 pub mod units;

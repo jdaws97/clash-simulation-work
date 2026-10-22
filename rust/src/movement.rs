@@ -123,15 +123,42 @@ impl Battle {
         &u.spec.walls
     }
 
-    // battle.py:1478-1503: Jump Spell's separate topology belongs to stage 4.
+    // battle.py:1478-1503: independent wall topology for active Jump fields.
     pub fn navigation_grid(&mut self, reference: UnitRef) -> &mut Grid {
         if matches!(self.unit(reference).kind.as_str(), "siege" | "siege_idle") {
             return &mut self.grid;
         }
-        if self.fields.iter().any(|f| f.kind == "jump" && f.started <= self.t && self.t < f.until) {
-            todo!("stage 4: battle.py:1488 Jump Spell navigation grid");
+        let fields: Vec<_> = self
+            .fields
+            .iter()
+            .filter(|f| f.kind == "jump" && f.started <= self.t && self.t < f.until)
+            .map(|f| {
+                (
+                    f.identity,
+                    f.x.to_bits(),
+                    f.y.to_bits(),
+                    f.radius.to_bits(),
+                    f.started.to_bits(),
+                )
+            })
+            .collect();
+        if fields.is_empty() {
+            return &mut self.grid;
         }
-        &mut self.grid
+        let key = (self.grid.version, fields);
+        if self.jump_grid_key.as_ref() != Some(&key) {
+            let mut grid = Grid::new(self.catalog.world);
+            grid.blocked.clone_from(&self.grid.blocked);
+            grid.wall.clone_from(&self.grid.wall);
+            for wall in &self.walls {
+                if wall.alive && crate::spells::wall_jumped(self, wall.id) {
+                    grid.set_wall(wall.tx, wall.ty, false);
+                }
+            }
+            self.jump_grid_key = Some(key);
+            self.jump_grid = Some(grid);
+        }
+        self.jump_grid.as_mut().expect("Jump topology")
     }
 
     // battle.py:1505-1520: add strongest speed bonus, then multiply slow.

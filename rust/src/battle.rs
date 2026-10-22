@@ -221,6 +221,42 @@ impl Battle {
         &self.dt_cache
     }
 
+    // battle.py:409-424: walls, rather than red-line occupancy, enclose holes.
+    pub fn inside_spots(&mut self) -> Vec<(f64, f64)> {
+        use std::collections::HashSet;
+        self.live_no_deploy();
+        let world = self.catalog.world as i32;
+        let walls: HashSet<_> = self.walls.iter().filter(|w| w.alive).map(|w| (w.tx, w.ty)).collect();
+        let mut queue = Vec::new();
+        for i in 0..world {
+            for j in [0, world - 1] { queue.push((i, j)); }
+        }
+        for i in 0..world {
+            for j in [0, world - 1] { queue.push((j, i)); }
+        }
+        let mut seen: HashSet<_> = queue.iter().copied().collect();
+        while let Some((x, y)) = queue.pop() {
+            for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
+                let next = (x + dx, y + dy);
+                if 0 <= next.0 && next.0 < world && 0 <= next.1 && next.1 < world
+                    && !walls.contains(&next) && !seen.contains(&next) {
+                    seen.insert(next);
+                    queue.push(next);
+                }
+            }
+        }
+        let mut spots = Vec::new();
+        for x in 0..world {
+            for y in 0..world {
+                let tile = (x, y);
+                if !seen.contains(&tile) && !self.nd_cache.contains(&tile) && !walls.contains(&tile) {
+                    spots.push((x as f64 + 0.5, y as f64 + 0.5));
+                }
+            }
+        }
+        spots
+    }
+
     // battle.py:427-455. Catalog summon_spec already includes heroes.summon_spec.
     pub fn spawn(
         &mut self,
@@ -375,10 +411,14 @@ impl Battle {
             },
         );
         let strength = self.plan.strength();
+        let default_mode = match &self.plan {
+            Plan::Playbook(p) if !p.attack.ground => "air",
+            _ => "ground",
+        };
         let unit = self.unit_mut(reference);
         // battle.py:469-480: Stage's default Warden mode is ground.
         if unit.name == "Grand Warden" {
-            let mode = deployment.mode.as_deref().unwrap_or("ground");
+            let mode = deployment.mode.as_deref().unwrap_or(default_mode);
             assert!(mode == "air" || mode == "ground", "Grand Warden mode must be air or ground");
             unit.flying = mode == "air";
         }
@@ -459,8 +499,19 @@ impl Battle {
             return false;
         }
         if self.deployments[self.next_deploy..].iter().any(|d| d.name != "Healer")
-            || self.plan.has_pending() {
+            || match &self.plan {
+                Plan::Playbook(p) => p.has_offensive_pending(self),
+                Plan::Stage { .. } => self.plan.has_pending(),
+            } {
             return false;
+        }
+        if !self.fast_end {
+            if let Plan::Playbook(p) = &self.plan {
+                if crate::plans::count(&p.attack.spells, "lightning") != 0
+                    || crate::plans::count(&p.attack.spells, "eq") != 0 {
+                    return false;
+                }
+            }
         }
         if self.pending.iter().any(|pending| matches!(pending.actor,
             Some(EntityRef::Unit(UnitRef {
@@ -610,12 +661,13 @@ impl Battle {
     }
 
     fn plan_on_tick(&mut self) {
-        match &self.plan {
-            Plan::Stage {
-                ..
-            }
-            => {
-            }
+        if let Plan::Playbook(plan) = &self.plan {
+            // Runtime helpers need &mut Battle while deploy/equip read immutable
+            // plan configuration. Keep that configuration in Battle throughout.
+            let mut running = (**plan).clone();
+            running.on_tick(self);
+            running.attack.cc_released |= self.plan.cc_released();
+            self.plan = Plan::Playbook(Box::new(running));
         }
     }
 
