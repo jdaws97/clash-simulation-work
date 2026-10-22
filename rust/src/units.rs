@@ -261,12 +261,12 @@ impl Battle<'_> {
         let field = self
             .grid
             .field(identity, tx, ty, half, reach, NORMAL_WALL_EXTRA);
-        let next = self.grid.next_step(&field, unit.x, unit.y);
+        let next = self.grid.next_step(field, unit.x, unit.y);
         if next.at_goal {
             let (i, j) = self.grid.cell(unit.x, unit.y);
             let cell = self.grid.index(i, j);
             // battle.py:1613-1622: finish straight only at a goal or inside a building.
-            if field[cell] == 0.0 || self.grid.blocked[cell] {
+            if self.grid.distance(field, cell) == 0.0 || self.grid.blocked[cell] {
                 self.move_straight(index, tx, ty, step);
             }
             return;
@@ -298,7 +298,7 @@ impl Battle<'_> {
             if left <= 1e-9 || unit.x != nx || unit.y != ny {
                 break;
             }
-            let next = self.grid.next_step(&field, unit.x, unit.y);
+            let next = self.grid.next_step(field, unit.x, unit.y);
             if next.at_goal || next.is_wall || next.x == unit.x && next.y == unit.y {
                 break;
             }

@@ -1,5 +1,5 @@
-use std::collections::HashMap;
-use std::rc::Rc;
+use std::cmp::Reverse;
+use std::collections::{BinaryHeap, HashMap};
 
 use crate::geom::round_half_even;
 
@@ -24,7 +24,12 @@ const NO_NEIGHBOR: usize = usize::MAX;
 // pathing.py:96-99: check [ci, nj] before [ni, cj] for each diagonal.
 const DIAGONAL_CORNERS: [(usize, usize); 4] = [(2, 0), (3, 0), (2, 1), (3, 1)];
 
-pub type Field = Rc<[f32]>;
+// Cache indices remain valid until the next prune.
+#[derive(Clone, Copy)]
+pub struct Field(usize);
+
+// Nonnegative, non-NaN f32 keys have the same order as their bits.
+type Frontier = BinaryHeap<Reverse<(u32, usize)>>;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TargetIdentity {
@@ -56,25 +61,12 @@ enum CacheKey {
     },
 }
 
-enum CachedGoal {
-    Target(Vec<bool>),
-    Source((usize, usize)),
-}
-
 struct CachedField {
     key: CacheKey,
     version: u64,
-    distances: Field,
-    goal: CachedGoal,
-}
-
-struct Change {
-    version: u64,
-    decrease_only: bool,
-    i0: isize,
-    i1: isize,
-    j0: isize,
-    j1: isize,
+    distances: Vec<f32>,
+    frontier: Frontier,
+    wall_extra: f64,
 }
 
 pub struct Grid {
@@ -85,12 +77,9 @@ pub struct Grid {
     pub version: u64,
     cache: Vec<CachedField>,
     cache_indices: HashMap<CacheKey, usize>,
-    log: Vec<Change>,
     neighbors: Vec<[usize; 8]>,
-    distance_buffer: Vec<f32>,
-    seed: Vec<bool>,
-    source_goal: Vec<bool>,
-    heap: Heap,
+    spare_fields: Vec<CachedField>,
+    goal_marks: Vec<bool>,
 }
 
 impl Grid {
@@ -104,12 +93,9 @@ impl Grid {
             version: 0,
             cache: Vec::new(),
             cache_indices: HashMap::new(),
-            log: Vec::new(),
             neighbors: neighbor_indices(n),
-            distance_buffer: vec![INF; n * n],
-            seed: vec![false; n * n],
-            source_goal: vec![false; n * n],
-            heap: Heap::new(n * n * 8 + 16),
+            spare_fields: Vec::new(),
+            goal_marks: vec![false; n * n],
         }
     }
 
@@ -129,7 +115,7 @@ impl Grid {
                 self.blocked[index] = value;
             }
         }
-        self.changed(lo_i, hi_i, lo_j, hi_j, !value);
+        self.version += 1;
     }
 
     pub fn set_wall(&mut self, tx: i32, ty: i32, present: bool) {
@@ -143,20 +129,8 @@ impl Grid {
                 self.wall[index] = present;
             }
         }
-        self.changed(lo_i, hi_i, lo_j, hi_j, !present);
-    }
-
-    // pathing.py:185-187: log every write, with a one-cell repair border.
-    fn changed(&mut self, i0: isize, i1: isize, j0: isize, j1: isize, decrease_only: bool) {
+        // pathing.py:185-187,197-199: even an unchanged write versions the grid.
         self.version += 1;
-        self.log.push(Change {
-            version: self.version,
-            decrease_only,
-            i0: (i0 - 1).max(0),
-            i1: (i1 + 1).min(self.n as isize),
-            j0: (j0 - 1).max(0),
-            j1: (j1 + 1).min(self.n as isize),
-        });
     }
 
     // pathing.py:272-275: truncate before clamping, rather than rounding.
@@ -164,25 +138,6 @@ impl Grid {
         let i = ((x * RES as f64) as isize).clamp(0, self.n as isize - 1);
         let j = ((y * RES as f64) as isize).clamp(0, self.n as isize - 1);
         (i as usize, j as usize)
-    }
-
-    pub fn goal_mask(&self, cx: f64, cy: f64, half: f64, reach: f64) -> Vec<bool> {
-        let mut goal = vec![false; self.n * self.n];
-        let (lo_i, hi_i) = goal_bounds(self.n, cx, half, reach);
-        let (lo_j, hi_j) = goal_bounds(self.n, cy, half, reach);
-        // pathing.py:121-141: compare squared distances in float64.
-        for i in lo_i..=hi_i {
-            let px = (i as f64 + 0.5) / 2.0;
-            let dx = ((px - cx).abs() - half).max(0.0);
-            for j in lo_j..=hi_j {
-                let py = (j as f64 + 0.5) / 2.0;
-                let dy = ((py - cy).abs() - half).max(0.0);
-                if dx * dx + dy * dy <= reach * reach {
-                    goal[self.index(i as usize, j as usize)] = true;
-                }
-            }
-        }
-        goal
     }
 
     pub fn field(
@@ -204,27 +159,19 @@ impl Grid {
             reach: float_key(reach),
             wall_extra: float_key(wall_extra),
         };
-        if let Some(distances) = self.cached(&key) {
-            return distances;
+        if let Some(field) = self.cached(&key) {
+            return field;
         }
-        let goal = self.goal_mask(cx, cy, half, reach);
-        let mut distances = None;
-        // pathing.py:222-234: a stale target field needs an identical goal mask.
-        if let Some(&index) = self.cache_indices.get(&key) {
-            let same_goal = match &self.cache[index].goal {
-                CachedGoal::Target(cached_goal) => cached_goal == &goal,
-                CachedGoal::Source(_) => false,
-            };
-            if same_goal {
-                distances = self.repair(index, &goal, wall_extra);
+        let field = self.reset_field(key, wall_extra);
+        let entry = &mut self.cache[field.0];
+        let blocked = &self.blocked;
+        // pathing.py:28-35: only unblocked goal cells seed the field.
+        for_each_goal_cell(self.n, cx, cy, half, reach, |cell| {
+            if !blocked[cell] {
+                entry.seed(cell);
             }
-        }
-        let distances = match distances {
-            Some(distances) => distances,
-            None => self.dijkstra(&goal, wall_extra),
-        };
-        self.store_field(key, Rc::clone(&distances), CachedGoal::Target(goal));
-        distances
+        });
+        field
     }
 
     pub fn source_field(&mut self, x: f64, y: f64, wall_extra: f64) -> Field {
@@ -236,32 +183,15 @@ impl Grid {
         };
         // pathing.py:237-255: same-version hits reuse the first half-cell's
         // field for the entire tile, without checking the new source cell.
-        if let Some(distances) = self.cached(&key) {
-            return distances;
+        if let Some(field) = self.cached(&key) {
+            return field;
         }
-        // Reuse this temporary mask; source cache entries store only the cell.
-        let mut goal = std::mem::take(&mut self.source_goal);
-        goal.fill(false);
-        goal[self.index(i, j)] = true;
-        let mut distances = None;
-        // pathing.py:245-255: repair only the same half-cell, passing its goal
-        // mask so a source freed by a removed building restarts at zero.
-        if let Some(&index) = self.cache_indices.get(&key) {
-            let same_source = matches!(
-                &self.cache[index].goal,
-                CachedGoal::Source(cell) if *cell == (i, j)
-            );
-            if same_source {
-                distances = self.repair(index, &goal, wall_extra);
-            }
+        let field = self.reset_field(key, wall_extra);
+        let cell = self.index(i, j);
+        if !self.blocked[cell] {
+            self.cache[field.0].seed(cell);
         }
-        let distances = match distances {
-            Some(distances) => distances,
-            None => self.dijkstra(&goal, wall_extra),
-        };
-        self.source_goal = goal;
-        self.store_field(key, Rc::clone(&distances), CachedGoal::Source((i, j)));
-        distances
+        field
     }
 
     pub fn building_costs(
@@ -276,34 +206,71 @@ impl Grid {
     ) -> Vec<f32> {
         assert_eq!(xs.len(), ys.len());
         assert_eq!(xs.len(), halves.len());
-        let distances = self.source_field(x, y, wall_extra);
+        let field = self.source_field(x, y, wall_extra);
+        let entry = &mut self.cache[field.0];
+        let goal_marks = &mut self.goal_marks;
+        goal_marks.fill(false);
+        // Stored values below the frontier are already final.
+        let frontier_min = entry
+            .frontier
+            .peek()
+            .map(|&Reverse((key, _))| f32::from_bits(key))
+            .unwrap_or(INF);
+        let mut best = INF;
+        for b in 0..xs.len() {
+            for_each_goal_cell(self.n, xs[b], ys[b], halves[b], reach, |cell| {
+                goal_marks[cell] = true;
+                let distance = entry.distances[cell];
+                // Earlier queries may already have settled this pool's goals.
+                if distance < frontier_min && distance < best {
+                    best = distance;
+                }
+            });
+        }
+        while let Some(&Reverse((key, _))) = entry.frontier.peek() {
+            if f32::from_bits(key) > best {
+                break;
+            }
+            if let Some((distance, cell)) =
+                entry.expand(&self.blocked, &self.wall, &self.neighbors)
+            {
+                if goal_marks[cell] && distance < best {
+                    best = distance;
+                }
+            }
+        }
+
+        // Once the frontier exceeds best, every value <= best is final.
+        // Larger stored upper bounds cannot change the first argmin or its
+        // >= 1e8 fallback (pathing.py:145-169; battle.py:1432-1441).
+        let distances = &entry.distances;
         let mut costs = vec![INF; xs.len()];
         // pathing.py:145-169; battle.py:1432-1441: output stays float32,
         // geometry stays float64, and strict comparisons retain the first tie.
         for b in 0..xs.len() {
-            let (lo_i, hi_i) = goal_bounds(self.n, xs[b], halves[b], reach);
-            let (lo_j, hi_j) = goal_bounds(self.n, ys[b], halves[b], reach);
             let mut best = INF;
-            for i in lo_i..=hi_i {
-                let px = (i as f64 + 0.5) / 2.0;
-                let dx = ((px - xs[b]).abs() - halves[b]).max(0.0);
-                for j in lo_j..=hi_j {
-                    let py = (j as f64 + 0.5) / 2.0;
-                    let dy = ((py - ys[b]).abs() - halves[b]).max(0.0);
-                    let distance = distances[self.index(i as usize, j as usize)];
-                    if dx * dx + dy * dy <= reach * reach && distance < best {
-                        best = distance;
-                    }
+            for_each_goal_cell(self.n, xs[b], ys[b], halves[b], reach, |cell| {
+                let distance = distances[cell];
+                if distance < best {
+                    best = distance;
                 }
-            }
+            });
             costs[b] = best;
         }
         costs
     }
 
-    pub fn next_step(&self, distances: &[f32], x: f64, y: f64) -> NextStep {
+    pub fn distance(&mut self, field: Field, cell: usize) -> f32 {
+        self.ensure(field, cell);
+        self.cache[field.0].distances[cell]
+    }
+
+    pub fn next_step(&mut self, field: Field, x: f64, y: f64) -> NextStep {
         let (i, j) = self.cell(x, y);
-        let here = distances[self.index(i, j)];
+        let cell = self.index(i, j);
+        self.ensure(field, cell);
+        let distances = &self.cache[field.0].distances;
+        let here = distances[cell];
         if here <= 0.0 {
             return NextStep {
                 x,
@@ -316,6 +283,7 @@ impl Grid {
         let (mut bi, mut bj) = (i, j);
         // pathing.py:287-297: choose the lowest stored distance, retaining the
         // earlier neighbor on ties. Do not check obstacles or corner cutting.
+        // Unsettled neighbors have stored values >= here and cannot be chosen.
         for (di, dj) in NEIGHBORS {
             let ni = i as isize + di;
             let nj = j as isize + dj;
@@ -347,19 +315,22 @@ impl Grid {
     }
 
     pub fn prune(&mut self) {
-        // pathing.py:261-270: stable sorting preserves the cache's current
-        // insertion order on equal versions, including after earlier prunes.
-        if self.cache.len() > 600 {
-            self.cache
-                .sort_by(|left, right| right.version.cmp(&left.version));
-            self.cache.truncate(400);
-            self.cache_indices.clear();
-            for (index, entry) in self.cache.iter().enumerate() {
-                self.cache_indices.insert(entry.key, index);
+        // Drop stale entries instead of retaining them for repair. Keep live
+        // source fields so whole-tile hits still use the first caller's cell.
+        let mut index = 0;
+        while index < self.cache.len() {
+            if self.cache[index].version != self.version {
+                let mut entry = self.cache.swap_remove(index);
+                entry.frontier.clear();
+                self.spare_fields.push(entry);
+            } else {
+                index += 1;
             }
         }
-        if let Some(oldest) = self.cache.iter().map(|entry| entry.version).min() {
-            self.log.retain(|change| change.version > oldest);
+        self.spare_fields.truncate(400);
+        self.cache_indices.clear();
+        for (index, entry) in self.cache.iter().enumerate() {
+            self.cache_indices.insert(entry.key, index);
         }
     }
 
@@ -367,127 +338,107 @@ impl Grid {
         let index = *self.cache_indices.get(key)?;
         let entry = &self.cache[index];
         if entry.version == self.version {
-            Some(Rc::clone(&entry.distances))
+            Some(Field(index))
         } else {
             None
         }
     }
 
-    fn store_field(&mut self, key: CacheKey, distances: Field, goal: CachedGoal) {
-        let entry = CachedField {
-            key,
-            version: self.version,
-            distances,
-            goal,
-        };
-        // pathing.py:234,255: replacing a dict value keeps its insertion order.
-        if let Some(&index) = self.cache_indices.get(&key) {
-            self.cache[index] = entry;
+    fn reset_field(&mut self, key: CacheKey, wall_extra: f64) -> Field {
+        let index = if let Some(&index) = self.cache_indices.get(&key) {
+            index
         } else {
-            self.cache_indices.insert(key, self.cache.len());
+            let index = self.cache.len();
+            let entry = self.spare_fields.pop().unwrap_or_else(|| CachedField {
+                key,
+                version: self.version,
+                distances: vec![INF; self.n * self.n],
+                frontier: Frontier::new(),
+                wall_extra: 0.0,
+            });
+            self.cache_indices.insert(key, index);
             self.cache.push(entry);
-        }
+            index
+        };
+        let entry = &mut self.cache[index];
+        entry.key = key;
+        entry.version = self.version;
+        entry.distances.fill(INF);
+        entry.frontier.clear();
+        // pathing.py:220,233,254: wall_extra is converted to float32 at entry.
+        entry.wall_extra = f64::from(wall_extra as f32);
+        Field(index)
     }
 
-    fn repair(&mut self, cache_index: usize, goal: &[bool], wall_extra: f64) -> Option<Field> {
-        let entry = &self.cache[cache_index];
-        let version = entry.version;
-        // pathing.py:201-214: require an unbroken log of removal-only changes.
-        if self.log.is_empty() || self.log[0].version > version + 1 {
-            return None;
-        }
-        self.seed.fill(false);
-        for change in self.log.iter().rev() {
-            if change.version <= version {
+    fn ensure(&mut self, field: Field, cell: usize) {
+        let entry = &mut self.cache[field.0];
+        debug_assert_eq!(entry.version, self.version);
+        // Drain equal keys too: afterwards this cell and all lower values are
+        // final, even if the cell started with an INF upper bound.
+        while let Some(&Reverse((key, _))) = entry.frontier.peek() {
+            if f32::from_bits(key) > entry.distances[cell] {
                 break;
             }
-            if !change.decrease_only {
-                return None;
-            }
-            let j0 = slice_bound(change.j0, self.n);
-            let j1 = slice_bound(change.j1, self.n);
-            for i in slice_bound(change.i0, self.n)..slice_bound(change.i1, self.n) {
-                for j in j0..j1 {
-                    self.seed[i * self.n + j] = true;
-                }
-            }
+            let _ = entry.expand(&self.blocked, &self.wall, &self.neighbors);
         }
+    }
+}
 
-        // pathing.py:215-220: copy the old field and reset freed goal cells.
-        self.distance_buffer.copy_from_slice(&entry.distances);
-        for (index, &is_goal) in goal.iter().enumerate() {
-            if self.seed[index] && is_goal && !self.blocked[index] {
-                self.distance_buffer[index] = 0.0;
-            }
-        }
-        Some(self.relax(wall_extra))
+impl CachedField {
+    fn seed(&mut self, cell: usize) {
+        self.distances[cell] = 0.0;
+        self.frontier.push(Reverse((0.0_f32.to_bits(), cell)));
     }
 
-    fn dijkstra(&mut self, goal: &[bool], wall_extra: f64) -> Field {
-        // pathing.py:28-35: full fields use the same relaxation as repairs.
-        for (index, &is_goal) in goal.iter().enumerate() {
-            self.distance_buffer[index] = if is_goal && !self.blocked[index] {
-                0.0
-            } else {
-                INF
-            };
+    fn expand(
+        &mut self,
+        blocked: &[bool],
+        wall: &[bool],
+        neighbor_indices: &[[usize; 8]],
+    ) -> Option<(f32, usize)> {
+        let Reverse((key, index)) = self.frontier.pop()?;
+        let distance = f32::from_bits(key);
+        // pathing.py:85-88: discard superseded queue entries.
+        if distance > self.distances[index] {
+            return None;
         }
-        self.seed.copy_from_slice(goal);
-        self.relax(wall_extra)
-    }
-
-    fn relax(&mut self, wall_extra: f64) -> Field {
-        self.heap.clear();
-        // pathing.py:50-64: flat order is x then y, with the same finite-seed test.
-        for (index, &is_seed) in self.seed.iter().enumerate() {
-            if is_seed && !self.blocked[index] && self.distance_buffer[index] < INF {
-                self.heap.push(self.distance_buffer[index], index);
-            }
-        }
-        // pathing.py:220,233,254: wall_extra is converted to float32 at entry.
-        let wall_extra = f64::from(wall_extra as f32);
         let diagonal = 2.0_f64.sqrt() / RES as f64;
-        while let Some((distance, index)) = self.heap.pop() {
-            if distance > self.distance_buffer[index] {
+        // pathing.py:100-104: compute each step-plus-wall cost once per pop.
+        let mut straight_cost = 0.5;
+        let mut diagonal_cost = diagonal;
+        if wall[index] {
+            straight_cost += self.wall_extra;
+            diagonal_cost += self.wall_extra;
+        }
+        let neighbors = &neighbor_indices[index];
+        for (q, &next) in neighbors.iter().enumerate() {
+            if next == NO_NEIGHBOR || blocked[next] {
                 continue;
             }
-            // pathing.py:100-104: compute each step-plus-wall cost once per pop.
-            let mut straight_cost = 0.5;
-            let mut diagonal_cost = diagonal;
-            if self.wall[index] {
-                straight_cost += wall_extra;
-                diagonal_cost += wall_extra;
-            }
-            let neighbors = &self.neighbors[index];
-            for (q, &next) in neighbors.iter().enumerate() {
-                if next == NO_NEIGHBOR || self.blocked[next] {
+            if q >= 4 {
+                // pathing.py:96-99: a valid diagonal has both cardinal neighbors.
+                let (along_y, along_x) = DIAGONAL_CORNERS[q - 4];
+                if blocked[neighbors[along_y]] || blocked[neighbors[along_x]] {
                     continue;
                 }
-                if q >= 4 {
-                    // A valid diagonal always has both cardinal neighbors.
-                    let (along_y, along_x) = DIAGONAL_CORNERS[q - 4];
-                    if self.blocked[neighbors[along_y]] || self.blocked[neighbors[along_x]] {
-                        continue;
-                    }
-                }
-                // pathing.py:100-109: charge the current cell's wall, and add
-                // that cost to the step before adding the popped f32 distance.
-                let cost = if q < 4 {
-                    straight_cost
-                } else {
-                    diagonal_cost
-                };
-                let candidate = f64::from(distance) + cost;
-                // Compare in f64 BEFORE either the distance or heap key is
-                // rounded to f32. Even an equal rounded value is pushed.
-                if candidate < f64::from(self.distance_buffer[next]) {
-                    self.distance_buffer[next] = candidate as f32;
-                    self.heap.push(candidate as f32, next);
-                }
+            }
+            // pathing.py:100-109: charge the current cell's wall, and add
+            // that cost to the step before adding the popped f32 distance.
+            let cost = if q < 4 {
+                straight_cost
+            } else {
+                diagonal_cost
+            };
+            let candidate = f64::from(distance) + cost;
+            // Compare in f64 BEFORE either the distance or heap key is
+            // rounded to f32. Even an equal rounded value is pushed.
+            if candidate < f64::from(self.distances[next]) {
+                let rounded = candidate as f32;
+                self.distances[next] = rounded;
+                self.frontier.push(Reverse((rounded.to_bits(), next)));
             }
         }
-        // Cached/returned fields own their storage; scratch buffers stay reusable.
-        Rc::from(self.distance_buffer.as_slice())
+        Some((distance, index))
     }
 }
 
@@ -531,65 +482,26 @@ fn goal_bounds(n: usize, center: f64, half: f64, reach: f64) -> (isize, isize) {
     (low, high)
 }
 
-// pathing.py:45-84,107-117: parallel-array min-heap with no index tie-break.
-struct Heap {
-    keys: Vec<f32>,
-    indices: Vec<usize>,
-}
-
-impl Heap {
-    fn new(capacity: usize) -> Self {
-        Self {
-            keys: Vec::with_capacity(capacity),
-            indices: Vec::with_capacity(capacity),
-        }
-    }
-
-    fn clear(&mut self) {
-        self.keys.clear();
-        self.indices.clear();
-    }
-
-    fn push(&mut self, key: f32, index: usize) {
-        let mut child = self.keys.len();
-        self.keys.push(key);
-        self.indices.push(index);
-        while child > 0 {
-            let parent = (child - 1) >> 1;
-            if self.keys[parent] <= self.keys[child] {
-                break;
+fn for_each_goal_cell(
+    n: usize,
+    cx: f64,
+    cy: f64,
+    half: f64,
+    reach: f64,
+    mut visit: impl FnMut(usize),
+) {
+    let (lo_i, hi_i) = goal_bounds(n, cx, half, reach);
+    let (lo_j, hi_j) = goal_bounds(n, cy, half, reach);
+    // pathing.py:121-141,145-169: identical bounds and float64 square test.
+    for i in lo_i..=hi_i {
+        let px = (i as f64 + 0.5) / 2.0;
+        let dx = ((px - cx).abs() - half).max(0.0);
+        for j in lo_j..=hi_j {
+            let py = (j as f64 + 0.5) / 2.0;
+            let dy = ((py - cy).abs() - half).max(0.0);
+            if dx * dx + dy * dy <= reach * reach {
+                visit(i as usize * n + j as usize);
             }
-            self.keys.swap(parent, child);
-            self.indices.swap(parent, child);
-            child = parent;
         }
-    }
-
-    fn pop(&mut self) -> Option<(f32, usize)> {
-        if self.keys.is_empty() {
-            return None;
-        }
-        let result = (self.keys[0], self.indices[0]);
-        self.keys.swap_remove(0);
-        self.indices.swap_remove(0);
-        let mut current = 0;
-        loop {
-            let left = 2 * current + 1;
-            let right = left + 1;
-            let mut smallest = current;
-            if left < self.keys.len() && self.keys[left] < self.keys[smallest] {
-                smallest = left;
-            }
-            if right < self.keys.len() && self.keys[right] < self.keys[smallest] {
-                smallest = right;
-            }
-            if smallest == current {
-                break;
-            }
-            self.keys.swap(smallest, current);
-            self.indices.swap(smallest, current);
-            current = smallest;
-        }
-        Some(result)
     }
 }
