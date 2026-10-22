@@ -72,6 +72,20 @@ ranges were 0.5 tile long; the real replay agreed with game data).
   calibration not round 8; archetype shares shifted by build coverage;
   full scouting keyed on group >= 5000; one-star trophies not capped at 15.
 
+- Round 3 (2026-10-22, output/hunt/r3-*.out): attacking burn fields missing
+  (Flame Flinger fire FireSpiritExplosion: PoisonIncreaseSlowly ramp, x25
+  walls, 75 x 400 ms per game data vs the wiki's 22 s; Furnace Firemite
+  FireSpiritBurn pools); frost combined one source's factor with another's
+  expiry; summon wind-ups missed CSV aliases (Spell Bat, Icemite, Firemite
+  Spawn, Disarmer); Spell Skeleton 30/hit (game data 25; per-hit now follows
+  DPS x interval except bursts); Lavaloon bombs ignored rage/aura/slows/haste;
+  Recall did not pause Gauntlet splash and other equipment timers; Tome/Torch
+  admitted recipients during the 1 s tail (emission = DeactivateAfterTime);
+  Rage Gem tail; opening zap spent every Lightning on one Air Defense;
+  deployed cleanup stayed in reserve (false timeouts, double lure); fallback
+  spells cast together in one tick; level overrides not checked against
+  Town Hall/Laboratory; one-star trophies counted from 0% (now above 1%).
+
 ## Known, not fixed
 
 - Town Halls 13-15 get the TH16 Giga Inferno profile (defense.py
@@ -119,6 +133,13 @@ ranges were 0.5 tile long; the real replay agreed with game data).
   the seed % 5 skill grouping).
 
 ## Rejected
+
+- Destroyed buildings/walls should keep their no-deploy zone (round 3,
+  SUSPECTED): no evidence; in the game the red zone shrinks as buildings
+  fall.
+- Illegal drops should not deploy (round 3): plans aim at points and the
+  engine snaps them to the nearest legal tile, modelling a player tapping
+  the border; intended.
 
 - Royal Champion base HP/DPS inflated: no, match heroes.csv level 55 and
   equipment at max (round 0).
