@@ -1,5 +1,4 @@
-use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::HashMap;
 
 use crate::geom::round_half_even;
 
@@ -20,7 +19,9 @@ const NEIGHBORS: [(isize, isize); 8] = [
     (-1, 1),
     (-1, -1),
 ];
-const NO_NEIGHBOR: usize = usize::MAX;
+const NO_NEIGHBOR: u32 = u32::MAX;
+const BLOCKED: u8 = 1;
+const WALL: u8 = 2;
 // pathing.py:96-99: check [ci, nj] before [ni, cj] for each diagonal.
 const DIAGONAL_CORNERS: [(usize, usize); 4] = [(2, 0), (3, 0), (2, 1), (3, 1)];
 
@@ -28,8 +29,76 @@ const DIAGONAL_CORNERS: [(usize, usize); 4] = [(2, 0), (3, 0), (2, 1), (3, 1)];
 #[derive(Clone, Copy)]
 pub struct Field(usize);
 
-// Nonnegative, non-NaN f32 keys have the same order as their bits.
-type Frontier = BinaryHeap<Reverse<(u32, usize)>>;
+// Nonnegative, non-NaN f32 keys have the same order as their bits. Dijkstra
+// pushes keys >= the last pop, including after rounding a candidate to f32.
+// Equal-key pop order does not change the field: relaxation is monotone, and
+// lazy queries drain all equal keys before using a settled distance.
+struct Frontier {
+    buckets: [Vec<(u32, u32)>; 33],
+    occupied: u64,
+    last: u32,
+}
+
+impl Frontier {
+    fn new() -> Self {
+        Self {
+            buckets: std::array::from_fn(|_| Vec::new()),
+            occupied: 0,
+            last: 0,
+        }
+    }
+
+    fn clear(&mut self) {
+        for bucket in &mut self.buckets {
+            bucket.clear();
+        }
+        self.occupied = 0;
+        self.last = 0;
+    }
+
+    fn push(&mut self, key: u32, cell: u32) {
+        debug_assert!(key >= self.last);
+        let bucket = (u32::BITS - (key ^ self.last).leading_zeros()) as usize;
+        self.buckets[bucket].push((key, cell));
+        self.occupied |= 1_u64 << bucket;
+    }
+
+    fn min_key(&mut self) -> Option<u32> {
+        if self.occupied == 0 {
+            return None;
+        }
+        if self.occupied & 1 == 0 {
+            self.redistribute();
+        }
+        Some(self.last)
+    }
+
+    fn redistribute(&mut self) {
+        let bucket = self.occupied.trailing_zeros() as usize;
+        let mut entries = std::mem::take(&mut self.buckets[bucket]);
+        self.last = entries
+            .iter()
+            .map(|&(key, _)| key)
+            .min()
+            .expect("occupied bucket");
+        self.occupied &= !(1_u64 << bucket);
+        // Every entry moves to a strictly lower bucket; retain this bucket's
+        // allocation for later redistributions and field reuse.
+        for (key, cell) in entries.drain(..) {
+            self.push(key, cell);
+        }
+        self.buckets[bucket] = entries;
+    }
+
+    fn pop(&mut self) -> Option<(u32, u32)> {
+        self.min_key()?;
+        let entry = self.buckets[0].pop();
+        if self.buckets[0].is_empty() {
+            self.occupied &= !1;
+        }
+        entry
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TargetIdentity {
@@ -65,12 +134,33 @@ enum CacheKey {
     },
 }
 
+impl CacheKey {
+    fn target(
+        identity: TargetIdentity,
+        cx: f64,
+        cy: f64,
+        reach: f64,
+        wall_extra: f64,
+    ) -> Self {
+        Self::Target {
+            identity,
+            x: float_key(cx),
+            y: float_key(cy),
+            reach: float_key(reach),
+            wall_extra: float_key(wall_extra),
+        }
+    }
+}
+
 struct CachedField {
     key: CacheKey,
     version: u64,
+    // Rubble entries use only key/version and rubble_components; they neither
+    // initialize nor expand distance storage, which may be reused after prune.
     distances: Vec<f32>,
     frontier: Frontier,
     wall_extra: f64,
+    rubble_components: Vec<u32>,
 }
 
 pub struct Grid {
@@ -81,7 +171,11 @@ pub struct Grid {
     pub version: u64,
     cache: Vec<CachedField>,
     cache_indices: HashMap<CacheKey, usize>,
-    neighbors: Vec<[usize; 8]>,
+    neighbors: Vec<[u32; 8]>,
+    cell_flags: Vec<u8>,
+    move_masks: Vec<u8>,
+    topology_version: Option<u64>,
+    connectivity: Connectivity,
     spare_fields: Vec<CachedField>,
     goal_marks: Vec<bool>,
 }
@@ -90,6 +184,7 @@ impl Grid {
     pub fn new(world_tiles: usize) -> Self {
         let n = world_tiles * RES;
         assert!(n > 0, "grid must have at least one cell");
+        assert!(n * n < u32::MAX as usize, "grid indices must fit in u32");
         Self {
             n,
             blocked: vec![false; n * n],
@@ -98,6 +193,10 @@ impl Grid {
             cache: Vec::new(),
             cache_indices: HashMap::new(),
             neighbors: neighbor_indices(n),
+            cell_flags: vec![0; n * n],
+            move_masks: vec![0; n * n],
+            topology_version: None,
+            connectivity: Connectivity::new(),
             spare_fields: Vec::new(),
             goal_marks: vec![false; n * n],
         }
@@ -144,6 +243,114 @@ impl Grid {
         (i as usize, j as usize)
     }
 
+    fn refresh_topology(&mut self) {
+        if self.topology_version == Some(self.version) {
+            return;
+        }
+        // Public blocked/wall arrays are also copied into newly created Jump
+        // grids. Derive these packed arrays lazily, once per grid version.
+        for (cell, flags) in self.cell_flags.iter_mut().enumerate() {
+            *flags = u8::from(self.blocked[cell]) * BLOCKED | u8::from(self.wall[cell]) * WALL;
+        }
+        for (cell, neighbors) in self.neighbors.iter().enumerate() {
+            let mut mask = 0;
+            for (q, &next) in neighbors.iter().enumerate() {
+                if next == NO_NEIGHBOR || self.cell_flags[next as usize] & BLOCKED != 0 {
+                    continue;
+                }
+                if q >= 4 {
+                    // A valid diagonal has both cardinal neighbors. Walls
+                    // never block corners; only building hitboxes do.
+                    let (along_y, along_x) = DIAGONAL_CORNERS[q - 4];
+                    if self.cell_flags[neighbors[along_y] as usize] & BLOCKED != 0
+                        || self.cell_flags[neighbors[along_x] as usize] & BLOCKED != 0
+                    {
+                        continue;
+                    }
+                }
+                mask |= 1_u8 << q;
+            }
+            self.move_masks[cell] = mask;
+        }
+        self.topology_version = Some(self.version);
+    }
+
+    // With wall_extra=inf, only non-wall cells can relax a neighbor. Hence
+    // finite cells are exactly: unblocked seeds; non-wall components containing
+    // a non-wall seed; and unblocked walls adjacent by an allowed move to such
+    // a component. A wall seed cannot propagate, and blocked cells never seed
+    // or receive relaxation. The corner rule is symmetric, so the same move
+    // masks serve component labelling and wall queries. Battle grids are far
+    // too small for a finite simple path to reach the 1e9 distance sentinel.
+    // Each Grid owns its labels, so Jump grids retain independent topology.
+    pub fn rubble_reachable(
+        &mut self,
+        building: usize,
+        cx: f64,
+        cy: f64,
+        half: f64,
+        reach: f64,
+        x: f64,
+        y: f64,
+    ) -> bool {
+        self.refresh_topology();
+        self.connectivity.ensure(
+            self.version,
+            &self.cell_flags,
+            &self.move_masks,
+            &self.neighbors,
+        );
+        let key = CacheKey::target(
+            TargetIdentity::Rubble(building),
+            cx,
+            cy,
+            reach,
+            f64::INFINITY,
+        );
+        let field = if let Some(field) = self.cached(&key) {
+            field
+        } else {
+            // Preserve the original field's cache insertion order and version
+            // even for a blocked query cell. Pruning can evict source fields,
+            // changing which half-cell is first reused for a tile. These
+            // entries carry seed labels without allocating a distance field.
+            let field = self.reset_entry(key, f64::INFINITY);
+            let labels = &self.connectivity.labels;
+            let components = &mut self.cache[field.0].rubble_components;
+            for_each_goal_cell(self.n, cx, cy, half, reach, |cell| {
+                let label = labels[cell];
+                if label != NO_COMPONENT && !components.contains(&label) {
+                    components.push(label);
+                }
+            });
+            field
+        };
+        let (i, j) = self.cell(x, y);
+        let cell = self.index(i, j);
+        if self.cell_flags[cell] & BLOCKED != 0 {
+            return false;
+        }
+        if is_goal_cell(self.n, i, j, cx, cy, half, reach) {
+            return true;
+        }
+        let components = &self.cache[field.0].rubble_components;
+        let labels = &self.connectivity.labels;
+        if self.cell_flags[cell] & WALL == 0 {
+            return components.contains(&labels[cell]);
+        }
+        let mut moves = self.move_masks[cell];
+        while moves != 0 {
+            let q = moves.trailing_zeros() as usize;
+            moves &= moves - 1;
+            let next = self.neighbors[cell][q] as usize;
+            let label = labels[next];
+            if label != NO_COMPONENT && components.contains(&label) {
+                return true;
+            }
+        }
+        false
+    }
+
     pub fn field(
         &mut self,
         identity: TargetIdentity,
@@ -156,16 +363,11 @@ impl Grid {
         // battle.py:1604-1611: callers pass max(range, GOAL_REACH_MIN),
         // or max(0.5, GOAL_REACH_MIN) and half=0 for a positioning goal.
         // Wall cost separates normal and ignore fields (fly bypasses fields).
-        let key = CacheKey::Target {
-            identity,
-            x: float_key(cx),
-            y: float_key(cy),
-            reach: float_key(reach),
-            wall_extra: float_key(wall_extra),
-        };
+        let key = CacheKey::target(identity, cx, cy, reach, wall_extra);
         if let Some(field) = self.cached(&key) {
             return field;
         }
+        self.refresh_topology();
         let field = self.reset_field(key, wall_extra);
         let entry = &mut self.cache[field.0];
         let blocked = &self.blocked;
@@ -190,6 +392,7 @@ impl Grid {
         if let Some(field) = self.cached(&key) {
             return field;
         }
+        self.refresh_topology();
         let field = self.reset_field(key, wall_extra);
         let cell = self.index(i, j);
         if !self.blocked[cell] {
@@ -217,8 +420,8 @@ impl Grid {
         // Stored values below the frontier are already final.
         let frontier_min = entry
             .frontier
-            .peek()
-            .map(|&Reverse((key, _))| f32::from_bits(key))
+            .min_key()
+            .map(f32::from_bits)
             .unwrap_or(INF);
         let mut best = INF;
         for b in 0..xs.len() {
@@ -231,12 +434,12 @@ impl Grid {
                 }
             });
         }
-        while let Some(&Reverse((key, _))) = entry.frontier.peek() {
+        while let Some(key) = entry.frontier.min_key() {
             if f32::from_bits(key) > best {
                 break;
             }
             if let Some((distance, cell)) =
-                entry.expand(&self.blocked, &self.wall, &self.neighbors)
+                entry.expand(&self.cell_flags, &self.move_masks, &self.neighbors)
             {
                 if goal_marks[cell] && distance < best {
                     best = distance;
@@ -284,25 +487,22 @@ impl Grid {
             };
         }
         let mut best = here;
-        let (mut bi, mut bj) = (i, j);
+        let mut best_cell = cell;
         // pathing.py:287-297: choose the lowest stored distance, retaining the
         // earlier neighbor on ties. Do not check obstacles or corner cutting.
         // Unsettled neighbors have stored values >= here and cannot be chosen.
-        for (di, dj) in NEIGHBORS {
-            let ni = i as isize + di;
-            let nj = j as isize + dj;
-            if ni < 0 || nj < 0 || ni >= self.n as isize || nj >= self.n as isize {
+        for &next in &self.neighbors[cell] {
+            if next == NO_NEIGHBOR {
                 continue;
             }
-            let (ni, nj) = (ni as usize, nj as usize);
-            let distance = distances[self.index(ni, nj)];
+            let next = next as usize;
+            let distance = distances[next];
             if distance < best {
                 best = distance;
-                bi = ni;
-                bj = nj;
+                best_cell = next;
             }
         }
-        if bi == i && bj == j {
+        if best_cell == cell {
             return NextStep {
                 x,
                 y,
@@ -310,10 +510,11 @@ impl Grid {
                 at_goal: here >= INF,
             };
         }
+        let (bi, bj) = (best_cell / self.n, best_cell % self.n);
         NextStep {
             x: (bi as f64 + 0.5) / RES as f64,
             y: (bj as f64 + 0.5) / RES as f64,
-            is_wall: self.wall[self.index(bi, bj)],
+            is_wall: self.cell_flags[best_cell] & WALL != 0,
             at_goal: false,
         }
     }
@@ -349,6 +550,14 @@ impl Grid {
     }
 
     fn reset_field(&mut self, key: CacheKey, wall_extra: f64) -> Field {
+        let field = self.reset_entry(key, wall_extra);
+        let distances = &mut self.cache[field.0].distances;
+        distances.resize(self.n * self.n, INF);
+        distances.fill(INF);
+        field
+    }
+
+    fn reset_entry(&mut self, key: CacheKey, wall_extra: f64) -> Field {
         let index = if let Some(&index) = self.cache_indices.get(&key) {
             index
         } else {
@@ -356,9 +565,10 @@ impl Grid {
             let entry = self.spare_fields.pop().unwrap_or_else(|| CachedField {
                 key,
                 version: self.version,
-                distances: vec![INF; self.n * self.n],
+                distances: Vec::new(),
                 frontier: Frontier::new(),
                 wall_extra: 0.0,
+                rubble_components: Vec::new(),
             });
             self.cache_indices.insert(key, index);
             self.cache.push(entry);
@@ -367,8 +577,8 @@ impl Grid {
         let entry = &mut self.cache[index];
         entry.key = key;
         entry.version = self.version;
-        entry.distances.fill(INF);
         entry.frontier.clear();
+        entry.rubble_components.clear();
         // pathing.py:220,233,254: wall_extra is converted to float32 at entry.
         entry.wall_extra = f64::from(wall_extra as f32);
         Field(index)
@@ -379,11 +589,11 @@ impl Grid {
         debug_assert_eq!(entry.version, self.version);
         // Drain equal keys too: afterwards this cell and all lower values are
         // final, even if the cell started with an INF upper bound.
-        while let Some(&Reverse((key, _))) = entry.frontier.peek() {
+        while let Some(key) = entry.frontier.min_key() {
             if f32::from_bits(key) > entry.distances[cell] {
                 break;
             }
-            let _ = entry.expand(&self.blocked, &self.wall, &self.neighbors);
+            let _ = entry.expand(&self.cell_flags, &self.move_masks, &self.neighbors);
         }
     }
 }
@@ -391,16 +601,17 @@ impl Grid {
 impl CachedField {
     fn seed(&mut self, cell: usize) {
         self.distances[cell] = 0.0;
-        self.frontier.push(Reverse((0.0_f32.to_bits(), cell)));
+        self.frontier.push(0.0_f32.to_bits(), cell as u32);
     }
 
     fn expand(
         &mut self,
-        blocked: &[bool],
-        wall: &[bool],
-        neighbor_indices: &[[usize; 8]],
+        cell_flags: &[u8],
+        move_masks: &[u8],
+        neighbor_indices: &[[u32; 8]],
     ) -> Option<(f32, usize)> {
-        let Reverse((key, index)) = self.frontier.pop()?;
+        let (key, index) = self.frontier.pop()?;
+        let index = index as usize;
         let distance = f32::from_bits(key);
         // pathing.py:85-88: discard superseded queue entries.
         if distance > self.distances[index] {
@@ -410,22 +621,16 @@ impl CachedField {
         // pathing.py:100-104: compute each step-plus-wall cost once per pop.
         let mut straight_cost = 0.5;
         let mut diagonal_cost = diagonal;
-        if wall[index] {
+        if cell_flags[index] & WALL != 0 {
             straight_cost += self.wall_extra;
             diagonal_cost += self.wall_extra;
         }
         let neighbors = &neighbor_indices[index];
-        for (q, &next) in neighbors.iter().enumerate() {
-            if next == NO_NEIGHBOR || blocked[next] {
-                continue;
-            }
-            if q >= 4 {
-                // pathing.py:96-99: a valid diagonal has both cardinal neighbors.
-                let (along_y, along_x) = DIAGONAL_CORNERS[q - 4];
-                if blocked[neighbors[along_y]] || blocked[neighbors[along_x]] {
-                    continue;
-                }
-            }
+        let mut moves = move_masks[index];
+        while moves != 0 {
+            let q = moves.trailing_zeros() as usize;
+            moves &= moves - 1;
+            let next = neighbors[q] as usize;
             // pathing.py:100-109: charge the current cell's wall, and add
             // that cost to the step before adding the popped f32 distance.
             let cost = if q < 4 {
@@ -433,20 +638,77 @@ impl CachedField {
             } else {
                 diagonal_cost
             };
-            let candidate = f64::from(distance) + cost;
+            let candidate: f64 = f64::from(distance) + cost;
             // Compare in f64 BEFORE either the distance or heap key is
             // rounded to f32. Even an equal rounded value is pushed.
             if candidate < f64::from(self.distances[next]) {
                 let rounded = candidate as f32;
                 self.distances[next] = rounded;
-                self.frontier.push(Reverse((rounded.to_bits(), next)));
+                self.frontier.push(rounded.to_bits(), next as u32);
             }
         }
         Some((distance, index))
     }
 }
 
-fn neighbor_indices(n: usize) -> Vec<[usize; 8]> {
+// Reachability with infinite wall cost; no distance fields are stored here.
+const NO_COMPONENT: u32 = u32::MAX;
+
+struct Connectivity {
+    version: Option<u64>,
+    labels: Vec<u32>,
+    pending: Vec<u32>,
+}
+
+impl Connectivity {
+    fn new() -> Self {
+        Self {
+            version: None,
+            labels: Vec::new(),
+            pending: Vec::new(),
+        }
+    }
+
+    fn ensure(
+        &mut self,
+        version: u64,
+        cell_flags: &[u8],
+        move_masks: &[u8],
+        neighbors: &[[u32; 8]],
+    ) {
+        if self.version == Some(version) {
+            return;
+        }
+        self.labels.resize(cell_flags.len(), NO_COMPONENT);
+        self.labels.fill(NO_COMPONENT);
+        self.pending.clear();
+        let mut label = 0_u32;
+        for cell in 0..cell_flags.len() {
+            if cell_flags[cell] != 0 || self.labels[cell] != NO_COMPONENT {
+                continue;
+            }
+            self.labels[cell] = label;
+            self.pending.push(cell as u32);
+            while let Some(current) = self.pending.pop() {
+                let current = current as usize;
+                let mut moves = move_masks[current];
+                while moves != 0 {
+                    let q = moves.trailing_zeros() as usize;
+                    moves &= moves - 1;
+                    let next = neighbors[current][q] as usize;
+                    if cell_flags[next] == 0 && self.labels[next] == NO_COMPONENT {
+                        self.labels[next] = label;
+                        self.pending.push(next as u32);
+                    }
+                }
+            }
+            label += 1;
+        }
+        self.version = Some(version);
+    }
+}
+
+fn neighbor_indices(n: usize) -> Vec<[u32; 8]> {
     let mut neighbors = vec![[NO_NEIGHBOR; 8]; n * n];
     // pathing.py:89-99: precompute geometry without changing neighbor order.
     for i in 0..n {
@@ -455,7 +717,7 @@ fn neighbor_indices(n: usize) -> Vec<[usize; 8]> {
                 let ni = i as isize + di;
                 let nj = j as isize + dj;
                 if ni >= 0 && nj >= 0 && ni < n as isize && nj < n as isize {
-                    neighbors[i * n + j][q] = ni as usize * n + nj as usize;
+                    neighbors[i * n + j][q] = (ni as usize * n + nj as usize) as u32;
                 }
             }
         }
@@ -484,6 +746,32 @@ fn goal_bounds(n: usize, center: f64, half: f64, reach: f64) -> (isize, isize) {
     let low = ((center - half - reach - 1.0) * 2.0).max(0.0) as isize;
     let high = ((center + half + reach + 1.0) * 2.0).min(n as f64 - 1.0) as isize;
     (low, high)
+}
+
+fn is_goal_cell(
+    n: usize,
+    i: usize,
+    j: usize,
+    cx: f64,
+    cy: f64,
+    half: f64,
+    reach: f64,
+) -> bool {
+    let (lo_i, hi_i) = goal_bounds(n, cx, half, reach);
+    let (lo_j, hi_j) = goal_bounds(n, cy, half, reach);
+    if (i as isize) < lo_i
+        || (i as isize) > hi_i
+        || (j as isize) < lo_j
+        || (j as isize) > hi_j
+    {
+        return false;
+    }
+    // Match for_each_goal_cell's bounds, cell centers and f64 operation order.
+    let px = (i as f64 + 0.5) / 2.0;
+    let py = (j as f64 + 0.5) / 2.0;
+    let dx = ((px - cx).abs() - half).max(0.0);
+    let dy = ((py - cy).abs() - half).max(0.0);
+    dx * dx + dy * dy <= reach * reach
 }
 
 fn for_each_goal_cell(

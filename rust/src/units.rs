@@ -6,10 +6,9 @@ use std::collections::{HashMap, HashSet};
 use crate::battle::SpawnOptions;
 use crate::combat::{SplashBuildingsOptions, SplashUnitsOptions};
 use crate::effects;
-use crate::heroes;
 use crate::geom;
+use crate::heroes;
 use crate::spells;
-use crate::grid::TargetIdentity;
 use crate::state::{
     Battle, CargoEntry, EntityRef, Pending, SpinPosition, StatusSource, Team, Unit, UnitRef, WallId,
 };
@@ -228,17 +227,7 @@ pub fn rubble_target(battle: &mut Battle, unit: UnitRef) -> (Option<EntityRef>, 
         let (id, bx, by, half) = (b.id, b.x, b.y, b.half_hit);
         let (x, y, reach) = (u.x, u.y, u.range);
         let grid = battle.navigation_grid(unit);
-        let field = grid.field(
-            TargetIdentity::Rubble(id.0),
-            bx,
-            by,
-            half,
-            reach,
-            f64::INFINITY,
-        );
-        let (i, j) = grid.cell(x, y);
-        let distance = grid.distance(field, grid.index(i, j));
-        if !distance.is_finite() || distance >= 1e9 {
+        if !grid.rubble_reachable(id.0, bx, by, half, reach, x, y) {
             continue;
         }
         let distance = geom::dist(x, y, bx, by);
