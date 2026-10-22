@@ -1,7 +1,7 @@
 //! Ports battle.py:212-234,370-577,787-958,1079-1085.
 //! Damage, movement and AI continue in combat.rs, movement.rs and ai.rs.
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::geom::{round6, round_half_even};
 use crate::labels::{Name, Tag};
@@ -281,7 +281,7 @@ impl Battle {
             Level::Int(self.catalog.stats.max_level(name, town_hall).filter(|lv| *lv != 0).unwrap_or(1))
         });
         let nums = *self.catalog.numbers(name, &level);
-        let spec = Rc::clone(&self.catalog.unit(name).summon_spec);
+        let spec = Arc::clone(&self.catalog.unit(name).summon_spec);
         self.uid += 1;
         let mut facing = (self.catalog.world as f64 / 2.0 - x,
             self.catalog.world as f64 / 2.0 - y);

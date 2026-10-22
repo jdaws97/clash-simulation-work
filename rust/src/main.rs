@@ -1,4 +1,4 @@
-//! CLI for rust_export.py battle exports; battle.py remains the engine reference.
+//! CLI for prepared jobs and reference battle exports; battle.py is the reference.
 
 pub mod battle;
 pub mod ai;
@@ -26,13 +26,15 @@ pub mod playbook;
 pub mod trace;
 pub mod traps;
 pub mod units;
+pub mod setup;
+pub mod jobs;
 
 use std::env;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::time::Instant;
 
 use catalog::Catalog;
@@ -58,18 +60,22 @@ fn catalog_path() -> Result<PathBuf, String> {
 
 fn run() -> Result<(), String> {
     let mut args = env::args_os().skip(1);
-    let usage = "usage: baselab-engine trace <battle.json> <trace.txt> | run <battle.json>... | stats-check <cases.json>";
+    let usage = "usage: baselab-engine trace <battle.json> <trace.txt> | run <battle.json>... | stats-check <cases.json> | setup-check <battle.json> <job.json> | trace-job <jobs.json> <k> <trace.txt> | jobs <jobs.json> <results.jsonl> [--threads N]";
     let command = args.next().ok_or(usage)?;
     let paths: Vec<PathBuf> = args.map(PathBuf::from).collect();
     let command = command.to_str().ok_or(usage)?;
     if command == "stats-check" && paths.len() == 1 {
         return stats_check(&paths[0]);
     }
+    if matches!(command, "setup-check" | "trace-job" | "jobs") {
+        let catalog = Arc::new(Catalog::load(&catalog_path()?)?);
+        return jobs::command(command, &paths, catalog);
+    }
     if !matches!(command, "trace" | "run") || paths.is_empty()
         || command == "trace" && paths.len() != 2 {
         return Err(usage.to_owned());
     }
-    let catalog = Rc::new(Catalog::load(&catalog_path()?)?);
+    let catalog = Arc::new(Catalog::load(&catalog_path()?)?);
     if command == "trace" {
         let mut battle = load::load(&paths[0], catalog)?;
         let file = File::create(&paths[1])
@@ -82,7 +88,7 @@ fn run() -> Result<(), String> {
     }
     let mut total_ms = 0.0;
     for path in &paths {
-        let mut battle = load::load(path, Rc::clone(&catalog))?;
+        let mut battle = load::load(path, Arc::clone(&catalog))?;
         let started = Instant::now();
         let result = battle.run();
         let milliseconds = started.elapsed().as_secs_f64() * 1000.0;

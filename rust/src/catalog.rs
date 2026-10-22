@@ -2,7 +2,7 @@
 
 use std::fs;
 use std::path::Path;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::fast_hash::FastMap as HashMap;
 use crate::json::{self, Json};
@@ -167,8 +167,8 @@ impl UnitNumbers {
 
 #[derive(Clone, Debug)]
 pub struct CatalogUnit {
-    pub spec: Rc<UnitSpec>,
-    pub summon_spec: Rc<UnitSpec>,
+    pub spec: Arc<UnitSpec>,
+    pub summon_spec: Arc<UnitSpec>,
 }
 
 #[derive(Clone, Debug)]
@@ -198,6 +198,8 @@ pub struct Catalog {
     pub warden_weights: Json,
     pub world: usize,
     pub margin: f64,
+    /// Static setup tables exported from the Python reference after each patch.
+    pub setup: Json,
 }
 
 impl Catalog {
@@ -224,14 +226,15 @@ impl Catalog {
             "game_ranges",
             "world",
             "margin",
+            "setup",
         ]);
         n.field("note").string();
         let stats = Stats::new(n.field("registry").value.clone());
         let units = n.field("units").object().into_iter().map(|(name, node)| {
             node.keys(&["spec", "summon_spec"]);
             let unit = CatalogUnit {
-                spec: Rc::new(UnitSpec::load(node.field("spec"))),
-                summon_spec: Rc::new(UnitSpec::load(node.field("summon_spec"))),
+                spec: Arc::new(UnitSpec::load(node.field("spec"))),
+                summon_spec: Arc::new(UnitSpec::load(node.field("summon_spec"))),
             };
             (name, unit)
         }).collect();
@@ -283,6 +286,7 @@ impl Catalog {
             warden_weights: n.field("warden_weights").value.clone(),
             world: n.field("world").usize(),
             margin: n.field("margin").number(),
+            setup: n.optional("setup").map_or(Json::Null, |v| v.value.clone()),
         }
     }
 

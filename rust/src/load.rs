@@ -3,7 +3,7 @@
 
 use std::fs;
 use std::path::Path;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::catalog::{Catalog, UnitSpec};
 use crate::fast_hash::FastMap as HashMap;
@@ -443,7 +443,17 @@ impl Resolver {
     }
 }
 
-pub fn load(path: &Path, catalog: Rc<Catalog>) -> Result<Battle, String> {
+pub fn setup_weapon_extra(value: &Json) -> WeaponExtra {
+    let resolver = Resolver {
+        buildings: HashMap::default(),
+        walls: HashMap::default(),
+        units: HashMap::default(),
+        trap_count: 0,
+    };
+    resolver.weapon_extra(Node::new(value, "catalog.setup.weapon_extra"))
+}
+
+pub fn load(path: &Path, catalog: Arc<Catalog>) -> Result<Battle, String> {
     let text = fs::read_to_string(path)
         .map_err(|error| format!("{}: {error}", path.display()))?;
     let value = json::parse(&text)
@@ -1150,7 +1160,7 @@ impl Resolver {
             flying: n.field("flying").boolean(),
             hits_air: n.field("hits_air").boolean(),
             hits_ground: n.field("hits_ground").boolean(),
-            spec: Rc::new(UnitSpec::load(n.field("spec"))),
+            spec: Arc::new(UnitSpec::load(n.field("spec"))),
             alive: n.field("alive").boolean(),
             cooldown: n.field("cooldown").number(),
             target: self.optional_ref(n.field("target")),
@@ -1385,48 +1395,15 @@ fn optional_levels(node: Option<Node<'_>>) -> Vec<(String, Option<Level>)> {
     })
 }
 
-pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
-    let root = Node::new(value, path);
-    root.keys(&[
-        "rng_state",
-        "env",
-        "scalars",
-        "buildings",
-        "walls",
-        "traps",
-        "attackers",
-        "defenders",
-        "fields",
-        "pending",
-        "deployments",
-        "plan",
-        "plan_type",
-    ]);
-    let resolver = Resolver::new(&root);
-    // Validate tags/references even in fields retained by a generic fallback.
-    resolver.value(root.clone());
-    let s = root.field("scalars");
-    let buildings: Vec<_> = root.field("buildings").array().into_iter()
-        .map(|n| resolver.building(n)).collect();
-    let walls: Vec<_> = root.field("walls").array().into_iter().enumerate()
-        .map(|(index, n)| resolver.wall(n, WallId(index))).collect();
-    let traps = root.field("traps").array().into_iter().enumerate()
-        .map(|(index, n)| resolver.trap(n, TrapId(index))).collect();
-    let attackers: Vec<_> = root.field("attackers").array().into_iter()
-        .map(|n| resolver.unit(n)).collect();
-    let defenders = root.field("defenders").array().into_iter()
-        .map(|n| resolver.unit(n)).collect();
-    let fields = root.field("fields").array().into_iter()
-        .map(|n| resolver.field(n)).collect();
-    let pending = root.field("pending").array().into_iter()
-        .map(|n| resolver.pending(n)).collect();
-    let deployments: Vec<_> = root.field("deployments").array().into_iter()
-        .map(|n| resolver.deployment(n)).collect();
-    if deployments.windows(2).any(|pair| pair[1].time < pair[0].time) {
-        root.field("deployments").fail("deployments must retain Python's stable time order");
-    }
-    let p = root.field("plan");
-    let plan = match root.field("plan_type").string().as_str() {
+/// Restore a constructed plan; setup and legacy battle loading use the same checks.
+pub fn plan(p: Node<'_>, deployments: &[Deployment]) -> Plan {
+    let resolver = Resolver {
+        buildings: HashMap::default(),
+        walls: HashMap::default(),
+        units: HashMap::default(),
+        trap_count: 0,
+    };
+    let plan = match p.field("$type").string().as_str() {
         "PlaybookPlan" => Plan::Playbook(Box::new(crate::playbook::PlaybookPlan::load(p.value))),
         "Stage" => {
             p.require_type("Stage");
@@ -1471,7 +1448,8 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
                 p.fail("stage 4: Stage callbacks and revives are unsupported");
             }
             Plan::Stage {
-                deployments: deployments.clone(),
+                constructed: p.value.clone(),
+                deployments: deployments.to_vec(),
                 town_hall: p.field("town_hall").integer(),
                 strength: p.field("strength").number(),
                 troop_levels: p
@@ -1500,8 +1478,54 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
                 observed: p.optional("observed").is_some_and(|n| n.boolean()),
             }
         }
-        _ => root.field("plan_type").fail("unsupported plan"),
+        _ => p.field("$type").fail("unsupported plan"),
     };
+    plan
+}
+
+pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
+    let root = Node::new(value, path);
+    root.keys(&[
+        "rng_state",
+        "env",
+        "scalars",
+        "buildings",
+        "walls",
+        "traps",
+        "attackers",
+        "defenders",
+        "fields",
+        "pending",
+        "deployments",
+        "plan",
+        "plan_type",
+    ]);
+    let resolver = Resolver::new(&root);
+    // Validate tags/references even in fields retained by a generic fallback.
+    resolver.value(root.clone());
+    let s = root.field("scalars");
+    let buildings: Vec<_> = root.field("buildings").array().into_iter()
+        .map(|n| resolver.building(n)).collect();
+    let walls: Vec<_> = root.field("walls").array().into_iter().enumerate()
+        .map(|(index, n)| resolver.wall(n, WallId(index))).collect();
+    let traps = root.field("traps").array().into_iter().enumerate()
+        .map(|(index, n)| resolver.trap(n, TrapId(index))).collect();
+    let attackers: Vec<_> = root.field("attackers").array().into_iter()
+        .map(|n| resolver.unit(n)).collect();
+    let defenders = root.field("defenders").array().into_iter()
+        .map(|n| resolver.unit(n)).collect();
+    let fields = root.field("fields").array().into_iter()
+        .map(|n| resolver.field(n)).collect();
+    let pending = root.field("pending").array().into_iter()
+        .map(|n| resolver.pending(n)).collect();
+    let deployments: Vec<_> = root.field("deployments").array().into_iter()
+        .map(|n| resolver.deployment(n)).collect();
+    if deployments.windows(2).any(|pair| pair[1].time < pair[0].time) {
+        root.field("deployments").fail("deployments must retain Python's stable time order");
+    }
+    assert_eq!(root.field("plan_type").string(), root.field("plan").field("$type").string(),
+        "plan_type disagrees with plan.$type");
+    let plan = plan(root.field("plan"), &deployments);
     let mut grid = Grid::new(catalog.world);
     // battle.py:248-281: dead banners never block. Walls are restored in file order.
     for building in &buildings {
@@ -1719,6 +1743,7 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         "_next_deploy",
         "_next_cc_exit",
         "_field_serial",
+        "guardian",
     ];
     for (key, node) in s.object() {
         if !known_scalars.contains(&key.as_str()) {

@@ -3,7 +3,7 @@
 
 use std::fmt;
 use std::ops::Deref;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Name {
@@ -269,7 +269,7 @@ macro_rules! text_tags {
         #[derive(Clone, Debug, Eq, PartialEq)]
         pub enum Tag {
             $($variant,)*
-            Other(Rc<str>),
+            Other(Arc<str>),
         }
 
         impl Tag {
@@ -286,7 +286,7 @@ macro_rules! text_tags {
             fn from(text: &str) -> Self {
                 match text {
                     $($text => Self::$variant,)*
-                    _ => Self::Other(Rc::from(text)),
+                    _ => Self::Other(Arc::from(text)),
                 }
             }
         }

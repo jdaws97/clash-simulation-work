@@ -189,17 +189,34 @@ def crafted_level(name: str, town_hall: int) -> int:
     return best
 
 
+# Static tables (module level so tools/baselab/rust_export.py can export
+# them to the Rust engine's catalog; a game patch edits them here only).
+# Wiki: Crafting Station, phase 4 runs August 1 to December 31, 2026.
+CRAFTING_PHASE = 4
+CRAFTING_WINDOW = ("2026-08-01", "2026-12-31")
+CRAFTED_MODES = ("cake", "candle", "hunter")
+# Wiki: Spell Tower, mode unlock levels (Earthquake also needs TH17).
+SPELL_TOWER_UNLOCKS = {"rage": 1, "poison": 2, "invis": 3, "eq": 4, "quake": 4, "earthquake": 4}
+# Wiki: X-Bow, Inferno Tower, Eagle Artillery and Scattershot ammunition.
+AMMUNITION = {"xbow": 1500, "inferno": 1000, "eagle": 90, "scatter": 90}
+# Wiki: Town Hall/Inferno Artillery, five weapon levels.
+ARTILLERY_DAMAGE = (140.0, 157.5, 175.0, 192.5, 210.0)
+# Wiki: Cannon/Home Village, Archer Tower/Home Village and Mortar gear-up levels.
+GEAR_MINIMUM = {"cannon": 7, "at": 10, "mortar": 8}
+# Wiki: Archer Tower/Home Village, Fast Attack damage per shot, L10-21.
+FAST_ARCHER_SHOTS = (31.5, 35, 37.5, 40, 45, 50, 52.5, 55, 60, 65, 69, 72.5)
+
+
 def _attach_crafted(battle, b: Building):
-    # Wiki: Crafting Station, phase 4 runs August 1 to December 31, 2026.
-    if battle.crafting_phase != 4 or not (
-        "2026-08-01" <= battle.crafting_date <= "2026-12-31"
+    if battle.crafting_phase != CRAFTING_PHASE or not (
+        CRAFTING_WINDOW[0] <= battle.crafting_date <= CRAFTING_WINDOW[1]
     ):
         raise ValueError("Only crafting phase 4 is supported")
     mode = b.mode
     if mode in (None, "none"):
         b.hp = b.max_hp = 1000.0  # Wiki: Crafting Station, unselected station.
         return
-    if mode not in ("cake", "candle", "hunter"):
+    if mode not in CRAFTED_MODES:
         raise ValueError("Crafted defense is unavailable in phase 4")
     name = CRAFTED[mode]
     cap = crafted_level(name, battle.town_hall)
@@ -406,16 +423,8 @@ def attach_weapon(battle, b: Building):
         # Invisibility 450, Earthquake 470).
         b.weapon = W(b, "spell_tower", range_=9.0, interval=70.0)
         b.weapon.mode = b.mode or "rage"
-        unlocks = {
-            "rage": 1,
-            "poison": 2,
-            "invis": 3,
-            "eq": 4,
-            "quake": 4,
-            "earthquake": 4,
-        }
         # Wiki: Spell Tower, Earthquake unlocks at level 4 and TH17.
-        required = unlocks.get(b.weapon.mode)
+        required = SPELL_TOWER_UNLOCKS.get(b.weapon.mode)
         if required is None or lvl < required:
             raise ValueError("Spell Tower mode is not unlocked")
         if required == 4 and battle.town_hall < 17:
@@ -452,10 +461,8 @@ def attach_weapon(battle, b: Building):
         _attach_crafted(battle, b)
     if key in ("at", "cannon", "mortar"):
         _gear_up(battle, b)
-    # Wiki: X-Bow, Inferno Tower, Eagle Artillery and Scattershot ammunition.
-    capacities = {"xbow": 1500, "inferno": 1000, "eagle": 90, "scatter": 90}
-    if key in capacities:
-        capacity = capacities[key]
+    if key in AMMUNITION:
+        capacity = AMMUNITION[key]
         rounds = battle.defense_ammo.get(b.id, battle.defense_ammo.get(key, capacity))
         if not isinstance(rounds, int) or not 0 <= rounds <= capacity:
             raise ValueError(f"Illegal {b.name} ammunition: {rounds}")
@@ -463,11 +470,10 @@ def attach_weapon(battle, b: Building):
 
 
 def _artillery_damage(battle):
-    # Wiki: Town Hall/Inferno Artillery, five weapon levels.
     level = battle.defense_levels.get("th:weapon", 5)
-    if level not in range(1, 6):
+    if level not in range(1, len(ARTILLERY_DAMAGE) + 1):
         raise ValueError("Inferno Artillery level must be between 1 and 5")
-    return (140.0, 157.5, 175.0, 192.5, 210.0)[level - 1]
+    return ARTILLERY_DAMAGE[level - 1]
 
 
 def _gear_up(battle, b):
@@ -475,8 +481,7 @@ def _gear_up(battle, b):
         return
     if b.mode not in ("geared", "burst", "fast"):
         raise ValueError(f"Unknown {b.name} mode: {b.mode}")
-    # Wiki: Cannon/Home Village, Archer Tower/Home Village and Mortar.
-    minimum = {"cannon": 7, "at": 10, "mortar": 8}[b.key]
+    minimum = GEAR_MINIMUM[b.key]
     if not isinstance(b.level, int):
         # Mortar's geared charge tables disagree about the required Town Hall.
         raise ValueError("Geared Mortar supercharge eligibility is unresolved")
@@ -484,9 +489,7 @@ def _gear_up(battle, b):
         raise ValueError(f"{b.name} is below its gear-up level")
     w = b.weapon
     if b.key == "at":
-        # Wiki: Archer Tower/Home Village, Fast Attack damage per shot, L10-21.
-        shots = (31.5, 35, 37.5, 40, 45, 50, 52.5, 55, 60, 65, 69, 72.5)
-        w.range, w.interval, w.damage = 8.0, 0.25, shots[b.level - minimum]
+        w.range, w.interval, w.damage = 8.0, 0.25, FAST_ARCHER_SHOTS[b.level - minimum]
     elif b.key == "cannon":
         w.kind, w.range, w.interval = "burst", 7.0, 1.6
         w.damage = stats.get(b.name, b.level, "Damage per Hit**")

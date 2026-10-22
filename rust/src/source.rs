@@ -4,7 +4,7 @@ use std::fmt;
 use std::ops::Deref;
 use std::rc::Rc;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum Source {
     Literal(&'static str),
     Shared(Rc<str>),
@@ -79,5 +79,13 @@ impl PartialEq<&str> for Source {
 impl fmt::Display for Source {
     fn fmt(&self, out: &mut fmt::Formatter<'_>) -> fmt::Result {
         out.write_str(self.as_str())
+    }
+}
+
+// Debug shows the text only: Literal and Shared are storage choices, and
+// setup-check compares states through their Debug output.
+impl fmt::Debug for Source {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(self.as_str(), f)
     }
 }

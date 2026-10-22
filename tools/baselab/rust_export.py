@@ -1,9 +1,9 @@
 """Inputs and checks for the Rust engine port (rust/).
 
-The Python engine stays the reference. Python builds each battle (layout,
-levels, weapons, traps, Clan Castle, defending heroes, attack plan) and
-exports its starting state; the Rust engine runs it. Static data the engine
-reads mid-battle comes from a catalog regenerated after every game patch.
+The Python engine stays the reference. Production jobs export only prepared
+layouts, constructed plans and options; Rust builds and runs their battles.
+Battle-state exports remain the reference for setup and tick parity. Static
+data comes from a catalog regenerated after every game patch.
 
   catalog --out rust/data/catalog.json
       the processed registry (stats.registry(), what stats.get reads), every
@@ -14,6 +14,10 @@ reads mid-battle comes from a catalog regenerated after every game patch.
   trace   --stage S --k K --out output/parity/trace-py-S-K.txt
       the Python engine's per-tick trace of that battle, compared with the
       Rust trace by tools/baselab/trace_diff.py
+  jobs --stage S --n N --out output/parity/jobs.json
+      prepared layouts/plans/options without constructing Python battles
+  parity-setup --stage S --n N
+      compare Rust setup field by field, then compare every trace tick
 
 Trace format, one record per line: `T <t>` before each step, then after it
 `U <team> <id> <name> <x> <y> <hp>` for every living unit (attackers then
@@ -66,14 +70,22 @@ def dump(obj, depth=0):
         if isinstance(obj, Unit):
             return {"$unit": obj.id, "team": obj.team}
     if isinstance(obj, dict):
-        return {(k if isinstance(k, str) else json.dumps(dump(k, 1))): dump(v, depth + 1) for k, v in obj.items()}
+        return {
+            (k if isinstance(k, str) else json.dumps(dump(k, 1))): dump(v, depth + 1)
+            for k, v in obj.items()
+        }
     if isinstance(obj, (list, tuple)):
         return [dump(v, depth + 1) for v in obj]
     if isinstance(obj, (set, frozenset)):
         return sorted((dump(v, depth + 1) for v in obj), key=repr)
     if dataclasses.is_dataclass(obj):
         out = {"$type": type(obj).__name__}
-        out.update({f.name: dump(getattr(obj, f.name), depth + 1) for f in dataclasses.fields(obj)})
+        out.update(
+            {
+                f.name: dump(getattr(obj, f.name), depth + 1)
+                for f in dataclasses.fields(obj)
+            }
+        )
         # Runtime plan state such as _spell_stock is created in __post_init__.
         for name, value in getattr(obj, "__dict__", {}).items():
             if name not in out:
@@ -87,7 +99,9 @@ def dump(obj, depth=0):
             if hasattr(obj, name):
                 v = getattr(obj, name)
                 if callable(v) and not isinstance(v, type):
-                    raise TypeError(f"cannot export callable {type(obj).__name__}.{name}")
+                    raise TypeError(
+                        f"cannot export callable {type(obj).__name__}.{name}"
+                    )
                 out[name] = dump(v, depth + 1)
         return out
     raise TypeError(f"cannot export {type(obj).__name__}")
@@ -96,23 +110,32 @@ def dump(obj, depth=0):
 # ------------------------------------------------------------------ catalog
 def catalog():
     from baselab import mechanics
-    from baselab.engine import heroes, specs, stats
+    from baselab.engine import battle, defense, heroes, playbook, specs, stats, traps
     from baselab.engine import units as engine_units
 
     reg = stats.registry()
     units, numbers = {}, {}
     for name, rec in reg.items():
-        if rec.get("kind") in ("troop", "super_troop", "siege", "hero", "pet", "summon", "spell") or name in specs.SPECS:
+        if (
+            rec.get("kind")
+            in ("troop", "super_troop", "siege", "hero", "pet", "summon", "spell")
+            or name in specs.SPECS
+        ):
             try:
                 sp = specs.spec(name)
             except Exception:  # noqa: BLE001 - names without a spec are not units
                 continue
-            units[name] = {"spec": dump(sp), "summon_spec": dump(heroes.summon_spec(name, sp))}
+            units[name] = {
+                "spec": dump(sp),
+                "summon_spec": dump(heroes.summon_spec(name, sp)),
+            }
             for entry in rec.get("levels", []):
                 level = entry.get("level")
                 if isinstance(level, int):
                     try:
-                        numbers[f"{name}|{level}"] = dump(specs.unit_numbers(name, level))
+                        numbers[f"{name}|{level}"] = dump(
+                            specs.unit_numbers(name, level)
+                        )
                     except Exception:  # noqa: BLE001 - incomplete rows stay absent
                         pass
     return {
@@ -129,6 +152,43 @@ def catalog():
         "trap_sizes": dump(mechanics.TRAP_SIZES),
         "world": mechanics.WORLD,
         "margin": mechanics.MARGIN,
+        "setup": {
+            "modifiers": dump(battle.MODIFIERS),
+            "inferno_artillery": dump(defense.INFERNO_ARTILLERY),
+            "giga_inferno": dump(defense.GIGA_INFERNO),
+            "facings": dump(defense.FACINGS),
+            "crafted": dump(defense.CRAFTED),
+            "ammunition": dump(defense.AMMUNITION),
+            "spell_tower_unlocks": dump(defense.SPELL_TOWER_UNLOCKS),
+            "gear_minimum": dump(defense.GEAR_MINIMUM),
+            "gear_archer_shots": dump(defense.FAST_ARCHER_SHOTS),
+            "artillery_damage": dump(defense.ARTILLERY_DAMAGE),
+            "crafting": {"phase": defense.CRAFTING_PHASE, "start": defense.CRAFTING_WINDOW[0],
+                         "end": defense.CRAFTING_WINDOW[1], "modes": dump(defense.CRAFTED_MODES)},
+            "cargo_order": dump(engine_units.CARGO_ORDER),
+            "default_loadouts": dump(heroes.DEFAULT_LOADOUTS),
+            "trap_fuse": dump(traps.FUSE),
+            "trap_no_trigger": dump(traps.NO_TRIGGER),
+            "donated_laboratory": {
+                name: {
+                    str(entry["level"]): battle._required_lab(
+                        battle._research_name(name), entry["level"]
+                    )
+                    for entry in reg[name].get("levels", [])
+                    if isinstance(entry.get("level"), int)
+                }
+                for name in units
+            },
+            "env": {
+                "dt": battle.DT,
+                "fast_end": battle.FAST_END,
+                "windup": engine_units.WINDUP,
+                "pace": float(os.environ.get("BASELAB_PACE", "1.0")),
+                "pace_tap": playbook.PACE_TAP,
+                "pace_switch": playbook.PACE_SWITCH,
+                "pace_ability": playbook.PACE_ABILITY,
+            },
+        },
     }
 
 
@@ -138,7 +198,11 @@ def own_layout(path):
 
     lv = json.loads((ROOT / "data" / "your-levels.json").read_text())
     lay = Layout.load(ROOT / path)
-    lay.levels, lay.wall_level, lay.hero_levels = dict(lv["levels"]), lv["wall_level"], dict(lv["hero_levels"])
+    lay.levels, lay.wall_level, lay.hero_levels = (
+        dict(lv["levels"]),
+        lv["wall_level"],
+        dict(lv["hero_levels"]),
+    )
     return lay
 
 
@@ -154,7 +218,9 @@ def edge_drops(army, angle, seed, gap=0.2):
             lat = (i - (n - 1) / 2) * 1.2 + rng.uniform(-0.4, 0.4)
             x = 22.0 + math.cos(angle) * 23.5 - math.sin(angle) * lat
             y = 22.0 + math.sin(angle) * 23.5 + math.cos(angle) * lat
-            out.append((gap * k, name, min(43.5, max(0.5, x)), min(43.5, max(0.5, y)), None))
+            out.append(
+                (gap * k, name, min(43.5, max(0.5, x)), min(43.5, max(0.5, y)), None)
+            )
             k += 1
     return out
 
@@ -166,20 +232,57 @@ STAGE1_ARMIES = [
     [("Dragon", 10), ("Balloon", 10), ("Minion", 12)],
     [("Giant", 10), ("Valkyrie", 12), ("Dragon", 6), ("Wizard", 10), ("Barbarian", 12)],
 ]
-STAGE4_BASES = ["data/reference-bases/your-base.json", "data/reference-bases/real-l6x.json",
-                "data/reference-bases/real-l1x.json", "data/reference-bases/real-l3x.json"]
-STAGE1_BASES = ["data/reference-bases/your-base.json", "data/reference-bases/real-l6x.json"]
+STAGE4_BASES = [
+    "data/reference-bases/your-base.json",
+    "data/reference-bases/real-l6x.json",
+    "data/reference-bases/real-l1x.json",
+    "data/reference-bases/real-l3x.json",
+]
+STAGE1_BASES = [
+    "data/reference-bases/your-base.json",
+    "data/reference-bases/real-l6x.json",
+]
 
 
 # Stage 2: the rest of the user's armies' troops, their summons, and siege
 # machines releasing attacker Clan Castle cargo (fixed drops, no heroes or
 # spells): (army drops, siege, cargo).
 STAGE2_ARMIES = [
-    ([("Ice Golem", 2), ("Root Rider", 4), ("Valkyrie", 8), ("Healer", 5), ("Apprentice Warden", 1)],
-     "Siege Barracks", ["Super Hog Rider"] * 4 + ["Minion"]),
-    ([("Ice Golem", 1), ("Druid", 2), ("Ruin Witch", 2), ("Root Rider", 2), ("Valkyrie", 3), ("Healer", 5), ("Archer", 3)],
-     "Log Launcher", ["Ice Golem", "Ice Golem", "Root Rider"]),
-    ([("Rocket Balloon", 6), ("Super Minion", 3), ("Balloon", 4), ("Minion", 6), ("Super Hog Rider", 4)], None, []),
+    (
+        [
+            ("Ice Golem", 2),
+            ("Root Rider", 4),
+            ("Valkyrie", 8),
+            ("Healer", 5),
+            ("Apprentice Warden", 1),
+        ],
+        "Siege Barracks",
+        ["Super Hog Rider"] * 4 + ["Minion"],
+    ),
+    (
+        [
+            ("Ice Golem", 1),
+            ("Druid", 2),
+            ("Ruin Witch", 2),
+            ("Root Rider", 2),
+            ("Valkyrie", 3),
+            ("Healer", 5),
+            ("Archer", 3),
+        ],
+        "Log Launcher",
+        ["Ice Golem", "Ice Golem", "Root Rider"],
+    ),
+    (
+        [
+            ("Rocket Balloon", 6),
+            ("Super Minion", 3),
+            ("Balloon", 4),
+            ("Minion", 6),
+            ("Super Hog Rider", 4),
+        ],
+        None,
+        [],
+    ),
 ]
 
 
@@ -198,24 +301,51 @@ def hero_stage(army_id, angle, seed):
     ref = make_plan(army_id, angle, 16, seed)
     heroes = list(build["heroes"])
     troops = [(name, n) for name, n in build["troops"].items()]
-    siege = next((name for name in build["cc"] if name in ("Siege Barracks", "Log Launcher", "Wall Wrecker",
-                                                           "Battle Blimp", "Stone Slammer", "Flame Flinger",
-                                                           "Battle Drill", "Troop Launcher")), None)
-    cargo = [name for name, n in build["cc"].items() for _ in range(int(n))
-             if name != siege and not name.endswith("Spell")]
-    drops = edge_drops([(h, 1) for h in heroes] + troops + ([(siege, 1)] if siege else []), angle, seed)
+    siege = next(
+        (
+            name
+            for name in build["cc"]
+            if name
+            in (
+                "Siege Barracks",
+                "Log Launcher",
+                "Wall Wrecker",
+                "Battle Blimp",
+                "Stone Slammer",
+                "Flame Flinger",
+                "Battle Drill",
+                "Troop Launcher",
+            )
+        ),
+        None,
+    )
+    cargo = [
+        name
+        for name, n in build["cc"].items()
+        for _ in range(int(n))
+        if name != siege and not name.endswith("Spell")
+    ]
+    drops = edge_drops(
+        [(h, 1) for h in heroes] + troops + ([(siege, 1)] if siege else []), angle, seed
+    )
     drops = [(t, name, x, y, ref.hero_levels.get(name)) for t, name, x, y, _ in drops]
     plan = Stage(drops)
-    for attr in ("loadouts", "hero_levels", "equipment_levels", "pet_levels", "troop_levels", "clan_castle_level",
-                 "auto_ability_on_ko"):
+    for attr in (
+        "loadouts",
+        "hero_levels",
+        "equipment_levels",
+        "pet_levels",
+        "troop_levels",
+        "clan_castle_level",
+        "auto_ability_on_ko",
+    ):
         setattr(plan, attr, getattr(ref, attr))
     plan.cc_troops = cargo
     return plan
 
 
-def scenario(stage, k):
-    """Python Battle for parity scenario k of a stage (not yet run)."""
-    from baselab.engine.battle import Battle
+def scenario_inputs(stage, k):
+    """Prepared layout, constructed plan and Battle options for a parity case."""
     from mechanic_tests import Stage
 
     if stage == 1:
@@ -226,7 +356,11 @@ def scenario(stage, k):
         angle, seed = 2 * math.pi * side / n_sides + 0.1 + 0.37 * k, 200 + k
         lay = own_layout(base)
         lay.heroes = []
-        return Battle(lay, Stage(edge_drops(army, angle, seed)), seed=seed, town_hall=16)
+        return (
+            lay,
+            Stage(edge_drops(army, angle, seed)),
+            {"seed": seed, "town_hall": 16},
+        )
     if stage == 2:
         n_sides = 4
         army, siege, cargo = STAGE2_ARMIES[k % len(STAGE2_ARMIES)]
@@ -238,7 +372,7 @@ def scenario(stage, k):
         drops = edge_drops(army + ([(siege, 1)] if siege else []), angle, seed)
         plan = Stage(drops)
         plan.cc_troops = list(cargo)  # read by Battle._attack_cargo
-        return Battle(lay, plan, seed=seed, town_hall=16)
+        return lay, plan, {"seed": seed, "town_hall": 16}
     if stage == 3:
         n_sides = 4
         army = STAGE3_ARMIES[k % len(STAGE3_ARMIES)]
@@ -246,7 +380,7 @@ def scenario(stage, k):
         side = k // (len(STAGE3_ARMIES) * len(STAGE1_BASES)) % n_sides
         angle, seed = 2 * math.pi * side / n_sides + 0.1 + 0.37 * k, 400 + k
         lay = own_layout(base)  # defending heroes stay on their banners
-        return Battle(lay, hero_stage(army, angle, seed), seed=seed, town_hall=16)
+        return lay, hero_stage(army, angle, seed), {"seed": seed, "town_hall": 16}
     if stage == 4:
         # the user's real armies with their playbook plans and spells, set up
         # exactly like a scored battle (tools/baselab/fingerprint.py run_one)
@@ -261,8 +395,36 @@ def scenario(stage, k):
         lay = own_layout(base)
         plan = make_plan(army, angle, 16, seed)
         plan.strength = STRENGTH.get(army, 1.0) * skill(seed)
-        return Battle(lay, plan, seed=seed, town_hall=16)
+        return lay, plan, {"seed": seed, "town_hall": 16}
     raise ValueError(f"no stage {stage}")
+
+
+def scenario(stage, k):
+    """Construct the Python reference; jobs exports only need scenario_inputs."""
+    from baselab.engine.battle import Battle
+
+    layout, plan, options = scenario_inputs(stage, k)
+    return Battle(layout, plan, **options)
+
+
+def plan_json(plan):
+    validate = getattr(plan, "require_legal", None)
+    if validate is not None:
+        validate()
+    return dump(plan)
+
+
+def layout_json(layout):
+    return layout.to_json()
+
+
+def jobs_json(layouts, plans, jobs):
+    """Export prepared data, without constructing any Python battles."""
+    return {
+        "layouts": [layout_json(layout) for layout in layouts],
+        "plans": [plan_json(plan) for plan in plans],
+        "jobs": [dict(job) for job in jobs],
+    }
 
 
 def battle_state(b):
@@ -270,10 +432,28 @@ def battle_state(b):
     validate = getattr(b.plan, "require_legal", None)
     if validate is not None:
         validate()  # Resolve constructed spell-stock levels before the export.
-    skip = {"plan", "log", "frames", "grid", "rng", "_bucket_grid", "deployments", "_dt_cache", "_nd_cache"}
+    skip = {
+        "plan",
+        "log",
+        "frames",
+        "grid",
+        "rng",
+        "_bucket_grid",
+        "deployments",
+        "_dt_cache",
+        "_nd_cache",
+    }
     scalars = {}
     for k, v in vars(b).items():
-        if k in skip or k in ("buildings", "walls", "traps", "attackers", "defenders", "fields", "pending"):
+        if k in skip or k in (
+            "buildings",
+            "walls",
+            "traps",
+            "attackers",
+            "defenders",
+            "fields",
+            "pending",
+        ):
             continue
         scalars[k] = dump(v, 1)
     from baselab.engine import battle as B
@@ -283,9 +463,15 @@ def battle_state(b):
     return {
         # random.Random internal state: 624 words and the index (getstate()[1])
         "rng_state": list(state),
-        "env": {"dt": B.DT, "fast_end": B.FAST_END, "windup": units.WINDUP,
-                "pace": float(os.environ.get("BASELAB_PACE", "1.0")),
-                "pace_tap": playbook.PACE_TAP, "pace_switch": playbook.PACE_SWITCH, "pace_ability": playbook.PACE_ABILITY},
+        "env": {
+            "dt": B.DT,
+            "fast_end": B.FAST_END,
+            "windup": units.WINDUP,
+            "pace": float(os.environ.get("BASELAB_PACE", "1.0")),
+            "pace_tap": playbook.PACE_TAP,
+            "pace_switch": playbook.PACE_SWITCH,
+            "pace_ability": playbook.PACE_ABILITY,
+        },
         "scalars": scalars,
         "buildings": [dump(x) for x in b.buildings],
         "walls": [dump(w) for w in b.walls.values()],
@@ -295,7 +481,7 @@ def battle_state(b):
         "fields": [dump(f) for f in b.fields],
         "pending": [dump(p) for p in b.pending],
         "deployments": [dump(d) for d in b.deployments],
-        "plan": dump(b.plan),
+        "plan": plan_json(b.plan),
         "plan_type": type(b.plan).__name__,
     }
 
@@ -314,7 +500,9 @@ def trace(b, max_ticks=10**9):
         for team, pool in (("atk", b.attackers), ("def", b.defenders)):
             for u in pool:
                 if u.alive:
-                    lines.append(f"U {team} {u.id} {u.name.replace(' ', '_')} {fbits(u.x)} {fbits(u.y)} {fbits(u.hp)}")
+                    lines.append(
+                        f"U {team} {u.id} {u.name.replace(' ', '_')} {fbits(u.x)} {fbits(u.y)} {fbits(u.hp)}"
+                    )
         for x in b.buildings:
             if last_b.get(x.id, x.max_hp) != x.hp:
                 last_b[x.id] = x.hp
@@ -333,25 +521,66 @@ def trace(b, max_ticks=10**9):
     return lines
 
 
-def parity(stage, n, start=0):
+def engine_executable():
+    configured = os.environ.get("BASELAB_ENGINE")
+    if configured:
+        return Path(configured)
+    directory = ROOT / "rust" / "target" / "release"
+    native = directory / "baselab-engine"
+    return native if native.exists() else directory / "baselab-engine.exe"
+
+
+def parity(stage, n, start=0, setup=False):
     """Export scenarios start..start+n-1 of a stage, trace them in both
     engines, and report the first difference of each (rust/ must be built)."""
     import subprocess
 
     from trace_diff import first_difference
 
-    exe = ROOT / "rust" / "target" / "release" / "baselab-engine.exe"
+    exe = engine_executable()
     d = ROOT / "output" / "parity"
     d.mkdir(parents=True, exist_ok=True)
     same = 0
     for k in range(start, start + n):
-        bj, py, rs = d / f"battle-{stage}-{k}.json", d / f"trace-py-{stage}-{k}.txt", d / f"trace-rs-{stage}-{k}.txt"
+        bj, py, rs = (
+            d / f"battle-{stage}-{k}.json",
+            d / f"trace-py-{stage}-{k}.txt",
+            d / f"trace-rs-{stage}-{k}.txt",
+        )
         b = scenario(stage, k)
         bj.write_text(json.dumps(battle_state(b)))
         py.write_text("\n".join(trace(scenario(stage, k))) + "\n")
-        run = subprocess.run([str(exe), "trace", str(bj), str(rs)], capture_output=True, text=True)
+        if setup:
+            layout, plan, options = scenario_inputs(stage, k)
+            job_file = d / f"jobs-{stage}-{k}.json"
+            job_file.write_text(
+                json.dumps(
+                    jobs_json([layout], [plan], [{"layout": 0, "plan": 0, **options}])
+                )
+            )
+            check = subprocess.run(
+                [str(exe), "setup-check", str(bj), str(job_file)],
+                capture_output=True,
+                text=True,
+            )
+            if check.returncode != 0:
+                print(f"  {k:3d}  SETUP FAILED")
+                print(check.stdout, end="")
+                print(check.stderr, end="")
+                continue
+            command = [str(exe), "trace-job", str(job_file), "0", str(rs)]
+        else:
+            command = [str(exe), "trace", str(bj), str(rs)]
+        run = subprocess.run(command, capture_output=True, text=True)
         if run.returncode != 0:
-            msg = " | ".join(l for l in run.stderr.strip().splitlines() if "RUST_BACKTRACE" not in l)[-300:] or "?"
+            msg = (
+                " | ".join(
+                    l
+                    for l in run.stderr.strip().splitlines()
+                    if "RUST_BACKTRACE" not in l
+                )[-300:]
+                or "?"
+            )
             print(f"  {k:3d}  RUST FAILED: {msg[:200]}")
             continue
         diff = first_difference(py.read_text().split("\n"), rs.read_text().split("\n"))
@@ -361,38 +590,71 @@ def parity(stage, n, start=0):
         else:
             print(f"  {k:3d}  DIFFERS {diff}")
     print(f"stage {stage}: {same}/{n} identical")
+    return same == n
 
 
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
-    c = sub.add_parser("catalog"); c.add_argument("--out", required=True)
-    pa = sub.add_parser("parity"); pa.add_argument("--stage", type=int, required=True)
-    pa.add_argument("--n", type=int, default=24); pa.add_argument("--start", type=int, default=0)
+    c = sub.add_parser("catalog")
+    c.add_argument("--out", required=True)
+    pa = sub.add_parser("parity")
+    pa.add_argument("--stage", type=int, required=True)
+    pa.add_argument("--n", type=int, default=24)
+    pa.add_argument("--start", type=int, default=0)
+    ps = sub.add_parser("parity-setup")
+    ps.add_argument("--stage", type=int, required=True)
+    ps.add_argument("--n", type=int, default=24)
+    ps.add_argument("--start", type=int, default=0)
+    jo = sub.add_parser("jobs")
+    jo.add_argument("--stage", type=int, required=True)
+    jo.add_argument("--n", type=int, default=1)
+    jo.add_argument("--start", type=int, default=0)
+    jo.add_argument("--out", required=True)
     for name in ("battle", "trace"):
-        p = sub.add_parser(name); p.add_argument("--stage", type=int, required=True); p.add_argument("--k", type=int, default=0)
+        p = sub.add_parser(name)
+        p.add_argument("--stage", type=int, required=True)
+        p.add_argument("--k", type=int, default=0)
         p.add_argument("--out", required=True)
     args = ap.parse_args()
     if args.cmd == "parity":
         parity(args.stage, args.n, args.start)
         return
+    if args.cmd == "parity-setup":
+        raise SystemExit(0 if parity(args.stage, args.n, args.start, setup=True) else 1)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     if args.cmd == "catalog":
         data = catalog()
         out.write_text(json.dumps(data))
-        print(f"catalog: {len(data['registry'])} registry entries, {len(data['units'])} units, "
-              f"{len(data['unit_numbers'])} unit levels -> {out} ({out.stat().st_size // 1024} KB)")
+        print(
+            f"catalog: {len(data['registry'])} registry entries, {len(data['units'])} units, "
+            f"{len(data['unit_numbers'])} unit levels -> {out} ({out.stat().st_size // 1024} KB)"
+        )
+    elif args.cmd == "jobs":
+        layouts, plans, jobs = [], [], []
+        for k in range(args.start, args.start + args.n):
+            layout, plan, options = scenario_inputs(args.stage, k)
+            index = len(jobs)
+            layouts.append(layout)
+            plans.append(plan)
+            jobs.append({"layout": index, "plan": index, **options})
+        out.write_text(json.dumps(jobs_json(layouts, plans, jobs)))
+        print(f"stage {args.stage}: {len(jobs)} prepared jobs -> {out}")
     elif args.cmd == "battle":
         b = scenario(args.stage, args.k)
         out.write_text(json.dumps(battle_state(b), indent=1))
-        print(f"stage {args.stage} scenario {args.k}: {len(b.buildings)} buildings, {len(b.walls)} walls, "
-              f"{len(b.traps)} traps, {len(b.deployments)} deployments -> {out}")
+        print(
+            f"stage {args.stage} scenario {args.k}: {len(b.buildings)} buildings, {len(b.walls)} walls, "
+            f"{len(b.traps)} traps, {len(b.deployments)} deployments -> {out}"
+        )
     else:
         b = scenario(args.stage, args.k)
         lines = trace(b)
         out.write_text("\n".join(lines) + "\n")
-        print(f"stage {args.stage} scenario {args.k}: {len(lines)} trace lines; {lines[-1]} -> {out}")
+        print(
+            f"stage {args.stage} scenario {args.k}: {len(lines)} trace lines; {lines[-1]} -> {out}"
+        )
 
 
 if __name__ == "__main__":

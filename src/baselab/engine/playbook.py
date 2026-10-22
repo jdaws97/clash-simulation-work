@@ -35,6 +35,7 @@ Anchors:
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 import os
@@ -704,13 +705,16 @@ def pick_variants(pb: dict, inventory: dict, heroes_in: list, spells: dict) -> l
     Launcher) takes their place. Best-supported variant first; additive
     variants (replacing nothing) are left out."""
     have = set(inventory) | set(heroes_in) | {SPELL_NAMES[k] for k, c in spells.items() if c}
-    steps = [dict(x) for x in pb["steps"]]
+    # deep copies: plan construction edits steps (e.g. appends a cite in
+    # from_playbook), which used to mutate the cached playbook itself, so
+    # every later plan of the family accumulated another citation
+    steps = copy.deepcopy(pb["steps"])
     for v in sorted(pb.get("variants", []), key=lambda v: -v.get("support", 0)):
         repl = set(v.get("replaces") or [])
         cur = [x for x in steps if x["id"] in repl]
         if not repl or not cur or any(_usable(x, have, heroes_in) for x in cur):
             continue
-        new = [dict(x, variant=v["name"]) for x in v.get("steps", [])]
+        new = [dict(copy.deepcopy(x), variant=v["name"]) for x in v.get("steps", [])]
         if not new or not all(_usable(x, have, heroes_in) for x in new):
             continue
         i = min(n for n, x in enumerate(steps) if x["id"] in repl)

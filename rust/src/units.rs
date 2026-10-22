@@ -1,7 +1,7 @@
 //! Ports units.py:23-244,249-847,933-992,1152-2236 for stages 1 and 2.
 //! Unrelated troops and later-stage content retain explicit unsupported branches.
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 use std::collections::HashSet;
 
@@ -278,7 +278,7 @@ fn smash_wall(battle: &mut Battle, unit: UnitRef, wall: WallId) {
 // units.py:249-328: spawn clocks begin before deploy-time strength scaling.
 pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
     let name = battle.unit(unit).name.clone();
-    let sp = Rc::clone(&battle.unit(unit).spec);
+    let sp = Arc::clone(&battle.unit(unit).spec);
     let t = battle.t;
     if name == "Spell Skeleton" {
         battle.unit_mut(unit).extra.armor_hp = 30.0;
@@ -373,7 +373,7 @@ pub fn pre_tick(battle: &mut Battle, unit: UnitRef) -> bool {
 
 fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
     let t = battle.t;
-    let sp = Rc::clone(&battle.unit(unit).spec);
+    let sp = Arc::clone(&battle.unit(unit).spec);
     if battle.unit(unit).extra.leaping {
         return true;
     }
@@ -796,7 +796,7 @@ pub fn on_death(battle: &mut Battle, unit: UnitRef) {
 }
 
 fn on_death_effect(battle: &mut Battle, unit: UnitRef) {
-    let sp = Rc::clone(&battle.unit(unit).spec);
+    let sp = Arc::clone(&battle.unit(unit).spec);
     let t = battle.t;
     if let Some(key) = sp.death_damage.as_deref().filter(|key| !key.is_empty()) {
         if !battle.unit(unit).extra.suicided {
@@ -1518,7 +1518,7 @@ pub fn launch_projectile(
     rocket: bool,
 ) {
     let u = battle.unit(unit);
-    let sp = Rc::clone(&u.spec);
+    let sp = Arc::clone(&u.spec);
     let name = u.name_id;
     let source = u.source.clone();
     let (hits_air, hits_ground) = (u.hits_air, u.hits_ground);
@@ -1646,7 +1646,7 @@ pub fn strike(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
 
 fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     let t = battle.t;
-    let sp = Rc::clone(&battle.unit(unit).spec);
+    let sp = Arc::clone(&battle.unit(unit).spec);
     if sp.attack == Tag::None && !(battle.unit(unit).name_id == Name::RuinWitch && unit.team == Team::Def)
     {
         return;
@@ -1770,7 +1770,7 @@ pub fn after_unit_hit(battle: &mut Battle, unit: UnitRef, target: UnitRef, damag
 
 fn after_unit_hit_effect(battle: &mut Battle, unit: UnitRef, target: UnitRef, damage: f64) {
     let t = battle.t;
-    let sp = Rc::clone(&battle.unit(unit).spec);
+    let sp = Arc::clone(&battle.unit(unit).spec);
     if sp.has_special(Special::Logger) {
         todo!("stage 2: units.py:1951 Logger collateral and pushback");
     }
@@ -1977,7 +1977,7 @@ fn act_healer_with_scratch(
     {
         return;
     }
-    let sp = Rc::clone(&battle.unit(unit).spec);
+    let sp = Arc::clone(&battle.unit(unit).spec);
     if unit.team == Team::Atk {
         allies.extend(battle.attackers_pool().map(Unit::reference));
     } else {

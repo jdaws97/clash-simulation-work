@@ -1267,7 +1267,7 @@ fn summon(battle: &mut Battle, f: &mut Field) -> bool {
         if f.extra.name.as_deref() == Some("Bag of Frostmites") {
             let u = battle.unit_mut(child);
             u.extra.bouncing_frostmite = true;
-            std::rc::Rc::make_mut(&mut u.spec).splash = 0.8;
+            std::sync::Arc::make_mut(&mut u.spec).splash = 0.8;
         }
     }
     j < n
@@ -1494,7 +1494,7 @@ fn totem(battle: &mut Battle, f: &Field) -> bool {
         flying: false,
         hits_air: false,
         hits_ground: false,
-        spec: std::rc::Rc::new(spec),
+        spec: std::sync::Arc::new(spec),
         alive: true,
         cooldown: 0.0,
         target: None,

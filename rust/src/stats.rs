@@ -1,9 +1,8 @@
 //! Ports stats.py:20-31,129-153,165-233 over rust_export.py's processed registry.
 
-use std::cell::RefCell;
 use std::fmt::Write;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 use crate::fast_hash::FastMap as HashMap;
 use crate::json::Json;
@@ -53,14 +52,14 @@ fn lower(row: &Row) -> Row {
 }
 
 struct CachedRow {
-    merged: Rc<Row>,
+    merged: Arc<Row>,
     text: Row,
     numeric: Vec<(String, Option<f64>)>,
 }
 
 pub struct Stats {
     pub registry: Json,
-    cache: RefCell<HashMap<String, HashMap<Level, CachedRow>>>,
+    cache: RwLock<HashMap<String, HashMap<Level, CachedRow>>>,
 }
 
 impl Stats {
@@ -70,7 +69,7 @@ impl Stats {
         registry.obj();
         Self {
             registry,
-            cache: RefCell::new(HashMap::default()),
+            cache: RwLock::new(HashMap::default()),
         }
     }
 
@@ -97,7 +96,8 @@ impl Stats {
     fn ensure_row(&self, name: &str, level: &Level) {
         if self
             .cache
-            .borrow()
+            .read()
+            .expect("stats cache lock")
             .get(name)
             .is_some_and(|levels| levels.contains_key(level))
         {
@@ -138,13 +138,14 @@ impl Stats {
             }
         }
         self.cache
-            .borrow_mut()
+            .write()
+            .expect("stats cache lock")
             .entry(name.to_owned())
             .or_default()
             .insert(
                 level.clone(),
                 CachedRow {
-                    merged: Rc::new(merged),
+                    merged: Arc::new(merged),
                     text,
                     numeric: numeric
                         .into_iter()
@@ -154,14 +155,14 @@ impl Stats {
             );
     }
 
-    pub fn row(&self, name: &str, level: &Level) -> Rc<Row> {
+    pub fn row(&self, name: &str, level: &Level) -> Arc<Row> {
         self.ensure_row(name, level);
-        Rc::clone(&self.cache.borrow()[name][level].merged)
+        Arc::clone(&self.cache.read().expect("stats cache lock")[name][level].merged)
     }
 
     pub fn get(&self, name: &str, level: &Level, keys: &[&str], default: Option<f64>) -> Option<f64> {
         self.ensure_row(name, level);
-        let cache = self.cache.borrow();
+        let cache = self.cache.read().expect("stats cache lock");
         let row = &cache[name][level].numeric;
         for key in keys {
             if let Some(fragment) = key.strip_prefix('~') {
@@ -187,7 +188,7 @@ impl Stats {
 
     pub fn text(&self, name: &str, level: &Level, keys: &[&str], default: Option<Json>) -> Option<Json> {
         self.ensure_row(name, level);
-        let cache = self.cache.borrow();
+        let cache = self.cache.read().expect("stats cache lock");
         let row = &cache[name][level].text;
         for key in keys {
             let key = key.to_lowercase();
@@ -220,6 +221,19 @@ impl Stats {
             (self.required_town_hall(name, &Level::Int(level)) <= town_hall as f64)
                 .then_some(level)
         }).max()
+    }
+
+    // stats.py:156-163: supercharge string levels are checked through row().
+    pub fn validate_level(&self, name: &str, level: &Level, town_hall: i64) {
+        assert!(
+            self.max_level(name, town_hall).is_some(),
+            "{name} is unavailable at Town Hall {town_hall}",
+        );
+        assert!(
+            self.required_town_hall(name, level) <= town_hall as f64,
+            "Illegal {name} level {level} at Town Hall {town_hall}",
+        );
+        let _ = self.row(name, level);
     }
 }
 
@@ -304,7 +318,7 @@ fn python_text(value: &Json) -> String {
     }
 }
 
-fn python_string_repr(value: &str) -> String {
+pub fn python_string_repr(value: &str) -> String {
     let quote = if value.contains('\'') && !value.contains('"') {
         '"'
     } else {

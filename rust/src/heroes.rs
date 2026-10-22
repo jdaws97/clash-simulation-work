@@ -1,4 +1,4 @@
-//! Ports heroes.py:28-1140,1348-1476. Python constructs defending heroes.
+//! Ports heroes.py:28-1140,1348-1476. setup.rs constructs defending heroes.
 
 use crate::battle::SpawnOptions;
 use crate::catalog::UnitSpec;
@@ -101,7 +101,16 @@ pub fn col(battle: &Battle, name: &str, level: &Level, fragments: &[&str], defau
     battle.catalog.stats.get(name, level, &keys, Some(default)).expect("numeric default")
 }
 
-fn default_loadout(hero: &str) -> Option<HeroLoadout> {
+fn default_loadout(battle: &Battle, hero: &str) -> Option<HeroLoadout> {
+    if let Some(loadouts) = battle.catalog.setup.get("default_loadouts") {
+        let loadout = loadouts.get(hero)?;
+        return Some(HeroLoadout {
+            hero: loadout.at("hero").str().to_owned(),
+            equipment: loadout.at("equipment").arr().iter().map(|v| v.str().to_owned()).collect(),
+            pet: loadout.at("pet").opt_str().map(str::to_owned),
+        });
+    }
+    // Compatibility with catalogs exported before setup tables were added.
     let (equipment, pet) = match hero {
         "Archer Queen" => (["Giant Arrow", "Action Figure"], "Unicorn"),
         "Barbarian King" => (["Spiky Ball", "Earthquake Boots"], "Spirit Fox"),
@@ -154,7 +163,7 @@ fn pet_level(battle: &Battle, hero: UnitRef, loadout: &HeroLoadout, town_hall: i
 // heroes.py:103-182: equip is called after strength, before league scaling.
 pub fn equip(battle: &mut Battle, hero: UnitRef) {
     let name = battle.unit(hero).name.clone();
-    let Some(loadout) = battle.plan.loadout(&name).cloned().or_else(|| default_loadout(&name)) else {
+    let Some(loadout) = battle.plan.loadout(&name).cloned().or_else(|| default_loadout(battle, &name)) else {
         return;
     };
     let th = battle.plan.town_hall();
@@ -302,7 +311,7 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
         flying,
         hits_air,
         hits_ground: true,
-        spec: std::rc::Rc::new(spec),
+        spec: std::sync::Arc::new(spec),
         alive: true,
         cooldown: 0.0,
         target: None,

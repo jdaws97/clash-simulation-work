@@ -6,6 +6,7 @@
 const N: usize = 624;
 const M: usize = 397;
 
+#[derive(Debug)]
 pub struct PyRandom {
     mt: [u32; N],
     index: usize,

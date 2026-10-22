@@ -2,7 +2,7 @@
 //! battle.py:148-210 and plans.py:128-137. Vec order is Python list/dict order.
 
 use std::collections::HashSet;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::catalog::{Catalog, UnitSpec};
 use crate::fast_hash::FastMap as HashMap;
@@ -727,8 +727,8 @@ pub struct Unit {
     pub hits_air: bool,
     pub hits_ground: bool,
     // Cheap immutable snapshots survive callbacks; the one per-unit spec edit
-    // uses Rc::make_mut so it cannot affect the catalog or another unit.
-    pub spec: Rc<UnitSpec>,
+    // uses Arc::make_mut so it cannot affect the catalog or another unit.
+    pub spec: Arc<UnitSpec>,
     pub alive: bool,
     pub cooldown: f64,
     pub target: Option<EntityRef>,
@@ -1024,6 +1024,7 @@ pub struct CargoEntry {
 pub enum Plan {
     Playbook(Box<crate::playbook::PlaybookPlan>),
     Stage {
+        constructed: crate::json::Json,
         deployments: Vec<Deployment>,
         town_hall: i64,
         strength: f64,
@@ -1203,8 +1204,8 @@ pub struct Battle {
     pub entity_scratch: Vec<EntityRef>,
     pub wall_contact_scratch: Vec<WallId>,
     pub spare_bucket_members: Vec<Vec<UnitRef>>,
-    pub catalog: Rc<Catalog>,
-    // battle.py:148 random.Random(seed), restored from the exported state.
+    pub catalog: Arc<Catalog>,
+    // battle.py:148 random.Random(seed), seeded by setup or restored from export.
     pub rng: Option<PyRandom>,
     pub dt: f64,
     pub pace: f64,

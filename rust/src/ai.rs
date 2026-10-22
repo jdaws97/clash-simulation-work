@@ -1,6 +1,6 @@
 //! Ports battle.py:1133-1410,1444-1458,1522-1589,1672-1753.
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::battle::SpawnOptions;
 use crate::labels::{Name, Special, Tag};
@@ -86,7 +86,7 @@ impl Battle {
         let dt = self.dt;
         let u = self.unit_mut(reference);
         u.cooldown = (u.cooldown - dt).max(-dt);
-        let sp = Rc::clone(&u.spec);
+        let sp = Arc::clone(&u.spec);
         if matches!(sp.attack, Tag::Heal | Tag::HealChain) {
             units::act_healer(self, reference);
             return;
