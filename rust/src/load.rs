@@ -637,6 +637,26 @@ impl Resolver {
                         (self.walls[&coordinates], n.number())
                     }).collect();
                 }
+                "from_druid" => extra.from_druid = v.boolean(),
+                "strength" => extra.strength = v.number(),
+                "heal_next" => extra.heal_next = v.optional_number(),
+                "healing_targets" => {
+                    extra.healing_targets = v
+                        .array()
+                        .into_iter()
+                        .map(|n| self.unit_ref(n))
+                        .collect();
+                }
+                "healing_sources" => {
+                    extra.healing_sources = v
+                        .object()
+                        .into_iter()
+                        .map(|(key, n)| {
+                            let encoded = json::parse(&key).expect("encoded healing source");
+                            (self.unit_ref(Node::new(&encoded, &n.path)), n.number())
+                        })
+                        .collect();
+                }
                 "hide_at" => extra.hide_at = v.optional_number(),
                 "next_mite_damage" => extra.next_mite_damage = v.number(),
                 "bouncing_frostmite" => extra.bouncing_frostmite = v.boolean(),
@@ -1314,7 +1334,29 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         root.field("plan_type").fail("unsupported plan (TASK 1a supports Stage)");
     }
     p.require_type("Stage");
-    p.keys(&["drops", "ticks", "town_hall", "strength", "loadouts", "revives_left"]);
+    p.keys(&[
+        "drops",
+        "ticks",
+        "town_hall",
+        "strength",
+        "loadouts",
+        "revives_left",
+        "cc_troops",
+        "cc_levels",
+        "_cc_released",
+        "troop_levels",
+    ]);
+    if let Some(cargo) = p.optional("cc_troops") {
+        // Battle construction already normalizes this inventory into _onboard_cargo.
+        for entry in cargo.array() {
+            resolver.value(entry);
+        }
+    }
+    if let Some(levels) = p.optional("cc_levels") {
+        for (_, level) in levels.object() {
+            let _ = level.optional_level();
+        }
+    }
     for drop in p.field("drops").array() {
         let parts = drop.tuple(5);
         parts[0].number();
@@ -1331,6 +1373,16 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         deployments: deployments.clone(),
         town_hall: p.field("town_hall").integer(),
         strength: p.field("strength").number(),
+        troop_levels: p
+            .optional("troop_levels")
+            .map_or_else(Vec::new, |levels| {
+                levels
+                    .object()
+                    .into_iter()
+                    .map(|(name, level)| (name, level.optional_level()))
+                    .collect()
+            }),
+        cc_released: p.optional("_cc_released").is_some_and(|n| n.boolean()),
     };
     let mut grid = Grid::new(catalog.world);
     // battle.py:248-281: dead banners never block. Walls are restored in file order.

@@ -37,6 +37,8 @@ pub enum TargetIdentity {
     Wall(i32, i32),
     // battle.py:1609: unit identity is tagged to avoid building-id collisions.
     Unit(usize),
+    // units.py:225: rubble paths have their own cache identity.
+    Rubble(usize),
 }
 
 #[derive(Clone, Copy, Debug)]

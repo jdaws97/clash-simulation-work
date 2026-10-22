@@ -1,13 +1,16 @@
-//! Ports heroes.py:1082-1140,1185-1200,1348-1470 stage-1 hooks.
+//! Ports heroes.py:1082-1140,1185-1200,1348-1470 hooks for stages 1 and 2.
 
 use crate::catalog::UnitSpec;
 use crate::effects;
-use crate::state::{Battle, UnitRef};
+use crate::state::{Battle, Team, UnitRef};
 
 // heroes.py:1082-1140: combatant order includes dead members for aura reset.
 pub fn apply_auras(battle: &mut Battle) {
-    let combatants: Vec<_> = battle.attackers_pool().chain(battle.defenders_pool())
-        .map(|u| u.reference()).collect();
+    let combatants: Vec<_> = battle
+        .attackers_pool()
+        .chain(battle.defenders_pool())
+        .map(|u| u.reference())
+        .collect();
     let mut want = Vec::new();
     for &reference in &combatants {
         let unit = battle.unit_mut(reference);
@@ -20,15 +23,61 @@ pub fn apply_auras(battle: &mut Battle) {
     for &reference in &combatants {
         let unit = battle.unit(reference);
         if unit.alive && unit.name == "Apprentice Warden" {
-            todo!("stage 2: heroes.py:1098 Apprentice Warden health aura");
+            let percentage = battle
+                .catalog
+                .stats
+                .get(
+                    "Apprentice Warden",
+                    unit.level.as_ref().expect("Apprentice Warden level"),
+                    &["Aura HP Increase"],
+                    None,
+                )
+                .expect("aura HP increase")
+                / 100.0;
+            let (x, y) = (unit.x, unit.y);
+            let allies: Vec<_> = if reference.team == Team::Atk {
+                battle.attackers_pool().map(|u| u.reference()).collect()
+            } else {
+                battle.defenders_pool().map(|u| u.reference()).collect()
+            };
+            for ally in allies {
+                let a = battle.unit(ally);
+                if !a.alive
+                    || crate::geom::dist(a.x, a.y, x, y) > 7.0
+                    || ally == reference
+                    || a.name == "Totem"
+                    || matches!(a.kind.as_str(), "siege" | "siege_idle")
+                {
+                    continue;
+                }
+                if percentage != 0.0 {
+                    let previous = want.iter_mut().find(|(unit, _)| *unit == ally);
+                    if let Some((_, (previous_pct, previous_cap))) = previous {
+                        if (percentage * a.base_max_hp).min(f64::INFINITY)
+                            > (*previous_pct * a.base_max_hp).min(*previous_cap)
+                        {
+                            *previous_pct = percentage;
+                            *previous_cap = f64::INFINITY;
+                        }
+                    } else if (percentage * a.base_max_hp).min(f64::INFINITY) > 0.0 {
+                        want.push((ally, (percentage, f64::INFINITY)));
+                    }
+                }
+                let a = battle.unit_mut(ally);
+                a.aura_dmg = a.aura_dmg.max(1.0);
+            }
         }
+        let unit = battle.unit(reference);
         if unit.alive && unit.name == "Grand Warden" {
             todo!("stage 3: heroes.py:1106 Grand Warden equipment auras");
         }
     }
     for reference in combatants {
         if battle.unit(reference).alive {
-            let (percentage, cap) = want.iter().find(|(unit, _)| *unit == reference).map_or((0.0, 0.0), |(_, value)| *value);
+            let (percentage, cap) = want
+                .iter()
+                .find(|(unit, _)| *unit == reference)
+                .map_or((0.0, 0.0), |(_, value)| *value);
             effects::health_aura(battle.unit_mut(reference), percentage, cap);
         }
     }

@@ -317,6 +317,11 @@ pub struct UnitExtra {
     pub next_bomb: f64,
     pub vacuum: Option<(BuildingId, f64)>,
     pub wall_pulses: Vec<(WallId, f64)>,
+    pub from_druid: bool,
+    pub strength: f64,
+    pub heal_next: Option<f64>,
+    pub healing_targets: Vec<UnitRef>,
+    pub healing_sources: Vec<(UnitRef, f64)>,
     pub hide_at: Option<f64>,
     pub next_mite_damage: f64,
     pub bouncing_frostmite: bool,
@@ -406,6 +411,11 @@ impl Default for UnitExtra {
             next_bomb: 0.0,
             vacuum: None,
             wall_pulses: Vec::new(),
+            from_druid: false,
+            strength: 1.0,
+            heal_next: None,
+            healing_targets: Vec::new(),
+            healing_sources: Vec::new(),
             hide_at: None,
             next_mite_damage: 400.0,
             bouncing_frostmite: false,
@@ -902,10 +912,39 @@ pub enum Plan {
         deployments: Vec<Deployment>,
         town_hall: i64,
         strength: f64,
+        troop_levels: Vec<(String, Option<Level>)>,
+        cc_released: bool,
     },
 }
 
 impl Plan {
+    pub fn town_hall(&self) -> i64 {
+        match self {
+            Self::Stage { town_hall, .. } => *town_hall,
+        }
+    }
+
+    pub fn researched_level(&self, name: &str) -> Option<&Option<Level>> {
+        match self {
+            Self::Stage { troop_levels, .. } => troop_levels
+                .iter()
+                .find(|(key, _)| key == name)
+                .map(|(_, level)| level),
+        }
+    }
+
+    pub fn cc_released(&self) -> bool {
+        match self {
+            Self::Stage { cc_released, .. } => *cc_released,
+        }
+    }
+
+    pub fn release_cc(&mut self) {
+        match self {
+            Self::Stage { cc_released, .. } => *cc_released = true,
+        }
+    }
+
     pub fn strength(&self) -> f64 {
         match self {
             Self::Stage {

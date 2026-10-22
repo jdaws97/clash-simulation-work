@@ -348,11 +348,6 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
                 battle.kill(target);
                 return;
             }
-            if special {
-                todo!(
-                    "stage 2: traps.py:289 Spring Trap special-target damage (heroes/pets stage 3)"
-                );
-            }
             let damage = tr.damage
                 * if special {
                     0.5
@@ -508,7 +503,10 @@ pub fn tornado_tick(battle: &mut Battle, field: &mut Field) {
         let weight = if unit.is_hero || unit.kind == "pet" {
             todo!("stage 3: traps.py:383 hero/pet Tornado force tier");
         } else if matches!(unit.kind.as_str(), "siege" | "siege_idle") {
-            todo!("stage 2: traps.py:385 siege Tornado force tier");
+            if unit.speed <= 0.0 {
+                continue;
+            }
+            1
         } else {
             (unit.housing as f64 / 3.0).ceil().clamp(1.0, 5.0) as usize
         };

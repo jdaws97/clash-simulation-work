@@ -1,5 +1,6 @@
 //! Ports battle.py:587-785,960-1076: hits, death and delayed impacts.
 
+use crate::battle::SpawnOptions;
 use crate::geom::py_hypot;
 use crate::state::*;
 use crate::trace::{round_decimal, LogValue};
@@ -365,9 +366,22 @@ impl Battle {
                 self.pending.push(p);
             }
         }
-        for p in due {
-            if p.extra.summon.is_some() {
-                todo!("stage 2: battle.py:965 delayed troop summon");
+        for mut p in due {
+            if let Some((name, level, group, owner)) = p.extra.summon.take() {
+                self.spawn(
+                    &name,
+                    p.team,
+                    p.x,
+                    p.y,
+                    SpawnOptions {
+                        level: Some(level),
+                        kind: "summon".to_owned(),
+                        group,
+                        owner,
+                        ..Default::default()
+                    },
+                );
+                continue;
             }
             let effect = p.effect.clone().expect("pending effect");
             effects::damage_source(self, p.actor, &effect, |battle| {

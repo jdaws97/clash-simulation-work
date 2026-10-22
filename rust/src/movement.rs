@@ -218,7 +218,8 @@ impl Battle {
             if let Some(&wall) = self.wall_indices.get(&(next.x as i32, next.y as i32)) {
                 if self.walls[wall.0].alive {
                     if self.unit(reference).name == "Ruin Witch" && reference.team == Team::Atk {
-                        todo!("stage 2: battle.py:1628 Ruin Witch wall retarget");
+                        self.unit_mut(reference).target = None;
+                        return;
                     }
                     self.unit_mut(reference).wall_target = Some(wall);
                     return;
@@ -267,7 +268,7 @@ impl Battle {
         }
         let d = py_hypot(dx, dy);
         if d != 0.0 && u.name == "Super Hog Rider" {
-            todo!("stage 2: battle.py:1664 Super Hog Rider heading");
+            u.extra.heading = Some((dx / d, dy / d));
         }
         if d <= step || d == 0.0 {
             u.x = tx;

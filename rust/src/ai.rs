@@ -83,7 +83,8 @@ impl Battle {
         u.cooldown = (u.cooldown - dt).max(-dt);
         let sp = u.spec.clone();
         if matches!(sp.attack.as_str(), "heal" | "heal_chain") {
-            todo!("stage 2: battle.py:1202 healer AI");
+            units::act_healer(self, reference);
+            return;
         }
         if sp.prefer == "none" {
             return;
@@ -97,17 +98,17 @@ impl Battle {
                 let EntityRef::Building(building) = current else {
                     panic!("building target kind");
                 };
-                if !self.building_targetable(building) {
-                    if sp.prefer == "th" {
-                        todo!("stage 2: battle.py:1214 siege blocking target validation");
-                    }
+                if !self.building_targetable(building)
+                    && (sp.prefer != "th" || !self.siege_blocks(current))
+                {
                     target = None;
                 }
             } else if sp.prefer == "th"
                 && u.target_kind.as_deref() == Some("destination")
                 && !u.flying
                 && t >= u.extra.next_blocker_check {
-                todo!("stage 2: battle.py:1216 siege destination blocker refresh");
+                self.unit_mut(reference).extra.next_blocker_check = t + 0.5;
+                target = None;
             } else if u.target_kind.as_deref() == Some("unit") {
                 let EntityRef::Unit(unit) = current else {
                     panic!("unit target kind");
@@ -154,7 +155,21 @@ impl Battle {
             units::interrupt_attack(self, reference);
         }
         if matches!(self.unit(reference).name.as_str(), "Grand Warden" | "Apprentice Warden") {
-            todo!("stage 2: battle.py:1256 Warden follow targeting (Grand Warden stage 3)");
+            let followed = units::follow_target(self, reference);
+            let u = self.unit_mut(reference);
+            if let Some(followed) = followed {
+                target = Some(followed);
+                let kind = if matches!(followed, EntityRef::Wall(_)) {
+                    "wall"
+                } else {
+                    "building"
+                };
+                u.target_kind = Some(kind.to_owned());
+                u.wall_target = None;
+            } else if u.extra.warden_group {
+                target = None;
+            }
+            u.extra.warden_group = followed.is_some();
         }
         let u = self.unit(reference);
         let angry = t < u.extra.angry_until;
@@ -248,13 +263,52 @@ impl Battle {
             todo!("stage 2: battle.py:1341 Wall Breaker target selection");
         }
         if pref == "th" && self.th.is_some() {
-            todo!("stage 2: battle.py:1346 siege Town Hall destination");
+            let th = self.th.expect("Town Hall destination");
+            let (tx, ty) = self.entity_position(EntityRef::Building(th));
+            if !u.flying {
+                let mut best: Option<(f64, EntityRef)> = None;
+                let blockers = self
+                    .buildings
+                    .iter()
+                    .map(|b| EntityRef::Building(b.id))
+                    .chain(self.walls.iter().map(|w| EntityRef::Wall(w.id)));
+                for blocker in blockers {
+                    if blocker == EntityRef::Building(th)
+                        || !self.entity_alive(blocker)
+                        || !self.siege_blocks(blocker)
+                    {
+                        continue;
+                    }
+                    if let Some(entry) = units::segment_entry(self, u.x, u.y, tx, ty, blocker) {
+                        if best.as_ref().map_or(true, |(previous, _)| entry < *previous) {
+                            best = Some((entry, blocker));
+                        }
+                    }
+                }
+                if let Some((_, blocker)) = best {
+                    let kind = if matches!(blocker, EntityRef::Wall(_)) {
+                        "wall"
+                    } else {
+                        "building"
+                    };
+                    return (Some(blocker), Some(kind.to_owned()));
+                }
+            }
+            return (Some(EntityRef::Building(th)), Some("destination".to_owned()));
         }
         if pref == "follow" {
-            todo!("stage 2: battle.py:1364 Warden follow target");
+            if let Some(followed) = units::follow_target(self, reference) {
+                let kind = if matches!(followed, EntityRef::Wall(_)) {
+                    "wall"
+                } else {
+                    "building"
+                };
+                return (Some(followed), Some(kind.to_owned()));
+            }
+            pref = "any".to_owned();
         }
         if pref == "rubble" {
-            todo!("stage 2: battle.py:1369 Ruin Witch rubble target");
+            return units::rubble_target(self, reference);
         }
         let mut pool: Option<Vec<BuildingId>> = None;
         if pref == "air_defense" {
@@ -300,6 +354,21 @@ impl Battle {
         (best, best.map(|_| "building".to_owned()))
     }
 
+    // battle.py:1412-1426: overgrowth and suspension still block ground sieges.
+    fn siege_blocks(&self, blocker: EntityRef) -> bool {
+        match blocker {
+            EntityRef::Wall(_) => true,
+            EntityRef::Building(id) => {
+                let b = self.building(id);
+                if b.key == "tesla" && !b.revealed {
+                    return false;
+                }
+                self.t >= b.invisible_until
+            }
+            _ => panic!("siege blocker must be a structure"),
+        }
+    }
+
     // battle.py:1444-1458: <= intentionally picks the LAST equal defender.
     pub fn nearest_defender(
         &self,
@@ -337,7 +406,14 @@ impl Battle {
             u.extra.facing = (tx - u.x, ty - u.y);
         }
         if u.target_kind.as_deref() == Some("destination") {
-            todo!("stage 2: battle.py:1525 siege destination arrival");
+            let (x, y, reach) = (u.x, u.y, u.range);
+            if self.entity_edge_distance(target, x, y) <= reach {
+                self.kill(reference);
+            } else {
+                let step = self.speed_of(reference) * self.dt;
+                self.move_straight(reference, tx, ty, step);
+            }
+            return;
         }
         let position = units::valkyrie_position(self, reference, target);
         if let Some(position) = position {
@@ -353,7 +429,12 @@ impl Battle {
         let d = units::target_distance(self, EntityRef::Unit(reference), target);
         let reach = units::effective_range(self.unit(reference));
         if self.unit(reference).name == "Super Hog Rider" {
-            todo!("stage 2: battle.py:1551 Super Hog Rider heading");
+            let u = self.unit(reference);
+            let (dx, dy) = (tx - u.x, ty - u.y);
+            let length = crate::geom::py_hypot(dx, dy);
+            if length != 0.0 {
+                self.unit_mut(reference).extra.heading = Some((dx / length, dy / length));
+            }
         }
         if self.unit(reference).name == "Super Miner" && reference.team == Team::Atk {
             self.unit_mut(reference).underground = d > reach;
@@ -417,7 +498,8 @@ impl Battle {
             return;
         }
         if matches!(u.spec.attack.as_str(), "heal" | "heal_chain") {
-            todo!("stage 2: battle.py:1688 defender healer AI");
+            units::act_healer(self, reference);
+            return;
         }
         if u.spec.attack == "none" && u.name != "Ruin Witch" {
             return;
