@@ -244,14 +244,49 @@ def trace(b, max_ticks=10**9):
     return lines
 
 
+def parity(stage, n, start=0):
+    """Export scenarios start..start+n-1 of a stage, trace them in both
+    engines, and report the first difference of each (rust/ must be built)."""
+    import subprocess
+
+    from trace_diff import first_difference
+
+    exe = ROOT / "rust" / "target" / "release" / "baselab-engine.exe"
+    d = ROOT / "output" / "parity"
+    d.mkdir(parents=True, exist_ok=True)
+    same = 0
+    for k in range(start, start + n):
+        bj, py, rs = d / f"battle-{stage}-{k}.json", d / f"trace-py-{stage}-{k}.txt", d / f"trace-rs-{stage}-{k}.txt"
+        b = scenario(stage, k)
+        bj.write_text(json.dumps(battle_state(b)))
+        py.write_text("\n".join(trace(scenario(stage, k))) + "\n")
+        run = subprocess.run([str(exe), "trace", str(bj), str(rs)], capture_output=True, text=True)
+        if run.returncode != 0:
+            msg = (run.stderr.strip().splitlines() or ["?"])[-1]
+            print(f"  {k:3d}  RUST FAILED: {msg[:200]}")
+            continue
+        diff = first_difference(py.read_text().split("\n"), rs.read_text().split("\n"))
+        if diff is None:
+            same += 1
+            print(f"  {k:3d}  identical   {py.read_text().splitlines()[-1]}")
+        else:
+            print(f"  {k:3d}  DIFFERS {diff}")
+    print(f"stage {stage}: {same}/{n} identical")
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("catalog"); c.add_argument("--out", required=True)
+    pa = sub.add_parser("parity"); pa.add_argument("--stage", type=int, required=True)
+    pa.add_argument("--n", type=int, default=24); pa.add_argument("--start", type=int, default=0)
     for name in ("battle", "trace"):
         p = sub.add_parser(name); p.add_argument("--stage", type=int, required=True); p.add_argument("--k", type=int, default=0)
         p.add_argument("--out", required=True)
     args = ap.parse_args()
+    if args.cmd == "parity":
+        parity(args.stage, args.n, args.start)
+        return
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     if args.cmd == "catalog":

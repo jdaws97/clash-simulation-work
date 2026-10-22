@@ -16,6 +16,19 @@ def show(line):
     return HEX.sub(lambda m: repr(struct.unpack("<d", struct.pack("<Q", int(m.group(0), 16)))[0]), line)
 
 
+def first_difference(a, b):
+    """None if the traces agree, else a one-line description of the first difference."""
+    t = None
+    for x, y in zip(a, b):
+        if x.startswith("T "):
+            t = show(x)
+        if x != y:
+            return f"after {t}: py {show(x)[:90]!r} rs {show(y)[:90]!r}"
+    if len(a) != len(b):
+        return f"lengths {len(a)} vs {len(b)}"
+    return None
+
+
 def main():
     a = open(sys.argv[1]).read().split("\n")
     b = open(sys.argv[2]).read().split("\n")

@@ -31,8 +31,11 @@ fields), `pyrandom.rs` (bit-exact `random.Random`), `json.rs` (std-only JSON).
 
 - Every `math.hypot` -> `geom::py_hypot` (Rust's `f64::hypot` differs in the
   last bit for ~16% of inputs). `math.sqrt` -> `f64::sqrt` is fine.
-  `math.cos/sin/atan2/exp/log` -> Rust's (same libm results are expected but
-  unverified; note any use).
+- `math.cos/sin/atan2` -> `geom::py_cos/py_sin/py_atan2`, and Python `x ** y`
+  (including `** 2`!) -> `geom::py_pow`: they call the same C runtime
+  (ucrtbase.dll) as CPython. Rust's own cos/sin differ in the last bit for ~3%
+  of inputs, atan2 ~0.1%, and `x * x` differs from Python's `x ** 2` in ~0.05%;
+  each broke parity runs (verified exact on 100k inputs each).
 - Keep Python's operation order in arithmetic: `a + b + c` is `(a + b) + c`;
   `x / d * s` is not `x * s / d`.
 - Python `round()` is half-even on the exact binary value

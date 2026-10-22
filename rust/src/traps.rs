@@ -1,60 +1,596 @@
-//! Ports traps.py. TASK 1c owns this file; trap setup comes from Python.
+//! Ports traps.py:80-81,114-431. Trap setup comes from the Python export.
 
-use crate::state::{Battle, Field, TrapId, Unit};
+use crate::battle::SpawnOptions;
+use crate::combat::SplashUnitsOptions;
+use crate::geom::{self, dist};
+use crate::state::{Battle, Field, Pending, Team, TrapId, Unit, UnitRef};
+use crate::stats::{self, Level};
+use crate::trace::round_decimal;
 
-// traps.py:80-81 _raw: numeric raw registry attribute with Python default.
-pub fn raw(_battle: &Battle, _name: &str, _key: &str, _default: Option<f64>) -> Option<f64> {
-    todo!("TASK 1c: port traps.py:80-81");
+// traps.py:29-67: preserve the multiplication used to derive each fuse.
+const FRAME_S: f64 = 1.5 / 35.0;
+const NO_TRIGGER: &[&str] = &[
+    "Spell Skeleton",
+    "Skeleton",
+    "Bat",
+    "Totem",
+    "Yetimite",
+    "Electromite",
+    "Firemite",
+    "Frostmite",
+    "Booger",
+    "Electro Owl",
+    "Poison Lizard",
+];
+
+// traps.py:80-81.
+pub fn raw(battle: &Battle, name: &str, key: &str, default: Option<f64>) -> Option<f64> {
+    battle
+        .catalog
+        .stats
+        .attrs(name)
+        .get("raw")
+        .and_then(|attrs| attrs.get(key))
+        .map_or(default, |value| stats::num(value, default))
 }
 
-// traps.py:114-123 _housing: trap interaction housing, including heroes/pets.
-pub fn housing(_unit: &Unit) -> i64 {
-    todo!("TASK 1c: port traps.py:114-123");
+// traps.py:114-123.
+pub fn housing(unit: &Unit) -> i64 {
+    if unit.name == "Totem" {
+        todo!("stage 4: traps.py:115 Totem trap housing");
+    }
+    if unit.is_hero {
+        todo!("stage 3: traps.py:119 hero trap housing");
+    }
+    if unit.kind == "pet" {
+        todo!("stage 3: traps.py:121 pet trap housing");
+    }
+    0.max(unit.housing)
 }
 
-// traps.py:126-131 _effect_target: effect eligibility, distinct from triggering.
-pub fn effect_target(_battle: &Battle, _trap: TrapId, _unit: &Unit, _t: f64) -> bool {
-    todo!("TASK 1c: port traps.py:126-131");
+// traps.py:126-131: effect eligibility deliberately ignores activation time.
+pub fn effect_target(battle: &Battle, trap: TrapId, unit: &Unit, t: f64) -> bool {
+    let attached = unit.name == "Angry Jelly"
+        && unit.owner.is_some_and(|owner| battle.unit(owner).alive)
+        && t < unit.extra.brainwash_until;
+    if !unit.alive || unit.underground || attached || unit.extra.suspended {
+        return false;
+    }
+    if unit.name == "Totem" {
+        return true;
+    }
+    let trap = &battle.traps[trap.0];
+    if unit.flying {
+        trap.air
+    } else {
+        trap.ground
+    }
 }
 
-// traps.py:134-146 _eligible: trigger exclusions and seeking housing limit.
-pub fn eligible(_battle: &Battle, _trap: TrapId, _unit: &Unit, _t: f64) -> bool {
-    todo!("TASK 1c: port traps.py:134-146");
+// traps.py:134-146.
+pub fn eligible(battle: &Battle, trap: TrapId, unit: &Unit, t: f64) -> bool {
+    if !effect_target(battle, trap, unit, t) || NO_TRIGGER.contains(&unit.name.as_str()) {
+        return false;
+    }
+    if unit.name == "Dragon Duke" && unit.dash.is_some() {
+        todo!("stage 3: traps.py:137 Dragon Duke dash trap exclusion");
+    }
+    if battle.traps[trap.0].key == "seeking" {
+        if matches!(unit.kind.as_str(), "siege" | "siege_idle") && unit.flying {
+            todo!("stage 2: traps.py:141 aerial siege Seeking Air Mine trigger");
+        }
+        if housing(unit) < 5 {
+            return false;
+        }
+    }
+    true
 }
 
-// traps.py:149-173 tick: ordered trap arming, fuses and seeking flight.
-pub fn tick(_battle: &mut Battle) {
-    todo!("TASK 1c: port traps.py:149-173");
+// traps.py:149-173: trap Vec order and first-minimum ties are significant.
+pub fn tick(battle: &mut Battle) {
+    let t = battle.t;
+    for index in 0..battle.traps.len() {
+        let id = TrapId(index);
+        let trap = &battle.traps[index];
+        if trap.extra.state.as_deref() == Some("flight") {
+            seeking_step(battle, id);
+            continue;
+        }
+        if !trap.armed {
+            continue;
+        }
+        if trap.fuse_at >= 0.0 {
+            if t >= trap.fuse_at {
+                fire(battle, id);
+            }
+            continue;
+        }
+        let near: Vec<_> = battle
+            .attackers_near(trap.x, trap.y, trap.trigger)
+            .into_iter()
+            .filter(|unit| eligible(battle, id, battle.unit(*unit), t))
+            .collect();
+        if near.is_empty() {
+            continue;
+        }
+        if trap.key == "giga"
+            && (near
+                .iter()
+                .map(|unit| housing(battle.unit(*unit)))
+                .sum::<i64>() as f64)
+                < trap.extra.housing
+        {
+            continue;
+        }
+        let mut target = near[0];
+        let mut distance = battle.unit(target).dist(trap.x, trap.y);
+        for &unit in &near[1..] {
+            let candidate = battle.unit(unit).dist(trap.x, trap.y);
+            if candidate < distance {
+                target = unit;
+                distance = candidate;
+            }
+        }
+        let fuse = match trap.key.as_str() {
+            "bomb" => 35.0 * FRAME_S,
+            "giant" => 37.0 * FRAME_S,
+            "giga" => 38.0 * FRAME_S,
+            "airbomb" | "seeking" => 7.0 * FRAME_S,
+            "tornado" => 8.0 * FRAME_S,
+            "spring" => 0.3,
+            "skeleton" => 0.6,
+            other => panic!("traps.py:171 unknown trap fuse {other}"),
+        };
+        let trap = &mut battle.traps[index];
+        trap.extra.trigger_unit = Some(target);
+        trap.fuse_at = t + fuse;
+        if trap.fuse_at <= t {
+            fire(battle, id);
+        }
+    }
 }
 
-// traps.py:176-183 _fire: save/restore _src around fire_effect, not actor/effect.
-pub fn fire(_battle: &mut Battle, _trap: TrapId) {
-    todo!("TASK 1c: port traps.py:176-183");
+// traps.py:176-183: only _src is restored; actor/effect remain as in Python.
+pub fn fire(battle: &mut Battle, trap: TrapId) {
+    let previous = battle.src.clone();
+    fire_effect(battle, trap);
+    battle.src = previous;
 }
 
-// traps.py:186-324 _fire_effect: damage/push, springs, skeletons and tornado.
-pub fn fire_effect(_battle: &mut Battle, _trap: TrapId) {
-    todo!("TASK 1c: port traps.py:186-324");
+// traps.py:186-324.
+pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
+    battle.traps[trap.0].armed = false;
+    let t = battle.t;
+    let tr = battle.traps[trap.0].clone();
+    let src = format!("trap:{}", tr.key);
+    battle.src = src.clone();
+    battle.log_event(vec![
+        round_decimal(t, 1).into(),
+        "trap".into(),
+        tr.key.clone().into(),
+    ]);
+    match tr.key.as_str() {
+        "bomb" | "giant" => {
+            battle.splash_units(
+                tr.x,
+                tr.y,
+                tr.radius,
+                tr.damage,
+                tr.air,
+                tr.ground,
+                SplashUnitsOptions {
+                    src: Some(&src),
+                    kind: "trap",
+                    ..Default::default()
+                },
+            );
+            for reference in battle.attackers_near(tr.x, tr.y, tr.radius) {
+                let unit = battle.unit(reference);
+                if unit.alive
+                    && !unit.is_hero
+                    && !matches!(unit.kind.as_str(), "pet" | "siege" | "siege_idle")
+                    && effect_target(battle, trap, unit, t)
+                    && unit.name != "Totem"
+                    && 0 < unit.housing
+                    && unit.housing <= 3
+                {
+                    let distance = unit.dist(tr.x, tr.y);
+                    if distance > 0.0 {
+                        battle.nudge(
+                            reference,
+                            2.0 * (unit.x - tr.x) / distance,
+                            2.0 * (unit.y - tr.y) / distance,
+                        );
+                    }
+                    let unit = battle.unit_mut(reference);
+                    unit.target = None;
+                    unit.wall_target = None;
+                }
+            }
+        }
+        "airbomb" => {
+            let committed = tr.extra.trigger_unit;
+            let radius = if committed.is_some_and(|unit| battle.unit(unit).alive) {
+                tr.trigger
+            } else {
+                2.0 * tr.trigger
+            };
+            let mut candidates: Vec<_> = battle
+                .attackers_near(tr.x, tr.y, radius)
+                .into_iter()
+                .filter(|unit| eligible(battle, trap, battle.unit(*unit), t))
+                .collect();
+            if let Some(unit) = committed {
+                if battle.unit(unit).alive && effect_target(battle, trap, battle.unit(unit), t) {
+                    candidates.push(unit);
+                }
+            }
+            let Some(&first) = candidates.first() else {
+                return;
+            };
+            let mut target = first;
+            let mut distance = battle.unit(target).dist(tr.x, tr.y);
+            for &unit in &candidates[1..] {
+                let candidate = battle.unit(unit).dist(tr.x, tr.y);
+                if candidate < distance {
+                    target = unit;
+                    distance = candidate;
+                }
+            }
+            let unit = battle.unit(target);
+            let flight = dist(tr.x, tr.y, unit.x, unit.y) / 2.5;
+            let mut pending = Pending::new(
+                t + flight,
+                unit.x,
+                unit.y,
+                tr.radius,
+                tr.damage,
+                true,
+                false,
+                &src,
+            );
+            pending.effect = Some("trap".to_owned());
+            battle.add_pending(pending);
+        }
+        "giga" => {
+            // Capture this pool before damage; movement rechecks survivors.
+            let pool: Vec<_> = battle
+                .attackers_near(tr.x, tr.y, tr.radius)
+                .into_iter()
+                .filter(|unit| {
+                    let unit = battle.unit(*unit);
+                    unit.name != "Totem" && !unit.underground
+                })
+                .collect();
+            battle.splash_units(
+                tr.x,
+                tr.y,
+                tr.radius,
+                tr.damage,
+                true,
+                true,
+                SplashUnitsOptions {
+                    src: Some(&src),
+                    kind: "trap",
+                    ..Default::default()
+                },
+            );
+            for reference in pool {
+                let unit = battle.unit(reference);
+                if unit.alive
+                    && !matches!(unit.kind.as_str(), "siege" | "siege_idle")
+                    && effect_target(battle, trap, unit, t)
+                {
+                    let distance = unit.dist(tr.x, tr.y);
+                    if distance > 0.0 {
+                        battle.nudge(
+                            reference,
+                            2.0 * (unit.x - tr.x) / distance,
+                            2.0 * (unit.y - tr.y) / distance,
+                        );
+                    }
+                    let unit = battle.unit_mut(reference);
+                    unit.target = None;
+                    unit.wall_target = None;
+                }
+            }
+        }
+        "seeking" => {
+            let Some(unit) = tr.extra.trigger_unit else {
+                return;
+            };
+            if !battle.unit(unit).alive || !effect_target(battle, trap, battle.unit(unit), t) {
+                return;
+            }
+            let extra = &mut battle.traps[trap.0].extra;
+            extra.state = Some("flight".to_owned());
+            extra.projectile = Some((tr.x, tr.y));
+        }
+        "spring" => {
+            let candidates: Vec<_> = battle
+                .attackers_near(tr.x, tr.y, tr.trigger)
+                .into_iter()
+                .filter(|unit| effect_target(battle, trap, battle.unit(*unit), t))
+                .collect();
+            let Some(&first) = candidates.first() else {
+                return;
+            };
+            let mut target = first;
+            let mut weight = housing(battle.unit(target));
+            let mut distance = battle.unit(target).dist(tr.x, tr.y);
+            for &reference in &candidates[1..] {
+                let unit = battle.unit(reference);
+                let candidate_weight = housing(unit);
+                let candidate_distance = unit.dist(tr.x, tr.y);
+                if candidate_weight > weight
+                    || candidate_weight == weight && candidate_distance < distance
+                {
+                    target = reference;
+                    weight = candidate_weight;
+                    distance = candidate_distance;
+                }
+            }
+            let unit = battle.unit(target);
+            let special =
+                unit.is_hero || matches!(unit.kind.as_str(), "pet" | "siege" | "siege_idle");
+            if !special && 0 < unit.housing && unit.housing as f64 <= tr.extra.capacity {
+                let housing = unit.housing;
+                if let Some((_, total)) = battle
+                    .kills_by_source
+                    .iter_mut()
+                    .find(|(key, _)| *key == src)
+                {
+                    *total += housing;
+                } else {
+                    battle.kills_by_source.push((src, housing));
+                }
+                battle.unit_mut(target).extra.sprung = true;
+                battle.kill(target);
+                return;
+            }
+            if special {
+                todo!(
+                    "stage 2: traps.py:289 Spring Trap special-target damage (heroes/pets stage 3)"
+                );
+            }
+            let damage = tr.damage
+                * if special {
+                    0.5
+                } else {
+                    1.0
+                };
+            battle.hit_unit(target, damage, Some(&src), "trap", None);
+            let unit = battle.unit_mut(target);
+            if unit.alive && !matches!(unit.kind.as_str(), "siege" | "siege_idle") {
+                unit.stun_until = unit.stun_until.max(t + 1.0);
+            }
+        }
+        "skeleton" => {
+            let count = tr.extra.count;
+            for index in 0..count {
+                let angle = 2.0 * std::f64::consts::PI * index as f64 / 1.max(count) as f64;
+                let reference = battle.spawn(
+                    "Skeleton",
+                    Team::Def,
+                    tr.x + 0.7 * geom::py_cos(angle),
+                    tr.y + 0.7 * geom::py_sin(angle),
+                    SpawnOptions {
+                        level: Some(Level::Int(tr.extra.skel_level)),
+                        kind: "trap_skeleton".to_owned(),
+                        ..Default::default()
+                    },
+                );
+                battle.unit_mut(reference).active_at = t + 0.15 * index as f64;
+                let level = Level::Int(tr.extra.skel_level);
+                let hp = battle
+                    .catalog
+                    .stats
+                    .get(&tr.name, &level, &["Hitpoints"], None)
+                    .expect("Skeleton Trap hitpoints");
+                let damage = battle
+                    .catalog
+                    .stats
+                    .get(&tr.name, &level, &["Damage per Hit"], None)
+                    .expect("Skeleton Trap damage");
+                let interval = raw(battle, &tr.name, "Attack Speed", None)
+                    .expect("Skeleton Trap attack speed");
+                let range = raw(battle, &tr.name, "Range", None).expect("Skeleton Trap range");
+                let unit = battle.unit_mut(reference);
+                unit.hp = hp;
+                unit.max_hp = hp;
+                unit.base_max_hp = hp;
+                unit.dmg = damage;
+                unit.interval = interval;
+                unit.range = range;
+                unit.flying = tr.mode.as_deref() == Some("air");
+                unit.hits_air = unit.flying;
+                unit.hits_ground = !unit.flying;
+                unit.speed = if unit.flying {
+                    2.2
+                } else {
+                    3.0
+                };
+            }
+        }
+        "tornado" => {
+            let mut field = Field::new("tornado", tr.x, tr.y, tr.radius, t + tr.extra.time);
+            field.team = Team::Def;
+            field.extra.pulses = tr.extra.pulses;
+            field.extra.has_pulses = true;
+            field.extra.delivered = 0;
+            field.started = t;
+            // Python appends before the immediate tick. Keep it visible during
+            // damage callbacks, then update its detached pulse state in place.
+            let index = battle.fields.len();
+            battle.fields.push(field.clone());
+            tornado_tick(battle, &mut field);
+            battle.fields[index] = field;
+        }
+        // traps.py:324: no other trap family has a runtime effect.
+        _ => {}
+    }
 }
 
-// traps.py:327-345 _seeking_step: advance the mine toward its committed target.
-pub fn seeking_step(_battle: &mut Battle, _trap: TrapId) {
-    todo!("TASK 1c: port traps.py:327-345");
+// traps.py:327-345.
+pub fn seeking_step(battle: &mut Battle, trap: TrapId) {
+    let tr = &battle.traps[trap.0];
+    let target = tr.extra.trigger_unit.expect("Seeking Air Mine target");
+    if !battle.unit(target).alive || !effect_target(battle, trap, battle.unit(target), battle.t) {
+        battle.traps[trap.0].extra.state = Some("spent".to_owned());
+        return;
+    }
+    let (x, y) = tr.extra.projectile.expect("Seeking Air Mine projectile");
+    let unit = battle.unit(target);
+    let (tx, ty) = (unit.x, unit.y);
+    let distance = dist(x, y, tx, ty);
+    let step = 3.5 * battle.dt;
+    if distance <= step {
+        let damage = tr.damage;
+        let extra = &mut battle.traps[trap.0].extra;
+        extra.projectile = Some((tx, ty));
+        extra.state = Some("spent".to_owned());
+        battle.hit_unit(target, damage, Some("trap:seeking"), "trap", None);
+    } else {
+        battle.traps[trap.0].extra.projectile = Some((
+            x + (tx - x) / distance * step,
+            y + (ty - y) / distance * step,
+        ));
+    }
 }
 
-// traps.py:348-401 tornado_tick: mutate this field's pulse budget, pull units.
-// Field is detached while ticking; effects that append fields keep their order.
-pub fn tornado_tick(_battle: &mut Battle, _field: &mut Field) {
-    todo!("TASK 1c: port traps.py:348-401");
+// traps.py:348-401: pulse timestamps temporarily replace the battle clock.
+pub fn tornado_tick(battle: &mut Battle, field: &mut Field) {
+    let t = battle.t;
+    let mut delivered = field.extra.delivered;
+    while delivered < field.extra.pulses {
+        let at = field.started + delivered as f64 * 0.128;
+        if at > t.min(field.until) {
+            break;
+        }
+        battle.t = at;
+        for reference in battle.attackers_near(field.x, field.y, field.radius) {
+            if !battle.unit(reference).underground {
+                battle.hit_unit(
+                    reference,
+                    1.0 * battle.def_mult,
+                    Some("trap:tornado"),
+                    "trap",
+                    None,
+                );
+            }
+        }
+        battle.t = t;
+        delivered += 1;
+    }
+    field.extra.delivered = delivered;
+    if t >= field.until {
+        return;
+    }
+    for reference in battle.attackers_near(field.x, field.y, field.radius) {
+        let unit = battle.unit(reference);
+        if !unit.alive || unit.underground || unit.attached(battle) || unit.extra.suspended {
+            continue;
+        }
+        if t < unit.extra.tornado_wall_until {
+            continue;
+        }
+        if unit.name == "Totem" {
+            todo!("stage 4: traps.py:379 Totem Tornado displacement exemption");
+        }
+        if matches!(
+            unit.name.as_str(),
+            "Miner" | "Super Miner" | "Diggy" | "Battle Drill"
+        ) {
+            todo!(
+                "stage 2: traps.py:379 burrowing Tornado displacement exemptions (Diggy stage 3)"
+            );
+        }
+        let weight = if unit.is_hero || unit.kind == "pet" {
+            todo!("stage 3: traps.py:383 hero/pet Tornado force tier");
+        } else if matches!(unit.kind.as_str(), "siege" | "siege_idle") {
+            todo!("stage 2: traps.py:385 siege Tornado force tier");
+        } else {
+            (unit.housing as f64 / 3.0).ceil().clamp(1.0, 5.0) as usize
+        };
+        let distance = unit.dist(field.x, field.y);
+        if distance > 0.7 {
+            let fraction = 1.0_f64.min((distance - 0.7) / 1e-9_f64.max(field.radius - 0.7));
+            let percentage = 1.0 + (0.65 - 1.0) * fraction;
+            let force = if unit.flying {
+                [5.0, 4.0, 3.0, 2.0, 1.5]
+            } else {
+                [4.0, 3.0, 2.0, 1.0, 1.0]
+            };
+            let speed = force[weight - 1] * percentage;
+            let step = (distance - 0.7).min(speed * battle.dt);
+            let nx = unit.x + (field.x - unit.x) / distance * step;
+            let ny = unit.y + (field.y - unit.y) / distance * step;
+            tornado_move(battle, reference, nx, ny, field.until);
+        }
+    }
 }
 
-// traps.py:404-431 _tornado_move: first wall contact and nextafter placement.
-pub fn tornado_move(
-    _battle: &mut Battle,
-    _unit: crate::state::UnitRef,
-    _nx: f64,
-    _ny: f64,
-    _until: f64,
-) {
-    todo!("TASK 1c: port traps.py:404-431");
+// traps.py:430-431: math.nextafter(value, toward), including signed zero.
+fn nextafter(value: f64, toward: f64) -> f64 {
+    if value.is_nan() || toward.is_nan() {
+        return value + toward;
+    }
+    if value == toward {
+        return toward;
+    }
+    if value == 0.0 {
+        return f64::from_bits(1).copysign(toward);
+    }
+    let bits = value.to_bits();
+    if (toward > value) == (value > 0.0) {
+        f64::from_bits(bits + 1)
+    } else {
+        f64::from_bits(bits - 1)
+    }
+}
+
+// traps.py:404-431: closed wall slabs; the first equal contact keeps its order.
+pub fn tornado_move(battle: &mut Battle, reference: UnitRef, nx: f64, ny: f64, until: f64) {
+    let unit = battle.unit(reference);
+    if unit.flying {
+        let unit = battle.unit_mut(reference);
+        unit.x = nx;
+        unit.y = ny;
+        return;
+    }
+    let (x, y) = (unit.x, unit.y);
+    let mut first: Option<f64> = None;
+    for wall in &battle.walls {
+        if !wall.alive {
+            continue;
+        }
+        let (mut enter, mut leave) = (0.0_f64, 1.0_f64);
+        for (start, end, center) in [(x, nx, wall.x), (y, ny, wall.y)] {
+            let (low, high) = (center - wall.half_hit, center + wall.half_hit);
+            let delta = end - start;
+            if delta == 0.0 {
+                if start < low || start > high {
+                    leave = -1.0;
+                    break;
+                }
+                continue;
+            }
+            let a = (low - start) / delta;
+            let b = (high - start) / delta;
+            enter = enter.max(a.min(b));
+            leave = leave.min(a.max(b));
+        }
+        if enter <= leave && first.map_or(true, |first| enter < first) {
+            first = Some(enter);
+        }
+    }
+    let unit = battle.unit_mut(reference);
+    let Some(first) = first else {
+        unit.x = nx;
+        unit.y = ny;
+        return;
+    };
+    unit.extra.tornado_wall_until = unit.extra.tornado_wall_until.max(until);
+    unit.x = nextafter(x + (nx - x) * first, x);
+    unit.y = nextafter(y + (ny - y) * first, y);
 }

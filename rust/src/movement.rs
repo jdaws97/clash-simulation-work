@@ -3,7 +3,7 @@
 use crate::geom::py_hypot;
 use crate::grid::{Grid, TargetIdentity, GOAL_REACH_MIN, NORMAL_WALL_EXTRA, RES};
 use crate::state::*;
-use crate::{effects, units};
+use crate::{effects, geom, units};
 
 impl Battle {
     // battle.py:1087-1117: frozen bucket order, live positions after each nudge.
@@ -35,8 +35,8 @@ impl Battle {
                     let mut d = d2.sqrt();
                     let push = if d < 1e-6 {
                         let angle = (ua.id.0 as f64 * 2.399).rem_euclid(2.0 * std::f64::consts::PI);
-                        dx = angle.cos();
-                        dy = angle.sin();
+                        dx = geom::py_cos(angle);
+                        dy = geom::py_sin(angle);
                         d = 1.0;
                         limit * 0.25
                     } else {

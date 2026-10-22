@@ -5,7 +5,7 @@ use crate::geom::{round6, round_half_even};
 use crate::state::*;
 use crate::stats::Level;
 use crate::trace::{exported_value, round_decimal, LogValue};
-use crate::{defense, effects, heroes, spells, traps, units};
+use crate::{defense, effects, geom, heroes, spells, traps, units};
 
 const BUCKET: f64 = 4.0;
 const SCOUT_TIME: f64 = 30.0;
@@ -135,9 +135,8 @@ impl Battle {
     pub fn defenders_near(&self, x: f64, y: f64, radius: f64) -> Vec<UnitRef> {
         let radius_squared = radius * radius;
         self.defenders_pool().filter(|unit| {
-            let dx = unit.x - x;
-            let dy = unit.y - y;
-            unit.alive && dx * dx + dy * dy <= radius_squared
+            // battle.py:577 uses `** 2` (C pow), not a product
+            unit.alive && geom::py_pow(unit.x - x, 2.0) + geom::py_pow(unit.y - y, 2.0) <= radius_squared
         }).map(Unit::reference).collect()
     }
 
@@ -334,9 +333,9 @@ impl Battle {
             let mut best = None;
             let mut best_distance = f64::INFINITY;
             for &(x, y) in self.deploy_tiles() {
-                let dx = x - deployment.x;
-                let dy = y - deployment.y;
-                let distance = dx * dx + dy * dy;
+                // Python `** 2` is the C runtime's pow, which differs from
+                // dx * dx in the last bit for some inputs (geom::py_pow).
+                let distance = geom::py_pow(x - deployment.x, 2.0) + geom::py_pow(y - deployment.y, 2.0);
                 if best.is_none() || distance < best_distance {
                     best = Some((x, y));
                     best_distance = distance;
