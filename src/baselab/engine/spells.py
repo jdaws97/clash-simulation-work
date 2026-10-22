@@ -11,7 +11,7 @@ import math
 
 from ..mechanics import WORLD
 from . import defense, effects, stats
-from .entities import Building, Field, Unit, Wall, dist
+from .entities import Building, Field, Pending, Unit, Wall, dist
 
 LAND_DELAY = 0.5  # time for a spell bottle to land (assumed)
 STORAGES = {"gs", "es", "ds"}
@@ -147,8 +147,18 @@ def cast_effect(battle, name, x, y, level=None):
                   extra={"slow": stats.get(name, lv, "Speed Decrease", default=50.0) / 100.0,
                          "atk": stats.get(name, lv, "Attack Rate Decrease", default=72.0) / 100.0})
     elif name == "Earthquake Spell":
-        f = Field("quake", x, y, _radius(name, lv, 4.7), t, value=stats.get(name, lv, "Building Damage %", default=29.0) / 100.0,
-                  extra={"troop": stats.get(name, lv, "Troop Damage %", default=0.0) / 100.0})
+        # game data v18.200.9: Earthquake.NumberOfHits=5, TimeBetweenHitsMS=400.
+        # Earthquake.BuildingDamagePermil=58 (L5+) -> 5.8% per hit;
+        # the registry percentages give the five-hit totals.
+        f = Field(
+            "quake",
+            x,
+            y,
+            _radius(name, lv, 4.7),
+            t,
+            value=stats.get(name, lv, "Building Damage %", default=29.0) / 500.0,
+            extra={"troop": stats.get(name, lv, "Troop Damage %", default=0.0) / 500.0},
+        )
     elif name == "Haste Spell":
         dur = stats.get(name, lv, "Spell Duration", default=30.0)
         f = Field("haste", x, y, _radius(name, lv, 4.0), t + dur, extra={"speed": stats.get(name, lv, "Speed Increase", default=52.0) / 8.0})
@@ -161,32 +171,33 @@ def cast_effect(battle, name, x, y, level=None):
             t + 18.0,
             value=stats.get(name, lv, "Cloned Capacity", default=42.0),
         )
-    # Wiki: Skeleton Spell and Bat Spell give 3.5; ClashKing gives 2.2.
     # Both summon over time (wiki: Bat Spell, "summons several Bats on the
     # battlefield over time (its method of spawning is similar to a Skeleton
     # Spell)"); a first group lands at once, the rest follow one at a time.
     elif name == "Skeleton Spell":
         n = stats.get(name, lv, "Skeletons generated", default=19.0)
+        # game data v18.200.9: Skeleton Spell.Radius=225 -> 2.25 tiles.
         # game data v18.200.9: Skeleton Spell.SpawnFirstGroupSize=3 -> 3 on landing.
         # game data v18.200.9: Skeleton Spell.SpawnDuration=19000 -> 19 s for 19 (1 s each, every level).
         f = Field(
             "summon",
             x,
             y,
-            3.5,
+            2.25,
             t + (n - 3) * 1.0,
             value=n,
             extra={"unit": "Spell Skeleton", "first": 3, "gap": 1.0},
         )
     elif name == "Bat Spell":
         n = stats.get(name, lv, "Bats generated", default=22.0)
+        # game data v18.200.9: Bat Spell.Radius=225 -> 2.25 tiles.
         # game data v18.200.9: Bat Spell.SpawnFirstGroupSize=1 -> 1 on landing.
         # game data v18.200.9: Bat Spell.SpawnDuration=15000 -> 15 s for 25 (0.6 s each, every level).
         f = Field(
             "summon",
             x,
             y,
-            3.5,
+            2.25,
             t + (n - 1) * 0.6,
             value=n,
             extra={"unit": "Bat", "first": 1, "gap": 0.6},
@@ -301,9 +312,7 @@ def _apply(battle, f: Field) -> bool:
         and t >= f.until
     ):
         return False
-    if k in ("lightning", "freeze", "poison", "def_rage") or (
-        k == "rage" and f.team == "def"
-    ):
+    if k in ("lightning", "freeze", "poison") or (k == "rage" and f.team == "def"):
         defense.builder_spell(battle, f)
     if k in ("tesla_freeze", "tesla_overgrowth"):
         if t >= f.until:
@@ -322,6 +331,10 @@ def _apply(battle, f: Field) -> bool:
                 else:
                     building.overgrown_until = max(building.overgrown_until, f.until)
         return True
+    if k == "rolling_log":
+        from . import units
+
+        return units.advance_log(battle, f)
     if k == "lightning":
         battle._src = "spell"
         for b in battle.buildings:
@@ -500,7 +513,18 @@ def _apply(battle, f: Field) -> bool:
     if k == "def_rage":
         from . import units
 
-        until = min(f.until, t + dt)
+        # game data v18.200.9: Spell Tower Rage.TimeBetweenHitsMS=300,
+        # BoostTimeMS=1000 -> each pulse grants one second, including the last.
+        pulse = _application(f, t, 0.3)
+        if pulse is None:
+            return True
+        until = round(pulse + 1.0, 6)
+        # Wiki: Spell Tower, Builders retain their repair/movement Rage boost too.
+        for builder in battle.builders:
+            if builder.owner.alive and dist(builder.x, builder.y, f.x, f.y) <= f.radius:
+                builder.repair_boost = 2.0
+                builder.rage_speed = f.extra.get("speed", 30.0 / 8.0)
+                builder.rage_until = until
         for b in battle.buildings:
             if b.alive and b.weapon is not None and b.edge_distance(f.x, f.y) <= f.radius:
                 b.rage_mult, b.rage_until = f.value, until
@@ -534,8 +558,8 @@ def _apply(battle, f: Field) -> bool:
             return False
         for u in battle.attackers_near(f.x, f.y, f.radius):
             if _affected(u) and not u.flying:
-                # Wiki: Jump Spell/Home Village, one-second boost time.
-                u.extra["jump_until"] = max(u.extra.get("jump_until", 0.0), t + 1.0)
+                # game data v18.200.9: Jump.JumpBoostMS=400 -> 0.4 s.
+                u.extra["jump_until"] = max(u.extra.get("jump_until", 0.0), t + 0.4)
                 u.wall_target = None
         return True
 
@@ -568,8 +592,11 @@ def _apply(battle, f: Field) -> bool:
         if _application(f, t, gap) is None:
             return True
         for u in battle.attackers_near(f.x, f.y, f.radius):
-            if _affected(u) or (
-                f.extra.get("origin") == "town_hall" and u.name == "Stone Slammer"
+            # Wiki: Totem Spell, spell immunities do not include defensive Poison.
+            if (
+                _affected(u)
+                or u.name == "Totem"
+                or (f.extra.get("origin") == "town_hall" and u.name == "Stone Slammer")
             ):
                 _poison(
                     battle,
@@ -585,36 +612,25 @@ def _apply(battle, f: Field) -> bool:
                     refresh=f.extra.get("gap", 0.2),
                 )
         return True
-    if k == "quake":
-        pct = f.value
-        for b in battle.buildings:
-            if (
-                b.alive
-                and b.counted
-                and b.key not in STORAGES
-                and not (b.key == "tesla" and not b.revealed)
-                and b.edge_distance(f.x, f.y) <= f.radius
-            ):
-                b.eq_hits += 1
-                battle.hit_building(b, b.max_hp * pct / (2 * b.eq_hits - 1))  # 1, 1/3, 1/5 ... (wiki)
-        for key, w in battle.walls.items():
-            if w.alive and w.edge_distance(f.x, f.y) <= f.radius:
-                w.eq_hits += 1
-                n = w.eq_hits
-                # wiki: nth quake does 1/n plus 5(n-1)^2 % of max HP on walls
-                # (L7 29%: three quakes 78%, four quakes 130%).
-                battle.hit_building(w, w.max_hp * (pct / n + 0.05 * (n - 1) ** 2))
-        if f.extra["troop"]:
-            for u in battle.defenders_near(f.x, f.y, f.radius):
-                if not u.flying:
-                    quake_unit(battle, u, f.extra["troop"])
-        return False
-    if k == "def_quake":
-        for u in battle.attackers_near(f.x, f.y, f.radius):
-            if _affected(u) and not u.flying:
-                n = u.extra.get("eq_n", 0) + 1
-                u.extra["eq_n"] = n
-                battle.hit_unit(u, u.max_hp * f.value / (2 * n - 1), src="spell_tower")
+    if k in ("quake", "def_quake"):
+        # game data v18.200.9: Earthquake / Spell Tower Earthquake:
+        # NumberOfHits=5, TimeBetweenHitsMS=400 -> five separate impacts.
+        for index in range(5):
+            battle.add_pending(
+                Pending(
+                    round(f.started + index * 0.4, 6),
+                    f.x,
+                    f.y,
+                    f.radius,
+                    0.0,
+                    False,
+                    True,
+                    "spell_tower" if k == "def_quake" else "spell",
+                    team="atk" if k == "def_quake" else "def",
+                    extra={"quake": f},
+                    effect="spell",
+                )
+            )
         return False
     if k == "clone":
         # game data v18.200.9: Clone.TimeBetweenHitsMS=300 -> 0.3 s.
@@ -689,6 +705,13 @@ def _apply(battle, f: Field) -> bool:
             j += 1
             f.extra["delivered"] = j
             child = battle.spawn(name, "atk", sx, sy, kind="summon", group="spell")
+            # Wiki: Ice Block Spell, unspawned Bat/Skeleton Spell troops are affected.
+            for source, (reduction, until, x, y, radius) in f.extra.get(
+                "iceblocks", {}
+            ).items():
+                if t < until and dist(sx, sy, x, y) <= radius:
+                    child.extra.setdefault("iceblocks", {})[source] = (reduction, until)
+                    child.frozen_until = max(child.frozen_until, until)
             if f.extra.get("name") == "Bag of Frostmites":
                 from dataclasses import replace
 
@@ -737,6 +760,24 @@ def _apply(battle, f: Field) -> bool:
         f.kind, f.until = "tesla_overgrowth", t + f.value
         return True
     if k == "iceblock":
+        # Wiki: Ice Block Spell, also affects troops still to spawn from active
+        # Bat/Skeleton Spells; retain this cast's area and expiry for those spawns.
+        until = t + f.extra["time"]
+        for summon in battle.fields:
+            if (
+                summon.kind == "summon"
+                and summon.extra.get("unit") in ("Spell Skeleton", "Bat")
+                and summon.started <= t <= summon.until
+                and summon.extra.get("delivered", 0) < summon.value
+                and dist(summon.x, summon.y, f.x, f.y) <= summon.radius + f.radius
+            ):
+                summon.extra.setdefault("iceblocks", {})[_source(battle, f)] = (
+                    f.value,
+                    until,
+                    f.x,
+                    f.y,
+                    f.radius,
+                )
         for u in battle.attackers_near(f.x, f.y, f.radius):
             if _affected(u) and not u.underground:
                 until = t + f.extra["time"]
@@ -777,6 +818,51 @@ def _apply(battle, f: Field) -> bool:
             _revive(battle, u, f.value)
         return False
     return False
+
+
+def quake_hit(battle, f):
+    # Wiki: Earthquake Spell, diminishing damage counts casts, not their five hits.
+    hits = f.extra.setdefault("hits", {})
+    if f.kind == "quake":
+        for b in battle.buildings:
+            if (
+                b.alive
+                and b.counted
+                and b.key not in STORAGES
+                and not (b.key == "tesla" and not b.revealed)
+                and b.edge_distance(f.x, f.y) <= f.radius
+            ):
+                key = ("building", b.id)
+                if key not in hits:
+                    b.eq_hits += 1
+                    hits[key] = b.eq_hits
+                battle.hit_building(b, b.max_hp * f.value / (2 * hits[key] - 1))
+        for key, w in battle.walls.items():
+            if w.alive and w.edge_distance(f.x, f.y) <= f.radius:
+                identity = ("wall", key)
+                if identity not in hits:
+                    w.eq_hits += 1
+                    hits[identity] = w.eq_hits
+                n = hits[identity]
+                # Wiki: Earthquake Spell, 5(n-1)^2% bonus per cast on walls;
+                # split equally across the five hits, like the base damage.
+                battle.hit_building(w, w.max_hp * (f.value / n + 0.01 * (n - 1) ** 2))
+    pct = f.extra["troop"] if f.kind == "quake" else f.value
+    if not pct:
+        return
+    pool = (
+        battle.defenders_near(f.x, f.y, f.radius)
+        if f.kind == "quake"
+        else battle.attackers_near(f.x, f.y, f.radius)
+    )
+    for u in pool:
+        if u.flying or f.kind == "def_quake" and not _affected(u):
+            continue
+        key = ("unit", u.id)
+        if key not in hits:
+            u.extra["eq_n"] = u.extra.get("eq_n", 0) + 1
+            hits[key] = u.extra["eq_n"]
+        battle.hit_unit(u, u.max_hp * pct / (2 * hits[key] - 1))
 
 
 def quake_unit(battle, u, pct):
@@ -1032,9 +1118,10 @@ def tower_cast(battle, b: Building, mode, near=None):
         # game data v18.200.9: Freeze.AffectsSiegeMachines=TRUE -> reaches sieges).
         # game data v18.200.9: Spell Tower Earthquake.TroopDamagePermil=60 -> 6% per hit.
         # game data v18.200.9: Spell Tower Earthquake.NumberOfHits=5 -> five hits, 30% in all.
+        # Spell Tower Earthquake.TimeBetweenHitsMS=400 -> 0.4 s between hits.
         battle.fields.append(
             Field(
-                "def_quake", x, y, 4.7, t + 0.3, team="def", value=0.30, started=t + 0.3
+                "def_quake", x, y, 4.7, t + 0.3, team="def", value=0.06, started=t + 0.3
             )
         )
 
@@ -1212,9 +1299,16 @@ def maybe_revive(battle, u):
 
 
 def _revive(battle, u, pct):
+    from . import heroes
+
+    # Wiki: Revive Spell, restores a percentage of maximum health; Life Gem's
+    # range bonus must reflect the living Wardens' current positions after KO.
+    effects.health_aura(u, 0.0, 0.0)
     u.alive = True
+    heroes.apply_auras(battle)
     u.extra["revivable"] = False
     u.hp = u.max_hp * pct
+    u.extra["aura_hp"] = u.aura_bonus * pct
     u.target = None
     u.wall_target = None
     u.cooldown = 0.0

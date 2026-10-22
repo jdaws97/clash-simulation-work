@@ -68,6 +68,9 @@ TORNADO_FORCE = {False: (4.0, 3.0, 2.0, 1.0, 1.0), True: (5.0, 4.0, 3.0, 2.0, 1.
 # game data v18.200.9: TornadoTrap.TornadoInnerRadius=70 -> 0.7 tiles,
 # TornadoInnerForcePercent=100, TornadoOuterForcePercent=65.
 TORNADO_INNER, TORNADO_INNER_PCT, TORNADO_OUTER_PCT = 0.7, 1.0, 0.65
+# game data v18.200.9: Tornado Trap.TornadoRotationSpeed=-180 -> -pi radians/s.
+# Wiki: Tornado Trap, counter-clockwise motion (the engine's y axis points down).
+TORNADO_ROTATION = -math.pi
 # game data v18.200.9: Traps.csv Bomb/GiantBomb.Pushback=100 and
 # PushbackHousingLimit=3, the same values as Mortar, whose push the wiki
 # states as 2 tiles (wiki: Barbarian, Mortar knocks Barbarians back 2 tiles).
@@ -369,6 +372,8 @@ def tornado_tick(battle, f: Field):
     f.extra["delivered"] = delivered
     if t >= f.until:
         return
+    angle = TORNADO_ROTATION * battle.DT
+    cos_angle, sin_angle = math.cos(angle), math.sin(angle)
     for u in battle.attackers_near(f.x, f.y, f.radius):
         if not u.alive or u.underground or u.attached(t) or u.extra.get("suspended"):
             continue
@@ -388,9 +393,9 @@ def tornado_tick(battle, f: Field):
             weight = min(5, max(1, math.ceil(u.housing / 3)))
         # Pull speed: the game-data force for this weight (air table for
         # flying units), 100% inside TORNADO_INNER and 65% at the edge.
-        # Assumed: the force is the pull speed toward the centre, linear in
-        # between; the rotation (TornadoRotationSpeed=-180) is not modelled.
+        # Assumed: the force is the pull speed toward the centre, linear in between.
         d = dist(u.x, u.y, f.x, f.y)
+        nx, ny = u.x, u.y
         if d > TORNADO_INNER:
             frac = min(1.0, (d - TORNADO_INNER) / max(1e-9, f.radius - TORNADO_INNER))
             pct = TORNADO_INNER_PCT + (TORNADO_OUTER_PCT - TORNADO_INNER_PCT) * frac
@@ -398,7 +403,12 @@ def tornado_tick(battle, f: Field):
             step = min(d - TORNADO_INNER, speed * battle.DT)
             nx = u.x + (f.x - u.x) / d * step
             ny = u.y + (f.y - u.y) / d * step
-            _tornado_move(battle, u, nx, ny, f.until)
+        # game data v18.200.9: Tornado Trap.TornadoRotationSpeed=-180;
+        # rotate the pulled position, including units inside the inner radius.
+        dx, dy = nx - f.x, ny - f.y
+        nx = f.x + dx * cos_angle - dy * sin_angle
+        ny = f.y + dx * sin_angle + dy * cos_angle
+        _tornado_move(battle, u, nx, ny, f.until)
 
 
 def _tornado_move(battle, u, nx, ny, until):

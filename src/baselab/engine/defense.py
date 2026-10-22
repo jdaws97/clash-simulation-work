@@ -203,6 +203,25 @@ AMMUNITION = {"xbow": 1500, "inferno": 1000, "eagle": 90, "scatter": 90}
 ARTILLERY_DAMAGE = (140.0, 157.5, 175.0, 192.5, 210.0)
 # Wiki: Cannon/Home Village, Archer Tower/Home Village and Mortar gear-up levels.
 GEAR_MINIMUM = {"cannon": 7, "at": 10, "mortar": 8}
+# game data v18.200.9: geared Cannon L7-21 AltProjectile rows use Cannonball5/7/
+# 10/12/13/14/15/16.StartOffset=62/66/70/72/74/76/76/76 -> tiles by level.
+GEARED_CANNON_OFFSETS = (
+    0.62,
+    0.66,
+    0.66,
+    0.70,
+    0.70,
+    0.72,
+    0.74,
+    0.76,
+    0.76,
+    0.76,
+    0.76,
+    0.76,
+    0.76,
+    0.76,
+    0.76,
+)
 # Wiki: Archer Tower/Home Village, Fast Attack damage per shot, L10-21.
 FAST_ARCHER_SHOTS = (31.5, 35, 37.5, 40, 45, 50, 52.5, 55, 60, 65, 69, 72.5)
 
@@ -344,7 +363,7 @@ def attach_weapon(battle, b: Building):
             min_range=4.0,
             interval=5.0,
             damage=stats.get(name, lvl, "Damage per Hit", "Damage per Shot"),
-            extra={"splash": 1.5, "flight": 1.5},
+            extra={"splash": 1.5},
         )
     elif key == "xbow":
         both = b.mode == "both"
@@ -722,6 +741,11 @@ def _act_once(battle, w: Weapon):
         if b.key == "mgt":
             # game data v18.200.9: merged_cat_cannon_projectile_lvl1.Speed=1200 -> 12 tiles/s.
             _projectile(battle, w, tgt, w.damage * rage, 12.0)
+        elif b.key == "cannon":
+            # game data v18.200.9: Cannonball16.Speed=1200, StartOffset=76
+            # -> 12 tiles/s from 0.76 tiles; DontTrackTarget=FALSE -> tracking.
+            offset = GEARED_CANNON_OFFSETS[b.level - GEAR_MINIMUM["cannon"]]
+            _projectile(battle, w, tgt, w.damage * rage, 12.0, offset=offset)
         else:
             battle.hit_unit(tgt, w.damage * rage)
         w.burst_left -= 1
@@ -751,6 +775,10 @@ def _act_once(battle, w: Weapon):
         elif b.key == "ad":
             # game data v18.200.9: Firework.Speed=800 -> 8 tiles/s.
             _projectile(battle, w, tgt, dmg, 8.0)
+        elif b.key == "mgt":
+            # game data v18.200.9: merged_cat_archer_projectile_lvl2.Speed=800,
+            # StartOffset=150 -> 8 tiles/s from 1.5 tiles; DontTrackTarget=FALSE.
+            _projectile(battle, w, tgt, dmg, 8.0, offset=1.5)
         else:
             battle.hit_unit(tgt, dmg)
     elif k == "monolith":
@@ -771,9 +799,15 @@ def _act_once(battle, w: Weapon):
         # Wizard Tower damages only the target's type; Bomb Tower ground only
         air = tgt.flying if w.extra.get("same_type") else w.targets in ("air", "both")
         ground = (not tgt.flying) if w.extra.get("same_type") else w.targets in ("ground", "both")
-        if b.key == "wt" and b.level <= 4:
-            # game data v18.200.9: wizardTower_projectile.Speed=500 -> 5 tiles/s.
-            flight = dist(b.x, b.y, tgt.x, tgt.y) / 5.0
+        if b.key == "wt":
+            if b.level <= 4:
+                # game data v18.200.9: wizardTower_projectile.Speed=500 -> 5 tiles/s.
+                flight = dist(b.x, b.y, tgt.x, tgt.y) / 5.0
+            else:
+                # game data v18.200.9: ps_chr_WizardAttack_TowerProjectile_lvl2/3/4:
+                # Speed=900, StartOffset=70 -> 9 tiles/s from 0.7 tiles;
+                # DontTrackTarget=TRUE -> impact at the launch-time position.
+                flight = max(0.0, dist(b.x, b.y, tgt.x, tgt.y) - 0.7) / 9.0
             battle.add_pending(
                 Pending(
                     t + flight,
@@ -829,9 +863,13 @@ def _projectile(battle, w, target, damage, speed, *, offset=0.0):
 
 
 def _mortar_shell(battle, w, target, damage):
+    # game data v18.200.9: every Mortar level's Mortar Ammo projectile row has
+    # Speed=500, StartOffset=20 -> 5 tiles/s from 0.2 tiles; FixedTravelTime=0,
+    # DontTrackTarget=TRUE -> distance-based flight to the launch-time position.
+    flight = max(0.0, dist(w.owner.x, w.owner.y, target.x, target.y) - 0.2) / 5.0
     battle.add_pending(
         Pending(
-            battle.t + w.extra["flight"],
+            battle.t + flight,
             target.x,
             target.y,
             w.extra["splash"],
@@ -881,6 +919,13 @@ def _multi(battle, w: Weapon, rage):
         keep.sort(key=lambda a: (dist(a.x, a.y, b.x, b.y), a.spawned_at, a.id))
         # Wiki: Multi-Archer Tower and Hot Candle, concentrate unused shots.
         arrows = [keep[i % len(keep)] for i in range(n)]
+        if w.kind == "multi_archer" and len(keep) == 2:
+            # Wiki: Multi-Archer Tower, the spare archer alternates between two
+            # nearby targets. Proximity cutoff is unstated; alternate this pair.
+            previous = w.extra.get("spare_target")
+            spare = keep[1] if previous is keep[0] else keep[0]
+            arrows[-1] = spare
+            w.extra["spare_target"] = spare
         for a in arrows:
             if w.kind == "multi_archer":
                 # game data v18.200.9: super_archer_tower_projectile.Speed=1800 -> 18 tiles/s.
@@ -979,8 +1024,9 @@ def _eagle(battle, w: Weapon):
         w.target = target = _eagle_pick(battle, w, pool)
     # Launch only the current shell; disabling the tower pauses later launches.
     # game data v18.200.9: Artillery Ammo7.FixedTravelTime=5000 -> 5 s.
+    # Wiki: Eagle Artillery, Damage per Hit and Shockwave Damage are separate.
     for radius, damage, shock in (
-        (w.extra["splash"], w.damage - w.extra["shock"], False),
+        (w.extra["splash"], w.damage, False),
         (w.extra["shock_radius"], w.extra["shock"], True),
     ):
         battle.add_pending(
@@ -1033,7 +1079,9 @@ def _sweeper(battle, w: Weapon):
         if d < w.min_range:
             continue
         ang = math.atan2(a.y - b.y, a.x - b.x)
-        if abs((ang - w.facing + math.pi) % (2 * math.pi) - math.pi) <= math.pi / 4:
+        # game data v18.200.9: Air Sweeper.TargetingConeAngle=105 -> +-52.5 degrees
+        # (the wiki's 90, 120 and 60 degree descriptions conflict).
+        if abs((ang - w.facing + math.pi) % (2 * math.pi) - math.pi) <= math.radians(52.5):
             cands.append((d, ang, a))
     if not cands:
         return
@@ -1056,10 +1104,14 @@ def _sweeper(battle, w: Weapon):
 def _tower_candidates(battle, w):
     from . import spells
 
+    # Wiki: Spell Tower, Offensive Strategies: a Skeleton Spell can trigger Poison.
     return [
         unit
         for unit in _visible(battle, w, w.range)
-        if unit.name not in spells.NO_TRIGGER
+        if (
+            unit.name not in spells.NO_TRIGGER
+            or (w.mode == "poison" and unit.name == "Spell Skeleton")
+        )
         and (w.mode not in ("eq", "quake", "earthquake") or not unit.flying)
     ]
 

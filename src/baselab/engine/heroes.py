@@ -105,6 +105,25 @@ def equip(battle, u: Unit, plan):
     lo = loadouts.get(u.name) or DEFAULT_LOADOUTS.get(u.name)
     if lo is None:
         return
+    if lo.hero != u.name:
+        raise ValueError(f"Loadout for {lo.hero} cannot be applied to {u.name}")
+    # game data v18.200.9: heroes.csv ItemSlotCount=2 -> two slots per home Hero.
+    if len(lo.equipment) > 2:
+        raise ValueError(f"{u.name} can equip at most 2 equipment items")
+    equipped = set()
+    for equipment in lo.equipment:
+        if equipment in equipped:
+            raise ValueError(f"Duplicate equipment for {u.name}: {equipment}")
+        equipped.add(equipment)
+        if (
+            equipment not in stats.registry()
+            or stats.record(equipment)["kind"] != "equipment"
+        ):
+            raise ValueError(f"{equipment} is not hero equipment")
+        # Wiki: Hero Equipment, each piece's User identifies its eligible Hero.
+        owner = stats.attrs(equipment).get("raw", {}).get("User")
+        if owner != u.name:
+            raise ValueError(f"{equipment} belongs to {owner}, not {u.name}")
     th = getattr(plan, "town_hall", battle.town_hall)
     pet_level = _pet_level(battle, u, lo, plan, th)
     levels_override = getattr(plan, "equipment_levels", {}) or {}
@@ -210,8 +229,8 @@ def _spawn_pet(battle, hero: Unit, k: Kit):
         hp=hp,
         dmg=dps * interval,
         interval=interval,
-        # Unicorn uses a separate label (wiki: Unicorn).
-        range_=stats.num(a.get("raw", {}).get("Healing Range")) or attack_range(name),
+        # game data v18.200.9: pets.csv AttackRange / 100 -> tiles; Electro Owl=550.
+        range_=a.get("range_ck", attack_range(name)),
         speed=movement_speed(name),
         housing=0,
         flying=bool(a.get("is_flying")),
@@ -486,7 +505,10 @@ def on_death(battle, u: Unit) -> bool:
     if k.has("Fire Heart") and not u.extra.get("fire_heart_done"):
         # explodes the first time he falls only, revived or not (wiki: Fire Heart)
         u.extra["fire_heart_done"] = True
-        battle.splash_buildings(u.x, u.y, 4.0, _col("Fire Heart", k.lv("Fire Heart"), "damage on defeat"), walls=False)
+        # game data v18.200.9: DragonCrownExplosion immunity flags unset -> troops, heroes and walls too.
+        damage = _col("Fire Heart", k.lv("Fire Heart"), "damage on defeat")
+        battle.splash_buildings(u.x, u.y, 4.0, damage, walls=True)
+        battle.splash_units(u.x, u.y, 4.0, damage, True, True, team="def")
     if k.phoenix and k.pet_unit is not None and k.pet_unit.alive:
         k.phoenix = False
         dur = stats.get("Phoenix", k.pet_level, "Revive Duration", default=8.5)
@@ -532,7 +554,7 @@ def activate(battle, u: Unit):
                 tgt,
                 75.0,
                 1.0,
-                lambda b: dmg * (2.0 if getattr(b, "key", None) == "ad" else 1.0),
+                dmg,
             )
         elif e == "Spiky Ball":
             # Projectile damage and target count (wiki: Spiky Ball).
@@ -545,16 +567,24 @@ def activate(battle, u: Unit):
                 cur = tgt
             elif cand:
                 cur = min(cand, key=lambda b: dist(b.x, b.y, u.x, u.y))
-            for _ in range(n):
-                if cur is None:
-                    break
+            if cur is not None and n > 0:
                 hit.add(cur)
-                if isinstance(cur, Unit):
-                    battle.hit_unit(cur, dmg)
-                else:
-                    battle.hit_building(cur, dmg)
-                cand = _ball_targets(battle, hit)
-                cur = min(cand, key=lambda b: dist(b.x, b.y, cur.x, cur.y)) if cand else None
+                # game data v18.200.9: BarbarianKingGearFootball.Speed=1500 -> 15 tiles/s.
+                battle.add_pending(
+                    Pending(
+                        t + dist(u.x, u.y, cur.x, cur.y) / 15.0,
+                        u.x,
+                        u.y,
+                        0.0,
+                        dmg,
+                        False,
+                        True,
+                        u.name,
+                        extra={"hero_impact": "ball", "remaining": n, "visited": hit},
+                        actor=u,
+                        target=cur,
+                    )
+                )
 
         elif e == "Earthquake Boots":
             # Damage percentages and eight-tile radius (wiki: Earthquake Boots).
@@ -683,6 +713,9 @@ def activate(battle, u: Unit):
             )
             _moving_auras(battle, u)
         elif e == "Seeking Shield":
+            # game data v18.200.9: Seeking Shield ability DisableAttacking=TRUE,
+            # DeactivateAfterTime=1200 -> no ordinary attacks for 1.2 s.
+            u.extra["attack_lock_until"] = t + 1.2
             # game data v18.200.9: RoyalChampionShieldBounce.PreActivationDelayTime=933 -> 0.933 s.
             battle.add_pending(
                 Pending(
@@ -715,7 +748,8 @@ def activate(battle, u: Unit):
             u.extra["haste_attack"] = (
                 1.0 + _col(e, lv, "ability attributes / attack speed increase") / 100.0
             )
-            u.cooldown = 0.0
+            # The cooldown carries on (resetting it gave 20 throws in 10 s; wiki:
+            # Haste Vial, at most 19).
         elif e == "Frost Flake":
             n = int(_col(e, lv, "number of targets", default=7))
             visited = set()
@@ -808,6 +842,77 @@ def projectile_impact(battle, pending):
     if mode == "blast":
         _blast(battle, pending.x, pending.y, pending.radius, pending.damage)
         return
+    if mode == "puppet":
+        _puppet(
+            battle,
+            pending.actor,
+            pending.extra["equipment"],
+            pending.extra["level"],
+            first=pending.extra["first"],
+            at=pending.at,
+        )
+        return
+    if mode == "ball":
+        target = pending.target
+        pending.x, pending.y = target.x, target.y
+        if target.alive and (
+            not isinstance(target, Unit) or target.indirect_targetable(battle.t)
+        ):
+            _damage(battle, target, pending.damage)
+        pending.extra["remaining"] -= 1
+        if not pending.extra["remaining"]:
+            return
+        candidates = _ball_targets(battle, pending.extra["visited"])
+        if not candidates:
+            return
+        target = min(
+            candidates,
+            key=lambda target: dist(pending.x, pending.y, target.x, target.y),
+        )
+        pending.extra["visited"].add(target)
+        # game data v18.200.9: BarbarianKingGearFootball.Speed=1500 -> each bounce travels at 15 tiles/s.
+        pending.at = battle.t + dist(pending.x, pending.y, target.x, target.y) / 15.0
+        pending.target = target
+        battle.add_pending(pending)
+        return
+    if mode == "arrow":
+        state = pending.extra
+        dx, dy = state["direction"]
+        previous = state["travel"]
+        travel = min(state["length"], (battle.t - pending.released_at) * 35.0)
+        # Wiki: Giant Arrow, passes through structures, walls and ground/air defenders.
+        targets = (
+            list(battle.buildings)
+            + list(battle.walls.values())
+            + list(battle.defenders)
+        )
+        for target in targets:
+            if not target.alive or target in state["visited"]:
+                continue
+            if isinstance(target, Building) and not target.counted:
+                continue
+            if isinstance(target, Unit) and not target.indirect_targetable(battle.t):
+                continue
+            px, py = target.x - pending.x, target.y - pending.y
+            along = px * dx + py * dy
+            half = getattr(target, "half_hit", 0.0)
+            if (
+                along + half >= previous
+                and along - half <= travel
+                and 0 < along < state["length"]
+                and abs(px * dy - py * dx) <= half + pending.radius
+            ):
+                state["visited"].add(target)
+                # Wiki: Giant Arrow, double damage to Air Defenses.
+                damage = pending.damage * (
+                    2.0 if getattr(target, "key", None) == "ad" else 1.0
+                )
+                _damage(battle, target, damage)
+        if travel < state["length"]:
+            state["travel"] = travel
+            pending.at = round(battle.t + battle.DT, 6)
+            battle.add_pending(pending)
+        return
     if mode == "shield":
         target = pending.target
         if target is not None:
@@ -884,34 +989,36 @@ def _ball_targets(battle, hit):
     ]
 
 
-def _line(battle, u, tgt, length, width, dmg_fn):
+def _line(battle, u, tgt, length, width, damage):
     if tgt is None:
         dx, dy = u.extra["facing"]
     else:
         dx, dy = tgt.x - u.x, tgt.y - u.y
     d = math.hypot(dx, dy) or 1.0
-    # The arrow hits structures and ground or air defenders (wiki: Giant Arrow).
-    targets = (
-        list(battle.buildings) + list(battle.walls.values()) + list(battle.defenders)
+    # game data v18.200.9: QueenPierceProjectile.Speed=3500 -> 35 tiles/s.
+    battle.add_pending(
+        Pending(
+            battle.t + battle.DT,
+            u.x,
+            u.y,
+            width,
+            damage,
+            True,
+            True,
+            u.name,
+            extra={
+                "hero_impact": "arrow",
+                "direction": (dx / d, dy / d),
+                "length": length,
+                "travel": 0.0,
+                "visited": set(),
+            },
+            actor=u,
+        )
     )
-    for b in targets:
-        if not b.alive or isinstance(b, Building) and not b.counted:
-            continue
-        if isinstance(b, Unit) and b.underground:
-            continue
-        px, py = b.x - u.x, b.y - u.y
-        along = (px * dx + py * dy) / d
-        if (
-            0 < along < length
-            and abs(px * dy - py * dx) / d <= getattr(b, "half_hit", 0.0) + width
-        ):
-            if isinstance(b, Unit):
-                battle.hit_unit(b, dmg_fn(b))
-            else:
-                battle.hit_building(b, dmg_fn(b))
 
 
-def _puppet(battle, u, e, lv):
+def _puppet(battle, u, e, lv, *, first=0, at=None):
     table = {
         "Barbarian Puppet": ("Barbarian", "summoned barbarians"),
         "Archer Puppet": ("Archer", "summoned archers"),
@@ -928,9 +1035,20 @@ def _puppet(battle, u, e, lv):
     if e in ("Barbarian Puppet", "Archer Puppet"):
         # Puppets use researched troop levels (wiki: Barbarian Puppet; Archer Puppet).
         level = (getattr(battle.plan, "troop_levels", {}) or {}).get(troop)
-    for j in range(n):
+    # game data v18.200.9: BarbarianKingSpawnBarbarians.SpawnnedTroopsPerHit=5, SpawnDelayBetweenHitsMS=500.
+    # game data v18.200.9: ArcherQueenSpawnArchers.SpawnnedTroopsPerHit=5, SpawnDelayBetweenHitsMS=1000.
+    # game data v18.200.9: GrandWardenSummonLavaloon.SpawnnedTroopsPerHit=1, SpawnDelayBetweenHitsMS=250.
+    batch, delay = {
+        "Barbarian Puppet": (5, 0.5),
+        "Archer Puppet": (5, 1.0),
+        "Lavaloon Puppet": (1, 0.25),
+    }.get(e, (n, 0.0))
+    for j in range(first, min(first + batch, n)):
         ang = 2 * math.pi * j / max(1, n)
-        s = battle.spawn(troop, "atk", u.x + 0.6 * math.cos(ang), u.y + 0.6 * math.sin(ang), level=level, kind="summon", group=u.group)
+        # the attacker's own Town Hall caps an unknown researched level (the
+        # spawn fallback is the battle's, i.e. the defender's, Town Hall)
+        s = battle.spawn(troop, "atk", u.x + 0.6 * math.cos(ang), u.y + 0.6 * math.sin(ang), level=level, kind="summon",
+                         group=u.group, town_hall=getattr(battle.plan, "town_hall", None))
         if e == "Archer Puppet":
             s.invisible_until = battle.t + _col(e, lv, "archer invisibility duration", default=6.0)
         if e == "Barbarian Puppet":
@@ -942,6 +1060,26 @@ def _puppet(battle, u, e, lv):
                 _col(e, lv, "barbarian speed increase") / 8.0,
                 battle.t + 20.0,
             )
+    if first + batch < n:
+        battle.add_pending(
+            Pending(
+                (battle.t if at is None else at) + delay,
+                u.x,
+                u.y,
+                0.0,
+                0.0,
+                False,
+                False,
+                u.name,
+                extra={
+                    "hero_impact": "puppet",
+                    "equipment": e,
+                    "level": lv,
+                    "first": first + batch,
+                },
+                actor=u,
+            )
+        )
 
 
 def start_dash(battle, u, damage):
@@ -1278,6 +1416,8 @@ def _resume_timers(unit, now):
         "torch_until",
         "haste_attack_until",
         "angry_until",
+        # Wiki: Portal Pendant, Angry Jelly's effect pauses pending redeployment.
+        "brainwash_until",
     ):
         if key in unit.extra:
             unit.extra[key] += elapsed

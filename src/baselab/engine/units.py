@@ -13,7 +13,7 @@ import os
 import numpy as np
 
 from . import effects, stats
-from .specs import unit_numbers
+from .specs import game_data, game_unit_data, unit_numbers
 from .entities import Building, Field, Pending, Unit, Wall, dist
 
 RESOURCE_KEYS = {"gm", "ec", "dd", "gs", "es", "ds", "th", "cc"}
@@ -423,6 +423,13 @@ def pre_tick(battle, u: Unit) -> bool:
         vacuum = u.extra.get("vacuum")
         if vacuum is not None:
             rubble, started = vacuum
+            # Wiki: Ruin Witch consumes a rubble pile once; a stale claim cannot deliver.
+            if not u.extra.get("delivery_committed") and (
+                rubble.extra.get("rubble_taken")
+                or rubble.extra.get("rubble_claim") != u.id
+            ):
+                u.extra.pop("vacuum")
+                return True
             # Wiki: Ruin Witch commits rubble after four seconds.
             if not u.extra.get("delivery_committed") and t >= started + 4.0:
                 rubble.extra["rubble_taken"] = True
@@ -457,6 +464,14 @@ def pre_tick(battle, u: Unit) -> bool:
             and not target.alive
             and getattr(target, "counted", False)
             and not target.extra.get("rubble_taken")
+            # Wiki: Ruin Witch, only one witch can consume each rubble pile.
+            and (
+                target.extra.get("rubble_claim") in (None, u.id)
+                or not any(
+                    witch.alive and witch.id == target.extra["rubble_claim"]
+                    for witch in battle.attackers
+                )
+            )
             and target.edge_distance(u.x, u.y) <= u.range
             and u.can_act(t)
             and t >= u.held_until
@@ -577,49 +592,85 @@ def _transform_bear(battle, u):
     bear.extra["from_druid"] = True
 
 
+# game data v18.200.9: RollingLog.Speed=420 -> 4.2 tiles/s.
+# game data v18.200.9: RollingLog.StartOffset=100 -> the log starts 1 tile out.
+LOG_SPEED = 4.2
+LOG_START = 1.0
+LOG_RANGE = 20.0  # logs travel up to 20 tiles (wiki)
+
+
 def _roll_log(battle, u):
     """Log Launcher: rolls a log towards the Town Hall; walls take x4, the log
-    stops after hitting four buildings (wiki)."""
+    stops after hitting four buildings (wiki). The log travels (advance_log);
+    it used to deal all its damage along 20 tiles in the launch tick, i.e.
+    2-5 s early at the far end."""
     th = battle.th
     tx, ty = (th.x, th.y) if th is not None else (25.0, 25.0)
     dx, dy = tx - u.x, ty - u.y
     d = math.hypot(dx, dy) or 1.0
     dx, dy = dx / d, dy / d
-    dmg = stats.get(u.name, u.level, "Damage per Hit", default=690.0) * u.extra.get("strength", 1.0)
-    wall_dmg = stats.get(u.name, u.level, "Damage per Hit vs. Walls", default=dmg * 4)
+    # Wiki: Log Launcher, wall and point-blank damage scale with the log's damage.
+    strength = u.extra.get("strength", 1.0)
+    base = stats.get(u.name, u.level, "Damage per Hit", default=690.0)
+    dmg = base * strength
+    wall_dmg = (
+        stats.get(u.name, u.level, "Damage per Hit vs. Walls", default=base * 4)
+        * strength
+    )
     # point-blank blast with every launch (wiki): structures and units right
     # next to the launcher
-    pb = stats.get(u.name, u.level, "Point-Blank Damage*", "Point-Blank Damage", default=0.0)
+    pb = (
+        stats.get(
+            u.name, u.level, "Point-Blank Damage*", "Point-Blank Damage", default=0.0
+        )
+        * strength
+    )
     if pb:
         # Wiki: Log Launcher gives radius one and fourfold wall damage.
         battle.splash_buildings(u.x, u.y, 1.0, pb, walls=True, wall_mult=4.0)
         battle.splash_units(u.x, u.y, 1.0, pb, False, True, team="def")
-    hit_b = set()
-    hit_w = set()
-    hit_units = set()
-    for step in range(0, 41):  # logs travel up to 20 tiles (wiki)
-        px, py = u.x + dx * step * 0.5, u.y + dy * step * 0.5
-        for k in ((int(px), int(py)), (int(px + 0.5), int(py)), (int(px), int(py + 0.5))):
-            w = battle.walls.get(k)
-            if w is not None and w.alive and k not in hit_w:
-                hit_w.add(k)
-                battle.hit_building(w, wall_dmg)
-        for b in battle.buildings:
-            if b.alive and b.counted and b.id not in hit_b and b.edge_distance(px, py) < 0.8:
-                hit_b.add(b.id)
-                battle.hit_building(b, dmg)
-                if len(hit_b) >= 4:
-                    return
-        # Log width and travel speed remain the existing approximations.
-        for foe in battle.defenders:
-            if (
-                foe.alive
-                and not foe.flying
-                and foe not in hit_units
-                and dist(px, py, foe.x, foe.y) < 0.8
-            ):
-                hit_units.add(foe)
-                battle.hit_unit(foe, dmg, attacker=u)
+    log = Field("rolling_log", u.x, u.y, 0.0, math.inf, team=u.team, started=battle.t, extra={
+        "launcher": u, "dx": dx, "dy": dy, "dmg": dmg, "wall_dmg": wall_dmg, "launched": battle.t,
+        # samples every half tile from the start offset on, as before
+        "next": int(LOG_START * 2), "hit_b": set(), "hit_w": set(), "hit_units": set(),
+    })
+    if advance_log(battle, log):
+        battle.fields.append(log)
+
+
+def advance_log(battle, f) -> bool:
+    """Roll a log up to where it is now; False once it has stopped."""
+    e = f.extra
+    u = e["launcher"]
+    reach = min(LOG_RANGE, LOG_START + LOG_SPEED * (battle.t - e["launched"]))
+    with effects.damage_source(battle, u, "attack"):
+        while e["next"] * 0.5 <= reach:
+            step = e["next"]
+            e["next"] += 1
+            px, py = f.x + e["dx"] * step * 0.5, f.y + e["dy"] * step * 0.5
+            for k in ((int(px), int(py)), (int(px + 0.5), int(py)), (int(px), int(py + 0.5))):
+                w = battle.walls.get(k)
+                if w is not None and w.alive and k not in e["hit_w"]:
+                    e["hit_w"].add(k)
+                    battle.hit_building(w, e["wall_dmg"])
+            for b in battle.buildings:
+                if b.alive and b.counted and b.id not in e["hit_b"] and b.edge_distance(px, py) < 0.8:
+                    e["hit_b"].add(b.id)
+                    battle.hit_building(b, e["dmg"])
+                    if len(e["hit_b"]) >= 4:
+                        return False
+            # Log width remains the existing approximation (game data
+            # RollingLog.PenetratingHitBoxWidth=30; its exact meaning is unstated).
+            for foe in battle.defenders:
+                if (
+                    foe.alive
+                    and not foe.flying
+                    and foe not in e["hit_units"]
+                    and dist(px, py, foe.x, foe.y) < 0.8
+                ):
+                    e["hit_units"].add(foe)
+                    battle.hit_unit(foe, e["dmg"], attacker=u)
+    return e["next"] * 0.5 <= LOG_RANGE
 
 
 # --------------------------------------------------------------- damage in
@@ -777,24 +828,36 @@ def on_death(battle, u: Unit):
     if "death_bolts" in special:
         txt = stats.text(u.name, u.level, "Damage when destroyed") or "0 x0"
         per = stats.num(txt) or 0.0
-        n = 6
-        # Keep the same radial sampling approximation as Santa's Surprise.
+        # game data v18.200.9: ElectroDragonOnDeath.SelfSpellLevel=4 at troop level 1.
+        ability = game_data("special_abilities", "ElectroDragonOnDeath", u.level)
+        spell = game_data(
+            "spells", ability["SelfSpell"], int(ability["SelfSpellLevel"])
+        )
+        # game data v18.200.9: ElectroDragonDie.NumberOfHits=6, TimeBetweenHitsMS=400.
+        n = int(spell["NumberOfHits"])
+        gap = int(spell["TimeBetweenHitsMS"]) / 1000.0
+        # Keep radial sampling and RNG order: angle then offset for each bolt at death.
         for k in range(n):
             angle = battle.rng.random() * 2 * math.pi
             # game data v18.200.9: ElectroDragonDie.RandomRadius=250 -> 2.5 tiles.
             offset = battle.rng.random() * 2.5
             x, y = u.x + offset * math.cos(angle), u.y + offset * math.sin(angle)
             # game data v18.200.9: ElectroDragonDie.Radius=200 -> 2 tiles.
-            if u.team == "atk":
-                battle.splash_buildings(x, y, 2.0, per, walls=False)
-            battle.splash_units(
-                x,
-                y,
-                2.0,
-                per,
-                False,
-                True,
-                team="def" if u.team == "atk" else "atk",
+            battle.add_pending(
+                Pending(
+                    t + k * gap,
+                    x,
+                    y,
+                    2.0,
+                    per,
+                    False,
+                    True,
+                    u.name,
+                    team="def" if u.team == "atk" else "atk",
+                    extra={"buildings": per if u.team == "atk" else 0.0},
+                    actor=u,
+                    effect="death",
+                )
             )
     if "smasher" in special and u.team == "def":
         # Sore Loser: drops a defensive Rage Spell like the Spell Tower's (wiki)
@@ -992,27 +1055,31 @@ def inherit_clone(battle, parent, child):
     battle._clones.append(child)
 
 
-def split_meteor(battle, u, target):
-    # Wiki: Meteor Golem splits into two children after throwing.
-    level = u.level
+def _spawn_meteormite(battle, u, x, y, health, small):
+    # Wiki: Meteor Golem, each child's health rounds down to 1% of its maximum.
+    child = battle.spawn(
+        "Meteormite",
+        u.team,
+        x,
+        y,
+        level=u.level,
+        kind="summon",
+        group=u.group,
+        owner=u,
+    )
+    quantum = child.max_hp * 0.01
+    child.hp = 1.0 if small else math.floor((health / 2.0) / quantum) * quantum
+    child.extra["meteor_components"] = (("permanent", u.level),)
+
+
+def split_meteor(battle, u, pending):
+    # Wiki: Meteor Golem splits on throwing; only the bottom child stays here.
     small = u.hp < u.max_hp * 0.01
-    positions = [(target.x, target.y)] if small else [(u.x, u.y), (target.x, target.y)]
-    for x, y in positions:
-        child = battle.spawn(
-            "Meteormite",
-            u.team,
-            x,
-            y,
-            level=level,
-            kind="summon",
-            group=u.group,
-            owner=u,
-        )
-        quantum = child.max_hp * 0.01
-        child.hp = 1.0 if small else math.floor((u.hp / 2.0) / quantum) * quantum
-        child.extra["meteor_components"] = (("permanent", level),)
+    pending.extra["meteor_health"] = u.hp
+    pending.extra["meteor_small"] = small
+    if not small:
+        _spawn_meteormite(battle, u, u.x, u.y, u.hp, small)
     u.alive = False
-    # Merge approach, timing and immunity duration are not stated.
 
 
 def try_merge_meteor(battle, u):
@@ -1024,6 +1091,9 @@ def try_merge_meteor(battle, u):
         and target_distance(u, u.target) <= u.range
     ):
         return False
+    candidates = []
+    # game data v18.200.9: Meteormite.MergeSearchRadius=500 -> seek within 5 tiles.
+    radius = int(game_unit_data(u.name, u.level)["MergeSearchRadius"]) / 100.0
     for other in battle.attackers:
         if (
             other is u
@@ -1032,8 +1102,9 @@ def try_merge_meteor(battle, u):
             or other.extra.get("clone")
             or other.level != u.level
             or other.extra.get("meteor_components") != u.extra.get("meteor_components")
-            or other.x != u.x
-            or other.y != u.y
+            or not other.can_act(battle.t)
+            or other.extra.get("leaping")
+            or dist(u.x, u.y, other.x, other.y) > radius
         ):
             continue
         if (
@@ -1042,9 +1113,17 @@ def try_merge_meteor(battle, u):
             and target_distance(other, other.target) <= other.range
         ):
             continue
-        # Wiki: Meteor Golem/Meteormite, same-type idle children may combine.
-        # Only coincident, same-level pairs are resolved; approach timing and
-        # mixed-level selection are not stated.
+        candidates.append(other)
+    if candidates:
+        # Wiki: Meteor Golem/Meteormite, idle children walk together to combine.
+        # Nearest first, then entity ID, without adding random calls.
+        other = min(candidates, key=lambda v: (dist(u.x, u.y, v.x, v.y), v.id))
+        if (u.x, u.y) != (other.x, other.y):
+            if battle.t < u.held_until:
+                return True
+            battle.move_towards(u, other, position=(other.x, other.y))
+            if (u.x, u.y) != (other.x, other.y):
+                return True
         parent = battle.spawn(
             "Meteor Golem", "atk", u.x, u.y, level=u.level, group=u.group
         )
@@ -1054,7 +1133,9 @@ def try_merge_meteor(battle, u):
             "meteor_components", ()
         ) + other.extra.get("meteor_components", ())
         u.alive = other.alive = False
-        # Recombination immunity duration is not stated.
+        # Wiki: Meteor Golem, briefly immune after recombining; duration unstated.
+        # Approximate that transition with one simulation tick.
+        parent.invuln_until = battle.t + battle.DT
         return True
     return False
 
@@ -1249,7 +1330,8 @@ def attack_ready(battle, u, target):
 
 def effective_range(u):
     if "long_shot" in u.spec.special and u.extra.get("long_shots", 0) > 0:
-        return 10.25  # Wiki: Super Minion.
+        # game data v18.200.9: SuperMinionSpecialProjectiles.AttackRange=975 -> 9.75 tiles.
+        return 9.75
     return u.range
 
 
@@ -1393,6 +1475,11 @@ def _frost(battle, target, factor, seconds):
 
 
 def _chill(battle, u, target):
+    if u.name == "Electromite":
+        # game data v18.200.9: ElectromiteStunAbility.FrostOnHitTime=100 -> 0.1 s.
+        # game data v18.200.9: ElectromiteStunAbility.FrostOnHitPercent=100 -> complete slow.
+        _frost(battle, target, 0.0, 0.1)
+        return
     if u.extra.get("bouncing_frostmite"):
         # game data v18.200.9: BouncingFrostmite.FrostOnHitPercent=30 -> 30% slow.
         # game data v18.200.9: BouncingFrostmite.FrostOnHitTime=3000 -> 3 s.
@@ -1417,11 +1504,13 @@ def _chill(battle, u, target):
     _frost(battle, target, 0.5, 2.0)
 
 
-def _hit_target(battle, u, target, damage):
-    damage *= _mult_vs(u, target, battle)
+def _hit_target(battle, u, target, damage, bonus=0.0):
+    # Wiki: Monolith Arrow, its percentage bonus bypasses ordinary damage multipliers.
+    damage = damage * _mult_vs(u, target, battle) + bonus
     if isinstance(target, Unit):
         battle.hit_unit(target, damage, attacker=u)
-        _after_unit_hit(battle, u, target, damage)
+        # Projectile and spatial splash already visit each victim once.
+        _after_unit_hit(battle, u, target, damage, splash=False)
     else:
         u.damage_dealt += battle.hit_building(target, damage)
     if not isinstance(target, Wall):
@@ -1454,6 +1543,66 @@ def _dragon_footprint(target, x, y):
             ):
                 return True
     return False
+
+
+def _chain_hit(battle, u, target, damage, hit, primary, remaining, base_damage, at):
+    if target.alive and (
+        not isinstance(target, Unit) or target.indirect_targetable(battle.t)
+    ):
+        _hit_target(battle, u, target, damage)
+    hit.add(target)
+    if remaining <= 0:
+        return
+    sp = u.spec
+    origin = primary if sp.chain_from_primary else target
+    candidates = []
+    for victim in _attack_targets(battle, u):
+        if victim in hit:
+            continue
+        distance = target_distance(origin, victim)
+        if distance <= sp.chain_range:
+            candidates.append((distance, -victim.max_hp, victim))
+    if not candidates:
+        return
+    next_target = min(candidates, key=lambda item: item[:2])[2]
+    # Wiki: Super Wizard/Home Village; every secondary is 40% of the primary.
+    amount = (base_damage if sp.chain_from_primary else damage) * sp.chain_decay
+    # game data v18.200.9: Electro Dragon/Super Wizard.ChainAttackDelay=128 -> 0.128 s.
+    # game data v18.200.9: ElectromiteStunAbility.ChainAttackDelay=128 -> 0.128 s.
+    delay = (
+        0.128
+        if u.name == "Electromite"
+        else int(game_unit_data(u.name, u.level).get("ChainAttackDelay", 0)) / 1000.0
+    )
+    if delay == 0:
+        _chain_hit(
+            battle, u, next_target, amount, hit, primary, remaining - 1, base_damage, at
+        )
+        return
+    battle.add_pending(
+        Pending(
+            # Keep the 128-ms clock when resolution rounds up to a simulation tick.
+            at + delay,
+            next_target.x,
+            next_target.y,
+            0.0,
+            amount,
+            u.hits_air,
+            u.hits_ground,
+            "unit:" + u.name,
+            team="def" if u.team == "atk" else "atk",
+            extra={
+                "troop_impact": "chain",
+                "hit": hit,
+                "primary": primary,
+                "remaining": remaining - 1,
+                "base_damage": base_damage,
+            },
+            actor=u,
+            effect="chain",
+            target=next_target,
+        )
+    )
 
 
 def _spatial_strike(battle, u, target, damage):
@@ -1511,30 +1660,7 @@ def _spatial_strike(battle, u, target, damage):
             u.extra["suicided"] = True
         battle.kill(u)
     elif sp.attack == "chain":
-        _hit_target(battle, u, target, damage)
-        hit = {target}
-        current = target
-        amount = damage
-        for _ in range(sp.chain):
-            # Wiki: Super Wizard/Home Village; every secondary is 40%.
-            amount = (
-                damage * sp.chain_decay
-                if sp.chain_from_primary
-                else amount * sp.chain_decay
-            )
-            origin = target if sp.chain_from_primary else current
-            candidates = []
-            for v in _attack_targets(battle, u):
-                if v in hit:
-                    continue
-                distance = target_distance(origin, v)
-                if distance <= sp.chain_range:
-                    candidates.append((distance, -v.max_hp, v))
-            if not candidates:
-                break
-            current = min(candidates, key=lambda item: item[:2])[2]
-            hit.add(current)
-            _hit_target(battle, u, current, amount)
+        _chain_hit(battle, u, target, damage, set(), target, sp.chain, damage, battle.t)
     elif sp.attack == "bounce":
         # Wiki: Super Bowler; three impacts, three tiles apart, radius 0.6.
         dx, dy = target.x - u.x, target.y - u.y
@@ -1580,13 +1706,17 @@ def _spatial_strike(battle, u, target, damage):
             battle, u, u.x, u.y, sp.splash, damage, walls=True, primary=target
         )
     else:
-        # Rocket Balloon/Super Witch/Witch Golem attack radii: NUMBER NOT STATED.
-        # Retain their existing radii; Rocket death radius is a separate value.
+        # game data v18.200.9: Balloon/Rocket Balloon.SelfAsAoeCenter=TRUE -> self-centred splash.
+        center = (
+            u
+            if game_unit_data(u.name, u.level).get("SelfAsAoeCenter") == "TRUE"
+            else target
+        )
         _area_hit(
             battle,
             u,
-            target.x,
-            target.y,
+            center.x,
+            center.y,
             sp.splash,
             damage,
             walls=True,
@@ -1627,66 +1757,21 @@ def _mult_vs(u, target, battle=None):
     return m
 
 
+def _projectile_data(u):
+    # game data v18.200.9: characters/heroes/pets.Projectile -> projectiles.csv row.
+    projectile = game_unit_data(u.name, u.level).get("Projectile")
+    if u.name == "Super Minion" and u.extra.get("long_shots", 0) > 0:
+        # game data v18.200.9: SuperMinionSpecialProjectiles.Projectile=super_gargoyle_projectile_big.
+        projectile = "super_gargoyle_projectile_big"
+    return game_data("projectiles", projectile) if projectile else {}
+
+
 def projectile_speed(u):
-    level = u.level
-    if u.name == "Royal Champion":
-        # game data v18.200.9: AmazonQueen_javelin.Speed=1200 -> 12 tiles/s.
-        return 12.0
-    if u.name == "Minion Prince":
-        # game data v18.200.9: MinionHeroAttackProjectile.Speed=1000 -> 10 tiles/s.
-        return 10.0
-    if u.name == "Longshot":
-        # game data v18.200.9: GuardianRangedProjectile.Speed=1500 -> 15 tiles/s.
-        return 15.0
-    if u.name == "Wizard" and 1 <= level <= 3:
-        # game data v18.200.9: ps_chr_WizardAttack_Projectile.Speed=500 -> 5 tiles/s.
-        return 5.0
-    if u.name == "Thrower" and 1 <= level <= 4:
-        # game data v18.200.9: ThrowerProjectile4.Speed=700 -> 7 tiles/s.
-        return 7.0
-    if u.name == "Minion" and 1 <= level <= 14:
-        # game data v18.200.9: gargoyle_projectile.Speed=380 -> 3.8 tiles/s.
-        return 3.8
-    if u.name in ("Witch", "Super Witch") and 1 <= level <= 8:
-        # game data v18.200.9: Witch_projectile.Speed=500 -> 5 tiles/s.
-        return 5.0
-    if u.name == "Lava Hound" and 1 <= level <= 8:
-        # game data v18.200.9: hound_projectile.Speed=200 -> 2 tiles/s.
-        return 2.0
-    if u.name == "Lava Pup":
-        # game data v18.200.9: tinyhound_projectile.Speed=300 -> 3 tiles/s.
-        return 3.0
-    if u.name == "Super Archer" and 5 <= level <= 14:
-        # game data v18.200.9: magic_archer_projectile.Speed=1400 -> 14 tiles/s.
-        return 14.0
-    if u.name == "Super Dragon" and 3 <= level <= 12:
-        # game data v18.200.9: SuperDragonProjectile.Speed=480 -> 4.8 tiles/s.
-        return 4.8
-    if u.name == "Super Minion":
-        if u.extra.get("long_shots", 0) > 0:
-            # game data v18.200.9: super_gargoyle_projectile_big.Speed=600 -> 6 tiles/s.
-            return 6.0
-        # game data v18.200.9: super_gargoyle_projectile.Speed=400 -> 4 tiles/s.
-        return 4.0
-    if u.name == "Ice Pup":
-        # game data v18.200.9: icy_tinyhound_projectile.Speed=300 -> 3 tiles/s.
-        return 3.0
-    if u.name == "Super Bowler" and 1 <= level <= 10:
-        # game data v18.200.9: SuperBowlerProjectile.Speed=475 -> 4.75 tiles/s.
-        return 4.75
-    if u.name == "Bowler" and 1 <= level <= 10:
-        # game data v18.200.9: trollBoulder_lvl1.Speed=475 -> 4.75 tiles/s.
-        return 4.75
-    if u.name == "Frostmite":
-        # game data v18.200.9: FrostmiteJump.Speed=400 -> 4 tiles/s.
-        return 4.0
-    if u.name == "Firemite":
-        # game data v18.200.9: FireSpiritJump1.Speed=400 -> 4 tiles/s.
-        return 4.0
-    if u.name == "Lavaloon Pup" and 1 <= level <= 11:
-        # game data v18.200.9: GW_Lavaloon Pup Projectile.Speed=300 -> 3 tiles/s.
-        return 3.0
-    return None
+    # game data v18.200.9: projectiles.Speed / 100 -> tiles/s at every troop level.
+    # game data v18.200.9: ps_chr_WizardAttack_Projectile_lvl2.Speed=900 -> 9 tiles/s.
+    # game data v18.200.9: ArcherQueen arrow lvl1.Speed=1650 -> 16.5 tiles/s.
+    speed = _projectile_data(u).get("Speed")
+    return int(speed) / 100.0 if speed and int(speed) > 0 else None
 
 
 def launch_projectile(battle, u, target, damage, speed, *, rocket=False):
@@ -1697,6 +1782,16 @@ def launch_projectile(battle, u, target, damage, speed, *, rocket=False):
     mode = "single"
     track = target
     extra = {}
+    x, y = target.x, target.y
+    projectile = (
+        game_data("projectiles", "RocketSpearProjectile")
+        if rocket
+        else _projectile_data(u)
+    )
+    # game data v18.200.9: MeteoriteGolemProjectile.StartOffset=65 -> starts 0.65 tiles out.
+    # Apply each projectile's offset, including Archer Queen's 65 and Archer's 50.
+    start_offset = int(projectile.get("StartOffset", 0)) / 100.0
+    flight = max(0.0, length - start_offset) / speed
     if sp.attack == "pierce":
         mode, track = "pierce", None
         extra = {
@@ -1709,7 +1804,7 @@ def launch_projectile(battle, u, target, damage, speed, *, rocket=False):
     elif sp.attack == "bounce":
         # Retain the existing collinear impact geometry.
         for index in range(sp.bounces + 1):
-            travel = length + index * sp.bounce_gap
+            travel = max(0.0, length - start_offset) + index * sp.bounce_gap
             battle.add_pending(
                 Pending(
                     battle.t + travel / speed,
@@ -1726,35 +1821,70 @@ def launch_projectile(battle, u, target, damage, speed, *, rocket=False):
                 )
             )
         return
-    elif u.name in ("Firemite", "Frostmite"):
+    elif u.name in ("Yetimite", "Firemite", "Frostmite"):
+        # Wiki: Yeti/Yetimite, invulnerable and untargetable until jump impact.
+        # game data v18.200.9: YetimiteJump.Speed=400 -> 4 tiles/s.
         mode = "leap"
         u.extra["leaping"] = True
+    elif u.name == "Meteor Golem":
+        # game data v18.200.9: MeteoriteGolemProjectile.Speed=800 -> 8 tiles/s.
+        mode = "meteor"
+    elif u.name == "Flame Flinger":
+        # Wiki: Flame Flinger fires three shots per burst; preserve that count.
+        # game data v18.200.9: FireCatapultProjectile1.Speed=500 -> 5 tiles/s.
+        for _ in range(3):
+            battle.add_pending(
+                Pending(
+                    battle.t + flight,
+                    x,
+                    y,
+                    sp.splash,
+                    damage,
+                    u.hits_air,
+                    u.hits_ground,
+                    "unit:" + u.name,
+                    team="def" if u.team == "atk" else "atk",
+                    extra={"troop_impact": "area"},
+                    actor=u,
+                )
+            )
+        return
     elif u.name == "Super Dragon":
         mode, track = "dragon", None
     elif sp.attack == "splash":
         # These fireballs land at the firing-time position.
+        mode, track = "area", None
+    # game data v18.200.9: SelfAsAoeCenter=TRUE -> splash uses the firing position.
+    if game_unit_data(u.name, u.level).get("SelfAsAoeCenter") == "TRUE":
+        x, y = u.x, u.y
         mode, track = "area", None
     if rocket:
         mode = "rocket"
     elif u.name == "Longshot":
         mode, track = "longshot", target
     extra["troop_impact"] = mode
-    battle.add_pending(
-        Pending(
-            battle.t + (battle.DT if mode == "pierce" else length / speed),
-            target.x,
-            target.y,
-            sp.splash,
-            damage,
-            u.hits_air,
-            u.hits_ground,
-            "unit:" + u.name,
-            team="def" if u.team == "atk" else "atk",
-            extra=extra,
-            actor=u,
-            target=track,
-        )
+    if mode == "single" and u.kit is not None:
+        from . import heroes
+
+        # Wiki: Monolith Arrow's percentage bonus and Frozen Arrow apply on impact.
+        extra["monolith_bonus"] = heroes.monolith_bonus(battle, u, target)
+    pending = Pending(
+        battle.t + (battle.DT if mode == "pierce" else flight),
+        x,
+        y,
+        sp.splash,
+        damage,
+        u.hits_air,
+        u.hits_ground,
+        "unit:" + u.name,
+        team="def" if u.team == "atk" else "atk",
+        extra=extra,
+        actor=u,
+        target=track,
     )
+    if mode == "meteor":
+        split_meteor(battle, u, pending)
+    battle.add_pending(pending)
 
 
 def projectile_impact(battle, pending):
@@ -1763,6 +1893,19 @@ def projectile_impact(battle, pending):
     x, y = pending.x, pending.y
     if pending.target is not None:
         x, y = pending.target.x, pending.target.y
+    if mode == "chain":
+        _chain_hit(
+            battle,
+            u,
+            pending.target,
+            pending.damage,
+            pending.extra["hit"],
+            pending.extra["primary"],
+            pending.extra["remaining"],
+            pending.extra["base_damage"],
+            pending.at,
+        )
+        return
     if mode == "pierce":
         ox, oy = pending.extra["origin"]
         dx, dy = pending.extra["direction"]
@@ -1817,7 +1960,13 @@ def projectile_impact(battle, pending):
         if target.alive and (
             not isinstance(target, Unit) or target.indirect_targetable(battle.t)
         ):
-            _hit_target(battle, u, target, pending.damage)
+            bonus = pending.extra.get("monolith_bonus", 0.0)
+            _hit_target(battle, u, target, pending.damage, bonus)
+            if u.kit is not None:
+                from . import heroes
+
+                # Wiki: Frozen Arrow, the attack's hit applies the equipment effect.
+                heroes.on_hit_extra(battle, u, target)
         return
     if mode == "dragon":
         for victim in _attack_targets(battle, u, walls=True):
@@ -1825,6 +1974,16 @@ def projectile_impact(battle, pending):
                 _hit_target(battle, u, victim, pending.damage)
         return
     _area_hit(battle, u, x, y, pending.radius, pending.damage, walls=True)
+    if mode == "meteor":
+        # Wiki: Meteor Golem, the thrown half joins the battlefield at impact.
+        _spawn_meteormite(
+            battle,
+            u,
+            x,
+            y,
+            pending.extra["meteor_health"],
+            pending.extra["meteor_small"],
+        )
     if mode == "leap":
         u.x, u.y = x, y
         u.extra["suicided"] = True
@@ -1862,25 +2021,29 @@ def strike(battle, u: Unit, target):
             vial = u.extra["vial_bonus"] * battle.atk_hero_mult
             dmg = max(dmg, ordinary + vial)
         dmg = max(dmg, ordinary + heroes.strike_bonus(battle, u, target))
-    speed = projectile_speed(u)
     if rocket:
         # game data v18.200.9: RocketSpearProjectile.Speed=1200 -> 12 tiles/s.
         launch_projectile(battle, u, target, dmg, 12.0, rocket=True)
         return
+    speed = projectile_speed(u)
+    if speed is not None:
+        launch_projectile(battle, u, target, dmg, speed)
     if "long_shot" in sp.special and u.extra.get("long_shots", 0) > 0:
         u.extra["long_shots"] -= 1
     if speed is not None:
-        launch_projectile(battle, u, target, dmg, speed)
         return
     # Every area attack type goes through the spatial code; the building-only
     # copies of these attacks that used to follow had drifted from it and
     # were unreachable.
-    if u.name in SPATIAL_TROOPS or sp.attack in ("suicide", "spin", "chain", "bounce", "pierce"):
+    if (
+        u.name in SPATIAL_TROOPS
+        or sp.attack in ("suicide", "spin", "chain", "bounce", "pierce")
+        # game data v18.200.9: SelfAsAoeCenter=TRUE -> use the self-centred area path.
+        or game_unit_data(u.name, u.level).get("SelfAsAoeCenter") == "TRUE"
+    ):
         _spatial_strike(battle, u, target, dmg)
         if u.name == "Valkyrie" and not target.alive:
             u.target = u.wall_target = None
-        if u.name == "Meteor Golem":
-            split_meteor(battle, u, target)
         if u.name == "Electromite":
             # Wiki: Super Yeti/Electromite dissipates after its discharge.
             # Preparation pause: NUMBER NOT STATED; keep immediate preparation.
@@ -1945,7 +2108,7 @@ def _gauntlet_hit(battle, u, target, dmg):
 
 
 @effects.sourced("secondary")
-def _after_unit_hit(battle, u, target, dmg):
+def _after_unit_hit(battle, u, target, dmg, *, splash=True):
     t = battle.t
     sp = u.spec
     if "logger" in sp.special:
@@ -1984,7 +2147,8 @@ def _after_unit_hit(battle, u, target, dmg):
         target.atk_slow, target.atk_slow_until = 1.0 - atk, t + duration
         # Poison damage, accumulation and the residual tail remain unresolved.
     if (
-        u.name not in SPATIAL_TROOPS
+        splash
+        and u.name not in SPATIAL_TROOPS
         and sp.attack in ("splash", "spin")
         and sp.splash > 0
         and "logger" not in sp.special

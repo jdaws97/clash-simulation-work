@@ -477,11 +477,19 @@ class Battle:
             if mode not in ("air", "ground"):
                 raise ValueError("Grand Warden mode must be air or ground")
             u.flying = mode == "air"
+            if u.flying and os.environ.get("BASELAB_FLYER_RANGE", "gamedata") == "gamedata":
+                # game data v18.200.9: Grand Warden.AltAttackRange=650 -> 6.5 tiles in air mode.
+                from .specs import _game_ranges
+
+                u.range = _game_ranges().get(u.name + "|alt", u.range)
         if k != 1.0:
             u.hp *= k
             u.max_hp *= k
             u.base_max_hp *= k
             u.dmg *= k
+            # read by damage taken from the tables at use (Log Launcher logs),
+            # which this scaling of u.dmg does not reach
+            u.extra["strength"] = k
         if u.is_hero:
             heroes.equip(self, u, self.plan)
             if self.atk_hero_mult != 1.0:  # league penalty incl. equipment boosts (wiki)
@@ -842,12 +850,16 @@ class Battle:
         ):
             return False
         if any(
-            isinstance(p.actor, Unit) and p.actor.team == "atk" for p in self.pending
+            isinstance(p.actor, Unit) and p.actor.team == "atk"
+            # game data v18.200.9: Earthquake.NumberOfHits=5 -> wait for every hit.
+            or "quake" in p.extra and p.team == "def"
+            for p in self.pending
         ) or any(
             f.kind
             in (
                 "lightning",
                 "quake",
+                "rolling_log",
                 "revive_cast",
                 "revive_due",
                 "summon",
@@ -982,6 +994,10 @@ class Battle:
             # Released attacks keep their origin through invisibility and death.
             with effects.damage_source(self, pending.actor, pending.effect):
                 self._src = pending.src
+                if "quake" in pending.extra:
+                    # game data v18.200.9: Earthquake.TimeBetweenHitsMS=400.
+                    spells.quake_hit(self, pending.extra["quake"])
+                    continue
                 if "hero_impact" in pending.extra:
                     heroes.projectile_impact(self, pending)
                     continue
@@ -1207,7 +1223,11 @@ class Battle:
             return
         if sp.prefer == "none":
             return
+        # Wiki: Angry Spell, affected units ignore defending troops and Heroes.
+        angry = t < u.extra.get("angry_until", 0.0)
         target = u.target
+        if angry and isinstance(target, Unit):
+            target = None
         if target is not None:
             if not target.alive and u.target_kind != "destination":
                 target = None
@@ -1232,7 +1252,7 @@ class Battle:
             if units.wall_breaker_target(self, u) is not target:
                 target = None
                 u.wall_target = None
-        if sp.prefer == "heroes":
+        if sp.prefer == "heroes" and not angry:
             hero = self._nearest_defender(u, math.inf, heroes_only=True)
             if hero is not None:
                 target, u.target_kind, u.wall_target = hero, "unit", None
@@ -1256,7 +1276,13 @@ class Battle:
         if target is None:
             u.target_kind = None
             units.interrupt_attack(u)
-        if u.name in ("Grand Warden", "Apprentice Warden"):
+        # game data v18.200.9: AngryJellyGivenMaster.FightWithGroups=FALSE.
+        # Wiki: Angry Spell, affected Wardens also target defenses directly.
+        if (
+            u.name in ("Grand Warden", "Apprentice Warden")
+            and not angry
+            and not (u.pet is not None and u.pet.attached(t))
+        ):
             followed = units.follow_target(self, u)
             grouped = u.extra.get("warden_group", False)
             if followed is not None:
@@ -1266,7 +1292,8 @@ class Battle:
             elif followed is None and grouped:
                 target = None
             u.extra["warden_group"] = followed is not None
-        angry = t < u.extra.get("angry_until", 0.0)
+        elif u.name in ("Grand Warden", "Apprentice Warden"):
+            u.extra["warden_group"] = False
         if (
             engages
             and not angry
@@ -1281,7 +1308,13 @@ class Battle:
         if target is None:
             u.wall_target = None
             target, u.target_kind = self.choose_target(u)
-        if u.name == "Dragon" and target is not None and not isinstance(target, Unit):
+        # Wiki: Angry Spell, even Dragons ignore nearer defending units.
+        if (
+            u.name == "Dragon"
+            and not angry
+            and target is not None
+            and not isinstance(target, Unit)
+        ):
             # Wiki: Dragon, Dragons attack the Barbarian King and Clan Castle
             # troops that cannot target air "if these troops are the closest
             # target", so this needs no awareness (such a foe can never make
@@ -1390,8 +1423,11 @@ class Battle:
         if not pool:
             pool = [b for b in self.buildings if self.building_targetable(b)]
         if not pool:
-            if u.spec.engages_units and (
-                t < u.aware_until or self._ally_under_attack(u)
+            # Wiki: Angry Spell, no retaliation even after all buildings are gone.
+            if (
+                t >= u.extra.get("angry_until", 0.0)
+                and u.spec.engages_units
+                and (t < u.aware_until or self._ally_under_attack(u))
             ):
                 foe = self._nearest_defender(u, ENGAGE_RADIUS)
                 if foe is not None:
@@ -1572,6 +1608,8 @@ class Battle:
             units.track_beam(self, u, target)
             if u.team == "atk" and "burrow" in u.spec.special:
                 u.underground = False
+            if self.t < u.extra.get("attack_lock_until", 0.0):
+                return  # casting an ability that disables attacks (Seeking Shield)
             if u.cooldown <= 0 and self.t >= u.held_until or u.cooldown <= 0 and u.range >= 1.0:
                 units.strike(self, u, target)
                 slow = effects.slow_mult(u, self.t)
@@ -1586,6 +1624,10 @@ class Battle:
                 if u.name == "Dragon Duke" and units.duke_alone(self, u):
                     interval /= 1.5  # wiki: Dragon Duke, Royal Rampage
                 u.cooldown += interval / max(0.05, slow)
+                if u.name == "Valkyrie" and not target.alive:
+                    # Wiki: Valkyrie, a kill resets her attack pattern; the next
+                    # target uses NewTargetAttackDelay=600 ms (game data v18.200.9).
+                    u.cooldown = 0.0
             return
         units.interrupt_attack(u)
         if self.t < u.held_until:
@@ -1751,6 +1793,9 @@ class Battle:
                 units.strike(self, u, target)
                 slow = effects.slow_mult(u, t)
                 u.cooldown += units.attack_interval(u, self) / max(0.05, slow)
+                if u.name == "Valkyrie" and not target.alive:
+                    # Wiki: Valkyrie, kills reset the defending attack cycle too.
+                    u.cooldown = 0.0
             return
         units.interrupt_attack(u)
         # Defenders jump walls while navigating around buildings (wiki: Clan Castle).

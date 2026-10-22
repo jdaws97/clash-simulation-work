@@ -171,7 +171,7 @@
    "th": 16,
    "share": 1.0,
    "three_star": 0.0,
-   "idea": "The Queen with Lavaloon Puppet funnels one flank and the King the other, so no camp space is spent on funnel troops; 16 Dragons and 11 Lightning (the real TH16 meta) behind them.",
+   "idea": "The Queen with Archer Puppet funnels one flank and the King the other, so no camp space is spent on funnel troops; 16 Dragons and 11 Lightning (the real TH16 meta) behind them. (2026-10-22: was Lavaloon Puppet, which is Grand Warden equipment; the engine now rejects equipment on the wrong hero.)",
    "troops": {
     "Dragon": 16
    },
@@ -201,7 +201,7 @@
    ],
    "loadouts": {
     "Archer Queen": [
-     "Lavaloon Puppet",
+     "Archer Puppet",
      "Giant Arrow",
      "Unicorn"
     ]

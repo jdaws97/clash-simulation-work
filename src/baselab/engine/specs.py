@@ -346,7 +346,70 @@ SUBTROOP_HOUSING = {
 }
 
 
+_GAME_TABLES: dict = {}
+
+
+def game_data(table, name, level=1):
+    """Read a level row, inheriting blank cells within each game-data entry."""
+    if table not in _GAME_TABLES:
+        import csv
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[3] / "data" / "gamecsv" / "v18.200.9"
+        entries = {}
+        current = None
+        inherited = {}
+        with open(
+            root / (table + ".csv"), encoding="utf-8", errors="replace"
+        ) as source:
+            rows = csv.reader(source)
+            header = next(rows)
+            next(rows)
+            for row in rows:
+                if not row:
+                    continue
+                if row[0]:
+                    current = row[0]
+                    inherited = {}
+                if current is None:
+                    continue
+                inherited.update(
+                    {key: value for key, value in zip(header, row) if value}
+                )
+                entries.setdefault(current, []).append(dict(inherited))
+        _GAME_TABLES[table] = entries
+    rows = _GAME_TABLES[table].get(name, ())
+    if not rows:
+        return {}
+    return rows[min(max(int(level or 1), 1), len(rows)) - 1]
+
+
+def game_unit_data(name, level=1):
+    # game data v18.200.9: Icemite/Firemite Spawn/Ice Hound Pup are the wiki summons.
+    # GW Equipment Lavaloon is the puppet summon used by this engine (heroes.py).
+    aliases = {
+        "Frostmite": "Icemite",
+        "Firemite": "Firemite Spawn",
+        "Ice Pup": "Ice Hound Pup",
+        "Lavaloon": "GW Equipment Lavaloon",
+        "Lavaloon Pup": "GW Equipment Lavaloon Pup",
+        "Spell Skeleton": "Spell Shielded Skeleton",
+        "L.A.S.S.I": "LASSI",
+    }
+    name = aliases.get(name, name)
+    for table in ("characters", "heroes", "pets"):
+        row = game_data(table, name, level)
+        if row:
+            return row
+    return {}
+
+
 def movement_speed(name):
+    # game data v18.200.9: characters/heroes/pets.Speed / 100 -> tiles/s.
+    # Thrower.Speed=220 -> 2.2 tiles/s, ahead of the wiki's rounded display.
+    speed = game_unit_data(name).get("Speed")
+    if speed is not None:
+        return int(speed) / 100.0
     # Wiki: Troop Movement Speed, exact tiles per second.
     exact = {
         "Giant Giant": 1.65,
@@ -382,19 +445,27 @@ _GAME_RANGES: dict | None = None
 
 
 def _game_ranges():
-    """AttackRange (tiles) per unit from game data v18.200.9 characters.csv."""
+    """AttackRange (tiles) per unit from game data v18.200.9 characters.csv
+    and heroes.csv (flying heroes were missed when only characters.csv was
+    read: Dragon Duke kept the wiki's 0.3 tiles against game data 1.25,
+    Minion Prince 3.5 against 4.5). Heroes' AltAttackRange (Grand Warden in
+    air mode, 6.5) is stored under "<name>|alt"."""
     global _GAME_RANGES
     if _GAME_RANGES is None:
         import csv
         from pathlib import Path
 
         _GAME_RANGES = {}
-        f = Path(__file__).resolve().parents[3] / "data" / "gamecsv" / "v18.200.9" / "characters.csv"
-        rows = list(csv.reader(open(f, encoding="utf-8", errors="replace")))
-        i = rows[0].index("AttackRange")
-        for r in rows[2:]:
-            if r and r[0] and r[0] not in _GAME_RANGES and len(r) > i and r[i].strip():
-                _GAME_RANGES[r[0]] = int(r[i]) / 100.0
+        root = Path(__file__).resolve().parents[3] / "data" / "gamecsv" / "v18.200.9"
+        for file in ("characters.csv", "heroes.csv"):
+            rows = list(csv.reader(open(root / file, encoding="utf-8", errors="replace")))
+            i = rows[0].index("AttackRange")
+            alt = rows[0].index("AltAttackRange") if "AltAttackRange" in rows[0] else None
+            for r in rows[2:]:
+                if r and r[0] and r[0] not in _GAME_RANGES and len(r) > i and r[i].strip():
+                    _GAME_RANGES[r[0]] = int(r[i]) / 100.0
+                    if alt is not None and len(r) > alt and r[alt].strip():
+                        _GAME_RANGES[r[0] + "|alt"] = int(r[alt]) / 100.0
     return _GAME_RANGES
 
 

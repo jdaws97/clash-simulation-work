@@ -26,9 +26,8 @@ def _hero(battle, pet):
     hero = pet.extra.get("diggy_hero", pet.owner)
     if (
         pet.name == "Diggy"
-        and hero is not None
-        and not hero.alive
-        and "recalled" not in hero.extra
+        # Wiki: Diggy, seek a new Hero after KO, including after owner is cleared.
+        and (hero is None or not hero.alive and "recalled" not in hero.extra)
     ):
         # Seek another active Hero after defeat, not Recall (wiki: Diggy).
         hero = _nearest(
@@ -262,16 +261,35 @@ def act(battle, pet):
         )
         pet.target = target
         if target is not None:
-            # Heal at 2.5 tiles, including flying Heroes (wiki: Unicorn).
-            if dist(pet.x, pet.y, target.x, target.y) <= 2.5:
+            # game data v18.200.9: Unicorn.AttackRange=250 -> 2.5 tiles, ground/air.
+            if dist(pet.x, pet.y, target.x, target.y) <= pet.range:
                 pet.extra["healing_targets"] = {target}
                 due = pet.extra.get("heal_next", t)
                 if t >= due or math.isclose(t, due):
                     # One-second pulses; first-pulse offset is unstated (wiki: Unicorn).
                     effectiveness = units.heal_effectiveness(battle, pet, target)
-                    target.heal(
-                        stats.get("Unicorn", pet.level, "Healing per Pulse")
-                        * effectiveness
+                    # game data v18.200.9: UnicornHealEnergy.Speed=1200 -> 12 tiles/s.
+                    battle.add_pending(
+                        Pending(
+                            t + dist(pet.x, pet.y, target.x, target.y) / 12.0,
+                            target.x,
+                            target.y,
+                            0.0,
+                            0.0,
+                            False,
+                            False,
+                            "unit:" + pet.name,
+                            team=pet.team,
+                            extra={
+                                "healing": stats.get(
+                                    "Unicorn", pet.level, "Healing per Pulse"
+                                )
+                                * effectiveness
+                            },
+                            actor=pet,
+                            effect="heal",
+                            target=target,
+                        )
                     )
                     pet.extra["heal_next"] = t + stats.num(
                         stats.attrs("Unicorn")["raw"]["Healing Speed"]
@@ -332,12 +350,23 @@ def act(battle, pet):
 
         movement = stats.get(pet.name, pet.level, "Poison Speed Decrease") / 100.0
         attack = stats.get(pet.name, pet.level, "Poison Attack Rate Decrease") / 100.0
-        _, movement, attack = spells.poison_factors(target, 0.0, movement, attack)
+        # game data v18.200.9: Poison Lizard.SpecialAbilitiesLevel=1/2/3/4 at L1/5/10/15 -> LizardPetPoison.
+        # game data v18.200.9: PoisonLizardAttack.PoisonDPS=80/100/120/140, PoisonIncreaseSlowly=FALSE -> no ramp.
+        spells._poison(
+            battle,
+            target,
+            stats.get(pet.name, pet.level, "Poison Max Damage per Second"),
+            movement,
+            attack,
+            1.0,
+            ramp=False,
+            origin="lizard",
+            source=pet.id,
+        )
         # game data v18.200.9: LizardPetPoison.PoisonOnHitDuration=3000 -> 3 s.
-        if not (target.kind == "guardian" and target.extra.get("waiting")):
-            target.move_slow, target.move_slow_until = 1.0 - movement, t + 3.0
-            target.atk_slow, target.atk_slow_until = 1.0 - attack, t + 3.0
-        # Poison dose accumulation and residual damage remain unresolved.
+        poison = battle._poison.get((target.id, "lizard", pet.id))
+        if poison is not None:
+            poison["until"] = t + 3.0
     if pet.name == "Electro Owl":
         # Two targets, with 80% damage on the second (wiki: Electro Owl).
         candidates = [
