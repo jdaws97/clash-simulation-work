@@ -210,7 +210,7 @@ SPECS: dict[str, UnitSpec] = {
             engages_units=False,
             special=("siege_cc", "logs"),
         ),
-        # Impact splash (the 22 s flame field is a separate spell, not modelled).
+        # Impact splash; projectile HitSpell creates the separate timed fire field.
         # game data v18.200.9: Flame Flinger.DamageRadius=100 -> 1 tile around the target.
         # game data v18.200.9: Flame Flinger.DamageMultiplierPercent=800 -> x8 to walls.
         S("Flame Flinger", prefer="defense", attack="splash", splash=1.0, vs_walls=8.0, engages_units=False, special=("siege_cc", "flinger")),
@@ -543,6 +543,18 @@ def unit_numbers(name: str, level: int) -> dict:
         # data's DPS differs (e.g. Flame Flinger L1 127 vs 124, Barbarian King
         # L1 102 vs 51) scale the hit so damage per second follows game data.
         dmg *= dps / wiki_dps
+    if (
+        dmg is not None
+        and dps is not None
+        and dps > 0
+        and abs(dmg - dps * interval) > max(1.0, 0.02 * dps * interval)
+        # game data v18.200.9: Flame Flinger.BurstCount=3, Super Dragon=10
+        # -> preserve per-shot timing rather than treating a burst as one hit.
+        and int(game_unit_data(name, level).get("BurstCount", 1)) == 1
+    ):
+        # game data v18.200.9: Spell Shielded Skeleton.DPS=25,
+        # AttackSpeed=1000 -> 25 per hit, despite the wiki's 30.
+        dmg = dps * interval
     if dps is not None and dps < 0:  # healers carry negative DPS in game data
         dmg = 0.0
     rng = attack_range(name)

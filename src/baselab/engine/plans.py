@@ -391,6 +391,43 @@ class AttackPlan:
                         raise ValueError(f"Invalid {name} level {supplied}")
                     if supplied:
                         stats.validate_level(name, supplied, self.town_hall)
+            # game data v18.200.9: Laboratory L14.TownHallLevel=16;
+            # Dragon L11/L12.LaboratoryLevel=14/15 -> cap explicit overrides.
+            # game data v18.200.9: Archer Queen L96.RequiredTownHallLevel=17.
+            lab = self._building_level("Laboratory", self.laboratory_level)
+            for levels in (self.troop_levels, self.hero_levels):
+                for name, level in levels.items():
+                    if type(level) is not int or level <= 0:
+                        raise ValueError(f"Invalid {name} level {level}")
+                    stats.validate_level(name, level, self.town_hall)
+                    research = name
+                    # Wiki: Super Troops, their level follows the original troop.
+                    if stats.record(name).get("super"):
+                        for column in stats.attrs(name).get("raw", {}):
+                            base = column.removesuffix(" Level Required")
+                            if (
+                                column.endswith(" Level Required")
+                                and base in stats.registry()
+                                and stats.record(base)["kind"] == "troop"
+                            ):
+                                research = base
+                                break
+                    if (
+                        stats.get(
+                            research, level, "Laboratory Level Required", default=0
+                        )
+                        > lab
+                    ):
+                        raise ValueError(
+                            f"{name} level {level} exceeds Laboratory level {lab}"
+                        )
+            # Wiki: Spell Factory and Clan Castle, brewed/donated level limits.
+            for levels, donated in (
+                (self.spell_levels, False),
+                (self.cc_spell_levels, True),
+            ):
+                for name, level in levels.items():
+                    spells.validate(self, name, level, donated=donated)
             for stock in self._spell_stock:
                 if stock.remaining == 0 and stock.level is None:
                     continue
@@ -445,7 +482,7 @@ class AttackPlan:
         self._cast_log.append((round(battle.t, 1), key))
         return field
 
-    def revive_knocked_out(self, battle):
+    def revive_knocked_out(self, battle, *, single_cast=False):
         if not self.auto_revive:
             return
         for hero in battle.attackers:
@@ -456,6 +493,9 @@ class AttackPlan:
                 and battle.t >= hero.extra["ko_at"] + self.revive_delay
             ):
                 self._use(battle, "revive", hero.x, hero.y)
+                # Video: docs/VIDEO_MEASUREMENTS.md:31, one spell drop per action.
+                if single_cast:
+                    return
 
     def _level(self, name):
         if name in heroes.HEROES:
@@ -542,6 +582,9 @@ class AttackPlan:
         ):
             return True
         if any(unit.name != "Healer" for unit in battle.portal_stash):
+            return True
+        # Wiki: Healer, undeployed non-healing troops keep the battle running.
+        if any(name != "Healer" for name, _level, _hp in self.recalled):
             return True
         if any(entry[1] != "Healer" for entry in self._later):
             return True
@@ -762,6 +805,8 @@ class AttackPlan:
             # different building far from the push, so the far side does not
             # run the clock out (players snipe the outer ring early)
             names = [n for n, c in self.cleanup for _ in range(c)] + [n for n, _lvl, _h in self.recalled]
+            # Wiki: Healer, only undeployed reserves count toward battle survival.
+            self.cleanup.clear()
             self.recalled.clear()
             army = self.main_units(battle)
             cx, cy = self.centroid(army) if army else (CENTER, CENTER)
@@ -863,20 +908,69 @@ class AttackPlan:
         heroes.activate(battle, u)
 
     # -------------------------------------------------------------- spells
-    def _zap(self, battle):
-        self._zap_done = True
-        lightnings, quakes = self.zap_ad
-        ex, ey = edge_point(battle, self.angle, 0.0)
-        ads = [b for b in battle.buildings if b.alive and b.key == "ad"]
-        if not ads:
+    def _zap(self, battle, *, single_cast=False):
+        if self._zap_done:
             return
-        target = min(ads, key=lambda b: math.hypot(b.x - ex, b.y - ey))
-        for _ in range(quakes):
-            if self._have("eq"):
-                self._use(battle, "eq", target.x, target.y)
-        for _ in range(lightnings):
-            if self._have("lightning"):
-                self._use(battle, "lightning", target.x, target.y)
+        if not hasattr(self, "_zap_left"):
+            self._zap_left = list(self.zap_ad)
+        ex, ey = edge_point(battle, self.angle, 0.0)
+        ads = sorted(
+            (b for b in battle.buildings if b.alive and b.key == "ad"),
+            key=lambda b: math.hypot(b.x - ex, b.y - ey),
+        )
+        if not ads:
+            self._zap_done = True
+            return
+        hp = {b.id: b.hp for b in ads}
+        eq_hits = {b.id: b.eq_hits for b in ads}
+        cast_hits = {}
+
+        def account(field, hits):
+            for b in ads:
+                if b.edge_distance(field.x, field.y) > field.radius:
+                    continue
+                if field.kind == "lightning":
+                    hp[b.id] -= field.value
+                else:
+                    # Wiki: Earthquake Spell, successive casts deal 1, 1/3, 1/5.
+                    key = (id(field), b.id)
+                    if key not in cast_hits:
+                        n = field.extra.get("hits", {}).get(("building", b.id))
+                        if n is None:
+                            eq_hits[b.id] += 1
+                            n = eq_hits[b.id]
+                        cast_hits[key] = n
+                    hp[b.id] -= b.max_hp * field.value * hits / (2 * cast_hits[key] - 1)
+
+        # game data v18.200.9: Lightning L11.Damage=640;
+        # Earthquake L7.BuildingDamagePermil=58, NumberOfHits=5 -> 29% total.
+        # Include falling bottles and unresolved quake hits without changing HP.
+        for pending in battle.pending:
+            field = pending.extra.get("quake")
+            if field is not None and field.kind == "quake":
+                account(field, 1)
+        for field in battle.fields:
+            if field.kind in ("lightning", "quake"):
+                account(field, 5 if field.kind == "quake" else 1)
+        # Wiki: Lightning_Spell_Home_Village, use enough casts to destroy each
+        # Air Defense, then spend the remaining spells on the next defense.
+        while any(self._zap_left):
+            target = next((b for b in ads if hp[b.id] > 1e-9), None)
+            if target is None:
+                break
+            index, kind = (1, "eq") if self._zap_left[1] else (0, "lightning")
+            if not self._have(kind):
+                self._zap_left[index] = 0
+                continue
+            field = self._use(battle, kind, target.x, target.y)
+            self._zap_left[index] -= 1
+            account(field, 5 if kind == "eq" else 1)
+            if single_cast:
+                self._zap_done = not any(self._zap_left) or all(
+                    hp[b.id] <= 1e-9 for b in ads
+                )
+                return
+        self._zap_done = True
 
     def _have(self, kind):
         return self.spells.get(kind, 0) > 0
@@ -910,7 +1004,7 @@ class AttackPlan:
                 out.append((b, d))
         return out
 
-    def _breach(self, battle, units):
+    def _breach(self, battle, units, *, single_cast=False):
         """Open walls where several push troops are stuck: Wall Breakers
         first, then Earthquake x4 / Jump if carried."""
         stuck = [u for u in units if u.wall_target is not None and u.wall_target.alive]
@@ -937,16 +1031,23 @@ class AttackPlan:
             self._use(battle, "jump", w.x, w.y)
             self._cast_log.append((round(battle.t, 1), "breach"))
         elif self.spells.get("eq", 0) >= 4:
-            for _ in range(4):
+            # Video: docs/VIDEO_MEASUREMENTS.md:31, spell drops have nonzero spacing.
+            if single_cast:
+                self._fallback_quakes = [(w.x, w.y)] * 3
+            for _ in range(1 if single_cast else 4):
                 self._use(battle, "eq", w.x, w.y)
             self._cast_log.append((round(battle.t, 1), "breach"))
 
-    def generic_spells(self, battle, units):
+    def generic_spells(self, battle, units, *, single_cast=False):
         if not units:
             return
         t = battle.t
         if t - self._last("breach") > 3:
-            self._breach(battle, units)
+            before = len(self._cast_log)
+            self._breach(battle, units, single_cast=single_cast)
+            # Video: docs/VIDEO_MEASUREMENTS.md:31, one fallback cast per action.
+            if single_cast and len(self._cast_log) > before:
+                return
         cx, cy = self.centroid(units)
         avg_hp = sum(u.hp / u.max_hp for u in units) / len(units)
         engaged = sum(1 for u in units if u.target is not None and u.cooldown > 0)
@@ -960,6 +1061,8 @@ class AttackPlan:
                         if inr < self.P("freeze_min_units"):
                             continue
                     self._use(battle, "freeze", b.x, b.y)
+                    if single_cast:
+                        return
                     break
         if self._have("totem") and t - self._last("totem") > self.P("totem_gap"):
             hot = self.threats_near(battle, cx, cy, 10)
@@ -967,6 +1070,8 @@ class AttackPlan:
                 fx = sum(b.x for b, _ in hot) / len(hot)
                 fy = sum(b.y for b, _ in hot) / len(hot)
                 self._use(battle, "totem", cx + (fx - cx) * 0.5, cy + (fy - cy) * 0.5)
+                if single_cast:
+                    return
         if self._have("overgrowth"):
             best = None
             for b, d in self.threats_near(battle, cx, cy, 13):
@@ -977,37 +1082,55 @@ class AttackPlan:
                     best = (score, b)
             if best is not None and best[0] >= self.P("og_min_score"):
                 self._use(battle, "overgrowth", best[1].x, best[1].y)
+                if single_cast:
+                    return
         if self._have("rage") and engaged >= max(2, int(len(units) * self.P("rage_engaged"))) and t - self._last("rage") > self.P("rage_gap"):
             self._use(battle, "rage", cx, cy)
+            if single_cast:
+                return
         if self._have("heal") and avg_hp < self.P("heal_hp") and t - self._last("heal") > 6:
             self._use(battle, "heal", cx, cy)
+            if single_cast:
+                return
         if self._have("invis") and t - self._last("invis") > self.P("invis_gap"):
             # players chain Invisibility over the push whenever heavy
             # defenses are shooting it (wiki: 4.25 s per spell)
             hot = [b for b, d in self.threats_near(battle, cx, cy, 11) if THREAT.get(b.key, 0) >= 4 and (b.weapon.target is not None or b.weapon.multi)]
             if avg_hp < self.P("invis_hp") or len(hot) >= self.P("invis_hot"):
                 self._use(battle, "invis", cx, cy)
+                if single_cast:
+                    return
         if self._have("recall") and t - self._last("recall") > 6.0 and t - self._main_at > self.P("recall_after"):
             # pull a stalled or dying push back and drop it where buildings remain
             work = any(b.alive and b.counted and b.edge_distance(cx, cy) < 7 for b in battle.buildings)
             if len(units) >= 6 and (not work or avg_hp < self.P("recall_hp")):
                 self._use(battle, "recall", cx, cy)
+                if single_cast:
+                    return
         if self._have("clone") and t - self._main_at > 1.0 and t - self._last("clone") > 1.0:
             big = [u for u in units if u.housing >= 10 and not u.extra.get("clone")]
             if big:
                 bx, by = self.centroid(big)
                 self._use(battle, "clone", bx, by)
+                if single_cast:
+                    return
         if self._have("haste") and t - self._main_at > self.P("haste_after") and t - self._last("haste") > self.P("haste_gap"):
             self._use(battle, "haste", cx, cy)
+            if single_cast:
+                return
         if self._have("iceblock") and avg_hp < 0.45 and t - self._last("iceblock") > 8:
             self._use(battle, "iceblock", cx, cy)
+            if single_cast:
+                return
         if self._have("poison"):
             foes = [d for d in battle.defenders if d.alive and t >= d.active_at and math.hypot(d.x - cx, d.y - cy) < 7]
             if len(foes) >= self.P("poison_min") or any(f.is_hero for f in foes):
                 self._use(battle, "poison", sum(f.x for f in foes) / len(foes), sum(f.y for f in foes) / len(foes))
-        self._learned_plays(battle, units, cx, cy)
+                if single_cast:
+                    return
+        self._learned_plays(battle, units, cx, cy, single_cast=single_cast)
 
-    def _learned_plays(self, battle, units, cx, cy):
+    def _learned_plays(self, battle, units, cx, cy, *, single_cast=False):
         """Plays switched on by the learned policy (all off by default)."""
         t = battle.t
         # Angry Spell: push troops chasing non-defenses next to a defense turn onto it
@@ -1017,17 +1140,23 @@ class AttackPlan:
             if len(astray) >= self.P("angry_min"):
                 ax, ay = self.centroid(astray)
                 self._use(battle, "angry", ax, ay)
+                if single_cast:
+                    return
         # Skeleton Spell: a distraction beside a heavy defense that is locked on the push
         if self.P("skeleton_on") > 0.5 and self._have("skeleton") and t - self._last("skeleton") > 8:
             for b, d in self.threats_near(battle, cx, cy, 12):
                 if THREAT.get(b.key, 0) >= 5 and b.weapon.target is not None and not b.weapon.multi:
                     self._use(battle, "skeleton", b.x + (cx - b.x) * 0.25, b.y + (cy - b.y) * 0.25)
+                    if single_cast:
+                        return
                     break
         # Bat Spell: onto the defenses the push is about to meet
         if self.P("bat_on") > 0.5 and self._have("bat") and t - self._last("bat") > 6:
             hot = self.threats_near(battle, cx, cy, 10)
             if len(hot) >= 2:
                 self._use(battle, "bat", sum(b.x for b, _ in hot) / len(hot), sum(b.y for b, _ in hot) / len(hot))
+                if single_cast:
+                    return
         th = battle.th
         # Earthquakes on the core walls between the push and the Town Hall
         d_core = self.P("eq_core_dist")
@@ -1035,9 +1164,14 @@ class AttackPlan:
         if d_core > 2 and th is not None and th.alive and self.spells.get("eq", 0) >= n_eq and self._last("eq_core") < 0:
             if math.hypot(th.x - cx, th.y - cy) <= d_core + 4:
                 px, py = cx + (th.x - cx) * 0.6, cy + (th.y - cy) * 0.6
-                for _ in range(n_eq):
+                # Video: docs/VIDEO_MEASUREMENTS.md:31, pace the remaining quakes.
+                if single_cast:
+                    self._fallback_quakes = [(px, py)] * (n_eq - 1)
+                for _ in range(1 if single_cast else n_eq):
                     self._use(battle, "eq", px, py)
                 self._cast_log.append((round(t, 1), "eq_core"))
+                if single_cast:
+                    return
         # distraction: one cleanup troop pulls a heavy defense off the push
         reach = self.P("distract_reach")
         if reach > 2 and self._distracts < int(round(self.P("distract_max"))) and t - self._last("distract") > 3.0:

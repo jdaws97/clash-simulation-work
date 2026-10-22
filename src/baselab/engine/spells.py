@@ -303,6 +303,7 @@ def _apply(battle, f: Field) -> bool:
             "def_poison",
             "def_rage",
             "def_burn",
+            "burn",
             "rage",
             "haste",
             "invis",
@@ -473,6 +474,70 @@ def _apply(battle, f: Field) -> bool:
                     b.rage_until = max(
                         b.rage_until,
                         pulses[-1] + f.extra.get("boost_time", 1.0),
+                    )
+        return True
+    if k == "burn":
+        if f.extra.get("burn_tick") == t:
+            return True
+        # Wiki: Poison Spell, overlapping poisons do not increase maximum DPS;
+        # Flame Flinger, lingering fire works similarly to Poison.
+        damage_by_target = {}
+        for field in battle.fields:
+            if field.kind != "burn" or not field.started <= t < field.until:
+                continue
+            field.extra["burn_tick"] = t
+            # As with def_burn, pulses refresh victims; damage accrues each tick.
+            if "pulses" not in field.extra or _pulses(field, t):
+                field.extra["victims"] = {
+                    unit.id
+                    for unit in battle.defenders_near(field.x, field.y, field.radius)
+                }
+            # game data v18.200.9: FireSpiritExplosion.PoisonIncreaseSlowly=TRUE.
+            # The shared Poison ramp time uses field age, not per-target exposure.
+            fraction = (
+                min(1.0, (t - field.started) / POISON_RAMP)
+                if field.extra.get("ramp")
+                else 1.0
+            )
+            damage = field.value * fraction
+            targets = []
+            if field.extra.get("buildings"):
+                targets.extend(
+                    building
+                    for building in battle.buildings
+                    if building.alive
+                    and building.edge_distance(field.x, field.y) <= field.radius
+                )
+            if field.extra.get("walls"):
+                targets.extend(
+                    wall
+                    for wall in battle.walls.values()
+                    if wall.alive
+                    and wall.edge_distance(field.x, field.y) <= field.radius
+                )
+            targets.extend(
+                unit
+                for unit in battle.defenders_near(field.x, field.y, field.radius)
+                if unit.indirect_targetable(t)
+                and unit.id in field.extra.get("victims", ())
+                and (not unit.flying or field.extra.get("hits_air"))
+            )
+            for target in targets:
+                amount = damage
+                if isinstance(target, Wall):
+                    amount *= field.extra.get("wall_mult", 1.0)
+                previous = damage_by_target.get(target)
+                if previous is None or amount > previous[0]:
+                    damage_by_target[target] = (amount, field)
+        for target, (damage, field) in damage_by_target.items():
+            actor = field.extra["actor"]
+            src = field.extra["src"]
+            with effects.damage_source(battle, actor, "attack"):
+                if isinstance(target, Unit):
+                    battle.hit_unit(target, damage * dt, src=src, attacker=actor)
+                else:
+                    actor.damage_dealt += battle.hit_building(
+                        target, damage * dt, src=src
                     )
         return True
     if k == "def_burn":

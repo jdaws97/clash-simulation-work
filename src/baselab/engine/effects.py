@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from functools import wraps
 
 from . import stats
+from .entities import Unit
 
 
 @contextmanager
@@ -41,6 +42,11 @@ def slow_mult(target, t, *, movement=False):
     for move, attack, until in target.extra.get("slows", {}).values():
         if t < until:
             result *= move if movement else attack
+    # Wiki: Ice Hound/Ice Pup, frost slows attacks and troop movement.
+    if not movement or isinstance(target, Unit):
+        from . import units
+
+        result *= units.frost_mult(target, t)
     return result
 
 

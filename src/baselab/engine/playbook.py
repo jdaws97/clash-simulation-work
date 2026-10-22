@@ -667,7 +667,12 @@ class PlaybookPlan(AttackPlan):
         if t < getattr(self, "_next_fallback", 0.0) or t < getattr(self, "_busy_until", 0.0):
             return
         self._next_fallback = t + 0.5
-        self.revive_knocked_out(battle)
+        # Video: docs/VIDEO_MEASUREMENTS.md:31, spell drops are separate actions.
+        left = sum(self.spells.values())
+        self.revive_knocked_out(battle, single_cast=True)
+        if sum(self.spells.values()) < left:
+            self._busy_until = t + action_time("spell")
+            return
         if battle.portal_stash and t >= battle.portal_ready_at and not any(
                 st["action"] == "redeploy" and st["id"] not in self._done for st in self.steps):
             # units no redeploy step will bring back (a Portal Pendant or a
@@ -681,16 +686,21 @@ class PlaybookPlan(AttackPlan):
         if not main:
             return
         self._fallback = True
-        left = sum(self.spells.values()) + sum(self.cc_spells.values())
+        left = sum(self.spells.values())
         try:
-            if not self._zap_done and self.zap_ad != (0, 0):
-                self._zap(battle)
-            self.generic_spells(battle, main)
+            if getattr(self, "_fallback_quakes", None):
+                x, y = self._fallback_quakes.pop(0)
+                if self._have("eq"):
+                    self._use(battle, "eq", x, y)
+            elif not self._zap_done and self.zap_ad != (0, 0):
+                self._zap(battle, single_cast=True)
+            if sum(self.spells.values()) == left:
+                self.generic_spells(battle, main, single_cast=True)
         finally:
             self._fallback = False
-        cast = left - sum(self.spells.values()) - sum(self.cc_spells.values())
-        if cast > 0:
-            self._busy_until = t + cast * action_time("spell", 1)
+        if sum(self.spells.values()) < left:
+            self._busy_until = t + action_time("spell")
+            return
         # heroes whose ability the playbook never names use the scripted
         # plans' ability timing (uncited, like the spells above); the
         # playbook's own ability steps keep control of theirs

@@ -262,6 +262,12 @@ STAGE2_ARMIES = [
         None,
         [],
     ),
+    (
+        # attacking burn fields: Flame Flinger fire, Furnace Firemite pools
+        [("Giant", 8), ("Furnace", 2), ("Wizard", 10), ("Archer", 10)],
+        "Flame Flinger",
+        ["Valkyrie", "Valkyrie"],
+    ),
 ]
 
 

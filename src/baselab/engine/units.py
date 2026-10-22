@@ -1396,6 +1396,17 @@ def _new_target_delays():
                     name = r[0]
                 if name and name not in _NTAD and len(r) > i and r[i].strip():
                     _NTAD[name] = int(r[i]) / 1000.0
+        # game data v18.200.9: Spell Bat.NewTargetAttackDelay=1500 -> 1.5 s.
+        # game data v18.200.9: Icemite/Firemite Spawn.NewTargetAttackDelay=500 -> 0.5 s.
+        # game data v18.200.9: Disarmer.NewTargetAttackDelay=600 -> 0.6 s.
+        for name, game_name in (
+            ("Bat", "Spell Bat"),
+            ("Frostmite", "Icemite"),
+            ("Firemite", "Firemite Spawn"),
+            ("The Disarmer", "Disarmer"),
+        ):
+            if game_name in _NTAD:
+                _NTAD[name] = _NTAD[game_name]
     return _NTAD
 
 
@@ -1488,16 +1499,32 @@ def _attack_targets(battle, u, walls=False):
     return targets
 
 
+def frost_mult(target, t):
+    # game data v18.200.9: ElectromiteStunAbility.FrostOnHitTime=100,
+    # Frosty.FrostOnHitTime=4000 -> each (factor, until) keeps its own expiry.
+    return min(
+        (
+            factor
+            for factor, until in target.extra.get("frost_effects", ())
+            if t < until
+        ),
+        default=1.0,
+    )
+
+
 def _frost(battle, target, factor, seconds):
     """The frost effect: slower attacks, and for troops slower movement too
     (wiki: Ice Hound/Ice Pup, "affected targets will have reduced movement
-    and attack speed"). The strongest active frost wins."""
+    and attack speed"). extra["frost_effects"] is a list of (factor, until)
+    pairs; the strongest active frost wins."""
     t = battle.t
-    target.atk_slow = min(target.atk_slow if t < target.atk_slow_until else 1.0, factor)
-    target.atk_slow_until = max(target.atk_slow_until, t + seconds)
-    if isinstance(target, Unit):
-        target.move_slow = min(target.move_slow if t < target.move_slow_until else 1.0, factor)
-        target.move_slow_until = max(target.move_slow_until, t + seconds)
+    active = [
+        (value, until)
+        for value, until in target.extra.get("frost_effects", ())
+        if t < until
+    ]
+    active.append((factor, t + seconds))
+    target.extra["frost_effects"] = active
 
 
 def _chill(battle, u, target):
@@ -2010,32 +2037,60 @@ def projectile_impact(battle, pending):
             pending.extra["meteor_health"],
             pending.extra["meteor_small"],
         )
-    if mode == "leap":
-        if u.name == "Firemite" and u.team == "def":
+    if (mode == "leap" and u.name == "Firemite") or u.name == "Flame Flinger":
+        if u.team == "def" and u.name == "Firemite":
             # game data v18.200.9: Firemite Spawn_DEF.Projectile=FireSpiritJump4_DEF at level 4.
             row = game_data("characters", "Firemite Spawn_DEF", u.level)
             projectile = game_data("projectiles", row["Projectile"])
-            # game data v18.200.9: FireSpiritJump4_DEF.HitSpell=FireSpiritBurn_DEF, HitSpellLevel=4.
-            spell = game_data(
-                "spells", projectile["HitSpell"], int(projectile["HitSpellLevel"])
+        else:
+            # game data v18.200.9: FireCatapultProjectile5.HitSpell=FireSpiritExplosion,
+            # HitSpellLevel=5; FireSpiritJump4.HitSpell=FireSpiritBurn, HitSpellLevel=4.
+            projectile = _projectile_data(u)
+        spell = game_data(
+            "spells", projectile["HitSpell"], int(projectile["HitSpellLevel"])
+        )
+        # game data v18.200.9: FireSpiritExplosion L5.PoisonDPS=130, Radius=250,
+        # NumberOfHits=75, TimeBetweenHitsMS=400 -> 30 s at radius 2.5.
+        # FireSpiritBurn L4.PoisonDPS=150, Radius=80, NumberOfHits=25 -> 10 s.
+        hits = int(spell["NumberOfHits"])
+        gap = int(spell["TimeBetweenHitsMS"]) / 1000.0
+        # Match Battle.deploy's calibration of direct-hit damage.
+        strength = u.extra.get("strength", 1.0) if u.team == "atk" else 1.0
+        # Wiki: Flame Flinger, lingering fire damages enemy ground units and structures.
+        # game data v18.200.9: FireSpiritExplosion.PoisonAffectAir=FALSE,
+        # PreferredTarget=Wall, PreferredTargetDamageMod=25 -> ground-only, x25 walls.
+        # FireSpiritBurn.PoisonAffectAir=TRUE, ImmunityWalls=TRUE -> air too, no walls.
+        battle.fields.append(
+            Field(
+                "burn" if u.team == "atk" else "def_burn",
+                x,
+                y,
+                int(spell["Radius"]) / 100.0,
+                battle.t + hits * gap,
+                team=u.team,
+                value=float(spell["PoisonDPS"]) * strength,
+                extra={
+                    "pulses": hits,
+                    "gap": gap,
+                    # game data v18.200.9: FireSpiritExplosion.PoisonIncreaseSlowly=TRUE;
+                    # FireSpiritBurn.PoisonIncreaseSlowly=FALSE -> only Flinger fire ramps.
+                    "ramp": spell.get("PoisonIncreaseSlowly") == "TRUE",
+                    "hits_air": spell.get("PoisonAffectAir") == "TRUE",
+                    "hits_ground": True,
+                    "buildings": u.team == "atk",
+                    "walls": spell.get("ImmunityWalls") != "TRUE",
+                    "wall_mult": (
+                        float(spell.get("PreferredTargetDamageMod", 1))
+                        if spell.get("PreferredTarget") == "Wall"
+                        else 1.0
+                    ),
+                    "actor": u,
+                    "src": "unit:" + u.name,
+                },
+                started=battle.t,
             )
-            # game data v18.200.9: FireSpiritBurn_DEF.PoisonDPS=145, Radius=80 at level 4.
-            # NumberOfHits=25, TimeBetweenHitsMS=400 -> a 10-second burn pool.
-            hits = int(spell["NumberOfHits"])
-            gap = int(spell["TimeBetweenHitsMS"]) / 1000.0
-            battle.fields.append(
-                Field(
-                    "def_burn",
-                    x,
-                    y,
-                    int(spell["Radius"]) / 100.0,
-                    battle.t + hits * gap,
-                    team="def",
-                    value=float(spell["PoisonDPS"]),
-                    extra={"pulses": hits, "gap": gap},
-                    started=battle.t,
-                )
-            )
+        )
+    if mode == "leap":
         u.x, u.y = x, y
         u.extra["suicided"] = True
         battle.kill(u)

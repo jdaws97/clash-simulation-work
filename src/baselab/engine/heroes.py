@@ -12,6 +12,7 @@ import math
 from ..loadouts import HeroLoadout
 from . import effects, spells, stats, units
 from .entities import Building, Pending, Unit, Wall, dist
+from .specs import game_data
 
 HEROES = {"Barbarian King", "Archer Queen", "Grand Warden", "Royal Champion", "Minion Prince", "Dragon Duke"}
 
@@ -674,7 +675,9 @@ def activate(battle, u: Unit):
                 u, t + 1.0
             )  # "turning invisible for 1 second" (wiki: Action Figure)
         elif e == "Eternal Tome":
-            dur = _col(e, lv, "ability duration", default=8.0)
+            # game data v18.200.9: GrandWardenInvulnerability L18.DeactivateAfterTime=7200 -> 7.2 s emission.
+            ability = game_data("special_abilities", "GrandWardenInvulnerability", lv)
+            dur = float(ability["DeactivateAfterTime"]) / 1000.0
             u.extra["tome_until"] = t + dur
             _moving_auras(battle, u)
         elif e == "Healing Tome":
@@ -704,7 +707,9 @@ def activate(battle, u: Unit):
                 )
             )
         elif e == "Heroic Torch":
-            dur = _col(e, lv, "ability duration", default=27.5)
+            # game data v18.200.9: GWHeroicTorch L10.DeactivateAfterTime=26500 -> 26.5 s emission.
+            ability = game_data("special_abilities", "GWHeroicTorch", lv // 3 + 1)
+            dur = float(ability["DeactivateAfterTime"]) / 1000.0
             red = _col(e, lv, "incoming damage reduction") / 100.0
             u.extra["torch_until"] = t + dur
             u.extra["torch_reduction"] = red
@@ -1050,7 +1055,10 @@ def _puppet(battle, u, e, lv, *, first=0, at=None):
         s = battle.spawn(troop, "atk", u.x + 0.6 * math.cos(ang), u.y + 0.6 * math.sin(ang), level=level, kind="summon",
                          group=u.group, town_hall=getattr(battle.plan, "town_hall", None))
         if e == "Archer Puppet":
-            s.invisible_until = battle.t + _col(e, lv, "archer invisibility duration", default=6.0)
+            # Wiki: Recall Spell, Archer Puppet's equipment invisibility pauses.
+            _invisible(
+                s, battle.t + _col(e, lv, "archer invisibility duration", default=6.0)
+            )
         if e == "Barbarian Puppet":
             # Twenty-second rage (wiki: Barbarian Puppet).
             units.add_rage(
@@ -1202,15 +1210,16 @@ def _moving_auras(battle, warden, members=None):
             continue
         until = warden.extra.get("tome_until", 0.0)
         if t < until:
-            # One second after leaving, bounded by expiry (wiki: Eternal Tome).
-            ally.extra.setdefault("tomes", {})[warden.id] = min(until, t + 1.0)
+            # game data v18.200.9: Eternal Tome Aura.ShieldTime=1000 -> 1 s after the last aura tick.
+            ally.extra.setdefault("tomes", {})[warden.id] = t + 1.0
         until = warden.extra.get("torch_until", 0.0)
         if t < until and ally.kind not in ("siege", "siege_idle"):
             speed = warden.extra["torch_speed"]
             if ally.is_hero and ally is not warden:
                 speed /= 2.0  # wiki: Heroic Torch
+            # game data v18.200.9: Heroic Torch Aura.ShieldTime=1000, BoostTimeMS=1000 -> 1 s tail.
             ally.extra.setdefault("torches", {})[warden.id] = (
-                min(until, t + 1.0),
+                t + 1.0,
                 speed,
                 warden.extra["torch_reduction"],
             )
@@ -1224,6 +1233,10 @@ def apply_auras(battle):
     for unit in combatants:
         boost = effects.crown_buff(unit)
         unit.aura_dmg = 1.0 + boost
+        # game data v18.200.9: Rage Gem Aura.BoostTimeMS=1000 -> retain each source's last tick for 1 s.
+        for until, increase in unit.extra.get("rage_auras", {}).values():
+            if battle.t < until:
+                unit.aura_dmg = max(unit.aura_dmg, 1.0 + increase)
         if boost:
             want[unit.id] = (boost, math.inf)
     wardens = [
@@ -1272,6 +1285,12 @@ def apply_auras(battle):
                     want[ally.id] = percentage, cap
             # Heroes receive half the damage increase (wiki: Rage Gem).
             increase = rage / 2.0 if ally.is_hero else rage
+            if increase:
+                # game data v18.200.9: Rage Gem Aura.BoostTimeMS=1000 -> per-recipient expiry.
+                ally.extra.setdefault("rage_auras", {})[warden.id] = (
+                    battle.t + 1.0,
+                    increase,
+                )
             ally.aura_dmg = max(ally.aura_dmg, 1.0 + increase)
     for ally in combatants:
         if ally.alive:
@@ -1408,8 +1427,11 @@ def stash(battle, taken, bonuses):
 
 def _resume_timers(unit, now):
     elapsed = now - unit.extra.pop("recalled")
-    # Only these equipment/clone/Angry/Phoenix timers pause (wiki: Portal Pendant).
+    # Wiki: Recall Spell and Portal Pendant, active equipment timers pause.
     for key in (
+        "gauntlet_until",
+        "attack_lock_until",
+        "boots_next",
         "horse_until",
         "vial_until",
         "tome_until",
@@ -1421,17 +1443,29 @@ def _resume_timers(unit, now):
     ):
         if key in unit.extra:
             unit.extra[key] += elapsed
-    if unit.extra.get("clone"):
+    # Wiki: Recall Spell, clone lifetimes and active equipment effects pause.
+    if unit.extra.get("clone") or unit.extra.get("mirror_clone"):
         unit.extra["expire_at"] += elapsed
+    # Wiki: Recall Spell, recipient Tome/Torch effects and equipment cooldowns pause.
+    for source, until in list(unit.extra.get("tomes", {}).items()):
+        unit.extra["tomes"][source] = until + elapsed
+    for source, (until, speed, reduction) in list(
+        unit.extra.get("torches", {}).items()
+    ):
+        unit.extra["torches"][source] = until + elapsed, speed, reduction
+    for source, until in list(unit.extra.get("revenge_cd", {}).items()):
+        unit.extra["revenge_cd"][source] = until + elapsed
     for source, (damage, speed, until) in list(
         unit.extra.get("rage_effects", {}).items()
     ):
         if source in ("Rage Vial", "Barbarian Puppet"):
             unit.extra["rage_effects"][source] = damage, speed, until + elapsed
     haste = unit.extra.get("haste_effects", {})
-    if "Haste Vial" in haste:
-        speed, until = haste["Haste Vial"]
-        haste["Haste Vial"] = speed, until + elapsed
+    # Wiki: Portal Pendant, its redeployment haste is an active equipment effect.
+    for source in ("Haste Vial", "Portal Pendant"):
+        if source in haste:
+            speed, until = haste[source]
+            haste[source] = speed, until + elapsed
     until = unit.extra.get("equipment_invisible_until")
     if until is not None:
         unit.extra["equipment_invisible_until"] = until + elapsed
@@ -1442,7 +1476,8 @@ def _resume_timers(unit, now):
         unit.invuln_until = max(unit.invuln_until, until + elapsed)
     kit = unit.kit
     if kit is not None:
-        for attribute in ("reduction_until", "heal_until"):
+        # Wiki: Recall Spell, preserve the Meteor Staff equipment cooldown too.
+        for attribute in ("reduction_until", "heal_until", "next_meteor"):
             until = getattr(kit, attribute)
             if until:
                 setattr(kit, attribute, until + elapsed)
@@ -1503,14 +1538,22 @@ def summon_tick(battle, unit):
     if target is None or not target.alive or not battle.building_targetable(target):
         target, unit.target_kind = battle.choose_target(unit)
         unit.target = target
-    # Bomb cadence is the attack interval (wiki: Lavaloon Puppet/Lavaloon).
-    due = unit.extra.get("bomb_next", unit.spawned_at + unit.interval)
+    # game data v18.200.9: GW Equipment Lavaloon.AttackSpeed=2500 -> normal 2.5 s attack cadence.
+    # Wiki: Poison Spell, attack slows also affect these troop attacks.
+    interval = units.attack_interval(unit, battle)
+    if battle.t < unit.extra.get("haste_attack_until", 0.0):
+        interval /= unit.extra["haste_attack"]
+    interval /= max(0.05, effects.slow_mult(unit, battle.t))
+    due = unit.extra.get("bomb_next", unit.spawned_at + interval)
     if battle.t >= due:
         # Each bomb splashes ground targets around the Lavaloon itself; the
         # initial phase is unstated.
         # game data v18.200.9: GW Equipment Lavaloon.DamageRadius=180 -> 1.8 tiles.
         # game data v18.200.9: GW Equipment Lavaloon.SelfAsAoeCenter=TRUE -> centred on itself.
-        units._area_hit(battle, unit, unit.x, unit.y, 1.8, unit.dmg, walls=True)
+        # Wiki: Rage Spell/Home Village and Rage Gem, use the strongest damage buff.
+        rage, _ = units.rage_boost(unit, battle.t)
+        damage = unit.dmg * max(rage, unit.aura_dmg, unit.extra.get("bell_damage", 1.0))
+        units._area_hit(battle, unit, unit.x, unit.y, 1.8, damage, walls=True)
         battle.spawn(
             "Lavaloon Pup",
             unit.team,
@@ -1521,7 +1564,7 @@ def summon_tick(battle, unit):
             group=unit.group,
             owner=unit,
         )
-        unit.extra["bomb_next"] = battle.t + unit.interval
+        unit.extra["bomb_next"] = battle.t + interval
     if target is not None and _distance(target, unit.x, unit.y) > unit.range:
         battle.move_towards(unit, target)
     return True
