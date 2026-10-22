@@ -242,7 +242,7 @@ fn compare(expected: &Battle, actual: &Battle) -> usize {
         };
     }
     pools!(buildings, walls, traps, attackers, defenders, fields, pending, builders, deployments);
-    fields!(rng, dt, pace, pace_tap, pace_switch, pace_ability, windup, fast_end,
+    fields!(rng, dt, pace, pace_tap, pace_switch, pace_ability, windup, fast_end, flyer_range,
         modifier, def_mult, def_hero_mult, guardian_mult, atk_hero_mult, portal_stash,
         first_destroy_t, first_deploy_t, defense_ammo, allow_synthetic_cc, battle_mode,
         upgrading, crafting_phase, crafting_date, builder_starts, portal_ready_at, t,

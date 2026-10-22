@@ -365,47 +365,17 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
             let count = tr.extra.count;
             for index in 0..count {
                 let angle = 2.0 * std::f64::consts::PI * index as f64 / 1.max(count) as f64;
-                let reference = battle.spawn(
-                    "Skeleton",
-                    Team::Def,
-                    tr.x + 0.7 * geom::py_cos(angle),
-                    tr.y + 0.7 * geom::py_sin(angle),
-                    SpawnOptions {
-                        level: Some(Level::Int(tr.extra.skel_level)),
-                        kind: Tag::TrapSkeleton,
-                        ..Default::default()
-                    },
-                );
-                battle.unit_mut(reference).active_at = t + 0.15 * index as f64;
-                let level = Level::Int(tr.extra.skel_level);
-                let hp = battle
-                    .catalog
-                    .stats
-                    .get(&tr.name, &level, &["Hitpoints"], None)
-                    .expect("Skeleton Trap hitpoints");
-                let damage = battle
-                    .catalog
-                    .stats
-                    .get(&tr.name, &level, &["Damage per Hit"], None)
-                    .expect("Skeleton Trap damage");
-                let interval = raw(battle, &tr.name, "Attack Speed", None)
-                    .expect("Skeleton Trap attack speed");
-                let range = raw(battle, &tr.name, "Range", None).expect("Skeleton Trap range");
-                let unit = battle.unit_mut(reference);
-                unit.hp = hp;
-                unit.max_hp = hp;
-                unit.base_max_hp = hp;
-                unit.dmg = damage;
-                unit.interval = interval;
-                unit.range = range;
-                unit.flying = tr.mode.as_deref() == Some("air");
-                unit.hits_air = unit.flying;
-                unit.hits_ground = !unit.flying;
-                unit.speed = if unit.flying {
-                    2.2
+                let x = tr.x + 0.7 * geom::py_cos(angle);
+                let y = tr.y + 0.7 * geom::py_sin(angle);
+                let at = tr.fuse_at + 0.15 * index as f64;
+                if at <= t {
+                    spawn_skeleton(battle, trap, x, y);
                 } else {
-                    3.0
-                };
+                    let mut pending = Pending::new(at, x, y, 0.0, 0.0, false, false, &src);
+                    pending.team = Team::Def;
+                    pending.extra.trap_skeleton = Some(trap);
+                    battle.add_pending(pending);
+                }
             }
         }
         "tornado" => {
@@ -425,6 +395,50 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
         // traps.py:324: no other trap family has a runtime effect.
         _ => {}
     }
+}
+
+// traps.py:337-358: create the Skeleton only when its Pending birth is due.
+pub fn spawn_skeleton(battle: &mut Battle, trap: TrapId, x: f64, y: f64) {
+    let tr = battle.traps[trap.0].clone();
+    let level = Level::Int(tr.extra.skel_level);
+    let reference = battle.spawn(
+        "Skeleton",
+        Team::Def,
+        x,
+        y,
+        SpawnOptions {
+            level: Some(level.clone()),
+            kind: Tag::TrapSkeleton,
+            ..Default::default()
+        },
+    );
+    let hp = battle
+        .catalog
+        .stats
+        .get(&tr.name, &level, &["Hitpoints"], None)
+        .expect("Skeleton Trap hitpoints");
+    let damage = battle
+        .catalog
+        .stats
+        .get(&tr.name, &level, &["Damage per Hit"], None)
+        .expect("Skeleton Trap damage");
+    let interval = raw(battle, &tr.name, "Attack Speed", None).expect("Skeleton Trap attack speed");
+    let range = raw(battle, &tr.name, "Range", None).expect("Skeleton Trap range");
+    let unit = battle.unit_mut(reference);
+    unit.hp = hp;
+    unit.max_hp = hp;
+    unit.base_max_hp = hp;
+    unit.dmg = damage;
+    unit.interval = interval;
+    unit.range = range;
+    unit.flying = tr.mode.as_deref() == Some("air");
+    unit.hits_air = unit.flying;
+    unit.hits_ground = !unit.flying;
+    unit.speed = if unit.flying {
+        2.2
+    } else {
+        3.0
+    };
 }
 
 // traps.py:327-345.
@@ -482,6 +496,9 @@ pub fn tornado_tick(battle: &mut Battle, field: &mut Field) {
     if t >= field.until {
         return;
     }
+    // traps.py:375-377: rotate every pulled position, including the inner radius.
+    let angle = -std::f64::consts::PI * battle.dt;
+    let (cos_angle, sin_angle) = (crate::geom::py_cos(angle), crate::geom::py_sin(angle));
     for reference in battle.attackers_near(field.x, field.y, field.radius) {
         let unit = battle.unit(reference);
         if !unit.alive || unit.underground || unit.attached(battle) || unit.extra.suspended {
@@ -508,6 +525,7 @@ pub fn tornado_tick(battle: &mut Battle, field: &mut Field) {
             (unit.housing as f64 / 3.0).ceil().clamp(1.0, 5.0) as usize
         };
         let distance = unit.dist(field.x, field.y);
+        let (mut nx, mut ny) = (unit.x, unit.y);
         if distance > 0.7 {
             let fraction = 1.0_f64.min((distance - 0.7) / 1e-9_f64.max(field.radius - 0.7));
             let percentage = 1.0 + (0.65 - 1.0) * fraction;
@@ -518,10 +536,13 @@ pub fn tornado_tick(battle: &mut Battle, field: &mut Field) {
             };
             let speed = force[weight - 1] * percentage;
             let step = (distance - 0.7).min(speed * battle.dt);
-            let nx = unit.x + (field.x - unit.x) / distance * step;
-            let ny = unit.y + (field.y - unit.y) / distance * step;
-            tornado_move(battle, reference, nx, ny, field.until);
+            nx = unit.x + (field.x - unit.x) / distance * step;
+            ny = unit.y + (field.y - unit.y) / distance * step;
         }
+        let (dx, dy) = (nx - field.x, ny - field.y);
+        nx = field.x + dx * cos_angle - dy * sin_angle;
+        ny = field.y + dx * sin_angle + dy * cos_angle;
+        tornado_move(battle, reference, nx, ny, field.until);
     }
 }
 

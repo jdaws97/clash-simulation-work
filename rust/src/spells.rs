@@ -1,5 +1,9 @@
 //! Ports spells.py:32-43,109-1238. Setup validation stays in Python.
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use crate::catalog::game_int;
 use crate::effects;
 use crate::geom::py_hypot;
 use crate::labels::{Name, Special, Tag};
@@ -46,31 +50,33 @@ pub fn tick(battle: &mut Battle) {
             field.identity = battle.field_identity;
         }
     }
-    let fields = battle.fields.clone();
-    let count = fields.len();
-    let mut keep = Vec::new();
-    for (index, mut field) in fields.into_iter().enumerate() {
+    // spells.py:270-287,765-783: tuple snapshots preserve object identity.
+    // A later Ice Block may update an already processed summon, so keep the
+    // live field slots until all callbacks have finished, then filter by index.
+    let count = battle.fields.len();
+    let mut keep = vec![false; count];
+    for index in 0..count {
+        let mut field = battle.fields[index].clone();
         if t < field.started {
-            keep.push(field);
+            keep[index] = true;
             continue;
         }
         if field.kind == Tag::Tornado && t >= field.until {
             traps::tornado_tick(battle, &mut field);
             expire(battle, &field);
+            battle.fields[index] = field;
             continue;
         }
         let alive = apply(battle, &mut field);
-        // Python mutates the original object while it remains in fields.
-        // Later fields (and Tesla reveal callbacks) must see the new kind.
-        battle.fields[index] = field.clone();
-        if alive && t < field.until {
-            keep.push(field);
-        } else {
+        keep[index] = alive && t < field.until;
+        if !keep[index] {
             expire(battle, &field);
         }
+        battle.fields[index] = field;
     }
-    keep.extend(battle.fields.drain(count..));
-    battle.fields = keep;
+    battle.fields = std::mem::take(&mut battle.fields).into_iter().enumerate()
+        .filter(|(index, _)| *index >= count || keep[*index])
+        .map(|(_, field)| field).collect();
     poison_states(battle);
     clone_expiry(battle);
 }
@@ -84,7 +90,7 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
         && t >= f.until {
         return false;
     }
-    if matches!(kind, Tag::Lightning | Tag::Freeze | Tag::Poison | Tag::DefRage)
+    if matches!(kind, Tag::Lightning | Tag::Freeze | Tag::Poison)
         || kind == Tag::Rage
         && f.team == Team::Def {
         defense::builder_spell(battle, f);
@@ -112,6 +118,7 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             true
         }
+        Tag::RollingLog => units::advance_log(battle, f),
         Tag::Lightning => damaging_field(battle, f, false),
         Tag::Birthday => damaging_field(battle, f, true),
         Tag::Yellow => yellow(battle, f),
@@ -153,7 +160,23 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
         }
         // spells.py:500-517: defense rage does not stack with itself.
         Tag::DefRage => {
-            let until = f.until.min(t + dt);
+            // spells.py:516-527: each 300-ms pulse lasts a full second.
+            let row = battle.catalog.game_data("spells", "Spell Tower Rage", None);
+            let gap = game_int(row, "TimeBetweenHitsMS", 0) as f64 / 1000.0;
+            let boost_time = game_int(row, "BoostTimeMS", 0) as f64 / 1000.0;
+            let Some(pulse) = application(f, t, gap) else {
+                return true;
+            };
+            let until = crate::geom::round6(pulse + boost_time);
+            for index in 0..battle.builders.len() {
+                let builder = &battle.builders[index];
+                if battle.building(builder.owner).alive && crate::geom::dist(builder.x, builder.y, f.x, f.y) <= f.radius {
+                    let builder = &mut battle.builders[index];
+                    builder.repair_boost = 2.0;
+                    builder.rage_speed = f.extra.speed.unwrap_or(30.0 / 8.0);
+                    builder.rage_until = until;
+                }
+            }
             for building in &mut battle.buildings {
                 if building.alive
                     && building.weapon.is_some()
@@ -186,8 +209,9 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             for reference in battle.attackers_near(f.x, f.y, f.radius) {
                 let u = battle.unit(reference);
                 if affected(u)
+                    || u.name_id == Name::Totem
                     || f.extra.origin.as_deref() == Some("town_hall")
-                    && u.name_id == Name::StoneSlammer {
+                    && matches!(u.kind, Tag::Siege | Tag::SiegeIdle) {
                     let multiplier = if u.is_hero {
                         f.extra.hero_mult
                     } else {
@@ -207,19 +231,7 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             true
         }
-        Tag::Quake => quake(battle, f),
-        // spells.py:612-618: defensive Earthquake tower uses existing unit state.
-        Tag::DefQuake => {
-            for reference in battle.attackers_near(f.x, f.y, f.radius) {
-                let u = battle.unit_mut(reference);
-                if affected(u) && !u.flying {
-                    u.extra.eq_n += 1;
-                    let amount = u.max_hp * f.value / (2 * u.extra.eq_n - 1) as f64;
-                    battle.hit_unit(reference, amount, Some("spell_tower"), "normal", None);
-                }
-            }
-            false
-        }
+        Tag::Quake | Tag::DefQuake => quake(battle, f),
         Tag::Clone => clone_field(battle, f),
         Tag::Summon => summon(battle, f),
         Tag::Invis => invis(battle, f),
@@ -553,7 +565,12 @@ pub fn tower_cast(battle: &mut Battle, owner: BuildingId, mode: &str, near: Opti
             return;
         }
         "invis" => ("def_invis", bx, by, 4.5, t + 4.5, 0.0, t),
-        "eq" | "quake" | "earthquake" => ("def_quake", x, y, 4.7, t + 0.3, 0.30, t + 0.3),
+        "eq" | "quake" | "earthquake" => {
+            // spells.py:1121-1126: the tower's value is per hit, rather than per cast.
+            let row = battle.catalog.game_data("spells", "Spell Tower Earthquake", None);
+            let percentage = game_int(row, "TroopDamagePermil", 0) as f64 / 1000.0;
+            ("def_quake", x, y, 4.7, t + 0.3, percentage, t + 0.3)
+        },
         _ => return,
     };
     battle.fields.push(Field {
@@ -733,8 +750,11 @@ pub fn cast_effect(battle: &mut Battle, name: &str, x: f64, y: f64, level: Optio
         }
         "Earthquake Spell" => {
             let mut f = Field::new("quake", x, y, radius(4.7), t);
-            f.value = get(&["Building Damage %"], 29.0) / 100.0;
-            f.extra.troop = get(&["Troop Damage %"], 0.0) / 100.0;
+            // spells.py:150-164: registry percentages describe all five impacts.
+            let row = battle.catalog.game_data("spells", "Earthquake", Some(&level));
+            let denominator = 100.0 * game_int(row, "NumberOfHits", 0) as f64;
+            f.value = get(&["Building Damage %"], 29.0) / denominator;
+            f.extra.troop = get(&["Troop Damage %"], 0.0) / denominator;
             f
         }
         "Haste Spell" => {
@@ -753,7 +773,10 @@ pub fn cast_effect(battle: &mut Battle, name: &str, x: f64, y: f64, level: Optio
             } else {
                 ("Bat", get(&["Bats generated"], 22.0), 1, 0.6)
             };
-            let mut f = Field::new("summon", x, y, 3.5, t + (n - first as f64) * gap);
+            // spells.py:178-207: both summon spells use their game-data radius.
+            let row = battle.catalog.game_data("spells", name, Some(&level));
+            let radius = game_int(row, "Radius", 0) as f64 / 100.0;
+            let mut f = Field::new("summon", x, y, radius, t + (n - first as f64) * gap);
             f.value = n;
             f.extra.unit = Some(unit.to_owned());
             f.extra.first = Some(first);
@@ -1049,7 +1072,10 @@ fn jump(battle: &mut Battle, f: &Field) -> bool {
     if battle.t >= f.until {
         return false;
     }
-    let until = battle.t + 1.0;
+    // spells.py:561-563: JumpBoostMS=400, rather than a one-second tail.
+    let row = battle.catalog.game_data("spells", "Jump", None);
+    let boost_time = game_int(row, "JumpBoostMS", 0) as f64 / 1000.0;
+    let until = battle.t + boost_time;
     for reference in battle.attackers_near(f.x, f.y, f.radius) {
         let u = battle.unit_mut(reference);
         if affected(u) && !u.flying {
@@ -1103,45 +1129,107 @@ fn attacker_poison(battle: &mut Battle, f: &mut Field) -> bool {
     true
 }
 
-// spells.py:588-610,782-786. In particular Python's **2 is C-runtime pow.
-fn quake(battle: &mut Battle, f: &Field) -> bool {
-    for index in 0..battle.buildings.len() {
-        let b = &mut battle.buildings[index];
-        if b.alive
-            && b.counted
-            && !matches!(b.key.as_str(), "gs" | "es" | "ds")
+// spells.py:615-636: schedule all impacts now; counters belong to the cast.
+fn quake(battle: &mut Battle, field: &Field) -> bool {
+    let defensive = field.kind == Tag::DefQuake;
+    let name = if defensive {
+        "Spell Tower Earthquake"
+    } else {
+        "Earthquake"
+    };
+    let row = battle.catalog.game_data("spells", name, None);
+    let count = game_int(row, "NumberOfHits", 0);
+    let gap = game_int(row, "TimeBetweenHitsMS", 0) as f64 / 1000.0;
+    let shared = Rc::new(RefCell::new(field.clone()));
+    for index in 0..count {
+        let mut pending = Pending::new(crate::geom::round6(field.started + index as f64 * gap),
+            field.x, field.y, field.radius, 0.0, false, true,
+            if defensive {
+            "spell_tower"
+        } else {
+            "spell"
+        });
+        pending.team = if defensive {
+            Team::Atk
+        } else {
+            Team::Def
+        };
+        pending.extra.quake = Some(Rc::clone(&shared));
+        pending.effect = Some(Tag::Spell);
+        battle.add_pending(pending);
+    }
+    false
+}
 
-            && !(b.key == "tesla"
-            && !b.revealed)
-            && b.edge_distance(f.x, f.y) <= f.radius {
-            b.eq_hits += 1;
-            let damage = b.max_hp * f.value / (2 * b.eq_hits - 1) as f64;
-            let id = b.id;
-            battle.hit_building(EntityRef::Building(id), damage, None, "normal");
+// spells.py:823-866: diminish by the cast's first contact with each entity.
+pub fn quake_hit(battle: &mut Battle, field: &mut Field) {
+    if field.kind == Tag::Quake {
+        for index in 0..battle.buildings.len() {
+            let b = &mut battle.buildings[index];
+            if b.alive && b.counted && !matches!(b.key.as_str(), "gs" | "es" | "ds")
+                && !(b.key == "tesla" && !b.revealed) && b.edge_distance(field.x, field.y) <= field.radius {
+                let target = EntityRef::Building(b.id);
+                let count = match field.extra.quake_hits.iter().find(|(key, _)| *key == target) {
+                    Some((_, count)) => *count,
+                    None => {
+                        b.eq_hits += 1;
+                        field.extra.quake_hits.push((target, b.eq_hits));
+                        b.eq_hits
+                    }
+                };
+                let damage = b.max_hp * field.value / (2 * count - 1) as f64;
+                battle.hit_building(target, damage, None, "normal");
+            }
         }
-    }
-    for index in 0..battle.walls.len() {
-        let w = &mut battle.walls[index];
-        if w.alive && w.edge_distance(f.x, f.y) <= f.radius {
-            w.eq_hits += 1;
-            let n = w.eq_hits as f64;
-            let damage = w.max_hp * (f.value / n + 0.05 * crate::geom::py_pow(n - 1.0, 2.0));
-            let id = w.id;
-            battle.hit_building(EntityRef::Wall(id), damage, None, "normal");
-        }
-    }
-    if f.extra.troop != 0.0 {
-        for reference in battle.defenders_near(f.x, f.y, f.radius) {
-            let u = battle.unit(reference);
-            if !u.flying {
-                let n = u.extra.eq_n;
-                let damage = u.max_hp * f.extra.troop / (2 * n + 1) as f64;
-                battle.hit_unit(reference, damage, None, "normal", None);
-                battle.unit_mut(reference).extra.eq_n = n + 1;
+        for index in 0..battle.walls.len() {
+            let wall = &mut battle.walls[index];
+            if wall.alive && wall.edge_distance(field.x, field.y) <= field.radius {
+                let target = EntityRef::Wall(wall.id);
+                let count = match field.extra.quake_hits.iter().find(|(key, _)| *key == target) {
+                    Some((_, count)) => *count,
+                    None => {
+                        wall.eq_hits += 1;
+                        field.extra.quake_hits.push((target, wall.eq_hits));
+                        wall.eq_hits
+                    }
+                };
+                let n = count as f64;
+                // Keep Python's pow and multiplication order for the wall bonus.
+                let damage = wall.max_hp * (field.value / n + 0.01 * crate::geom::py_pow(n - 1.0, 2.0));
+                battle.hit_building(target, damage, None, "normal");
             }
         }
     }
-    false
+    let percentage = if field.kind == Tag::Quake {
+        field.extra.troop
+    } else {
+        field.value
+    };
+    if percentage == 0.0 {
+        return;
+    }
+    let pool = if field.kind == Tag::Quake {
+        battle.defenders_near(field.x, field.y, field.radius)
+    } else {
+        battle.attackers_near(field.x, field.y, field.radius)
+    };
+    for reference in pool {
+        let u = battle.unit_mut(reference);
+        if u.flying || field.kind == Tag::DefQuake && !affected(u) {
+            continue;
+        }
+        let target = EntityRef::Unit(reference);
+        let count = match field.extra.quake_hits.iter().find(|(key, _)| *key == target) {
+            Some((_, count)) => *count,
+            None => {
+                u.extra.eq_n += 1;
+                field.extra.quake_hits.push((target, u.extra.eq_n));
+                u.extra.eq_n
+            }
+        };
+        let damage = u.max_hp * percentage / (2 * count - 1) as f64;
+        battle.hit_unit(reference, damage, None, "normal", None);
+    }
 }
 
 // spells.py:782-786: equipment and spells share the same hit counter. Store
@@ -1220,7 +1308,7 @@ fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
                 level: level.clone(),
                 kind: Tag::Summon,
                 group: group.clone(),
-                    ..Default::default()
+                ..Default::default()
             });
             let t = battle.t;
             let u = battle.unit_mut(child);
@@ -1274,6 +1362,18 @@ fn summon(battle: &mut Battle, f: &mut Field) -> bool {
             group: "spell".to_owned(),
                 ..Default::default()
         });
+        // spells.py:708-717: only future spawns inside each retained cast area freeze.
+        for (source, (reduction, until, cx, cy, radius)) in &f.extra.iceblocks {
+            if battle.t < *until && crate::geom::dist(x, y, *cx, *cy) <= *radius {
+                let child = battle.unit_mut(child);
+                crate::plans::set(
+                    &mut child.extra.iceblocks,
+                    source.clone(),
+                    (*reduction, *until)
+                );
+                child.frozen_until = child.frozen_until.max(*until);
+            }
+        }
         if f.extra.name.as_deref() == Some("Bag of Frostmites") {
             let u = battle.unit_mut(child);
             u.extra.bouncing_frostmite = true;
@@ -1388,6 +1488,19 @@ fn overgrowth(battle: &mut Battle, f: &mut Field) -> bool {
 // spells.py:740-751.
 fn iceblock(battle: &mut Battle, f: &mut Field) -> bool {
     let until = battle.t + f.extra.time;
+    // spells.py:763-783: save coverage for unspawned Skeletons and Bats.
+    for index in 0..battle.fields.len() {
+        let summon = &battle.fields[index];
+        if summon.kind == Tag::Summon
+            && matches!(summon.extra.unit.as_deref(), Some("Spell Skeleton" | "Bat"))
+            && summon.started <= battle.t && battle.t <= summon.until
+            && (summon.extra.delivered as f64) < summon.value
+            && crate::geom::dist(summon.x, summon.y, f.x, f.y) <= summon.radius + f.radius {
+            let key = source(battle, f);
+            let coverage = (f.value, until, f.x, f.y, f.radius);
+            crate::plans::set(&mut battle.fields[index].extra.iceblocks, key, coverage);
+        }
+    }
     for reference in battle.attackers_near(f.x, f.y, f.radius) {
         let u = battle.unit(reference);
         if affected(u) && !u.underground {
@@ -1451,10 +1564,14 @@ fn revive_cast(battle: &mut Battle, f: &Field) -> bool {
 
 // spells.py:1214-1223.
 fn revive(battle: &mut Battle, hero: UnitRef, percentage: f64) {
+    // spells.py:1302-1311: clear stale aura health, then recompute living coverage.
+    effects::health_aura(battle.unit_mut(hero), 0.0, 0.0);
+    battle.unit_mut(hero).alive = true;
+    crate::heroes::apply_auras(battle);
     let u = battle.unit_mut(hero);
-    u.alive = true;
     u.extra.revivable = false;
     u.hp = u.max_hp * percentage;
+    u.extra.aura_hp = u.aura_bonus * percentage;
     u.target = None;
     u.wall_target = None;
     u.cooldown = 0.0;

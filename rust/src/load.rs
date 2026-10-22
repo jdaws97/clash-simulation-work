@@ -14,6 +14,14 @@ use crate::pyrandom::PyRandom;
 use crate::state::*;
 use crate::stats::Level;
 
+// Older exports omit this switch; subprocesses inherit the Python environment.
+pub fn flyer_range(env: &Json) -> String {
+    env.get("flyer_range").map_or_else(
+        || std::env::var("BASELAB_FLYER_RANGE").unwrap_or_else(|_| "gamedata".to_owned()),
+        |value| Node::new(value, "env.flyer_range").string(),
+    )
+}
+
 #[derive(Clone)]
 pub struct Node<'a> {
     pub value: &'a Json,
@@ -543,6 +551,7 @@ impl Resolver {
                 "poison_level" => extra.poison_level = v.usize(),
                 "pool_hits" => extra.pool_hits = v.usize(),
                 "same_type" => extra.same_type = v.boolean(),
+                "spare_target" => extra.spare_target = self.optional_unit_ref(v),
                 "inner_min" => extra.inner_min = v.optional_number(),
                 "wake_at" => extra.wake_at = v.optional_number(),
                 "ramp" => extra.ramp = v.array().iter().map(Node::pair).collect(),
@@ -562,6 +571,8 @@ impl Resolver {
             match key.as_str() {
                 "boots_next" => extra.boots_next = v.optional_number(),
                 "spear_base_range" => extra.spear_base_range = v.optional_number(),
+                "shield_destination" => extra.shield_destination = v.optional_pair(),
+                "attack_lock_until" => extra.attack_lock_until = v.number(),
                 "equipment_invisible_until" => {
                     extra.equipment_invisible_until = v.number();
                     extra.paused_timers.equipment_invisible_until = true;
@@ -584,6 +595,7 @@ impl Resolver {
                 }
                 "fox_next" => extra.fox_next = v.number(),
                 "hero_present" => extra.hero_present = v.boolean(),
+                "diggy_hero" => extra.diggy_hero = self.optional_unit_ref(v),
                 "owner_defeated" => extra.owner_defeated = v.boolean(),
                 "rampage_detached" => extra.rampage_detached = v.boolean(),
                 "bomb_next" => extra.bomb_next = v.optional_number(),
@@ -591,7 +603,10 @@ impl Resolver {
                 "ko_at" => extra.ko_at = v.optional_number(),
                 "children" => extra.children = v.array().into_iter().map(|n| self.unit_ref(n)).collect(),
                 "yellow_until" => extra.yellow_until = v.number(),
-                "brainwash_until" => extra.brainwash_until = v.number(),
+                "brainwash_until" => {
+                    extra.brainwash_until = v.number();
+                    extra.paused_timers.brainwash_until = true;
+                }
                 "armor_hp" => extra.armor_hp = v.number(),
                 "aura_hp" => extra.aura_hp = v.number(),
                 "troop_hit_at" => extra.troop_hit_at = v.number(),
@@ -789,8 +804,42 @@ impl Resolver {
     // JSON fallback.
     fn field_extra(&self, n: Node<'_>) -> FieldExtra {
         let mut extra = FieldExtra::default();
+        if let Some(launcher) = n.optional("launcher") {
+            extra.rolling_log = Some(RollingLog {
+                launcher: self.unit_ref(launcher),
+                dx: n.field("dx").number(),
+                dy: n.field("dy").number(),
+                damage: n.field("dmg").number(),
+                wall_damage: n.field("wall_dmg").number(),
+                launched: n.field("launched").number(),
+                next: n.field("next").usize(),
+                hit_buildings: n
+                    .field("hit_b")
+                    .array()
+                    .iter()
+                    .map(|item| BuildingId(item.usize()))
+                    .collect(),
+                hit_walls: n
+                    .field("hit_w")
+                    .array()
+                    .iter()
+                    .map(|item| {
+                    let pair = item.tuple(2);
+                    (pair[0].i32(), pair[1].i32())
+                })
+                    .collect(),
+                hit_units: n
+                    .field("hit_units")
+                    .array()
+                    .into_iter()
+                    .map(|item| self.unit_ref(item))
+                    .collect(),
+            });
+        }
         for (key, v) in n.object() {
             match key.as_str() {
+                "launcher" | "dx" | "dy" | "dmg" | "wall_dmg" | "launched" | "next" | "hit_b"
+                | "hit_w" | "hit_units" if extra.rolling_log.is_some() => {}
                 "pulses" => {
                     extra.pulses = v.usize();
                     extra.has_pulses = true;
@@ -817,6 +866,37 @@ impl Resolver {
                 "first" => extra.first = Some(v.usize()),
                 "spots" => extra.spots = Some(v.array().iter().map(Node::pair).collect()),
                 "hero" => extra.hero = Some(self.unit_ref(v)),
+                // spells.py:709-717,765-783: source keys are the normal field identities.
+                "iceblocks" => {
+                    extra.iceblocks = v.object().into_iter().map(|(key, value)| {
+                        let parts = value.tuple(5);
+                        (status_source(&key), (parts[0].number(), parts[1].number(),
+                            parts[2].number(), parts[3].number(), parts[4].number()))
+                    }).collect();
+                }
+                "hits" => {
+                    extra.quake_hits = v.object().into_iter().map(|(key, value)| {
+                        let encoded = json::parse(&key).expect("encoded quake hit key");
+                        let parts = Node::new(&encoded, &value.path).tuple(2);
+                        let target = match parts[0].value.str() {
+                            "building" => EntityRef::Building(BuildingId(parts[1].usize())),
+                            "wall" => {
+                                let tile = parts[1].pair();
+                                let id = self.walls.get(&(tile.0 as i32, tile.1 as i32)).expect("quake wall");
+                                EntityRef::Wall(*id)
+                            }
+                            "unit" => {
+                                let id = UnitId(parts[1].usize());
+                                let (team, _) = self.units.get(&id).expect("quake unit");
+                                EntityRef::Unit(UnitRef {
+                                    id, team: *team
+                                })
+                            }
+                            _ => value.fail("unknown quake hit identity"),
+                        };
+                        (target, value.usize())
+                    }).collect();
+                }
                 _ => extra.unknown.push((key, self.value(v))),
             }
         }
@@ -845,6 +925,17 @@ impl Resolver {
                 "speed" => extra.speed = v.number(),
                 "hit" => extra.hit = v.array().into_iter().map(|item| self.reference(item)).collect(),
                 "hero_impact" => extra.hero_impact = v.optional_string(),
+                "remaining" => extra.remaining = v.usize(),
+                "quake" => extra.quake = Some(std::rc::Rc::new(std::cell::RefCell::new(self.field(v)))),
+                "primary" => extra.primary = self.optional_ref(v),
+                "base_damage" => extra.base_damage = v.number(),
+                "monolith_bonus" => extra.monolith_bonus = v.number(),
+                "meteor_health" => extra.meteor_health = v.number(),
+                "meteor_small" => extra.meteor_small = v.boolean(),
+                "length" => extra.length = v.number(),
+                "equipment" => extra.equipment = v.optional_string(),
+                "level" => extra.level = v.optional_level(),
+                "first" => extra.first = v.integer(),
                 "until" => extra.until = v.number(),
                 "last_at" => extra.last_at = v.number(),
                 "visited" => {
@@ -855,6 +946,12 @@ impl Resolver {
                 "summon" => {
                     let parts = v.tuple(4);
                     extra.summon = Some((parts[0].string(), parts[1].level(), parts[2].string(), self.optional_unit_ref(parts[3].clone())));
+                }
+                "trap_skeleton" => {
+                    let EntityRef::Trap(trap) = self.reference(v.clone()) else {
+                        v.fail("expected Skeleton Trap reference");
+                    };
+                    extra.trap_skeleton = Some(trap);
                 }
                 _ => extra.unknown.push((key, self.value(v))),
             }
@@ -988,7 +1085,7 @@ impl Resolver {
         let extra = n.field("extra");
         let required: &[&str] = match n.field("kind").string().as_str() {
             "splash" => &["splash"],
-            "mortar" => &["splash", "flight"],
+            "mortar" => &["splash"],
             "ricochet" => &["bounce", "bounce_range"],
             "inferno_single" => &["ramp"],
             "inferno_multi" => &["targets"],
@@ -1599,6 +1696,7 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
         pace_ability: env.optional("pace_ability").map_or(0.3, |v| v.number()),
         windup: env.field("windup").boolean(),
         fast_end: env.field("fast_end").boolean(),
+        flyer_range: flyer_range(env.value),
         modifier: s.field("modifier").optional_string(),
         def_mult: s.field("def_mult").number(),
         def_hero_mult: s.field("def_hero_mult").number(),
@@ -1665,7 +1763,11 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
             PoisonState {
                 unit: resolver.unit_ref(n.field("u")),
                 origin: n.optional("origin").map_or_else(|| "spell".to_owned(), |v| v.string()),
-                source: parts[2].optional_source(),
+                source: if matches!(parts[2].value, Json::Num(_)) {
+                    Some(("unit".to_owned(), parts[2].integer()))
+                } else {
+                    parts[2].optional_source()
+                },
                 since: n.field("since").number(),
                 dps: n.field("dps").number(),
                 ramp: n.field("ramp").boolean(),

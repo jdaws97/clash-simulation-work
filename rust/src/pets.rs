@@ -36,13 +36,27 @@ fn nearest(
     best
 }
 
-// pets.py:25-49: these five pets retain their owner until defeat detaches it.
-fn hero(battle: &Battle, pet: UnitRef) -> Option<UnitRef> {
+// pets.py:25-48: Diggy can find a new Hero after defeat clears its owner.
+fn hero(battle: &mut Battle, pet: UnitRef) -> Option<UnitRef> {
     let unit = battle.unit(pet);
-    if unit.name_id == Name::Diggy {
-        todo!("stage 3+: Diggy owner reassignment");
+    let previous = unit.extra.diggy_hero.or(unit.owner);
+    if unit.name_id == Name::Diggy && previous.is_none_or(|hero| {
+        let hero = battle.unit(hero);
+        !hero.alive && hero.extra.recalled.is_none()
+    }) {
+        // pets.py:25-48: nearest active Hero, retaining first ties in attacker order.
+        let candidates = battle.attackers_pool().filter(|ally| {
+            Some(ally.reference()) != previous && ally.kind == Tag::Hero && ally.alive
+                && ally.extra.recalled.is_none() && !ally.extra.suspended && battle.t >= ally.active_at
+        }).map(|ally| EntityRef::Unit(ally.reference()));
+        let replacement = nearest(battle, EntityRef::Unit(pet), candidates);
+        if let Some(EntityRef::Unit(hero)) = replacement {
+            battle.unit_mut(pet).extra.diggy_hero = Some(hero);
+            return Some(hero);
+        }
+        return None;
     }
-    unit.owner
+    previous
 }
 
 // pets.py:52-71.
@@ -151,6 +165,13 @@ fn target_from_pools(
         if valid(battle, pet, wall) {
             return wall;
         }
+        if unit.name_id == Name::Diggy
+            && matches!(
+            hero.target,
+            Some(EntityRef::Unit(target)) if battle.unit(target).flying
+        ) {
+            return nearest(battle, EntityRef::Unit(pet), buildings.iter().copied());
+        }
         if valid(battle, pet, hero.target) {
             return hero.target;
         }
@@ -257,7 +278,7 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
         if let Some(EntityRef::Unit(target)) = target {
             let unit = battle.unit(pet);
             let recipient = battle.unit(target);
-            if dist(unit.x, unit.y, recipient.x, recipient.y) <= 2.5 {
+            if dist(unit.x, unit.y, recipient.x, recipient.y) <= unit.range {
                 battle.unit_mut(pet).extra.healing_targets = vec![target];
                 let due = battle.unit(pet).extra.heal_next.unwrap_or(t);
                 if t >= due || units::isclose(t, due) {
@@ -265,7 +286,18 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
                     let unit = battle.unit(pet);
                     let amount = battle.catalog.stats.get("Unicorn", unit.level.as_ref().expect("Unicorn level"),
                         &["Healing per Pulse"], None).expect("Unicorn healing") * effectiveness;
-                    battle.unit_mut(target).heal(amount);
+                    // pets.py:272-295: Unicorn healing travels without a start offset.
+                    let recipient = battle.unit(target);
+                    let row = battle.catalog.game_data("projectiles", "UnicornHealEnergy", None);
+                    let speed = crate::catalog::game_int(row, "Speed", 0) as f64 / 100.0;
+                    let mut pending = Pending::new(t + dist(unit.x, unit.y, recipient.x, recipient.y) / speed,
+                        recipient.x, recipient.y, 0.0, 0.0, false, false, unit.source.clone());
+                    pending.team = pet.team;
+                    pending.extra.healing = Some(amount);
+                    pending.actor = Some(EntityRef::Unit(pet));
+                    pending.effect = Some(Tag::Heal);
+                    pending.target = Some(EntityRef::Unit(target));
+                    battle.add_pending(pending);
                     let interval = stats::num(battle.catalog.stats.attrs("Unicorn").at("raw").at("Healing Speed"), None)
                         .expect("Unicorn healing speed");
                     battle.unit_mut(pet).extra.heal_next = Some(t + interval);
@@ -282,6 +314,9 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
     let target = target(battle, pet);
     battle.unit_mut(pet).target = target;
     let Some(target) = target else {
+        if battle.unit(pet).name_id == Name::Diggy {
+            battle.unit_mut(pet).underground = true;
+        }
         if present && !battle.unit(pet).attached(battle) {
             move_pet(battle, pet, EntityRef::Unit(owner.expect("present owner")));
         }
@@ -289,10 +324,27 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
     };
     let unit = battle.unit(pet);
     if heroes::distance(battle, target, unit.x, unit.y) > unit.range {
-        if !unit.attached(battle) {
+        let attached = unit.attached(battle);
+        if unit.name_id == Name::Diggy {
+            battle.unit_mut(pet).underground = true;
+        }
+        if !attached {
             move_pet(battle, pet, target);
         }
         return;
+    }
+    // pets.py:334-339: a reattached Diggy emerges and stuns its new defense target.
+    let unit = battle.unit(pet);
+    if unit.name_id == Name::Diggy && unit.underground {
+        battle.unit_mut(pet).underground = false;
+        if let EntityRef::Building(building) = target {
+            if battle.is_defense_target(building) {
+                let level = battle.unit(pet).level.as_ref().expect("Diggy level");
+                let duration = battle.catalog.stats.get("Diggy", level, &["Stun Duration"], None).expect("Diggy stun");
+                let building = battle.building_mut(building);
+                building.stun_until = building.stun_until.max(t + duration);
+            }
+        }
     }
     let unit = battle.unit(pet);
     if unit.cooldown > 0.0 && !units::isclose(t + unit.cooldown, t) {
@@ -312,13 +364,16 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
                 .expect("lizard movement slow") / 100.0;
             let attack = battle.catalog.stats.get(&unit.name, level, &["Poison Attack Rate Decrease"], None)
                 .expect("lizard attack slow") / 100.0;
-            let (_, movement, attack) = spells::poison_factors(battle.unit(target), 0.0, movement, attack);
-            let unit = battle.unit_mut(target);
-            if !(unit.kind == Tag::Guardian && unit.extra.waiting) {
-                unit.move_slow = 1.0 - movement;
-                unit.move_slow_until = t + 3.0;
-                unit.atk_slow = 1.0 - attack;
-                unit.atk_slow_until = t + 3.0;
+            // pets.py:353-370: Lizard doses enter the shared poison state, without ramp.
+            let damage = battle.catalog.stats.get(&unit.name, level, &["Poison Max Damage per Second"], None)
+                .expect("lizard poison damage");
+            let source = Some(("unit".to_owned(), pet.id.0 as i64));
+            spells::poison(battle, target, damage, movement, attack, 1.0, spells::PoisonOptions {
+                ramp: false, origin: "lizard", source: source.clone(), source_until: None, refresh: 0.2,
+            });
+            if let Some(state) = battle.poison.iter_mut().find(|state|
+                state.unit == target && state.origin == "lizard" && state.source == source) {
+                state.until = t + 3.0;
             }
         }
     }

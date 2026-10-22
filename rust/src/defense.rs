@@ -425,6 +425,14 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
         }
         if battle.building(owner).key == "mgt" {
             projectile(battle, owner, target, w.damage * damage_rage, 12.0, 0.0);
+        } else if battle.building(owner).key == "cannon" {
+            // defense.py:744-748: geared Cannon projectile offset is level-specific.
+            let Level::Int(level) = battle.building(owner).level.as_ref().expect("Cannon level") else {
+                panic!("integer Cannon level");
+            };
+            let minimum = battle.catalog.setup.at("gear_minimum").at("cannon").i64();
+            let offset = battle.catalog.setup.at("geared_cannon_offsets").arr()[(*level - minimum) as usize].f64();
+            projectile(battle, owner, target, w.damage * damage_rage, 12.0, offset);
         } else {
             battle.hit_unit(target, w.damage * damage_rage, None, "normal", None);
         }
@@ -466,6 +474,8 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
             "cannon" => projectile(battle, owner, target, damage, 12.0, 0.0),
             "at" => projectile(battle, owner, target, damage, 18.0, 0.0),
             "ad" => projectile(battle, owner, target, damage, 8.0, 0.0),
+            // defense.py:778-781: long-range Multi-Gear tracks its projectile.
+            "mgt" => projectile(battle, owner, target, damage, 8.0, 1.5),
             _ => {
                 battle.hit_unit(target, damage, None, "normal", None);
             }
@@ -507,10 +517,16 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
                 matches!(w.targets, Tag::Ground | Tag::Both)
             };
             let building = battle.building(owner);
-            if building.key == "wt"
-                && matches!(building.level.as_ref(), Some(Level::Int(level)) if *level <= 4)
-            {
-                let flight = dist(bx, by, tx, ty) / 5.0;
+            if building.key == "wt" {
+                // defense.py:802-812: higher Wizard Towers fire from a 0.7-tile offset.
+                let flight = if matches!(
+                    building.level.as_ref(),
+                    Some(Level::Int(level)) if *level <= 4
+                ) {
+                    dist(bx, by, tx, ty) / 5.0
+                } else {
+                    0.0_f64.max(dist(bx, by, tx, ty) - 0.7) / 9.0
+                };
                 battle.add_pending(Pending::new(
                     t + flight,
                     tx,
@@ -598,8 +614,10 @@ pub fn mortar_shell(battle: &mut Battle, owner: BuildingId, target: UnitRef, dam
     let building = battle.building(owner);
     let w = weapon(battle, owner);
     let unit = battle.unit(target);
+    // defense.py:866-872: all Mortar shells use distance-based flight.
+    let flight = 0.0_f64.max(dist(building.x, building.y, unit.x, unit.y) - 0.2) / 5.0;
     let mut pending = Pending::new(
-        battle.t + w.extra.flight,
+        battle.t + flight,
         unit.x,
         unit.y,
         w.extra.splash,
@@ -667,10 +685,24 @@ pub fn multi(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
     if matches!(w.kind, Tag::MultiArcher | Tag::Candle) {
         sort_concentrated(battle, &mut keep, bx, by);
         weapon_mut(battle, owner).multi = keep.clone().into();
-        // keep and count are the same immutable snapshot previously used to
-        // build arrows; callbacks cannot change this local cycling order.
+        // defense.py:922-928: the third archer alternates between a retained pair.
+        let spare = if w.kind == Tag::MultiArcher && keep.len() == 2 {
+            let spare = if w.extra.spare_target == Some(keep[0]) {
+                keep[1]
+            } else {
+                keep[0]
+            };
+            weapon_mut(battle, owner).extra.spare_target = Some(spare);
+            Some(spare)
+        } else {
+            None
+        };
         for index in 0..count {
-            let reference = keep[index % keep.len()];
+            let reference = if index + 1 == count {
+                spare.unwrap_or(keep[index % keep.len()])
+            } else {
+                keep[index % keep.len()]
+            };
             if w.kind == Tag::MultiArcher {
                 projectile(battle, owner, reference, w.damage * damage_rage, 18.0, 0.0);
             } else {
@@ -869,7 +901,7 @@ pub fn eagle(battle: &mut Battle, owner: BuildingId) {
     let w = weapon(battle, owner).clone();
     let (bx, by) = battle.entity_position(EntityRef::Building(owner));
     for (radius, damage, shock) in [
-        (w.extra.splash, w.damage - w.extra.shock, false),
+        (w.extra.splash, w.damage, false),
         (w.extra.shock_radius, w.extra.shock, true),
     ] {
         let (x, y) = battle.entity_position(EntityRef::Unit(target));
@@ -926,7 +958,8 @@ pub fn sweeper(battle: &mut Battle, owner: BuildingId) {
             continue;
         }
         let angle = geom::py_atan2(unit.y - by, unit.x - bx);
-        if ((angle - w.facing + PI).rem_euclid(2.0 * PI) - PI).abs() <= PI / 4.0
+        // defense.py:1038: math.radians multiplies by the rounded PI / 180.0.
+        if ((angle - w.facing + PI).rem_euclid(2.0 * PI) - PI).abs() <= 52.5 * (PI / 180.0)
             && (aim.is_none() || distance < best_distance)
         {
             aim = Some(angle);
@@ -964,7 +997,9 @@ pub fn tower_candidates(battle: &Battle, owner: BuildingId) -> Vec<UnitRef> {
         .into_iter()
         .filter(|reference| {
             let unit = battle.unit(*reference);
-            !spells::NO_TRIGGER.contains(&unit.name_id)
+        // defense.py:1107-1115: spell Skeletons can trigger Poison Towers.
+        (!spells::NO_TRIGGER.contains(&unit.name_id)
+            || w.mode.as_deref() == Some("poison") && unit.name_id == Name::SpellSkeleton)
                 && (!matches!(w.mode.as_deref(), Some("eq" | "quake" | "earthquake"))
                     || !unit.flying)
         })
@@ -1165,16 +1200,10 @@ pub fn builders_tick(battle: &mut Battle) {
                     * boost
             })
             .collect();
-        let efficiency = if amounts.iter().all(|amount| *amount == amounts[0]) {
-            weights[..builders.len().min(weights.len())]
-                .iter()
-                .copied()
-                .fold(0.0, |total, weight| total + weight)
-                / builders.len() as f64
-        } else {
-            1.0
-        };
-        for ((index, _), amount) in builders.into_iter().zip(amounts) {
+        // defense.py:1253-1259: marginal weights follow battle.builders order.
+        for (position, ((index, _), amount)) in builders.into_iter().zip(amounts).enumerate()
+        {
+            let efficiency = weights[position.min(weights.len() - 1)];
             if battle.builders[index].cooldown <= 0.0 {
                 let target = battle.building_mut(target);
                 target.hp = target.max_hp.min(target.hp + amount * efficiency);

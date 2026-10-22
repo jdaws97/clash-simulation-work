@@ -372,6 +372,7 @@ text_tags! {
     ReviveCast => "revive_cast",
     ReviveDue => "revive_due",
     Ricochet => "ricochet",
+    RollingLog => "rolling_log",
     Rubble => "rubble",
     Santa => "santa",
     Scatter => "scatter",

@@ -85,7 +85,7 @@ impl Battle {
         }));
         let u = self.unit(reference);
         let (x, y) = (u.x, u.y);
-        let reach = units::effective_range(u).max(GOAL_REACH_MIN);
+        let reach = units::effective_range(self, u).max(GOAL_REACH_MIN);
         let costs = self.navigation_grid(reference).building_costs(
             x,
             y,
@@ -207,7 +207,7 @@ impl Battle {
             return;
         }
         let reach = if position.is_none() {
-            units::effective_range(u)
+            units::effective_range(self, u)
         } else {
             1.0 / RES as f64
         };

@@ -154,8 +154,8 @@ enum CacheKey {
         wall_extra: u64,
     },
     Source {
-        tile_i: usize,
-        tile_j: usize,
+        i: usize,
+        j: usize,
         wall_extra: u64,
     },
 }
@@ -169,8 +169,7 @@ impl CacheKey {
         wall_extra: f64,
     ) -> Self {
         // These callers pass their complete Python key, unlike movement's
-        // (identity, x, y, reach, mode). Key counts and insertion order affect
-        // prune, and hence source_field's observable first-half-cell reuse.
+        // (identity, x, y, reach, mode).
         match identity {
             TargetIdentity::Breaker(building) => return Self::Breaker(building),
             TargetIdentity::Rubble(building) => return Self::Rubble(building, float_key(reach)),
@@ -237,7 +236,6 @@ pub struct Grid {
     topology_version: Option<u64>,
     changes: Vec<Change>,
     connectivity: Connectivity,
-    access_connectivity: Connectivity,
     field_storage: Vec<FieldStorage>,
     oldest_storage: Option<usize>,
     newest_storage: Option<usize>,
@@ -274,7 +272,6 @@ impl Grid {
             topology_version: None,
             changes: Vec::new(),
             connectivity: Connectivity::new(),
-            access_connectivity: Connectivity::new(),
             field_storage: Vec::new(),
             oldest_storage: None,
             newest_storage: None,
@@ -380,44 +377,6 @@ impl Grid {
         self.topology_version = Some(self.version);
     }
 
-    // units.py:125-136: the temporary access Grid has blocked=blocked|wall
-    // and no wall costs. Its unblocked source is its only zero-distance seed.
-    // All eight edges are symmetric, with BOTH diagonal corners tested against
-    // blocked|wall. Positive finite steps make cost<INF equivalent to sharing
-    // a component with any building goal (battle grids cannot approach 1e9).
-    // A blocked source has no seed, so even an overlapping goal is unreachable.
-    // Keep this separate from rubble's graph, whose corners ignore walls.
-    pub fn access_component(&mut self, x: f64, y: f64) -> Option<u32> {
-        self.refresh_topology();
-        self.access_connectivity.ensure(
-            self.version,
-            &self.cell_flags,
-            &self.move_masks,
-            &self.neighbors,
-            true,
-        );
-        let (i, j) = self.cell(x, y);
-        let label = self.access_connectivity.labels[self.index(i, j)];
-        (label != NO_COMPONENT).then_some(label)
-    }
-
-    pub fn building_accessible(
-        &mut self,
-        component: Option<u32>,
-        cx: f64,
-        cy: f64,
-        half: f64,
-        reach: f64,
-    ) -> bool {
-        let Some(component) = component else {
-            return false;
-        };
-        let index = self.building_goal_index(cx, cy, half, reach);
-        self.building_goals[index]
-            .iter()
-            .any(|span| self.access_connectivity.labels[span.start..span.end].contains(&component))
-    }
-
     // With wall_extra=inf, only non-wall cells can relax a neighbor. Hence
     // finite cells are exactly: unblocked seeds; non-wall components containing
     // a non-wall seed; and unblocked walls adjacent by an allowed move to such
@@ -442,7 +401,6 @@ impl Grid {
             &self.cell_flags,
             &self.move_masks,
             &self.neighbors,
-            false,
         );
         let key = CacheKey::target(
             TargetIdentity::Rubble(building),
@@ -453,10 +411,7 @@ impl Grid {
         );
         let (field, inserted) = self.cache_entry(key, f64::INFINITY);
         if inserted || self.cache[field.0].version != self.version {
-            // Preserve the original field's cache insertion order and version
-            // even for a blocked query cell. Pruning can evict source fields,
-            // changing which half-cell is first reused for a tile. These
-            // entries carry seed labels without allocating a distance field.
+            // Keep seed labels without allocating a distance field.
             let entry = &mut self.cache[field.0];
             entry.version = self.version;
             entry.goal_geometry = (cx.to_bits(), cy.to_bits(), half.to_bits(), reach.to_bits());
@@ -521,7 +476,8 @@ impl Grid {
         // Wall cost separates normal and ignore fields (fly bypasses fields).
         let key = CacheKey::target(identity, cx, cy, reach, wall_extra);
         let (field, inserted) = self.cache_entry(key, wall_extra);
-        if !inserted && self.cache[field.0].version == self.version {
+        let same_cost = self.cache[field.0].wall_extra == f64::from(wall_extra as f32);
+        if !inserted && same_cost && self.cache[field.0].version == self.version {
             // Python's key can omit goal geometry: even after storage
             // eviction, reuse saved goals rather than the current geometry.
             self.use_field(field);
@@ -529,12 +485,13 @@ impl Grid {
         }
         self.refresh_topology();
         let entry = &mut self.cache[field.0];
-        let mut same_goals = !inserted;
+        let mut same_goals = !inserted && same_cost;
+        entry.wall_extra = f64::from(wall_extra as f32);
         let geometry = (cx.to_bits(), cy.to_bits(), half.to_bits(), reach.to_bits());
         if inserted || entry.goal_geometry != geometry {
             let mut goals = Vec::new();
             for_each_goal_cell(self.n, cx, cy, half, reach, |cell| goals.push(cell));
-            same_goals = !inserted && entry.goals == goals;
+            same_goals = !inserted && same_cost && entry.goals == goals;
             entry.goals = goals;
             entry.goal_geometry = geometry;
         }
@@ -551,29 +508,22 @@ impl Grid {
     pub fn source_field(&mut self, x: f64, y: f64, wall_extra: f64) -> Field {
         let (i, j) = self.cell(x, y);
         let key = CacheKey::Source {
-            tile_i: i / RES,
-            tile_j: j / RES,
+            i,
+            j,
             wall_extra: float_key(wall_extra),
         };
-        // pathing.py:237-255: same-version hits reuse the first half-cell's
-        // field for the entire tile, without checking the new source cell.
+        // pathing.py:248-261: each half-tile source has its own field.
         let (field, inserted) = self.cache_entry(key, wall_extra);
         if !inserted && self.cache[field.0].version == self.version {
-            // A missing slot restarts from the FIRST caller's saved half-cell.
             self.use_field(field);
             return field;
         }
         self.refresh_topology();
         let cell = self.index(i, j);
-        let same_source = !inserted && self.cache[field.0].goals.first() == Some(&cell);
-        // A different half-cell in the same tile can reuse only a current
-        // version. Stale entries repair only for the original source cell.
-        if !same_source {
-            let goals = &mut self.cache[field.0].goals;
-            goals.clear();
-            goals.push(cell);
+        if inserted {
+            self.cache[field.0].goals.push(cell);
         }
-        if !same_source || !self.repair_field(field) {
+        if inserted || !self.repair_field(field) {
             self.restart_field(field);
         }
         self.use_field(field);
@@ -720,8 +670,7 @@ impl Grid {
         let (i, j) = self.cell(x, y);
         let cell = self.index(i, j);
         let storage = self.ensure(field, cell);
-        let distances = &self.field_storage[storage].distances;
-        let here = distances[cell];
+        let here = self.field_storage[storage].distances[cell];
         if here <= 0.0 {
             return NextStep {
                 x,
@@ -730,17 +679,47 @@ impl Grid {
                 at_goal: true,
             };
         }
-        let mut best = here;
+        if self.blocked[cell] {
+            return NextStep {
+                x,
+                y,
+                is_wall: false,
+                at_goal: here >= INF,
+            };
+        }
+        // next_step now compares every legal neighbor's full entry cost.
+        // Settle all of them: unlike descending raw distances, a wall can
+        // make the winner's distance larger than the current cell's value.
+        let mut moves = self.move_masks[cell];
+        while moves != 0 {
+            let q = moves.trailing_zeros() as usize;
+            moves &= moves - 1;
+            let next = self.neighbors[cell][q] as usize;
+            self.ensure(field, next);
+        }
+        let distances = &self.field_storage[storage].distances;
+        let wall_extra = self.cache[field.0].wall_extra;
+        let mut best = f64::INFINITY;
         let mut best_cell = cell;
-        // pathing.py:287-297: choose the lowest stored distance, retaining the
-        // earlier neighbor on ties. Do not check obstacles or corner cutting.
-        // Unsettled neighbors have stored values >= here and cannot be chosen.
-        for &next in &self.neighbors[cell] {
-            if next == NO_NEIGHBOR {
+        // pathing.py:307-324: preserve neighbor order, f64 step arithmetic
+        // and the relaxation's blocked/corner rules.
+        let mut moves = self.move_masks[cell];
+        while moves != 0 {
+            let q = moves.trailing_zeros() as usize;
+            moves &= moves - 1;
+            let next = self.neighbors[cell][q] as usize;
+            if distances[next] >= INF {
                 continue;
             }
-            let next = next as usize;
-            let distance = distances[next];
+            let mut cost = if q < 4 {
+                0.5
+            } else {
+                2.0_f64.sqrt() / RES as f64
+            };
+            if self.wall[next] {
+                cost += wall_extra;
+            }
+            let distance = f64::from(distances[next]) + cost;
             if distance < best {
                 best = distance;
                 best_cell = next;
@@ -764,10 +743,7 @@ impl Grid {
     }
 
     pub fn prune(&mut self) {
-        // pathing.py:261-267: preserve dictionary insertion order, including
-        // stale keys. A stable version sort chooses the same retained fields
-        // on ties. Evicting a live source key can change the first half-cell
-        // reused for that tile, so this is observable simulation state.
+        // pathing.py:266-272: preserve stable version order when pruning.
         if self.cache.len() > 600 {
             self.cache
                 .sort_by(|first, second| second.version.cmp(&first.version));
@@ -891,9 +867,7 @@ impl Grid {
 
     fn use_field(&mut self, field: Field) -> usize {
         if self.cache[field.0].storage.is_none() {
-            // Distances are a unique fixed point of saved goals, wall cost
-            // and topology. Rebuilding storage preserves Python bookkeeping,
-            // including same-version source reuse after LRU eviction.
+            // Rebuild evicted storage from the saved goals and wall cost.
             self.refresh_topology();
             self.restart_field(field);
         }
@@ -1073,7 +1047,7 @@ impl FieldStorage {
     }
 }
 
-// Non-wall components for rubble and solid-wall access; no distances stored.
+// Non-wall components for rubble; no distances stored.
 const NO_COMPONENT: u32 = u32::MAX;
 
 struct Connectivity {
@@ -1097,7 +1071,6 @@ impl Connectivity {
         cell_flags: &[u8],
         move_masks: &[u8],
         neighbors: &[[u32; 8]],
-        solid_walls: bool,
     ) {
         if self.version == Some(version) {
             return;
@@ -1118,14 +1091,6 @@ impl Connectivity {
                 while moves != 0 {
                     let q = moves.trailing_zeros() as usize;
                     moves &= moves - 1;
-                    if solid_walls && q >= 4 {
-                        let (along_y, along_x) = DIAGONAL_CORNERS[q - 4];
-                        if cell_flags[neighbors[current][along_y] as usize] != 0
-                            || cell_flags[neighbors[current][along_x] as usize] != 0
-                        {
-                            continue;
-                        }
-                    }
                     let next = neighbors[current][q] as usize;
                     if cell_flags[next] == 0 && self.labels[next] == NO_COMPONENT {
                         self.labels[next] = label;

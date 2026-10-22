@@ -1,8 +1,8 @@
 //! Ports heroes.py:28-1140,1348-1476. setup.rs constructs defending heroes.
 
 use crate::battle::SpawnOptions;
-use crate::catalog::UnitSpec;
-use crate::combat::SplashBuildingsOptions;
+use crate::catalog::{game_int, UnitSpec};
+use crate::combat::{SplashBuildingsOptions, SplashUnitsOptions};
 use crate::geom::{dist, py_hypot};
 use crate::labels::{Name, Specials, Tag};
 use crate::state::*;
@@ -166,6 +166,20 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
     let Some(loadout) = battle.plan.loadout(&name).cloned().or_else(|| default_loadout(battle, &name)) else {
         return;
     };
+    // heroes.py:108-126: validate every slot before applying any boosts.
+    assert_eq!(loadout.hero, name, "Loadout for {} cannot be applied to {name}", loadout.hero);
+    assert!(loadout.equipment.len() <= 2, "{name} can equip at most 2 equipment items");
+    let mut equipped = Vec::new();
+    for equipment in &loadout.equipment {
+        assert!(!equipped.contains(&equipment), "Duplicate equipment for {name}: {equipment}");
+        equipped.push(equipment);
+        let stats = &battle.catalog.stats;
+        assert!(stats.registry.get(equipment).is_some() && stats.record(equipment).at("kind").str() == "equipment",
+            "{equipment} is not hero equipment");
+        let owner = stats.attrs(equipment).get("raw").and_then(|raw| raw.get("User"))
+            .and_then(crate::json::Json::opt_str);
+        assert!(owner == Some(name.as_str()), "{equipment} belongs to {owner:?}, not {name}");
+    }
     let th = battle.plan.town_hall();
     let pet_level = pet_level(battle, hero, &loadout, th);
     let mut kit = Kit::new(&name);
@@ -202,7 +216,9 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
             "Electro Boots" => battle.unit_mut(hero).extra.boots_next = Some(battle.t + 0.4),
             "Rocket Spear" | "Revenge Deck" | "Fire Heart" | "Action Figure" | "Giant Arrow"
             | "Eternal Tome" | "Rage Gem" | "Fireball" | "Rocket Backpack"
-            | "Spiky Ball" | "Earthquake Boots" | "Dark Orb" | "Meteor Staff" => {}
+            | "Spiky Ball" | "Earthquake Boots" | "Dark Orb" | "Meteor Staff"
+            | "Barbarian Puppet" | "Archer Puppet" | "Hog Rider Puppet" | "Healer Puppet"
+            | "Lavaloon Puppet" | "Seeking Shield" | "Haste Vial" => {}
             _ => todo!("stage 3+: equip {equipment}"),
         }
     }
@@ -237,7 +253,7 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
     let name = kit.pet_name.as_deref().expect("pet name").to_owned();
     let level = kit.pet_level.clone().expect("pet level");
     if !matches!(name.as_str(), "Unicorn" | "Phoenix" | "Frosty" | "Poison Lizard" | "Spirit Fox"
-        | "Electro Owl" | "Angry Jelly" | "L.A.S.S.I") {
+        | "Electro Owl" | "Angry Jelly" | "L.A.S.S.I" | "Diggy") {
         todo!("stage 3+: pet {name}");
     }
     let stats = &battle.catalog.stats;
@@ -251,15 +267,12 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
     let interval = attrs.get("attack_interval").and_then(|v| v.opt_f64()).filter(|v| *v != 0.0)
         .or_else(|| attrs.get("attack_interval_ck").and_then(|v| v.opt_f64()).filter(|v| *v != 0.0))
         .unwrap_or(1.0);
-    let raw = attrs.get("raw");
-    let healing_range = raw.and_then(|raw| raw.get("Healing Range"))
-        .and_then(|value| stats::num(value, None)).filter(|value| *value != 0.0);
-    let range = healing_range.or_else(|| {
-        ["Range", "Attack Range"].iter().find_map(|key| raw.and_then(|raw| raw.get(key))
-            .and_then(|value| stats::num(value, None)))
-    }).or_else(|| attrs.get("range").and_then(|v| v.opt_f64()))
-        .or_else(|| attrs.get("range_ck").and_then(|v| v.opt_f64())).expect("pet range");
-    let speed = attrs.get("speed").and_then(|v| v.opt_f64())
+    // heroes.py:232-234: pet construction bypasses unit_numbers' range override.
+    let range = *battle.catalog.pet_spawn_ranges.get(&name).expect("pet spawn range");
+    // specs.py:412-429: game-data movement uses the first row, including pets.
+    let row = battle.catalog.game_unit_data(&name, None);
+    let speed = row.get("Speed").map(|_| game_int(row, "Speed", 0) as f64 / 100.0)
+        .or_else(|| attrs.get("speed").and_then(|v| v.opt_f64()))
         .or_else(|| attrs.get("speed_display").and_then(|v| v.opt_f64()).map(|v| v / 8.0))
         .unwrap_or(0.0);
     let flying = attrs.get("is_flying").is_some_and(|v| v.bool());
@@ -379,6 +392,7 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
         pet.extra.brainwash_until = battle.t
             + battle.catalog.stats.get(&name, &level, &["Brainwash Duration"], None)
                 .expect("Brainwash duration");
+        pet.extra.paused_timers.brainwash_until = true;
     }
     if name == "Spirit Fox" {
         let duration = battle.catalog.stats.get(&name, &level, &["Invisibility Duration"], None)
@@ -388,6 +402,9 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
         let hero = battle.unit_mut(hero);
         hero.invisible_until = hero.invisible_until.max(until);
         pet.extra.fox_next = battle.t + duration + 6.0;
+    }
+    if name == "Diggy" {
+        pet.underground = true;
     }
     if name == "Phoenix" {
         pet.extra.egg = true;
@@ -618,6 +635,7 @@ pub fn on_death(battle: &mut Battle, hero: UnitRef) -> bool {
         pet.extra.rampage_detached = true;
         if pet.name_id == Name::AngryJelly {
             pet.extra.brainwash_until = t;
+            pet.extra.paused_timers.brainwash_until = true;
         }
     }
     if battle.unit(hero).dash.is_some() {
@@ -629,8 +647,13 @@ pub fn on_death(battle: &mut Battle, hero: UnitRef) -> bool {
         let damage = col(battle, "Fire Heart", kit.lv("Fire Heart"), &["damage on defeat"], 0.0);
         let (x, y) = (unit.x, unit.y);
         battle.unit_mut(hero).extra.fire_heart_done = true;
+        // heroes.py:508-512: Fire Heart reaches structures, walls and all defenders.
         battle.splash_buildings(x, y, 4.0, damage, SplashBuildingsOptions {
-            walls: false,
+            walls: true,
+            ..Default::default()
+        });
+        battle.splash_units(x, y, 4.0, damage, true, true, SplashUnitsOptions {
+            team: Team::Def,
             ..Default::default()
         });
     }
@@ -702,20 +725,25 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 let mut hit = Vec::new();
                 let candidates = ball_targets(battle, &hit);
                 let u = battle.unit(hero);
-                let mut current = if target.is_some_and(|target| candidates.contains(&target)) {
+                let current = if target.is_some_and(|target| candidates.contains(&target)) {
                     target
                 } else {
                     nearest_center(battle, &candidates, u.x, u.y)
                 };
-                for _ in 0..count {
-                    let Some(victim) = current else {
-                        break;
-                    };
+                if let Some(victim) = current.filter(|_| count > 0) {
                     hit.push(victim);
-                    damage_target(battle, victim, damage);
-                    let candidates = ball_targets(battle, &hit);
                     let (x, y) = battle.entity_position(victim);
-                    current = nearest_center(battle, &candidates, x, y);
+                    let row = battle.catalog.game_data("projectiles", "BarbarianKingGearFootball", None);
+                    let speed = game_int(row, "Speed", 0) as f64 / 100.0;
+                    let u = battle.unit(hero);
+                    let mut pending = Pending::new(t + dist(u.x, u.y, x, y) / speed,
+                        u.x, u.y, 0.0, damage, false, true, &u.name);
+                    pending.extra.hero_impact = Some("ball".to_owned());
+                    pending.extra.remaining = count as usize;
+                    pending.extra.visited = hit;
+                    pending.actor = Some(EntityRef::Unit(hero));
+                    pending.target = Some(victim);
+                    battle.add_pending(pending);
                 }
             }
             "Earthquake Boots" => {
@@ -793,6 +821,8 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 });
                 invisible(battle.unit_mut(hero), t + 1.0);
             }
+            "Barbarian Puppet" | "Archer Puppet" | "Hog Rider Puppet" | "Healer Puppet"
+            | "Lavaloon Puppet" => puppet(battle, hero, &name, &level, 0, None),
             "Eternal Tome" => {
                 let duration = col(battle, &name, &level, &["ability duration"], 8.0);
                 battle.unit_mut(hero).extra.tome_until = t + duration;
@@ -821,6 +851,23 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 pending.extra.hero_impact = Some("blast".to_owned());
                 battle.add_pending(pending);
             }
+            "Seeking Shield" => {
+                battle.unit_mut(hero).extra.attack_lock_until = t + 1.2;
+                let unit = battle.unit(hero);
+                let mut pending = Pending::new(
+                    t + 0.933,
+                    unit.x,
+                    unit.y,
+                    0.0,
+                    col(battle, &name, &level, &["projectile damage"], 0.0),
+                    true,
+                    true,
+                    &unit.name,
+                );
+                pending.extra.hero_impact = Some("shield".to_owned());
+                pending.extra.remaining = 4;
+                battle.add_pending(pending);
+            }
             "Rocket Spear" => {
                 let shots = col(battle, &name, &level, &["number of attacks"], 9.0) as i64;
                 let bonus = col(battle, &name, &level, &["damage per shot increase"], 0.0);
@@ -832,6 +879,29 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                     unit.extra.spear_base_range = Some(unit.range);
                 }
                 unit.range = 10.0;
+            }
+            "Haste Vial" => {
+                let duration = col(battle, &name, &level, &["ability duration"], 10.0);
+                let speed = col(battle, &name, &level, &["speed increase"], 0.0) / 8.0;
+                let attack = 1.0
+                + col(battle, &name, &level, &["ability attributes / attack speed increase"], 0.0, ) / 100.0;
+                let source = StatusSource::Name(name.clone());
+                let unit = battle.unit_mut(hero);
+                let value = (speed, t + duration);
+                if let Some((_, previous)) = unit
+                    .extra
+                    .haste_effects
+                    .iter_mut()
+                    .find(|(key, _)| *key == source)
+                {
+                    *previous = value;
+                } else {
+                    unit.extra.haste_effects.push((source, value));
+                }
+                unit.extra.haste_attack_until = t + duration;
+                unit.extra.haste_attack = attack;
+                unit.extra.paused_timers.haste_attack_until = true;
+                // heroes.py:721-722: preserve the current ordinary attack cooldown.
             }
             "Rocket Backpack" => {
                 let damage = col(battle, &name, &level, &["ability damage"], 0.0);
@@ -850,6 +920,140 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
 pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
     match pending.extra.hero_impact.as_deref().expect("hero impact mode") {
         "blast" => blast(battle, pending.x, pending.y, pending.radius, pending.damage, None, 1.0),
+        // heroes.py:845-855: subsequent puppet batches retain the scheduled clock.
+        "puppet" => {
+            let Some(EntityRef::Unit(hero)) = pending.actor else {
+                panic!("puppet hero actor");
+            };
+            puppet(
+                battle,
+                hero,
+                pending.extra.equipment.as_deref().expect("puppet equipment"),
+                pending.extra.level.as_ref().expect("puppet level"),
+                pending.extra.first,
+                Some(pending.at),
+            );
+        }
+        // heroes.py:856-882: tracking ball bounces use center distance and first ties.
+        "ball" => {
+            let target = pending.target.expect("Spiky Ball target");
+            (pending.x, pending.y) = battle.entity_position(target);
+            if battle.entity_alive(target) && match target {
+                EntityRef::Unit(unit) => battle.unit(unit).indirect_targetable(battle),
+                _ => true,
+            } {
+                damage_target(battle, target, pending.damage);
+            }
+            pending.extra.remaining -= 1;
+            if pending.extra.remaining == 0 {
+                return;
+            }
+            let candidates = ball_targets(battle, &pending.extra.visited);
+            let Some(target) = nearest_center(battle, &candidates, pending.x, pending.y) else {
+                return;
+            };
+            pending.extra.visited.push(target);
+            let (x, y) = battle.entity_position(target);
+            let row = battle.catalog.game_data("projectiles", "BarbarianKingGearFootball", None);
+            let speed = game_int(row, "Speed", 0) as f64 / 100.0;
+            pending.at = battle.t + dist(pending.x, pending.y, x, y) / speed;
+            pending.target = Some(target);
+            battle.add_pending(pending);
+        }
+        // heroes.py:883-917: sweep only the newly travelled segment each tick.
+        "arrow" => {
+            let (dx, dy) = pending.extra.direction.expect("Giant Arrow direction");
+            let previous = pending.extra.travel;
+            let row = battle.catalog.game_data("projectiles", "QueenPierceProjectile", None);
+            let speed = game_int(row, "Speed", 0) as f64 / 100.0;
+            let travel = pending.extra.length.min((battle.t - pending.released_at.expect("Giant Arrow release")) * speed);
+            let targets: Vec<_> = battle.buildings.iter().map(|b| EntityRef::Building(b.id))
+                .chain(battle.walls.iter().map(|w| EntityRef::Wall(w.id)))
+                .chain(battle.defenders_pool().map(|u| EntityRef::Unit(u.reference()))).collect();
+            for target in targets {
+                if !battle.entity_alive(target) || pending.extra.visited.contains(&target) {
+                    continue;
+                }
+                let half = match target {
+                    EntityRef::Building(id) => {
+                        let building = battle.building(id);
+                        if !building.counted {
+                            continue;
+                        }
+                        building.half_hit
+                    }
+                    EntityRef::Wall(id) => battle.walls[id.0].half_hit,
+                    EntityRef::Unit(unit) => {
+                        if !battle.unit(unit).indirect_targetable(battle) {
+                            continue;
+                        }
+                        0.0
+                    }
+                    EntityRef::Trap(_) => unreachable!(),
+                };
+                let (x, y) = battle.entity_position(target);
+                let (px, py) = (x - pending.x, y - pending.y);
+                let along = px * dx + py * dy;
+                if along + half >= previous && along - half <= travel
+                    && 0.0 < along && along < pending.extra.length
+                    && (px * dy - py * dx).abs() <= half + pending.radius {
+                    pending.extra.visited.push(target);
+                    let multiplier = if matches!(
+                        target,
+                        EntityRef::Building(id) if battle.building(id).key == "ad"
+                    ) {
+                        2.0
+                    } else {
+                        1.0
+                    };
+                    damage_target(battle, target, pending.damage * multiplier);
+                }
+            }
+            if travel < pending.extra.length {
+                pending.extra.travel = travel;
+                pending.at = crate::geom::round6(battle.t + battle.dt);
+                battle.add_pending(pending);
+            }
+        }
+        "shield" => {
+            if let Some(target) = pending.target {
+                (pending.x, pending.y) = battle.entity_position(target);
+                if battle.entity_alive(target) {
+                    damage_target(battle, target, pending.damage);
+                }
+                pending.extra.remaining -= 1;
+            }
+            if pending.extra.remaining == 0 {
+                return;
+            }
+            let mut candidates = targets(battle, true);
+            candidates.retain(|target| !pending.extra.visited.contains(target));
+            if candidates.is_empty() {
+                candidates = targets(battle, false);
+                candidates.retain(|target| !pending.extra.visited.contains(target));
+            }
+            let mut best = None;
+            let mut closest = f64::INFINITY;
+            for target in candidates {
+                let distance = distance(battle, target, pending.x, pending.y);
+                if best.is_none() || distance < closest {
+                    best = Some(target);
+                    closest = distance;
+                }
+            }
+            let Some(target) = best else {
+                let Some(EntityRef::Unit(hero)) = pending.actor else {
+                    panic!("Seeking Shield actor must be a hero");
+                };
+                battle.unit_mut(hero).extra.shield_destination = Some((0.0, 0.0));
+                return;
+            };
+            pending.extra.visited.push(target);
+            let (x, y) = battle.entity_position(target);
+            pending.at = battle.t + dist(pending.x, pending.y, x, y) / 20.0;
+            pending.target = Some(target);
+            battle.add_pending(pending);
+        }
         "orb" => {
             let at = battle.t.min(pending.extra.until);
             let travel = 0.0_f64.max(at - pending.extra.last_at) * pending.extra.speed;
@@ -963,36 +1167,124 @@ fn line(
     });
     let magnitude = py_hypot(dx, dy);
     let magnitude = if magnitude == 0.0 { 1.0 } else { magnitude };
-    let targets: Vec<_> = battle.buildings.iter().map(|b| EntityRef::Building(b.id))
-        .chain(battle.walls.iter().map(|w| EntityRef::Wall(w.id)))
-        .chain(battle.defenders_pool().map(|u| EntityRef::Unit(u.reference()))).collect();
-    for target in targets {
-        if !battle.entity_alive(target) {
-            continue;
+    // heroes.py:992-1022: normalize before multiplying along/cross distances.
+    let mut pending = Pending::new(battle.t + battle.dt, x, y, width, damage, true, true, &unit.name);
+    pending.extra.hero_impact = Some("arrow".to_owned());
+    pending.extra.direction = Some((dx / magnitude, dy / magnitude));
+    pending.extra.length = length;
+    pending.actor = Some(EntityRef::Unit(hero));
+    battle.add_pending(pending);
+}
+
+// heroes.py:1025-1083: preserve batch indices, spawn order and the scheduled clock.
+fn puppet(
+    battle: &mut Battle,
+    hero: UnitRef,
+    equipment: &str,
+    equipment_level: &Level,
+    first: i64,
+    at: Option<f64>,
+) {
+    let (troop, count_column, level_column) = match equipment {
+        "Barbarian Puppet" => ("Barbarian", "summoned barbarians", None),
+        "Archer Puppet" => ("Archer", "summoned archers", None),
+        "Hog Rider Puppet" => ("Hog Rider", "summoned hog riders", Some("hog rider level")),
+        "Healer Puppet" => ("Healer", "summoned healers", Some("healer level")),
+        "Lavaloon Puppet" => ("Lavaloon", "summoned lavaloons", Some("lavaloon level")),
+        _ => unreachable!("puppet equipment"),
+    };
+    let t = battle.t;
+    if equipment == "Hog Rider Puppet" {
+        invisible(battle.unit_mut(hero), t + 1.0);
+    }
+    let count = col(battle, equipment, equipment_level, &[count_column], 1.0) as i64;
+    let level = match level_column {
+        Some(column) => {
+            Some(Level::Int(col(battle, equipment, equipment_level, &[column], 0.0) as i64))
         }
-        let (half, multiplier) = match target {
-            EntityRef::Building(id) => {
-                let building = battle.building(id);
-                if !building.counted {
-                    continue;
-                }
-                (building.half_hit, if building.key == "ad" { 2.0 } else { 1.0 })
-            }
-            EntityRef::Wall(id) => (battle.walls[id.0].half_hit, 1.0),
-            EntityRef::Unit(id) => {
-                if battle.unit(id).underground {
-                    continue;
-                }
-                (0.0, 1.0)
-            }
-            EntityRef::Trap(_) => unreachable!(),
-        };
-        let (tx, ty) = battle.entity_position(target);
-        let (px, py) = (tx - x, ty - y);
-        let along = (px * dx + py * dy) / magnitude;
-        if 0.0 < along && along < length && (px * dy - py * dx).abs() / magnitude <= half + width {
-            damage_target(battle, target, damage * multiplier);
+        None => battle.plan.researched_level(troop).cloned().flatten(),
+    };
+    let ability = match equipment {
+        "Barbarian Puppet" => Some("BarbarianKingSpawnBarbarians"),
+        "Archer Puppet" => Some("ArcherQueenSpawnArchers"),
+        "Lavaloon Puppet" => Some("GrandWardenSummonLavaloon"),
+        _ => None,
+    };
+    let (batch, delay) = ability.map_or((count, 0.0), |name| {
+        let row = battle.catalog.game_data("special_abilities", name, None);
+        let batch = game_int(row, "SpawnnedTroopsPerHit", count);
+        let delay = game_int(row, "SpawnDelayBetweenHitsMS", 0) as f64 / 1000.0;
+        (batch, delay)
+    });
+    for index in first..(first + batch).min(count) {
+        let angle = 2.0 * std::f64::consts::PI * index as f64 / count.max(1) as f64;
+        let unit = battle.unit(hero);
+        let summon = battle.spawn(
+            troop,
+            Team::Atk,
+            unit.x + 0.6 * crate::geom::py_cos(angle),
+            unit.y + 0.6 * crate::geom::py_sin(angle),
+            SpawnOptions {
+                level: level.clone(),
+                kind: Tag::Summon,
+                group: unit.group.clone(),
+                town_hall: Some(battle.plan.town_hall()),
+                ..Default::default()
+            },
+        );
+        if equipment == "Archer Puppet" {
+            let duration = col(
+                battle,
+                equipment,
+                equipment_level,
+                &["archer invisibility duration"],
+                6.0,
+            );
+            battle.unit_mut(summon).invisible_until = t + duration;
         }
+        if equipment == "Barbarian Puppet" {
+            let damage = 1.0
+                + col(
+                    battle,
+                    equipment,
+                    equipment_level,
+                    &["barbarian damage increase"],
+                    0.0,
+                ) / 100.0;
+            let speed = col(
+                battle,
+                equipment,
+                equipment_level,
+                &["barbarian speed increase"],
+                0.0,
+            ) / 8.0;
+            units::add_rage(
+                battle.unit_mut(summon),
+                StatusSource::Name(equipment.to_owned()),
+                damage,
+                speed,
+                t + 20.0,
+            );
+        }
+    }
+    if first + batch < count {
+        let u = battle.unit(hero);
+        let mut pending = Pending::new(
+            at.unwrap_or(battle.t) + delay,
+            u.x,
+            u.y,
+            0.0,
+            0.0,
+            false,
+            false,
+            &u.name,
+        );
+        pending.extra.hero_impact = Some("puppet".to_owned());
+        pending.extra.equipment = Some(equipment.to_owned());
+        pending.extra.level = Some(equipment_level.clone());
+        pending.extra.first = first + batch;
+        pending.actor = Some(EntityRef::Unit(hero));
+        battle.add_pending(pending);
     }
 }
 
@@ -1477,6 +1769,8 @@ fn resume_timers(unit: &mut Unit, now: f64) {
         (e.paused_timers.torch_until, &mut e.torch_until),
         (e.paused_timers.haste_attack_until, &mut e.haste_attack_until),
         (e.paused_timers.angry_until, &mut e.angry_until),
+        // heroes.py:1419-1421: Angry Jelly's attachment clock pauses in Recall.
+        (e.paused_timers.brainwash_until, &mut e.brainwash_until),
     ] {
         if present {
             *deadline += elapsed;

@@ -89,7 +89,28 @@ def catalog():
                         )
                     except Exception:  # noqa: BLE001 - incomplete rows stay absent
                         pass
+    # specs.py:352-386 owns CSV inheritance and level clamping. Export its
+    # resolved rows, so Rust reads the same data without a second CSV reader.
+    game_tables = {}
+    for table in (
+        "characters",
+        "heroes",
+        "pets",
+        "projectiles",
+        "special_abilities",
+        "spells",
+    ):
+        specs.game_data(table, "")
+        game_tables[table] = specs._GAME_TABLES[table]
+    # heroes.py constructs pets directly, bypassing unit_numbers. Preserve
+    # its range_ck fallback separately from the troop game-range override.
+    pet_spawn_ranges = {
+        name: stats.attrs(name).get("range_ck", specs.attack_range(name))
+        for name, rec in reg.items()
+        if rec.get("kind") == "pet"
+    }
     return {
+        "game_data": game_tables,
         "note": "Rust engine catalog, exported by tools/baselab/rust_export.py catalog",
         "registry": reg,
         "units": units,
@@ -99,6 +120,7 @@ def catalog():
         "new_target_delays": engine_units._new_target_delays(),
         "warden_weights": engine_units.warden_weights(),
         "game_ranges": specs._game_ranges(),
+        "pet_spawn_ranges": pet_spawn_ranges,
         "trap_names": dump(mechanics.TRAP_NAMES),
         "trap_sizes": dump(mechanics.TRAP_SIZES),
         "world": mechanics.WORLD,
@@ -112,10 +134,15 @@ def catalog():
             "ammunition": dump(defense.AMMUNITION),
             "spell_tower_unlocks": dump(defense.SPELL_TOWER_UNLOCKS),
             "gear_minimum": dump(defense.GEAR_MINIMUM),
+            "geared_cannon_offsets": dump(defense.GEARED_CANNON_OFFSETS),
             "gear_archer_shots": dump(defense.FAST_ARCHER_SHOTS),
             "artillery_damage": dump(defense.ARTILLERY_DAMAGE),
-            "crafting": {"phase": defense.CRAFTING_PHASE, "start": defense.CRAFTING_WINDOW[0],
-                         "end": defense.CRAFTING_WINDOW[1], "modes": dump(defense.CRAFTED_MODES)},
+            "crafting": {
+                "phase": defense.CRAFTING_PHASE,
+                "start": defense.CRAFTING_WINDOW[0],
+                "end": defense.CRAFTING_WINDOW[1],
+                "modes": dump(defense.CRAFTED_MODES),
+            },
             "cargo_order": dump(engine_units.CARGO_ORDER),
             "default_loadouts": dump(heroes.DEFAULT_LOADOUTS),
             "trap_fuse": dump(traps.FUSE),
@@ -134,6 +161,7 @@ def catalog():
                 "dt": battle.DT,
                 "fast_end": battle.FAST_END,
                 "windup": engine_units.WINDUP,
+                "flyer_range": os.environ.get("BASELAB_FLYER_RANGE", "gamedata"),
                 "pace": float(os.environ.get("BASELAB_PACE", "1.0")),
                 "pace_tap": playbook.PACE_TAP,
                 "pace_switch": playbook.PACE_SWITCH,
@@ -433,6 +461,16 @@ def battle_state(b):
     from baselab.engine import playbook, units
 
     version, state, gauss = b.rng.getstate()
+    pending = []
+    for event in b.pending:
+        exported = dump(event)
+        trap = event.extra.get("trap_skeleton")
+        if trap is not None:
+            # Trap has no Python id; preserve identity through battle-list order.
+            exported["extra"]["trap_skeleton"] = {
+                "$trap": next(i for i, item in enumerate(b.traps) if item is trap)
+            }
+        pending.append(exported)
     return {
         # random.Random internal state: 624 words and the index (getstate()[1])
         "rng_state": list(state),
@@ -440,6 +478,7 @@ def battle_state(b):
             "dt": B.DT,
             "fast_end": B.FAST_END,
             "windup": units.WINDUP,
+            "flyer_range": os.environ.get("BASELAB_FLYER_RANGE", "gamedata"),
             "pace": float(os.environ.get("BASELAB_PACE", "1.0")),
             "pace_tap": playbook.PACE_TAP,
             "pace_switch": playbook.PACE_SWITCH,
@@ -452,7 +491,7 @@ def battle_state(b):
         "attackers": [dump(u) for u in b.attackers],
         "defenders": [dump(u) for u in b.defenders],
         "fields": [dump(f) for f in b.fields],
-        "pending": [dump(p) for p in b.pending],
+        "pending": pending,
         "deployments": [dump(d) for d in b.deployments],
         "plan": plan_json(b.plan),
         "plan_type": type(b.plan).__name__,

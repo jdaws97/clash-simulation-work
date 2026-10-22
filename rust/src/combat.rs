@@ -5,7 +5,7 @@ use crate::geom::py_hypot;
 use crate::labels::{Name, Tag};
 use crate::state::*;
 use crate::trace::{round_decimal, LogValue};
-use crate::{defense, effects, heroes, spells, units};
+use crate::{defense, effects, heroes, spells, traps, units};
 
 pub struct SplashBuildingsOptions<'a> {
     pub walls: bool,
@@ -375,6 +375,10 @@ impl Battle {
             }
         }
         for mut p in due {
+            if let Some(trap) = p.extra.trap_skeleton {
+                traps::spawn_skeleton(self, trap, p.x, p.y);
+                continue;
+            }
             if let Some((name, level, group, owner)) = p.extra.summon.take() {
                 self.spawn(
                     &name,
@@ -400,6 +404,11 @@ impl Battle {
     }
 
     fn resolve_impact(&mut self, p: Pending) {
+        // battle.py:997-1001: quake hits resolve in the normal pending order.
+        if let Some(quake) = &p.extra.quake {
+            spells::quake_hit(self, &mut quake.borrow_mut());
+            return;
+        }
         if p.extra.hero_impact.is_some() {
             heroes::projectile_impact(self, p);
             return;

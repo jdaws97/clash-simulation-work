@@ -464,18 +464,29 @@ impl Battle {
             Plan::Playbook(p) if !p.attack.ground => "air",
             _ => "ground",
         };
+        let warden_air_range = if self.flyer_range == "gamedata" {
+            self.catalog.game_ranges.get("Grand Warden|alt").copied()
+        } else {
+            None
+        };
         let unit = self.unit_mut(reference);
         // battle.py:469-480: Stage's default Warden mode is ground.
         if unit.name_id == Name::GrandWarden {
             let mode = deployment.mode.as_deref().unwrap_or(default_mode);
             assert!(mode == "air" || mode == "ground", "Grand Warden mode must be air or ground");
             unit.flying = mode == "air";
+            if unit.flying {
+                if let Some(range) = warden_air_range {
+                    unit.range = range;
+                }
+            }
         }
         if strength != 1.0 {
             unit.hp *= strength;
             unit.max_hp *= strength;
             unit.base_max_hp *= strength;
             unit.dmg *= strength;
+            unit.extra.strength = strength;
         }
         if unit.is_hero {
             heroes::equip(self, reference);
@@ -571,15 +582,28 @@ impl Battle {
                 }
             }
         }
-        if self.pending.iter().any(|pending| matches!(pending.actor,
-            Some(EntityRef::Unit(UnitRef {
-                team: Team::Atk,
-                ..
-            })))) {
+        // battle.py:853-858: an offensive quake remains active through its last hit.
+        if self.pending.iter().any(|pending| {
+            matches!(
+                pending.actor,
+                Some(EntityRef::Unit(UnitRef { team: Team::Atk, .. }))
+            ) || pending.extra.quake.is_some() && pending.team == Team::Def
+        }) {
             return false;
         }
-        !self.fields.iter().any(|field| ["lightning", "quake", "revive_cast", "revive_due",
-            "summon", "santa", "birthday"].contains(&field.kind.as_str()))
+        !self.fields.iter().any(|field| {
+            [
+                "lightning",
+                "quake",
+                "rolling_log",
+                "revive_cast",
+                "revive_due",
+                "summon",
+                "santa",
+                "birthday",
+            ]
+                .contains(&field.kind.as_str())
+        })
     }
 
     pub fn result(&mut self) -> BattleResult {

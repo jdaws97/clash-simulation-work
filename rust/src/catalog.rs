@@ -10,6 +10,17 @@ use crate::labels::{Tag, Special, Specials};
 use crate::load::Node;
 use crate::stats::{Level, Stats};
 
+// specs.py: units.py game-data consumers use int(cell), with explicit defaults.
+pub fn game_int(row: &Json, key: &str, default: i64) -> i64 {
+    row.get(key).map_or(default, |value| {
+        value
+            .str()
+            .trim()
+            .parse::<i64>()
+            .expect("integer game-data cell")
+    })
+}
+
 #[derive(Clone, Debug)]
 pub struct UnitSpec {
     pub name: String,
@@ -194,6 +205,10 @@ pub struct Catalog {
     pub new_target_delays: HashMap<String, f64>,
     /// specs.py _game_ranges: AttackRange tiles per unit.
     pub game_ranges: HashMap<String, f64>,
+    /// heroes.py _spawn_pet: range_ck, falling back to specs.attack_range.
+    pub pet_spawn_ranges: HashMap<String, f64>,
+    /// specs.py:352-409: inherited game CSV rows, retaining per-entry level order.
+    pub game_data: HashMap<String, HashMap<String, Vec<Json>>>,
     /// units.py warden_weights(): data/warden-weights.json as read.
     pub warden_weights: Json,
     pub world: usize,
@@ -224,6 +239,8 @@ impl Catalog {
             "new_target_delays",
             "warden_weights",
             "game_ranges",
+            "pet_spawn_ranges",
+            "game_data",
             "world",
             "margin",
             "setup",
@@ -283,11 +300,70 @@ impl Catalog {
             trap_sizes,
             new_target_delays: number_map("new_target_delays"),
             game_ranges: number_map("game_ranges"),
+            pet_spawn_ranges: number_map("pet_spawn_ranges"),
+            game_data: n
+                .field("game_data")
+                .object()
+                .into_iter()
+                .map(|(table, entries)| {
+                    let entries = entries
+                        .object()
+                        .into_iter()
+                        .map(|(name, rows)| {
+                            let rows = rows
+                                .array()
+                                .into_iter()
+                                .map(|row| row.value.clone())
+                                .collect();
+                            (name, rows)
+                        })
+                        .collect();
+                    (table, entries)
+                })
+                .collect(),
             warden_weights: n.field("warden_weights").value.clone(),
             world: n.field("world").usize(),
             margin: n.field("margin").number(),
             setup: n.optional("setup").map_or(Json::Null, |v| v.value.clone()),
         }
+    }
+
+    // specs.py:352-386: absent entries are empty; requested levels clamp to rows.
+    pub fn game_data(&self, table: &str, name: &str, level: Option<&Level>) -> &Json {
+        static EMPTY: Json = Json::Null;
+        let Some(rows) = self.game_data.get(table).and_then(|entries| entries.get(name)) else {
+            return &EMPTY;
+        };
+        if rows.is_empty() {
+            return &EMPTY;
+        }
+        let level = match level {
+            None | Some(Level::Int(0)) => 1,
+            Some(Level::Int(level)) => *level,
+            Some(Level::Text(text)) => text.trim().parse::<i64>().expect("integer game-data level"),
+        };
+        &rows[(level.max(1) as usize).min(rows.len()) - 1]
+    }
+
+    // specs.py:389-409: aliases precede characters, heroes, then pets lookup.
+    pub fn game_unit_data(&self, name: &str, level: Option<&Level>) -> &Json {
+        let name = match name {
+            "Frostmite" => "Icemite",
+            "Firemite" => "Firemite Spawn",
+            "Ice Pup" => "Ice Hound Pup",
+            "Lavaloon" => "GW Equipment Lavaloon",
+            "Lavaloon Pup" => "GW Equipment Lavaloon Pup",
+            "Spell Skeleton" => "Spell Shielded Skeleton",
+            "L.A.S.S.I" => "LASSI",
+            other => other,
+        };
+        for table in ["characters", "heroes", "pets"] {
+            let row = self.game_data(table, name, level);
+            if !row.is_null() {
+                return row;
+            }
+        }
+        &Json::Null
     }
 
     pub fn numbers(&self, name: &str, level: &Level) -> &UnitNumbers {

@@ -319,10 +319,25 @@ impl AttackPlan {
         &self,
         battle: &mut Battle,
         name: &str,
+        x: f64,
+        y: f64,
+        group: &str,
+        jitter: f64,
+    ) {
+        let at = battle.t;
+        self.drop_at(battle, name, x, y, group, jitter, at);
+    }
+
+    // plans.py:581-609: jitter draws happen when scheduling, in step order.
+    pub fn drop_at(
+        &self,
+        battle: &mut Battle,
+        name: &str,
         mut x: f64,
         mut y: f64,
         group: &str,
         jitter: f64,
+        at: f64,
     ) {
         if jitter != 0.0 {
             x += battle.rng.as_mut().expect("battle rng").uniform(-jitter, jitter);
@@ -334,9 +349,12 @@ impl AttackPlan {
         } else {
             &self.troop_levels
         };
-        let level = levels.iter().find(|(key, _)| key == name).and_then(|(_, lv)| lv.clone());
-        battle.deploy(Deployment {
-            time: battle.t,
+        let level = levels
+            .iter()
+            .find(|(key, _)| key == name)
+            .and_then(|(_, lv)| lv.clone());
+        let deployment = Deployment {
+            time: at,
             name: name.to_owned(),
             x: (world - 0.6).min(0.6_f64.max(x)),
             y: (world - 0.6).min(0.6_f64.max(y)),
@@ -345,7 +363,16 @@ impl AttackPlan {
             town_hall: Some(self.town_hall),
             source: "army".to_owned(),
             mode: None,
-        });
+        };
+        if deployment.time > battle.t {
+            battle.deployments.push(deployment);
+            // Stable sorting keeps existing equal-time drops before new taps.
+            battle.deployments[battle.next_deploy..].sort_by(|a, b| {
+                a.time.partial_cmp(&b.time).expect("deployment time")
+            });
+        } else {
+            battle.deploy(deployment);
+        }
     }
 
     // plans.py:713-721: first maximum over the sixteen candidate edges.
@@ -413,8 +440,7 @@ impl AttackPlan {
                 && kit.has("Giant Arrow")
                 && self.aim(battle, reference, "arrow").is_some()
             {
-                let target = self.aim(battle, reference, "arrow").expect("aim target");
-                fire_aimed(battle, reference, target);
+                fire_aimed(battle, reference);
                 continue;
             } else if self.p("dash_aim") > 0.5
                 && kit.has("Rocket Backpack")
@@ -444,12 +470,28 @@ impl AttackPlan {
         let reach = self.p(&format!("{kind}_reach"));
         let threshold = self.p(&format!("{kind}_threat"));
         let u = battle.unit(hero);
+        let target = u.target?;
+        if !battle.entity_alive(target) {
+            return None;
+        }
+        let (tx, ty) = battle.entity_position(target);
+        let (dx, dy) = (tx - u.x, ty - u.y);
+        let length = py_hypot(dx, dy);
+        if length <= 0.0 {
+            return None;
+        }
         let mut best: Option<(f64, f64, BuildingId)> = None;
         for b in &battle.buildings {
             let weight = threat(&b.key, 0.0);
             if b.alive && b.weapon.is_some() && weight >= threshold {
                 let d = b.dist(u.x, u.y);
-                if d <= reach && best.is_none_or(|(w, neg_d, _)| (weight, -d) > (w, neg_d)) {
+                let along = ((b.x - u.x) * dx + (b.y - u.y) * dy) / length;
+                let off = ((b.x - u.x) * dy - (b.y - u.y) * dx).abs() / length;
+                if d <= reach
+                    && along > 0.0
+                    && off <= b.half_hit + 1.0
+                    && best.is_none_or(|(w, neg_d, _)| (weight, -d) > (w, neg_d))
+                {
                     best = Some((weight, -d, b.id));
                 }
             }
@@ -488,7 +530,13 @@ impl AttackPlan {
     }
 
     // plans.py:899-923: breakers precede Jump and Earthquake.
-    fn breach(&mut self, battle: &mut Battle, units: &[UnitRef], have: &impl Fn(&Self, &str) -> bool) {
+    fn breach(
+        &mut self,
+        battle: &mut Battle,
+        units: &[UnitRef],
+        have: &impl Fn(&Self, &str) -> bool,
+        inventory: Option<&mut Vec<(String, i64)>>,
+    ) {
         let stuck: Vec<_> = units.iter()
             .copied()
             .filter(|u| battle.unit(*u).wall_target.is_some_and(|w| battle.walls[w.0].alive))
@@ -505,9 +553,22 @@ impl AttackPlan {
             return;
         }
         let (cx, cy) = centroid(battle, &stuck);
-        if let Some(index) = self.breakers.iter().position(|(_, n)| *n > 0) {
-            let n = self.breakers[index].1.min(3);
-            self.breakers[index].1 -= n;
+        let breaker = self
+            .breakers
+            .iter()
+            .enumerate()
+            .find_map(|(index, (name, amount))| {
+                let left = inventory
+                    .as_deref()
+                    .map_or(*amount, |stock| count(stock, name));
+                (left > 0).then_some((index, left))
+            });
+        if let Some((index, left)) = breaker {
+            let n = left.min(3);
+            self.breakers[index].1 = left - n;
+            if let Some(stock) = inventory {
+                set(stock, self.breakers[index].0.clone(), left - n);
+            }
             for _ in 0..n {
                 self.drop(battle, &self.breakers[index].0, cx, cy, "breach", 0.4);
             }
@@ -526,13 +587,19 @@ impl AttackPlan {
     }
 
     // plans.py:925-989. 'have' implements PlaybookPlan's fallback reservations.
-    pub fn generic_spells(&mut self, battle: &mut Battle, units: &[UnitRef], have: &impl Fn(&Self, &str) -> bool) {
+    pub fn generic_spells(
+        &mut self,
+        battle: &mut Battle,
+        units: &[UnitRef],
+        have: &impl Fn(&Self, &str) -> bool,
+        inventory: Option<&mut Vec<(String, i64)>>,
+    ) {
         if units.is_empty() {
             return;
         }
         let t = battle.t;
         if t - self.last("breach") > 3.0 {
-            self.breach(battle, units, have);
+            self.breach(battle, units, have, inventory);
         }
         let (cx, cy) = centroid(battle, units);
         let avg_hp = units.iter().map(|r| {
@@ -860,13 +927,7 @@ pub fn entity_is_defense(battle: &Battle, target: EntityRef) -> bool {
 }
 
 // plans.py:843-849.
-pub fn fire_aimed(battle: &mut Battle, hero: UnitRef, target: BuildingId) {
-    let u = battle.unit_mut(hero);
-    let previous = (u.target, u.target_kind.clone());
-    u.target = Some(EntityRef::Building(target));
-    u.target_kind = Some(Tag::Building);
+pub fn fire_aimed(battle: &mut Battle, hero: UnitRef) {
+    // plans.py:861-865: activation follows the hero's current firing line.
     heroes::activate(battle, hero);
-    let u = battle.unit_mut(hero);
-    u.target = previous.0;
-    u.target_kind = previous.1;
 }

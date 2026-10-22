@@ -1,7 +1,9 @@
 //! Ports entities.py:19-292, defense.py:17-57,1099-1111,
 //! battle.py:148-210 and plans.py:128-137. Vec order is Python list/dict order.
 
+use std::cell::RefCell;
 use std::collections::HashSet;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::catalog::{Catalog, UnitSpec};
@@ -174,6 +176,7 @@ pub struct WeaponExtra {
     pub poison_level: usize,
     pub pool_hits: usize,
     pub same_type: bool,
+    pub spare_target: Option<UnitRef>,
     pub inner_min: Option<f64>,
     pub wake_at: Option<f64>,
     pub ramp: SharedVec<(f64, f64)>,
@@ -230,6 +233,7 @@ impl Default for WeaponExtra {
             poison_level: 0,
             pool_hits: 0,
             same_type: false,
+            spare_target: None,
             inner_min: None,
             wake_at: None,
             ramp: SharedVec::default(),
@@ -251,6 +255,7 @@ pub struct PausedTimers {
     pub torch_until: bool,
     pub haste_attack_until: bool,
     pub angry_until: bool,
+    pub brainwash_until: bool,
     pub equipment_invisible_until: bool,
     pub phoenix_until: bool,
 }
@@ -284,6 +289,7 @@ pub struct UnitExtra {
     pub expire_at: f64,
     pub expires_at: f64,
     pub attack_ready_at: f64,
+    pub attack_lock_until: f64,
     pub next_blocker_check: f64,
     pub suspended: bool,
     pub leaping: bool,
@@ -352,6 +358,7 @@ pub struct UnitExtra {
     // heroes.py:103-1078; pets.py:147-412: absent-key defaults.
     pub boots_next: Option<f64>,
     pub spear_base_range: Option<f64>,
+    pub shield_destination: Option<(f64, f64)>,
     pub equipment_invisible_until: f64,
     pub tome_until: f64,
     pub torch_until: f64,
@@ -363,6 +370,7 @@ pub struct UnitExtra {
     pub phoenix_until: f64,
     pub fox_next: f64,
     pub hero_present: bool,
+    pub diggy_hero: Option<UnitRef>,
     pub owner_defeated: bool,
     pub rampage_detached: bool,
     pub children: Vec<UnitRef>,
@@ -402,6 +410,7 @@ impl Default for UnitExtra {
             expire_at: f64::INFINITY,
             expires_at: f64::INFINITY,
             attack_ready_at: 0.0,
+            attack_lock_until: 0.0,
             next_blocker_check: 0.0,
             suspended: false,
             leaping: false,
@@ -468,6 +477,7 @@ impl Default for UnitExtra {
             poison_exit: None,
             boots_next: None,
             spear_base_range: None,
+            shield_destination: None,
             equipment_invisible_until: 0.0,
             tome_until: 0.0,
             torch_until: 0.0,
@@ -479,6 +489,7 @@ impl Default for UnitExtra {
             phoenix_until: 0.0,
             fox_next: 0.0,
             hero_present: true,
+            diggy_hero: None,
             owner_defeated: false,
             rampage_detached: false,
             children: Vec::new(),
@@ -522,6 +533,21 @@ impl Default for TrapExtra {
     }
 }
 
+// units.py:606-650: persistent state for a travelling Log Launcher log.
+#[derive(Clone, Debug)]
+pub struct RollingLog {
+    pub launcher: UnitRef,
+    pub dx: f64,
+    pub dy: f64,
+    pub damage: f64,
+    pub wall_damage: f64,
+    pub launched: f64,
+    pub next: usize,
+    pub hit_buildings: HashSet<BuildingId>,
+    pub hit_walls: HashSet<(i32, i32)>,
+    pub hit_units: HashSet<UnitRef>,
+}
+
 // traps.py:313-369; defense.py:1126-1140,1229: Python extra keys and their absent-key defaults.
 #[derive(Clone, Debug)]
 pub struct FieldExtra {
@@ -549,6 +575,11 @@ pub struct FieldExtra {
     pub first: Option<usize>,
     pub spots: Option<Vec<(f64, f64)>>,
     pub hero: Option<UnitRef>,
+    pub rolling_log: Option<RollingLog>,
+    // spells.py:709-717,765-783: pending summons inherit casts in insertion order.
+    pub iceblocks: Vec<(StatusSource, (f64, f64, f64, f64, f64))>,
+    // spells.py:823-863: each cast remembers its own diminishing-damage count.
+    pub quake_hits: Vec<(EntityRef, usize)>,
     pub unknown: ExtraMap,
 }
 
@@ -579,6 +610,9 @@ impl Default for FieldExtra {
             first: None,
             spots: None,
             hero: None,
+            rolling_log: None,
+            iceblocks: Vec::new(),
+            quake_hits: Vec::new(),
             unknown: Vec::new(),
         }
     }
@@ -603,12 +637,24 @@ pub struct PendingExtra {
     pub speed: f64,
     pub hit: Vec<EntityRef>,
     pub summon: Option<(String, Level, String, Option<UnitRef>)>,
+    pub trap_skeleton: Option<TrapId>,
     pub hero_impact: Option<String>,
+    pub remaining: usize,
     pub until: f64,
     pub last_at: f64,
     pub visited: Vec<EntityRef>,
     pub slow: f64,
     pub duration: f64,
+    pub quake: Option<Rc<RefCell<Field>>>,
+    pub primary: Option<EntityRef>,
+    pub base_damage: f64,
+    pub monolith_bonus: f64,
+    pub meteor_health: f64,
+    pub meteor_small: bool,
+    pub length: f64,
+    pub equipment: Option<String>,
+    pub level: Option<Level>,
+    pub first: i64,
     pub unknown: ExtraMap,
 }
 
@@ -631,12 +677,24 @@ impl Default for PendingExtra {
             speed: 0.0,
             hit: Vec::new(),
             summon: None,
+            trap_skeleton: None,
             hero_impact: None,
+            remaining: 0,
             until: 0.0,
             last_at: 0.0,
             visited: Vec::new(),
             slow: 0.0,
             duration: 0.0,
+            quake: None,
+            primary: None,
+            base_damage: 0.0,
+            monolith_bonus: 0.0,
+            meteor_health: 0.0,
+            meteor_small: false,
+            length: 0.0,
+            equipment: None,
+            level: None,
+            first: 0,
             unknown: Vec::new(),
         }
     }
@@ -1227,6 +1285,7 @@ pub struct Battle {
     pub pace_ability: f64,
     pub windup: bool,
     pub fast_end: bool,
+    pub flyer_range: String,
     pub modifier: Option<String>,
     pub def_mult: f64,
     pub def_hero_mult: f64,

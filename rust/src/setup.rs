@@ -165,6 +165,7 @@ pub fn build(
         pace_ability: number(env, "pace_ability", 0.3),
         windup: boolean(env, "windup", true),
         fast_end: boolean(env, "fast_end", false),
+        flyer_range: load::flyer_range(env),
         modifier: optional_text(options, "modifier"),
         def_mult: 1.0 + modifiers[0].f64(),
         def_hero_mult: 1.0 + modifiers[1].f64(),
@@ -845,7 +846,6 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
                 s(&["Damage per Hit", "Damage per Shot"], None),
             );
             w.extra.splash = 1.5;
-            w.extra.flight = 1.5;
             w
         }
         "xbow" => {

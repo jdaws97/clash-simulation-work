@@ -92,7 +92,12 @@ impl Battle {
         if prefer == Tag::None {
             return;
         }
+        // battle.py:1226-1230: Angry drops existing defender targets too.
+        let angry = t < u.extra.angry_until;
         let mut target = u.target;
+        if angry && matches!(target, Some(EntityRef::Unit(_))) {
+            target = None;
+        }
         if let Some(current) = target {
             let u = self.unit(reference);
             if !self.entity_alive(current) && u.target_kind.as_ref() != Some(&Tag::Destination) {
@@ -127,7 +132,7 @@ impl Battle {
                 self.unit_mut(reference).wall_target = None;
             }
         }
-        if prefer == Tag::Heroes {
+        if prefer == Tag::Heroes && !angry {
             if let Some(hero) = self.nearest_defender(reference, f64::INFINITY, true) {
                 target = Some(EntityRef::Unit(hero));
                 self.unit_mut(reference).target_kind = Some(Tag::Unit);
@@ -160,7 +165,13 @@ impl Battle {
             self.unit_mut(reference).target_kind = None;
             units::interrupt_attack(self, reference);
         }
-        if matches!(self.unit(reference).name_id, Name::GrandWarden | Name::ApprenticeWarden) {
+        // battle.py:1279-1298: attached Jelly and Angry disable Warden grouping.
+        let warden = matches!(
+            self.unit(reference).name_id,
+            Name::GrandWarden | Name::ApprenticeWarden
+        );
+        let attached = self.unit(reference).pet.is_some_and(|pet| self.unit(pet).attached(self));
+        if warden && !angry && !attached {
             let followed = units::follow_target(self, reference);
             let u = self.unit_mut(reference);
             if let Some(followed) = followed {
@@ -176,9 +187,10 @@ impl Battle {
                 target = None;
             }
             u.extra.warden_group = followed.is_some();
+        } else if warden {
+            self.unit_mut(reference).extra.warden_group = false;
         }
         let u = self.unit(reference);
-        let angry = t < u.extra.angry_until;
         if engages && !angry && u.target_kind.as_ref() != Some(&Tag::Unit) && t >= u.extra.next_engage {
             self.unit_mut(reference).extra.next_engage = t + 0.5;
             if t < self.unit(reference).aware_until || self.ally_under_attack(reference) {
@@ -196,6 +208,7 @@ impl Battle {
             self.unit_mut(reference).target_kind = chosen.1;
         }
         if self.unit(reference).name_id == Name::Dragon
+            && !angry
             && target.is_some()
             && !matches!(target, Some(EntityRef::Unit(_))) {
             if let Some(foe) = self.nearest_defender(reference, 7.0, false) {
@@ -340,7 +353,8 @@ impl Battle {
         if pool.is_empty() {
             self.target_pool_scratch = pool;
             let u = self.unit(reference);
-            if u.spec.engages_units && (self.t < u.aware_until || self.ally_under_attack(reference)) {
+            // battle.py:1426-1432: Angry also prevents last-building retaliation.
+            if self.t >= u.extra.angry_until && u.spec.engages_units && (self.t < u.aware_until || self.ally_under_attack(reference)) {
                 if let Some(foe) = self.nearest_defender(reference, 7.0, false) {
                     return (Some(EntityRef::Unit(foe)), Some(Tag::Unit));
                 }
@@ -433,7 +447,8 @@ impl Battle {
         let position = units::valkyrie_position(self, reference, target);
         if let Some(position) = position {
             let u = self.unit(reference);
-            if (u.x, u.y) != position {
+            // battle.py:1589: separation nudges must not prevent spin attacks.
+            if crate::geom::dist(u.x, u.y, position.0, position.1) > 0.3 {
                 units::interrupt_attack(self, reference);
                 if self.t >= self.unit(reference).held_until {
                     self.move_towards(reference, target, Some(position));
@@ -442,7 +457,7 @@ impl Battle {
             }
         }
         let d = units::target_distance(self, EntityRef::Unit(reference), target);
-        let reach = units::effective_range(self.unit(reference));
+        let reach = units::effective_range(self, self.unit(reference));
         if self.unit(reference).name_id == Name::SuperHogRider {
             let u = self.unit(reference);
             let (dx, dy) = (tx - u.x, ty - u.y);
@@ -475,6 +490,9 @@ impl Battle {
                 self.unit_mut(reference).underground = false;
             }
             let u = self.unit(reference);
+            if self.t < u.extra.attack_lock_until {
+                return;
+            }
             if u.cooldown <= 0.0 && self.t >= u.held_until || u.cooldown <= 0.0 && u.range >= 1.0 {
                 units::strike(self, reference, target);
                 let slow = effects::slow_mult(self.unit(reference), self.t, false);
@@ -492,6 +510,10 @@ impl Battle {
                     interval /= 1.5;
                 }
                 self.unit_mut(reference).cooldown += interval / 0.05_f64.max(slow);
+                // battle.py:1627-1630: reset after a kill, then apply next-target windup.
+                if self.unit(reference).name_id == Name::Valkyrie && !self.entity_alive(target) {
+                    self.unit_mut(reference).cooldown = 0.0;
+                }
             }
             return;
         }
@@ -632,7 +654,7 @@ impl Battle {
         let u = self.unit(reference);
         let victim = self.unit(target);
         let d = u.dist(victim.x, victim.y);
-        let reach = units::effective_range(u);
+        let reach = units::effective_range(self, u);
         if d <= reach {
             if !units::attack_ready(self, reference, EntityRef::Unit(target)) {
                 return;
@@ -643,6 +665,10 @@ impl Battle {
                 let slow = effects::slow_mult(self.unit(reference), t, false);
                 let interval = units::attack_interval(self, reference);
                 self.unit_mut(reference).cooldown += interval / 0.05_f64.max(slow);
+                // battle.py:1796-1799: defending Valkyries reset on kills too.
+                if self.unit(reference).name_id == Name::Valkyrie && !self.unit(target).alive {
+                    self.unit_mut(reference).cooldown = 0.0;
+                }
             }
             return;
         }
