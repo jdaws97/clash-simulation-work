@@ -52,6 +52,26 @@ ranges were 0.5 tile long; the real replay agreed with game data).
   Jelly disables Warden follow. Saved army lavaloon-queen-dragons had Warden
   equipment on the Queen (now Archer Puppet).
 
+- Round 2 (2026-10-22, output/hunt/r2-*.out): next_step walked into walls
+  beside cheaper open routes (now minimises distance plus entering cost);
+  source fields reused another troop's whole-tile field (now per half-tile
+  cell); attack ranges from game data for every unit; Valkyrie spin-position
+  livelock (0.3-tile arrival tolerance); Warden follow ignored untargetable
+  buildings; Wall Breakers skipped partial enclosures; defending Firemite
+  burn pools; hound pup spawn spread; Super Witch 25 s summon cooldown;
+  strength missing on CC cargo and Bears; Skeleton Trap skeletons existed
+  before their spawn times; Town Hall poison skipped sieges; mixed-level
+  Builders stacked without the reduction. Plans: fallback Wall Breakers
+  deployed beyond the army; Giant Arrow aimed at a substituted target and
+  required 12 tiles; cited immediate casts stretched by add_waits; fallback
+  Revive not counted as pending offense; a step's troops spawned at once
+  (now 0.133 s apart); variant selection blocked by usable steps; recalled
+  units left their group; meteor-golem and super-minion-air armies illegal.
+  Scoring: skill quantiles only balanced globally; compare_layouts and
+  proof_scorer used raw averages, not the scouting objective; default
+  calibration not round 8; archetype shares shifted by build coverage;
+  full scouting keyed on group >= 5000; one-star trophies not capped at 15.
+
 ## Known, not fixed
 
 - Town Halls 13-15 get the TH16 Giga Inferno profile (defense.py
@@ -92,6 +112,11 @@ ranges were 0.5 tile long; the real replay agreed with game data).
   Barracks release cadence by level; Unicorn healing under Rage; Mighty Yak
   speed (CSV 300 vs wiki table 250 - CSV applied by the speed rule); attack
   slows baked into the whole cooldown (needs measurement).
+
+- Round 2 deferred: defensive troop stat variants (CC troops use attacker
+  stats); calibrated strength for pets and hero equipment summons;
+  tools/baselab/predictor_proof.py still groups seeds the old way (needs
+  the seed % 5 skill grouping).
 
 ## Rejected
 
