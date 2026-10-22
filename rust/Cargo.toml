@@ -1,8 +1,8 @@
 [package]
-name = "spike-engine"
+name = "baselab-engine"
 version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "spike-engine"
+name = "baselab-engine"
 path = "src/main.rs"

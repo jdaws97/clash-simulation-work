@@ -29,6 +29,16 @@ impl PyRandom {
         rng
     }
 
+    /// From `random.Random.getstate()[1]`: 624 state words followed by the index.
+    pub fn from_state(words: &[u32]) -> Self {
+        assert_eq!(words.len(), N + 1, "random state needs 625 integers");
+        let mut mt = [0; N];
+        mt.copy_from_slice(&words[..N]);
+        let index = words[N] as usize;
+        assert!(index <= N, "random state index out of range");
+        Self { mt, index }
+    }
+
     fn init_genrand(&mut self, s: u32) {
         self.mt[0] = s;
         for i in 1..N {

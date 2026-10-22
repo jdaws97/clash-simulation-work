@@ -1,126 +1,105 @@
-mod battle;
-mod defense;
+//! CLI for rust_export.py battle exports; battle.py remains the engine reference.
+
+pub mod battle;
+pub mod catalog;
+pub mod defense;
+pub mod effects;
 pub mod geom;
 pub mod grid;
-pub mod input;
-mod units;
+pub mod json;
+pub mod load;
+pub mod pyrandom;
+pub mod state;
+pub mod stats;
+pub mod trace;
+pub mod traps;
+pub mod units;
 
 use std::env;
-use std::fmt::Write;
-use std::fs;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::rc::Rc;
 use std::time::Instant;
 
-use battle::{Battle, ResultRow};
+use catalog::Catalog;
 
 fn main() -> ExitCode {
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
-            eprintln!("spike-engine: {error}");
+            eprintln!("baselab-engine: {error}");
             ExitCode::FAILURE
         }
     }
 }
 
+fn catalog_path() -> Result<PathBuf, String> {
+    if let Some(path) = env::var_os("BASELAB_CATALOG") {
+        return Ok(PathBuf::from(path));
+    }
+    let executable = env::current_exe().map_err(|error| error.to_string())?;
+    let directory = executable.parent().ok_or("executable has no parent directory")?;
+    Ok(directory.join("../../data/catalog.json"))
+}
+
 fn run() -> Result<(), String> {
     let mut args = env::args_os().skip(1);
-    let usage = "usage: spike-engine <input path> <output path>";
-    let input_path = PathBuf::from(args.next().ok_or(usage)?);
-    let output_path = PathBuf::from(args.next().ok_or(usage)?);
-    if args.next().is_some() {
+    let usage = "usage: baselab-engine trace <battle.json> <trace.txt> | run <battle.json>... | stats-check <cases.json>";
+    let command = args.next().ok_or(usage)?;
+    let paths: Vec<PathBuf> = args.map(PathBuf::from).collect();
+    let command = command.to_str().ok_or(usage)?;
+    if command == "stats-check" && paths.len() == 1 {
+        return stats_check(&paths[0]);
+    }
+    if !matches!(command, "trace" | "run") || paths.is_empty()
+        || command == "trace" && paths.len() != 2 {
         return Err(usage.to_owned());
     }
-    let input = input::load(&input_path)?;
-    if input.world != 50 {
-        return Err("this spike requires world 50 (a 100 by 100 grid)".to_owned());
-    }
-    if input.dt != 0.1 {
-        return Err("this spike requires dt 0.1".to_owned());
-    }
-    if input.scenarios.is_empty() {
-        return Err("missing scenarios".to_owned());
-    }
-    for unit in &input.units {
-        if unit.name != "Valkyrie" && unit.name != "Dragon" {
-            return Err(format!("unsupported troop {:?}", unit.name));
-        }
-    }
-    for building in &input.buildings {
-        if building.key == "th" && building.weapon.is_some() {
-            return Err("this spike requires a weaponless Town Hall".to_owned());
-        }
-    }
-    for wall in &input.walls {
-        if !(0..50).contains(&wall.tx) || !(0..50).contains(&wall.ty) {
-            return Err("wall coordinates must be inside the world".to_owned());
-        }
-    }
-    for scenario in &input.scenarios {
-        for drop in &scenario.drops {
-            if !input.units.iter().any(|unit| unit.name == drop.name) {
-                return Err(format!("missing unit record for {:?}", drop.name));
-            }
-            if !(0.0..50.0).contains(&drop.x) || !(0.0..50.0).contains(&drop.y) {
-                return Err("deployment coordinates must be inside the world".to_owned());
-            }
-        }
-    }
-
-    if let Ok(k) = std::env::var("SPIKE_TRACE") {
-        // SPIKE_TRACE=<scenario index>: write that battle's per-tick trace instead.
-        let k: usize = k.parse().map_err(|_| "SPIKE_TRACE must be a scenario index")?;
-        let lines = Battle::new(&input, &input.scenarios[k]).trace();
-        fs::write(&output_path, lines.join("\n") + "\n").map_err(|error| error.to_string())?;
+    let catalog = Rc::new(Catalog::load(&catalog_path()?)?);
+    if command == "trace" {
+        let mut battle = load::load(&paths[0], catalog)?;
+        let file = File::create(&paths[1])
+            .map_err(|error| format!("{}: {error}", paths[1].display()))?;
+        let mut out = BufWriter::new(file);
+        trace::write_trace(&mut battle, &mut out)
+            .map_err(|error| format!("{}: {error}", paths[1].display()))?;
+        out.flush().map_err(|error| format!("{}: {error}", paths[1].display()))?;
         return Ok(());
     }
-    let mut rows = Vec::with_capacity(input.scenarios.len());
-    let started = Instant::now();
-    for scenario in &input.scenarios {
-        rows.push(Battle::new(&input, scenario).run());
+    let mut total_ms = 0.0;
+    for path in &paths {
+        let mut battle = load::load(path, Rc::clone(&catalog))?;
+        let started = Instant::now();
+        let result = battle.run();
+        let milliseconds = started.elapsed().as_secs_f64() * 1000.0;
+        total_ms += milliseconds;
+        println!("{} stars={} destruction={} time={} ms_per_battle={:.3}",
+            path.display(), result.stars, result.destruction,
+            trace::py_float_repr(result.time), milliseconds);
     }
-    let seconds_per_battle = started.elapsed().as_secs_f64() / rows.len() as f64;
-    let output = output_json(seconds_per_battle, &rows);
-    fs::write(&output_path, output)
-        .map_err(|error| format!("cannot write {}: {error}", output_path.display()))?;
-    let mean_destruction = rows.iter().map(|row| row.destruction).sum::<f64>() / rows.len() as f64;
-    let mean_stars = rows.iter().map(|row| row.stars as f64).sum::<f64>() / rows.len() as f64;
-    println!(
-        "battles={} ms_per_battle={:.3} mean_destruction={:.3} mean_stars={:.3}",
-        rows.len(),
-        seconds_per_battle * 1000.0,
-        mean_destruction,
-        mean_stars,
-    );
+    println!("battles={} ms_per_battle={:.3}", paths.len(), total_ms / paths.len() as f64);
     Ok(())
 }
 
-fn output_json(seconds_per_battle: f64, rows: &[ResultRow]) -> String {
-    let mut output = String::new();
-    write!(
-        output,
-        "{{\"engine\": \"rust\", \"seconds_per_battle\": {seconds_per_battle:?}, \"rows\": ["
-    )
-    .expect("writing to a String");
-    for (index, row) in rows.iter().enumerate() {
-        if index != 0 {
-            output.push_str(", ");
+/// stats.get over [name, level, [keys...], default] cases (written by
+/// rust_export.py stats-check): one line per case, the result's bits or None.
+fn stats_check(path: &PathBuf) -> Result<(), String> {
+    let catalog = Catalog::load(&catalog_path()?)?;
+    let text = std::fs::read_to_string(path).map_err(|error| error.to_string())?;
+    let cases = json::parse(&text).map_err(|error| error.to_string())?;
+    let mut out = String::new();
+    for case in cases.arr() {
+        let case = case.arr();
+        let level = stats::Level::from_json(&case[1]);
+        let keys: Vec<&str> = case[2].arr().iter().map(|k| k.str()).collect();
+        let value = catalog.stats.get(case[0].str(), &level, &keys, case[3].opt_f64());
+        match value {
+            Some(v) => out.push_str(&format!("{:016x}\n", v.to_bits())),
+            None => out.push_str("None\n"),
         }
-        write!(
-            output,
-            "{{\"angle\": {:?}, \"seed\": {}, \"stars\": {}, \"destruction\": {:?}, \"time\": {:?}, \"fell\": {{",
-            row.angle, row.seed, row.stars, row.destruction, row.time,
-        )
-        .expect("writing to a String");
-        for (index, (building, time)) in row.fell.iter().enumerate() {
-            if index != 0 {
-                output.push_str(", ");
-            }
-            write!(output, "\"{building}\": {time:?}").expect("writing to a String");
-        }
-        write!(output, "}}, \"units_left\": {}}}", row.units_left).expect("writing to a String");
     }
-    output.push_str("]}\n");
-    output
+    print!("{out}");
+    Ok(())
 }

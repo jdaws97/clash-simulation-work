@@ -93,6 +93,7 @@ def dump(obj, depth=0):
 def catalog():
     from baselab import mechanics
     from baselab.engine import heroes, specs, stats
+    from baselab.engine import units as engine_units
 
     reg = stats.registry()
     units, numbers = {}, {}
@@ -116,6 +117,10 @@ def catalog():
         "units": units,
         "unit_numbers": numbers,
         "building_types": {k: dump(v) for k, v in mechanics.BUILDING_TYPES.items()},
+        # tables the engine reads from data files mid-battle
+        "new_target_delays": engine_units._new_target_delays(),
+        "warden_weights": engine_units.warden_weights(),
+        "game_ranges": specs._game_ranges(),
         "trap_names": dump(mechanics.TRAP_NAMES),
         "trap_sizes": dump(mechanics.TRAP_SIZES),
         "world": mechanics.WORLD,
@@ -185,7 +190,16 @@ def battle_state(b):
         if k in skip or k in ("buildings", "walls", "traps", "attackers", "defenders", "fields", "pending"):
             continue
         scalars[k] = dump(v, 1)
+    from baselab.engine import battle as B
+    from baselab.engine import playbook, units
+
+    version, state, gauss = b.rng.getstate()
     return {
+        # random.Random internal state: 624 words and the index (getstate()[1])
+        "rng_state": list(state),
+        "env": {"dt": B.DT, "fast_end": B.FAST_END, "windup": units.WINDUP,
+                "pace": float(os.environ.get("BASELAB_PACE", "1.0")),
+                "pace_tap": playbook.PACE_TAP, "pace_switch": playbook.PACE_SWITCH, "pace_ability": playbook.PACE_ABILITY},
         "scalars": scalars,
         "buildings": [dump(x) for x in b.buildings],
         "walls": [dump(w) for w in b.walls.values()],
