@@ -12,13 +12,35 @@ on 32 battles and 44x faster (commits 8d7d1bd..ad63d52). Its hard-won pieces are
 kept: `geom.rs` (CPython-exact `py_hypot`, `round6`), `grid.rs` (lazy path
 fields), `pyrandom.rs` (bit-exact `random.Random`), `json.rs` (std-only JSON).
 
+## Status and use (2026-10-22)
+
+- Exact on 340 parity battles: stages 1-4 (every defense and trap, the
+  user's two armies with heroes, equipment, pets, spells and playbook plans)
+  and stage 5 (the 17 ranked meta armies the base scorer uses), with Rust
+  building each battle itself from a layout + plan job.
+- `BASELAB_ENGINE=rust` makes `evaluate.run_batch` (the base scorer) run in
+  Rust via `src/baselab/rust_bridge.py`: identical results to the Python
+  engine (`tools/baselab/scorer_check.py`), ~19x faster end to end than the
+  Python process pool on this machine; ~9 battles/s per thread, ~89/s on 16.
+- Build: `cargo build --release --manifest-path rust/Cargo.toml` (binary
+  `rust/target/release/baselab-engine.exe`, or set `BASELAB_ENGINE_EXE`).
+- After a game patch: update the Python data/engine, then
+  `python tools/baselab/rust_export.py catalog --out rust/data/catalog.json`,
+  then rerun parity (below). Rule changes go into the Python engine first;
+  the Rust engine must then match its traces again.
+- Parity: `python tools/baselab/rust_export.py parity-setup --stage S --n N`
+  for S in 1..5 (N = 72, 72, 64, 64, 68), with
+  `BASELAB_CALIBRATION=data/meta-calibration-r8.json`.
+
 ## Division of work
 
-- **Python builds, Rust runs.** Python constructs each `Battle` (layout,
-  levels, weapons, traps, Clan Castle queue, defending heroes, plan) and
-  exports its starting state with `tools/baselab/rust_export.py battle`. Rust
-  never re-implements setup (`Battle._setup`, `defense.attach_weapon`,
-  `traps.make_trap`, plan construction).
+- **Python prepares, Rust builds and runs.** Python supplies layouts
+  (`Layout.to_json()` with levels) and constructed attack plans (plan
+  construction stays in Python; plans do not depend on the layout, so each is
+  built once and reused). Rust ports battle setup (`rust/src/setup.rs`:
+  `Battle.__init__`, weapons, traps, Clan Castle, defending heroes) and runs
+  the battle. The Python battle-state export (`rust_export.py battle`) remains
+  the reference that `setup-check` compares Rust's setup against.
 - **Catalog** (`rust/data/catalog.json`, `rust_export.py catalog`): the
   processed registry (`stats.registry()`), every `UnitSpec` (`spec(name)` and
   `heroes.summon_spec(name, spec(name))`), `unit_numbers(name, level)` for

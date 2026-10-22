@@ -52,59 +52,10 @@ def fbits(x) -> str:
 
 # ------------------------------------------------------------------ generic dump
 def dump(obj, depth=0):
-    """JSON-able copy of engine state. Engine objects inside other objects
-    become references ({"$building": id}, {"$wall": [tx, ty]}, {"$unit": id},
-    {"$trap": index}) so the Rust side can rebuild the links."""
-    from baselab.engine.entities import Building, Pending, Trap, Unit, Wall
-    from baselab.engine.entities import Field as EField
+    """baselab.rust_bridge.dump (the one exporter of engine objects)."""
+    from baselab.rust_bridge import dump as bridge_dump
 
-    if obj is None or isinstance(obj, (bool, int, str)):
-        return obj
-    if isinstance(obj, float):
-        return obj  # json.dumps writes Infinity/NaN, which rust/src/json.rs reads
-    if depth > 0:
-        if isinstance(obj, Building):
-            return {"$building": obj.id}
-        if isinstance(obj, Wall):
-            return {"$wall": [obj.tx, obj.ty]}
-        if isinstance(obj, Unit):
-            return {"$unit": obj.id, "team": obj.team}
-    if isinstance(obj, dict):
-        return {
-            (k if isinstance(k, str) else json.dumps(dump(k, 1))): dump(v, depth + 1)
-            for k, v in obj.items()
-        }
-    if isinstance(obj, (list, tuple)):
-        return [dump(v, depth + 1) for v in obj]
-    if isinstance(obj, (set, frozenset)):
-        return sorted((dump(v, depth + 1) for v in obj), key=repr)
-    if dataclasses.is_dataclass(obj):
-        out = {"$type": type(obj).__name__}
-        out.update(
-            {
-                f.name: dump(getattr(obj, f.name), depth + 1)
-                for f in dataclasses.fields(obj)
-            }
-        )
-        # Runtime plan state such as _spell_stock is created in __post_init__.
-        for name, value in getattr(obj, "__dict__", {}).items():
-            if name not in out:
-                out[name] = dump(value, depth + 1)
-        return out
-    slots = getattr(type(obj), "__slots__", None)
-    if slots is not None or hasattr(obj, "__dict__"):
-        names = list(slots or []) + list(getattr(obj, "__dict__", {}))
-        out = {"$type": type(obj).__name__}
-        for name in names:
-            if hasattr(obj, name):
-                v = getattr(obj, name)
-                if callable(v) and not isinstance(v, type):
-                    raise TypeError(
-                        f"cannot export callable {type(obj).__name__}.{name}"
-                    )
-                out[name] = dump(v, depth + 1)
-        return out
-    raise TypeError(f"cannot export {type(obj).__name__}")
+    return bridge_dump(obj, depth)
 
 
 # ------------------------------------------------------------------ catalog
@@ -431,10 +382,9 @@ def scenario(stage, k):
 
 
 def plan_json(plan):
-    validate = getattr(plan, "require_legal", None)
-    if validate is not None:
-        validate()
-    return dump(plan)
+    from baselab.rust_bridge import plan_json as bridge_plan_json
+
+    return bridge_plan_json(plan)
 
 
 def layout_json(layout):
@@ -545,12 +495,9 @@ def trace(b, max_ticks=10**9):
 
 
 def engine_executable():
-    configured = os.environ.get("BASELAB_ENGINE")
-    if configured:
-        return Path(configured)
-    directory = ROOT / "rust" / "target" / "release"
-    native = directory / "baselab-engine"
-    return native if native.exists() else directory / "baselab-engine.exe"
+    from baselab.rust_bridge import engine_executable as bridge_executable
+
+    return bridge_executable()
 
 
 def parity(stage, n, start=0, setup=False):
