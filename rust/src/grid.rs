@@ -499,6 +499,28 @@ impl Grid {
         field
     }
 
+    /// building_costs with EVERY cost exact (pathing.py building_costs over a
+    /// fully computed field). building_costs itself stops once the cheapest
+    /// building is settled, so costs of farther buildings may still be upper
+    /// bounds (even INF); callers that read more than the argmin and its
+    /// >= 1e8 test (units.py wall_breaker_target reads every cost) need this.
+    pub fn building_costs_exact(
+        &mut self,
+        x: f64,
+        y: f64,
+        wall_extra: f64,
+        geometry: &[(f64, f64, f64)],
+        reach: f64,
+    ) -> &[f32] {
+        let field = self.source_field(x, y, wall_extra);
+        let storage = self.cache[field.0].storage.expect("source field storage");
+        let entry = &mut self.field_storage[storage];
+        while entry.frontier.min_key().is_some() {
+            let _ = entry.expand(&self.cell_flags, &self.move_masks, &self.neighbors);
+        }
+        self.building_costs(x, y, wall_extra, geometry, reach)
+    }
+
     pub fn building_costs(
         &mut self,
         x: f64,

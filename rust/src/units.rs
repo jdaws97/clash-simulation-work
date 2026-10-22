@@ -222,7 +222,8 @@ pub fn wall_breaker_target(battle: &mut Battle, unit: UnitRef) -> Option<WallId>
     }
     let reach = 1.0 / RES as f64;
     let geometry: Vec<_> = buildings.iter().map(|b| (b.1, b.2, b.3)).collect();
-    let costs = access.building_costs(x, y, 0.0, &geometry, reach);
+    // every building's cost is read below, so all must be exact
+    let costs = access.building_costs_exact(x, y, 0.0, &geometry, reach);
     for (building, &cost) in buildings.iter().zip(costs) {
         if cost < 1e9 {
             continue;

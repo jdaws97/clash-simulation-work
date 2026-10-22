@@ -229,7 +229,12 @@ def pool():
 
 
 def run_batch(jobs, *, parallel=True):
-    """jobs: list of (layout_json, Scenario, strength). Returns result tuples."""
+    """jobs: list of (layout_json, Scenario, strength). Returns result tuples.
+    BASELAB_ENGINE=rust runs them in the Rust engine (rust_bridge.py)."""
+    if os.environ.get("BASELAB_ENGINE") == "rust":
+        from .rust_bridge import run_batch as rust_batch
+
+        return rust_batch(jobs, threads=None if parallel else 1)
     if not parallel or len(jobs) < 4:
         return [_run_one(j) for j in jobs]
     return list(pool().map(_run_one, jobs, chunksize=max(1, len(jobs) // (4 * (os.cpu_count() or 2)))))

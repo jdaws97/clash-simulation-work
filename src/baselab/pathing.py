@@ -297,4 +297,7 @@ class Grid:
                     bi, bj = ni, nj
         if bi == i and bj == j:
             return x, y, False, here >= INF
-        return (bi + 0.5) / RES, (bj + 0.5) / RES, bool(self.wall[bi, bj]), False
+        # plain floats: bi/bj are NumPy ints, and a np.float64 position would
+        # follow NumPy's round() (x*10, rint, /10) in logs instead of Python's
+        # correctly rounded round(); the values themselves are identical
+        return float((bi + 0.5) / RES), float((bj + 0.5) / RES), bool(self.wall[bi, bj]), False
