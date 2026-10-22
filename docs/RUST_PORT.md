@@ -32,6 +32,24 @@ fields), `pyrandom.rs` (bit-exact `random.Random`), `json.rs` (std-only JSON).
   for S in 1..5 (N = 72, 72, 64, 64, 68), with
   `BASELAB_CALIBRATION=data/meta-calibration-r8.json`.
 
+## Performance notes (2026-10-22)
+
+Real-army battles ~105 ms per thread (~9.3/s), meta armies ~68 ms (~14.7/s);
+16 threads ~92/s and ~117/s (8-core Ryzen 7 7800X3D). Python: ~3.8 s per
+battle, ~4.6/s on its 15-process pool. What mattered: rubble reachability as
+connectivity (was 41% of a battle), lazy path fields with in-place repair,
+interned names and no per-tick clones/allocations, bounded field storage (the
+31 MB per-battle working set limited scaling past 10 threads), wall-breaker
+reachability as connectivity.
+Tried and rejected: a 0.5-tile bucket (Dial) queue instead of the radix heap
+(exact but 8% slower); more or fewer stored fields (32-256: no gain);
+`-C target-cpu=native` (+2%, not worth a machine-specific binary).
+Remaining cost: about half of a battle is path-field expansion (~900k pops
+per real battle; 1,035 fields per battle chase moving units and are rebuilt
+each tick, as in Python). A goal-directed search for those could save maybe
+15-20%, but its exactness argument (every neighbour of the chaser final,
+fields shared by several chasers, f32 rounding) is subtle; not done.
+
 ## Division of work
 
 - **Python prepares, Rust builds and runs.** Python supplies layouts
