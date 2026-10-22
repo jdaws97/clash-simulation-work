@@ -13,6 +13,7 @@ Per-entity behaviour lives in sibling modules:
 from __future__ import annotations
 
 import math
+import os
 import random
 
 import numpy as np
@@ -26,7 +27,15 @@ from . import defense, effects, heroes, spells, stats, traps, units
 from .entities import Building, Pending, Unit, Wall, dist
 from .specs import spec, unit_numbers
 
-DT = 0.1
+# BASELAB_DT: time step for fast screening runs only (default 0.1 s; a
+# coarser step changes results and must be validated against the full sim:
+# tools/baselab/proof_proxy.py)
+DT = float(os.environ.get("BASELAB_DT", "0.1"))
+# BASELAB_FAST_END=1: end a battle once nothing attacking is alive or left to
+# deploy, without idling to the time limit on Lightning/Earthquake the plan
+# never casts. Stars and destruction are unchanged; only `time` of failed
+# attacks differs. Opt-in for screening; the default follows the game rule.
+FAST_END = os.environ.get("BASELAB_FAST_END") == "1"
 MAX_TIME = 180.0  # Wiki: Multiplayer Battles, three minutes of combat.
 SCOUT_TIME = 30.0  # Wiki: Multiplayer Battles, maximum scouting time.
 BUCKET = 4.0
@@ -824,7 +833,7 @@ class Battle:
                 return False
         elif self.plan.has_pending():
             return False
-        if any(
+        if not FAST_END and any(
             getattr(self.plan, "spells", {}).get(key, 0) for key in ("lightning", "eq")
         ):
             return False

@@ -49,7 +49,11 @@ def run_one(base, army, angle, seed):
     plan.strength = STRENGTH.get(army, 1.0) * skill(seed)
     b = Battle(lay, plan, seed=seed, town_hall=16, record=True)
     r = b.run()
-    h = hashlib.sha256(repr((r.stars, r.destruction, round(r.time, 6), b.log)).encode()).hexdigest()
+    if os.environ.get("BASELAB_FAST_END") == "1":
+        # fast end changes only `time` and the idle tail of the log
+        h = hashlib.sha256(repr((r.stars, r.destruction)).encode()).hexdigest()
+    else:
+        h = hashlib.sha256(repr((r.stars, r.destruction, round(r.time, 6), b.log)).encode()).hexdigest()
     return h, r.stars, r.destruction, round(r.time, 3)
 
 
