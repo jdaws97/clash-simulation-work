@@ -72,6 +72,7 @@ pub type ExtraMap = Vec<(String, Value)>;
 pub enum StatusSource {
     Name(String),
     Field(i64),
+    Actor(String, UnitId),
 }
 
 // defense.py:547-554: the Town Hall's delayed death-poison configuration.
@@ -343,6 +344,7 @@ pub struct UnitExtra {
     pub healing_sources: Vec<(UnitRef, f64)>,
     pub hide_at: Option<f64>,
     pub next_mite_damage: f64,
+    pub meteor_components: Option<Vec<(String, Level)>>,
     pub bouncing_frostmite: bool,
     pub waiting: bool,
     pub clone_casts: Vec<(String, i64)>,
@@ -459,6 +461,7 @@ impl Default for UnitExtra {
             healing_sources: Vec::new(),
             hide_at: None,
             next_mite_damage: 400.0,
+            meteor_components: None,
             bouncing_frostmite: false,
             waiting: false,
             clone_casts: Vec::new(),
@@ -601,6 +604,11 @@ pub struct PendingExtra {
     pub hit: Vec<EntityRef>,
     pub summon: Option<(String, Level, String, Option<UnitRef>)>,
     pub hero_impact: Option<String>,
+    pub until: f64,
+    pub last_at: f64,
+    pub visited: Vec<EntityRef>,
+    pub slow: f64,
+    pub duration: f64,
     pub unknown: ExtraMap,
 }
 
@@ -624,6 +632,11 @@ impl Default for PendingExtra {
             hit: Vec::new(),
             summon: None,
             hero_impact: None,
+            until: 0.0,
+            last_at: 0.0,
+            visited: Vec::new(),
+            slow: 0.0,
+            duration: 0.0,
             unknown: Vec::new(),
         }
     }

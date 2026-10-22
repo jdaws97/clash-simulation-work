@@ -1,10 +1,10 @@
-//! Ports pets.py:9-374,397-412 for Unicorn, Phoenix, Frosty, Poison Lizard
-//! and Spirit Fox. Other pets retain explicit stage-3+ exclusions at equip.
+//! Ports pets.py:9-412 for the stage-3 and ranked stage-5 pets.
+//! Other pets retain explicit unsupported branches at equip.
 
 use crate::battle::SpawnOptions;
-use crate::geom::dist;
+use crate::geom::{dist, py_pow};
 use crate::labels::{Name, Tag};
-use crate::state::{Battle, EntityRef, UnitRef};
+use crate::state::{Battle, EntityRef, Pending, UnitRef};
 use crate::stats::{self, Level};
 use crate::{effects, heroes, spells, units};
 
@@ -110,6 +110,16 @@ fn target_from_pools(
             _ => false,
         });
         return nearest(battle, EntityRef::Unit(pet), candidates);
+    }
+    if unit.name_id == Name::AngryJelly && owner_present {
+        let owner = battle.unit(hero.expect("present owner"));
+        if let Some(EntityRef::Building(source)) = owner.extra.last_damage_source {
+            let target = EntityRef::Building(source);
+            if valid(battle, pet, Some(target))
+                && battle.building(source).edge_distance(unit.x, unit.y) <= unit.range {
+                return Some(target);
+            }
+        }
     }
     if unit.name_id == Name::PoisonLizard {
         let nearby = defenders.iter().copied().filter(|target| {
@@ -312,6 +322,43 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
             }
         }
     }
+    if battle.unit(pet).name_id == Name::ElectroOwl {
+        let candidates = battle.buildings.iter().map(|b| EntityRef::Building(b.id))
+            .chain(battle.defenders_pool().map(|u| EntityRef::Unit(u.reference())))
+            .filter(|candidate| *candidate != target && valid(battle, pet, Some(*candidate))
+                && owl_link(battle, target, *candidate));
+        if let Some(second) = nearest(battle, target, candidates) {
+            let unit = battle.unit(pet);
+            let boost = units::rage_boost(unit, t).0.max(unit.aura_dmg).max(unit.extra.bell_damage);
+            let damage = unit.dmg * boost * 0.8;
+            let (x, y) = battle.entity_position(second);
+            let mut pending = Pending::new(t + 0.128, x, y, 0.0, damage, false, true, &unit.name);
+            pending.extra.direct = true;
+            pending.actor = Some(EntityRef::Unit(pet));
+            pending.effect = Some(Tag::Chain);
+            pending.target = Some(second);
+            battle.add_pending(pending);
+        }
+    }
+}
+
+// pets.py:377-394: unit links are inclusive; building-edge links are strict.
+fn owl_link(battle: &Battle, mut first: EntityRef, mut second: EntityRef) -> bool {
+    if matches!(first, EntityRef::Unit(_)) || matches!(second, EntityRef::Unit(_)) {
+        if !matches!(second, EntityRef::Unit(_)) {
+            std::mem::swap(&mut first, &mut second);
+        }
+        let (x, y) = battle.entity_position(second);
+        return heroes::distance(battle, first, x, y) <= 3.0;
+    }
+    let (EntityRef::Building(first), EntityRef::Building(second)) = (first, second) else {
+        return false;
+    };
+    let first = battle.building(first);
+    let second = battle.building(second);
+    let dx = 0.0_f64.max((first.x - second.x).abs() - (first.size + second.size) as f64 / 2.0);
+    let dy = 0.0_f64.max((first.y - second.y).abs() - (first.size + second.size) as f64 / 2.0);
+    py_pow(dx * dx + dy * dy, 0.5) < 3.0
 }
 
 // pets.py:397-412: Spirit Fox invisibility continues after owner defeat.
@@ -330,6 +377,10 @@ pub fn passives(battle: &mut Battle, pet: UnitRef) {
             hero.invisible_until = hero.invisible_until.max(t + duration);
         }
         battle.unit_mut(pet).extra.fox_next = t + duration + 6.0;
+    }
+    if battle.unit(pet).name_id == Name::AngryJelly {
+        let range = if battle.unit(pet).attached(battle) { 7.0 } else { 5.0 };
+        battle.unit_mut(pet).range = range;
     }
     if battle.unit(pet).attached(battle) {
         let hero = battle.unit(owner.expect("attached owner"));

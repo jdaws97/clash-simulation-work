@@ -1,4 +1,4 @@
-//! Ports units.py:23-244,249-847,933-992,1152-2236 for stages 1 and 2.
+//! Ports units.py troop behavior through the ranked stage-5 armies.
 //! Unrelated troops and later-stage content retain explicit unsupported branches.
 
 use std::sync::Arc;
@@ -10,6 +10,7 @@ use crate::combat::{SplashBuildingsOptions, SplashUnitsOptions};
 use crate::effects;
 use crate::fast_hash::FastMap as HashMap;
 use crate::geom;
+use crate::grid::{Grid, TargetIdentity, RES};
 use crate::heroes;
 use crate::labels::{Name, Special, Tag};
 use crate::spells;
@@ -19,6 +20,32 @@ use crate::state::{
 use crate::stats::Level;
 
 pub const RESOURCE_KEYS: &[&str] = &["gm", "ec", "dd", "gs", "es", "ds", "th", "cc"];
+
+fn unit_stat(battle: &Battle, unit: UnitRef, keys: &[&str], default: Option<f64>) -> f64 {
+    let u = battle.unit(unit);
+    battle
+        .catalog
+        .stats
+        .get(&u.name, u.level.as_ref().expect("unit level"), keys, default)
+        .expect("unit statistic")
+}
+
+fn spawn_child(battle: &mut Battle, owner: UnitRef, name: &str, x: f64, y: f64) -> UnitRef {
+    let u = battle.unit(owner);
+    battle.spawn(
+        name,
+        owner.team,
+        x,
+        y,
+        SpawnOptions {
+            level: u.level.clone(),
+            kind: Tag::Summon,
+            group: u.group.clone(),
+            owner: Some(owner),
+            ..Default::default()
+        },
+    )
+}
 
 // Python math.isclose defaults: relative tolerance 1e-9, no absolute tolerance.
 pub fn isclose(a: f64, b: f64) -> bool {
@@ -144,6 +171,93 @@ pub fn segment_entry(
         _ => panic!("segment_entry requires a square hitbox"),
     };
     geom::segment_entry(x, y, tx, ty, cx, cy, half_hit)
+}
+
+// units.py:92-163: connectivity is membership-only; building and route order
+// determine the selected wall. The temporary access grid treats walls as solid.
+pub fn wall_breaker_target(battle: &mut Battle, unit: UnitRef) -> Option<WallId> {
+    if battle.wall_mode(unit) == Tag::Ignore {
+        return None;
+    }
+    let walls: Vec<_> = battle
+        .walls
+        .iter()
+        .filter(|wall| wall.alive && !spells::wall_jumped(battle, wall.id))
+        .map(|wall| ((wall.tx, wall.ty), wall.id))
+        .collect();
+    let mut unseen: HashSet<_> = walls.iter().map(|(key, _)| *key).collect();
+    let mut connected = HashSet::new();
+    while let Some(&start) = unseen.iter().next() {
+        unseen.remove(&start);
+        let mut todo = vec![start];
+        let mut component = vec![start];
+        while let Some((x, y)) = todo.pop() {
+            for neighbor in [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)] {
+                if unseen.remove(&neighbor) {
+                    component.push(neighbor);
+                    todo.push(neighbor);
+                }
+            }
+        }
+        if component.len() >= 3 {
+            connected.extend(component);
+        }
+    }
+    let u = battle.unit(unit);
+    let (x, y) = (u.x, u.y);
+    let mut buildings: Vec<_> = battle
+        .buildings
+        .iter()
+        .filter(|b| battle.building_targetable(b.id))
+        .map(|b| (b.id, b.x, b.y, b.half_hit, b.edge_distance(x, y)))
+        .collect();
+    buildings.sort_by(|a, b| a.4.partial_cmp(&b.4).expect("building distance"));
+    if buildings.is_empty() {
+        return None;
+    }
+    let grid = battle.navigation_grid(unit);
+    let mut access = Grid::new(grid.n / RES);
+    for index in 0..grid.blocked.len() {
+        access.blocked[index] = grid.blocked[index] || grid.wall[index];
+    }
+    let reach = 1.0 / RES as f64;
+    let geometry: Vec<_> = buildings.iter().map(|b| (b.1, b.2, b.3)).collect();
+    let costs = access.building_costs(x, y, 0.0, &geometry, reach);
+    for (building, &cost) in buildings.iter().zip(costs) {
+        if cost < 1e9 {
+            continue;
+        }
+        // Identical geometry/reach/wall cost can share the public building
+        // field API; no separate breaker cache identity is needed.
+        let route = grid.field(
+            TargetIdentity::Building(building.0.0),
+            building.1,
+            building.2,
+            building.3,
+            reach,
+            0.0,
+        );
+        let (mut px, mut py) = (x, y);
+        let mut visited = HashSet::new();
+        while visited.insert(grid.cell(px, py)) {
+            let next = grid.next_step(route, px, py);
+            (px, py) = (next.x, next.y);
+            if next.at_goal {
+                break;
+            }
+            if next.is_wall {
+                let key = (px as i32, py as i32);
+                if connected.contains(&key) {
+                    return walls
+                        .iter()
+                        .find(|(tile, _)| *tile == key)
+                        .map(|(_, id)| *id);
+                }
+                break;
+            }
+        }
+    }
+    None
 }
 
 // units.py:166-206: score insertion order decides ties, including zero weights.
@@ -289,19 +403,31 @@ pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
         u.haste_until = t + 4.0;
     }
     if sp.has_special(Special::Cloak) {
-        todo!("stage 2: units.py:267 spawn cloak");
+        battle.unit_mut(unit).invisible_until = t + 5.0;
     }
     if sp.has_special(Special::StartRage) {
-        todo!("stage 2: units.py:269 Super Barbarian initial rage");
+        add_rage(
+            battle.unit_mut(unit),
+            StatusSource::Name("innate".to_owned()),
+            1.7,
+            16.0 / 8.0,
+            t + 8.0,
+        );
     }
     if sp.has_special(Special::Burrow) {
         todo!("stage 2: units.py:272 burrowing troop spawn");
     }
     if sp.has_special(Special::Yetimites) {
-        todo!("stage 2: units.py:280 Yeti child reserves");
+        let count = unit_stat(battle, unit, &["Yetimites spawned"], Some(14.0)) as i64;
+        let u = battle.unit_mut(unit);
+        u.extra.mites = count;
+        u.extra.mite_dmg = 0.0;
     }
     if sp.has_special(Special::Electromites) {
-        todo!("stage 2: units.py:283 Super Yeti child reserves");
+        let count = unit_stat(battle, unit, &["Electromites spawned"], Some(14.0)) as i64;
+        let u = battle.unit_mut(unit);
+        u.extra.mites = count;
+        u.extra.mite_dmg = 0.0;
     }
     if sp.has_special(Special::Furnace) {
         todo!("stage 2: units.py:286 Furnace spawn and decay");
@@ -357,10 +483,18 @@ pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
         todo!("stage 2: units.py:314 Super Dragon burst initialization");
     }
     if sp.has_special(Special::SkyWagon) {
-        todo!("stage 2: units.py:321 Sky Wagon barrels");
+        let count = unit_stat(battle, unit, &["Barrel Count"], Some(5.0)) as i64;
+        let u = battle.unit_mut(unit);
+        u.extra.barrels = count;
+        u.extra.next = t + 2.0;
     }
     if sp.has_special(Special::TroopLauncher) {
-        todo!("stage 2: units.py:324 Troop Launcher barrels and lifetime");
+        let count = unit_stat(battle, unit, &["Barrel Count"], Some(7.0)) as i64;
+        let lifetime = unit_stat(battle, unit, &["Lifetime"], None);
+        let u = battle.unit_mut(unit);
+        u.extra.barrels = count;
+        u.extra.next = t + 2.0;
+        u.extra.expires_at = t + lifetime;
     }
 }
 
@@ -402,8 +536,8 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
     if battle.unit(unit).extra.leaping {
         return true;
     }
-    if battle.unit(unit).name_id == Name::Meteormite {
-        todo!("stage 2: units.py:338 Meteormite merging");
+    if battle.unit(unit).name_id == Name::Meteormite && try_merge_meteor(battle, unit) {
+        return true;
     }
     if beam {
         if let Some(target) = battle.unit(unit).target {
@@ -497,13 +631,43 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         u.rage_spd = 12.0 / 8.0;
         u.rage_until = t + 20.0;
     }
-    let u = battle.unit(unit);
     if special.is_empty() {
         return false;
     }
     if special.contains(Special::TitanAura) {
-        todo!("stage 2: units.py:399 Electro Titan aura");
+        let due = battle.unit(unit).extra.aura_next.unwrap_or(t);
+        if t >= due || isclose(t, due) {
+            let damage = unit_stat(battle, unit, &["Aura Damage per Hit"], None);
+            battle.unit_mut(unit).extra.aura_next = Some(due + 0.4);
+            let foes: Vec<_> = if unit.team == Team::Atk {
+                battle.defenders_pool().map(Unit::reference).collect()
+            } else {
+                battle.attackers_pool().map(Unit::reference).collect()
+            };
+            for foe in foes {
+                let u = battle.unit(unit);
+                let f = battle.unit(foe);
+                if f.alive && geom::dist(u.x, u.y, f.x, f.y) <= 3.5 {
+                    let amount = if f.is_hero {
+                        damage * 0.25
+                    } else {
+                        damage
+                    };
+                    battle.hit_unit(foe, amount, None, "normal", None);
+                }
+            }
+            if unit.team == Team::Atk {
+                for index in 0..battle.buildings.len() {
+                    let b = &battle.buildings[index];
+                    let u = battle.unit(unit);
+                    if b.alive && b.counted && b.edge_distance(u.x, u.y) <= 3.5 {
+                        battle.hit_building(EntityRef::Building(b.id), damage, None, "normal");
+                    }
+                }
+            }
+        }
     }
+    let u = battle.unit(unit);
     if u.name_id == Name::Druid && t >= u.extra.bear_at {
         transform_bear(battle, unit);
         return true;
@@ -642,8 +806,11 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         && t >= u.extra.next
         && u.extra.barrels > 0
     {
-        todo!("stage 2: units.py:528 Troop Launcher barrel release");
+        if let Some(target) = launcher_target(battle, unit) {
+            launch_barrel(battle, unit, EntityRef::Unit(target));
+        }
     }
+    let u = battle.unit(unit);
     if special.contains(Special::BlimpBombs) && u.can_act(t) && t >= u.extra.next_bomb {
         todo!("stage 2: units.py:538 Battle Blimp bomb drops");
     }
@@ -802,14 +969,29 @@ fn roll_log(battle: &mut Battle, unit: UnitRef) {
     }
 }
 
-// units.py:626-666: stage-1 units have neither damage-triggered child ability.
-pub fn on_damaged(battle: &mut Battle, unit: UnitRef, _amount: f64) {
-    let sp = &battle.unit(unit).spec;
-    if sp.has_special(Special::Electromites) {
-        todo!("stage 2: units.py:628 damage-triggered Electromites");
+// units.py:626-666: damage is accumulated before testing the child thresholds.
+pub fn on_damaged(battle: &mut Battle, unit: UnitRef, amount: f64) {
+    if battle.unit(unit).spec.has_special(Special::Electromites) {
+        battle.unit_mut(unit).extra.mite_dmg += amount;
+        let mut threshold = battle.unit(unit).extra.next_mite_damage;
+        while battle.unit(unit).extra.mites > 0 && battle.unit(unit).extra.mite_dmg >= threshold {
+            battle.unit_mut(unit).extra.mites -= 1;
+            threshold += 400.0;
+            let u = battle.unit(unit);
+            spawn_child(battle, unit, "Electromite", u.x, u.y);
+        }
+        battle.unit_mut(unit).extra.next_mite_damage = threshold;
+        return;
     }
-    if sp.has_special(Special::Yetimites) {
-        todo!("stage 2: units.py:651 damage-triggered Yetimites");
+    if battle.unit(unit).spec.has_special(Special::Yetimites) {
+        battle.unit_mut(unit).extra.mite_dmg += amount;
+        while battle.unit(unit).extra.mites > 0 && battle.unit(unit).extra.mite_dmg >= 600.0 {
+            let u = battle.unit_mut(unit);
+            u.extra.mite_dmg -= 600.0;
+            u.extra.mites -= 1;
+            let (x, y) = (u.x + 0.4, u.y + 0.4);
+            spawn_child(battle, unit, "Yetimite", x, y);
+        }
     }
 }
 
@@ -968,13 +1150,72 @@ fn on_death_effect(battle: &mut Battle, unit: UnitRef) {
         todo!("stage 2: units.py:756 troop death summons");
     }
     if sp.has_special(Special::DeathBolts) {
-        todo!("stage 2: units.py:777 Electro Dragon death bolts");
+        let u = battle.unit(unit);
+        let text = battle
+            .catalog
+            .stats
+            .text(
+                &u.name,
+                u.level.as_ref().expect("Electro Dragon level"),
+                &["Damage when destroyed"],
+                None,
+            )
+            .unwrap_or_else(|| crate::json::Json::Str("0 x0".to_owned()));
+        let damage = crate::stats::num(&text, None).unwrap_or(0.0);
+        for _ in 0..6 {
+            let angle = battle.rng_mut().random() * 2.0 * std::f64::consts::PI;
+            let offset = battle.rng_mut().random() * 2.5;
+            let u = battle.unit(unit);
+            let (x, y) = (
+                u.x + offset * geom::py_cos(angle),
+                u.y + offset * geom::py_sin(angle),
+            );
+            if unit.team == Team::Atk {
+                battle.splash_buildings(
+                    x,
+                    y,
+                    2.0,
+                    damage,
+                    SplashBuildingsOptions {
+                        walls: false,
+                        ..Default::default()
+                    },
+                );
+            }
+            battle.splash_units(
+                x,
+                y,
+                2.0,
+                damage,
+                false,
+                true,
+                SplashUnitsOptions {
+                    team: if unit.team == Team::Atk {
+                        Team::Def
+                    } else {
+                        Team::Atk
+                    },
+                    ..Default::default()
+                },
+            );
+        }
     }
     if sp.has_special(Special::Smasher) && unit.team == Team::Def {
         todo!("stage 2: units.py:799 defending Smasher death Rage");
     }
     if sp.has_special(Special::DeathRage) {
-        todo!("stage 2: units.py:802 Super Valkyrie death Rage");
+        let u = battle.unit(unit);
+        let mut field = crate::state::Field::new("rage", u.x, u.y, 4.0, t + 18.0);
+        field.team = unit.team;
+        field.value = 2.6;
+        field.extra.speed = Some(26.0 / 8.0);
+        field.extra.defense_damage = Some(1.6);
+        field.extra.pulses = 60;
+        field.extra.has_pulses = true;
+        field.extra.gap = Some(0.3);
+        field.extra.boost_time = 1.0;
+        field.started = t;
+        battle.fields.push(field);
     }
     if sp.has_special(Special::HogSplit) && unit.team == Team::Atk {
         split_hog(battle, unit);
@@ -982,7 +1223,21 @@ fn on_death_effect(battle: &mut Battle, unit: UnitRef) {
     if (sp.has_special(Special::Yetimites) || sp.has_special(Special::Electromites))
         && battle.unit(unit).extra.mites > 0
     {
-        todo!("stage 2: units.py:829 remaining death child release");
+        let name = if sp.has_special(Special::Yetimites) {
+            "Yetimite"
+        } else {
+            "Electromite"
+        };
+        let count = battle.unit(unit).extra.mites;
+        for k in 0..count {
+            let u = battle.unit(unit);
+            let (x, y) = (
+                u.x + 0.4 * geom::py_cos(k as f64),
+                u.y + 0.4 * geom::py_sin(k as f64),
+            );
+            spawn_child(battle, unit, name, x, y);
+        }
+        battle.unit_mut(unit).extra.mites = 0;
     }
     if battle.unit(unit).name_id == Name::Druid && !battle.unit(unit).extra.sprung {
         transform_bear(battle, unit);
@@ -1042,6 +1297,176 @@ pub fn release_cc_at(battle: &mut Battle, x: f64, y: f64, group: &str, siege: bo
     }
 }
 
+// units.py:995-1014: children are allocated in position order, then health is
+// quantized using their fully initialized (including inherited aura) maximum.
+fn split_meteor(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
+    let u = battle.unit(unit);
+    let small = u.hp < u.max_hp * 0.01;
+    let target_position = battle.entity_position(target);
+    let positions = if small {
+        vec![target_position]
+    } else {
+        vec![(u.x, u.y), target_position]
+    };
+    for (x, y) in positions {
+        let child = spawn_child(battle, unit, "Meteormite", x, y);
+        let quantum = battle.unit(child).max_hp * 0.01;
+        let hp = if small {
+            1.0
+        } else {
+            ((battle.unit(unit).hp / 2.0) / quantum).floor() * quantum
+        };
+        let level = battle.unit(unit).level.clone().expect("Meteor Golem level");
+        let child = battle.unit_mut(child);
+        child.hp = hp;
+        child.extra.meteor_components = Some(vec![("permanent".to_owned(), level)]);
+    }
+    battle.unit_mut(unit).alive = false;
+}
+
+// units.py:1018-1059: first coincident eligible partner in attacker list order.
+fn try_merge_meteor(battle: &mut Battle, unit: UnitRef) -> bool {
+    let u = battle.unit(unit);
+    if unit.team != Team::Atk || u.extra.clone || !u.can_act(battle.t) {
+        return false;
+    }
+    if u.target.is_some_and(|target| {
+        battle.entity_alive(target)
+            && target_distance(battle, EntityRef::Unit(unit), target) <= u.range
+    }) {
+        return false;
+    }
+    let other = battle.attackers_pool().find(|other| {
+        let reference = other.reference();
+        reference != unit && other.alive && other.name_id == Name::Meteormite
+            && !other.extra.clone && other.level == u.level
+            && other.extra.meteor_components == u.extra.meteor_components
+            && other.x == u.x && other.y == u.y
+            && !other.target.is_some_and(|target| {
+                battle.entity_alive(target)
+                    && target_distance(battle, EntityRef::Unit(reference), target) <= other.range
+            })
+    }).map(Unit::reference);
+    let Some(other) = other else {
+        return false;
+    };
+    let parent = battle.spawn("Meteor Golem", Team::Atk, u.x, u.y, SpawnOptions {
+        level: u.level.clone(),
+        group: u.group.clone(),
+        ..Default::default()
+    });
+    let quantum = battle.unit(parent).max_hp * 0.005;
+    let hp = 1.0_f64.max(((battle.unit(unit).hp + battle.unit(other).hp) / quantum).floor() * quantum);
+    let mut components = battle.unit(unit).extra.meteor_components.clone().unwrap_or_default();
+    components.extend(battle.unit(other).extra.meteor_components.clone().unwrap_or_default());
+    let parent = battle.unit_mut(parent);
+    parent.hp = hp;
+    parent.extra.meteor_components = Some(components);
+    battle.unit_mut(unit).alive = false;
+    battle.unit_mut(other).alive = false;
+    true
+}
+
+// units.py:1062-1080: Python max keeps the first (housing, -id) extreme.
+fn launcher_target(battle: &Battle, unit: UnitRef) -> Option<UnitRef> {
+    let mut best = None;
+    let mut best_key = (i64::MIN, i64::MIN);
+    for ally in battle.attackers_pool() {
+        if ally.reference() == unit || !ally.alive || ally.extra.suspended
+            || matches!(
+                ally.name_id,
+                Name::SpellSkeleton | Name::Bat | Name::Totem | Name::Furnace | Name::Firemite
+            )
+            || matches!(ally.kind, Tag::Siege | Tag::SiegeIdle)
+            || !(ally.is_hero || ally.housing >= 2)
+        {
+            continue;
+        }
+        let key = (if ally.is_hero { 25 } else { ally.housing }, -(ally.id.0 as i64));
+        if best.is_none() || key > best_key {
+            best = Some(ally.reference());
+            best_key = key;
+        }
+    }
+    best
+}
+
+// units.py:1083-1149: contents, healing, one cargo entry, clock, then final death.
+pub fn launch_barrel(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
+    if battle.unit(unit).extra.barrels <= 0 {
+        return;
+    }
+    let (x, y) = battle.entity_position(target);
+    battle.unit_mut(unit).extra.barrels -= 1;
+    if battle.unit(unit).name_id == Name::SkyWagon {
+        for (name, column) in [
+            ("Minion", "Minions"),
+            ("Balloon", "Balloon"),
+            ("Baby Dragon", "Baby Dragon"),
+        ] {
+            let count = unit_stat(battle, unit, &[&format!("Troops Spawned / {column}")], None) as i64;
+            let level = unit_stat(battle, unit, &[&format!("Troop Levels / {column}")], None) as i64;
+            for _ in 0..count {
+                let u = battle.unit(unit);
+                battle.spawn(name, unit.team, x, y, SpawnOptions {
+                    level: Some(Level::Int(level)),
+                    kind: Tag::Summon,
+                    group: u.group.clone(),
+                    owner: Some(unit),
+                    ..Default::default()
+                });
+            }
+        }
+        let damage = unit_stat(battle, unit, &["Damage per Hit*"], None);
+        battle.hit_building(target, damage, None, "normal");
+    } else {
+        let level = unit_stat(battle, unit, &["Troop Level"], None) as i64;
+        for (name, column) in [
+            ("Barbarian", "Barbarians"),
+            ("Archer", "Archers"),
+            ("Giant", "Giants"),
+            ("Wall Breaker", "Wall Breakers"),
+        ] {
+            let count = unit_stat(battle, unit, &[&format!("Troops Spawned / {column}")], None) as i64;
+            for _ in 0..count {
+                let u = battle.unit(unit);
+                battle.spawn(name, unit.team, x, y, SpawnOptions {
+                    level: Some(Level::Int(level)),
+                    kind: Tag::Summon,
+                    group: u.group.clone(),
+                    owner: Some(unit),
+                    ..Default::default()
+                });
+            }
+        }
+        let recipients: Vec<_> = battle.attackers_pool().filter(|ally| {
+            ally.alive && !ally.flying
+                && !matches!(
+                    ally.name_id,
+                    Name::Furnace | Name::Firemite | Name::Totem | Name::SpellSkeleton | Name::Bat
+                )
+                && !matches!(ally.kind, Tag::Siege | Tag::SiegeIdle)
+                && geom::dist(x, y, ally.x, ally.y) <= 1.0
+        }).map(Unit::reference).collect();
+        for ally in recipients {
+            battle.unit_mut(ally).heal(6.0);
+        }
+    }
+    if !battle.onboard_cargo.is_empty() {
+        let entry = battle.onboard_cargo.remove(0);
+        let group = battle.unit(unit).group.clone();
+        spawn_cargo(battle, entry, x, y, &group, true);
+        if battle.onboard_cargo.is_empty() {
+            battle.plan.release_cc();
+        }
+    }
+    let next = battle.t + battle.unit(unit).interval;
+    battle.unit_mut(unit).extra.next = next;
+    if battle.unit(unit).extra.barrels == 0 {
+        battle.kill(unit);
+    }
+}
+
 // units.py:984-992: ordinary spawned descendants do not enter clone bookkeeping.
 pub fn inherit_clone(battle: &mut Battle, owner: UnitRef, child: UnitRef) {
     if !battle.unit(owner).extra.clone {
@@ -1062,7 +1487,18 @@ pub fn tantrum(battle: &Battle, unit: UnitRef) -> bool {
     if !battle.unit(unit).spec.has_special(Special::Tantrum) {
         return false;
     }
-    todo!("stage 2: units.py:1155 Baby Dragon allied-air Tantrum check");
+    let u = battle.unit(unit);
+    let eligible = |ally: &Unit| {
+        ally.reference() != unit && ally.alive && ally.flying
+            && battle.t >= ally.active_at && !ally.extra.suspended
+            && geom::dist(u.x, u.y, ally.x, ally.y) <= 4.5
+    };
+    let nearby_air = if unit.team == Team::Atk {
+        battle.attackers_pool().any(eligible)
+    } else {
+        battle.defenders_pool().any(eligible)
+    };
+    !nearby_air
 }
 
 // units.py:1200-1236: cache identity, closed segment contacts, first minimum.
@@ -1394,41 +1830,169 @@ pub fn area_hit(
     battle.entity_scratch = targets;
 }
 
-// units.py:1459-1594: Valkyrie spins at herself; other stage-1 areas at target.
+// units.py:1459-1594: preserve target-pool order and first minimum chain ties.
 pub fn spatial_strike(battle: &mut Battle, unit: UnitRef, target: EntityRef, damage: f64) {
     let u = battle.unit(unit);
-    let sp = &u.spec;
-    if u.name_id == Name::StoneSlammer {
-        todo!("stage 2: units.py:1461 Stone Slammer secondary hitbox");
-    } else if matches!(u.name_id, Name::Yetimite | Name::Firemite) {
-        todo!("stage 2: units.py:1485 Yetimite and Firemite suicide splash");
-    } else if u.name_id == Name::FlameFlinger {
-        todo!("stage 2: units.py:1494 Flame Flinger three-shot splash");
-    } else if sp.attack == Tag::Suicide {
-        todo!("stage 2: units.py:1501 Wall Breaker suicide blast");
-    } else if sp.attack == Tag::Chain {
-        todo!("stage 2: units.py:1513 troop chain attacks");
-    } else if sp.attack == Tag::Bounce {
-        todo!("stage 2: units.py:1538 troop bouncing attacks");
-    } else if sp.attack == Tag::Pierce {
-        todo!("stage 2: units.py:1555 troop piercing attacks");
-    } else if u.name_id == Name::SuperDragon {
-        todo!("stage 2: units.py:1569 Super Dragon footprint");
-    } else if sp.attack == Tag::Spin {
-        if u.name_id == Name::SuperValkyrie {
-            todo!("stage 2: units.py:1574 Super Valkyrie spin");
-        }
-        let (x, y, radius) = (u.x, u.y, sp.splash);
-        area_hit(battle, unit, x, y, radius, damage, true, Some(target));
-    } else {
-        if !matches!(u.name_id, Name::Wizard | Name::Dragon | Name::Balloon | Name::RocketBalloon | Name::Phoenix | Name::GiantGiant
-        ) {
-            todo!("stage 2: units.py:1582 other special troop area attacks");
-        }
-        let radius = sp.splash;
+    let name = u.name_id;
+    let sp = Arc::clone(&u.spec);
+    if name == Name::StoneSlammer {
         let (x, y) = battle.entity_position(target);
-        area_hit(battle, unit, x, y, radius, damage, true, Some(target));
+        area_hit(battle, unit, x, y, 1.0, damage, true, Some(target));
+        let pair = match battle.unit(unit).level.as_ref() {
+            Some(Level::Int(1)) => Some((100.0, 200.0)),
+            Some(Level::Int(2)) => Some((150.0, 300.0)),
+            Some(Level::Int(3)) => Some((200.0, 400.0)),
+            Some(Level::Int(4)) => Some((250.0, 500.0)),
+            Some(Level::Int(5)) => Some((300.0, 600.0)),
+            Some(Level::Int(6)) => Some((350.0, 700.0)),
+            _ => None,
+        };
+        if let Some((minimum, maximum)) = pair {
+            let boost = damage / unit_stat(battle, unit, &["Damage per Hit / Hitbox 1"], None);
+            for victim in attack_targets(battle, unit, true) {
+                let distance = target_distance(battle, target, victim);
+                if distance <= 3.0 {
+                    let fraction = 0.0_f64.max(distance - 2.0);
+                    let mut amount = (maximum - (maximum - minimum) * fraction) * boost;
+                    if matches!(victim, EntityRef::Wall(_)) {
+                        amount *= 25.0;
+                    }
+                    hit_target(battle, unit, victim, amount);
+                }
+            }
+        }
+    } else if matches!(name, Name::Yetimite | Name::Firemite) {
+        battle.unit_mut(unit).extra.leaping = true;
+        let (x, y) = battle.entity_position(target);
+        area_hit(battle, unit, x, y, sp.splash, damage, true, Some(target));
+        battle.unit_mut(unit).extra.suicided = true;
+        battle.kill(unit);
+    } else if name == Name::FlameFlinger {
+        for _ in 0..3 {
+            let (x, y) = battle.entity_position(target);
+            area_hit(battle, unit, x, y, sp.splash, damage, true, Some(target));
+        }
+    } else if sp.attack == Tag::Suicide {
+        let (x, y) = battle.entity_position(target);
+        area_hit(battle, unit, x, y, sp.splash, damage, true, Some(target));
+        if name == Name::WallBreaker {
+            battle.unit_mut(unit).extra.suicided = true;
+        }
+        battle.kill(unit);
+    } else if sp.attack == Tag::Chain {
+        hit_target(battle, unit, target, damage);
+        let mut hit = vec![target];
+        let mut current = target;
+        let mut amount = damage;
+        for _ in 0..sp.chain {
+            amount = if sp.chain_from_primary {
+                damage * sp.chain_decay
+            } else {
+                amount * sp.chain_decay
+            };
+            let origin = if sp.chain_from_primary { target } else { current };
+            let mut best = None;
+            let mut best_key = (f64::INFINITY, f64::INFINITY);
+            for victim in attack_targets(battle, unit, false) {
+                if hit.contains(&victim) {
+                    continue;
+                }
+                let distance = target_distance(battle, origin, victim);
+                if distance <= sp.chain_range {
+                    let max_hp = match victim {
+                        EntityRef::Building(id) => battle.building(id).max_hp,
+                        EntityRef::Wall(id) => battle.walls[id.0].max_hp,
+                        EntityRef::Unit(id) => battle.unit(id).max_hp,
+                        EntityRef::Trap(_) => unreachable!(),
+                    };
+                    let key = (distance, -max_hp);
+                    if best.is_none() || key < best_key {
+                        best = Some(victim);
+                        best_key = key;
+                    }
+                }
+            }
+            let Some(next) = best else {
+                break;
+            };
+            current = next;
+            hit.push(current);
+            hit_target(battle, unit, current, amount);
+        }
+    } else if sp.attack == Tag::Bounce {
+        let u = battle.unit(unit);
+        let (tx, ty) = battle.entity_position(target);
+        let (dx, dy) = (tx - u.x, ty - u.y);
+        let length = geom::py_hypot(dx, dy);
+        let length = if length == 0.0 { 1.0 } else { length };
+        for k in 0..=sp.bounces {
+            let (tx, ty) = battle.entity_position(target);
+            let x = tx + dx / length * sp.bounce_gap * k as f64;
+            let y = ty + dy / length * sp.bounce_gap * k as f64;
+            area_hit(battle, unit, x, y, sp.splash, damage, true,
+                if k == 0 { Some(target) } else { None });
+        }
+    } else if sp.attack == Tag::Pierce {
+        hit_target(battle, unit, target, damage);
+        let u = battle.unit(unit);
+        let (tx, ty) = battle.entity_position(target);
+        let (dx, dy) = (tx - u.x, ty - u.y);
+        let length = geom::py_hypot(dx, dy);
+        let length = if length == 0.0 { 1.0 } else { length };
+        for victim in attack_targets(battle, unit, true) {
+            if victim == target {
+                continue;
+            }
+            let u = battle.unit(unit);
+            let (vx, vy) = battle.entity_position(victim);
+            let (px, py) = (vx - u.x, vy - u.y);
+            let along = (px * dx + py * dy) / length;
+            let width = entity_half(battle, victim) + 0.3;
+            if 0.0 < along && along <= sp.pierce && (px * dy - py * dx).abs() / length <= width {
+                hit_target(battle, unit, victim, damage);
+            }
+        }
+    } else if name == Name::SuperDragon {
+        for victim in attack_targets(battle, unit, true) {
+            let (x, y) = battle.entity_position(target);
+            if dragon_footprint(battle, victim, x, y) {
+                hit_target(battle, unit, victim, damage);
+            }
+        }
+    } else if sp.attack == Tag::Spin {
+        let u = battle.unit(unit);
+        area_hit(battle, unit, u.x, u.y, sp.splash, damage, true, Some(target));
+    } else {
+        let (x, y) = battle.entity_position(target);
+        area_hit(battle, unit, x, y, sp.splash, damage, true, Some(target));
     }
+}
+
+fn entity_half(battle: &Battle, target: EntityRef) -> f64 {
+    match target {
+        EntityRef::Building(id) => battle.building(id).half_hit,
+        EntityRef::Wall(id) => battle.walls[id.0].half_hit,
+        _ => 0.0,
+    }
+}
+
+// units.py:1443-1456: the square's four corner cells are omitted.
+fn dragon_footprint(battle: &Battle, target: EntityRef, x: f64, y: f64) -> bool {
+    let half = entity_half(battle, target);
+    let (tx, ty) = battle.entity_position(target);
+    for dx in -2_i32..3 {
+        for dy in -2_i32..3 {
+            if dx.abs() == 2 && dy.abs() == 2 {
+                continue;
+            }
+            if (tx - x - dx as f64).abs() <= half + 0.5
+                && (ty - y - dy as f64).abs() <= half + 0.5
+            {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 // units.py:1597-1627: wall early return, then resource/defense/building factors.
@@ -1489,7 +2053,7 @@ pub fn projectile_speed(unit: &Unit) -> Option<f64> {
         return Some(5.0);
     }
     if unit.name_id == Name::Thrower && level_between(unit, 1, 4) {
-        todo!("stage 2: units.py:1644 Thrower projectile speed");
+        return Some(7.0);
     }
     if unit.name_id == Name::Minion && level_between(unit, 1, 14) {
         return Some(3.8);
@@ -1516,10 +2080,10 @@ pub fn projectile_speed(unit: &Unit) -> Option<f64> {
         todo!("stage 2: units.py:1671 Ice Pup projectile speed");
     }
     if unit.name_id == Name::SuperBowler && level_between(unit, 1, 10) {
-        todo!("stage 2: units.py:1674 Super Bowler projectile speed");
+        return Some(4.75);
     }
     if unit.name_id == Name::Bowler && level_between(unit, 1, 10) {
-        todo!("stage 2: units.py:1677 Bowler projectile speed");
+        return Some(4.75);
     }
     if unit.name_id == Name::Frostmite {
         return Some(4.0);
@@ -1549,12 +2113,32 @@ pub fn launch_projectile(
     let (hits_air, hits_ground) = (u.hits_air, u.hits_ground);
     let (x, y) = battle.entity_position(target);
     let length = geom::dist(u.x, u.y, x, y);
+    let denominator = if length == 0.0 { 1.0 } else { length };
+    let (dx, dy) = ((x - u.x) / denominator, (y - u.y) / denominator);
     let mut mode = "single";
     let mut track = Some(target);
     if sp.attack == Tag::Pierce {
         todo!("stage 2: units.py:1700 launch piercing projectile");
     } else if sp.attack == Tag::Bounce {
-        todo!("stage 2: units.py:1709 launch bouncing projectiles");
+        for index in 0..=sp.bounces {
+            let travel = length + index as f64 * sp.bounce_gap;
+            let (x, y) = battle.entity_position(target);
+            let mut pending = Pending::new(
+                battle.t + travel / speed,
+                x + dx * index as f64 * sp.bounce_gap,
+                y + dy * index as f64 * sp.bounce_gap,
+                sp.splash,
+                damage,
+                hits_air,
+                hits_ground,
+                source.clone(),
+            );
+            pending.team = if unit.team == Team::Atk { Team::Def } else { Team::Atk };
+            pending.extra.troop_impact = Some("area".to_owned());
+            pending.actor = Some(EntityRef::Unit(unit));
+            battle.add_pending(pending);
+        }
+        return;
     } else if name == Name::Frostmite {
         mode = "leap";
         battle.unit_mut(unit).extra.leaping = true;
@@ -1728,10 +2312,10 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
             u.wall_target = None;
         }
         if battle.unit(unit).name_id == Name::MeteorGolem {
-            todo!("stage 2: units.py:1882 Meteor Golem attack split");
+            split_meteor(battle, unit, target);
         }
         if battle.unit(unit).name_id == Name::Electromite {
-            todo!("stage 2: units.py:1884 Electromite discharge death");
+            battle.kill(unit);
         }
         return;
     }

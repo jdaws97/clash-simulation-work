@@ -124,7 +124,10 @@ impl Battle {
             }
         }
         if sp.prefer == Tag::Wall && matches!(target, Some(EntityRef::Wall(_))) {
-            todo!("stage 2: battle.py:1228 Wall Breaker preferred wall");
+            if units::wall_breaker_target(self, reference).map(EntityRef::Wall) != target {
+                target = None;
+                self.unit_mut(reference).wall_target = None;
+            }
         }
         if sp.prefer == Tag::Heroes {
             if let Some(hero) = self.nearest_defender(reference, f64::INFINITY, true) {
@@ -265,8 +268,12 @@ impl Battle {
             pref = Tag::Any;
         }
         if pref == Tag::Wall {
-            todo!("stage 2: battle.py:1341 Wall Breaker target selection");
+            if let Some(wall) = units::wall_breaker_target(self, reference) {
+                return (Some(EntityRef::Wall(wall)), Some(Tag::Wall));
+            }
+            pref = Tag::Any;
         }
+        let u = self.unit(reference);
         if pref == Tag::Th && self.th.is_some() {
             let th = self.th.expect("Town Hall destination");
             let (tx, ty) = self.entity_position(EntityRef::Building(th));
@@ -456,7 +463,16 @@ impl Battle {
         }
         if d <= reach {
             if self.unit(reference).name_id == Name::SkyWagon {
-                todo!("stage 2: battle.py:1559 Sky Wagon barrel attack");
+                let EntityRef::Building(building) = target else {
+                    return;
+                };
+                if !self.is_defense_target(building) {
+                    return;
+                }
+                if self.t >= self.unit(reference).extra.next {
+                    units::launch_barrel(self, reference, target);
+                }
+                return;
             }
             if !units::attack_ready(self, reference, target) {
                 return;

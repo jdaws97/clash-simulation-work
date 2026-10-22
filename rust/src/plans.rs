@@ -158,6 +158,7 @@ pub struct AttackPlan {
     pub zap_ad: (i64, i64),
     pub zap_done: bool,
     pub cc_released: bool,
+    pub siege_donated: bool,
     pub main_at: f64,
     pub cast_log: SharedVec<(f64, String)>,
     pub breakers: SharedVec<(String, i64)>,
@@ -227,6 +228,7 @@ impl AttackPlan {
             zap_ad: (p.at("zap_ad").arr()[0].i64(), p.at("zap_ad").arr()[1].i64()),
             zap_done: flag(p, "_zap_done"),
             cc_released: flag(p, "_cc_released"),
+            siege_donated: flag(p, "siege_donated"),
             main_at: number(p, "_main_at", 0.0),
             cast_log: p.at("_cast_log")
                 .arr()

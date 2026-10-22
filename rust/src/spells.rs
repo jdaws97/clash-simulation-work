@@ -1144,6 +1144,16 @@ fn quake(battle: &mut Battle, f: &Field) -> bool {
     false
 }
 
+// spells.py:782-786: equipment and spells share the same hit counter. Store
+// the increment after the hit, whose callbacks may inspect the previous value.
+pub fn quake_unit(battle: &mut Battle, unit: UnitRef, percentage: f64) {
+    let u = battle.unit(unit);
+    let n = u.extra.eq_n;
+    let damage = u.max_hp * percentage / (2 * n + 1) as f64;
+    battle.hit_unit(unit, damage, None, "normal", None);
+    battle.unit_mut(unit).extra.eq_n = n + 1;
+}
+
 // spells.py:850-870: x-major free tile order, int truncation at bounds.
 fn spawn_spots(battle: &Battle, x: f64, y: f64, radius: f64, flying: bool) -> Vec<(f64, f64)> {
     let mut spots = Vec::new();

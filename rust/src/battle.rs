@@ -488,10 +488,9 @@ impl Battle {
                 unit.dmg *= multiplier;
             }
         }
-        let unit = self.unit_mut(reference);
+        let unit = self.unit(reference);
         let is_hero = unit.is_hero;
         let housing = unit.housing;
-        unit.extra.deployment_source = Some(deployment.source.clone());
         let activation_housing = if is_hero {
             25
         } else if kind == "siege" {
@@ -503,7 +502,17 @@ impl Battle {
         if deployment.source != "cc" && deployment.source != "clan_castle" {
             self.deployed_housing += activation_housing;
         }
-        if deployment.source == "army" && ["troop", "hero", "siege"].contains(&record_kind.as_str()) {
+        // battle.py:502-518: donated sieges still count for Eagle activation,
+        // but carry their own source and do not count for Monolith Arrow.
+        let donated_siege = kind == "siege"
+            && matches!(&self.plan, Plan::Playbook(plan) if plan.attack.siege_donated);
+        let source = if donated_siege {
+            "donated_siege"
+        } else {
+            deployment.source.as_str()
+        };
+        self.unit_mut(reference).extra.deployment_source = Some(source.to_owned());
+        if source == "army" && ["troop", "hero", "siege"].contains(&record_kind.as_str()) {
             self.monolith_housing += activation_housing;
         }
         self.log_event(vec![

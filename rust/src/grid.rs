@@ -21,6 +21,9 @@ const NEIGHBORS: [(isize, isize); 8] = [
 const NO_NEIGHBOR: u32 = u32::MAX;
 const BLOCKED: u8 = 1;
 const WALL: u8 = 2;
+// Bound distance/frontier storage independently of Python's observable cache.
+// At 100 x 100 cells, 64 distance arrays contain 2.44 MiB of f32 values.
+const MAX_STORED_FIELDS: usize = 64;
 // pathing.py:96-99: check [ci, nj] before [ni, cj] for each diagonal.
 const DIAGONAL_CORNERS: [(usize, usize); 4] = [(2, 0), (3, 0), (2, 1), (3, 1)];
 
@@ -172,15 +175,23 @@ impl CacheKey {
 struct CachedField {
     key: CacheKey,
     version: u64,
-    // Rubble entries use only key/version and rubble_components; they neither
-    // initialize nor expand distance storage, which may be reused after prune.
-    distances: Vec<f32>,
-    frontier: Frontier,
+    // Storage eviction leaves this metadata, its version and its goals intact.
+    // Rubble entries use only key/version and rubble_components, with no slot.
+    storage: Option<usize>,
     wall_extra: f64,
     rubble_components: Vec<u32>,
     // Include blocked goals: a later removal may free a zero-distance seed.
     goals: Vec<usize>,
     goal_half: u64,
+}
+
+struct FieldStorage {
+    // Cache indices move only at prune, which updates the surviving owners.
+    owner: Option<usize>,
+    last_used: u64,
+    distances: Vec<f32>,
+    frontier: Frontier,
+    wall_extra: f64,
 }
 
 struct Change {
@@ -211,7 +222,8 @@ pub struct Grid {
     topology_version: Option<u64>,
     changes: Vec<Change>,
     connectivity: Connectivity,
-    spare_fields: Vec<CachedField>,
+    field_storage: Vec<FieldStorage>,
+    storage_clock: u64,
     cell_marks: Vec<u32>,
     mark_generation: u32,
     repair_cells: Vec<usize>,
@@ -240,7 +252,8 @@ impl Grid {
             topology_version: None,
             changes: Vec::new(),
             connectivity: Connectivity::new(),
-            spare_fields: Vec::new(),
+            field_storage: Vec::new(),
+            storage_clock: 0,
             cell_marks: vec![0; n * n],
             mark_generation: 0,
             repair_cells: Vec::new(),
@@ -429,6 +442,9 @@ impl Grid {
         let key = CacheKey::target(identity, cx, cy, reach, wall_extra);
         let (field, inserted) = self.cache_entry(key, wall_extra);
         if !inserted && self.cache[field.0].version == self.version {
+            // Half is absent from the key: even after storage eviction, reuse
+            // the saved goals rather than the current caller's geometry.
+            self.use_field(field);
             return field;
         }
         self.refresh_topology();
@@ -447,6 +463,7 @@ impl Grid {
         if !same_goals || !self.repair_field(field) {
             self.restart_field(field);
         }
+        self.use_field(field);
         field
     }
 
@@ -461,6 +478,8 @@ impl Grid {
         // field for the entire tile, without checking the new source cell.
         let (field, inserted) = self.cache_entry(key, wall_extra);
         if !inserted && self.cache[field.0].version == self.version {
+            // A missing slot restarts from the FIRST caller's saved half-cell.
+            self.use_field(field);
             return field;
         }
         self.refresh_topology();
@@ -476,6 +495,7 @@ impl Grid {
         if !same_source || !self.repair_field(field) {
             self.restart_field(field);
         }
+        self.use_field(field);
         field
     }
 
@@ -523,7 +543,8 @@ impl Grid {
         }
         let field = self.source_field(x, y, wall_extra);
         let generation = self.next_mark_generation();
-        let entry = &mut self.cache[field.0];
+        let storage = self.cache[field.0].storage.expect("source field storage");
+        let entry = &mut self.field_storage[storage];
         let goal_marks = &mut self.cell_marks;
         // Start from every goal cell's stored value: each is an upper bound
         // on its distance. (Only counting values below the frontier minimum
@@ -582,15 +603,15 @@ impl Grid {
     }
 
     pub fn distance(&mut self, field: Field, cell: usize) -> f32 {
-        self.ensure(field, cell);
-        self.cache[field.0].distances[cell]
+        let storage = self.ensure(field, cell);
+        self.field_storage[storage].distances[cell]
     }
 
     pub fn next_step(&mut self, field: Field, x: f64, y: f64) -> NextStep {
         let (i, j) = self.cell(x, y);
         let cell = self.index(i, j);
-        self.ensure(field, cell);
-        let distances = &self.cache[field.0].distances;
+        let storage = self.ensure(field, cell);
+        let distances = &self.field_storage[storage].distances;
         let here = distances[cell];
         if here <= 0.0 {
             return NextStep {
@@ -640,14 +661,19 @@ impl Grid {
         // reused for that tile, so this is observable simulation state.
         if self.cache.len() > 600 {
             self.cache.sort_by(|first, second| second.version.cmp(&first.version));
-            for mut entry in self.cache.drain(400..) {
-                entry.frontier.clear();
-                self.spare_fields.push(entry);
+            for entry in self.cache.drain(400..) {
+                if let Some(storage) = entry.storage {
+                    let slot = &mut self.field_storage[storage];
+                    slot.owner = None;
+                    slot.frontier.clear();
+                }
             }
-            self.spare_fields.truncate(400);
             self.cache_indices.clear();
             for (index, entry) in self.cache.iter().enumerate() {
                 self.cache_indices.insert(entry.key, index);
+                if let Some(storage) = entry.storage {
+                    self.field_storage[storage].owner = Some(index);
+                }
             }
         }
         if let Some(oldest) = self.cache.iter().map(|entry| entry.version).min() {
@@ -666,18 +692,75 @@ impl Grid {
     }
 
     fn restart_field(&mut self, field: Field) {
+        let storage = self.storage_slot(field);
         let entry = &mut self.cache[field.0];
         entry.version = self.version;
-        entry.frontier.clear();
-        entry.distances.resize(self.n * self.n, INF);
-        entry.distances.fill(INF);
+        let slot = &mut self.field_storage[storage];
+        slot.wall_extra = entry.wall_extra;
+        slot.frontier.clear();
+        // Keep contiguous building-goal scans and a sequential reset without
+        // per-cell stamps or touched-cell lists. Initialize new arrays only
+        // once rather than following resize with a second fill.
+        if slot.distances.is_empty() {
+            slot.distances.resize(self.n * self.n, INF);
+        } else {
+            slot.distances.fill(INF);
+        }
         // pathing.py:28-35: only unblocked goals seed a restarted field.
         for &cell in &entry.goals {
             if !self.blocked[cell] {
-                entry.distances[cell] = 0.0;
-                entry.frontier.push(0.0_f32.to_bits(), cell as u32);
+                slot.distances[cell] = 0.0;
+                slot.frontier.push(0.0_f32.to_bits(), cell as u32);
             }
         }
+    }
+
+    fn storage_slot(&mut self, field: Field) -> usize {
+        if let Some(storage) = self.cache[field.0].storage {
+            return storage;
+        }
+        let storage = if let Some(free) = self
+            .field_storage
+            .iter()
+            .position(|slot| slot.owner.is_none())
+        {
+            free
+        } else if self.field_storage.len() < MAX_STORED_FIELDS {
+            let index = self.field_storage.len();
+            self.field_storage.push(FieldStorage::new());
+            index
+        } else {
+            // Scan only the bounded pool, not all Python cache entries. This
+            // moves storage alone: no key, version, goal or order is changed.
+            self.field_storage
+                .iter()
+                .enumerate()
+                .min_by_key(|(_, slot)| slot.last_used)
+                .map(|(index, _)| index)
+                .expect("nonempty field storage pool")
+        };
+        let slot = &mut self.field_storage[storage];
+        if let Some(owner) = slot.owner {
+            self.cache[owner].storage = None;
+        }
+        slot.owner = Some(field.0);
+        self.cache[field.0].storage = Some(storage);
+        storage
+    }
+
+    fn use_field(&mut self, field: Field) -> usize {
+        if self.cache[field.0].storage.is_none() {
+            // Distances are a unique fixed point of saved goals, wall cost
+            // and topology. Rebuilding storage preserves Python bookkeeping,
+            // including same-version source reuse after LRU eviction.
+            self.refresh_topology();
+            self.restart_field(field);
+        }
+        let storage = self.cache[field.0].storage.expect("field storage");
+        debug_assert_eq!(self.field_storage[storage].owner, Some(field.0));
+        self.storage_clock += 1;
+        self.field_storage[storage].last_used = self.storage_clock;
+        storage
     }
 
     fn cache_entry(&mut self, key: CacheKey, wall_extra: f64) -> (Field, bool) {
@@ -686,29 +769,25 @@ impl Grid {
             return (Field(index), false);
         }
         let index = self.cache.len();
-        let mut entry = self.spare_fields.pop().unwrap_or_else(|| CachedField {
+        let entry = CachedField {
             key,
             version: self.version,
-            distances: Vec::new(),
-            frontier: Frontier::new(),
-            wall_extra: 0.0,
+            storage: None,
+            // pathing.py:220,233,254: convert wall_extra to float32 at entry.
+            wall_extra: f64::from(wall_extra as f32),
             rubble_components: Vec::new(),
             goals: Vec::new(),
             goal_half: 0,
-        });
-        entry.key = key;
-        entry.version = self.version;
-        entry.frontier.clear();
-        entry.rubble_components.clear();
-        entry.goals.clear();
-        // pathing.py:220,233,254: wall_extra is converted to float32 at entry.
-        entry.wall_extra = f64::from(wall_extra as f32);
+        };
         self.cache_indices.insert(key, index);
         self.cache.push(entry);
         (Field(index), true)
     }
 
     fn repair_field(&mut self, field: Field) -> bool {
+        let Some(storage) = self.cache[field.0].storage else {
+            return false;
+        };
         let version = self.cache[field.0].version;
         debug_assert!(version < self.version);
         let first = self.changes.partition_point(|change| change.version <= version);
@@ -731,24 +810,25 @@ impl Grid {
             }
         }
         let entry = &mut self.cache[field.0];
+        let slot = &mut self.field_storage[storage];
         for &cell in &entry.goals {
             // pathing.py:216-220: freed targets AND freed source cells must
             // become goals again, including fields previously all-INF.
             if self.cell_marks[cell] == generation && !self.blocked[cell] {
-                entry.distances[cell] = 0.0;
+                slot.distances[cell] = 0.0;
             }
         }
-        let mut minimum = entry.frontier.last;
+        let mut minimum = slot.frontier.last;
         for &cell in &self.repair_cells {
-            if !self.blocked[cell] && entry.distances[cell] < INF {
-                minimum = minimum.min(entry.distances[cell].to_bits());
+            if !self.blocked[cell] && slot.distances[cell] < INF {
+                minimum = minimum.min(slot.distances[cell].to_bits());
             }
         }
-        entry.frontier.rebase(minimum);
+        slot.frontier.rebase(minimum);
         for &cell in &self.repair_cells {
-            let distance = entry.distances[cell];
+            let distance = slot.distances[cell];
             if !self.blocked[cell] && distance < INF {
-                entry.frontier.push(distance.to_bits(), cell as u32);
+                slot.frontier.push(distance.to_bits(), cell as u32);
             }
         }
         // Removing obstacles preserves every stored upper bound. Any newly
@@ -766,9 +846,11 @@ impl Grid {
         true
     }
 
-    fn ensure(&mut self, field: Field, cell: usize) {
-        let entry = &mut self.cache[field.0];
-        debug_assert_eq!(entry.version, self.version);
+    fn ensure(&mut self, field: Field, cell: usize) -> usize {
+        debug_assert_eq!(self.cache[field.0].version, self.version);
+        // Field handles address metadata, so they survive storage eviction.
+        let storage = self.use_field(field);
+        let entry = &mut self.field_storage[storage];
         // Drain equal keys too: afterwards this cell and all lower values are
         // final, even if the cell started with an INF upper bound.
         while let Some(key) = entry.frontier.min_key() {
@@ -777,10 +859,21 @@ impl Grid {
             }
             let _ = entry.expand(&self.cell_flags, &self.move_masks, &self.neighbors);
         }
+        storage
     }
 }
 
-impl CachedField {
+impl FieldStorage {
+    fn new() -> Self {
+        Self {
+            owner: None,
+            last_used: 0,
+            distances: Vec::new(),
+            frontier: Frontier::new(),
+            wall_extra: 0.0,
+        }
+    }
+
     fn expand(
         &mut self,
         cell_flags: &[u8],

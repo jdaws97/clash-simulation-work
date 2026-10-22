@@ -201,7 +201,8 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         match equipment.as_str() {
             "Electro Boots" => battle.unit_mut(hero).extra.boots_next = Some(battle.t + 0.4),
             "Rocket Spear" | "Revenge Deck" | "Fire Heart" | "Action Figure" | "Giant Arrow"
-            | "Eternal Tome" | "Rage Gem" | "Fireball" | "Rocket Backpack" => {}
+            | "Eternal Tome" | "Rage Gem" | "Fireball" | "Rocket Backpack"
+            | "Spiky Ball" | "Earthquake Boots" | "Dark Orb" | "Meteor Staff" => {}
             _ => todo!("stage 3+: equip {equipment}"),
         }
     }
@@ -217,6 +218,16 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         kit.pet_level = pet_level;
         spawn_pet(battle, hero, &mut kit);
     }
+    if kit.has("Meteor Staff") {
+        kit.next_meteor = battle.t
+            + col(
+                battle,
+                "Meteor Staff",
+                kit.lv("Meteor Staff"),
+                &["cooldown time"],
+                0.0,
+            );
+    }
     battle.unit_mut(hero).kit = Some(kit);
 }
 
@@ -225,7 +236,8 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
 fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
     let name = kit.pet_name.as_deref().expect("pet name").to_owned();
     let level = kit.pet_level.clone().expect("pet level");
-    if !matches!(name.as_str(), "Unicorn" | "Phoenix" | "Frosty" | "Poison Lizard" | "Spirit Fox") {
+    if !matches!(name.as_str(), "Unicorn" | "Phoenix" | "Frosty" | "Poison Lizard" | "Spirit Fox"
+        | "Electro Owl" | "Angry Jelly" | "L.A.S.S.I") {
         todo!("stage 3+: pet {name}");
     }
     let stats = &battle.catalog.stats;
@@ -359,6 +371,15 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
         damage_dealt: 0.0,
         in_pool: true,
     };
+    if name == "Angry Jelly" {
+        pet.range = 5.0;
+        let owner = battle.unit(hero);
+        pet.x = owner.x;
+        pet.y = owner.y;
+        pet.extra.brainwash_until = battle.t
+            + battle.catalog.stats.get(&name, &level, &["Brainwash Duration"], None)
+                .expect("Brainwash duration");
+    }
     if name == "Spirit Fox" {
         let duration = battle.catalog.stats.get(&name, &level, &["Invisibility Duration"], None)
             .expect("Fox invisibility duration");
@@ -408,9 +429,47 @@ pub fn tick(battle: &mut Battle, hero: UnitRef) {
         battle.unit_mut(hero).heal(amount);
     }
     let kit = battle.unit(hero).kit.as_ref().expect("hero kit");
-    if kit.has("Meteor Staff") {
-        todo!("stage 3+: Meteor Staff tick");
+    if kit.has("Meteor Staff") && t >= kit.next_meteor {
+        let level = kit.lv("Meteor Staff").clone();
+        let mut candidates = targets(battle, true);
+        if candidates.is_empty() {
+            candidates = battle.buildings.iter().filter(|b| battle.building_targetable(b.id))
+                .map(|b| EntityRef::Building(b.id)).collect();
+        }
+        let u = battle.unit(hero);
+        let mut best = None;
+        let mut closest = f64::INFINITY;
+        for target in candidates {
+            let (x, y) = battle.entity_position(target);
+            let distance = dist(x, y, u.x, u.y);
+            if best.is_none() || distance < closest {
+                best = Some(target);
+                closest = distance;
+            }
+        }
+        if let Some(target) = best {
+            let (x, y) = battle.entity_position(target);
+            let mut pending = Pending::new(
+                t + 0.8,
+                x,
+                y,
+                battle.catalog.stats.attrs("Meteor Staff").at("radius").f64(),
+                col(battle, "Meteor Staff", &level, &["damage per hit"], 0.0),
+                true,
+                true,
+                &battle.unit(hero).name,
+            );
+            pending.extra.hero_impact = Some("blast".to_owned());
+            pending.actor = Some(EntityRef::Unit(hero));
+            pending.effect = Some(Tag::Meteor);
+            effects::damage_source(battle, Some(EntityRef::Unit(hero)), Tag::Meteor, |battle| {
+                battle.add_pending(pending);
+            });
+        }
+        let next = t + col(battle, "Meteor Staff", &level, &["cooldown time"], 0.0);
+        battle.unit_mut(hero).kit.as_mut().expect("hero kit").next_meteor = next;
     }
+    let kit = battle.unit(hero).kit.as_ref().expect("hero kit");
     if kit.has("Electro Boots") {
         let due = battle.unit(hero).extra.boots_next.unwrap_or(t);
         if t >= due || units::isclose(t, due) {
@@ -637,6 +696,92 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 let damage = col(battle, &name, &level, &["projectile damage"], 0.0);
                 line(battle, hero, target, 75.0, 1.0, damage);
             }
+            "Spiky Ball" => {
+                let damage = col(battle, &name, &level, &["projectile damage"], 0.0);
+                let count = col(battle, &name, &level, &["number of targets"], 0.0) as i64;
+                let mut hit = Vec::new();
+                let candidates = ball_targets(battle, &hit);
+                let u = battle.unit(hero);
+                let mut current = if target.is_some_and(|target| candidates.contains(&target)) {
+                    target
+                } else {
+                    nearest_center(battle, &candidates, u.x, u.y)
+                };
+                for _ in 0..count {
+                    let Some(victim) = current else {
+                        break;
+                    };
+                    hit.push(victim);
+                    damage_target(battle, victim, damage);
+                    let candidates = ball_targets(battle, &hit);
+                    let (x, y) = battle.entity_position(victim);
+                    current = nearest_center(battle, &candidates, x, y);
+                }
+            }
+            "Earthquake Boots" => {
+                let percentage = col(battle, &name, &level, &["building damage %"], 0.0) / 100.0;
+                for index in 0..battle.buildings.len() {
+                    let b = &battle.buildings[index];
+                    let u = battle.unit(hero);
+                    if b.alive && b.counted && b.edge_distance(u.x, u.y) <= 8.0 {
+                        let id = b.id;
+                        let damage = b.max_hp * percentage / (2 * b.eq_hits + 1) as f64;
+                        battle.hit_building(EntityRef::Building(id), damage, None, "normal");
+                        battle.building_mut(id).eq_hits += 1;
+                    }
+                }
+                for index in 0..battle.walls.len() {
+                    let wall = &battle.walls[index];
+                    let u = battle.unit(hero);
+                    if wall.alive && dist(wall.x, wall.y, u.x, u.y) <= 8.0 {
+                        battle.hit_building(EntityRef::Wall(wall.id), 1e9, None, "normal");
+                    }
+                }
+                let permil = match crate::geom::round_half_even(percentage * 200.0) as i64 {
+                    20 => Some(10.0),
+                    40 => Some(12.0),
+                    60 | 68 => Some(14.0),
+                    72 => Some(16.0),
+                    76 => Some(18.0),
+                    80 => Some(20.0),
+                    _ => None,
+                };
+                let troop_percentage = permil.map_or_else(
+                    || col(battle, &name, &level, &["troop damage %"], 0.0) / 100.0,
+                    |value| value * 5.0 / 1000.0,
+                );
+                let u = battle.unit(hero);
+                for foe in battle.defenders_near(u.x, u.y, 8.0) {
+                    let f = battle.unit(foe);
+                    if !f.flying && f.kind != Tag::TrapSkeleton {
+                        spells::quake_unit(battle, foe, troop_percentage);
+                    }
+                }
+            }
+            "Dark Orb" => {
+                let u = battle.unit(hero);
+                let (dx, dy) = u.extra.facing;
+                let length = py_hypot(dx, dy);
+                let length = if length == 0.0 { 1.0 } else { length };
+                let mut pending = Pending::new(
+                    t,
+                    u.x,
+                    u.y,
+                    5.0,
+                    col(battle, &name, &level, &["projectile damage"], 0.0),
+                    true,
+                    true,
+                    &u.name,
+                );
+                pending.extra.hero_impact = Some("orb".to_owned());
+                pending.extra.direction = Some((dx / length, dy / length));
+                pending.extra.speed = 12.5;
+                pending.extra.until = t + 1.25;
+                pending.extra.last_at = t;
+                pending.extra.slow = col(battle, &name, &level, &["slow down"], 0.0) / 100.0;
+                pending.extra.duration = col(battle, &name, &level, &["slow down duration"], 0.0);
+                battle.add_pending(pending);
+            }
             "Action Figure" => {
                 let level = col(battle, &name, &level, &["giant giant level"], 10.0) as i64;
                 let unit = battle.unit(hero);
@@ -693,7 +838,7 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 start_dash(battle, hero, damage);
             }
             // These pieces have passive effects only in Python's activate.
-            "Electro Boots" | "Revenge Deck" | "Fire Heart" | "Rage Gem" => {}
+            "Electro Boots" | "Revenge Deck" | "Fire Heart" | "Rage Gem" | "Meteor Staff" => {}
             _ => todo!("stage 3+: activate {name}"),
         }
     }
@@ -701,11 +846,103 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
     battle.log_event(vec![round_decimal(t, 1).into(), "ability".into(), name.into()]);
 }
 
-// heroes.py:806-870: stage-3 loadouts launch Fireball's blast only.
-pub fn projectile_impact(battle: &mut Battle, pending: Pending) {
+// heroes.py:806-870: delayed blasts and Dark Orb's swept path.
+pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
     match pending.extra.hero_impact.as_deref().expect("hero impact mode") {
         "blast" => blast(battle, pending.x, pending.y, pending.radius, pending.damage, None, 1.0),
+        "orb" => {
+            let at = battle.t.min(pending.extra.until);
+            let travel = 0.0_f64.max(at - pending.extra.last_at) * pending.extra.speed;
+            let (dx, dy) = pending.extra.direction.expect("Dark Orb direction");
+            for target in targets(battle, false) {
+                if pending.extra.visited.contains(&target) {
+                    continue;
+                }
+                let (tx, ty) = battle.entity_position(target);
+                let along = (tx - pending.x) * dx + (ty - pending.y) * dy;
+                let along = travel.min(0.0_f64.max(along));
+                let (x, y) = (pending.x + dx * along, pending.y + dy * along);
+                if distance(battle, target, x, y) > pending.radius {
+                    continue;
+                }
+                pending.extra.visited.push(target);
+                damage_target(battle, target, pending.damage);
+                let slow = 1.0 - pending.extra.slow;
+                let Some(EntityRef::Unit(actor)) = pending.actor else {
+                    panic!("Dark Orb actor must be a hero");
+                };
+                add_target_slow(
+                    battle,
+                    target,
+                    StatusSource::Actor("Dark Orb".to_owned(), actor.id),
+                    slow,
+                    slow,
+                    battle.t + pending.extra.duration,
+                );
+            }
+            pending.x += dx * travel;
+            pending.y += dy * travel;
+            pending.extra.last_at = at;
+            if at < pending.extra.until {
+                pending.at = (battle.t + battle.dt).min(pending.extra.until);
+                battle.add_pending(pending);
+            }
+        }
         mode => todo!("stage 3+: hero projectile {mode}"),
+    }
+}
+
+// heroes.py:873-884: all buildings precede targetable ground defenders.
+fn ball_targets(battle: &Battle, hit: &[EntityRef]) -> Vec<EntityRef> {
+    let buildings: Vec<_> = battle.buildings.iter()
+        .map(|b| EntityRef::Building(b.id))
+        .filter(|target| !hit.contains(target))
+        .filter(|target| matches!(target, EntityRef::Building(id) if battle.building_targetable(*id)))
+        .collect();
+    if !buildings.is_empty() {
+        return buildings;
+    }
+    battle.defenders_pool().filter(|u| {
+        !hit.contains(&EntityRef::Unit(u.reference())) && !u.flying && u.targetable(battle)
+    }).map(|u| EntityRef::Unit(u.reference())).collect()
+}
+
+fn nearest_center(battle: &Battle, candidates: &[EntityRef], x: f64, y: f64) -> Option<EntityRef> {
+    let mut best = None;
+    let mut closest = f64::INFINITY;
+    for &target in candidates {
+        let (tx, ty) = battle.entity_position(target);
+        let distance = dist(tx, ty, x, y);
+        if best.is_none() || distance < closest {
+            best = Some(target);
+            closest = distance;
+        }
+    }
+    best
+}
+
+fn add_target_slow(
+    battle: &mut Battle,
+    target: EntityRef,
+    source: StatusSource,
+    movement: f64,
+    attack: f64,
+    until: f64,
+) {
+    match target {
+        EntityRef::Unit(unit) => {
+            effects::add_slow(battle.unit_mut(unit), source, movement, attack, until);
+        }
+        EntityRef::Building(id) => {
+            let slows = &mut battle.building_mut(id).extra.slows;
+            let value = (movement, attack, until);
+            if let Some((_, previous)) = slows.iter_mut().find(|(key, _)| *key == source) {
+                *previous = value;
+            } else {
+                slows.push((source, value));
+            }
+        }
+        _ => panic!("equipment slow requires a building or unit"),
     }
 }
 

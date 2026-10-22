@@ -230,6 +230,9 @@ fn status_source(key: &str) -> StatusSource {
         if parts.len() == 2 && parts[0].str() == "field" {
             return StatusSource::Field(parts[1].i64());
         }
+        if parts.len() == 2 && matches!(parts[0].str(), "Dark Orb" | "Frozen Arrow") {
+            return StatusSource::Actor(parts[0].str().to_owned(), UnitId(parts[1].usize()));
+        }
     }
     StatusSource::Name(key.to_owned())
 }
@@ -702,6 +705,17 @@ impl Resolver {
                 }
                 "hide_at" => extra.hide_at = v.optional_number(),
                 "next_mite_damage" => extra.next_mite_damage = v.number(),
+                "meteor_components" => {
+                    extra.meteor_components = Some(
+                        v.array()
+                            .iter()
+                            .map(|component| {
+                                let parts = component.tuple(2);
+                                (parts[0].string(), parts[1].level())
+                            })
+                            .collect(),
+                    );
+                }
                 "bouncing_frostmite" => extra.bouncing_frostmite = v.boolean(),
                 "waiting" => extra.waiting = v.boolean(),
                 "poison_exit" => {
@@ -831,6 +845,13 @@ impl Resolver {
                 "speed" => extra.speed = v.number(),
                 "hit" => extra.hit = v.array().into_iter().map(|item| self.reference(item)).collect(),
                 "hero_impact" => extra.hero_impact = v.optional_string(),
+                "until" => extra.until = v.number(),
+                "last_at" => extra.last_at = v.number(),
+                "visited" => {
+                    extra.visited = v.array().into_iter().map(|item| self.reference(item)).collect();
+                }
+                "slow" => extra.slow = v.number(),
+                "duration" => extra.duration = v.number(),
                 "summon" => {
                     let parts = v.tuple(4);
                     extra.summon = Some((parts[0].string(), parts[1].level(), parts[2].string(), self.optional_unit_ref(parts[3].clone())));

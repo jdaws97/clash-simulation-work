@@ -78,7 +78,7 @@ pub fn eligible(battle: &Battle, trap: TrapId, unit: &Unit, t: f64) -> bool {
     }
     if battle.traps[trap.0].key == "seeking" {
         if matches!(unit.kind, Tag::Siege | Tag::SiegeIdle) && unit.flying {
-            todo!("stage 2: traps.py:141 aerial siege Seeking Air Mine trigger");
+            return true;
         }
         if housing(unit) < 5 {
             return false;
