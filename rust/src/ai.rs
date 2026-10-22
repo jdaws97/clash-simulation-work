@@ -1,7 +1,5 @@
 //! Ports battle.py:1133-1410,1444-1458,1522-1589,1672-1753.
 
-use std::sync::Arc;
-
 use crate::battle::SpawnOptions;
 use crate::labels::{Name, Special, Tag};
 use crate::state::*;
@@ -86,12 +84,12 @@ impl Battle {
         let dt = self.dt;
         let u = self.unit_mut(reference);
         u.cooldown = (u.cooldown - dt).max(-dt);
-        let sp = Arc::clone(&u.spec);
-        if matches!(sp.attack, Tag::Heal | Tag::HealChain) {
+        let (attack, prefer, engages_units) = (u.spec.attack.clone(), u.spec.prefer.clone(), u.spec.engages_units);
+        if matches!(attack, Tag::Heal | Tag::HealChain) {
             units::act_healer(self, reference);
             return;
         }
-        if sp.prefer == Tag::None {
+        if prefer == Tag::None {
             return;
         }
         let mut target = u.target;
@@ -104,11 +102,11 @@ impl Battle {
                     panic!("building target kind");
                 };
                 if !self.building_targetable(building)
-                    && (sp.prefer != Tag::Th || !self.siege_blocks(current))
+                    && (prefer != Tag::Th || !self.siege_blocks(current))
                 {
                     target = None;
                 }
-            } else if sp.prefer == Tag::Th
+            } else if prefer == Tag::Th
                 && u.target_kind.as_ref() == Some(&Tag::Destination)
                 && !u.flying
                 && t >= u.extra.next_blocker_check {
@@ -123,13 +121,13 @@ impl Battle {
                 }
             }
         }
-        if sp.prefer == Tag::Wall && matches!(target, Some(EntityRef::Wall(_))) {
+        if prefer == Tag::Wall && matches!(target, Some(EntityRef::Wall(_))) {
             if units::wall_breaker_target(self, reference).map(EntityRef::Wall) != target {
                 target = None;
                 self.unit_mut(reference).wall_target = None;
             }
         }
-        if sp.prefer == Tag::Heroes {
+        if prefer == Tag::Heroes {
             if let Some(hero) = self.nearest_defender(reference, f64::INFINITY, true) {
                 target = Some(EntityRef::Unit(hero));
                 self.unit_mut(reference).target_kind = Some(Tag::Unit);
@@ -137,10 +135,10 @@ impl Battle {
             }
         }
         let preferred = self.preferred_remaining(reference);
-        let mut engages = sp.engages_units;
-        if matches!(sp.prefer, Tag::Defense | Tag::AirDefense) {
-            engages = engages || self.defenses_gone();
-        }
+        // For Defense/AirDefense, preferred is always Some and the branch
+        // below replaces engages unconditionally. Its earlier defenses_gone
+        // scan therefore had no observable use.
+        let mut engages = engages_units;
         if let Some(preferred) = preferred {
             let u = self.unit_mut(reference);
             if u.extra.preferred_remaining && !preferred {
@@ -244,11 +242,6 @@ impl Battle {
             let a = self.unit(other);
             other != reference && self.t - a.extra.troop_hit_at < 1.0 && a.name_id != Name::Totem
         })
-    }
-
-    // battle.py:1323-1324.
-    pub fn defenses_gone(&self) -> bool {
-        !self.buildings.iter().any(|b| b.alive && b.defense_target(self.th_active()))
     }
 
     // battle.py:1326-1410: ordered pools; strict comparisons keep first minimum.
@@ -574,20 +567,19 @@ impl Battle {
                 f64::INFINITY
             };
             let u = self.unit(reference);
-            // Python asks about all attackers, including heroes outside this
-            // defender's leash. The answer is constant during this scan.
-            let prefer_heroes = u.spec.prefer == Tag::Heroes
-                && self.attackers_pool().any(|hero| {
-                    hero.is_hero
-                        && hero.targetable(self)
-                        && self.can_hit(reference, hero.reference())
-                });
+            let prefer_heroes = u.spec.prefer == Tag::Heroes;
+            let mut hero_available = false;
             let (mut best, mut distance) = (None, f64::INFINITY);
+            let (mut best_hero, mut hero_distance) = (None, f64::INFINITY);
             for a in self.attackers_pool() {
                 if !a.targetable(self) || !self.can_hit(reference, a.reference()) {
                     continue;
                 }
-                if prefer_heroes && !a.is_hero {
+                // Python's preference sees heroes even outside the leash.
+                // Record global eligibility before filtering by that leash.
+                let hero = prefer_heroes && a.is_hero;
+                hero_available |= hero;
+                if hero_available && !hero {
                     continue;
                 }
                 // With no leash this comparison can never reject a target.
@@ -602,8 +594,18 @@ impl Battle {
                     distance = d;
                     best = Some(a.reference());
                 }
+                if hero && d < hero_distance {
+                    hero_distance = d;
+                    best_hero = Some(a.reference());
+                }
             }
-            target = best;
+            // Both minima follow attacker_order and keep the first tie. If
+            // every eligible hero is outside the leash, Python chooses None.
+            target = if hero_available {
+                best_hero
+            } else {
+                best
+            };
         }
         if target.is_some() && target.map(EntityRef::Unit) != self.unit(reference).target {
             units::new_target_windup(self, reference);

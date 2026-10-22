@@ -10,7 +10,7 @@ use crate::combat::{SplashBuildingsOptions, SplashUnitsOptions};
 use crate::effects;
 use crate::fast_hash::FastMap as HashMap;
 use crate::geom;
-use crate::grid::{Grid, TargetIdentity, RES};
+use crate::grid::{TargetIdentity, RES};
 use crate::heroes;
 use crate::labels::{Name, Special, Tag};
 use crate::spells;
@@ -174,7 +174,7 @@ pub fn segment_entry(
 }
 
 // units.py:92-163: connectivity is membership-only; building and route order
-// determine the selected wall. The temporary access grid treats walls as solid.
+// determine the selected wall. Cached access components treat walls as solid.
 pub fn wall_breaker_target(battle: &mut Battle, unit: UnitRef) -> Option<WallId> {
     if battle.wall_mode(unit) == Tag::Ignore {
         return None;
@@ -216,22 +216,14 @@ pub fn wall_breaker_target(battle: &mut Battle, unit: UnitRef) -> Option<WallId>
         return None;
     }
     let grid = battle.navigation_grid(unit);
-    let mut access = Grid::new(grid.n / RES);
-    for index in 0..grid.blocked.len() {
-        access.blocked[index] = grid.blocked[index] || grid.wall[index];
-    }
     let reach = 1.0 / RES as f64;
-    let geometry: Vec<_> = buildings.iter().map(|b| (b.1, b.2, b.3)).collect();
-    // every building's cost is read below, so all must be exact
-    let costs = access.building_costs_exact(x, y, 0.0, &geometry, reach);
-    for (building, &cost) in buildings.iter().zip(costs) {
-        if cost < 1e9 {
+    let component = grid.access_component(x, y);
+    for building in &buildings {
+        if grid.building_accessible(component, building.1, building.2, building.3, reach) {
             continue;
         }
-        // Identical geometry/reach/wall cost can share the public building
-        // field API; no separate breaker cache identity is needed.
         let route = grid.field(
-            TargetIdentity::Building(building.0.0),
+            TargetIdentity::Breaker(building.0.0),
             building.1,
             building.2,
             building.3,
@@ -350,8 +342,14 @@ pub fn rubble_target(battle: &mut Battle, unit: UnitRef) -> (Option<EntityRef>, 
         if b.extra.rubble_claim.is_some_and(|claim| {
             claim != u.id
                 && battle
-                    .attackers_pool()
-                    .any(|witch| witch.alive && witch.id == claim)
+                    .unit_indices
+                    .get(claim.0)
+                    .and_then(|location| *location)
+                    .is_some_and(|(team, index)| {
+                        team == Team::Atk
+                            && battle.attackers[index].in_pool
+                            && battle.attackers[index].alive
+                    })
         }) {
             continue;
         }
@@ -589,7 +587,15 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         for &id in &contacts {
             smash_wall(battle, unit, id);
         }
-        battle.unit_mut(unit).extra.wall_pulses.retain(|(id, _)| contacts.contains(id));
+        battle
+            .unit_mut(unit)
+            .extra
+            .wall_pulses
+            .retain(|(id, _)| {
+                contacts
+                    .binary_search_by_key(&id.0, |contact| contact.0)
+                    .is_ok()
+            });
         contacts.clear();
         battle.wall_contact_scratch = contacts;
     }

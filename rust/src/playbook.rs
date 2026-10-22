@@ -2,7 +2,6 @@
 
 use std::rc::Rc;
 
-use crate::fast_hash::FastMap;
 use crate::geom::py_hypot;
 use crate::heroes;
 use crate::json::Json;
@@ -191,6 +190,8 @@ pub struct PlaybookPlan {
     pub done: SharedVec<(String, f64)>,
     pub next: SharedVec<(String, f64)>,
     pub hurt: SharedVec<(HurtKey, HurtValue)>,
+    // Lookup-only hints, validated against hurt after engagement-key removal.
+    hurt_indices: SharedVec<Option<usize>>,
     pub no_target: SharedVec<(String, f64)>,
     pub log_steps: SharedVec<(f64, String)>,
     pub deployed: SharedVec<String>,
@@ -229,6 +230,7 @@ impl PlaybookPlan {
             done: plans::times(p, "_done").into(),
             next: plans::times(p, "_next").into(),
             hurt: hurt.into(),
+            hurt_indices: SharedVec::default(),
             no_target: plans::times(p, "_no_target").into(),
             log_steps: p.at("log_steps")
                 .arr()
@@ -425,7 +427,7 @@ impl PlaybookPlan {
     // playbook.py:233-239.
     fn heavy_fire(&self, battle: &Battle, unit: UnitRef, fraction: f64) -> bool {
         let u = battle.unit(unit);
-        let history = self.hurt.iter().find(|(key, _)| *key == HurtKey::Unit(u.id));
+        let history = self.hurt_index(u.id).map(|index| &self.hurt[index]);
         let recent = history.and_then(|(_, value)| {
             if let HurtValue::History(history) = value {
                 history.iter()
@@ -442,6 +444,21 @@ impl PlaybookPlan {
                 .is_some_and(|w| w.target == Some(unit) || w.multi.contains(&unit))
         });
         lost >= fraction * u.max_hp || locked
+    }
+
+    fn hurt_index(&self, unit: UnitId) -> Option<usize> {
+        if let Some(index) = self.hurt_indices.get(unit.0).copied().flatten() {
+            if self
+                .hurt
+                .get(index)
+                .is_some_and(|(key, _)| *key == HurtKey::Unit(unit))
+            {
+                return Some(index);
+            }
+        }
+        self.hurt
+            .iter()
+            .position(|(key, _)| *key == HurtKey::Unit(unit))
     }
 
     // playbook.py:241-249.
@@ -492,6 +509,10 @@ impl PlaybookPlan {
             Trigger::Always => true,
             Trigger::All(parts) => parts.iter().all(|part| self.ready(battle, part, relax)),
             Trigger::Any(parts) => {
+                if !relax {
+                    return parts.is_empty()
+                        || parts.iter().any(|part| self.ready(battle, part, false));
+                }
                 let parts: Vec<_> = parts.iter()
                     .filter(|part| !(relax && self.impossible(battle, part)))
                     .collect();
@@ -813,24 +834,25 @@ impl PlaybookPlan {
     pub fn on_tick(&mut self, battle: &mut Battle) {
         let t = battle.t;
         if (t * 10.0) as i64 % 5 == 0 {
-            // Histories keep their Python dictionary order. This lookup-only
-            // index lasts through the sampling pass, which never removes keys.
-            let mut indices: FastMap<UnitId, usize> = FastMap::default();
-            for (index, (key, _)) in self.hurt.iter().enumerate() {
-                if let HurtKey::Unit(id) = key {
-                    indices.entry(*id).or_insert(index);
-                }
-            }
+            // Keep Python history order, but reuse dense unit-id hints rather
+            // than rebuilding a hash map for every sampling pass. A removed
+            // engagement clock can shift indices, so hurt_index validates.
             for u in battle.attackers_pool() {
                 if u.alive && (u.is_hero || u.housing >= 5) {
-                    let index = if let Some(&index) = indices.get(&u.id) {
+                    let index = if let Some(index) = self.hurt_index(u.id) {
                         index
                     } else {
                         let index = self.hurt.len();
-                        self.hurt.push((HurtKey::Unit(u.id), HurtValue::History(Vec::new())));
-                        indices.insert(u.id, index);
+                        self.hurt
+                            .push((HurtKey::Unit(u.id), HurtValue::History(Vec::new())));
                         index
                     };
+                    if self.hurt_indices.len() <= u.id.0 {
+                        self.hurt_indices.resize(u.id.0 + 1, None);
+                    }
+                    if self.hurt_indices[u.id.0] != Some(index) {
+                        self.hurt_indices[u.id.0] = Some(index);
+                    }
                     let HurtValue::History(history) = &mut self.hurt[index].1 else {
                         panic!("unit HP history")
                     };
@@ -1025,15 +1047,19 @@ impl PlaybookPlan {
         }
         let kinds = self.step_spells.as_ref().expect("step kinds").clone();
         let reservations: Vec<_> = kinds.iter().map(|kind| {
-            let mine: Vec<_> = self.steps.iter().filter(|s| {
+            let mine = self.steps.iter().filter(|s| {
                 s.action == Action::Recall
                     && kind == "recall"
                     || s.action == Action::Spell
                     && s.what.as_deref()
                     .and_then(spell_key) == Some(kind.as_str())
-            }).collect();
-            let repeat = mine.iter().any(|s| s.every.is_some());
-            let n = mine.iter().filter(|s| !self.done(&s.id)).count() as i64;
+            });
+            let mut repeat = false;
+            let mut n = 0;
+            for step in mine {
+                repeat |= step.every.is_some();
+                n += i64::from(!self.done(&step.id));
+            }
             (kind.clone(), if repeat {
                 i64::MAX
             } else {

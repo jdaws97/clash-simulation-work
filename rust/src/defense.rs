@@ -309,21 +309,22 @@ pub fn act(battle: &mut Battle, owner: BuildingId) {
 pub fn act_once(battle: &mut Battle, owner: BuildingId) {
     let t = battle.t;
     let dt = battle.dt;
-    let w = weapon(battle, owner).clone();
     let (bx, by) = battle.entity_position(EntityRef::Building(owner));
-    let kind = &w.kind;
-    if kind == &Tag::Hook {
+    let kind = weapon(battle, owner).kind.clone();
+    if kind == Tag::Hook {
+        let w = weapon(battle, owner);
         if w.cooldown > 0.0 {
             return;
         }
-        let candidates = visible(battle, owner, w.range);
+        let (range, damage, stun, interval) = (w.range, w.damage, w.extra.stun, w.interval);
+        let candidates = visible(battle, owner, range);
         let Some(target) = nearest(battle, &candidates, bx, by) else {
             return;
         };
-        battle.hit_unit(target, w.damage, None, "normal", None);
+        battle.hit_unit(target, damage, None, "normal", None);
         let unit = battle.unit_mut(target);
-        unit.stun_until = unit.stun_until.max(t + w.extra.stun);
-        weapon_mut(battle, owner).cooldown += w.interval;
+        unit.stun_until = unit.stun_until.max(t + stun);
+        weapon_mut(battle, owner).cooldown += interval;
         return;
     }
     match kind {
@@ -335,15 +336,17 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
     let damage_rage = rage(battle, owner);
     match kind {
         Tag::Candle => {
+            let w = weapon(battle, owner);
             if let Some(first) = battle.first_deploy_t {
                 let active = battle.t - first;
-                weapon_mut(battle, owner).extra.targets = if active < w.extra.melt1 {
+                let targets = if active < w.extra.melt1 {
                     6
                 } else if active < w.extra.melt2 {
                     4
                 } else {
                     3
                 };
+                weapon_mut(battle, owner).extra.targets = targets;
             }
             return multi(battle, owner, damage_rage);
         }
@@ -356,29 +359,30 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
         Tag::Firespitter => return firespitter(battle, owner, damage_rage),
         _ => {}
     }
-    let mut target = w.target;
+    let w = weapon(battle, owner);
+    let (range, min_range, idle_until, mut target) = (w.range, w.min_range, w.idle_until, w.target);
     if let Some(reference) = target {
         let unit = battle.unit(reference);
         let distance = dist(unit.x, unit.y, bx, by);
         if !unit.alive
             || !unit.targetable(battle)
-            || distance > w.range
-            || distance < w.min_range
+            || distance > range
+            || distance < min_range
         {
             target = None;
             weapon_mut(battle, owner).lock_time = 0.0;
         }
     }
     if target.is_none() {
-        if t < w.idle_until {
+        if t < idle_until {
             return;
         }
-        let mut pool = visible(battle, owner, w.range);
+        let mut pool = visible(battle, owner, range);
         if pool.is_empty() {
             weapon_mut(battle, owner).idle_until = t + 0.25;
             return;
         }
-        if kind == &Tag::Hunter && pool.iter().any(|unit| battle.unit(*unit).is_hero) {
+        if kind == Tag::Hunter && pool.iter().any(|unit| battle.unit(*unit).is_hero) {
             pool.retain(|unit| battle.unit(*unit).is_hero);
         }
         target = nearest(battle, &pool, bx, by);
@@ -387,11 +391,12 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
         actual.lock_time = 0.0;
     }
     let target = target.expect("single-target defense target");
-    if kind == &Tag::InfernoSingle {
+    if kind == Tag::InfernoSingle {
         weapon_mut(battle, owner).lock_time += dt;
+        let w = weapon(battle, owner);
         let mut dps = 0.0;
         for &(start, value) in &w.extra.ramp {
-            if weapon(battle, owner).lock_time >= start {
+            if w.lock_time >= start {
                 dps = value;
             }
         }
@@ -411,7 +416,10 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
     if weapon(battle, owner).cooldown > 0.0 {
         return;
     }
-    if kind == &Tag::Burst {
+    // Specialized and cooling weapons never need an owning snapshot. Keep
+    // one only across firing callbacks, which can mutate this weapon.
+    let w = weapon(battle, owner).clone();
+    if kind == Tag::Burst {
         if weapon(battle, owner).burst_left <= 0 {
             weapon_mut(battle, owner).burst_left = w.extra.shots as i64;
         }
@@ -429,7 +437,7 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
         };
         return;
     }
-    if kind == &Tag::MortarBurst {
+    if kind == Tag::MortarBurst {
         if weapon(battle, owner).burst_left <= 0 {
             weapon_mut(battle, owner).burst_left = w.extra.shots as i64;
         }
@@ -443,7 +451,7 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
         };
         return;
     }
-    if kind == &Tag::Revenge {
+    if kind == Tag::Revenge {
         revenge(battle, owner, target, damage_rage);
         return;
     }
