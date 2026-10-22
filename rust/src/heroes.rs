@@ -4,6 +4,7 @@ use crate::battle::SpawnOptions;
 use crate::catalog::UnitSpec;
 use crate::combat::SplashBuildingsOptions;
 use crate::geom::{dist, py_hypot};
+use crate::labels::{Name, Specials, Tag};
 use crate::state::*;
 use crate::stats::{self, Level};
 use crate::trace::round_decimal;
@@ -143,7 +144,7 @@ fn pet_level(battle: &Battle, hero: UnitRef, loadout: &HeroLoadout, town_hall: i
         }
         assert!(!unit.kit.as_ref().is_some_and(|kit| kit.pet_name.as_deref() == Some(name)),
             "{name} is already assigned to {}", unit.name);
-        assert!(!(unit.kind == "pet" && unit.name == name && unit.owner != Some(hero)),
+        assert!(!(unit.kind == Tag::Pet && unit.name == name && unit.owner != Some(hero)),
             "{name} is already assigned to another Hero");
     }
     assert!(battle.unit(hero).pet.is_none(), "hero already has a pet");
@@ -245,9 +246,9 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
     // heroes.py:204 constructs UnitSpec directly, rather than spec(name).
     let mut spec = UnitSpec {
         name: name.clone(),
-        prefer: "owner".to_owned(),
-        walls: if flying { "fly" } else { "ignore" }.to_owned(),
-        attack: "single".to_owned(),
+        prefer: Tag::Owner,
+        walls: if flying { Tag::Fly } else { Tag::Ignore },
+        attack: Tag::Single,
         splash: 0.0,
         splash_ground_only: false,
         chain: 0,
@@ -269,21 +270,23 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
         death_freeze: None,
         death_freeze_radius: 0.0,
         death_spawn: Vec::new(),
-        special: Vec::new(),
+        special: Specials::default(),
         heal_air: false,
         flying_override: None,
         notes: String::new(),
     };
     if name == "Phoenix" {
-        spec.attack = "splash".to_owned();
+        spec.attack = Tag::Splash;
         spec.splash = 0.3;
     }
     battle.uid += 1;
     let owner = battle.unit(hero);
     let mut pet = Unit {
+        source: format!("unit:{name}").into(),
+        name_id: Name::from_str(&name),
         id: UnitId(battle.uid),
         name: name.clone(),
-        kind: "pet".to_owned(),
+        kind: Tag::Pet,
         team: Team::Atk,
         level: Some(level.clone()),
         x: owner.x + 0.5,
@@ -299,7 +302,7 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
         flying,
         hits_air,
         hits_ground: true,
-        spec,
+        spec: std::rc::Rc::new(spec),
         alive: true,
         cooldown: 0.0,
         target: None,
@@ -367,7 +370,7 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
             .expect("Frosty summon cooldown");
     }
     let reference = pet.reference();
-    battle.unit_indices.insert(pet.id, (Team::Atk, battle.attackers.len()));
+    battle.register_unit(pet.id, Team::Atk, battle.attackers.len());
     battle.attackers.push(pet);
     battle.attacker_order.push(reference);
     new_member(battle, reference);
@@ -414,7 +417,7 @@ pub fn tick(battle: &mut Battle, hero: UnitRef) {
         let amount = kit.heal_rate * battle.dt;
         let unit = battle.unit(hero);
         for ally in battle.attackers_near(unit.x, unit.y, 9.0) {
-            if !matches!(battle.unit(ally).kind.as_str(), "siege" | "siege_idle") {
+            if !matches!(battle.unit(ally).kind, Tag::Siege | Tag::SiegeIdle) {
                 battle.unit_mut(ally).heal(amount);
             }
         }
@@ -442,9 +445,9 @@ pub fn on_damaged(
     }
     if let EntityRef::Unit(unit) = source {
         let unit = battle.unit(unit);
-        if unit.name == "Firemite" && effect == "secondary"
-            || unit.name == "Electro Dragon" && effect == "chain"
-            || unit.spec.attack == "suicide" || matches!(unit.name.as_str(), "Yetimite" | "Electromite") {
+        if unit.name_id == Name::Firemite && effect == "secondary"
+            || unit.name_id == Name::ElectroDragon && effect == "chain"
+            || unit.spec.attack == Tag::Suicide || matches!(unit.name_id, Name::Yetimite | Name::Electromite) {
             return;
         }
     }
@@ -468,7 +471,7 @@ pub fn on_damaged(
     let damage = col(battle, "Revenge Deck", kit.lv("Revenge Deck"), &["counter damage"], 225.0);
     let heal = col(battle, "Revenge Deck", kit.lv("Revenge Deck"), &["heal per counter"], 0.0);
     battle.unit_mut(hero).heal(heal);
-    effects::damage_source(battle, Some(EntityRef::Unit(hero)), "counter", |battle| {
+    effects::damage_source(battle, Some(EntityRef::Unit(hero)), Tag::Counter, |battle| {
         damage_target(battle, source, damage);
     });
 }
@@ -545,7 +548,7 @@ pub fn on_death(battle: &mut Battle, hero: UnitRef) -> bool {
         let t = battle.t;
         let pet = battle.unit_mut(pet);
         pet.extra.rampage_detached = true;
-        if pet.name == "Angry Jelly" {
+        if pet.name_id == Name::AngryJelly {
             pet.extra.brainwash_until = t;
         }
     }
@@ -588,7 +591,7 @@ pub fn on_death(battle: &mut Battle, hero: UnitRef) -> bool {
 
 // heroes.py:508-803: stable equipment priority, under ability provenance.
 pub fn activate(battle: &mut Battle, hero: UnitRef) {
-    effects::damage_source(battle, Some(EntityRef::Unit(hero)), "ability", |battle| {
+    effects::damage_source(battle, Some(EntityRef::Unit(hero)), Tag::Ability, |battle| {
         activate_effect(battle, hero);
     });
 }
@@ -630,7 +633,7 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 let unit = battle.unit(hero);
                 battle.spawn("Giant Giant", Team::Atk, unit.x + 0.5, unit.y + 0.5, SpawnOptions {
                     level: Some(Level::Int(level)),
-                    kind: "summon".to_owned(),
+                    kind: Tag::Summon,
                     group: unit.group.clone(),
                     ..Default::default()
                 });
@@ -925,11 +928,14 @@ fn moving_auras(battle: &mut Battle, warden: UnitRef, members: Option<&[UnitRef]
         extra.torch_speed,
         extra.torch_reduction,
     );
+    if t >= tome && t >= torch {
+        return;
+    }
     let source = StatusSource::Name(unit.id.0.to_string());
     let members = members.map_or_else(|| battle.attackers_near(unit.x, unit.y, 9.0), |members| members.to_vec());
     for ally in members {
         let unit = battle.unit_mut(ally);
-        if unit.name == "Totem" {
+        if unit.name_id == Name::Totem {
             continue;
         }
         if t < tome {
@@ -939,7 +945,7 @@ fn moving_auras(battle: &mut Battle, warden: UnitRef, members: Option<&[UnitRef]
                 unit.extra.tomes.push((source.clone(), tome.min(t + 1.0)));
             }
         }
-        if t < torch && !matches!(unit.kind.as_str(), "siege" | "siege_idle") {
+        if t < torch && !matches!(unit.kind, Tag::Siege | Tag::SiegeIdle) {
             let speed = if unit.is_hero && ally != warden {
                 speed / 2.0
             } else {
@@ -957,9 +963,11 @@ fn moving_auras(battle: &mut Battle, warden: UnitRef, members: Option<&[UnitRef]
 
 // heroes.py:1082-1140: all combatants reset before any strongest-buff selection.
 pub fn apply_auras(battle: &mut Battle) {
-    let combatants: Vec<_> = battle.attackers_pool().chain(battle.defenders_pool())
-        .map(Unit::reference).collect();
-    let mut want = Vec::new();
+    let mut combatants = std::mem::take(&mut battle.actor_scratch);
+    combatants.clear();
+    combatants.extend(battle.attackers_pool().chain(battle.defenders_pool()).map(Unit::reference));
+    let mut want = std::mem::take(&mut battle.aura_want_scratch);
+    want.clear();
     for &reference in &combatants {
         let unit = battle.unit_mut(reference);
         let boost = effects::crown_buff(unit);
@@ -968,13 +976,14 @@ pub fn apply_auras(battle: &mut Battle) {
             want.push((reference, (boost, f64::INFINITY)));
         }
     }
-    let wardens: Vec<_> = combatants.iter().copied().filter(|reference| {
-        let unit = battle.unit(*reference);
-        unit.alive && matches!(unit.name.as_str(), "Grand Warden" | "Apprentice Warden")
-    }).collect();
-    for reference in wardens {
+    // Aura updates do not change life, name, team or pool membership. This
+    // walks the same filtered combatant snapshot without a second allocation.
+    for &reference in &combatants {
         let unit = battle.unit(reference);
-        let (percentage, cap, rage, radius) = if unit.name == "Apprentice Warden" {
+        if !unit.alive || !matches!(unit.name_id, Name::GrandWarden | Name::ApprenticeWarden) {
+            continue;
+        }
+        let (percentage, cap, rage, radius) = if unit.name_id == Name::ApprenticeWarden {
             (battle.catalog.stats.get("Apprentice Warden", unit.level.as_ref().expect("Warden level"),
                 &["Aura HP Increase"], None).expect("aura HP increase") / 100.0, f64::INFINITY, 0.0, 7.0)
         } else {
@@ -994,15 +1003,13 @@ pub fn apply_auras(battle: &mut Battle) {
         };
         let unit = battle.unit(reference);
         let (x, y) = (unit.x, unit.y);
-        let allies: Vec<_> = if reference.team == Team::Atk {
-            battle.attackers_pool().map(Unit::reference).collect()
-        } else {
-            battle.defenders_pool().map(Unit::reference).collect()
-        };
-        for ally in allies {
+        for &ally in &combatants {
+            if ally.team != reference.team {
+                continue;
+            }
             let unit = battle.unit(ally);
             if !unit.alive || dist(unit.x, unit.y, x, y) > radius || ally == reference
-                || unit.name == "Totem" || matches!(unit.kind.as_str(), "siege" | "siege_idle") {
+                || unit.name_id == Name::Totem || matches!(unit.kind, Tag::Siege | Tag::SiegeIdle) {
                 continue;
             }
             if percentage != 0.0 {
@@ -1022,13 +1029,17 @@ pub fn apply_auras(battle: &mut Battle) {
             unit.aura_dmg = unit.aura_dmg.max(1.0 + increase);
         }
     }
-    for reference in combatants {
+    for &reference in &combatants {
         if battle.unit(reference).alive {
             let (percentage, cap) = want.iter().find(|(unit, _)| *unit == reference)
                 .map_or((0.0, 0.0), |(_, value)| *value);
             effects::health_aura(battle.unit_mut(reference), percentage, cap);
         }
     }
+    combatants.clear();
+    want.clear();
+    battle.actor_scratch = combatants;
+    battle.aura_want_scratch = want;
 }
 
 // heroes.py:1185-1200: Town Hall 18 guardians are outside stage 3's scenarios.
@@ -1043,7 +1054,7 @@ pub fn defending_hero_ability(_battle: &mut Battle, _unit: UnitRef) {}
 
 // heroes.py:1357-1387.
 pub fn summon_tick(battle: &mut Battle, unit: UnitRef) -> bool {
-    if battle.unit(unit).name != "Lavaloon" {
+    if battle.unit(unit).name_id != Name::Lavaloon {
         return false;
     }
     if !battle.unit(unit).can_act(battle.t) {
@@ -1065,7 +1076,7 @@ pub fn summon_tick(battle: &mut Battle, unit: UnitRef) -> bool {
         let u = battle.unit(unit);
         battle.spawn("Lavaloon Pup", unit.team, u.x, u.y, SpawnOptions {
             level: u.level.clone(),
-            kind: "summon".to_owned(),
+            kind: Tag::Summon,
             owner: Some(unit),
             group: u.group.clone(),
             ..Default::default()
@@ -1085,7 +1096,7 @@ pub fn summon_tick(battle: &mut Battle, unit: UnitRef) -> bool {
 // heroes.py:1390-1425: children precede the delayed death bomb.
 pub fn summon_death(battle: &mut Battle, unit: UnitRef) {
     let u = battle.unit(unit);
-    if u.name != "Lavaloon" {
+    if u.name_id != Name::Lavaloon {
         return;
     }
     let count = battle.catalog.stats.get("Lavaloon", u.level.as_ref().expect("Lavaloon level"),
@@ -1094,7 +1105,7 @@ pub fn summon_death(battle: &mut Battle, unit: UnitRef) {
         let u = battle.unit(unit);
         battle.spawn("Lavaloon Pup", unit.team, u.x, u.y, SpawnOptions {
             level: u.level.clone(),
-            kind: "summon".to_owned(),
+            kind: Tag::Summon,
             owner: Some(unit),
             group: u.group.clone(),
             ..Default::default()
@@ -1107,7 +1118,7 @@ pub fn summon_death(battle: &mut Battle, unit: UnitRef) {
     pending.team = if unit.team == Team::Atk { Team::Def } else { Team::Atk };
     pending.extra.buildings = if unit.team == Team::Atk { damage } else { 0.0 };
     pending.actor = Some(EntityRef::Unit(unit));
-    pending.effect = Some("death".to_owned());
+    pending.effect = Some(Tag::Death);
     battle.add_pending(pending);
 }
 
@@ -1121,11 +1132,11 @@ fn invisible(unit: &mut Unit, until: f64) {
 // heroes.py:1435-1449: also preprocessed in the exported catalog.
 pub fn summon_spec(name: &str, mut specification: UnitSpec) -> UnitSpec {
     match name {
-        "Henchman" | "Booger" => specification.walls = "fly".to_owned(),
-        "Lavaloon" => specification.prefer = "air_defense".to_owned(),
+        "Henchman" | "Booger" => specification.walls = Tag::Fly,
+        "Lavaloon" => specification.prefer = Tag::AirDefense,
         "Frostmite" => {
-            specification.prefer = "defense".to_owned();
-            specification.walls = "ignore".to_owned();
+            specification.prefer = Tag::Defense;
+            specification.walls = Tag::Ignore;
             specification.engages_units = false;
         }
         _ => {}
@@ -1148,7 +1159,8 @@ pub fn new_member(battle: &mut Battle, reference: UnitRef) {
             index
         } else {
             let index = battle.buckets.len();
-            battle.buckets.push((cell, Vec::new()));
+            let members = battle.spare_bucket_members.pop().unwrap_or_default();
+            battle.buckets.push((cell, members));
             battle.bucket_indices.insert(cell, index);
             index
         };
@@ -1158,7 +1170,7 @@ pub fn new_member(battle: &mut Battle, reference: UnitRef) {
     }
     let unit = battle.unit(reference);
     let wardens: Vec<_> = battle.attackers_pool().filter(|warden| {
-        warden.alive && warden.name == "Grand Warden" && dist(warden.x, warden.y, unit.x, unit.y) <= 9.0
+        warden.alive && warden.name_id == Name::GrandWarden && dist(warden.x, warden.y, unit.x, unit.y) <= 9.0
     }).map(Unit::reference).collect();
     for warden in wardens {
         moving_auras(battle, warden, Some(&[reference]));
@@ -1175,10 +1187,10 @@ pub fn act_pet(battle: &mut Battle, unit: UnitRef) {
 // heroes.py:1237-1245: these pets travel free with their paired hero.
 pub fn free_pet(battle: &Battle, reference: UnitRef) -> bool {
     let u = battle.unit(reference);
-    u.kind == "pet"
+    u.kind == Tag::Pet
         && (u.extra.egg
             || u.attached(battle)
-            || u.name == "Sneezy" && u.owner.is_some_and(|owner| battle.unit(owner).alive))
+            || u.name_id == Name::Sneezy && u.owner.is_some_and(|owner| battle.unit(owner).alive))
 }
 
 // heroes.py:1248-1268: Recall and Portal Pendant share the same stash path.
@@ -1263,7 +1275,7 @@ fn resume_timers(unit: &mut Unit, now: f64) {
 pub fn portal_redeploy(battle: &mut Battle, x: f64, y: f64) {
     assert!(battle.can_deploy(x, y), "Portal redeployment requires a legal deployment tile");
     let t = battle.t;
-    let mut ordered = battle.portal_units();
+    let mut ordered: Vec<_> = battle.portal_units().collect();
     ordered.sort_by(|a, b| {
         let a = battle.unit(*a);
         let b = battle.unit(*b);

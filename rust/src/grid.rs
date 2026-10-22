@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-
+use crate::fast_hash::FastMap as HashMap;
 use crate::geom::round_half_even;
 
 pub const RES: usize = 2;
@@ -178,6 +177,11 @@ pub struct Grid {
     connectivity: Connectivity,
     spare_fields: Vec<CachedField>,
     goal_marks: Vec<bool>,
+    // Goal geometry is independent of obstacles and survives field pruning.
+    building_goals: Vec<Vec<usize>>,
+    building_goal_indices: HashMap<(u64, u64, u64, u64), usize>,
+    pool_goals: Vec<usize>,
+    building_costs: Vec<f32>,
 }
 
 impl Grid {
@@ -191,7 +195,7 @@ impl Grid {
             wall: vec![false; n * n],
             version: 0,
             cache: Vec::new(),
-            cache_indices: HashMap::new(),
+            cache_indices: HashMap::default(),
             neighbors: neighbor_indices(n),
             cell_flags: vec![0; n * n],
             move_masks: vec![0; n * n],
@@ -199,6 +203,10 @@ impl Grid {
             connectivity: Connectivity::new(),
             spare_fields: Vec::new(),
             goal_marks: vec![false; n * n],
+            building_goals: Vec::new(),
+            building_goal_indices: HashMap::default(),
+            pool_goals: Vec::new(),
+            building_costs: Vec::new(),
         }
     }
 
@@ -406,13 +414,31 @@ impl Grid {
         x: f64,
         y: f64,
         wall_extra: f64,
-        xs: &[f64],
-        ys: &[f64],
-        halves: &[f64],
+        geometry: &[(f64, f64, f64)],
         reach: f64,
-    ) -> Vec<f32> {
-        assert_eq!(xs.len(), ys.len());
-        assert_eq!(xs.len(), halves.len());
+    ) -> &[f32] {
+        self.pool_goals.clear();
+        for &(cx, cy, half) in geometry {
+            let key = (
+                cx.to_bits(),
+                cy.to_bits(),
+                half.to_bits(),
+                reach.to_bits(),
+            );
+            let index = if let Some(&index) = self.building_goal_indices.get(&key) {
+                index
+            } else {
+                let mut goals = Vec::new();
+                // Use exactly the original bounding box, cell order and f64
+                // test. Only the resulting integer cell indices are cached.
+                for_each_goal_cell(self.n, cx, cy, half, reach, |cell| goals.push(cell));
+                let index = self.building_goals.len();
+                self.building_goals.push(goals);
+                self.building_goal_indices.insert(key, index);
+                index
+            };
+            self.pool_goals.push(index);
+        }
         let field = self.source_field(x, y, wall_extra);
         let entry = &mut self.cache[field.0];
         let goal_marks = &mut self.goal_marks;
@@ -424,15 +450,14 @@ impl Grid {
             .map(f32::from_bits)
             .unwrap_or(INF);
         let mut best = INF;
-        for b in 0..xs.len() {
-            for_each_goal_cell(self.n, xs[b], ys[b], halves[b], reach, |cell| {
+        for &index in &self.pool_goals {
+            for &cell in &self.building_goals[index] {
                 goal_marks[cell] = true;
                 let distance = entry.distances[cell];
-                // Earlier queries may already have settled this pool's goals.
                 if distance < frontier_min && distance < best {
                     best = distance;
                 }
-            });
+            }
         }
         while let Some(key) = entry.frontier.min_key() {
             if f32::from_bits(key) > best {
@@ -451,20 +476,18 @@ impl Grid {
         // Larger stored upper bounds cannot change the first argmin or its
         // >= 1e8 fallback (pathing.py:145-169; battle.py:1432-1441).
         let distances = &entry.distances;
-        let mut costs = vec![INF; xs.len()];
-        // pathing.py:145-169; battle.py:1432-1441: output stays float32,
-        // geometry stays float64, and strict comparisons retain the first tie.
-        for b in 0..xs.len() {
+        self.building_costs.clear();
+        for &index in &self.pool_goals {
             let mut best = INF;
-            for_each_goal_cell(self.n, xs[b], ys[b], halves[b], reach, |cell| {
+            for &cell in &self.building_goals[index] {
                 let distance = distances[cell];
                 if distance < best {
                     best = distance;
                 }
-            });
-            costs[b] = best;
+            }
+            self.building_costs.push(best);
         }
-        costs
+        &self.building_costs
     }
 
     pub fn distance(&mut self, field: Field, cell: usize) -> f32 {

@@ -2,24 +2,27 @@
 
 use crate::geom::py_hypot;
 use crate::grid::{Grid, TargetIdentity, GOAL_REACH_MIN, NORMAL_WALL_EXTRA, RES};
+use crate::labels::{Name, Tag};
 use crate::state::*;
 use crate::{effects, geom, units};
 
 impl Battle {
     // battle.py:1087-1117: frozen bucket order, live positions after each nudge.
     pub fn separate(&mut self) {
-        let cells: Vec<_> = self.buckets.iter().map(|(_, members)| members.clone()).collect();
-        for cell in cells {
-            if cell.len() < 2 {
+        // nudge only changes positions/navigation; it cannot mutate membership.
+        for cell_index in 0..self.buckets.len() {
+            let count = self.buckets[cell_index].1.len();
+            if count < 2 {
                 continue;
             }
-            for i in 0..cell.len() {
-                let a = cell[i];
+            for i in 0..count {
+                let a = self.buckets[cell_index].1[i];
                 if !self.unit(a).alive || self.unit(a).speed <= 0.0 {
                     continue;
                 }
                 let ra = 0.35 + 0.015 * 30.min(self.unit(a).housing) as f64;
-                for &b in &cell[i + 1..] {
+                for j in i + 1..count {
+                    let b = self.buckets[cell_index].1[j];
                     let ua = self.unit(a);
                     let ub = self.unit(b);
                     if !ub.alive || ub.flying != ua.flying || ub.speed <= 0.0 {
@@ -59,10 +62,10 @@ impl Battle {
         let (nx, ny, flying) = (u.x + dx, u.y + dy, u.flying);
         if !flying {
             let (i, j) = self.grid.cell(nx, ny);
-            let mode = self.wall_mode(reference).to_owned();
+            let mode = self.wall_mode(reference);
             let grid = self.navigation_grid(reference);
             let index = grid.index(i, j);
-            if grid.blocked[index] || grid.wall[index] && mode == "normal" {
+            if grid.blocked[index] || grid.wall[index] && mode == Tag::Normal {
                 return;
             }
         }
@@ -74,20 +77,31 @@ impl Battle {
 
     // battle.py:1428-1442: first argmin, first nearest fallback.
     pub fn path_target(&mut self, reference: UnitRef, pool: &[BuildingId]) -> BuildingId {
-        let xs: Vec<_> = pool.iter().map(|id| self.building(*id).x).collect();
-        let ys: Vec<_> = pool.iter().map(|id| self.building(*id).y).collect();
-        let halves: Vec<_> = pool.iter().map(|id| self.building(*id).half_hit).collect();
+        let mut geometry = std::mem::take(&mut self.building_geometry_scratch);
+        geometry.clear();
+        geometry.extend(pool.iter().map(|id| {
+            let building = self.building(*id);
+            (building.x, building.y, building.half_hit)
+        }));
         let u = self.unit(reference);
         let (x, y) = (u.x, u.y);
         let reach = units::effective_range(u).max(GOAL_REACH_MIN);
-        let costs = self.navigation_grid(reference).building_costs(x, y, NORMAL_WALL_EXTRA, &xs, &ys, &halves, reach);
+        let costs = self.navigation_grid(reference).building_costs(
+            x,
+            y,
+            NORMAL_WALL_EXTRA,
+            &geometry,
+            reach,
+        );
         let mut k = 0;
         for i in 1..costs.len() {
             if costs[i] < costs[k] {
                 k = i;
             }
         }
-        if costs[k] >= 1e8 {
+        let unreachable = costs[k] >= 1e8;
+        self.building_geometry_scratch = geometry;
+        if unreachable {
             let mut best = pool[0];
             let mut distance = self.building(best).edge_distance(x, y);
             for &id in &pool[1..] {
@@ -103,50 +117,42 @@ impl Battle {
     }
 
     // battle.py:1460-1476.
-    pub fn wall_mode(&self, reference: UnitRef) -> &str {
+    pub fn wall_mode(&self, reference: UnitRef) -> Tag {
         let u = self.unit(reference);
         if u.team == Team::Def {
-            return "ignore";
+            return Tag::Ignore;
         }
-        if !matches!(u.kind.as_str(), "siege" | "siege_idle") && self.t < u.extra.jump_until {
-            return "ignore";
+        if !matches!(u.kind, Tag::Siege | Tag::SiegeIdle) && self.t < u.extra.jump_until {
+            return Tag::Ignore;
         }
         if self.t < u.extra.horse_until || effects::torch_stats(u, self.t).1 != 0.0 {
-            return "ignore";
+            return Tag::Ignore;
         }
         if !u.extra.torches.is_empty() && !u.flying {
             let (i, j) = self.grid.cell(u.x, u.y);
             if self.grid.wall[self.grid.index(i, j)] {
-                return "ignore";
+                return Tag::Ignore;
             }
         }
-        &u.spec.walls
+        u.spec.walls.clone()
     }
 
     // battle.py:1478-1503: independent wall topology for active Jump fields.
     pub fn navigation_grid(&mut self, reference: UnitRef) -> &mut Grid {
-        if matches!(self.unit(reference).kind.as_str(), "siege" | "siege_idle") {
+        if matches!(self.unit(reference).kind, Tag::Siege | Tag::SiegeIdle) {
             return &mut self.grid;
         }
-        let fields: Vec<_> = self
-            .fields
-            .iter()
-            .filter(|f| f.kind == "jump" && f.started <= self.t && self.t < f.until)
-            .map(|f| {
-                (
-                    f.identity,
-                    f.x.to_bits(),
-                    f.y.to_bits(),
-                    f.radius.to_bits(),
-                    f.started.to_bits(),
-                )
-            })
-            .collect();
-        if fields.is_empty() {
+        let active = || self.fields.iter()
+            .filter(|f| f.kind == Tag::Jump && f.started <= self.t && self.t < f.until)
+            .map(|f| (f.identity, f.x.to_bits(), f.y.to_bits(), f.radius.to_bits(), f.started.to_bits()));
+        if active().next().is_none() {
             return &mut self.grid;
         }
-        let key = (self.grid.version, fields);
-        if self.jump_grid_key.as_ref() != Some(&key) {
+        let unchanged = self.jump_grid_key.as_ref().is_some_and(|(version, fields)| {
+            *version == self.grid.version && fields.iter().copied().eq(active())
+        });
+        if !unchanged {
+            let key = (self.grid.version, active().collect());
             let mut grid = Grid::new(self.catalog.world);
             grid.blocked.clone_from(&self.grid.blocked);
             grid.wall.clone_from(&self.grid.wall);
@@ -188,15 +194,15 @@ impl Battle {
             return;
         }
         let (tx, ty) = position.unwrap_or_else(|| self.entity_position(target));
-        let mut mode = self.wall_mode(reference).to_owned();
+        let mut mode = self.wall_mode(reference);
         let u = self.unit(reference);
-        if u.name == "Ruin Witch" && u.team == Team::Atk {
-            mode = "normal".to_owned();
+        if u.name_id == Name::RuinWitch && u.team == Team::Atk {
+            mode = Tag::Normal;
         }
-        if mode == "smash" {
-            mode = "ignore".to_owned();
+        if mode == Tag::Smash {
+            mode = Tag::Ignore;
         }
-        if u.flying || mode == "fly" || u.underground || u.spec.prefer == "th" {
+        if u.flying || mode == Tag::Fly || u.underground || u.spec.prefer == Tag::Th {
             self.move_straight(reference, tx, ty, step);
             return;
         }
@@ -221,9 +227,9 @@ impl Battle {
             EntityRef::Unit(id) => TargetIdentity::Unit(id.id.0),
             EntityRef::Trap(_) => panic!("navigation target is a trap"),
         };
-        let wall_extra = match mode.as_str() {
-            "normal" => NORMAL_WALL_EXTRA,
-            "ignore" | "fly" => 0.0,
+        let wall_extra = match mode {
+            Tag::Normal => NORMAL_WALL_EXTRA,
+            Tag::Ignore | Tag::Fly => 0.0,
             _ => panic!("unknown wall mode {mode}"),
         };
         let (x, y) = (u.x, u.y);
@@ -238,13 +244,13 @@ impl Battle {
             }
             return;
         }
-        if next.is_wall && mode == "ignore" {
+        if next.is_wall && mode == Tag::Ignore {
             next.is_wall = false;
         }
         if next.is_wall {
             if let Some(&wall) = self.wall_indices.get(&(next.x as i32, next.y as i32)) {
                 if self.walls[wall.0].alive {
-                    if self.unit(reference).name == "Ruin Witch" && reference.team == Team::Atk {
+                    if self.unit(reference).name_id == Name::RuinWitch && reference.team == Team::Atk {
                         self.unit_mut(reference).target = None;
                         return;
                     }
@@ -273,7 +279,7 @@ impl Battle {
             }
             let (x, y) = (u.x, u.y);
             next = self.navigation_grid(reference).next_step(field, x, y);
-            if next.at_goal || next.is_wall && mode != "ignore" || next.x == x && next.y == y {
+            if next.at_goal || next.is_wall && mode != Tag::Ignore || next.x == x && next.y == y {
                 break;
             }
             let d = py_hypot(next.x - x, next.y - y);
@@ -294,7 +300,7 @@ impl Battle {
             u.extra.facing = (dx, dy);
         }
         let d = py_hypot(dx, dy);
-        if d != 0.0 && u.name == "Super Hog Rider" {
+        if d != 0.0 && u.name_id == Name::SuperHogRider {
             u.extra.heading = Some((dx / d, dy / d));
         }
         if d <= step || d == 0.0 {

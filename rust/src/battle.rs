@@ -1,7 +1,11 @@
 //! Ports battle.py:212-234,370-577,787-958,1079-1085.
 //! Damage, movement and AI continue in combat.rs, movement.rs and ai.rs.
 
+use std::rc::Rc;
+
 use crate::geom::{round6, round_half_even};
+use crate::labels::{Name, Tag};
+use crate::source::Source;
 use crate::state::*;
 use crate::stats::Level;
 use crate::trace::{exported_value, round_decimal, LogValue};
@@ -13,7 +17,7 @@ const TH_ACTIVATION_DELAY: f64 = 0.5;
 
 pub struct SpawnOptions {
     pub level: Option<Level>,
-    pub kind: String,
+    pub kind: Tag,
     pub group: String,
     pub owner: Option<UnitRef>,
     pub town_hall: Option<i64>,
@@ -23,7 +27,7 @@ impl Default for SpawnOptions {
     fn default() -> Self {
         Self {
             level: None,
-            kind: "troop".to_owned(),
+            kind: Tag::Troop,
             group: "main".to_owned(),
             owner: None,
             town_hall: None,
@@ -67,42 +71,39 @@ impl Battle {
     }
 
     // battle.py:536-554: unavailable structures can still be targeted.
+    #[inline]
     pub fn building_targetable(&self, id: BuildingId) -> bool {
-        let b = self.building(id);
-        if !b.alive || !b.counted && b.key != "th" {
-            return false;
-        }
-        if self.t < b.overgrown_until || self.t < b.invisible_until
-            || self.t < b.extra.yellow_until {
-            return false;
-        }
-        b.key != "tesla" || b.revealed
+        self.building(id).targetable(self.t)
     }
 
+    #[inline]
     pub fn is_defense_target(&self, id: BuildingId) -> bool {
-        let b = self.building(id);
-        if b.key == "th" {
-            b.weapon.is_some() && self.th_active()
-        } else {
-            b.is_defense
-        }
+        self.building(id).defense_target(self.th_active())
     }
 
     // battle.py:1079-1085: cells and their members keep first insertion order.
     // Membership stays frozen during the tick, but queries read current x/y.
     pub fn rebuild_buckets(&mut self) {
-        self.buckets.clear();
+        for (_, mut members) in self.buckets.drain(..) {
+            members.clear();
+            self.spare_bucket_members.push(members);
+        }
         self.bucket_indices.clear();
-        let attackers: Vec<_> = self.attackers_pool().filter(|unit| unit.alive)
-            .map(Unit::reference).collect();
-        for reference in attackers {
+        // No callbacks run while gathering membership; index traversal has the
+        // same attacker_order/in_pool filter as the former reference snapshot.
+        for index in 0..self.attacker_order.len() {
+            let reference = self.attacker_order[index];
             let unit = self.unit(reference);
+            if !unit.in_pool || !unit.alive {
+                continue;
+            }
             let cell = ((unit.x / BUCKET) as i32, (unit.y / BUCKET) as i32);
             let index = match self.bucket_indices.get(&cell) {
                 Some(index) => *index,
                 None => {
                     let index = self.buckets.len();
-                    self.buckets.push((cell, Vec::new()));
+                    let members = self.spare_bucket_members.pop().unwrap_or_default();
+                    self.buckets.push((cell, members));
                     self.bucket_indices.insert(cell, index);
                     index
                 }
@@ -113,26 +114,35 @@ impl Battle {
         heroes::apply_auras(self);
     }
 
-    pub fn attackers_near(&self, x: f64, y: f64, radius: f64) -> Vec<UnitRef> {
-        let mut out = Vec::new();
+    // Read-only users can stop early. Mutation callers still collect the exact
+    // frozen membership and live-position filter before their first callback.
+    pub fn attackers_near_iter(
+        &self,
+        x: f64,
+        y: f64,
+        radius: f64,
+    ) -> impl Iterator<Item = UnitRef> + '_ {
         let radius_squared = radius * radius;
-        // battle.py:560-561: int() truncates toward zero, even outside the world.
-        for i in ((x - radius) / BUCKET) as i32..=((x + radius) / BUCKET) as i32 {
-            for j in ((y - radius) / BUCKET) as i32..=((y + radius) / BUCKET) as i32 {
-                if let Some(index) = self.bucket_indices.get(&(i, j)) {
-                    for reference in &self.buckets[*index].1 {
-                        let unit = self.unit(*reference);
-                        let dx = unit.x - x;
-                        let dy = unit.y - y;
-                        if dx * dx + dy * dy <= radius_squared && unit.alive
-                            && !unit.extra.suspended {
-                            out.push(*reference);
-                        }
-                    }
-                }
-            }
-        }
-        out
+        let min_i = ((x - radius) / BUCKET) as i32;
+        let max_i = ((x + radius) / BUCKET) as i32;
+        let min_j = ((y - radius) / BUCKET) as i32;
+        let max_j = ((y + radius) / BUCKET) as i32;
+        (min_i..=max_i)
+            .flat_map(move |i| {
+                (min_j..=max_j)
+                    .filter_map(move |j| self.bucket_indices.get(&(i, j)))
+                    .flat_map(move |&index| self.buckets[index].1.iter().copied())
+            })
+            .filter(move |&reference| {
+                let unit = self.unit(reference);
+                let dx = unit.x - x;
+                let dy = unit.y - y;
+                dx * dx + dy * dy <= radius_squared && unit.alive && !unit.extra.suspended
+            })
+    }
+
+    pub fn attackers_near(&self, x: f64, y: f64, radius: f64) -> Vec<UnitRef> {
+        self.attackers_near_iter(x, y, radius).collect()
     }
 
     pub fn defenders_near(&self, x: f64, y: f64, radius: f64) -> Vec<UnitRef> {
@@ -150,7 +160,7 @@ impl Battle {
         if !victim.alive || victim.underground || victim.extra.leaping {
             return false;
         }
-        if victim.name == "Totem" {
+        if victim.name_id == Name::Totem {
             return true;
         }
         if victim.flying {
@@ -270,16 +280,18 @@ impl Battle {
         let level = options.level.unwrap_or_else(|| {
             Level::Int(self.catalog.stats.max_level(name, town_hall).filter(|lv| *lv != 0).unwrap_or(1))
         });
-        let nums = self.catalog.numbers(name, &level).clone();
-        let spec = self.catalog.unit(name).summon_spec.clone();
+        let nums = *self.catalog.numbers(name, &level);
+        let spec = Rc::clone(&self.catalog.unit(name).summon_spec);
         self.uid += 1;
         let mut facing = (self.catalog.world as f64 / 2.0 - x,
             self.catalog.world as f64 / 2.0 - y);
         if facing == (0.0, 0.0) {
             facing = (1.0, 0.0);
         }
-        let is_hero = options.kind == "hero" || options.kind == "hero_clone";
+        let is_hero = options.kind == Tag::Hero || options.kind == Tag::HeroClone;
         let unit = Unit {
+            source: format!("unit:{name}").into(),
+            name_id: Name::from_str(name),
             id: UnitId(self.uid),
             name: name.to_owned(),
             kind: options.kind,
@@ -295,7 +307,7 @@ impl Battle {
             range: nums.range,
             speed: nums.speed,
             housing: nums.housing,
-            flying: nums.flying || spec.walls == "fly",
+            flying: nums.flying || spec.walls == Tag::Fly,
             hits_air: nums.hits_air,
             hits_ground: nums.hits_ground,
             spec,
@@ -354,8 +366,9 @@ impl Battle {
             Team::Atk => &mut self.attackers,
             Team::Def => &mut self.defenders,
         };
-        self.unit_indices.insert(unit.id, (team, pool.len()));
+        let index = pool.len();
         pool.push(unit);
+        self.register_unit(reference.id, team, index);
         if team == Team::Atk {
             self.attacker_order.push(reference);
         }
@@ -404,7 +417,7 @@ impl Battle {
             deployment.y,
             SpawnOptions {
                 level: deployment.level.clone(),
-                kind: kind.to_owned(),
+                kind: Tag::from(kind),
                 group: deployment.group.clone(),
                 owner: None,
                 town_hall: deployment.town_hall,
@@ -417,7 +430,7 @@ impl Battle {
         };
         let unit = self.unit_mut(reference);
         // battle.py:469-480: Stage's default Warden mode is ground.
-        if unit.name == "Grand Warden" {
+        if unit.name_id == Name::GrandWarden {
             let mode = deployment.mode.as_deref().unwrap_or(default_mode);
             assert!(mode == "air" || mode == "ground", "Grand Warden mode must be air or ground");
             unit.flying = mode == "air";
@@ -494,8 +507,8 @@ impl Battle {
     pub fn offense_finished(&self) -> bool {
         // battle.py:821-855: Stage has no spell inventory or deferred callbacks.
         if self.attackers_pool().any(|unit| unit.alive
-            && !["Healer", "Unicorn", "Totem"].contains(&unit.name.as_str())
-            && unit.kind != "siege_idle") {
+            && !matches!(unit.name_id, Name::Healer | Name::Unicorn | Name::Totem)
+            && unit.kind != Tag::SiegeIdle) {
             return false;
         }
         if self.deployments[self.next_deploy..].iter().any(|d| d.name != "Healer")
@@ -594,47 +607,55 @@ impl Battle {
             return;
         }
         self.src_obj = None;
-        self.src = "spell".to_owned();
-        self.effect = "spell".to_owned();
+        self.src = Source::Literal("spell");
+        self.effect = Tag::Spell;
         spells::tick(self);
         self.resolve_pending();
-        self.src = "trap".to_owned();
+        self.src = Source::Literal("trap");
         self.src_obj = None;
-        self.effect = "trap".to_owned();
+        self.effect = Tag::Trap;
         traps::tick(self);
         self.castle();
         heroes::guardians_tick(self);
         defense::bell_tick(self);
         defense::builders_tick(self);
-        let attackers: Vec<_> = self.attackers_pool().map(Unit::reference).collect();
-        for reference in attackers {
+        let mut actors = std::mem::take(&mut self.actor_scratch);
+        actors.clear();
+        actors.extend(self.attackers_pool().map(Unit::reference));
+        for &reference in &actors {
             if self.unit(reference).alive {
-                effects::damage_source(self, Some(EntityRef::Unit(reference)), "attack", |battle| {
+                effects::damage_source(self, Some(EntityRef::Unit(reference)), Tag::Attack, |battle| {
                     battle.act_attacker(reference);
                 });
             }
         }
+        actors.clear();
+        self.actor_scratch = actors;
         self.separate();
         for index in 0..self.buildings.len() {
             let building = &self.buildings[index];
             if building.alive && building.weapon.is_some() {
                 let id = building.id;
-                self.src = building.key.clone();
-                effects::damage_source(self, Some(EntityRef::Building(id)), "attack", |battle| {
+                self.src = building.source.clone();
+                effects::damage_source(self, Some(EntityRef::Building(id)), Tag::Attack, |battle| {
                     defense::act(battle, id);
                 });
             }
         }
-        let defenders: Vec<_> = self.defenders_pool().map(Unit::reference).collect();
-        for reference in defenders {
+        let mut actors = std::mem::take(&mut self.actor_scratch);
+        actors.clear();
+        actors.extend(self.defenders_pool().map(Unit::reference));
+        for &reference in &actors {
             let unit = self.unit(reference);
             if unit.alive {
-                self.src = format!("unit:{}", unit.name);
-                effects::damage_source(self, Some(EntityRef::Unit(reference)), "attack", |battle| {
+                self.src = unit.source.clone();
+                effects::damage_source(self, Some(EntityRef::Unit(reference)), Tag::Attack, |battle| {
                     battle.act_defender(reference);
                 });
             }
         }
+        actors.clear();
+        self.actor_scratch = actors;
         self.src_obj = None;
         if round_half_even(t * 10.0) as i64 % 50 == 0 {
             self.grid.prune();
@@ -662,8 +683,8 @@ impl Battle {
 
     fn plan_on_tick(&mut self) {
         if let Plan::Playbook(plan) = &self.plan {
-            // Runtime helpers need &mut Battle while deploy/equip read immutable
-            // plan configuration. Keep that configuration in Battle throughout.
+            // Callbacks read the previous plan while on_tick updates its own
+            // copy. SharedVec keeps these lists shared until the first write.
             let mut running = (**plan).clone();
             running.on_tick(self);
             running.attack.cc_released |= self.plan.cc_released();

@@ -5,7 +5,9 @@ use std::rc::Rc;
 use crate::geom::py_hypot;
 use crate::heroes;
 use crate::json::Json;
+use crate::labels::{Name, Tag};
 use crate::plans::{self, count, flag, number, set, spell_key, spell_name, text, truth, AttackPlan};
+use crate::shared::SharedVec;
 use crate::state::*;
 use crate::stats::Level;
 use crate::trace::round_decimal;
@@ -182,20 +184,20 @@ pub enum HurtValue {
 pub struct PlaybookPlan {
     pub attack: AttackPlan,
     pub steps: Rc<Vec<Step>>,
-    pub inventory: Vec<(String, i64)>,
+    pub inventory: SharedVec<(String, i64)>,
     pub flank_offset: f64,
     pub charge_side: String,
-    pub done: Vec<(String, f64)>,
-    pub next: Vec<(String, f64)>,
-    pub hurt: Vec<(HurtKey, HurtValue)>,
-    pub no_target: Vec<(String, f64)>,
-    pub log_steps: Vec<(f64, String)>,
-    pub deployed: Vec<String>,
-    pub aim_since: Vec<(String, f64)>,
+    pub done: SharedVec<(String, f64)>,
+    pub next: SharedVec<(String, f64)>,
+    pub hurt: SharedVec<(HurtKey, HurtValue)>,
+    pub no_target: SharedVec<(String, f64)>,
+    pub log_steps: SharedVec<(f64, String)>,
+    pub deployed: SharedVec<String>,
+    pub aim_since: SharedVec<(String, f64)>,
     pub last_alive: f64,
     pub busy_until: f64,
     pub next_fallback: f64,
-    pub step_spells: Option<Vec<String>>,
+    pub step_spells: Option<Rc<Vec<String>>>,
     // All construction fields remain available for export inspection; runtime
     // branches above use typed fields rather than interpreting this snapshot.
     pub constructed: Rc<Json>,
@@ -204,7 +206,7 @@ pub struct PlaybookPlan {
 impl PlaybookPlan {
     pub fn load(p: &Json) -> Self {
         assert_eq!(p.at("$type").str(), "PlaybookPlan");
-        let hurt = p.at("_hurt").obj().iter().map(|(key, value)| {
+        let hurt: Vec<_> = p.at("_hurt").obj().iter().map(|(key, value)| {
             if let Some(group) = key.strip_prefix("engaged_since:") {
                 (HurtKey::Engaged(group.to_owned()), HurtValue::Since(value.f64()))
             } else {
@@ -220,26 +222,26 @@ impl PlaybookPlan {
         Self {
             attack: AttackPlan::load(p),
             steps: Rc::new(p.at("steps").arr().iter().map(Step::load).collect()),
-            inventory: plans::counts(p, "inventory"),
+            inventory: plans::counts(p, "inventory").into(),
             flank_offset: p.at("flank_offset").f64(),
             charge_side: p.at("charge_side").str().to_owned(),
-            done: plans::times(p, "_done"),
-            next: plans::times(p, "_next"),
-            hurt,
-            no_target: plans::times(p, "_no_target"),
+            done: plans::times(p, "_done").into(),
+            next: plans::times(p, "_next").into(),
+            hurt: hurt.into(),
+            no_target: plans::times(p, "_no_target").into(),
             log_steps: p.at("log_steps")
                 .arr()
                 .iter()
                 .map(|v| (v.arr()[0].f64(), v.arr()[1].str().to_owned()))
                 .collect(),
             deployed: p.get("_deployed")
-                .map_or_else(Vec::new, |v| v.arr().iter().map(|v| v.str().to_owned()).collect()),
-            aim_since: plans::times(p, "_aim_t"),
+                .map_or_else(SharedVec::default, |v| v.arr().iter().map(|v| v.str().to_owned()).collect()),
+            aim_since: plans::times(p, "_aim_t").into(),
             last_alive: number(p, "_last_alive", 0.0),
             busy_until: number(p, "_busy_until", 0.0),
             next_fallback: number(p, "_next_fallback", 0.0),
             step_spells: p.get("_step_spells")
-                .map(|v| v.arr().iter().map(|v| v.str().to_owned()).collect()),
+                .map(|v| Rc::new(v.arr().iter().map(|v| v.str().to_owned()).collect())),
             constructed: Rc::new(p.clone()),
         }
     }
@@ -264,7 +266,7 @@ impl PlaybookPlan {
             && s.what.as_deref() == Some("Revive Spell")) {
             return true;
         }
-        if battle.portal_units().iter().any(|r| battle.unit(*r).name != "Healer") {
+        if battle.portal_units().any(|r| battle.unit(r).name_id != Name::Healer) {
             return true;
         }
         self.steps.iter().any(|s| {
@@ -442,7 +444,7 @@ impl PlaybookPlan {
     // playbook.py:241-249.
     fn down(&self, battle: &Battle, name: &str) -> bool {
         self.deployed.iter().any(|n| n == name) && self.unit(battle, name).is_none()
-            && !battle.portal_units().iter().any(|r| battle.unit(*r).name == name)
+            && !battle.portal_units().any(|r| battle.unit(r).name == name)
             && (plans::is_hero(name) || count(&self.inventory, name) <= 0)
     }
 
@@ -556,8 +558,7 @@ impl PlaybookPlan {
             Trigger::SpellsLeft(key, n) => count(&self.attack.spells, key) <= *n,
             Trigger::Dead(name) => self.unit(battle, name)
                 .is_none() && self.deployed.contains(name) && !battle.portal_units()
-                .iter()
-                .any(|r| battle.unit(*r).name == *name),
+                .any(|r| battle.unit(r).name == *name),
             Trigger::DefendersNear(group) => self.anchor(battle, &format!("defenders:{group}"))
                 .is_some(),
             Trigger::Destruction(amount) => battle.destruction() as f64 >= *amount,
@@ -756,7 +757,6 @@ impl PlaybookPlan {
         if step.action == Action::Deploy {
             return (plans::is_hero(what)
 
-
                 && self.deployed.iter().any(|name| name == what)).then(|| format!("{what} already deployed"));
         }
         if self.impossible(battle, &step.when) {
@@ -827,8 +827,8 @@ impl PlaybookPlan {
         }
         if battle.attackers_pool()
             .any(|u| u.alive
-            && u.name != "Totem"
-            && !matches!(u.kind.as_str(), "pet" | "siege_idle")) {
+            && u.name_id != Name::Totem
+            && !matches!(u.kind, Tag::Pet | Tag::SiegeIdle)) {
             self.last_alive = t;
         }
         let stalled = t - self.last_alive > 3.0;
@@ -971,7 +971,7 @@ impl PlaybookPlan {
             }
         }
         self.attack.auto_revive = !kinds.iter().any(|k| k == "revive");
-        self.step_spells = Some(kinds);
+        self.step_spells = Some(Rc::new(kinds));
     }
 
     // playbook.py:635-681. Revive runs before fallback reservation mode.

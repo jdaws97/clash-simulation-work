@@ -1,19 +1,21 @@
 //! Ports specs.py:19-48,401-503; rust_export.py:103-134 supplies all static data.
 
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use std::rc::Rc;
 
+use crate::fast_hash::FastMap as HashMap;
 use crate::json::{self, Json};
+use crate::labels::{Tag, Special, Specials};
 use crate::load::Node;
 use crate::stats::{Level, Stats};
 
 #[derive(Clone, Debug)]
 pub struct UnitSpec {
     pub name: String,
-    pub prefer: String,
-    pub walls: String,
-    pub attack: String,
+    pub prefer: Tag,
+    pub walls: Tag,
+    pub attack: Tag,
     pub splash: f64,
     pub splash_ground_only: bool,
     pub chain: usize,
@@ -35,15 +37,16 @@ pub struct UnitSpec {
     pub death_freeze: Option<String>,
     pub death_freeze_radius: f64,
     pub death_spawn: Vec<Json>,
-    pub special: Vec<String>,
+    pub special: Specials,
     pub heal_air: bool,
     pub flying_override: Option<bool>,
     pub notes: String,
 }
 
 impl UnitSpec {
-    pub fn has_special(&self, name: &str) -> bool {
-        self.special.iter().any(|special| special == name)
+    #[inline]
+    pub fn has_special(&self, special: Special) -> bool {
+        self.special.contains(special)
     }
 
     pub fn load(n: Node<'_>) -> Self {
@@ -81,9 +84,9 @@ impl UnitSpec {
         ]);
         Self {
             name: n.field("name").string(),
-            prefer: n.field("prefer").string(),
-            walls: n.field("walls").string(),
-            attack: n.field("attack").string(),
+            prefer: n.field("prefer").string().into(),
+            walls: n.field("walls").string().into(),
+            attack: n.field("attack").string().into(),
             splash: n.field("splash").number(),
             splash_ground_only: n.field("splash_ground_only").boolean(),
             chain: n.field("chain").usize(),
@@ -105,7 +108,13 @@ impl UnitSpec {
             death_freeze: n.field("death_freeze").optional_string(),
             death_freeze_radius: n.field("death_freeze_radius").number(),
             death_spawn: n.field("death_spawn").array().iter().map(|v| v.value.clone()).collect(),
-            special: n.field("special").array().iter().map(|v| v.string()).collect(),
+            special: {
+                let mut specials = Specials::default();
+                for value in n.field("special").array() {
+                    specials.insert(value.value.str());
+                }
+                specials
+            },
             heal_air: n.field("heal_air").boolean(),
             flying_override: n.field("flying_override").optional_bool(),
             notes: n.field("notes").string(),
@@ -113,7 +122,7 @@ impl UnitSpec {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct UnitNumbers {
     pub hp: f64,
     pub dmg: f64,
@@ -158,8 +167,8 @@ impl UnitNumbers {
 
 #[derive(Clone, Debug)]
 pub struct CatalogUnit {
-    pub spec: UnitSpec,
-    pub summon_spec: UnitSpec,
+    pub spec: Rc<UnitSpec>,
+    pub summon_spec: Rc<UnitSpec>,
 }
 
 #[derive(Clone, Debug)]
@@ -168,7 +177,7 @@ pub struct BuildingType {
     pub name: String,
     pub size: usize,
     pub count: usize,
-    pub kind: String,
+    pub kind: Tag,
     pub counted: bool,
     pub weapon_key: Option<String>,
 }
@@ -177,6 +186,7 @@ pub struct Catalog {
     pub stats: Stats,
     pub units: HashMap<String, CatalogUnit>,
     pub unit_numbers: HashMap<String, UnitNumbers>,
+    integer_unit_numbers: HashMap<String, HashMap<i64, UnitNumbers>>,
     pub building_types: Vec<(String, BuildingType)>,
     pub trap_names: Vec<(String, String)>,
     pub trap_sizes: Vec<(String, usize)>,
@@ -220,13 +230,24 @@ impl Catalog {
         let units = n.field("units").object().into_iter().map(|(name, node)| {
             node.keys(&["spec", "summon_spec"]);
             let unit = CatalogUnit {
-                spec: UnitSpec::load(node.field("spec")),
-                summon_spec: UnitSpec::load(node.field("summon_spec")),
+                spec: Rc::new(UnitSpec::load(node.field("spec"))),
+                summon_spec: Rc::new(UnitSpec::load(node.field("summon_spec"))),
             };
             (name, unit)
         }).collect();
-        let unit_numbers = n.field("unit_numbers").object().into_iter()
+        let unit_numbers: HashMap<String, UnitNumbers> = n.field("unit_numbers").object().into_iter()
             .map(|(name, node)| (name, UnitNumbers::load(node))).collect();
+        let mut integer_unit_numbers: HashMap<String, HashMap<i64, UnitNumbers>> = HashMap::default();
+        for (key, &numbers) in &unit_numbers {
+            let Some((name, text)) = key.rsplit_once('|') else {
+                continue;
+            };
+            if let Ok(level) = text.parse::<i64>() {
+                if level.to_string() == text {
+                    integer_unit_numbers.entry(name.to_owned()).or_default().insert(level, numbers);
+                }
+            }
+        }
         let building_types = n.field("building_types").object().into_iter()
             .map(|(key, node)| {
                 node.require_type("BuildingType");
@@ -236,7 +257,7 @@ impl Catalog {
                     name: node.field("name").string(),
                     size: node.field("size").usize(),
                     count: node.field("count").usize(),
-                    kind: node.field("kind").string(),
+                    kind: node.field("kind").string().into(),
                     counted: node.field("counted").boolean(),
                     weapon_key: node.field("weapon_key").optional_string(),
                 };
@@ -253,6 +274,7 @@ impl Catalog {
             stats,
             units,
             unit_numbers,
+            integer_unit_numbers,
             building_types,
             trap_names,
             trap_sizes,
@@ -265,6 +287,11 @@ impl Catalog {
     }
 
     pub fn numbers(&self, name: &str, level: &Level) -> &UnitNumbers {
+        if let Level::Int(level) = level {
+            if let Some(numbers) = self.integer_unit_numbers.get(name).and_then(|levels| levels.get(level)) {
+                return numbers;
+            }
+        }
         let key = format!("{name}|{level}");
         self.unit_numbers.get(&key)
             .unwrap_or_else(|| panic!("catalog.unit_numbers[{key:?}]: missing unit numbers"))
@@ -281,9 +308,9 @@ impl UnitSpec {
     pub fn totem() -> Self {
         Self {
             name: "Totem".to_owned(),
-            prefer: "none".to_owned(),
-            walls: "fly".to_owned(),
-            attack: "single".to_owned(),
+            prefer: Tag::None,
+            walls: Tag::Fly,
+            attack: Tag::Single,
             splash: 0.0,
             splash_ground_only: false,
             chain: 0,
@@ -305,7 +332,7 @@ impl UnitSpec {
             death_freeze: None,
             death_freeze_radius: 0.0,
             death_spawn: Vec::new(),
-            special: Vec::new(),
+            special: Specials::default(),
             heal_air: false,
             flying_override: None,
             notes: String::new(),

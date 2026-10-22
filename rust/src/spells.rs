@@ -2,11 +2,13 @@
 
 use crate::effects;
 use crate::geom::py_hypot;
+use crate::labels::{Name, Special, Tag};
+use crate::source::Source;
 use crate::state::*;
 use crate::trace::round_decimal;
 use crate::{defense, traps, units};
 
-pub const NO_TRIGGER: &[&str] = &["Spell Skeleton", "Skeleton", "Bat", "Totem"];
+pub const NO_TRIGGER: &[Name] = &[Name::SpellSkeleton, Name::Skeleton, Name::Bat, Name::Totem];
 
 // spells.py:1199-1211: marking a KO does not cast a Revive Spell.
 pub fn maybe_revive(battle: &mut Battle, hero: UnitRef) {
@@ -31,8 +33,8 @@ pub fn maybe_revive(battle: &mut Battle, hero: UnitRef) {
 // spells.py:42-43.
 fn affected(unit: &Unit) -> bool {
     unit.alive
-        && !matches!(unit.kind.as_str(), "siege" | "siege_idle")
-        && unit.name != "Totem"
+        && !matches!(unit.kind, Tag::Siege | Tag::SiegeIdle)
+        && unit.name_id != Name::Totem
 }
 
 // spells.py:258-280: snapshot original fields, preserve fields appended mid-tick.
@@ -52,7 +54,7 @@ pub fn tick(battle: &mut Battle) {
             keep.push(field);
             continue;
         }
-        if field.kind == "tornado" && t >= field.until {
+        if field.kind == Tag::Tornado && t >= field.until {
             traps::tornado_tick(battle, &mut field);
             expire(battle, &field);
             continue;
@@ -78,22 +80,22 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
     let t = battle.t;
     let dt = battle.dt;
     let kind = f.kind.clone();
-    if matches!(kind.as_str(), "poison" | "def_poison" | "def_rage" | "def_burn" | "rage" | "haste" | "invis" | "def_invis" | "angry")
+    if matches!(kind, Tag::Poison | Tag::DefPoison | Tag::DefRage | Tag::DefBurn | Tag::Rage | Tag::Haste | Tag::Invis | Tag::DefInvis | Tag::Angry)
         && t >= f.until {
         return false;
     }
-    if matches!(kind.as_str(), "lightning" | "freeze" | "poison" | "def_rage")
-        || kind == "rage"
+    if matches!(kind, Tag::Lightning | Tag::Freeze | Tag::Poison | Tag::DefRage)
+        || kind == Tag::Rage
         && f.team == Team::Def {
         defense::builder_spell(battle, f);
     }
-    match kind.as_str() {
+    match kind {
         // spells.py:308-324: residual freeze/overgrowth coverage for revealed Teslas.
-        "tesla_freeze" | "tesla_overgrowth" => {
+        Tag::TeslaFreeze | Tag::TeslaOvergrowth => {
             if t >= f.until {
                 return false;
             }
-            if kind == "tesla_freeze" {
+            if kind == Tag::TeslaFreeze {
                 defense::builder_spell(battle, f);
             }
             for building in &mut battle.buildings {
@@ -101,7 +103,7 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
                     && building.key == "tesla"
                     && building.revealed
                     && building.edge_distance(f.x, f.y) <= f.radius {
-                    if kind == "tesla_freeze" {
+                    if kind == Tag::TeslaFreeze {
                         building.frozen_until = building.frozen_until.max(f.until);
                     } else {
                         building.overgrown_until = building.overgrown_until.max(f.until);
@@ -110,17 +112,16 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             true
         }
-        "lightning" => damaging_field(battle, f, false),
-        "birthday" => damaging_field(battle, f, true),
-        "yellow" => yellow(battle, f),
-        "santa" => santa(battle, f),
-        "heal" => heal(battle, f),
-        "rage" => rage(battle, f),
+        Tag::Lightning => damaging_field(battle, f, false),
+        Tag::Birthday => damaging_field(battle, f, true),
+        Tag::Yellow => yellow(battle, f),
+        Tag::Santa => santa(battle, f),
+        Tag::Heal => heal(battle, f),
+        Tag::Rage => rage(battle, f),
         // spells.py:465-494: pool damage does not stack or gain defense difficulty.
-        "def_burn" => {
+        Tag::DefBurn => {
             if !f.extra.has_pulses || !pulses(f, t).is_empty() {
-                f.extra.victims = battle.attackers_near(f.x, f.y, f.radius)
-                    .iter()
+                f.extra.victims = battle.attackers_near_iter(f.x, f.y, f.radius)
                     .map(|unit| unit.id)
                     .collect();
             }
@@ -134,7 +135,7 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
                 }
                 let mut damage = None;
                 for field in &battle.fields {
-                    if field.kind == "def_burn"
+                    if field.kind == Tag::DefBurn
                         && field.started <= t
                         && t < field.until
                         && u.dist(field.x, field.y) <= field.radius {
@@ -146,12 +147,12 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             true
         }
-        "tornado" => {
+        Tag::Tornado => {
             traps::tornado_tick(battle, f);
             true
         }
         // spells.py:500-517: defense rage does not stack with itself.
-        "def_rage" => {
+        Tag::DefRage => {
             let until = f.until.min(t + dt);
             for building in &mut battle.buildings {
                 if building.alive
@@ -172,12 +173,12 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             true
         }
-        "haste" => haste(battle, f),
-        "jump" => jump(battle, f),
-        "freeze" => freeze(battle, f),
-        "poison" => attacker_poison(battle, f),
+        Tag::Haste => haste(battle, f),
+        Tag::Jump => jump(battle, f),
+        Tag::Freeze => freeze(battle, f),
+        Tag::Poison => attacker_poison(battle, f),
         // spells.py:566-587.
-        "def_poison" => {
+        Tag::DefPoison => {
             let gap = f.extra.gap.unwrap_or(dt);
             if application(f, t, gap).is_none() {
                 return true;
@@ -186,7 +187,7 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
                 let u = battle.unit(reference);
                 if affected(u)
                     || f.extra.origin.as_deref() == Some("town_hall")
-                    && u.name == "Stone Slammer" {
+                    && u.name_id == Name::StoneSlammer {
                     let multiplier = if u.is_hero {
                         f.extra.hero_mult
                     } else {
@@ -206,9 +207,9 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             true
         }
-        "quake" => quake(battle, f),
+        Tag::Quake => quake(battle, f),
         // spells.py:612-618: defensive Earthquake tower uses existing unit state.
-        "def_quake" => {
+        Tag::DefQuake => {
             for reference in battle.attackers_near(f.x, f.y, f.radius) {
                 let u = battle.unit_mut(reference);
                 if affected(u) && !u.flying {
@@ -219,11 +220,11 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             false
         }
-        "clone" => clone_field(battle, f),
-        "summon" => summon(battle, f),
-        "invis" => invis(battle, f),
+        Tag::Clone => clone_field(battle, f),
+        Tag::Summon => summon(battle, f),
+        Tag::Invis => invis(battle, f),
         // spells.py:713-725: each pulse grants 0.6 seconds of invisibility.
-        "def_invis" => {
+        Tag::DefInvis => {
             let Some(until) = invisibility_until(f, t) else {
                 return true;
             };
@@ -238,19 +239,19 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             for reference in battle.attackers_near(f.x, f.y, f.radius) {
                 let u = battle.unit_mut(reference);
-                if !matches!(u.kind.as_str(), "siege" | "siege_idle") {
+                if !matches!(u.kind, Tag::Siege | Tag::SiegeIdle) {
                     u.invisible_until = u.invisible_until.max(until);
                 }
             }
             true
         }
-        "recall" => recall(battle, f),
-        "overgrowth" => overgrowth(battle, f),
-        "iceblock" => iceblock(battle, f),
-        "totem" => totem(battle, f),
-        "angry" => angry(battle, f),
-        "revive_cast" => revive_cast(battle, f),
-        "revive_due" => {
+        Tag::Recall => recall(battle, f),
+        Tag::Overgrowth => overgrowth(battle, f),
+        Tag::Iceblock => iceblock(battle, f),
+        Tag::Totem => totem(battle, f),
+        Tag::Angry => angry(battle, f),
+        Tag::ReviveCast => revive_cast(battle, f),
+        Tag::ReviveDue => {
             let hero = f.extra.hero.expect("delayed Revive hero");
             let u = battle.unit(hero);
             if !u.alive && u.extra.revivable {
@@ -323,7 +324,7 @@ pub fn expire(_battle: &mut Battle, _field: &Field) {
 pub fn wall_jumped(battle: &Battle, wall: WallId) -> bool {
     let w = &battle.walls[wall.0];
     battle.fields.iter()
-        .any(|field| field.kind == "jump"
+        .any(|field| field.kind == Tag::Jump
         && field.started <= battle.t
         && battle.t < field.until
         && py_hypot(w.x - field.x, w.y - field.y) <= field.radius)
@@ -331,7 +332,7 @@ pub fn wall_jumped(battle: &Battle, wall: WallId) -> bool {
 
 // spells.py:873-879.
 pub fn poison_factors(unit: &Unit, damage: f64, movement: f64, attack: f64) -> (f64, f64, f64) {
-    if unit.kind == "guardian" {
+    if unit.kind == Tag::Guardian {
         if unit.extra.waiting {
             return (0.0, 0.0, 0.0);
         }
@@ -359,7 +360,7 @@ pub fn poison(
     options: PoisonOptions<'_>,
     ) {
     let u = battle.unit(reference);
-    if u.kind == "guardian" && u.extra.waiting {
+    if u.kind == Tag::Guardian && u.extra.waiting {
         return;
     }
     let (damage, slow, attack) = poison_factors(u, max_dps * multiplier, slow, attack);
@@ -455,11 +456,10 @@ pub fn poison_states(battle: &mut Battle) {
     }
     for (unit, damage, origin, movement, attack) in active {
         battle.src = if unit.team == Team::Def {
-            "spell"
+            Source::Literal("spell")
         } else {
-            "poison"
-        }
-            .to_owned();
+            Source::Literal("poison")
+        };
         let kind = if origin == "town_hall" {
             "th_poison"
         } else {
@@ -502,7 +502,7 @@ pub fn add_defensive_poison(
     }
     battle.fields.push(Field {
         identity: 0,
-        kind: "def_poison".to_owned(),
+        kind: Tag::DefPoison,
         x,
         y,
         radius: config.radius.unwrap_or(5.0),
@@ -558,7 +558,7 @@ pub fn tower_cast(battle: &mut Battle, owner: BuildingId, mode: &str, near: Opti
     };
     battle.fields.push(Field {
         identity: 0,
-        kind: kind.to_owned(),
+        kind: Tag::from(kind),
         x,
         y,
         radius,
@@ -575,14 +575,14 @@ pub fn escape_poison(battle: &mut Battle, reference: UnitRef) -> bool {
     use crate::grid::{INF, RES};
     let u = battle.unit(reference);
     if u.is_hero
-        || matches!(u.name.as_str(), "Healer" | "Druid")
+        || matches!(u.name_id, Name::Healer | Name::Druid)
         || u.speed <= 0.0 {
         return false;
     }
     let (ux, uy, flying) = (u.x, u.y, u.flying);
     let saved = u.extra.poison_exit.clone();
     let clouds: Vec<_> = battle.fields.iter().filter(|f| {
-        f.kind == "poison" && f.started <= battle.t && battle.t < f.until
+        f.kind == Tag::Poison && f.started <= battle.t && battle.t < f.until
     }).map(|f| (f.identity as u64, f.x, f.y, f.radius)).collect();
     if !clouds.iter().any(|(_, x, y, radius)| py_hypot(ux - x, uy - y) <= *radius) {
         battle.unit_mut(reference).extra.poison_exit = None;
@@ -851,7 +851,7 @@ fn retarget(battle: &mut Battle, target: EntityRef) {
 fn damaging_field(battle: &mut Battle, f: &Field, birthday: bool) -> bool {
     let t = battle.t;
     if !birthday {
-        battle.src = "spell".to_owned();
+        battle.src = Source::Literal("spell");
     }
     let stun = if birthday {
         0.0
@@ -869,7 +869,6 @@ fn damaging_field(battle: &mut Battle, f: &Field, birthday: bool) -> bool {
             || b.edge_distance(f.x, f.y) > f.radius
 
             || !birthday
-
 
             && matches!(b.key.as_str(), "gs" | "es" | "ds" | "th" | "cc") {
             continue;
@@ -912,7 +911,7 @@ fn damaging_field(battle: &mut Battle, f: &Field, birthday: bool) -> bool {
 // spells.py:372-400: building candidates precede defending heroes.
 fn yellow(battle: &mut Battle, f: &Field) -> bool {
     let mut candidates: Vec<_> = battle.buildings.iter().filter(|b| {
-        b.alive && b.weapon.as_ref().is_some_and(|w| w.kind != "bh_repair_only")
+        b.alive && b.weapon.as_ref().is_some_and(|w| w.kind != Tag::BhRepairOnly)
             && !b.extra.unavailable && (b.key != "tesla" || b.revealed)
             && (b.is_defense || b.key == "th") && b.edge_distance(f.x, f.y) <= f.radius
     }).map(|b| EntityRef::Building(b.id)).collect();
@@ -967,7 +966,7 @@ fn heal(battle: &mut Battle, f: &mut Field) -> bool {
     for _ in pulses(f, battle.t) {
         for unit in battle.attackers_near(f.x, f.y, f.radius) {
             let u = battle.unit_mut(unit);
-            if u.alive && !matches!(u.kind.as_str(), "siege" | "siege_idle") {
+            if u.alive && !matches!(u.kind, Tag::Siege | Tag::SiegeIdle) {
                 u.heal(f.value * if u.is_hero {
                     0.55
                 } else {
@@ -1077,7 +1076,7 @@ fn freeze(battle: &mut Battle, f: &mut Field) -> bool {
         let u = battle.unit_mut(reference);
         u.frozen_until = u.frozen_until.max(until);
     }
-    f.kind = "tesla_freeze".to_owned();
+    f.kind = Tag::TeslaFreeze;
     f.until = until;
     true
 }
@@ -1186,7 +1185,7 @@ fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
     sources.sort_by(|a, b| battle.unit(*a).spawned_at.total_cmp(&battle.unit(*b).spawned_at));
     for reference in sources {
         let u = battle.unit(reference);
-        if !affected(u) || u.is_hero || u.kind == "pet" {
+        if !affected(u) || u.is_hero || u.kind == Tag::Pet {
             continue;
         }
         let StatusSource::Field(serial) = source(battle, f) else {
@@ -1209,7 +1208,7 @@ fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
             let (x, y) = spots[index];
             let child = battle.spawn(&name, Team::Atk, x, y, crate::battle::SpawnOptions {
                 level: level.clone(),
-                kind: "summon".to_owned(),
+                kind: Tag::Summon,
                 group: group.clone(),
                     ..Default::default()
             });
@@ -1221,7 +1220,7 @@ fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
             }
             u.extra.clone = true;
             u.extra.expire_at = t + 30.0;
-            if u.spec.has_special("start_rage") {
+            if u.spec.has_special(Special::StartRage) {
                 u.extra.rage_effects.retain(|(source, _)| *source != StatusSource::Name("innate".to_owned()));
             }
             battle.clones.push(child);
@@ -1261,14 +1260,14 @@ fn summon(battle: &mut Battle, f: &mut Field) -> bool {
         j += 1;
         f.extra.delivered = j;
         let child = battle.spawn(&name, Team::Atk, x, y, crate::battle::SpawnOptions {
-            kind: "summon".to_owned(),
+            kind: Tag::Summon,
             group: "spell".to_owned(),
                 ..Default::default()
         });
         if f.extra.name.as_deref() == Some("Bag of Frostmites") {
             let u = battle.unit_mut(child);
             u.extra.bouncing_frostmite = true;
-            u.spec.splash = 0.8;
+            std::rc::Rc::make_mut(&mut u.spec).splash = 0.8;
         }
     }
     j < n
@@ -1281,7 +1280,7 @@ fn invis(battle: &mut Battle, f: &mut Field) -> bool {
     };
     for reference in battle.attackers_near(f.x, f.y, f.radius) {
         let u = battle.unit_mut(reference);
-        if !matches!(u.kind.as_str(), "siege" | "siege_idle") {
+        if !matches!(u.kind, Tag::Siege | Tag::SiegeIdle) {
             u.invisible_until = u.invisible_until.max(until);
         }
     }
@@ -1304,7 +1303,7 @@ pub fn interaction_housing(unit: &Unit) -> i64 {
     if unit.is_hero {
         return 25;
     }
-    if unit.kind == "pet" {
+    if unit.kind == Tag::Pet {
         return 20;
     }
     match unit.name.as_str() {
@@ -1324,8 +1323,7 @@ fn recall(battle: &mut Battle, f: &Field) -> bool {
         let u = battle.unit(reference);
         if affected(u)
 
-
-            && matches!(u.kind.as_str(), "troop" | "hero" | "hero_clone" | "pet" | "summon")
+            && matches!(u.kind, Tag::Troop | Tag::Hero | Tag::HeroClone | Tag::Pet | Tag::Summon)
             && !candidates.contains(&reference) {
             candidates.push(reference);
         }
@@ -1372,7 +1370,7 @@ fn overgrowth(battle: &mut Battle, f: &mut Field) -> bool {
             b.overgrown_until = b.overgrown_until.max(until);
         }
     }
-    f.kind = "tesla_overgrowth".to_owned();
+    f.kind = Tag::TeslaOvergrowth;
     f.until = until;
     true
 }
@@ -1398,17 +1396,17 @@ fn angry(battle: &mut Battle, f: &Field) -> bool {
     for reference in battle.attackers_near(f.x, f.y, f.radius) {
         let u = battle.unit(reference);
         let sp = &u.spec;
-        if !u.alive || matches!(sp.attack.as_str(), "heal" | "heal_chain")
+        if !u.alive || matches!(sp.attack, Tag::Heal | Tag::HealChain)
 
-            || matches!(sp.prefer.as_str(), "defense" | "air_defense")
-            && !matches!(u.name.as_str(), "Lava Hound" | "Ice Hound")
+            || matches!(sp.prefer, Tag::Defense | Tag::AirDefense)
+            && !matches!(u.name_id, Name::LavaHound | Name::IceHound)
 
-            || matches!(u.name.as_str(), "Ruin Witch" | "Totem")
-            || matches!(u.kind.as_str(), "siege" | "siege_idle") {
+            || matches!(u.name_id, Name::RuinWitch | Name::Totem)
+            || matches!(u.kind, Tag::Siege | Tag::SiegeIdle) {
             continue;
         }
         if !u.extra.paused_timers.angry_until || u.extra.angry_until < t + f.value - 0.5 {
-            let defense = u.target_kind.as_deref() == Some("building")
+            let defense = u.target_kind.as_ref() == Some(&Tag::Building)
                 && u.target.is_some_and(|r| crate::plans::entity_is_defense(battle, r));
             let u = battle.unit_mut(reference);
             u.extra.angry_until = t + f.value;
@@ -1476,9 +1474,11 @@ fn totem(battle: &mut Battle, f: &Field) -> bool {
     let spec = crate::catalog::UnitSpec::totem();
     let decay = crate::traps::raw(battle, "Totem Spell", "Hitpoint Decay per Second", Some(334.0)).expect("Totem decay");
     let unit = Unit {
+        source: Source::Literal("unit:Totem"),
+        name_id: Name::Totem,
         id: UnitId(battle.uid),
         name: "Totem".to_owned(),
-        kind: "summon".to_owned(),
+        kind: Tag::Summon,
         team: Team::Atk,
         level: Some(crate::stats::Level::Int(1)),
         x,
@@ -1494,7 +1494,7 @@ fn totem(battle: &mut Battle, f: &Field) -> bool {
         flying: false,
         hits_air: false,
         hits_ground: false,
-        spec,
+        spec: std::rc::Rc::new(spec),
         alive: true,
         cooldown: 0.0,
         target: None,
@@ -1544,7 +1544,7 @@ fn totem(battle: &mut Battle, f: &Field) -> bool {
     };
 
     let reference = unit.reference();
-    battle.unit_indices.insert(unit.id, (Team::Atk, battle.attackers.len()));
+    battle.register_unit(unit.id, Team::Atk, battle.attackers.len());
     battle.attackers.push(unit);
     battle.attacker_order.push(reference);
     let until = battle.t + 0.2;

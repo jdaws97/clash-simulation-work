@@ -1,13 +1,17 @@
 //! Ports entities.py:19-292, defense.py:17-57,1099-1111,
 //! battle.py:148-210 and plans.py:128-137. Vec order is Python list/dict order.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use crate::catalog::{Catalog, UnitSpec};
+use crate::fast_hash::FastMap as HashMap;
 use crate::geom::{edge_distance, py_hypot};
 use crate::grid::Grid;
+use crate::labels::{Name, Tag};
 use crate::pyrandom::PyRandom;
+use crate::shared::SharedVec;
+use crate::source::Source;
 use crate::stats::Level;
 use crate::trace::LogValue;
 
@@ -171,10 +175,10 @@ pub struct WeaponExtra {
     pub same_type: bool,
     pub inner_min: Option<f64>,
     pub wake_at: Option<f64>,
-    pub ramp: Vec<(f64, f64)>,
+    pub ramp: SharedVec<(f64, f64)>,
     pub trigger: Option<WeaponTrigger>,
-    pub hit_triggers: Vec<(UnitRef, f64)>,
-    pub unknown: ExtraMap,
+    pub hit_triggers: SharedVec<(UnitRef, f64)>,
+    pub unknown: SharedVec<(String, Value)>,
 }
 
 impl Default for WeaponExtra {
@@ -227,10 +231,10 @@ impl Default for WeaponExtra {
             same_type: false,
             inner_min: None,
             wake_at: None,
-            ramp: Vec::new(),
+            ramp: SharedVec::default(),
             trigger: None,
-            hit_triggers: Vec::new(),
-            unknown: Vec::new(),
+            hit_triggers: SharedVec::default(),
+            unknown: SharedVec::default(),
         }
     }
 }
@@ -627,10 +631,15 @@ impl Default for PendingExtra {
 
 #[derive(Clone, Debug)]
 pub struct Building {
+    pub town_hall_target: bool,
+    pub hidden_tesla: bool,
+    pub resource_target: bool,
+    pub source: Source,
+    pub name_id: Name,
     pub id: BuildingId,
     pub key: String,
     pub name: String,
-    pub kind: String,
+    pub kind: Tag,
     pub x: f64,
     pub y: f64,
     pub size: usize,
@@ -676,19 +685,19 @@ pub struct Wall {
 #[derive(Clone, Debug)]
 pub struct Weapon {
     pub owner: BuildingId,
-    pub kind: String,
-    pub targets: String,
+    pub kind: Tag,
+    pub targets: Tag,
     pub range: f64,
     pub min_range: f64,
     pub interval: f64,
     pub damage: f64,
     pub cooldown: f64,
     pub target: Option<UnitRef>,
-    pub multi: Vec<UnitRef>,
+    pub multi: SharedVec<UnitRef>,
     pub lock_time: f64,
     pub idle_until: f64,
     pub facing: f64,
-    pub mode: Option<String>,
+    pub mode: Option<Tag>,
     pub extra: WeaponExtra,
     pub burst_left: i64,
     pub ammunition: Option<i64>,
@@ -697,9 +706,11 @@ pub struct Weapon {
 
 #[derive(Clone, Debug)]
 pub struct Unit {
+    pub source: Source,
+    pub name_id: Name,
     pub id: UnitId,
     pub name: String,
-    pub kind: String,
+    pub kind: Tag,
     pub team: Team,
     pub level: Option<Level>,
     pub x: f64,
@@ -715,11 +726,13 @@ pub struct Unit {
     pub flying: bool,
     pub hits_air: bool,
     pub hits_ground: bool,
-    pub spec: UnitSpec,
+    // Cheap immutable snapshots survive callbacks; the one per-unit spec edit
+    // uses Rc::make_mut so it cannot affect the catalog or another unit.
+    pub spec: Rc<UnitSpec>,
     pub alive: bool,
     pub cooldown: f64,
     pub target: Option<EntityRef>,
-    pub target_kind: Option<String>,
+    pub target_kind: Option<Tag>,
     pub wall_target: Option<WallId>,
     pub group: String,
     pub spawned_at: f64,
@@ -787,7 +800,7 @@ pub struct Trap {
 #[derive(Clone, Debug)]
 pub struct Field {
     pub identity: usize,
-    pub kind: String,
+    pub kind: Tag,
     pub x: f64,
     pub y: f64,
     pub radius: f64,
@@ -807,12 +820,12 @@ pub struct Pending {
     pub damage: f64,
     pub hits_air: bool,
     pub hits_ground: bool,
-    pub src: String,
+    pub src: Source,
     pub falloff: bool,
     pub team: Team,
     pub extra: PendingExtra,
     pub actor: Option<EntityRef>,
-    pub effect: Option<String>,
+    pub effect: Option<Tag>,
     pub target: Option<EntityRef>,
     pub released_at: Option<f64>,
 }
@@ -843,7 +856,7 @@ impl Pending {
         damage: f64,
         hits_air: bool,
         hits_ground: bool,
-        src: &str,
+        src: impl Into<Source>,
     ) -> Self {
         Self {
             at,
@@ -853,7 +866,7 @@ impl Pending {
             damage,
             hits_air,
             hits_ground,
-            src: src.to_owned(),
+            src: src.into(),
             falloff: false,
             team: Team::Atk,
             extra: PendingExtra::default(),
@@ -870,7 +883,7 @@ impl Field {
     pub fn new(kind: &str, x: f64, y: f64, radius: f64, until: f64) -> Self {
         Self {
             identity: 0,
-            kind: kind.to_owned(),
+            kind: Tag::from(kind),
             x,
             y,
             radius,
@@ -897,6 +910,26 @@ pub struct Deployment {
 }
 
 impl Building {
+    #[inline]
+    pub fn targetable(&self, t: f64) -> bool {
+        if !self.alive || !self.counted && !self.town_hall_target {
+            return false;
+        }
+        if t < self.overgrown_until || t < self.invisible_until || t < self.extra.yellow_until {
+            return false;
+        }
+        !self.hidden_tesla || self.revealed
+    }
+
+    #[inline]
+    pub fn defense_target(&self, th_active: bool) -> bool {
+        if self.town_hall_target {
+            self.weapon.is_some() && th_active
+        } else {
+            self.is_defense
+        }
+    }
+
     // entities.py:15-16.
     pub fn dist(&self, x: f64, y: f64) -> f64 {
         py_hypot(self.x - x, self.y - y)
@@ -945,6 +978,7 @@ impl Unit {
         gained
     }
 
+    #[inline]
     pub fn reference(&self) -> UnitRef {
         UnitRef {
             id: self.id,
@@ -953,21 +987,25 @@ impl Unit {
     }
 
     // entities.py:199-237: targetability is distinct from the ability to act.
+    #[inline]
     pub fn attached(&self, battle: &Battle) -> bool {
-        self.name == "Angry Jelly" && self.owner.is_some_and(|owner| battle.unit(owner).alive)
+        self.name_id == Name::AngryJelly && self.owner.is_some_and(|owner| battle.unit(owner).alive)
             && battle.t < self.extra.brainwash_until
     }
 
+    #[inline]
     pub fn can_act(&self, t: f64) -> bool {
         !self.extra.suspended && t >= self.extra.yellow_until && t >= self.frozen_until
             && t >= self.stun_until && t >= self.active_at
     }
 
+    #[inline]
     pub fn indirect_targetable(&self, battle: &Battle) -> bool {
         self.alive && !self.extra.suspended && !self.underground && !self.extra.leaping
             && !self.attached(battle) && battle.t >= self.active_at
     }
 
+    #[inline]
     pub fn targetable(&self, battle: &Battle) -> bool {
         self.indirect_targetable(battle) && self.dash.is_none()
             && battle.t >= self.extra.yellow_until && battle.t >= self.invisible_until
@@ -1142,7 +1180,29 @@ pub struct PoisonState {
     pub attack: f64,
 }
 
+#[derive(Default)]
+pub struct HealerScratch {
+    pub allies: Vec<UnitRef>,
+    pub eligible: Vec<UnitRef>,
+    pub weighted: Vec<(f64, f64, i64)>,
+    pub recipients: Vec<UnitRef>,
+    pub effectiveness: Vec<f64>,
+}
+
 pub struct Battle {
+    pub follow_scores_scratch: Vec<(EntityRef, f64)>,
+    pub pet_buildings_scratch: Vec<EntityRef>,
+    pub pet_defenders_scratch: Vec<EntityRef>,
+    pub healer_scratch: HealerScratch,
+    pub healing_source_scratch: Vec<(UnitRef, f64)>,
+    pub aura_want_scratch: Vec<(UnitRef, (f64, f64))>,
+    pub building_geometry_scratch: Vec<(f64, f64, f64)>,
+    pub wall_tiles_standard: bool,
+    pub target_pool_scratch: Vec<BuildingId>,
+    pub actor_scratch: Vec<UnitRef>,
+    pub entity_scratch: Vec<EntityRef>,
+    pub wall_contact_scratch: Vec<WallId>,
+    pub spare_bucket_members: Vec<Vec<UnitRef>>,
     pub catalog: Rc<Catalog>,
     // battle.py:148 random.Random(seed), restored from the exported state.
     pub rng: Option<PyRandom>,
@@ -1203,11 +1263,11 @@ pub struct Battle {
     pub hero_levels: Vec<(String, Level)>,
     pub wall_level: Option<Level>,
     pub cc_level: Vec<(String, Level)>,
-    pub damage_by_source: Vec<(String, f64)>,
-    pub kills_by_source: Vec<(String, i64)>,
-    pub src: String,
+    pub damage_by_source: Vec<(Source, f64)>,
+    pub kills_by_source: Vec<(Source, i64)>,
+    pub src: Source,
     pub src_obj: Option<EntityRef>,
-    pub effect: String,
+    pub effect: Tag,
     pub poison: Vec<PoisonState>,
     pub clones: Vec<UnitRef>,
     pub total_counted: usize,
@@ -1225,10 +1285,10 @@ pub struct Battle {
     pub field_serial: i64,
     pub field_identity: usize,
     pub plan: Plan,
-    // Hash maps are used only for lookup. Python-order iteration uses the Vecs.
-    pub building_indices: HashMap<BuildingId, usize>,
+    // Id tables and hash maps are lookup-only. Python-order iteration uses the entity Vecs.
+    pub building_indices: Vec<Option<usize>>,
     pub wall_indices: HashMap<(i32, i32), WallId>,
-    pub unit_indices: HashMap<UnitId, (Team, usize)>,
+    pub unit_indices: Vec<Option<(Team, usize)>>,
     pub buckets: Vec<((i32, i32), Vec<UnitRef>)>,
     pub bucket_indices: HashMap<(i32, i32), usize>,
     pub buckets_initialized: bool,
@@ -1237,13 +1297,13 @@ pub struct Battle {
 }
 
 impl Battle {
-    pub fn portal_units(&self) -> Vec<UnitRef> {
+    pub fn portal_units(&self) -> impl Iterator<Item = UnitRef> + '_ {
         self.portal_stash.iter().map(|value| {
             let Value::Ref(EntityRef::Unit(unit)) = value else {
                 panic!("portal stash contains a non-unit");
             };
             *unit
-        }).collect()
+        })
     }
 
     pub fn entity_position(&self, entity: EntityRef) -> (f64, f64) {
@@ -1273,17 +1333,20 @@ impl Battle {
         }
     }
 
+    #[inline]
     pub fn building(&self, id: BuildingId) -> &Building {
-        &self.buildings[self.building_indices[&id]]
+        &self.buildings[self.building_indices[id.0].expect("building id")]
     }
 
+    #[inline]
     pub fn building_mut(&mut self, id: BuildingId) -> &mut Building {
-        let index = self.building_indices[&id];
+        let index = self.building_indices[id.0].expect("building id");
         &mut self.buildings[index]
     }
 
+    #[inline]
     pub fn unit(&self, reference: UnitRef) -> &Unit {
-        let (team, index) = self.unit_indices[&reference.id];
+        let (team, index) = self.unit_indices[reference.id.0].expect("unit id");
         assert_eq!(team, reference.team, "unit team mismatch");
         match team {
             Team::Atk => &self.attackers[index],
@@ -1291,13 +1354,21 @@ impl Battle {
         }
     }
 
+    #[inline]
     pub fn unit_mut(&mut self, reference: UnitRef) -> &mut Unit {
-        let (team, index) = self.unit_indices[&reference.id];
+        let (team, index) = self.unit_indices[reference.id.0].expect("unit id");
         assert_eq!(team, reference.team, "unit team mismatch");
         match team {
             Team::Atk => &mut self.attackers[index],
             Team::Def => &mut self.defenders[index],
         }
+    }
+
+    pub fn register_unit(&mut self, id: UnitId, team: Team, index: usize) {
+        if self.unit_indices.len() <= id.0 {
+            self.unit_indices.resize(id.0 + 1, None);
+        }
+        self.unit_indices[id.0] = Some((team, index));
     }
 
     pub fn attackers_pool(&self) -> impl Iterator<Item = &Unit> {

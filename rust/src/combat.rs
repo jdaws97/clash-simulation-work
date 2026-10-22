@@ -2,6 +2,7 @@
 
 use crate::battle::SpawnOptions;
 use crate::geom::py_hypot;
+use crate::labels::{Name, Tag};
 use crate::state::*;
 use crate::trace::{round_decimal, LogValue};
 use crate::{defense, effects, heroes, spells, units};
@@ -64,13 +65,12 @@ impl Battle {
         }
         let source = attacker.or(self.src_obj);
         let effect = if kind == "th_poison" {
-            "poison"
+            Tag::Poison
         } else if kind != "normal" {
-            kind
+            Tag::from(kind)
         } else {
-            &self.effect
+            self.effect.clone()
         };
-        let effect = effect.to_owned();
         if effects::invulnerable(u, t) || u.attached(self) || u.extra.suspended || u.extra.leaping {
             return 0.0;
         }
@@ -80,7 +80,7 @@ impl Battle {
         if u.extra.recalled.is_some() {
             return 0.0;
         }
-        if kind == "trap" && u.name == "Dragon Duke" && units::duke_alone(self, victim) {
+        if kind == "trap" && u.name_id == Name::DragonDuke && units::duke_alone(self, victim) {
             amount *= 0.8;
         }
         let mut red = if t < u.dmg_taken_until {
@@ -112,12 +112,12 @@ impl Battle {
             amount = armor.min(amount);
         }
         if victim.team == Team::Atk {
-            let label = src.filter(|s| !s.is_empty()).unwrap_or(&self.src).to_owned();
+            let label = src.filter(|s| !s.is_empty()).unwrap_or(self.src.as_str());
             let dealt = amount.min(self.unit(victim).hp);
-            if let Some((_, total)) = self.damage_by_source.iter_mut().find(|(key, _)| *key == label) {
+            if let Some((_, total)) = self.damage_by_source.iter_mut().find(|(key, _)| key.as_str() == label) {
                 *total += dealt;
             } else {
-                self.damage_by_source.push((label, dealt));
+                self.damage_by_source.push((label.into(), dealt));
             }
         }
         // Preserve the effect captured before on_damaged changes provenance.
@@ -149,12 +149,12 @@ impl Battle {
         }
         if self.unit(victim).hp <= 0.0 {
             if victim.team == Team::Atk {
-                let label = src.filter(|s| !s.is_empty()).unwrap_or(&self.src).to_owned();
+                let label = src.filter(|s| !s.is_empty()).unwrap_or(self.src.as_str());
                 let housing = 1.max(self.unit(victim).housing);
-                if let Some((_, total)) = self.kills_by_source.iter_mut().find(|(key, _)| *key == label) {
+                if let Some((_, total)) = self.kills_by_source.iter_mut().find(|(key, _)| key.as_str() == label) {
                     *total += housing;
                 } else {
-                    self.kills_by_source.push((label, housing));
+                    self.kills_by_source.push((label.into(), housing));
                 }
             }
             self.kill(victim);
@@ -199,13 +199,13 @@ impl Battle {
             if self.t < self.building(id).overgrown_until {
                 return 0.0;
             }
-            if self.effect != "meteor" {
+            if self.effect != Tag::Meteor {
                 let t = self.t;
                 self.building_mut(id).last_hit = t;
             }
             if let Some(EntityRef::Unit(source)) = self.src_obj {
                 if source.team == Team::Atk
-                    && !matches!(self.effect.as_str(), "meteor" | "spell" | "poison") {
+                    && !matches!(self.effect, Tag::Meteor | Tag::Spell | Tag::Poison) {
                     let (x, y) = self.entity_position(target);
                     let hp = self.building(id).hp;
                     let t = self.t;
@@ -214,7 +214,7 @@ impl Battle {
                             continue;
                         };
                         if tower.alive
-                            && w.kind == "spell_tower"
+                            && w.kind == Tag::SpellTower
                             && w.mode.as_deref() == Some("invis")
                             && w.cooldown <= 0.0
                             && py_hypot(tower.x - x, tower.y - y) <= 4.5 && (hp > amount || tower.id == id)
@@ -333,7 +333,7 @@ impl Battle {
             if Some(reference) == options.exclude || u.underground {
                 continue;
             }
-            if u.name != "Totem" && (u.flying && !hits_air || !u.flying && !hits_ground) {
+            if u.name_id != Name::Totem && (u.flying && !hits_air || !u.flying && !hits_ground) {
                 continue;
             }
             let d = u.dist(x, y);
@@ -383,7 +383,7 @@ impl Battle {
                     p.y,
                     SpawnOptions {
                         level: Some(level),
-                        kind: "summon".to_owned(),
+                        kind: Tag::Summon,
                         group,
                         owner,
                         ..Default::default()
@@ -392,7 +392,7 @@ impl Battle {
                 continue;
             }
             let effect = p.effect.clone().expect("pending effect");
-            effects::damage_source(self, p.actor, &effect, |battle| {
+            effects::damage_source(self, p.actor, effect, |battle| {
                 battle.src = p.src.clone();
                 battle.resolve_impact(p);
             });
@@ -456,7 +456,7 @@ impl Battle {
         if p.extra.push != 0.0 {
             for reference in self.attackers_near(x, y, p.radius) {
                 let u = self.unit(reference);
-                if u.alive && !u.is_hero && !matches!(u.kind.as_str(), "pet" | "siege" | "siege_idle")
+                if u.alive && !u.is_hero && !matches!(u.kind, Tag::Pet | Tag::Siege | Tag::SiegeIdle)
                     && 0 < u.housing && u.housing as f64 <= p.extra.push_housing && !u.underground
                 {
                     let (mut dx, mut dy) = (u.x - x, u.y - y);
@@ -481,7 +481,7 @@ impl Battle {
                 if u.alive
                     && !u.flying
                     && !u.is_hero
-                    && !matches!(u.kind.as_str(), "pet" | "siege" | "siege_idle")
+                    && !matches!(u.kind, Tag::Pet | Tag::Siege | Tag::SiegeIdle)
                     && 0 < u.housing && u.housing <= 3 && !u.underground
                 {
                     let (ox, oy) = p.extra.origin.unwrap_or((x, y));

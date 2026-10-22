@@ -4,10 +4,12 @@
 use crate::geom::{py_cos, py_hypot, py_sin, round_half_even};
 use crate::heroes::{self, HeroLoadout};
 use crate::json::Json;
+use crate::labels::{Name, Tag};
+use crate::shared::SharedVec;
+use crate::spells;
 use crate::state::*;
 use crate::stats::Level;
 use crate::trace::round_decimal;
-use crate::spells;
 
 pub const SPELL_NAMES: &[(&str, &str)] = &[
     ("lightning", "Lightning Spell"),
@@ -138,31 +140,31 @@ pub struct AttackPlan {
     pub town_hall: i64,
     pub strength: f64,
     pub ground: bool,
-    pub loadouts: Vec<(String, HeroLoadout)>,
-    pub troop_levels: Vec<(String, Option<Level>)>,
-    pub hero_levels: Vec<(String, Option<Level>)>,
-    pub equipment_levels: Vec<(String, Option<Level>)>,
-    pub pet_levels: Vec<(String, Option<Level>)>,
-    pub spell_levels: Vec<(String, Option<Level>)>,
+    pub loadouts: SharedVec<(String, HeroLoadout)>,
+    pub troop_levels: SharedVec<(String, Option<Level>)>,
+    pub hero_levels: SharedVec<(String, Option<Level>)>,
+    pub equipment_levels: SharedVec<(String, Option<Level>)>,
+    pub pet_levels: SharedVec<(String, Option<Level>)>,
+    pub spell_levels: SharedVec<(String, Option<Level>)>,
     pub auto_ability_on_ko: bool,
     pub observed: bool,
-    pub spells: Vec<(String, i64)>,
-    pub cc_spells: Vec<(String, i64)>,
-    pub stock: Vec<SpellStock>,
-    pub pol: Vec<(String, f64)>,
+    pub spells: SharedVec<(String, i64)>,
+    pub cc_spells: SharedVec<(String, i64)>,
+    pub stock: SharedVec<SpellStock>,
+    pub pol: SharedVec<(String, f64)>,
     pub auto_revive: bool,
     pub revive_delay: f64,
-    pub freeze_first: Vec<String>,
+    pub freeze_first: SharedVec<String>,
     pub zap_ad: (i64, i64),
     pub zap_done: bool,
     pub cc_released: bool,
     pub main_at: f64,
-    pub cast_log: Vec<(f64, String)>,
-    pub breakers: Vec<(String, i64)>,
-    pub cleanup: Vec<(String, i64)>,
+    pub cast_log: SharedVec<(f64, String)>,
+    pub breakers: SharedVec<(String, i64)>,
+    pub cleanup: SharedVec<(String, i64)>,
     pub distracts: i64,
     pub snipe_t: Option<f64>,
-    pub snipe_points: Vec<(f64, f64)>,
+    pub snipe_points: SharedVec<(f64, f64)>,
 }
 
 impl AttackPlan {
@@ -174,7 +176,7 @@ impl AttackPlan {
                 .map(|v| (v.arr()[0].str().to_owned(), v.arr()[1].i64()))
                 .collect()
         };
-        let stock = p.at("_spell_stock").arr().iter().map(|v| {
+        let stock: Vec<_> = p.at("_spell_stock").arr().iter().map(|v| {
             assert_eq!(v.at("$type").str(), "SpellStock");
             let remaining = v.at("remaining").i64();
             let level = v
@@ -208,17 +210,17 @@ impl AttackPlan {
                     pet: v.at("pet").opt_str().map(str::to_owned),
                 })
             }).collect(),
-            troop_levels: levels(p, "troop_levels"),
-            hero_levels: levels(p, "hero_levels"),
-            equipment_levels: levels(p, "equipment_levels"),
-            pet_levels: levels(p, "pet_levels"),
-            spell_levels: levels(p, "spell_levels"),
+            troop_levels: levels(p, "troop_levels").into(),
+            hero_levels: levels(p, "hero_levels").into(),
+            equipment_levels: levels(p, "equipment_levels").into(),
+            pet_levels: levels(p, "pet_levels").into(),
+            spell_levels: levels(p, "spell_levels").into(),
             auto_ability_on_ko: p.at("auto_ability_on_ko").bool(),
             observed: flag(p, "observed"),
-            spells: counts(p, "spells"),
-            cc_spells: counts(p, "cc_spells"),
-            stock,
-            pol: times(p, "pol"),
+            spells: counts(p, "spells").into(),
+            cc_spells: counts(p, "cc_spells").into(),
+            stock: stock.into(),
+            pol: times(p, "pol").into(),
             auto_revive: flag(p, "auto_revive"),
             revive_delay: number(p, "revive_delay", 1.5),
             freeze_first: p.at("freeze_first").arr().iter().map(|v| v.str().to_owned()).collect(),
@@ -231,11 +233,11 @@ impl AttackPlan {
                 .iter()
                 .map(|v| (v.arr()[0].f64(), v.arr()[1].str().to_owned()))
                 .collect(),
-            breakers: pairs("breakers"),
-            cleanup: pairs("cleanup"),
+            breakers: pairs("breakers").into(),
+            cleanup: pairs("cleanup").into(),
             distracts: number(p, "_distracts", 0.0) as i64,
             snipe_t: None,
-            snipe_points: Vec::new(),
+            snipe_points: SharedVec::default(),
         }
     }
 
@@ -376,10 +378,10 @@ impl AttackPlan {
             let frac = u.hp / 1.0_f64.max(u.max_hp);
             let engaged = u.target.is_some() && t - u.spawned_at > 2.0;
             let mut fire = false;
-            if u.name == "Minion Prince" && kit.has("Portal Pendant") {
+            if u.name_id == Name::MinionPrince && kit.has("Portal Pendant") {
                 let near: Vec<_> = battle.attackers_near(u.x, u.y, 7.0).into_iter().filter(|r| {
                     let a = battle.unit(*r);
-                    !a.is_hero && a.kind != "pet" && a.name != "Totem"
+                    !a.is_hero && a.kind != Tag::Pet && a.name_id != Name::Totem
                 }).collect();
                 if !near.is_empty() {
                     let (cx, cy) = centroid(battle, &near);
@@ -393,10 +395,10 @@ impl AttackPlan {
                 } else {
                     fire = frac < 0.35;
                 }
-            } else if u.name == "Grand Warden" {
+            } else if u.name_id == Name::GrandWarden {
                 let near: Vec<_> = battle.attackers_near(u.x, u.y, 7.0).into_iter().filter(|r| {
                     let a = battle.unit(*r);
-                    a.name != "Totem" && !a.is_hero
+                    a.name_id != Name::Totem && !a.is_hero
                 }).collect();
                 let hurt = near.iter().filter(|r| {
                     let a = battle.unit(**r);
@@ -417,7 +419,7 @@ impl AttackPlan {
                 && self.aim(battle, reference, "dash").is_some()
             {
                 unreachable!("dash aim is always false in Python");
-            } else if u.name == "Dragon Duke" {
+            } else if u.name_id == Name::DragonDuke {
                 fire = engaged
                     && (frac < self.p("duke_hp")
                     || u.target.is_some_and(|r| entity_is_defense(battle, r)));
@@ -820,8 +822,8 @@ pub fn main_units(battle: &Battle, group: &str) -> Vec<UnitRef> {
     battle.attackers_pool()
         .filter(|u| u.alive
         && u.group == group
-        && u.name != "Totem"
-        && u.kind != "pet")
+        && u.name_id != Name::Totem
+        && u.kind != Tag::Pet)
         .map(Unit::reference)
         .collect()
 }
@@ -860,7 +862,7 @@ pub fn fire_aimed(battle: &mut Battle, hero: UnitRef, target: BuildingId) {
     let u = battle.unit_mut(hero);
     let previous = (u.target, u.target_kind.clone());
     u.target = Some(EntityRef::Building(target));
-    u.target_kind = Some("building".to_owned());
+    u.target_kind = Some(Tag::Building);
     heroes::activate(battle, hero);
     let u = battle.unit_mut(hero);
     u.target = previous.0;

@@ -1,5 +1,6 @@
 //! Ports effects.py:10-124: ordered status accounting and damage provenance.
 
+use crate::labels::Tag;
 use crate::state::{Battle, Building, EntityRef, StatusSource, Team, Unit, UnitRef};
 
 // effects.py:10-16: _src is deliberately NOT restored by this context.
@@ -7,11 +8,11 @@ use crate::state::{Battle, Building, EntityRef, StatusSource, Team, Unit, UnitRe
 pub fn damage_source<R>(
     battle: &mut Battle,
     actor: Option<EntityRef>,
-    effect: &str,
+    effect: Tag,
     action: impl FnOnce(&mut Battle) -> R,
 ) -> R {
     let previous_actor = battle.src_obj;
-    let previous_effect = std::mem::replace(&mut battle.effect, effect.to_owned());
+    let previous_effect = std::mem::replace(&mut battle.effect, effect);
     battle.src_obj = actor;
     let result = action(battle);
     battle.src_obj = previous_actor;
@@ -105,7 +106,7 @@ pub fn health_aura(unit: &mut Unit, percentage: f64, cap: f64) {
 // effects.py:77-105: only hero equipment can receive death housing.
 pub fn record_death(battle: &mut Battle, victim: UnitRef) {
     let unit = battle.unit(victim);
-    if unit.team != Team::Atk || matches!(unit.kind.as_str(), "siege" | "siege_idle")
+    if unit.team != Team::Atk || matches!(unit.kind, Tag::Siege | Tag::SiegeIdle)
         || unit.extra.clone || unit.extra.mirror_clone || unit.extra.recalled.is_some()
     {
         return;

@@ -1,16 +1,17 @@
 //! Ports rust_export.py:47-87,190-222: strict, path-labelled exported state loading.
 //! Python constructs objects; this module only restores their values and links.
 
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::rc::Rc;
 
 use crate::catalog::{Catalog, UnitSpec};
+use crate::fast_hash::FastMap as HashMap;
 use crate::grid::Grid;
 use crate::json::{self, Json};
-use crate::state::*;
+use crate::labels::{Name, Tag};
 use crate::pyrandom::PyRandom;
+use crate::state::*;
 use crate::stats::Level;
 
 #[derive(Clone)]
@@ -242,7 +243,7 @@ struct Resolver {
 
 impl Resolver {
     fn new(root: &Node<'_>) -> Self {
-        let mut buildings = HashMap::new();
+        let mut buildings = HashMap::default();
         for (index, n) in root.field("buildings").array().into_iter().enumerate() {
             n.require_type("Building");
             let id = BuildingId(n.field("id").usize());
@@ -250,7 +251,7 @@ impl Resolver {
                 n.field("id").fail("duplicate building id");
             }
         }
-        let mut walls = HashMap::new();
+        let mut walls = HashMap::default();
         for (index, n) in root.field("walls").array().into_iter().enumerate() {
             n.require_type("Wall");
             let key = (n.field("tx").i32(), n.field("ty").i32());
@@ -258,7 +259,7 @@ impl Resolver {
                 n.fail("duplicate wall coordinates");
             }
         }
-        let mut units = HashMap::new();
+        let mut units = HashMap::default();
         for (pool, team) in [("attackers", Team::Atk), ("defenders", Team::Def)] {
             for (index, n) in root.field(pool).array().into_iter().enumerate() {
                 n.require_type("Unit");
@@ -533,7 +534,7 @@ impl Resolver {
                 "wake_at" => extra.wake_at = v.optional_number(),
                 "ramp" => extra.ramp = v.array().iter().map(Node::pair).collect(),
                 "trigger" => extra.trigger = self.trigger(v),
-                "hit_triggers" => extra.hit_triggers = self.hit_triggers(v),
+                "hit_triggers" => extra.hit_triggers = self.hit_triggers(v).into(),
                 _ => extra.unknown.push((key, self.value(v))),
             }
         }
@@ -864,10 +865,16 @@ impl Resolver {
             "extra",
         ]);
         let result = Building {
+            town_hall_target: n.field("key").value.str() == "th",
+            hidden_tesla: n.field("key").value.str() == "tesla",
+            resource_target: n.field("kind").value.str() == "resource"
+                || crate::units::RESOURCE_KEYS.contains(&n.field("key").value.str()),
+            source: n.field("key").string().into(),
+            name_id: Name::from_str(n.field("name").value.str()),
             id: BuildingId(n.field("id").usize()),
             key: n.field("key").string(),
             name: n.field("name").string(),
-            kind: n.field("kind").string(),
+            kind: n.field("kind").string().into(),
             x: n.field("x").number(),
             y: n.field("y").number(),
             size: n.field("size").usize(),
@@ -994,8 +1001,8 @@ impl Resolver {
         ]);
         let result = Weapon {
             owner: self.building_ref(n.field("owner")),
-            kind: n.field("kind").string(),
-            targets: n.field("targets").string(),
+            kind: n.field("kind").string().into(),
+            targets: n.field("targets").string().into(),
             range: n.field("range").number(),
             min_range: n.field("min_range").number(),
             interval: n.field("interval").number(),
@@ -1006,7 +1013,7 @@ impl Resolver {
             lock_time: n.field("lock_time").number(),
             idle_until: n.field("idle_until").number(),
             facing: n.field("facing").number(),
-            mode: n.field("mode").optional_string(),
+            mode: n.field("mode").optional_string().map(Tag::from),
             extra: self.weapon_extra(n.field("extra")),
             burst_left: n.field("burst_left").integer(),
             ammunition: n.field("ammunition").optional_integer(),
@@ -1123,9 +1130,11 @@ impl Resolver {
             "damage_dealt",
         ]);
         let result = Unit {
+            source: format!("unit:{}", n.field("name").value.str()).into(),
+            name_id: Name::from_str(n.field("name").value.str()),
             id: UnitId(n.field("id").usize()),
             name: n.field("name").string(),
-            kind: n.field("kind").string(),
+            kind: n.field("kind").string().into(),
             team: n.field("team").team(),
             level: n.field("level").optional_level(),
             x: n.field("x").number(),
@@ -1141,11 +1150,11 @@ impl Resolver {
             flying: n.field("flying").boolean(),
             hits_air: n.field("hits_air").boolean(),
             hits_ground: n.field("hits_ground").boolean(),
-            spec: UnitSpec::load(n.field("spec")),
+            spec: Rc::new(UnitSpec::load(n.field("spec"))),
             alive: n.field("alive").boolean(),
             cooldown: n.field("cooldown").number(),
             target: self.optional_ref(n.field("target")),
-            target_kind: n.field("target_kind").optional_string(),
+            target_kind: n.field("target_kind").optional_string().map(Tag::from),
             wall_target: self.optional_wall_ref(n.field("wall_target")),
             group: n.field("group").string(),
             spawned_at: n.field("spawned_at").number(),
@@ -1244,7 +1253,7 @@ impl Resolver {
         n.keys(&["kind", "x", "y", "radius", "until", "team", "value", "extra", "started"]);
         let result = Field {
             identity: 0,
-            kind: n.field("kind").string(),
+            kind: n.field("kind").string().into(),
             x: n.field("x").number(),
             y: n.field("y").number(),
             radius: n.field("radius").number(),
@@ -1284,12 +1293,12 @@ impl Resolver {
             damage: n.field("damage").number(),
             hits_air: n.field("hits_air").boolean(),
             hits_ground: n.field("hits_ground").boolean(),
-            src: n.field("src").string(),
+            src: n.field("src").string().into(),
             falloff: n.field("falloff").boolean(),
             team: n.field("team").team(),
             extra: self.pending_extra(n.field("extra")),
             actor: self.optional_ref(n.field("actor")),
-            effect: n.field("effect").optional_string(),
+            effect: n.field("effect").optional_string().map(Tag::from),
             target: self.optional_ref(n.field("target")),
             released_at: n.field("released_at").optional_number(),
         };
@@ -1520,7 +1529,22 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         .iter()
         .map(|w| u32::try_from(w.integer()).unwrap_or_else(|_| w.fail("rng word out of range")))
         .collect();
+    let wall_tiles_standard = resolver.walls.len() == walls.len()
+        && walls.iter().all(|wall| wall.x == wall.tx as f64 + 0.5 && wall.y == wall.ty as f64 + 0.5);
     let mut battle = Battle {
+        follow_scores_scratch: Vec::new(),
+        pet_buildings_scratch: Vec::new(),
+        pet_defenders_scratch: Vec::new(),
+        healer_scratch: HealerScratch::default(),
+        healing_source_scratch: Vec::new(),
+        aura_want_scratch: Vec::new(),
+        building_geometry_scratch: Vec::new(),
+        wall_tiles_standard,
+        target_pool_scratch: Vec::new(),
+        actor_scratch: Vec::new(),
+        entity_scratch: Vec::new(),
+        wall_contact_scratch: Vec::new(),
+        spare_bucket_members: Vec::new(),
         catalog,
         rng: Some(PyRandom::from_state(&words)),
         dt,
@@ -1582,14 +1606,14 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         wall_level: s.field("wall_level").optional_level(),
         cc_level: levels(s.field("cc_level")),
         damage_by_source: s.field("damage_by_source").object().into_iter()
-            .map(|(key, n)| (key, n.number()))
+            .map(|(key, n)| (key.into(), n.number()))
             .collect(),
         kills_by_source: s.field("kills_by_source").object().into_iter()
-            .map(|(key, n)| (key, n.integer()))
+            .map(|(key, n)| (key.into(), n.integer()))
             .collect(),
-        src: s.field("_src").string(),
+        src: s.field("_src").string().into(),
         src_obj: resolver.optional_ref(s.field("_src_obj")),
-        effect: s.field("_effect").string(),
+        effect: s.field("_effect").string().into(),
         poison: s.field("_poison").object().into_iter().map(|(key, n)| {
             let encoded = json::parse(&key).expect("encoded poison key");
             let parts = Node::new(&encoded, &n.path).tuple(3);
@@ -1621,11 +1645,23 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         field_identity: 0,
         field_serial: s.optional("_field_serial").map_or(0, |n| n.integer()),
         plan,
-        building_indices: resolver.buildings.clone(),
+        building_indices: {
+            let mut indices = vec![None; resolver.buildings.keys().map(|id| id.0 + 1).max().unwrap_or(0)];
+            for (&id, &index) in &resolver.buildings {
+                indices[id.0] = Some(index);
+            }
+            indices
+        },
         wall_indices: resolver.walls.clone(),
-        unit_indices: resolver.units.clone(),
+        unit_indices: {
+            let mut indices = vec![None; resolver.units.keys().map(|id| id.0 + 1).max().unwrap_or(0)];
+            for (&id, &location) in &resolver.units {
+                indices[id.0] = Some(location);
+            }
+            indices
+        },
         buckets: Vec::new(),
-        bucket_indices: HashMap::new(),
+        bucket_indices: HashMap::default(),
         buckets_initialized: false,
         guardian: s.optional("guardian").and_then(|n| resolver.optional_unit_ref(n)),
         unknown_scalars: Vec::new(),
@@ -1695,7 +1731,7 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
     if battle.next_deploy > battle.deployments.len() {
         s.field("_next_deploy").fail("deployment cursor outside list");
     }
-    if battle.unit_indices.keys().any(|id| id.0 > battle.uid) {
+    if battle.unit_indices.iter().enumerate().any(|(id, location)| location.is_some() && id > battle.uid) {
         s.field("_uid").fail("shared unit counter precedes an exported unit id");
     }
     battle

@@ -3,24 +3,25 @@
 use crate::battle::SpawnOptions;
 use crate::combat::SplashUnitsOptions;
 use crate::geom::{self, dist};
+use crate::labels::{Name, Tag};
 use crate::state::{Battle, Field, Pending, Team, TrapId, Unit, UnitRef};
 use crate::stats::{self, Level};
 use crate::trace::round_decimal;
 
 // traps.py:29-67: preserve the multiplication used to derive each fuse.
 const FRAME_S: f64 = 1.5 / 35.0;
-const NO_TRIGGER: &[&str] = &[
-    "Spell Skeleton",
-    "Skeleton",
-    "Bat",
-    "Totem",
-    "Yetimite",
-    "Electromite",
-    "Firemite",
-    "Frostmite",
-    "Booger",
-    "Electro Owl",
-    "Poison Lizard",
+const NO_TRIGGER: &[Name] = &[
+    Name::SpellSkeleton,
+    Name::Skeleton,
+    Name::Bat,
+    Name::Totem,
+    Name::Yetimite,
+    Name::Electromite,
+    Name::Firemite,
+    Name::Frostmite,
+    Name::Booger,
+    Name::ElectroOwl,
+    Name::PoisonLizard,
 ];
 
 // traps.py:80-81.
@@ -36,13 +37,13 @@ pub fn raw(battle: &Battle, name: &str, key: &str, default: Option<f64>) -> Opti
 
 // traps.py:114-123.
 pub fn housing(unit: &Unit) -> i64 {
-    if unit.name == "Totem" {
+    if unit.name_id == Name::Totem {
         return 20;
     }
     if unit.is_hero {
         return 25;
     }
-    if unit.kind == "pet" {
+    if unit.kind == Tag::Pet {
         return 20;
     }
     0.max(unit.housing)
@@ -50,13 +51,13 @@ pub fn housing(unit: &Unit) -> i64 {
 
 // traps.py:126-131: effect eligibility deliberately ignores activation time.
 pub fn effect_target(battle: &Battle, trap: TrapId, unit: &Unit, t: f64) -> bool {
-    let attached = unit.name == "Angry Jelly"
+    let attached = unit.name_id == Name::AngryJelly
         && unit.owner.is_some_and(|owner| battle.unit(owner).alive)
         && t < unit.extra.brainwash_until;
     if !unit.alive || unit.underground || attached || unit.extra.suspended {
         return false;
     }
-    if unit.name == "Totem" {
+    if unit.name_id == Name::Totem {
         return true;
     }
     let trap = &battle.traps[trap.0];
@@ -69,14 +70,14 @@ pub fn effect_target(battle: &Battle, trap: TrapId, unit: &Unit, t: f64) -> bool
 
 // traps.py:134-146.
 pub fn eligible(battle: &Battle, trap: TrapId, unit: &Unit, t: f64) -> bool {
-    if !effect_target(battle, trap, unit, t) || NO_TRIGGER.contains(&unit.name.as_str()) {
+    if !effect_target(battle, trap, unit, t) || NO_TRIGGER.contains(&unit.name_id) {
         return false;
     }
-    if unit.name == "Dragon Duke" && unit.dash.is_some() {
+    if unit.name_id == Name::DragonDuke && unit.dash.is_some() {
         return false;
     }
     if battle.traps[trap.0].key == "seeking" {
-        if matches!(unit.kind.as_str(), "siege" | "siege_idle") && unit.flying {
+        if matches!(unit.kind, Tag::Siege | Tag::SiegeIdle) && unit.flying {
             todo!("stage 2: traps.py:141 aerial siege Seeking Air Mine trigger");
         }
         if housing(unit) < 5 {
@@ -163,7 +164,7 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
     let t = battle.t;
     let tr = battle.traps[trap.0].clone();
     let src = format!("trap:{}", tr.key);
-    battle.src = src.clone();
+    battle.src = src.clone().into();
     battle.log_event(vec![
         round_decimal(t, 1).into(),
         "trap".into(),
@@ -188,9 +189,9 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
                 let unit = battle.unit(reference);
                 if unit.alive
                     && !unit.is_hero
-                    && !matches!(unit.kind.as_str(), "pet" | "siege" | "siege_idle")
+                    && !matches!(unit.kind, Tag::Pet | Tag::Siege | Tag::SiegeIdle)
                     && effect_target(battle, trap, unit, t)
-                    && unit.name != "Totem"
+                    && unit.name_id != Name::Totem
                     && 0 < unit.housing
                     && unit.housing <= 3
                 {
@@ -249,7 +250,7 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
                 false,
                 &src,
             );
-            pending.effect = Some("trap".to_owned());
+            pending.effect = Some(Tag::Trap);
             battle.add_pending(pending);
         }
         "giga" => {
@@ -259,7 +260,7 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
                 .into_iter()
                 .filter(|unit| {
                     let unit = battle.unit(*unit);
-                    unit.name != "Totem" && !unit.underground
+                    unit.name_id != Name::Totem && !unit.underground
                 })
                 .collect();
             battle.splash_units(
@@ -278,7 +279,7 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
             for reference in pool {
                 let unit = battle.unit(reference);
                 if unit.alive
-                    && !matches!(unit.kind.as_str(), "siege" | "siege_idle")
+                    && !matches!(unit.kind, Tag::Siege | Tag::SiegeIdle)
                     && effect_target(battle, trap, unit, t)
                 {
                     let distance = unit.dist(tr.x, tr.y);
@@ -332,17 +333,17 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
             }
             let unit = battle.unit(target);
             let special =
-                unit.is_hero || matches!(unit.kind.as_str(), "pet" | "siege" | "siege_idle");
+                unit.is_hero || matches!(unit.kind, Tag::Pet | Tag::Siege | Tag::SiegeIdle);
             if !special && 0 < unit.housing && unit.housing as f64 <= tr.extra.capacity {
                 let housing = unit.housing;
                 if let Some((_, total)) = battle
                     .kills_by_source
                     .iter_mut()
-                    .find(|(key, _)| *key == src)
+                    .find(|(key, _)| key.as_str() == src.as_str())
                 {
                     *total += housing;
                 } else {
-                    battle.kills_by_source.push((src, housing));
+                    battle.kills_by_source.push((src.into(), housing));
                 }
                 battle.unit_mut(target).extra.sprung = true;
                 battle.kill(target);
@@ -356,7 +357,7 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
                 };
             battle.hit_unit(target, damage, Some(&src), "trap", None);
             let unit = battle.unit_mut(target);
-            if unit.alive && !matches!(unit.kind.as_str(), "siege" | "siege_idle") {
+            if unit.alive && !matches!(unit.kind, Tag::Siege | Tag::SiegeIdle) {
                 unit.stun_until = unit.stun_until.max(t + 1.0);
             }
         }
@@ -371,7 +372,7 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
                     tr.y + 0.7 * geom::py_sin(angle),
                     SpawnOptions {
                         level: Some(Level::Int(tr.extra.skel_level)),
-                        kind: "trap_skeleton".to_owned(),
+                        kind: Tag::TrapSkeleton,
                         ..Default::default()
                     },
                 );
@@ -489,18 +490,16 @@ pub fn tornado_tick(battle: &mut Battle, field: &mut Field) {
         if t < unit.extra.tornado_wall_until {
             continue;
         }
-        if unit.name == "Totem" {
+        if unit.name_id == Name::Totem {
             continue;
         }
-        if matches!(
-            unit.name.as_str(),
-            "Miner" | "Super Miner" | "Diggy" | "Battle Drill"
+        if matches!(unit.name_id, Name::Miner | Name::SuperMiner | Name::Diggy | Name::BattleDrill
         ) {
             continue;
         }
-        let weight = if unit.is_hero || unit.kind == "pet" {
+        let weight = if unit.is_hero || unit.kind == Tag::Pet {
             5
-        } else if matches!(unit.kind.as_str(), "siege" | "siege_idle") {
+        } else if matches!(unit.kind, Tag::Siege | Tag::SiegeIdle) {
             if unit.speed <= 0.0 {
                 continue;
             }

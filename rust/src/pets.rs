@@ -3,6 +3,7 @@
 
 use crate::battle::SpawnOptions;
 use crate::geom::dist;
+use crate::labels::{Name, Tag};
 use crate::state::{Battle, EntityRef, UnitRef};
 use crate::stats::{self, Level};
 use crate::{effects, heroes, spells, units};
@@ -38,7 +39,7 @@ fn nearest(
 // pets.py:25-49: these five pets retain their owner until defeat detaches it.
 fn hero(battle: &Battle, pet: UnitRef) -> Option<UnitRef> {
     let unit = battle.unit(pet);
-    if unit.name == "Diggy" {
+    if unit.name_id == Name::Diggy {
         todo!("stage 3+: Diggy owner reassignment");
     }
     unit.owner
@@ -54,10 +55,10 @@ fn independent(
     let unit = battle.unit(pet);
     let target = unit.target;
     if battle.t < unit.aware_until || battle.ally_under_attack(pet) {
-        let nearby: Vec<_> = defenders.iter().copied().filter(|target| {
+        let nearby = defenders.iter().copied().filter(|target| {
             let (x, y) = battle.entity_position(*target);
             dist(unit.x, unit.y, x, y) <= 7.0
-        }).collect();
+        });
         if let Some(target) = nearest(battle, EntityRef::Unit(pet), nearby) {
             return Some(target);
         }
@@ -77,10 +78,30 @@ fn independent(
 fn target(battle: &mut Battle, pet: UnitRef) -> Option<EntityRef> {
     let hero = hero(battle, pet);
     let owner_present = hero.is_some_and(|hero| battle.unit(hero).alive);
-    let buildings: Vec<_> = battle.buildings.iter().map(|b| EntityRef::Building(b.id))
-        .filter(|target| valid(battle, pet, Some(*target))).collect();
-    let defenders: Vec<_> = battle.defenders_pool().map(|u| EntityRef::Unit(u.reference()))
-        .filter(|target| valid(battle, pet, Some(*target))).collect();
+    let mut buildings = std::mem::take(&mut battle.pet_buildings_scratch);
+    let mut defenders = std::mem::take(&mut battle.pet_defenders_scratch);
+    buildings.clear();
+    defenders.clear();
+    buildings.extend(battle.buildings.iter().map(|b| EntityRef::Building(b.id))
+        .filter(|target| valid(battle, pet, Some(*target))));
+    defenders.extend(battle.defenders_pool().map(|u| EntityRef::Unit(u.reference()))
+        .filter(|target| valid(battle, pet, Some(*target))));
+    let result = target_from_pools(battle, pet, hero, owner_present, &buildings, &defenders);
+    buildings.clear();
+    defenders.clear();
+    battle.pet_buildings_scratch = buildings;
+    battle.pet_defenders_scratch = defenders;
+    result
+}
+
+fn target_from_pools(
+    battle: &mut Battle,
+    pet: UnitRef,
+    hero: Option<UnitRef>,
+    owner_present: bool,
+    buildings: &[EntityRef],
+    defenders: &[EntityRef],
+) -> Option<EntityRef> {
     let unit = battle.unit(pet);
     if unit.attached(battle) {
         let candidates = buildings.iter().copied().filter(|target| match target {
@@ -90,17 +111,17 @@ fn target(battle: &mut Battle, pet: UnitRef) -> Option<EntityRef> {
         });
         return nearest(battle, EntityRef::Unit(pet), candidates);
     }
-    if unit.name == "Poison Lizard" {
-        let nearby: Vec<_> = defenders.iter().copied().filter(|target| {
+    if unit.name_id == Name::PoisonLizard {
+        let nearby = defenders.iter().copied().filter(|target| {
             if !owner_present {
                 return true;
             }
             let hero = battle.unit(hero.expect("present owner"));
             let (x, y) = battle.entity_position(*target);
             dist(x, y, hero.x, hero.y) <= 6.5
-        }).collect();
-        if !nearby.is_empty() {
-            return nearest(battle, EntityRef::Unit(pet), nearby);
+        });
+        if let Some(target) = nearest(battle, EntityRef::Unit(pet), nearby) {
+            return Some(target);
         }
     }
     if owner_present {
@@ -110,7 +131,7 @@ fn target(battle: &mut Battle, pet: UnitRef) -> Option<EntityRef> {
         if preference.starts_with("Within ") {
             let radius = stats::num(&crate::json::Json::Str(preference.to_owned()), None)
                 .expect("pet preference radius");
-            let candidates = buildings.iter().chain(&defenders).copied().filter(|target| {
+            let candidates = buildings.iter().chain(defenders).copied().filter(|target| {
                 let (x, y) = battle.entity_position(*target);
                 dist(x, y, hero.x, hero.y) <= radius
             });
@@ -125,7 +146,7 @@ fn target(battle: &mut Battle, pet: UnitRef) -> Option<EntityRef> {
         }
         return None;
     }
-    independent(battle, pet, &buildings, &defenders)
+    independent(battle, pet, buildings, defenders)
 }
 
 // pets.py:147-163: owner loss clears old walls even for passive pets.
@@ -134,7 +155,7 @@ pub fn owner_defeated(battle: &mut Battle, pet: UnitRef) {
     if !unit.alive || unit.extra.owner_defeated {
         return;
     }
-    if matches!(unit.name.as_str(), "Mighty Yak" | "Sneezy") {
+    if matches!(unit.name_id, Name::MightyYak | Name::Sneezy) {
         todo!("stage 3+: pet owner-loss rage");
     }
     let unit = battle.unit_mut(pet);
@@ -146,10 +167,10 @@ pub fn owner_defeated(battle: &mut Battle, pet: UnitRef) {
 // pets.py:166-216: Frosty's children spawn at the pet, in count order.
 fn summon(battle: &mut Battle, pet: UnitRef) -> bool {
     let unit = battle.unit(pet);
-    if unit.name == "Sneezy" {
+    if unit.name_id == Name::Sneezy {
         todo!("stage 3+: Sneezy summons");
     }
-    if unit.name != "Frosty" {
+    if unit.name_id != Name::Frosty {
         return false;
     }
     if battle.t < unit.extra.next_summon {
@@ -168,7 +189,7 @@ fn summon(battle: &mut Battle, pet: UnitRef) -> bool {
         let unit = battle.unit(pet);
         let child = battle.spawn("Frostmite", pet.team, unit.x, unit.y, SpawnOptions {
             level: Some(Level::Int(1)),
-            kind: "summon".to_owned(),
+            kind: Tag::Summon,
             owner: Some(pet),
             group: unit.group.clone(),
             ..Default::default()
@@ -211,15 +232,15 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
         }
         return;
     }
-    if battle.unit(pet).name == "Unicorn" {
+    if battle.unit(pet).name_id == Name::Unicorn {
         battle.unit_mut(pet).extra.healing_targets.clear();
         let target = if present {
             owner.map(EntityRef::Unit)
         } else {
             nearest(battle, EntityRef::Unit(pet), battle.attackers_pool().filter(|ally| {
                 ally.alive && ally.reference() != pet && ally.hp < ally.max_hp
-                    && !matches!(ally.kind.as_str(), "siege" | "siege_idle")
-                    && !matches!(ally.spec.attack.as_str(), "heal" | "heal_chain")
+                    && !matches!(ally.kind, Tag::Siege | Tag::SiegeIdle)
+                    && !matches!(ally.spec.attack, Tag::Heal | Tag::HealChain)
             }).map(|ally| EntityRef::Unit(ally.reference())))
         };
         battle.unit_mut(pet).target = target;
@@ -267,13 +288,13 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
     if unit.cooldown > 0.0 && !units::isclose(t + unit.cooldown, t) {
         return;
     }
-    effects::damage_source(battle, Some(EntityRef::Unit(pet)), "attack", |battle| {
+    effects::damage_source(battle, Some(EntityRef::Unit(pet)), Tag::Attack, |battle| {
         units::strike(battle, pet, target);
     });
     let unit = battle.unit(pet);
     let delay = unit.interval / 0.05_f64.max(effects::slow_mult(unit, t, false));
     battle.unit_mut(pet).cooldown += delay;
-    if battle.unit(pet).name == "Poison Lizard" {
+    if battle.unit(pet).name_id == Name::PoisonLizard {
         if let EntityRef::Unit(target) = target {
             let unit = battle.unit(pet);
             let level = unit.level.as_ref().expect("Poison Lizard level");
@@ -283,7 +304,7 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
                 .expect("lizard attack slow") / 100.0;
             let (_, movement, attack) = spells::poison_factors(battle.unit(target), 0.0, movement, attack);
             let unit = battle.unit_mut(target);
-            if !(unit.kind == "guardian" && unit.extra.waiting) {
+            if !(unit.kind == Tag::Guardian && unit.extra.waiting) {
                 unit.move_slow = 1.0 - movement;
                 unit.move_slow_until = t + 3.0;
                 unit.atk_slow = 1.0 - attack;
@@ -299,7 +320,7 @@ pub fn passives(battle: &mut Battle, pet: UnitRef) {
     let owner = unit.owner;
     let present = owner.is_some_and(|hero| battle.unit(hero).alive);
     let t = battle.t;
-    if unit.name == "Spirit Fox" && t >= unit.extra.fox_next {
+    if unit.name_id == Name::SpiritFox && t >= unit.extra.fox_next {
         let duration = battle.catalog.stats.get("Spirit Fox", unit.level.as_ref().expect("Fox level"),
             &["Invisibility Duration"], None).expect("Fox invisibility duration");
         let unit = battle.unit_mut(pet);

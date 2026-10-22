@@ -1,11 +1,11 @@
 //! Ports stats.py:20-31,129-153,165-233 over rust_export.py's processed registry.
 
 use std::cell::RefCell;
-use std::collections::HashMap;
-use std::fmt;
 use std::fmt::Write;
+use std::fmt;
 use std::rc::Rc;
 
+use crate::fast_hash::FastMap as HashMap;
 use crate::json::Json;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -55,12 +55,12 @@ fn lower(row: &Row) -> Row {
 struct CachedRow {
     merged: Rc<Row>,
     text: Row,
-    numeric: Row,
+    numeric: Vec<(String, Option<f64>)>,
 }
 
 pub struct Stats {
     pub registry: Json,
-    cache: RefCell<HashMap<(String, Level), CachedRow>>,
+    cache: RefCell<HashMap<String, HashMap<Level, CachedRow>>>,
 }
 
 impl Stats {
@@ -70,7 +70,7 @@ impl Stats {
         registry.obj();
         Self {
             registry,
-            cache: RefCell::new(HashMap::new()),
+            cache: RefCell::new(HashMap::default()),
         }
     }
 
@@ -95,8 +95,12 @@ impl Stats {
     }
 
     fn ensure_row(&self, name: &str, level: &Level) {
-        let key = (name.to_owned(), level.clone());
-        if self.cache.borrow().contains_key(&key) {
+        if self
+            .cache
+            .borrow()
+            .get(name)
+            .is_some_and(|levels| levels.contains_key(level))
+        {
             return;
         }
         let entry = self.entry(name, level);
@@ -133,37 +137,47 @@ impl Stats {
                 set(&mut numeric, alias.to_owned(), value);
             }
         }
-        self.cache.borrow_mut().insert(key, CachedRow {
-            merged: Rc::new(merged),
-            text,
-            numeric,
-        });
+        self.cache
+            .borrow_mut()
+            .entry(name.to_owned())
+            .or_default()
+            .insert(
+                level.clone(),
+                CachedRow {
+                    merged: Rc::new(merged),
+                    text,
+                    numeric: numeric
+                        .into_iter()
+                        .map(|(key, value)| (key, num(&value, None)))
+                        .collect(),
+                },
+            );
     }
 
     pub fn row(&self, name: &str, level: &Level) -> Rc<Row> {
         self.ensure_row(name, level);
-        Rc::clone(&self.cache.borrow()[&(name.to_owned(), level.clone())].merged)
+        Rc::clone(&self.cache.borrow()[name][level].merged)
     }
 
     pub fn get(&self, name: &str, level: &Level, keys: &[&str], default: Option<f64>) -> Option<f64> {
         self.ensure_row(name, level);
         let cache = self.cache.borrow();
-        let row = &cache[&(name.to_owned(), level.clone())].numeric;
+        let row = &cache[name][level].numeric;
         for key in keys {
             if let Some(fragment) = key.strip_prefix('~') {
                 let fragment = fragment.to_lowercase();
                 for (key, value) in row {
                     if key.contains(&fragment) {
-                        if let Some(number) = num(value, None) {
-                            return Some(number);
+                        if let Some(number) = value {
+                            return Some(*number);
                         }
                     }
                 }
             } else {
                 let key = key.to_lowercase();
                 if let Some((_, value)) = row.iter().find(|(name, _)| *name == key) {
-                    if let Some(number) = num(value, None) {
-                        return Some(number);
+                    if let Some(number) = value {
+                        return Some(*number);
                     }
                 }
             }
@@ -174,7 +188,7 @@ impl Stats {
     pub fn text(&self, name: &str, level: &Level, keys: &[&str], default: Option<Json>) -> Option<Json> {
         self.ensure_row(name, level);
         let cache = self.cache.borrow();
-        let row = &cache[&(name.to_owned(), level.clone())].text;
+        let row = &cache[name][level].text;
         for key in keys {
             let key = key.to_lowercase();
             if let Some((_, value)) = row.iter().find(|(name, _)| *name == key) {
