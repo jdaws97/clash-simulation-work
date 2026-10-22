@@ -279,7 +279,11 @@ class Battle:
                 self.cc_building = b
             self.buildings.append(b)
             self.grid.block_square(b.x, b.y, b.half_hit)
-        for tx, ty in layout.walls:
+        # sorted: a set's iteration order depends on its insertion history, and
+        # the wall order is a result (splash and area hits visit walls in it),
+        # so the same layout must always give the same order (and the Rust
+        # engine, which builds battles from layouts, reproduces it).
+        for tx, ty in sorted(layout.walls):
             level = layout.wall_levels.get(
                 (tx, ty), self.wall_level or stats.max_level("Wall", th)
             )
