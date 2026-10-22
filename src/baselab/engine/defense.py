@@ -1247,13 +1247,11 @@ def builders_tick(battle):
             stats.get(builder.owner.name, builder.owner.level, "Repair per Hit") * boost
             for builder, boost in builders
         ]
-        # The wiki gives no assignment order for unequal repair amounts.
-        efficiency = (
-            sum(weights[: len(builders)]) / len(builders)
-            if len(set(amounts)) == 1
-            else 1.0
-        )
-        for (builder, _), amount in zip(builders, amounts):
+        # Wiki: Builder's Hut, unequal hut levels also lose repair output;
+        # which Builder gets the reduction matters. The order is unstated,
+        # so assign the existing marginal weights in battle.builders order.
+        for index, ((builder, _), amount) in enumerate(zip(builders, amounts)):
+            efficiency = weights[min(index, len(weights) - 1)]
             if builder.cooldown <= 0:
                 target.hp = min(target.max_hp, target.hp + amount * efficiency)
                 builder.cooldown += 0.75

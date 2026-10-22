@@ -10,8 +10,6 @@ from __future__ import annotations
 import math
 import os
 
-import numpy as np
-
 from . import effects, stats
 from .specs import game_data, game_unit_data, unit_numbers
 from .entities import Building, Field, Pending, Unit, Wall, dist
@@ -121,25 +119,13 @@ def wall_breaker_target(battle, u):
     )
     if not buildings:
         return None
-    from ..pathing import Grid, RES
+    from ..pathing import RES
 
     grid = battle.navigation_grid(u)
-    access = Grid(grid.n // RES)
-    access.blocked[:] = grid.blocked | grid.wall
-    # Access means reaching a cell beside the hitbox, without crossing a wall.
     reach = 1.0 / RES
-    open_costs = access.building_costs(
-        u.x,
-        u.y,
-        0.0,
-        np.array([b.x for b in buildings]),
-        np.array([b.y for b in buildings]),
-        np.array([b.half_hit for b in buildings]),
-        reach,
-    )
-    for building, cost in zip(buildings, open_costs):
-        if cost < 1e9:
-            continue  # An opening already gives access to this building.
+    # Wiki: Wall Breaker, walls may protect a building fully or partially.
+    # Trace the wall-ignoring route even when a wall-free detour exists.
+    for building in buildings:
         route = grid.field(
             ("breaker", building.id),
             building.x,
@@ -159,7 +145,6 @@ def wall_breaker_target(battle, u):
                 key = (int(x), int(y))
                 if key in connected:
                     return walls[key]
-                break
     return None
 
 
@@ -199,6 +184,9 @@ def follow_target(battle, u):
             or not target.alive
             or not isinstance(target, (Building, Wall))
         ):
+            continue
+        # Wiki: Overgrowth Spell/Invisibility Spell, affected buildings lose targets.
+        if isinstance(target, Building) and not battle.building_targetable(target):
             continue
         score[target] = score.get(target, 0.0) + weight
     if total_weight < threshold or not score:
@@ -507,7 +495,10 @@ def pre_tick(battle, u: Unit) -> bool:
         bb = u.extra.get("bb")
         if bb is None or not bb.alive:
             u.extra["bb"] = battle.spawn("Big Boy", u.team, u.x + 0.5, u.y, level=1, kind="summon", group=u.group, owner=u)
-        u.extra["next_summon"] = t + 5.0
+            # game data v18.200.9: Super Witch.SummonCooldown=25000 -> 25 s per summon.
+            u.extra["next_summon"] = (
+                t + int(game_unit_data(u.name, u.level)["SummonCooldown"]) / 1000.0
+            )
     if (
         "furnace" in special
         and u.team == "def"
@@ -589,6 +580,15 @@ def _transform_bear(battle, u):
     bear = battle.spawn(
         "Bear", u.team, u.x, u.y, level=u.level, kind="summon", group=u.group, owner=u
     )
+    # game data v18.200.9: Bear.Hitpoints=2500, DPS=205 at level 5.
+    # Calibration: inherit Battle.deploy's strength once for the fresh Bear.
+    strength = u.extra.get("strength", 1.0) if u.team == "atk" else 1.0
+    if strength != 1.0:
+        bear.hp *= strength
+        bear.max_hp *= strength
+        bear.base_max_hp *= strength
+        bear.dmg *= strength
+        bear.extra["strength"] = strength
     bear.extra["from_druid"] = True
 
 
@@ -812,13 +812,30 @@ def on_death(battle, u: Unit):
         sub_level = stats.max_level(name, 18) or 1
         if name == "Golemite":
             sub_level = u.level
+        spawn_distance, spawn_offset, randomize_distance = 0.7, 0.0, False
+        if u.name in ("Lava Hound", "Ice Hound"):
+            row_name = "Defensive " + u.name if u.team == "def" else u.name
+            row = game_data("characters", row_name, u.level)
+            # game data v18.200.9: Lava Hound/Defensive Lava Hound.SecondarySpawnDist=350,
+            # SecondarySpawnOffset=100 -> 3.5-tile spread plus a 1-tile offset.
+            # game data v18.200.9: Ice Hound/Defensive Ice Hound.SecondarySpawnDist=250 -> 2.5 tiles.
+            spawn_distance = int(row["SecondarySpawnDist"]) / 100.0
+            spawn_offset = int(row.get("SecondarySpawnOffset", 0)) / 100.0
+            # game data v18.200.9: both hounds.RandomizeSecSpawnDist=TRUE -> scatter radii.
+            randomize_distance = row.get("RandomizeSecSpawnDist") == "TRUE"
         for k in range(n):
             ang = 2 * math.pi * k / max(1, n)
+            radius = spawn_distance
+            if randomize_distance:
+                # Uniform radial approximation; one RNG draw per pup in spawn order.
+                # Keep the existing evenly spaced angles, with no angle draws.
+                radius *= battle.rng.random()
+            radius += spawn_offset
             battle.spawn(
                 name,
                 u.team,
-                u.x + 0.7 * math.cos(ang),
-                u.y + 0.7 * math.sin(ang),
+                u.x + radius * math.cos(ang),
+                u.y + radius * math.sin(ang),
                 level=min(sub_level, stats.max_level(name, 18) or sub_level),
                 kind="summon",
                 group=u.group,
@@ -1013,6 +1030,15 @@ def spawn_cargo(battle, entry, x, y, group, *, siege):
         kind="troop",
         group=group,
     )
+    # game data v18.200.9: Dragon.Hitpoints=5700, DPS=410 at level 12.
+    # Calibration: scale fresh cargo exactly as Battle.deploy scales camp troops.
+    strength = getattr(battle.plan, "strength", 1.0)
+    if strength != 1.0:
+        child.hp *= strength
+        child.max_hp *= strength
+        child.base_max_hp *= strength
+        child.dmg *= strength
+        child.extra["strength"] = strength
     child.extra["deployment_source"] = "siege" if siege else entry["source"]
     # Wiki: Super Barbarian/Home Village excludes siege delivery from initial Rage.
     if siege and "start_rage" in child.spec.special:
@@ -1985,6 +2011,31 @@ def projectile_impact(battle, pending):
             pending.extra["meteor_small"],
         )
     if mode == "leap":
+        if u.name == "Firemite" and u.team == "def":
+            # game data v18.200.9: Firemite Spawn_DEF.Projectile=FireSpiritJump4_DEF at level 4.
+            row = game_data("characters", "Firemite Spawn_DEF", u.level)
+            projectile = game_data("projectiles", row["Projectile"])
+            # game data v18.200.9: FireSpiritJump4_DEF.HitSpell=FireSpiritBurn_DEF, HitSpellLevel=4.
+            spell = game_data(
+                "spells", projectile["HitSpell"], int(projectile["HitSpellLevel"])
+            )
+            # game data v18.200.9: FireSpiritBurn_DEF.PoisonDPS=145, Radius=80 at level 4.
+            # NumberOfHits=25, TimeBetweenHitsMS=400 -> a 10-second burn pool.
+            hits = int(spell["NumberOfHits"])
+            gap = int(spell["TimeBetweenHitsMS"]) / 1000.0
+            battle.fields.append(
+                Field(
+                    "def_burn",
+                    x,
+                    y,
+                    int(spell["Radius"]) / 100.0,
+                    battle.t + hits * gap,
+                    team="def",
+                    value=float(spell["PoisonDPS"]),
+                    extra={"pulses": hits, "gap": gap},
+                    started=battle.t,
+                )
+            )
         u.x, u.y = x, y
         u.extra["suicided"] = True
         battle.kill(u)

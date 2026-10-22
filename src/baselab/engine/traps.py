@@ -297,21 +297,28 @@ def _fire_effect(battle, tr: Trap):
         n = tr.extra["count"]
         for j in range(n):
             ang = 2 * math.pi * j / max(1, n)
-            s = battle.spawn("Skeleton", "def", tr.x + 0.7 * math.cos(ang), tr.y + 0.7 * math.sin(ang), level=tr.extra["skel_level"], kind="trap_skeleton")
-            # game data v18.200.9: Traps.csv SkeletonTrap.TimeBetweenSpawnsMs=150 -> 0.15 s apart.
-            s.active_at = t + 0.15 * j
-            # Skeleton Trap: dedicated Skeleton stats, indexed by Skeleton level;
-            # matches game data v18.200.9 Characters.csv Trap Skeleton / Trap Air
-            # Skeleton: Hitpoints=30|45, AttackSpeed=700, DPS=25|30, Speed=300/220,
-            # IsFlying FALSE/TRUE, AirTargets FALSE/TRUE.
-            lv = tr.extra["skel_level"]
-            s.hp = s.max_hp = s.base_max_hp = stats.get(tr.name, lv, "Hitpoints")
-            s.dmg = stats.get(tr.name, lv, "Damage per Hit")
-            s.interval = _raw(tr.name, "Attack Speed", None)
-            s.range = _raw(tr.name, "Range", None)
-            s.flying = tr.mode == "air"
-            s.hits_air, s.hits_ground = s.flying, not s.flying
-            s.speed = 2.2 if s.flying else 3.0  # Skeleton Trap: 17.6/24 display speed.
+            x = tr.x + 0.7 * math.cos(ang)
+            y = tr.y + 0.7 * math.sin(ang)
+            # game data v18.200.9: SkeletonTrap.SpawnInitialDelayMs=600,
+            # TimeBetweenSpawnsMs=150 -> create units only at their spawn times.
+            at = tr.fuse_at + 0.15 * j
+            if at <= t:
+                spawn_skeleton(battle, tr, x, y)
+            else:
+                battle.add_pending(
+                    Pending(
+                        at,
+                        x,
+                        y,
+                        0.0,
+                        0.0,
+                        False,
+                        False,
+                        src,
+                        team="def",
+                        extra={"trap_skeleton": tr},
+                    )
+                )
     elif k == "tornado":
         f = Field(
             "tornado",
@@ -325,6 +332,29 @@ def _fire_effect(battle, tr: Trap):
         )
         battle.fields.append(f)
         tornado_tick(battle, f)
+
+
+def spawn_skeleton(battle, tr: Trap, x, y):
+    s = battle.spawn(
+        "Skeleton",
+        "def",
+        x,
+        y,
+        level=tr.extra["skel_level"],
+        kind="trap_skeleton",
+    )
+    # Skeleton Trap: dedicated Skeleton stats, indexed by Skeleton level;
+    # matches game data v18.200.9 Characters.csv Trap Skeleton / Trap Air
+    # Skeleton: Hitpoints=30|45, AttackSpeed=700, DPS=25|30, Speed=300/220,
+    # IsFlying FALSE/TRUE, AirTargets FALSE/TRUE.
+    lv = tr.extra["skel_level"]
+    s.hp = s.max_hp = s.base_max_hp = stats.get(tr.name, lv, "Hitpoints")
+    s.dmg = stats.get(tr.name, lv, "Damage per Hit")
+    s.interval = _raw(tr.name, "Attack Speed", None)
+    s.range = _raw(tr.name, "Range", None)
+    s.flying = tr.mode == "air"
+    s.hits_air, s.hits_ground = s.flying, not s.flying
+    s.speed = 2.2 if s.flying else 3.0  # Skeleton Trap: 17.6/24 display speed.
 
 
 def _seeking_step(battle, tr: Trap):

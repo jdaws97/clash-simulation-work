@@ -13,7 +13,7 @@ TrophyCoach ranked data: exact compositions with their real 3-star rates).
   spells         by key; Lightning is used to zap Air Defenses first
 The brain and the learned policy (engine/plans.py) decide everything during
 the battle. `library(th)` lists the builds for one Town Hall with weights
-(archetype share x build share within the archetype).
+(archetype share split across the saved builds within the archetype).
 """
 
 from __future__ import annotations
@@ -228,7 +228,15 @@ def library(th: int):
     d = data()
     rows = [b for b in d["builds"] if b["th"] == th]
     share = d["archetype_share_th18"]
-    w = [share.get(b["archetype"], [0.02])[0] * b["share"] for b in rows]
+    # data/meta-armies-2026-10-15.json: build.share is within its archetype.
+    coverage = {}
+    for b in rows:
+        archetype = b["archetype"]
+        coverage[archetype] = coverage.get(archetype, 0.0) + b["share"]
+    w = [
+        share.get(b["archetype"], [0.02])[0] * b["share"] / coverage[b["archetype"]]
+        for b in rows
+    ]
     tot = sum(w) or 1.0
     return [(b, x / tot) for b, x in zip(rows, w)]
 

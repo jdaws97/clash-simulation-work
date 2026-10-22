@@ -978,6 +978,12 @@ class Battle:
         due = [p for p in self.pending if p.at <= t]
         self.pending = [p for p in self.pending if p.at > t]
         for pending in due:
+            # game data v18.200.9: SkeletonTrap.TimeBetweenSpawnsMs=150 -> staggered births.
+            if "trap_skeleton" in pending.extra:
+                traps.spawn_skeleton(
+                    self, pending.extra["trap_skeleton"], pending.x, pending.y
+                )
+                continue
             if pending.extra.get("summon"):
                 name, level, group, owner = pending.extra["summon"]
                 self.spawn(
@@ -1580,7 +1586,10 @@ class Battle:
                 self.move_straight(u, target.x, target.y, self.speed_of(u) * DT)
             return
         position = units.valkyrie_position(self, u, target)
-        if position is not None and (u.x, u.y) != position:
+        # Wiki: Valkyrie, move between buildings to attack multiple targets.
+        # A 0.3-tile arrival tolerance exceeds a pair's 0.235-tile separation
+        # nudge; the actual attack range below still gates every strike.
+        if position is not None and dist(u.x, u.y, *position) > 0.3:
             units.interrupt_attack(u)
             if self.t >= u.held_until:
                 self.move_towards(u, target, position=position)

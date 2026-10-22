@@ -118,17 +118,22 @@ class PlaybookPlan(AttackPlan):
         return any(s["id"] not in self._done for s in self.steps if s["action"] in ("deploy", "redeploy"))
 
     def has_offensive_pending(self, battle):
+        self._step_kinds()
+        # Wiki: Revive Spell, eligible fallen heroes can return through fallback too.
         if (
             self._have("revive")
             and any(
                 not hero.alive and hero.extra.get("revivable")
                 for hero in battle.attackers
             )
-            and any(
-                step["id"] not in self._done
-                and step["action"] == "spell"
-                and step.get("what") == "Revive Spell"
-                for step in self.steps
+            and (
+                self.auto_revive
+                or any(
+                    step["id"] not in self._done
+                    and step["action"] == "spell"
+                    and step.get("what") == "Revive Spell"
+                    for step in self.steps
+                )
             )
         ):
             return True
@@ -246,6 +251,10 @@ class PlaybookPlan(AttackPlan):
             name in self._deployed
             and self._unit(battle, name) is None
             and not any(u.name == name for u in battle.portal_stash)
+            # Video: docs/VIDEO_MEASUREMENTS.md:30, later taps may still be queued.
+            and not any(
+                d.name == name for d in battle.deployments[battle._next_deploy :]
+            )
             and (name in heroes.HEROES or self.inventory.get(name, 0) <= 0)
         )
 
@@ -361,6 +370,8 @@ class PlaybookPlan(AttackPlan):
         if n <= 0:
             return False
         at = str(s.get("at", ""))
+        # Video: docs/VIDEO_MEASUREMENTS.md:30 -> 0.133 s between held troops.
+        tap = PACE_TAP * float(os.environ.get("BASELAB_PACE", "1.0"))
         if at.startswith("edge:") and n >= 3 and "spread" not in s and what not in LINE_EXEMPT:
             # several troops at an edge are dragged in a line along the
             # deploy border (about a tile apart, at most 8 tiles wide), not
@@ -369,10 +380,26 @@ class PlaybookPlan(AttackPlan):
             w = min(float(n - 1), 8.0)
             for i in range(n):
                 x, y = edge_point(battle, ang, -w / 2 + w * i / (n - 1))
-                self._drop(battle, what, x, y, s.get("group", "main"), jitter=0.3)
+                self._drop(
+                    battle,
+                    what,
+                    x,
+                    y,
+                    s.get("group", "main"),
+                    jitter=0.3,
+                    at=battle.t + i * tap,
+                )
         else:
-            for _ in range(n):
-                self._drop(battle, what, pos[0], pos[1], s.get("group", "main"), jitter=s.get("spread", 1.0))
+            for i in range(n):
+                self._drop(
+                    battle,
+                    what,
+                    pos[0],
+                    pos[1],
+                    s.get("group", "main"),
+                    jitter=s.get("spread", 1.0),
+                    at=battle.t + i * tap,
+                )
         self.inventory[what] = left - n
         self._deployed.add(what)
         return True
@@ -421,7 +448,7 @@ class PlaybookPlan(AttackPlan):
 
     def _aim_building(self, battle, u, key):
         """An ability aimed at a building (e.g. "arrow through the CC"). Giant
-        Arrow: fired at the building once it is within the arrow's reach.
+        Arrow: wait until the Queen's current firing line crosses the building.
         Fireball: it always flies at the closest defense (wiki: Fireball), so
         the Warden fires it once that defense is within the blast radius of
         the building. The step waits until then; if the building is gone it
@@ -432,30 +459,23 @@ class PlaybookPlan(AttackPlan):
             heroes.activate(battle, u)
             return True
         if u.kit.has("Giant Arrow"):
-            # of the buildings of that key in reach, the one whose arrow line
-            # (a straight shot through it) crosses the most of them: "line up
-            # these two air defenses with the giant arrow" (s5btI1E0LdY 6:04)
-            reach = self.P("arrow_reach")
-            cands = [b for b in battle.buildings if b.alive and b.key == key
-                     and math.hypot(b.x - u.x, b.y - u.y) <= reach]
-            if not cands:
+            # Wiki: Giant Arrow, fires toward the Queen's current target and
+            # travels through the entire village; building distance is no limit.
+            target = u.target
+            if target is None or not target.alive:
                 return False
-
-            def crossed(c):
-                dx, dy = c.x - u.x, c.y - u.y
-                n = math.hypot(dx, dy) or 1.0
-                hits = 0
-                for o in battle.buildings:
-                    if o.alive and o.key == key:
-                        along = ((o.x - u.x) * dx + (o.y - u.y) * dy) / n
-                        off = abs((o.x - u.x) * dy - (o.y - u.y) * dx) / n
-                        hits += along > 0 and off <= o.half_hit + 1.0
-                return hits
-
-            tgt = max(cands, key=lambda c: (crossed(c), -math.hypot(c.x - u.x, c.y - u.y)))
-            u.extra["aim_at"] = tgt
-            self._fire_aimed(battle, u)
-            return True
+            dx, dy = target.x - u.x, target.y - u.y
+            length = math.hypot(dx, dy)
+            if length <= 0:
+                return False
+            for b in battle.buildings:
+                if b.alive and b.key == key:
+                    along = ((b.x - u.x) * dx + (b.y - u.y) * dy) / length
+                    off = abs((b.x - u.x) * dy - (b.y - u.y) * dx) / length
+                    if along > 0 and off <= b.half_hit + 1.0:
+                        self._fire_aimed(battle, u)
+                        return True
+            return False
         if u.kit.has("Fireball"):
             defs = heroes._targets(battle, defenses=True)
             if not defs:
@@ -581,6 +601,9 @@ class PlaybookPlan(AttackPlan):
                     ok = self._spell(battle, {**s, "what": "Recall Spell" if act == "recall" else s.get("what")}, pos)
                 elif act == "redeploy":
                     if battle.portal_stash and t >= battle.portal_ready_at:
+                        # Playbook: gWXxU_sp7Kg 43.5, Queen returns with Bowlers and Warden.
+                        for u in battle.portal_stash:
+                            u.group = s.get("group", "main")
                         heroes.portal_redeploy(battle, pos[0], pos[1])
                         ok = True
             if ok:
@@ -712,7 +735,8 @@ def pick_variants(pb: dict, inventory: dict, heroes_in: list, spells: dict) -> l
     for v in sorted(pb.get("variants", []), key=lambda v: -v.get("support", 0)):
         repl = set(v.get("replaces") or [])
         cur = [x for x in steps if x["id"] in repl]
-        if not repl or not cur or any(_usable(x, have, heroes_in) for x in cur):
+        # Playbook: Yeti, KDalGKrAyL0 50.2 -> Barracks and Queen share the variant.
+        if not repl or not cur or all(_usable(x, have, heroes_in) for x in cur):
             continue
         new = [dict(copy.deepcopy(x), variant=v["name"]) for x in v.get("steps", [])]
         if not new or not all(_usable(x, have, heroes_in) for x in new):
@@ -861,28 +885,59 @@ def add_waits(steps: list) -> None:
     attack moves to a new group (tools/baselab/step_gaps.py ->
     data/playbook-gaps.json). Those medians replace the unstated zeros,
     less the time the action itself takes (action_time). Explicit non-zero
-    delays and the uncited fallbacks keep theirs."""
+    delays and the uncited fallbacks keep theirs. Zero-delay chains whose
+    citations explicitly say immediate (including the cited Invis/Invis/Fireball
+    sequence) keep zero delay; action_time still paces the player's inputs."""
     g = _gaps()
     if g is None:
         return
     same, change = g
     group = {s["id"]: s.get("group", "main") for s in steps}
     act = {s["id"]: s["action"] for s in steps}
+    by_id = {s["id"]: s for s in steps}
 
-    def fix(w, mine):
+    def immediate(st, previous):
+        quotes = " ".join(c.get("quote", "") for c in st.get("cite", [])).lower()
+        if any(
+            word in quotes
+            for word in (
+                "immediately",
+                "right away",
+                "straight away",
+                "instantly",
+                "quick succession",
+            )
+        ):
+            return True
+        # Wiki: Fireball, multiple Invisibilities in quick succession then
+        # immediate Fireball. iBpk-396MQs 78.3/82.1 cites "Invis Invis" / "Fireball".
+        if previous.get("what") != "Invisibility Spell":
+            return False
+        if st.get("what") == "Invisibility Spell" and "invis invis" in quotes:
+            return True
+        before = " ".join(c.get("quote", "") for c in previous.get("cite", [])).lower()
+        return (
+            st["action"] == "ability"
+            and st.get("what") == "Grand Warden"
+            and "fireball" in quotes
+            and ("invis invis" in before or "quick succession" in before)
+        )
+
+    def fix(w, mine, st):
         if not isinstance(w, dict):
             return w
         if "after" in w and not w.get("delay") and w["after"] in group:
-            gap = same if group[w["after"]] == mine else change
-            w = {**w, "delay": max(0.0, gap - action_time(act[w["after"]], 1))}
+            if not immediate(st, by_id[w["after"]]):
+                gap = same if group[w["after"]] == mine else change
+                w = {**w, "delay": max(0.0, gap - action_time(act[w["after"]], 1))}
         for k in ("all", "any"):
             if k in w:
-                w = {**w, k: [fix(x, mine) for x in w[k]]}
+                w = {**w, k: [fix(x, mine, st) for x in w[k]]}
         return w
 
     for st in steps:
         if not st.get("uncited"):
-            st["when"] = fix(st.get("when"), st.get("group", "main"))
+            st["when"] = fix(st.get("when"), st.get("group", "main"), st)
 
 
 def apply_overrides(steps: list, overrides: dict | None) -> None:

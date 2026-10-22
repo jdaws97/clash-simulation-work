@@ -578,24 +578,32 @@ class AttackPlan:
     def has_pending(self) -> bool:
         return self._phase != "done" or bool(getattr(self, "_battle_portal", None))
 
-    def _drop(self, battle, name, x, y, group, jitter=0.0, *, source="army"):
+    def _drop(self, battle, name, x, y, group, jitter=0.0, *, source="army", at=None):
         if jitter:
             x += battle.rng.uniform(-jitter, jitter)
             y += battle.rng.uniform(-jitter, jitter)
         x = min(WORLD - 0.6, max(0.6, x))
         y = min(WORLD - 0.6, max(0.6, y))
-        return battle.deploy(
-            Deployment(
-                battle.t,
-                name,
-                x,
-                y,
-                group=group,
-                level=self._level(name),
-                town_hall=self.town_hall,
-                source=source,
-            )
+        deployment = Deployment(
+            battle.t if at is None else at,
+            name,
+            x,
+            y,
+            group=group,
+            level=self._level(name),
+            town_hall=self.town_hall,
+            source=source,
         )
+        # Video: docs/VIDEO_MEASUREMENTS.md, held troops arrive 0.133 s apart.
+        # Jitter draws stay in step order (x then y), when the drop is scheduled.
+        if deployment.time > battle.t:
+            remaining = battle.deployments[battle._next_deploy :]
+            remaining.append(deployment)
+            battle.deployments[battle._next_deploy :] = sorted(
+                remaining, key=lambda d: d.time
+            )
+            return None
+        return battle.deploy(deployment)
 
     def _best_entry(self, battle):
         best = None
@@ -823,30 +831,36 @@ class AttackPlan:
                 heroes.activate(battle, u)
 
     def _aim(self, battle, u, kind):
-        """Point an aimed ability at the heaviest defense in reach; True when
-        it should fire now (the hero's target is set to it)."""
+        """Wait for the current firing line to cross a heavy nearby defense."""
         if kind == "dash":
             return False  # Rocket Backpack follows the village centre (wiki).
+        # Wiki: Giant Arrow, direction follows the Queen's current target.
+        target = u.target
+        if target is None or not target.alive:
+            return False
+        dx, dy = target.x - u.x, target.y - u.y
+        length = math.hypot(dx, dy)
+        if length <= 0:
+            return False
         reach, thr = self.P(kind + "_reach"), self.P(kind + "_threat")
         best = None
         for b in battle.buildings:
             if b.alive and b.weapon is not None and THREAT.get(b.key, 0) >= thr:
                 d = math.hypot(b.x - u.x, b.y - u.y)
-                if d <= reach and (best is None or (THREAT.get(b.key, 0), -d) > best[0]):
-                    best = ((THREAT.get(b.key, 0), -d), b)
+                along = ((b.x - u.x) * dx + (b.y - u.y) * dy) / length
+                off = abs((b.x - u.x) * dy - (b.y - u.y) * dx) / length
+                if d <= reach and along > 0 and off <= b.half_hit + 1.0:
+                    if best is None or (THREAT.get(b.key, 0), -d) > best[0]:
+                        best = ((THREAT.get(b.key, 0), -d), b)
         if best is None:
             return False
-        u.extra["aim_at"] = best[1]
         return True
 
     @staticmethod
     def _fire_aimed(battle, u):
-        """Fire the ability at the aimed building, then go back to whatever
-        the hero was fighting (a defending unit, say)."""
-        prev = (u.target, u.target_kind)
-        u.target, u.target_kind = u.extra.pop("aim_at"), "building"
+        """Activate once the hero's current firing line is useful."""
+        # Wiki: Giant Arrow, the player times activation, not its direction.
         heroes.activate(battle, u)
-        u.target, u.target_kind = prev
 
     # -------------------------------------------------------------- spells
     def _zap(self, battle):
@@ -906,10 +920,15 @@ class AttackPlan:
         if sum(1 for v in stuck if abs(v.wall_target.x - w.x) + abs(v.wall_target.y - w.y) <= 3) < 2:
             return
         cx, cy = self.centroid(stuck)
+        # Wiki: Wall Breaker, sacrifices itself; fallback spends the same army.
+        inventory = getattr(self, "inventory", None)
         for b in self.breakers:
-            if b[1] > 0:
-                n = min(b[1], 3)
-                b[1] -= n
+            left = b[1] if inventory is None else inventory.get(b[0], 0)
+            if left > 0:
+                n = min(left, 3)
+                b[1] = left - n
+                if inventory is not None:
+                    inventory[b[0]] = left - n
                 for _ in range(n):
                     self._drop(battle, b[0], cx, cy, "breach", jitter=0.4)
                 self._cast_log.append((round(battle.t, 1), "breach"))

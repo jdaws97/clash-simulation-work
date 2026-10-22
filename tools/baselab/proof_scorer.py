@@ -7,7 +7,7 @@ must score clearly lower than their originals on both sets, the two sets
 must agree, and freshly generated designs give a baseline.
 
 Score = expected defender trophies per ranked defense (higher is better),
-with a standard error from the per-battle spread.
+with a standard error over scouted attacker groups and paired differences.
 
 Usage: python tools/baselab/proof_scorer.py [--angles 4] [--seeds 2]
 """
@@ -29,7 +29,13 @@ sys.path.insert(0, str(ROOT / "tools" / "baselab"))
 import numpy as np  # noqa: E402
 
 from baselab.archetypes import design  # noqa: E402
-from baselab.evaluate import STRENGTH, defender_trophies, meta_scenarios, run_batch  # noqa: E402
+from baselab.evaluate import (  # noqa: E402
+    STRENGTH,
+    defender_trophies,
+    meta_scenarios,
+    run_batch,
+    scouted,
+)
 from baselab.layout import Layout  # noqa: E402
 
 DEF = {"inferno", "eagle", "scatter", "xbow", "mono", "ad", "mat", "ric", "wt", "bt", "mortar", "at", "cannon",
@@ -70,24 +76,41 @@ def scrambled(lay, seed=0):
     return l
 
 
-def score(lays, scenarios):
-    """Per base: (mean defender trophies, standard error, 3-star rate)."""
+def score(lays, scenarios, *, return_samples=False):
+    """Per base: (mean defender trophies, standard error, 3-star rate).
+
+    With return_samples, also return group weights and each base's scouted
+    trophies in the same group order, for paired differences.
+    """
     jobs = []
     for l in lays:
         lj = l.to_json()
         jobs += [(lj, sc, STRENGTH.get(sc.army, 1.0)) for sc in scenarios]
     res = run_batch(jobs)
     k = len(scenarios)
-    w = np.array([sc.weight for sc in scenarios])
-    w = w / w.sum()
     out = []
+    per = []
     for n in range(len(lays)):
         r = res[n * k:(n + 1) * k]
-        t = np.array([defender_trophies(int(x[0]), x[1]) for x in r], dtype=float)
-        three = np.array([x[0] >= 3 for x in r], dtype=float)
+        # evaluate.summarise: score the attacker's choice among scouted sides.
+        # Combinations share battles; average them within each attacker group.
+        groups = {}
+        for sc, result, weight in scouted(scenarios, r):
+            key = (sc.army, sc.town_hall, sc.modifier, sc.group, sc.full_scout)
+            row = groups.setdefault(key, [0.0, 0.0, 0.0])
+            row[0] += weight
+            row[1] += weight * defender_trophies(int(result[0]), result[1])
+            row[2] += weight * (result[0] >= 3)
+        w = np.array([row[0] for row in groups.values()])
+        t = np.array([row[1] / row[0] for row in groups.values()])
+        three = np.array([row[2] / row[0] for row in groups.values()])
+        w = w / w.sum()
         m = float((w * t).sum())
         se = float(math.sqrt((w ** 2 * (t - m) ** 2).sum()))
         out.append((m, se, float((w * three).sum())))
+        per.append(t)
+    if return_samples:
+        return out, w, per
     return out
 
 
@@ -111,13 +134,19 @@ def main():
         "set A": meta_scenarios("ranked", args.angles, tuple(range(args.seeds))),
         "set B": meta_scenarios("ranked", args.angles, tuple(range(100, 100 + args.seeds)), angle_offset=math.pi / args.angles),
     }
-    results = {s: score([bases[n] for n in names], sc) for s, sc in sets.items()}
+    scored = {
+        s: score([bases[n] for n in names], sc, return_samples=True)
+        for s, sc in sets.items()
+    }
+    results = {s: rows[0] for s, rows in scored.items()}
     print(f"battles per base per set: {len(sets['set A'])}")
     print(f"{'base':28s} {'set A trophies':>18s} {'set B trophies':>18s}   3-star A / B")
     for i, n in enumerate(names):
         a, b = results["set A"][i], results["set B"][i]
         print(f"{n:28s} {a[0]:7.2f} +- {a[1]:4.2f}     {b[0]:7.2f} +- {b[1]:4.2f}     {a[2]:5.1%} / {b[2]:5.1%}")
-    print("\nchecks (difference original - variant, in units of the combined standard error):")
+    print(
+        "\nchecks (difference original - variant, in units of the paired standard error):"
+    )
     ok = True
     for base in ("your-base", "hole-free"):
         i0 = names.index(base)
@@ -125,8 +154,12 @@ def main():
             i1 = names.index(f"{base} / {v}")
             zs = []
             for s in sets:
-                (m0, e0, _), (m1, e1, _) = results[s][i0], results[s][i1]
-                zs.append((m0 - m1) / math.sqrt(e0 ** 2 + e1 ** 2 + 1e-9))
+                # evaluate.summarise: pair the same scouted attacker groups.
+                _, w, per = scored[s]
+                d = per[i0] - per[i1]
+                md = float((w * d).sum())
+                se = math.sqrt(float((w**2 * (d - md) ** 2).sum()))
+                zs.append(md / math.sqrt(se**2 + 1e-9))
             passed = all(z > 2 for z in zs)
             ok &= passed
             print(f"  {base:10s} vs {v:9s}: z = {zs[0]:5.1f} (A), {zs[1]:5.1f} (B)  {'PASS' if passed else 'FAIL'}")

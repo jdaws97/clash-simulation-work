@@ -202,7 +202,7 @@ class Grid:
         """Bring a cached field up to the current version without a full
         recompute when every change since it was built only removed obstacles.
         Returns None when a full recompute is needed."""
-        v0, dist, goal = entry
+        v0, dist, goal = entry[:3]
         if not self._log or self._log[0][0] > v0 + 1:
             return None  # the log no longer reaches back that far
         seed = np.zeros((self.n, self.n), dtype=np.bool_)
@@ -220,39 +220,44 @@ class Grid:
         return _relax(dist, seed, self.blocked, self.wall, np.float32(wall_extra), _NEIGHBORS, _STEP)
 
     def field(self, key, cx: float, cy: float, half: float, reach: float, wall_extra: float):
+        # Wiki: Wall/Home Village, troops use gaps; retain the planned wall entry cost.
+        wall_extra = np.float32(wall_extra)
         entry = self._cache.get(key)
-        if entry is not None and entry[0] == self.version:
+        if entry is not None and entry[0] == self.version and entry[3] == wall_extra:
             return entry[1]
         goal = _goal_mask(self.n, cx, cy, half, reach)
         dist = None
         # repair only when the goal area still matches (keeps results
         # identical to a recompute)
-        if entry is not None and np.array_equal(entry[2], goal):
+        if (
+            entry is not None
+            and entry[3] == wall_extra
+            and np.array_equal(entry[2], goal)
+        ):
             dist = self._repair(entry, wall_extra)
         if dist is None:
             dist = _dijkstra(goal, self.blocked, self.wall, np.float32(wall_extra), _NEIGHBORS, _STEP)
-        self._cache[key] = (self.version, dist, goal)
+        self._cache[key] = (self.version, dist, goal, wall_extra)
         return dist
 
     def source_field(self, x: float, y: float, wall_extra: float):
-        """Path cost from (x, y) to every cell; cached per tile and version."""
+        """Path cost from (x, y) to every cell; cached per half-tile and version."""
         i, j = self.cell(x, y)
-        key = ("src", i // RES, j // RES, wall_extra)
+        # Wiki: Yeti, closest building; distinct half-tile sources need distinct fields.
+        key = ("src", i, j, wall_extra)
         entry = self._cache.get(key)
         if entry is not None and entry[0] == self.version:
             return entry[1]
         dist = None
         goal = np.zeros((self.n, self.n), dtype=np.bool_)
         goal[i, j] = True
-        # the key is per tile but the source cell is a half-tile: repair only
-        # for the same source cell (keeps results identical to a recompute).
         # The source is passed as the goal so a source inside a hitbox that
         # has since fallen restarts at 0; without it the field stayed all-INF.
         if entry is not None and entry[2] == (i, j):
             dist = self._repair((entry[0], entry[1], goal), wall_extra)
         if dist is None:
             dist = _dijkstra(goal, self.blocked, self.wall, np.float32(wall_extra), _NEIGHBORS, _STEP)
-        self._cache[key] = (self.version, dist, (i, j))
+        self._cache[key] = (self.version, dist, (i, j), np.float32(wall_extra))
         return dist
 
     def building_costs(self, x, y, wall_extra, xs, ys, halves, reach):
@@ -274,27 +279,46 @@ class Grid:
         j = min(self.n - 1, max(0, int(y * RES)))
         return i, j
 
-    def next_step(self, dist, x: float, y: float):
+    def next_step(self, dist, x: float, y: float, wall_extra: float | None = None):
         """Best neighbouring cell centre and whether it is a wall cell.
 
         Returns (tx, ty, is_wall, at_goal). at_goal means the unit stands on a
         goal cell already and should attack.
+        Cached fields retain their wall cost; pass wall_extra for other arrays.
         """
         i, j = self.cell(x, y)
         here = dist[i, j]
         if here <= 0.0:
             return x, y, False, True
-        best = here
+        if self.blocked[i, j]:
+            return x, y, False, here >= INF
+        if wall_extra is None:
+            wall_extra = 0.0
+            for entry in self._cache.values():
+                if entry[1] is dist:
+                    wall_extra = entry[3]
+                    break
+        wall_extra = np.float32(wall_extra)
+        best = math.inf
         bi, bj = i, j
         n = self.n
         for q in range(8):
             ni = i + _NEIGHBORS[q, 0]
             nj = j + _NEIGHBORS[q, 1]
-            if 0 <= ni < n and 0 <= nj < n:
-                d = dist[ni, nj]
-                if d < best:
-                    best = d
-                    bi, bj = ni, nj
+            if ni < 0 or nj < 0 or ni >= n or nj >= n:
+                continue
+            if self.blocked[ni, nj] or dist[ni, nj] >= INF:
+                continue
+            if q >= 4 and (self.blocked[i, nj] or self.blocked[ni, j]):
+                continue
+            # Wiki: Wall/Home Village, troops use gaps; match _relax's entry costs.
+            cost = _STEP[q]
+            if self.wall[ni, nj]:
+                cost += wall_extra
+            d = dist[ni, nj] + cost
+            if d < best:
+                best = d
+                bi, bj = ni, nj
         if bi == i and bj == j:
             return x, y, False, here >= INF
         # plain floats: bi/bj are NumPy ints, and a np.float64 position would

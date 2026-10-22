@@ -29,7 +29,11 @@ def _load_strength():
         pass
     # real meta builds (tools/baselab/calibrate_meta.py), keyed "meta:<build id>"
     try:
-        m = Path(os.environ.get("BASELAB_CALIBRATION") or Path(__file__).resolve().parents[2] / "data" / "meta-calibration.json")
+        # docs/SIM_ACCURACY.md: round 8 is the measured calibration checkpoint.
+        m = Path(
+            os.environ.get("BASELAB_CALIBRATION")
+            or Path(__file__).resolve().parents[2] / "data" / "meta-calibration-r8.json"
+        )
         base.update({"meta:" + k: v["strength"] for k, v in json.loads(m.read_text()).items()})
     except (OSError, ValueError, KeyError):
         pass
@@ -52,9 +56,11 @@ def attacker_trophies(stars: int, pct: float) -> int:
     if stars >= 3:
         return 40
     if stars == 2:
+        # Wiki: Ranked Battles, 16 at 50%, +1 per 3% above 50%, 32 at 98%.
         return 16 + max(0, int((pct - 50) // 3))
     if stars == 1:
-        return 5 + int(pct // 9)
+        # Wiki: Ranked Battles, one-star attacks award between 5 and 15 trophies.
+        return min(15, 5 + int(pct // 9))
     return min(4, int(pct // 10))
 
 
@@ -75,6 +81,8 @@ class Scenario:
     group: int = 0  # scenarios of one army/TH/group differ only by approach angle
     tactic: tuple | None = None  # adaptive-attacker knobs (tactics.py); sets the side too
     charge: tuple | None = None  # (hero, healers): the build is played as a hero charge (Invisibility + Recall)
+    # Bug hunt r2-d #7: full scouting is independent of the seed/group number.
+    full_scout: bool = False
 
 
 # Hero charges a player can run with a build, as (hero, Healers sent with
@@ -139,7 +147,6 @@ def skill(seed: int) -> float:
 # side and seed; m % 2 still alternates the playbook charge flank with the
 # side) and q the group's quantile, so seed % 5 is still the skill.
 SKILL_ORDER = (1, 3, 2, 0, 4)  # 2 or 3 consecutive entries average to the median
-_Z_VAR = sum(z * z for z in _Z) / len(_Z)
 
 
 def group_seed(j: int, s: int, k: int, n: int) -> int:
@@ -148,54 +155,23 @@ def group_seed(j: int, s: int, k: int, n: int) -> int:
     return 5 * (s * n + k) + SKILL_ORDER[j % len(SKILL_ORDER)]
 
 
-def _skill_patterns(n: int) -> list:
-    """Quantile multisets for the n groups of one army: symmetric around the
-    median (mean z 0) when n >= 2, any single quantile when n == 1."""
-    import itertools
-
-    q = len(_Z)
-    if n == 1:
-        return [(i,) for i in range(q)]
-    return [p for p in itertools.combinations_with_replacement(range(q), n)
-            if all(p.count(i) == p.count(q - 1 - i) for i in range(q // 2))]
-
-
 def _assign_skill(scenarios):
     """Scenario seeds come in as m = s * n_sides + k; each scouting group
-    (army, Town Hall, modifier, group) gets one quantile q and every seed
-    becomes 5 * m + q. The groups of one army take a set of quantiles
-    symmetric around the median, so no army is played systematically weak
-    or strong; armies are placed heaviest first on the set that keeps the
-    weighted quantile shares closest to 1/5 each, with the weighted mean and
-    variance of z closest to those of the five quantiles. Ties rotate with
-    the seed."""
-    armies: dict = {}
+    is replayed at every quantile q with seed 5 * m + q and weight / 5.
+    Sides and techniques share a quantile only within their own group."""
+    # Bug hunt r2-d #1: balance all five quantiles within every army and seed.
+    out = []
     for sc in scenarios:
-        g = armies.setdefault((sc.army, sc.town_hall, sc.modifier), {})
-        g.setdefault(sc.group, [0.0, sc.seed])[0] += sc.weight
-    tot = sum(w for g in armies.values() for w, _m in g.values()) or 1.0
-    fill = [0.0] * len(_Z)
-    q_of = {}
-    for key in sorted(armies, key=lambda a: (-sum(w for w, _m in armies[a].values()), str(a))):
-        gs = sorted(armies[key])
-        ws = [armies[key][g][0] / tot for g in gs]
-
-        def cost(p):
-            f = list(fill)
-            for q, w in zip(p, ws):
-                f[q] += w
-            mean = sum(x * z for x, z in zip(f, _Z))
-            spread = sum(x * (z * z - _Z_VAR) for x, z in zip(f, _Z))
-            return round(sum((x - 1 / len(_Z)) ** 2 for x in f) + mean ** 2 + spread ** 2, 12)
-
-        pats = _skill_patterns(len(gs))
-        r = armies[key][gs[0]][1] % len(pats)
-        pats = pats[r:] + pats[:r]
-        p = min(pats, key=cost)
-        for g, q, w in zip(gs, p, ws):
-            fill[q] += w
-            q_of[key + (g,)] = q
-    return [replace(sc, seed=5 * sc.seed + q_of[(sc.army, sc.town_hall, sc.modifier, sc.group)]) for sc in scenarios]
+        for q in range(len(_Z)):
+            out.append(
+                replace(
+                    sc,
+                    seed=len(_Z) * sc.seed + q,
+                    group=len(_Z) * sc.group + q,
+                    weight=sc.weight / len(_Z),
+                )
+            )
+    return out
 
 
 def _run_one(args):
@@ -280,13 +256,13 @@ def target_scenarios(town_hall: int, n_angles=8, seeds=(0,), modifier=None):
 def meta_scenarios(mode="ranked", n_angles=8, seeds=(0,), modifier=None, th_mix=None, techniques_on=False, angle_offset=0.0):
     """Scenarios from the real meta builds (meta_armies.py). Ranked: TH18 and
     TH17 attackers (65/35 by default); war: TH16. Within a Town Hall each build
-    is weighted by archetype share x build share.
+    is weighted by archetype share, split across its saved builds.
 
     The approach angles depend only on the build and `n_angles`, not on the
     seeds, so a hold-out set needs `angle_offset` (e.g. half an angle step)
-    to face sides the search never saw; the seed alone changes only the
-    skill quantile (seed % 5, one per build and seed: _assign_skill), the
-    charge flank (seed % 2) and jitter."""
+    to face sides the search never saw. Every seed covers all five skill
+    quantiles (_assign_skill); fresh seeds change the charge flank
+    (seed % 2) and jitter."""
     from .meta_armies import library
 
     th_mix = th_mix or ({18: 0.65, 17: 0.35} if mode == "ranked" else {16: 1.0})
@@ -328,7 +304,20 @@ def side_scenarios(armies, seeds, share, n_sides=8, charge="Royal Champion", cha
                     v[NAMES.index("charge_pick")] = CHARGE_OPTIONS.index(charge) + 0.5
                     v[NAMES.index("charge_healers")] = 0.5
                     v[NAMES.index("charge_len")] = charge_len
-                out.append(Scenario(army, th, float(v[0]), s * n_sides + k, share / (len(armies) * len(seeds) * n_sides), None, g, tuple(map(float, v))))
+                # Bug hunt r2-d #7: preserve this caller's inspect-every-side rule.
+                out.append(
+                    Scenario(
+                        army,
+                        th,
+                        float(v[0]),
+                        s * n_sides + k,
+                        share / (len(armies) * len(seeds) * n_sides),
+                        None,
+                        g,
+                        tuple(map(float, v)),
+                        full_scout=True,
+                    )
+                )
     return _assign_skill(out)
 
 
@@ -350,7 +339,8 @@ def adaptive_scenarios(archive, mode, seeds, share, weights=None):
             for s in seeds:
                 g += 1
                 out.append(Scenario(army, th, float(v[0]), s, share * meta.get(army, 0.05) / tot / (len(vecs) * len(seeds)), None, g, tuple(map(float, v))))
-    return out
+    # Bug hunt r2-d #4: search and validation use the same five skill quantiles.
+    return _assign_skill(out)
 
 
 def blend(scripted, adaptive, share):
@@ -440,19 +430,20 @@ def scouted(scenarios, results, scout=None):
         return [(sc, r, sc.weight) for sc, r in zip(scenarios, results)]
     groups: dict = {}
     for sc, r in zip(scenarios, results):
-        groups.setdefault((sc.army, sc.town_hall, sc.modifier, sc.group), []).append((sc, r))
+        groups.setdefault(
+            (sc.army, sc.town_hall, sc.modifier, sc.group, sc.full_scout), []
+        ).append((sc, r))
     out = []
     for rows in groups.values():
         wg = sum(sc.weight for sc, _ in rows)
-        # groups from 5000 up are "full scout" attackers: they look at every side
-        # and take the best, so the defender is scored on its weakest side
+        # Bug hunt r2-d #7: only explicit full-scout attackers inspect every side.
         # sides are scouted; on each scouted side the attacker also picks the
         # best of its techniques (scripted plan or a hero charge)
         sides: dict = {}
         for row in rows:
             sides.setdefault(round(row[0].angle, 6), []).append(row)
         sides_l = list(sides.values())
-        k = len(sides_l) if rows[0][0].group >= 5000 else min(scout, len(sides_l))
+        k = len(sides_l) if rows[0][0].full_scout else min(scout, len(sides_l))
         combos = list(itertools.combinations(sides_l, k))
         for combo in combos:
             sc, r = max((x for side in combo for x in side), key=lambda x: (attacker_trophies(x[1][0], x[1][1]), x[1][1]))

@@ -596,7 +596,11 @@ def _apply(battle, f: Field) -> bool:
             if (
                 _affected(u)
                 or u.name == "Totem"
-                or (f.extra.get("origin") == "town_hall" and u.name == "Stone Slammer")
+                # game data v18.200.9: TH15 Poison.AffectsSiegeMachines=TRUE -> all sieges.
+                or (
+                    f.extra.get("origin") == "town_hall"
+                    and u.kind in ("siege", "siege_idle")
+                )
             ):
                 _poison(
                     battle,

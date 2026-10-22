@@ -28,9 +28,7 @@
    "Minion": 1,
    "Hog Rider": 1,
    "Goblin": 1,
-   "Flame Flinger": 1,
-   "Stone Slammer": 1,
-   "Troop Launcher": 1
+   "Flame Flinger": 1
   },
   "spells": {
    "Invisibility Spell": 4,
@@ -41,8 +39,6 @@
   "cc": {
    "Super Yeti": 1,
    "Super Valkyrie": 1,
-   "Siege Barracks": 1,
-   "Log Launcher": 1,
    "Totem Spell": 2,
    "Recall Spell": 1
   },
@@ -2258,7 +2254,7 @@
  "notes": [
   "All 219 source JSON files were checked; these are the 10 with relevant=true and army_family=super-minion-air. Support counts distinct videos, including their rules and policies, rather than attacks within a video.",
   "The selected complete army is shared by HnEtYULN4Y0 and dn6J46bW0ts after flattening the former's nested Clan Castle fields. Every other quantified composition differs. This is the most frequent complete composition, not a majority of all 10 videos or a vote on individual equipment items.",
-  "The five listed siege machines are available options, not simultaneous deployments. Flame Flinger is the default; Log Launcher and Troop Launcher variants use the corresponding listed option. The Battle Drill variant requires pTmX2vmv4sc's alternative inventory.",
+  "Wiki: Workshop, only one Siege Machine can be used per battle. HnEtYULN4Y0 and dn6J46bW0ts list Flame Flinger, Stone Slammer, Troop Launcher, Siege Barracks and Log Launcher as available options. The default army selects only Flame Flinger; the other four are not camp troops or Clan Castle cargo. Log Launcher and Troop Launcher variants require that selected siege in the supplied build. The Battle Drill variant requires pTmX2vmv4sc's alternative inventory.",
   "Initial Healer deployment is not explicitly narrated in any extraction. The five Healers remain in the inventory without an invented deployment step. A complete shared deployment sequence for the main Super Minions is also absent; unquantified funnel and late-support drops have not been converted into numerical allocations or an all-troops drop.",
   "The Dragon Duke deployment is supported only by pTmX2vmv4sc's conditional plan to push King, Queen and Duke toward the Town Hall if the Warden survives and maintains his route. inside:Grand Warden is the closest available proxy for that living Warden continuing into the base. Other sources mainly describe the Duke's ability without a deployment step.",
   "t=0 translates the opening Warden deployment. Every delay=0 encodes narrated order when no delay is stated. Caption timestamps are citation times, not attack-relative deployment times. The sources vary on whether Flame Flinger or Warden is placed first; concurrent opening work is approximated by ordered zero-delay steps.",

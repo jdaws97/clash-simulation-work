@@ -18,13 +18,14 @@
    "Apprentice Warden": 1
   },
   "spells": {
-   "Totem Spell": 8,
+   "Totem Spell": 5,
    "Rage Spell": 2,
    "Revive Spell": 1
   },
   "cc": {
    "Meteor Golem": 1,
-   "Troop Launcher": 1
+   "Troop Launcher": 1,
+   "Totem Spell": 3
   },
   "heroes": [
    "Barbarian King",
@@ -1254,6 +1255,7 @@
   }
  ],
  "notes": [
+  "Source: UqzQGpGU0FI, spell_policy and uncertain: eight Totems total; their brewed/donated split is not spoken. game data v18.200.9: Totem.HousingSpace=1, Rage.HousingSpace=2, Revive.HousingSpace=2 -> five brewed Totems, two Rages and one Revive use 11 housing; the other three Totems are donated. This split is inferred from capacity, preserving the cited spell totals.",
   "All nine complete source compositions are different, so there is no most common complete composition. The army uses UqzQGpGU0FI as a representative of the Dragon Duke funnel and grouped Meteor Golem plan. Its hero equipment matches -jNbwwWqnOE. This is a tie-break, not a claim that eight Meteor Golems are the most common count. Four Meteor Golems occur in three sources; five Healers occur in six.",
   "Support counts describe the shared tactical action, not unanimous agreement on troop quantity, exact ordering, loadout or trigger. In particular, the seven sources supporting a main Meteor Golem deployment do not all describe the two-Golem funnel. The explicit Apprentice Warden, King, Queen, Warden and Troop Launcher order comes from -jNbwwWqnOE and UqzQGpGU0FI.",
   "t=0 means the stated start of the attack. Citation times are video timestamps, not attack-clock delays. No source supplies a fixed wait for funnel completion. All zero-delay dependencies preserve narrated order without inventing a duration; they do not establish that the funnel has actually finished.",

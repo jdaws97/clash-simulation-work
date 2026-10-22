@@ -18,11 +18,9 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tools" / "baselab"))
 
-import numpy as np  # noqa: E402
-
-from baselab.evaluate import STRENGTH, defender_trophies, meta_scenarios, run_batch  # noqa: E402
+from baselab.evaluate import meta_scenarios  # noqa: E402
 from baselab.layout import Layout  # noqa: E402
-from proof_scorer import own  # noqa: E402
+from proof_scorer import own, score  # noqa: E402
 
 
 def main():
@@ -33,23 +31,18 @@ def main():
     args = ap.parse_args()
     lays = [own(Layout.load(f)) for f in args.layouts]
     sc = meta_scenarios("ranked", args.angles, tuple(range(args.seeds)))
-    w = np.array([s.weight for s in sc]); w = w / w.sum()
-    jobs = []
-    for l in lays:
-        lj = l.to_json()
-        jobs += [(lj, s, STRENGTH.get(s.army, 1.0)) for s in sc]
-    res = run_batch(jobs)
+    # evaluate.summarise: use scouted outcomes, paired by attacker group.
+    results, w, per = score(lays, sc, return_samples=True)
     k = len(sc)
-    per = [np.array([defender_trophies(int(r[0]), r[1]) for r in res[i * k:(i + 1) * k]], dtype=float) for i in range(len(lays))]
-    three = [np.array([r[0] >= 3 for r in res[i * k:(i + 1) * k]], dtype=float) for i in range(len(lays))]
     print(f"{k} battles per layout (identical across layouts)")
     base = per[0]
-    for f, t, th in zip(args.layouts, per, three):
-        m = (w * t).sum()
+    for f, t, (m, _se, three) in zip(args.layouts, per, results):
         d = t - base
         md = (w * d).sum()
         se = math.sqrt((w ** 2 * (d - md) ** 2).sum())
-        print(f"{Path(f).stem:28s} trophies {m:6.2f}  3-star {(w * th).sum():5.1%}  vs first {md:+6.2f} +- {se:.2f}  (z {md / se if se else 0:+.1f})")
+        print(
+            f"{Path(f).stem:28s} trophies {m:6.2f}  3-star {three:5.1%}  vs first {md:+6.2f} +- {se:.2f}  (z {md / se if se else 0:+.1f})"
+        )
 
 
 if __name__ == "__main__":

@@ -445,9 +445,9 @@ _GAME_RANGES: dict | None = None
 
 
 def _game_ranges():
-    """AttackRange (tiles) per unit from game data v18.200.9 characters.csv
-    and heroes.csv (flying heroes were missed when only characters.csv was
-    read: Dragon Duke kept the wiki's 0.3 tiles against game data 1.25,
+    """AttackRange (tiles) per unit from game data v18.200.9 characters.csv,
+    heroes.csv and pets.csv (flying heroes were missed when only characters.csv
+    was read: Dragon Duke kept the wiki's 0.3 tiles against game data 1.25,
     Minion Prince 3.5 against 4.5). Heroes' AltAttackRange (Grand Warden in
     air mode, 6.5) is stored under "<name>|alt"."""
     global _GAME_RANGES
@@ -457,7 +457,8 @@ def _game_ranges():
 
         _GAME_RANGES = {}
         root = Path(__file__).resolve().parents[3] / "data" / "gamecsv" / "v18.200.9"
-        for file in ("characters.csv", "heroes.csv"):
+        # game data v18.200.9: Electro Owl.AttackRange=550 -> 5.5 tiles, including pets.
+        for file in ("characters.csv", "heroes.csv", "pets.csv"):
             rows = list(csv.reader(open(root / file, encoding="utf-8", errors="replace")))
             i = rows[0].index("AttackRange")
             alt = rows[0].index("AltAttackRange") if "AltAttackRange" in rows[0] else None
@@ -466,11 +467,35 @@ def _game_ranges():
                     _GAME_RANGES[r[0]] = int(r[i]) / 100.0
                     if alt is not None and len(r) > alt and r[alt].strip():
                         _GAME_RANGES[r[0] + "|alt"] = int(r[alt]) / 100.0
+        # game data v18.200.9: Firemite Spawn.AttackRange=200, Ice Hound Pup=225,
+        # GW Equipment Lavaloon=0, Spell Bat=30 -> resolve engine names to CSV rows.
+        aliases = {
+            "P.E.K.K.A": "PEKKA",
+            "Pumpkin Barbarian": "Pumpkin Barbarian Armored",
+            "M.E.C.H.A": "MECHA",
+            "C.O.O.K.I.E": "COOKIE",
+            "Debt Collector": "Tax Collector",
+            "K.A.N.E": "KANE",
+            "The Disarmer": "Disarmer",
+            "L.A.S.S.I": "LASSI",
+            "Greedy Raven": "Crow",
+            "Frostmite": "Icemite",
+            "Firemite": "Firemite Spawn",
+            "Ice Pup": "Ice Hound Pup",
+            "Lavaloon": "GW Equipment Lavaloon",
+            "Lavaloon Pup": "GW Equipment Lavaloon Pup",
+            "Spell Skeleton": "Spell Shielded Skeleton",
+            "Bat": "Spell Bat",
+            "Henchman": "MP Equipment Henchman",
+        }
+        for name, game_name in aliases.items():
+            if game_name in _GAME_RANGES:
+                _GAME_RANGES[name] = _GAME_RANGES[game_name]
     return _GAME_RANGES
 
 
 def unit_numbers(name: str, level: int) -> dict:
-    """Read wiki numbers first, using game data only for missing values."""
+    """Read unit numbers, preferring game data for HP, DPS, speed and range."""
     a = stats.attrs(name)
     # Game data first for hitpoints and DPS (stats.get prefers it under the
     # lowercase keys; the wiki columns are the fallback). This also covers the
@@ -550,12 +575,9 @@ def unit_numbers(name: str, level: int) -> dict:
     if name == "Yetimite":
         # Wiki: Yeti/Yetimite explicitly attacks both air and ground.
         hits_air = hits_ground = True
-    if flying and _os.environ.get("BASELAB_FLYER_RANGE", "gamedata") == "gamedata":
-        # The wiki ranges are 0.5 tile longer than game data AttackRange for
-        # every flying troop (Dragon 3.0 vs 2.5, Minion 2.75 vs 2.25, Healer 5
-        # vs 4.5 ...). Game data wins; the real defense replay of 2026-10-21
-        # agrees (TH16 Dragons: 3rd star 72.6 s with game-data ranges vs
-        # 61.9 s with wiki ranges; real 83.2 s; docs/VIDEO_MEASUREMENTS.md).
+    if _os.environ.get("BASELAB_FLYER_RANGE", "gamedata") == "gamedata":
+        # game data v18.200.9: Flame Flinger.AttackRange=1005 -> 10.05 tiles;
+        # Super Wizard.AttackRange=350 -> 3.5 tiles, regardless of registry flying flags.
         # BASELAB_FLYER_RANGE=wiki restores the wiki values.
         gd = _game_ranges().get(name)
         if gd is not None:
