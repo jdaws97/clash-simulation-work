@@ -177,6 +177,36 @@ STAGE2_ARMIES = [
 ]
 
 
+# Stage 3: heroes on both sides, with the user's loadouts (equipment, pets);
+# abilities fire through the plan's automatic on-KO use. Fixed drops: the
+# heroes first, then the army; no spells. (army id, base)
+STAGE3_ARMIES = ["custom:user-rr", "custom:user-druid-ruin"]
+
+
+def hero_stage(army_id, angle, seed):
+    """Stage plan carrying a real build's heroes, loadouts and levels."""
+    from baselab.meta_armies import build_by_id, make_plan
+    from mechanic_tests import Stage
+
+    build = build_by_id(army_id)
+    ref = make_plan(army_id, angle, 16, seed)
+    heroes = list(build["heroes"])
+    troops = [(name, n) for name, n in build["troops"].items()]
+    siege = next((name for name in build["cc"] if name in ("Siege Barracks", "Log Launcher", "Wall Wrecker",
+                                                           "Battle Blimp", "Stone Slammer", "Flame Flinger",
+                                                           "Battle Drill", "Troop Launcher")), None)
+    cargo = [name for name, n in build["cc"].items() for _ in range(int(n))
+             if name != siege and not name.endswith("Spell")]
+    drops = edge_drops([(h, 1) for h in heroes] + troops + ([(siege, 1)] if siege else []), angle, seed)
+    drops = [(t, name, x, y, ref.hero_levels.get(name)) for t, name, x, y, _ in drops]
+    plan = Stage(drops)
+    for attr in ("loadouts", "hero_levels", "equipment_levels", "pet_levels", "troop_levels", "clan_castle_level",
+                 "auto_ability_on_ko"):
+        setattr(plan, attr, getattr(ref, attr))
+    plan.cc_troops = cargo
+    return plan
+
+
 def scenario(stage, k):
     """Python Battle for parity scenario k of a stage (not yet run)."""
     from baselab.engine.battle import Battle
@@ -203,6 +233,14 @@ def scenario(stage, k):
         plan = Stage(drops)
         plan.cc_troops = list(cargo)  # read by Battle._attack_cargo
         return Battle(lay, plan, seed=seed, town_hall=16)
+    if stage == 3:
+        n_sides = 4
+        army = STAGE3_ARMIES[k % len(STAGE3_ARMIES)]
+        base = STAGE1_BASES[(k // len(STAGE3_ARMIES)) % len(STAGE1_BASES)]
+        side = k // (len(STAGE3_ARMIES) * len(STAGE1_BASES)) % n_sides
+        angle, seed = 2 * math.pi * side / n_sides + 0.1 + 0.37 * k, 400 + k
+        lay = own_layout(base)  # defending heroes stay on their banners
+        return Battle(lay, hero_stage(army, angle, seed), seed=seed, town_hall=16)
     raise ValueError(f"no stage {stage}")
 
 
