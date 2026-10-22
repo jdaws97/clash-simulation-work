@@ -1,38 +1,126 @@
-//! Ports effects.py:9-16 damage provenance; combat effect hooks follow later.
+//! Ports effects.py:10-124: ordered status accounting and damage provenance.
 
-use crate::state::{Battle, EntityRef, UnitRef};
+use crate::state::{Battle, Building, EntityRef, StatusSource, Team, Unit, UnitRef};
 
-// effects.py:9-16: _src is deliberately not part of the restored context.
-pub fn damage_source(
+// effects.py:10-16: _src is deliberately NOT restored by this context.
+// The caller owns any separate _src save/restore required by its Python rule.
+pub fn damage_source<R>(
     battle: &mut Battle,
     actor: Option<EntityRef>,
     effect: &str,
-    action: impl FnOnce(&mut Battle),
-) {
+    action: impl FnOnce(&mut Battle) -> R,
+) -> R {
     let previous_actor = battle.src_obj;
     let previous_effect = std::mem::replace(&mut battle.effect, effect.to_owned());
     battle.src_obj = actor;
-    action(battle);
+    let result = action(battle);
     battle.src_obj = previous_actor;
     battle.effect = previous_effect;
+    result
 }
 
-pub fn tick_spells(_battle: &mut Battle) {
-    // TASK 1c: port spells.py:258 tick, including defensive fields in stage 1.
+// effects.py:31-32: reassignment retains the dictionary's insertion position.
+pub fn add_slow(unit: &mut Unit, source: StatusSource, movement: f64, attack: f64, until: f64) {
+    let value = (movement, attack, until);
+    if let Some((_, old)) = unit.extra.slows.iter_mut().find(|(key, _)| *key == source) {
+        *old = value;
+    } else {
+        unit.extra.slows.push((source, value));
+    }
 }
 
-pub fn resolve_pending(_battle: &mut Battle) {
-    // TASK 1b: port battle.py:960 _resolve_pending.
+// effects.py:35-44: the moving-unit form of the shared Python rule.
+pub fn slow_mult(unit: &Unit, t: f64, movement: bool) -> f64 {
+    let mut result = if movement {
+        if t < unit.move_slow_until {
+            unit.move_slow
+        } else {
+            1.0
+        }
+    } else if t < unit.atk_slow_until {
+        unit.atk_slow
+    } else {
+        1.0
+    };
+    for (_, (move_factor, attack_factor, until)) in &unit.extra.slows {
+        if t < *until {
+            result *= if movement {
+                *move_factor
+            } else {
+                *attack_factor
+            };
+        }
+    }
+    result
 }
 
-pub fn guardians_tick(_battle: &mut Battle) {
-    // TASK 1d: port heroes.py guardians_tick (no guardians in stage 1).
+// effects.py:35-44; defense.py:597-598: building callers use attack slowdown.
+pub fn building_slow_mult(building: &Building, t: f64) -> f64 {
+    let mut result = if t < building.atk_slow_until {
+        building.atk_slow
+    } else {
+        1.0
+    };
+    for (_, (_, attack, until)) in &building.extra.slows {
+        if t < *until {
+            result *= *attack;
+        }
+    }
+    result
 }
 
-pub fn apply_auras(_battle: &mut Battle) {
-    // TASK 1d: port heroes.py apply_auras (no hero auras in stage 1).
+// effects.py:47-50.
+pub fn invulnerable(unit: &Unit, t: f64) -> bool {
+    t < unit.invuln_until || unit.extra.tomes.iter().any(|(_, until)| t < *until)
 }
 
-pub fn new_member(_battle: &mut Battle, _unit: UnitRef) {
-    // TASK 1d: port heroes.py new_member (no hero auras in stage 1).
+// effects.py:53-59.
+pub fn torch_stats(unit: &Unit, t: f64) -> (f64, f64) {
+    let (mut speed, mut reduction) = (0.0_f64, 0.0_f64);
+    for (_, (until, added_speed, reduced)) in &unit.extra.torches {
+        if t < *until {
+            speed = speed.max(*added_speed);
+            reduction = reduction.max(*reduced);
+        }
+    }
+    (speed, reduction)
+}
+
+// effects.py:62-74: bonus health absorbs damage before base health.
+pub fn health_aura(unit: &mut Unit, percentage: f64, cap: f64) {
+    let capacity = (unit.base_max_hp * percentage).min(cap);
+    if capacity == unit.aura_bonus {
+        return;
+    }
+    let remaining = std::mem::replace(&mut unit.extra.aura_hp, 0.0);
+    unit.hp = 0.0_f64.max(unit.hp - remaining);
+    unit.max_hp -= unit.aura_bonus;
+    let grant = (unit.hp * percentage).min(cap);
+    unit.aura_bonus = capacity;
+    unit.max_hp += capacity;
+    unit.hp += grant;
+    unit.extra.aura_hp = grant;
+}
+
+// effects.py:77-105: only hero equipment can receive death housing.
+pub fn record_death(battle: &mut Battle, victim: UnitRef) {
+    let unit = battle.unit(victim);
+    if unit.team != Team::Atk || matches!(unit.kind.as_str(), "siege" | "siege_idle")
+        || unit.extra.clone || unit.extra.mirror_clone || unit.extra.recalled.is_some()
+    {
+        return;
+    }
+    for prince in battle.attackers_pool() {
+        if prince.kit.is_some() {
+            todo!("stage 3: effects.py:96 Dark Crown death housing");
+        }
+    }
+}
+
+// effects.py:108-124.
+pub fn crown_buff(unit: &mut Unit) -> f64 {
+    if unit.kit.is_none() {
+        return 0.0;
+    }
+    todo!("stage 3: effects.py:110 Dark Crown equipment buff");
 }

@@ -35,6 +35,8 @@ type Frontier = BinaryHeap<Reverse<(u32, usize)>>;
 pub enum TargetIdentity {
     Building(usize),
     Wall(i32, i32),
+    // battle.py:1609: unit identity is tagged to avoid building-id collisions.
+    Unit(usize),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -151,7 +153,7 @@ impl Grid {
     ) -> Field {
         // battle.py:1604-1611: callers pass max(range, GOAL_REACH_MIN),
         // or max(0.5, GOAL_REACH_MIN) and half=0 for a positioning goal.
-        // Only normal wall mode is used here, so its cost identifies the mode.
+        // Wall cost separates normal and ignore fields (fly bypasses fields).
         let key = CacheKey::Target {
             identity,
             x: float_key(cx),

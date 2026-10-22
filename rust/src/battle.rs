@@ -1,11 +1,11 @@
-//! Ports battle.py:212-234,370-406,427-577,787-958,1079-1085.
-//! Combat subsystems are deliberately empty until TASK 1b/1c/1d.
+//! Ports battle.py:212-234,370-577,787-958,1079-1085.
+//! Damage, movement and AI continue in combat.rs, movement.rs and ai.rs.
 
 use crate::geom::{round6, round_half_even};
 use crate::state::*;
 use crate::stats::Level;
 use crate::trace::{exported_value, round_decimal, LogValue};
-use crate::{defense, effects, traps, units};
+use crate::{defense, effects, heroes, spells, traps, units};
 
 const BUCKET: f64 = 4.0;
 const SCOUT_TIME: f64 = 30.0;
@@ -106,7 +106,8 @@ impl Battle {
             };
             self.buckets[index].1.push(unit.reference());
         }
-        effects::apply_auras(self);
+        self.buckets_initialized = true;
+        heroes::apply_auras(self);
     }
 
     pub fn attackers_near(&self, x: f64, y: f64, radius: f64) -> Vec<UnitRef> {
@@ -319,7 +320,7 @@ impl Battle {
         pool.push(unit);
         units::on_spawn(self, reference);
         if team == Team::Atk {
-            effects::new_member(self, reference);
+            heroes::new_member(self, reference);
         }
         if let Some(owner) = options.owner {
             units::inherit_clone(self, owner, reference);
@@ -369,7 +370,6 @@ impl Battle {
             },
         );
         let strength = self.plan.strength();
-        let hero_mult = self.atk_hero_mult;
         let unit = self.unit_mut(reference);
         // battle.py:469-480: Stage's default Warden mode is ground.
         if unit.name == "Grand Warden" {
@@ -384,13 +384,7 @@ impl Battle {
             unit.dmg *= strength;
         }
         if unit.is_hero {
-            // TASK 1d: port heroes.equip when attacking heroes are supported.
-            if hero_mult != 1.0 {
-                unit.hp *= hero_mult;
-                unit.max_hp *= hero_mult;
-                unit.base_max_hp *= hero_mult;
-                unit.dmg *= hero_mult;
-            }
+            todo!("stage 3: battle.py:482 attacking hero equipment and league penalty");
         }
         let is_hero = unit.is_hero;
         let housing = unit.housing;
@@ -455,7 +449,10 @@ impl Battle {
             return false;
         }
         if self.pending.iter().any(|pending| matches!(pending.actor,
-            Some(EntityRef::Unit(UnitRef { team: Team::Atk, .. })))) {
+            Some(EntityRef::Unit(UnitRef {
+                team: Team::Atk,
+                ..
+            })))) {
             return false;
         }
         !self.fields.iter().any(|field| ["lightning", "quake", "revive_cast", "revive_due",
@@ -534,25 +531,25 @@ impl Battle {
         self.src_obj = None;
         self.src = "spell".to_owned();
         self.effect = "spell".to_owned();
-        effects::tick_spells(self);
-        effects::resolve_pending(self);
+        spells::tick(self);
+        self.resolve_pending();
         self.src = "trap".to_owned();
         self.src_obj = None;
         self.effect = "trap".to_owned();
         traps::tick(self);
-        units::castle(self);
-        effects::guardians_tick(self);
+        self.castle();
+        heroes::guardians_tick(self);
         defense::bell_tick(self);
         defense::builders_tick(self);
         let attackers: Vec<_> = self.attackers_pool().map(Unit::reference).collect();
         for reference in attackers {
             if self.unit(reference).alive {
                 effects::damage_source(self, Some(EntityRef::Unit(reference)), "attack", |battle| {
-                    units::act_attacker(battle, reference);
+                    battle.act_attacker(reference);
                 });
             }
         }
-        units::separate(self);
+        self.separate();
         for index in 0..self.buildings.len() {
             let building = &self.buildings[index];
             if building.alive && building.weapon.is_some() {
@@ -569,7 +566,7 @@ impl Battle {
             if unit.alive {
                 self.src = format!("unit:{}", unit.name);
                 effects::damage_source(self, Some(EntityRef::Unit(reference)), "attack", |battle| {
-                    units::act_defender(battle, reference);
+                    battle.act_defender(reference);
                 });
             }
         }
@@ -600,7 +597,11 @@ impl Battle {
 
     fn plan_on_tick(&mut self) {
         match &self.plan {
-            Plan::Stage { .. } => {}
+            Plan::Stage {
+                ..
+            }
+            => {
+            }
         }
     }
 

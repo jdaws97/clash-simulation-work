@@ -223,6 +223,15 @@ fn known_type(name: &str) -> bool {
         | "Field" | "Pending" | "Builder" | "Deployment" | "Stage" | "BuildingType")
 }
 
+fn status_source(key: &str) -> StatusSource {
+    if let Ok(Json::Arr(parts)) = json::parse(key) {
+        if parts.len() == 2 && parts[0].str() == "field" {
+            return StatusSource::Field(parts[1].i64());
+        }
+    }
+    StatusSource::Name(key.to_owned())
+}
+
 struct Resolver {
     buildings: HashMap<BuildingId, usize>,
     walls: HashMap<(i32, i32), WallId>,
@@ -287,7 +296,10 @@ impl Resolver {
             let id = UnitId(n.field("$unit").usize());
             let team = n.field("team").team();
             match self.units.get(&id) {
-                Some((actual, _)) if *actual == team => EntityRef::Unit(UnitRef { id, team }),
+                Some((actual, _)) if *actual == team => EntityRef::Unit(UnitRef {
+                    id,
+                    team
+                }),
                 _ => n.fail("unknown unit reference or wrong team"),
             }
         } else if n.value.get("$trap").is_some() {
@@ -365,7 +377,8 @@ impl Resolver {
                     match tag.string().as_str() {
                         "Building" | "Wall" | "Unit" | "UnitSpec" | "Weapon" | "Trap"
                         | "Field" | "Pending" | "Builder" | "Deployment" | "Stage"
-                        | "BuildingType" => {}
+                        | "BuildingType" => {
+                        }
                         _ => tag.fail("unknown $type"),
                     }
                 }
@@ -465,6 +478,11 @@ impl Resolver {
                     } else {
                         Some(UnitId(v.usize()))
                     };
+                }
+                "slows" => {
+                    extra.slows = v.object().into_iter()
+                        .map(|(key, value)| (status_source(&key), value.triple()))
+                        .collect();
                 }
                 _ => extra.unknown.push((key, self.value(v))),
             }
@@ -570,7 +588,7 @@ impl Resolver {
                 "leaping" => extra.leaping = v.boolean(),
                 "sprung" => extra.sprung = v.boolean(),
                 "preferred_remaining" => extra.preferred_remaining = v.boolean(),
-                "finish_preferred" => extra.finish_preferred = v.boolean(),
+                "finish_preferred" => extra.finish_preferred = self.optional_building_ref(v),
                 "warden_group" => extra.warden_group = v.boolean(),
                 "clone" => extra.clone = v.boolean(),
                 "mirror_clone" => extra.mirror_clone = v.boolean(),
@@ -591,35 +609,77 @@ impl Resolver {
                 "long_shots" => extra.long_shots = v.integer(),
                 "burst_left" => extra.burst_left = v.integer(),
                 "eq_n" => extra.eq_n = v.usize(),
+                "barrels" => extra.barrels = v.integer(),
+                "bear_at" => extra.bear_at = v.number(),
+                "knights" => extra.knights = v.integer(),
+                "mite_dmg" => extra.mite_dmg = v.number(),
+                "mites" => extra.mites = v.integer(),
+                "next" => extra.next = v.number(),
+                "next_log" => extra.next_log = v.number(),
+                "next_mite" => extra.next_mite = v.number(),
+                "next_summon" => extra.next_summon = v.number(),
+                "queue" => extra.queue = v.array().iter().map(Node::string).collect(),
+                "skeletons" => extra.skeletons = v.array().into_iter().map(|n| self.unit_ref(n)).collect(),
+                "aura_next" => extra.aura_next = v.optional_number(),
+                "bb" => extra.bb = self.optional_unit_ref(v),
+                "delivery_committed" => extra.delivery_committed = v.boolean(),
+                "enraged" => extra.enraged = v.boolean(),
+                "next_bomb" => extra.next_bomb = v.number(),
+                "vacuum" => {
+                    let pair = v.tuple(2);
+                    extra.vacuum = Some((self.building_ref(pair[0].clone()), pair[1].number()));
+                }
+                "wall_pulses" => {
+                    extra.wall_pulses = v.object().into_iter().map(|(key, n)| {
+                        let encoded = json::parse(&key).expect("encoded wall identity");
+                        let parts = Node::new(&encoded, &n.path).tuple(3);
+                        let coordinates = (parts[1].i32(), parts[2].i32());
+                        (self.walls[&coordinates], n.number())
+                    }).collect();
+                }
+                "hide_at" => extra.hide_at = v.optional_number(),
+                "next_mite_damage" => extra.next_mite_damage = v.number(),
+                "bouncing_frostmite" => extra.bouncing_frostmite = v.boolean(),
+                "waiting" => extra.waiting = v.boolean(),
+                "poison_exit" => {
+                    let parts = v.tuple(2);
+                    let key = parts[0].tuple(2);
+                    extra.poison_exit = Some((
+                        u64::try_from(key[0].integer()).expect("nonnegative grid version"),
+                        key[1].array().iter().map(|n| u64::try_from(n.integer()).expect("nonnegative field identity")).collect(),
+                        parts[1].pair(),
+                    ));
+                }
+                "clone_casts" => extra.clone_casts = v.array().iter().map(|n| n.optional_source().expect("clone source")).collect(),
                 "burn_tick" => extra.burn_tick = v.optional_number(),
                 "rage_effects" => {
                     extra.rage_effects = v.object().into_iter()
-                        .map(|(key, value)| (key, value.triple()))
+                        .map(|(key, value)| (status_source(&key), value.triple()))
                         .collect();
                 }
                 "haste_effects" => {
                     extra.haste_effects = v.object().into_iter()
-                        .map(|(key, value)| (key, value.pair()))
+                        .map(|(key, value)| (status_source(&key), value.pair()))
                         .collect();
                 }
                 "slows" => {
                     extra.slows = v.object().into_iter()
-                        .map(|(key, value)| (key, value.triple()))
+                        .map(|(key, value)| (status_source(&key), value.triple()))
                         .collect();
                 }
                 "torches" => {
                     extra.torches = v.object().into_iter()
-                        .map(|(key, value)| (key, value.triple()))
+                        .map(|(key, value)| (status_source(&key), value.triple()))
                         .collect();
                 }
                 "iceblocks" => {
                     extra.iceblocks = v.object().into_iter()
-                        .map(|(key, value)| (key, value.pair()))
+                        .map(|(key, value)| (status_source(&key), value.pair()))
                         .collect();
                 }
                 "tomes" => {
                     extra.tomes = v.object().into_iter()
-                        .map(|(key, value)| (key, value.number()))
+                        .map(|(key, value)| (status_source(&key), value.number()))
                         .collect();
                 }
                 _ => extra.unknown.push((key, self.value(v))),
@@ -654,7 +714,10 @@ impl Resolver {
         let mut extra = FieldExtra::default();
         for (key, v) in n.object() {
             match key.as_str() {
-                "pulses" => extra.pulses = v.usize(),
+                "pulses" => {
+                    extra.pulses = v.usize();
+                    extra.has_pulses = true;
+                }
                 "delivered" => extra.delivered = v.usize(),
                 "gap" => extra.gap = v.optional_number(),
                 "atk" => extra.atk = v.number(),
@@ -665,6 +728,9 @@ impl Resolver {
                 "hero_mult" => extra.hero_mult = v.number(),
                 "next_apply" => extra.next_apply = v.optional_number(),
                 "source" => extra.source = v.optional_source(),
+                "victims" => extra.victims = v.array().iter().map(|n| UnitId(n.usize())).collect(),
+                "boost_time" => extra.boost_time = v.number(),
+                "defense_damage" => extra.defense_damage = v.optional_number(),
                 _ => extra.unknown.push((key, self.value(v))),
             }
         }
@@ -692,6 +758,11 @@ impl Resolver {
                 "travel" => extra.travel = v.number(),
                 "speed" => extra.speed = v.number(),
                 "hit" => extra.hit = v.array().into_iter().map(|item| self.reference(item)).collect(),
+                "hero_impact" => extra.hero_impact = v.optional_string(),
+                "summon" => {
+                    let parts = v.tuple(4);
+                    extra.summon = Some((parts[0].string(), parts[1].level(), parts[2].string(), self.optional_unit_ref(parts[3].clone())));
+                }
                 _ => extra.unknown.push((key, self.value(v))),
             }
         }
@@ -1292,6 +1363,7 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         catalog,
         rng: Some(PyRandom::from_state(&words)),
         dt,
+        windup: env.field("windup").boolean(),
         fast_end: env.field("fast_end").boolean(),
         modifier: s.field("modifier").optional_string(),
         def_mult: s.field("def_mult").number(),
@@ -1350,7 +1422,21 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         src: s.field("_src").string(),
         src_obj: resolver.optional_ref(s.field("_src_obj")),
         effect: s.field("_effect").string(),
-        poison: resolver.map(s.field("_poison")),
+        poison: s.field("_poison").object().into_iter().map(|(key, n)| {
+            let encoded = json::parse(&key).expect("encoded poison key");
+            let parts = Node::new(&encoded, &n.path).tuple(3);
+            PoisonState {
+                unit: resolver.unit_ref(n.field("u")),
+                origin: n.optional("origin").map_or_else(|| "spell".to_owned(), |v| v.string()),
+                source: parts[2].optional_source(),
+                since: n.field("since").number(),
+                dps: n.field("dps").number(),
+                ramp: n.field("ramp").boolean(),
+                until: n.field("until").number(),
+                slow: n.field("slow").number(),
+                attack: n.field("atk").number(),
+            }
+        }).collect(),
         clones: s.field("_clones").array().into_iter().map(|n| resolver.unit_ref(n)).collect(),
         total_counted: s.field("total_counted").usize(),
         destroyed_counted: s.field("destroyed_counted").usize(),
@@ -1371,6 +1457,8 @@ pub fn from_json(value: &Json, catalog: Rc<Catalog>, path: &str) -> Battle {
         unit_indices: resolver.units.clone(),
         buckets: Vec::new(),
         bucket_indices: HashMap::new(),
+        buckets_initialized: false,
+        guardian: s.optional("guardian").and_then(|n| resolver.optional_unit_ref(n)),
         unknown_scalars: Vec::new(),
     };
     let known_scalars = &[

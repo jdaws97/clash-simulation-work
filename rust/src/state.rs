@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use crate::catalog::{Catalog, UnitSpec};
-use crate::geom::edge_distance;
+use crate::geom::{edge_distance, py_hypot};
 use crate::grid::Grid;
 use crate::pyrandom::PyRandom;
 use crate::stats::Level;
@@ -64,6 +64,12 @@ pub enum Value {
 
 pub type ExtraMap = Vec<(String, Value)>;
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum StatusSource {
+    Name(String),
+    Field(i64),
+}
+
 // defense.py:547-554: the Town Hall's delayed death-poison configuration.
 #[derive(Clone, Debug)]
 pub struct PoisonConfig {
@@ -98,6 +104,7 @@ pub struct BuildingExtra {
     pub yellow_until: f64,
     pub rubble_taken: bool,
     pub rubble_claim: Option<UnitId>,
+    pub slows: Vec<(StatusSource, (f64, f64, f64))>,
     pub unknown: ExtraMap,
 }
 
@@ -108,6 +115,7 @@ impl Default for BuildingExtra {
             yellow_until: 0.0,
             rubble_taken: false,
             rubble_claim: None,
+            slows: Vec::new(),
             unknown: Vec::new(),
         }
     }
@@ -262,7 +270,7 @@ pub struct UnitExtra {
     pub leaping: bool,
     pub sprung: bool,
     pub preferred_remaining: bool,
-    pub finish_preferred: bool,
+    pub finish_preferred: Option<BuildingId>,
     pub warden_group: bool,
     pub clone: bool,
     pub mirror_clone: bool,
@@ -284,12 +292,37 @@ pub struct UnitExtra {
     pub burst_left: i64,
     pub eq_n: usize,
     pub burn_tick: Option<f64>,
-    pub rage_effects: Vec<(String, (f64, f64, f64))>,
-    pub haste_effects: Vec<(String, (f64, f64))>,
-    pub slows: Vec<(String, (f64, f64, f64))>,
-    pub torches: Vec<(String, (f64, f64, f64))>,
-    pub iceblocks: Vec<(String, (f64, f64))>,
-    pub tomes: Vec<(String, f64)>,
+    pub rage_effects: Vec<(StatusSource, (f64, f64, f64))>,
+    pub haste_effects: Vec<(StatusSource, (f64, f64))>,
+    pub slows: Vec<(StatusSource, (f64, f64, f64))>,
+    pub torches: Vec<(StatusSource, (f64, f64, f64))>,
+    pub iceblocks: Vec<(StatusSource, (f64, f64))>,
+    pub tomes: Vec<(StatusSource, f64)>,
+    // units.py:249-568,626-847: runtime state, including later-stage branches.
+    pub barrels: i64,
+    pub bear_at: f64,
+    pub knights: i64,
+    pub mite_dmg: f64,
+    pub mites: i64,
+    pub next: f64,
+    pub next_log: f64,
+    pub next_mite: f64,
+    pub next_summon: f64,
+    pub queue: Vec<String>,
+    pub skeletons: Vec<UnitRef>,
+    pub aura_next: Option<f64>,
+    pub bb: Option<UnitRef>,
+    pub delivery_committed: bool,
+    pub enraged: bool,
+    pub next_bomb: f64,
+    pub vacuum: Option<(BuildingId, f64)>,
+    pub wall_pulses: Vec<(WallId, f64)>,
+    pub hide_at: Option<f64>,
+    pub next_mite_damage: f64,
+    pub bouncing_frostmite: bool,
+    pub waiting: bool,
+    pub clone_casts: Vec<(String, i64)>,
+    pub poison_exit: Option<(u64, Vec<u64>, (f64, f64))>,
     pub unknown: ExtraMap,
 }
 
@@ -327,7 +360,7 @@ impl Default for UnitExtra {
             leaping: false,
             sprung: false,
             preferred_remaining: false,
-            finish_preferred: false,
+            finish_preferred: None,
             warden_group: false,
             clone: false,
             mirror_clone: false,
@@ -355,6 +388,30 @@ impl Default for UnitExtra {
             torches: Vec::new(),
             iceblocks: Vec::new(),
             tomes: Vec::new(),
+            barrels: 0,
+            bear_at: 1e9,
+            knights: 0,
+            mite_dmg: 0.0,
+            mites: 0,
+            next: 0.0,
+            next_log: 0.0,
+            next_mite: 0.0,
+            next_summon: 0.0,
+            queue: Vec::new(),
+            skeletons: Vec::new(),
+            aura_next: None,
+            bb: None,
+            delivery_committed: false,
+            enraged: false,
+            next_bomb: 0.0,
+            vacuum: None,
+            wall_pulses: Vec::new(),
+            hide_at: None,
+            next_mite_damage: 400.0,
+            bouncing_frostmite: false,
+            waiting: false,
+            clone_casts: Vec::new(),
+            poison_exit: None,
             unknown: Vec::new(),
         }
     }
@@ -406,6 +463,10 @@ pub struct FieldExtra {
     pub hero_mult: f64,
     pub next_apply: Option<f64>,
     pub source: Option<(String, i64)>,
+    pub victims: HashSet<UnitId>,
+    pub boost_time: f64,
+    pub defense_damage: Option<f64>,
+    pub has_pulses: bool,
     pub unknown: ExtraMap,
 }
 
@@ -423,6 +484,10 @@ impl Default for FieldExtra {
             hero_mult: 1.0,
             next_apply: None,
             source: None,
+            victims: HashSet::new(),
+            boost_time: 1.0,
+            defense_damage: None,
+            has_pulses: false,
             unknown: Vec::new(),
         }
     }
@@ -446,6 +511,8 @@ pub struct PendingExtra {
     pub travel: f64,
     pub speed: f64,
     pub hit: Vec<EntityRef>,
+    pub summon: Option<(String, Level, String, Option<UnitRef>)>,
+    pub hero_impact: Option<String>,
     pub unknown: ExtraMap,
 }
 
@@ -467,6 +534,8 @@ impl Default for PendingExtra {
             travel: 0.0,
             speed: 0.0,
             hit: Vec::new(),
+            summon: None,
+            hero_impact: None,
             unknown: Vec::new(),
         }
     }
@@ -679,6 +748,55 @@ pub struct Builder {
     pub repair_boost: f64,
 }
 
+impl Pending {
+    // entities.py:277-292: Python dataclass defaults; add_pending fills context.
+    pub fn new(
+        at: f64,
+        x: f64,
+        y: f64,
+        radius: f64,
+        damage: f64,
+        hits_air: bool,
+        hits_ground: bool,
+        src: &str,
+    ) -> Self {
+        Self {
+            at,
+            x,
+            y,
+            radius,
+            damage,
+            hits_air,
+            hits_ground,
+            src: src.to_owned(),
+            falloff: false,
+            team: Team::Atk,
+            extra: PendingExtra::default(),
+            actor: None,
+            effect: None,
+            target: None,
+            released_at: None,
+        }
+    }
+}
+
+impl Field {
+    // entities.py:262-274: the default field belongs to the attacker.
+    pub fn new(kind: &str, x: f64, y: f64, radius: f64, until: f64) -> Self {
+        Self {
+            kind: kind.to_owned(),
+            x,
+            y,
+            radius,
+            until,
+            team: Team::Atk,
+            value: 0.0,
+            extra: FieldExtra::default(),
+            started: 0.0,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Deployment {
     pub time: f64,
@@ -693,6 +811,11 @@ pub struct Deployment {
 }
 
 impl Building {
+    // entities.py:15-16.
+    pub fn dist(&self, x: f64, y: f64) -> f64 {
+        py_hypot(self.x - x, self.y - y)
+    }
+
     pub fn edge_distance(&self, x: f64, y: f64) -> f64 {
         edge_distance(x, y, self.x, self.y, self.half_hit)
     }
@@ -704,12 +827,38 @@ impl Building {
 }
 
 impl Wall {
+    // entities.py:15-16.
+    pub fn dist(&self, x: f64, y: f64) -> f64 {
+        py_hypot(self.x - x, self.y - y)
+    }
+
     pub fn edge_distance(&self, x: f64, y: f64) -> f64 {
         edge_distance(x, y, self.x, self.y, 0.5)
     }
 }
 
 impl Unit {
+    // entities.py:15-16: subtract in the same direction as Python dist().
+    pub fn dist(&self, x: f64, y: f64) -> f64 {
+        py_hypot(self.x - x, self.y - y)
+    }
+
+    // entities.py:182-197: needed by delayed healing impacts.
+    pub fn heal(&mut self, amount: f64) -> f64 {
+        if !self.alive || self.extra.recalled.is_some() {
+            return 0.0;
+        }
+        if self.kit.is_some() {
+            todo!("stage 3: entities.py:187 Phoenix healing restriction");
+        }
+        let gained = 0.0_f64.max(amount.min(self.max_hp - self.hp));
+        self.hp += gained;
+        if self.aura_bonus != 0.0 {
+            self.extra.aura_hp = self.extra.aura_hp.max(self.hp - self.base_max_hp);
+        }
+        gained
+    }
+
     pub fn reference(&self) -> UnitRef {
         UnitRef {
             id: self.id,
@@ -759,14 +908,21 @@ pub enum Plan {
 impl Plan {
     pub fn strength(&self) -> f64 {
         match self {
-            Self::Stage { strength, .. } => *strength,
+            Self::Stage {
+                strength,
+                ..
+            }
+            => *strength,
         }
     }
 
     // mechanic_tests.py:43-48: Stage has no pending work and no exported callbacks.
     pub fn has_pending(&self) -> bool {
         match self {
-            Self::Stage { .. } => false,
+            Self::Stage {
+                ..
+            }
+            => false,
         }
     }
 }
@@ -800,11 +956,26 @@ pub struct BattleResult {
     pub log: Vec<Vec<LogValue>>,
 }
 
+// spells.py:882-959: insertion-ordered poison dictionary entries.
+#[derive(Clone, Debug)]
+pub struct PoisonState {
+    pub unit: UnitRef,
+    pub origin: String,
+    pub source: Option<(String, i64)>,
+    pub since: f64,
+    pub dps: f64,
+    pub ramp: bool,
+    pub until: f64,
+    pub slow: f64,
+    pub attack: f64,
+}
+
 pub struct Battle {
     pub catalog: Rc<Catalog>,
     // battle.py:148 random.Random(seed), restored from the exported state.
     pub rng: Option<PyRandom>,
     pub dt: f64,
+    pub windup: bool,
     pub fast_end: bool,
     pub modifier: Option<String>,
     pub def_mult: f64,
@@ -857,7 +1028,7 @@ pub struct Battle {
     pub src: String,
     pub src_obj: Option<EntityRef>,
     pub effect: String,
-    pub poison: ExtraMap,
+    pub poison: Vec<PoisonState>,
     pub clones: Vec<UnitRef>,
     pub total_counted: usize,
     pub destroyed_counted: usize,
@@ -879,10 +1050,39 @@ pub struct Battle {
     pub unit_indices: HashMap<UnitId, (Team, usize)>,
     pub buckets: Vec<((i32, i32), Vec<UnitRef>)>,
     pub bucket_indices: HashMap<(i32, i32), usize>,
+    pub buckets_initialized: bool,
+    pub guardian: Option<UnitRef>,
     pub unknown_scalars: ExtraMap,
 }
 
 impl Battle {
+    pub fn entity_position(&self, entity: EntityRef) -> (f64, f64) {
+        match entity {
+            EntityRef::Building(id) => (self.building(id).x, self.building(id).y),
+            EntityRef::Wall(id) => (self.walls[id.0].x, self.walls[id.0].y),
+            EntityRef::Unit(id) => (self.unit(id).x, self.unit(id).y),
+            EntityRef::Trap(id) => (self.traps[id.0].x, self.traps[id.0].y),
+        }
+    }
+
+    pub fn entity_alive(&self, entity: EntityRef) -> bool {
+        match entity {
+            EntityRef::Building(id) => self.building(id).alive,
+            EntityRef::Wall(id) => self.walls[id.0].alive,
+            EntityRef::Unit(id) => self.unit(id).alive,
+            EntityRef::Trap(id) => self.traps[id.0].armed,
+        }
+    }
+
+    pub fn entity_edge_distance(&self, entity: EntityRef, x: f64, y: f64) -> f64 {
+        match entity {
+            EntityRef::Building(id) => self.building(id).edge_distance(x, y),
+            EntityRef::Wall(id) => self.walls[id.0].edge_distance(x, y),
+            EntityRef::Unit(id) => self.unit(id).dist(x, y),
+            EntityRef::Trap(id) => py_hypot(x - self.traps[id.0].x, y - self.traps[id.0].y),
+        }
+    }
+
     pub fn building(&self, id: BuildingId) -> &Building {
         &self.buildings[self.building_indices[&id]]
     }

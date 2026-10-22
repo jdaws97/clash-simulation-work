@@ -1,16 +1,21 @@
 //! CLI for rust_export.py battle exports; battle.py remains the engine reference.
 
 pub mod battle;
+pub mod ai;
+pub mod combat;
 pub mod catalog;
 pub mod defense;
 pub mod effects;
 pub mod geom;
 pub mod grid;
+pub mod heroes;
 pub mod json;
 pub mod load;
+pub mod movement;
 pub mod pyrandom;
 pub mod state;
 pub mod stats;
+pub mod spells;
 pub mod trace;
 pub mod traps;
 pub mod units;
