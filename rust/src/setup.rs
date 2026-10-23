@@ -930,7 +930,10 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
                 "both",
                 10.0,
                 3.0,
-                3.2,
+                catalog.resolved
+                    .at("scatter_intervals")
+                    .at(&level.to_string())
+                    .f64(),
                 s(&["Damage per Shot*"], Some(576.0)),
             );
             w.extra.splash_max = 420.0;

@@ -671,7 +671,12 @@ pub fn tower_cast(battle: &mut Battle, owner: BuildingId, mode: &str, near: Opti
                 continue;
             }
             let d = unit.dist(bx, by);
-            if target.is_none() || d < distance {
+            // spells.py:1295-1297: equal distances use the entering troop's ID.
+            if target.is_none()
+                || d < distance
+                || d == distance
+                    && target.is_some_and(|previous: UnitRef| unit.id.0 < previous.id.0)
+            {
                 target = Some(reference);
                 distance = d;
             }
@@ -1421,7 +1426,14 @@ fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
     }
     let mut capacity = f.value;
     let mut sources = battle.attackers_near(f.x, f.y, f.radius);
-    sources.sort_by(|a, b| battle.unit(*a).spawned_at.total_cmp(&battle.unit(*b).spawned_at));
+    sources.sort_by(|a, b| {
+        let a = battle.unit(*a);
+        let b = battle.unit(*b);
+        a.spawned_at.total_cmp(&b.spawned_at).then_with(|| {
+            a.extra.spawn_sequence.unwrap_or(a.id.0)
+                .cmp(&b.extra.spawn_sequence.unwrap_or(b.id.0))
+        })
+    });
     for reference in sources {
         let u = battle.unit(reference);
         if !affected(u) || u.is_hero || u.kind == Tag::Pet {
@@ -1594,6 +1606,10 @@ fn recall(battle: &mut Battle, f: &Field) -> bool {
         (!a.is_hero, -interaction_housing(a))
             .cmp(&(!b.is_hero, -interaction_housing(b)))
             .then_with(|| a.spawned_at.total_cmp(&b.spawned_at))
+            .then_with(|| {
+                a.extra.spawn_sequence.unwrap_or(a.id.0)
+                    .cmp(&b.extra.spawn_sequence.unwrap_or(b.id.0))
+            })
     });
     let mut taken = Vec::new();
     for reference in candidates {

@@ -112,7 +112,7 @@ fn equipment_ability_level(level: &Level) -> Level {
     Level::Int(level.div_euclid(3) + 1)
 }
 
-fn default_loadout(battle: &Battle, hero: &str) -> Option<HeroLoadout> {
+pub fn default_loadout(battle: &Battle, hero: &str) -> Option<HeroLoadout> {
     if let Some(loadouts) = battle.catalog.setup.get("default_loadouts") {
         let loadout = loadouts.get(hero)?;
         return Some(HeroLoadout {
@@ -144,11 +144,8 @@ fn pet_level(battle: &Battle, hero: UnitRef, loadout: &HeroLoadout, town_hall: i
     let stats = &battle.catalog.stats;
     assert!(stats.registry.get(name).is_some() && stats.record(name).at("kind").str() == "pet",
         "{name} is not a pet");
-    let maximum = stats.max_level(name, town_hall).unwrap_or_else(|| {
-        assert!(battle.plan.observed(), "{name} is unavailable at Town Hall {town_hall}");
-        stats.record(name).at("levels").arr().iter()
-            .map(|row| row.at("level").i64()).max().expect("pet levels")
-    });
+    let maximum = stats.max_level(name, town_hall)
+        .unwrap_or_else(|| panic!("{name} is unavailable at Town Hall {town_hall}"));
     let level = battle.plan.pet_level(name).cloned().unwrap_or(Level::Int(maximum));
     assert!(matches!(&level, Level::Int(value) if 1 <= *value && *value <= maximum),
         "Illegal {name} level {level} at Town Hall {town_hall}");
@@ -174,7 +171,7 @@ fn pet_level(battle: &Battle, hero: UnitRef, loadout: &HeroLoadout, town_hall: i
 // heroes.py:103-182: equip is called after strength, before league scaling.
 pub fn equip(battle: &mut Battle, hero: UnitRef) {
     let name = battle.unit(hero).name.clone();
-    let Some(loadout) = battle.plan.loadout(&name).cloned().or_else(|| default_loadout(battle, &name)) else {
+    let Some(mut loadout) = battle.plan.loadout(&name).cloned().or_else(|| default_loadout(battle, &name)) else {
         return;
     };
     // heroes.py:108-126: validate every slot before applying any boosts.
@@ -192,6 +189,60 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         assert!(owner == Some(name.as_str()), "{equipment} belongs to {owner:?}, not {name}");
     }
     let th = battle.plan.town_hall();
+    if loadout.pet.as_deref().is_some_and(|pet| {
+        !pet.is_empty()
+            && battle.catalog.stats.registry.get(pet).is_some()
+            && battle.catalog.stats.record(pet).at("kind").str() == "pet"
+            && battle.plan.observed()
+            && battle.catalog.stats.max_level(pet, th).is_none()
+    }) {
+        // heroes.py:176-215: reserve explicit assignments and live replacements.
+        let loadouts: &[(String, HeroLoadout)] = match &battle.plan {
+            Plan::Playbook(plan) => &plan.attack.loadouts,
+            Plan::Stage { loadouts, .. } => loadouts,
+        };
+        let mut assigned: Vec<String> = loadouts
+            .iter()
+            .filter(|(_, other)| other.hero != name)
+            .filter_map(|(_, other)| other.pet.clone())
+            .collect();
+        for reference in battle.attackers_pool()
+            .map(Unit::reference)
+            .chain(battle.portal_units())
+        {
+            if reference == hero {
+                continue;
+            }
+            let unit = battle.unit(reference);
+            if let Some(pet) = unit.kit.as_ref().and_then(|kit| kit.pet_name.as_ref()) {
+                assigned.push(pet.clone());
+            }
+            if unit.kind == Tag::Pet {
+                assigned.push(unit.name.clone());
+            }
+        }
+        let stats = &battle.catalog.stats;
+        let mut pets: Vec<_> = stats.registry.obj()
+            .iter()
+            .filter(|(_, record)| record.at("kind").str() == "pet")
+            .map(|(name, _)| name.clone())
+            .collect();
+        pets.sort_by(|a, b| {
+            let unlock = |name: &str| {
+                stats::num(
+                    stats.attrs(name).at("raw").at("Pet House Level Required"),
+                    None,
+                ).expect("pet unlock level")
+            };
+            unlock(a).total_cmp(&unlock(b)).then_with(|| a.cmp(b))
+        });
+        let preferred = default_loadout(battle, &name)
+            .expect("default hero loadout")
+            .pet;
+        loadout.pet = preferred.into_iter()
+            .chain(pets)
+            .find(|pet| !assigned.contains(pet) && stats.max_level(pet, th).is_some());
+    }
     let pet_level = pet_level(battle, hero, &loadout, th);
     let mut kit = Kit::new(&name);
     let base_interval = battle.unit(hero).interval;
@@ -362,9 +413,12 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
                 0.0,
             );
     }
-    let tracks_summons = ["Action Figure", "Magic Mirror", "Henchmen Puppet"]
-        .iter()
-        .any(|name| kit.has(name));
+    let tracks_summons = [
+        "Action Figure",
+        "Magic Mirror",
+        "Henchmen Puppet",
+        "Healer Puppet",
+    ].iter().any(|name| kit.has(name));
     let unit = battle.unit_mut(hero);
     unit.kit = Some(kit);
     if tracks_summons {
@@ -731,7 +785,11 @@ pub fn on_damaged(
     }
     let (x, y) = battle.entity_position(source);
     let unit = battle.unit(hero);
-    if dist(x, y, unit.x, unit.y) > 25.0 {
+    let counter_range = battle.catalog.resolved
+        .at("revenge_ranges")
+        .at(&kit.lv("Revenge Deck").to_string())
+        .f64();
+    if dist(x, y, unit.x, unit.y) > counter_range {
         return;
     }
     let due = unit.extra.revenge_cd.iter().find(|(key, _)| *key == source).map_or(-1.0, |(_, at)| *at);
@@ -1051,7 +1109,8 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
             }
             "Rage Vial" => {
                 let damage = 1.0 + col(battle, &name, &level, &["damage increase"], 0.0) / 100.0;
-                let speed = col(battle, &name, &level, &["movement speed increase"], 0.0) / 8.0;
+                let ability = battle.catalog.equipment_ability(&name, &level);
+                let speed = game_float(ability, "SpeedBoost") / 100.0;
                 units::add_rage(
                     battle.unit_mut(hero),
                     StatusSource::Name(name.clone()),
@@ -1310,7 +1369,7 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                 unit.extra.paused_timers.haste_attack_until = true;
                 // heroes.py:721-722: preserve the current ordinary attack cooldown.
             }
-            // heroes.py:794-811: each target is chosen again after the previous hit.
+            // heroes.py:944-973: target selection precedes delayed damage and freeze.
             "Frost Flake" => {
                 let count = col(battle, &name, &level, &["number of targets"], 7.0) as i64;
                 let mut visited = Vec::new();
@@ -1336,19 +1395,25 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                     };
                     visited.push(target);
                     let damage = col(battle, &name, &level, &["projectile damage"], 0.0);
-                    damage_target(battle, target, damage);
-                    let until = t + col(battle, &name, &level, &["slow down duration"], 0.0);
-                    match target {
-                        EntityRef::Building(id) => {
-                            let building = battle.building_mut(id);
-                            building.frozen_until = building.frozen_until.max(until);
-                        }
-                        EntityRef::Unit(id) => {
-                            let unit = battle.unit_mut(id);
-                            unit.frozen_until = unit.frozen_until.max(until);
-                        }
-                        _ => unreachable!(),
-                    }
+                    let (x, y) = battle.entity_position(target);
+                    let unit = battle.unit(hero);
+                    let mut pending = Pending::new(
+                        t + dist(unit.x, unit.y, x, y) / 15.0,
+                        x,
+                        y,
+                        0.0,
+                        damage,
+                        true,
+                        true,
+                        &unit.name,
+                    );
+                    pending.extra.hero_impact = Some("frost".to_owned());
+                    pending.extra.duration = col(
+                        battle, &name, &level, &["slow down duration"], 0.0,
+                    );
+                    pending.actor = Some(EntityRef::Unit(hero));
+                    pending.target = Some(target);
+                    battle.add_pending(pending);
                 }
             }
             // heroes.py:840-842.
@@ -1554,7 +1619,29 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
                 Some(pending.at),
             );
         }
-        // heroes.py:856-882: tracking ball bounces use center distance and first ties.
+        "frost" => {
+            let target = pending.target.expect("Frost Flake target");
+            let targetable = battle.entity_alive(target) && match target {
+                EntityRef::Unit(unit) => battle.unit(unit).indirect_targetable(battle),
+                _ => true,
+            };
+            if targetable {
+                damage_target(battle, target, pending.damage);
+                let until = battle.t + pending.extra.duration;
+                match target {
+                    EntityRef::Building(id) => {
+                        let building = battle.building_mut(id);
+                        building.frozen_until = building.frozen_until.max(until);
+                    }
+                    EntityRef::Unit(id) => {
+                        let unit = battle.unit_mut(id);
+                        unit.frozen_until = unit.frozen_until.max(until);
+                    }
+                    _ => unreachable!("Frost Flake target"),
+                }
+            }
+        }
+        // heroes.py:1161-1180: continue bounces from the exact arrival deadline.
         "ball" => {
             let target = pending.target.expect("Spiky Ball target");
             (pending.x, pending.y) = battle.entity_position(target);
@@ -1576,7 +1663,7 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
             let (x, y) = battle.entity_position(target);
             let row = battle.catalog.game_data("projectiles", "BarbarianKingGearFootball", None);
             let speed = game_int(row, "Speed", 0) as f64 / 100.0;
-            pending.at = battle.t + dist(pending.x, pending.y, x, y) / speed;
+            pending.at += dist(pending.x, pending.y, x, y) / speed;
             pending.target = Some(target);
             battle.add_pending(pending);
         }
@@ -1670,7 +1757,7 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
             };
             pending.extra.visited.push(target);
             let (x, y) = battle.entity_position(target);
-            pending.at = battle.t + dist(pending.x, pending.y, x, y) / 20.0;
+            pending.at += dist(pending.x, pending.y, x, y) / 20.0;
             pending.target = Some(target);
             battle.add_pending(pending);
         }
@@ -1875,13 +1962,23 @@ fn puppet(
         (batch, delay)
     });
     for index in first..(first + batch).min(count) {
-        let angle = 2.0 * std::f64::consts::PI * index as f64 / count.max(1) as f64;
+        let (x, y) = if equipment == "Healer Puppet" {
+            let target = battle.unit(hero).target;
+            summon_position(battle, hero, target, index, count, true, 0.6)
+        } else {
+            let angle = 2.0 * std::f64::consts::PI * index as f64 / count.max(1) as f64;
+            let unit = battle.unit(hero);
+            (
+                unit.x + 0.6 * crate::geom::py_cos(angle),
+                unit.y + 0.6 * crate::geom::py_sin(angle),
+            )
+        };
         let unit = battle.unit(hero);
         let summon = battle.spawn(
             troop,
             Team::Atk,
-            unit.x + 0.6 * crate::geom::py_cos(angle),
-            unit.y + 0.6 * crate::geom::py_sin(angle),
+            x,
+            y,
             SpawnOptions {
                 level: level.clone(),
                 kind: Tag::Summon,

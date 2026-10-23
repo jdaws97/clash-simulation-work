@@ -1005,6 +1005,7 @@ pub fn sweeper(battle: &mut Battle, owner: BuildingId) {
     let (bx, by) = battle.entity_position(EntityRef::Building(owner));
     let mut aim = None;
     let mut best_distance = 0.0;
+    let mut best_id = usize::MAX;
     for reference in battle.attackers_near(bx, by, w.range) {
         let unit = battle.unit(reference);
         if !unit.flying || unit.name_id == Name::Totem || !unit.targetable(battle) {
@@ -1017,10 +1018,13 @@ pub fn sweeper(battle: &mut Battle, owner: BuildingId) {
         let angle = geom::py_atan2(unit.y - by, unit.x - bx);
         // defense.py:1038: math.radians multiplies by the rounded PI / 180.0.
         if ((angle - w.facing + PI).rem_euclid(2.0 * PI) - PI).abs() <= 52.5 * (PI / 180.0)
-            && (aim.is_none() || distance < best_distance)
+            && (aim.is_none()
+                || distance < best_distance
+                || distance == best_distance && unit.id.0 < best_id)
         {
             aim = Some(angle);
             best_distance = distance;
+            best_id = unit.id.0;
         }
     }
     let Some(aim) = aim else {

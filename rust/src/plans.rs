@@ -148,6 +148,52 @@ struct ZapTarget {
     eq_hits: usize,
 }
 
+// plans.py:1197-1231: cargo and support steps are fixed at construction time.
+fn supported_cargo(plan: &Json) -> SharedVec<String> {
+    let Some(siege) = plan.get("siege")
+        .and_then(Json::opt_str)
+        .filter(|name| !name.is_empty())
+    else {
+        return SharedVec::default();
+    };
+    let cargo = plan.get("cc_troops").map_or(&[][..], Json::arr);
+    let steps = plan.get("steps").map_or(&[][..], Json::arr);
+    let initial_clone = ["_spells0", "_cc_spells0"].iter().any(|key| {
+        plan.get(key)
+            .and_then(|stock| stock.get("clone"))
+            .is_some_and(truth)
+    });
+    let mut supported = SharedVec::default();
+    for entry in cargo {
+        let name = match entry {
+            Json::Str(name) => name.as_str(),
+            _ => entry
+                .get("name")
+                .filter(|name| truth(name))
+                .unwrap_or_else(|| entry.at("type"))
+                .str(),
+        };
+        let explicit = steps.iter().any(|step| {
+            if text(step, "action", "") != "spell"
+                || !matches!(text(step, "what", ""), "Clone Spell" | "Invisibility Spell")
+            {
+                return false;
+            }
+            let at = text(step, "at", "");
+            matches!(at, "group:cargo" | "group:cc")
+                || at.strip_prefix("unit:").or_else(|| at.strip_prefix("unit_ahead:"))
+                    == Some(name)
+        });
+        if matches!(name, "Super Archer" | "Super Wizard")
+            || siege == "Battle Blimp" && initial_clone && name == "Balloon"
+            || explicit
+        {
+            supported.push(name.to_owned());
+        }
+    }
+    supported
+}
+
 // plans.py:930-945: estimate damage without changing any live battle state.
 fn account_zap(
     battle: &Battle,
@@ -220,6 +266,9 @@ pub struct AttackPlan {
     pub cc_released: bool,
     pub siege_donated: bool,
     pub siege: Option<String>,
+    // plans.py:1197-1231: derived from the fixed cargo, initial spells and steps.
+    pub supported_cargo: SharedVec<String>,
+    pub cargo_wait_since: Option<f64>,
     pub clan_castle_level: Option<i64>,
     pub main_at: f64,
     pub cast_log: SharedVec<(f64, String)>,
@@ -305,6 +354,8 @@ impl AttackPlan {
             cc_released: flag(p, "_cc_released"),
             siege_donated: flag(p, "siege_donated"),
             siege: p.get("siege").and_then(Json::opt_str).map(str::to_owned),
+            supported_cargo: supported_cargo(p),
+            cargo_wait_since: p.get("_cargo_wait_since").map(Json::f64),
             clan_castle_level: p
                 .get("clan_castle_level")
                 .filter(|v| !v.is_null())
@@ -606,6 +657,7 @@ impl AttackPlan {
         battle: &mut Battle,
         allowed: &impl Fn(&Self, &str) -> bool,
         single_cast: bool,
+        reserved: &[BuildingId],
     ) {
         if self.zap_done {
             return;
@@ -615,7 +667,7 @@ impl AttackPlan {
         let mut targets: Vec<_> = battle
             .buildings
             .iter()
-            .filter(|b| b.alive && b.key == "ad")
+            .filter(|b| b.alive && b.key == "ad" && !reserved.contains(&b.id))
             .map(|b| ZapTarget {
                 id: b.id,
                 hp: b.hp,
@@ -627,7 +679,7 @@ impl AttackPlan {
                 .total_cmp(&battle.building(b.id).dist(ex, ey))
         });
         if targets.is_empty() {
-            self.zap_done = true;
+            self.zap_done = reserved.is_empty();
             return;
         }
         let mut cast_hits = Vec::new();
@@ -654,7 +706,7 @@ impl AttackPlan {
             }
         }
         while self.zap_left.expect("zap budget").iter().any(|n| *n != 0) {
-            let Some(target) = targets.iter().find(|target| target.hp > 1e-9) else {
+            let Some(mut target) = targets.iter().find(|target| target.hp > 1e-9) else {
                 break;
             };
             let (index, kind) = if self.zap_left.expect("zap budget")[1] != 0 {
@@ -665,6 +717,28 @@ impl AttackPlan {
             if !allowed(self, kind) {
                 self.zap_left.as_mut().expect("zap budget")[index] = 0;
                 continue;
+            }
+            if !reserved.is_empty() {
+                let stock = self.stock.iter()
+                    .find(|stock| stock.name == spell_name(kind) && stock.remaining > 0)
+                    .expect("live zap stock");
+                let level = stock.level.as_ref().expect("resolved spell level");
+                let radius = battle.catalog.resolved
+                    .at("zap_radii")
+                    .at(&format!("{}|{level}", stock.name))
+                    .f64();
+                let safe = targets.iter().find(|target| {
+                    let b = battle.building(target.id);
+                    target.hp > 1e-9 && battle.buildings.iter().all(|r| {
+                        !r.alive
+                            || !reserved.contains(&r.id)
+                            || r.edge_distance(b.x, b.y) > radius
+                    })
+                });
+                let Some(safe) = safe else {
+                    break;
+                };
+                target = safe;
             }
             let b = battle.building(target.id);
             let (x, y) = (b.x, b.y);
@@ -681,11 +755,12 @@ impl AttackPlan {
             );
             if single_cast {
                 self.zap_done = self.zap_left.expect("zap budget").iter().all(|n| *n == 0)
-                    || targets.iter().all(|target| target.hp <= 1e-9);
+                    || reserved.is_empty() && targets.iter().all(|target| target.hp <= 1e-9);
                 return;
             }
         }
-        self.zap_done = true;
+        self.zap_done = self.zap_left.expect("zap budget").iter().all(|n| *n == 0)
+            || reserved.is_empty();
     }
 
     // plans.py:1007-1040: breakers precede Jump and paced Earthquakes.
@@ -750,7 +825,105 @@ impl AttackPlan {
         }
     }
 
-    // plans.py:1042-1131. 'have' implements PlaybookPlan's fallback reservations.
+    // plans.py:1134-1195: only affordable defenses after accounting for falling bolts.
+    pub fn spare_lightning(
+        &mut self,
+        battle: &mut Battle,
+        have: &impl Fn(&Self, &str) -> bool,
+        lightning_reserved: i64,
+    ) -> bool {
+        if !have(self, "lightning") {
+            return false;
+        }
+        let mut available = count(&self.spells, "lightning") - lightning_reserved;
+        let mut damage = 0.0;
+        for stock in self.stock.iter() {
+            if stock.name != "Lightning Spell" || stock.remaining <= 0 {
+                continue;
+            }
+            let count = available.min(stock.remaining);
+            let level = stock.level.as_ref().expect("resolved Lightning level");
+            damage += count as f64
+                * battle.catalog.stats
+                    .get(&stock.name, level, &["damage", "Damage"], None)
+                    .expect("Lightning damage");
+            available -= count;
+        }
+        let remaining_hp = |b: &Building| {
+            b.hp - battle.fields.iter()
+                .filter(|f| {
+                    f.kind == Tag::Lightning && b.edge_distance(f.x, f.y) <= f.radius
+                })
+                .map(|f| f.value)
+                .sum::<f64>()
+        };
+        if battle.buildings.iter().any(|b| {
+            b.alive && b.key == "ad" && remaining_hp(b) > 1e-9
+        }) {
+            return false;
+        }
+        let target = battle.buildings.iter()
+            .filter(|b| {
+                let hp = remaining_hp(b);
+                b.alive
+                    && b.is_defense
+                    && !matches!(b.key.as_str(), "gs" | "es" | "ds" | "th" | "cc")
+                    && !(b.key == "tesla" && !b.revealed)
+                    && 1e-9 < hp
+                    && hp <= damage
+            })
+            .min_by(|a, b| {
+                let priority = |b: &Building| i32::from(self.ground || b.key != "sweeper");
+                priority(a).cmp(&priority(b))
+                    .then_with(|| remaining_hp(a).total_cmp(&remaining_hp(b)))
+            })
+            .map(|b| (b.x, b.y));
+        let Some((x, y)) = target else {
+            return false;
+        };
+        self.use_spell(battle, "lightning", x, y);
+        true
+    }
+
+    // plans.py:1197-1251: None falls back; an empty group holds support for cargo.
+    pub fn cargo_support(&mut self, battle: &Battle) -> Option<Vec<UnitRef>> {
+        if self.supported_cargo.is_empty() {
+            return None;
+        }
+        let delivered: Vec<_> = battle.attackers_pool()
+            .filter(|unit| {
+                self.supported_cargo.contains(&unit.name)
+                    && unit.extra.deployment_source.as_deref() == Some("siege")
+            })
+            .collect();
+        let cargo: Vec<_> = battle.attackers_pool()
+            .filter(|unit| {
+                unit.alive
+                    && self.supported_cargo.contains(&unit.name)
+                    && (unit.extra.deployment_source.as_deref() == Some("siege")
+                        || unit.extra.clone
+                            && delivered.iter().any(|source| source.group == unit.group))
+            })
+            .map(Unit::reference)
+            .collect();
+        if !cargo.is_empty() {
+            return Some(cargo);
+        }
+        // Callbacks can release cargo while this tick's plan copy is running.
+        if !delivered.is_empty() || self.cc_released || battle.plan.cc_released() {
+            return None;
+        }
+        let mut carriers = battle.attackers_pool()
+            .filter(|unit| self.siege.as_deref() == Some(unit.name.as_str()))
+            .peekable();
+        if carriers.peek().is_some() && !carriers.any(|unit| unit.alive) {
+            return None;
+        }
+        let since = self.cargo_wait_since.get_or_insert(battle.t);
+        (battle.t - *since < 30.0).then(Vec::new)
+    }
+
+    // plans.py:1253-1351. 'have' implements PlaybookPlan's fallback reservations.
     pub fn generic_spells(
         &mut self,
         battle: &mut Battle,
@@ -758,10 +931,15 @@ impl AttackPlan {
         have: &impl Fn(&Self, &str) -> bool,
         inventory: Option<&mut Vec<(String, i64)>>,
         single_cast: bool,
+        lightning_reserved: i64,
     ) {
+        if self.spare_lightning(battle, have, lightning_reserved) && single_cast {
+            return;
+        }
         if units.is_empty() {
             return;
         }
+        let cargo = self.cargo_support(battle);
         let t = battle.t;
         if t - self.last("breach") > 3.0 {
             let before = self.cast_log.len();
@@ -875,14 +1053,18 @@ impl AttackPlan {
             }
         }
         if have(self, "invis")
-            && t - self.last("invis") > self.p("invis_gap") {
+            && t - self.last("invis") > self.p("invis_gap")
+            && cargo.as_ref().is_none_or(|units| !units.is_empty()) {
             let hot = threats_near(battle, cx, cy, 11.0).iter().filter(|(id, _)| {
                 let b = battle.building(*id);
                 let w = b.weapon.as_ref().expect("weapon");
                 threat(&b.key, 0.0) >= 4.0 && (w.target.is_some() || !w.multi.is_empty())
             }).count();
-            if avg_hp < self.p("invis_hp") || hot as f64 >= self.p("invis_hot") {
-                self.use_spell(battle, "invis", cx, cy);
+            if cargo.as_ref().is_some_and(|units| !units.is_empty())
+                || avg_hp < self.p("invis_hp") || hot as f64 >= self.p("invis_hot") {
+                let (x, y) = cargo.as_ref().filter(|units| !units.is_empty())
+                    .map_or((cx, cy), |units| centroid(battle, units));
+                self.use_spell(battle, "invis", x, y);
                 if single_cast {
                     return;
                 }
@@ -903,9 +1085,9 @@ impl AttackPlan {
         if have(self, "clone")
             && t - self.main_at > 1.0
             && t - self.last("clone") > 1.0 {
-            let big: Vec<_> = units.iter().copied().filter(|r| {
+            let big: Vec<_> = cargo.as_deref().unwrap_or(units).iter().copied().filter(|r| {
                 let u = battle.unit(*r);
-                u.housing >= 10 && !u.extra.clone
+                (cargo.is_some() || u.housing >= 10) && !u.extra.clone
             }).collect();
             if !big.is_empty() {
                 let (x, y) = centroid(battle, &big);

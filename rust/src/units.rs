@@ -267,7 +267,7 @@ pub fn wall_breaker_target(battle: &mut Battle, unit: UnitRef) -> Option<WallId>
     None
 }
 
-// units.py:166-206: score insertion order decides ties, including zero weights.
+// units.py:166-221: equal scores use buildings before walls, then entity ID.
 pub fn follow_target(battle: &mut Battle, unit: UnitRef) -> Option<EntityRef> {
     let mut scores = std::mem::take(&mut battle.follow_scores_scratch);
     scores.clear();
@@ -330,16 +330,21 @@ fn follow_target_with_scores(
     if total_weight < threshold {
         return None;
     }
-    let mut best = None;
-    for &(target, score) in scores.iter() {
-        if best
-            .as_ref()
-            .map_or(true, |(_, previous)| score > *previous)
-        {
-            best = Some((target, score));
+    let target_key = |target: EntityRef| match target {
+        EntityRef::Building(id) => (false, battle.building(id).id.0 as i64, 0),
+        // Python wall IDs are ("wall", tx, ty), not storage indices.
+        EntityRef::Wall(id) => {
+            let wall = &battle.walls[id.0];
+            (true, i64::from(wall.tx), i64::from(wall.ty))
         }
-    }
-    best.map(|(target, _)| target)
+        _ => unreachable!("Warden follows buildings or walls"),
+    };
+    scores.iter()
+        .min_by(|(a, a_score), (b, b_score)| {
+            b_score.total_cmp(a_score)
+                .then_with(|| target_key(*a).cmp(&target_key(*b)))
+        })
+        .map(|(target, _)| *target)
 }
 
 // units.py:209-235: dead counted buildings remain available as rubble.
@@ -408,6 +413,8 @@ fn smash_wall(battle: &mut Battle, unit: UnitRef, wall: WallId) {
 
 // units.py:249-328: spawn clocks begin before deploy-time strength scaling.
 pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
+    // units.py:263-265: preserve birth order across same-tick spawns and Recall.
+    battle.unit_mut(unit).extra.spawn_sequence = Some(unit.id.0);
     let name = battle.unit(unit).name.clone();
     let sp = Arc::clone(&battle.unit(unit).spec);
     let t = battle.t;
@@ -3444,7 +3451,21 @@ pub fn heal_effectiveness(battle: &mut Battle, healer: UnitRef, recipient: UnitR
     result
 }
 
-// units.py:2117-2236: recipients and projectile appends retain ally-list order.
+// units.py:2708-2717: housing is nonnegative; stop once the group exceeds two.
+fn healer_grouped(target: &Unit, weighted: &[(f64, f64, i64)], radius: f64) -> bool {
+    let mut weight = 0;
+    for &(x, y, housing) in weighted {
+        if geom::dist(target.x, target.y, x, y) <= radius {
+            weight += housing;
+            if weight > 2 {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+// units.py:2720-2820: recipients and projectile appends retain ally-list order.
 pub fn act_healer(battle: &mut Battle, unit: UnitRef) {
     let mut scratch = std::mem::take(&mut battle.healer_scratch);
     act_healer_with_scratch(battle, unit, &mut scratch);
@@ -3469,6 +3490,8 @@ fn act_healer_with_scratch(
     recipients.clear();
     effectiveness.clear();
     let t = battle.t;
+    let due = battle.unit(unit).extra.heal_next.unwrap_or(t);
+    let heal_ready = t >= due || isclose(t, due);
     battle.unit_mut(unit).extra.healing_targets.clear();
     if unit.team == Team::Def
         && battle
@@ -3501,15 +3524,38 @@ fn act_healer_with_scratch(
                     (a.x, a.y, if a.is_hero { 25 } else { a.housing })
                 }),
         );
-        eligible.retain(|target| {
-            let target = battle.unit(*target);
-            weighted
-                .iter()
-                .filter(|(x, y, _)| geom::dist(target.x, target.y, *x, *y) <= sp.splash)
-                .map(|(_, _, weight)| *weight)
-                .sum::<i64>()
-                > 2
-        });
+        if heal_ready {
+            eligible.retain(|target| healer_grouped(battle.unit(*target), weighted, sp.splash));
+        } else {
+            let u = battle.unit(unit);
+            let current = match u.target {
+                Some(EntityRef::Unit(target)) => Some(target),
+                _ => None,
+            };
+            let mut target = [u.follow, current].into_iter().flatten().find(|candidate| {
+                eligible.contains(candidate)
+                    && healer_grouped(battle.unit(*candidate), weighted, sp.splash)
+            });
+            if target.is_none() {
+                if unit.team == Team::Def {
+                    eligible.retain(|ally| {
+                        let ally = battle.unit(*ally);
+                        ally.hp < ally.max_hp
+                    });
+                }
+                eligible.sort_by(|a, b| {
+                    let a = battle.unit(*a);
+                    let b = battle.unit(*b);
+                    geom::dist(u.x, u.y, a.x, a.y)
+                        .total_cmp(&geom::dist(u.x, u.y, b.x, b.y))
+                });
+                target = eligible.iter().copied().find(|candidate| {
+                    healer_grouped(battle.unit(*candidate), weighted, sp.splash)
+                });
+            }
+            eligible.clear();
+            eligible.extend(target);
+        }
     }
     let u = battle.unit(unit);
     let mut target = match u.target {
@@ -3592,8 +3638,7 @@ fn act_healer_with_scratch(
             .iter()
             .map(|ally| heal_effectiveness(battle, unit, *ally)),
     );
-    let due = battle.unit(unit).extra.heal_next.unwrap_or(t);
-    if t < due && !isclose(t, due) {
+    if !heal_ready {
         return;
     }
     let u = battle.unit_mut(unit);

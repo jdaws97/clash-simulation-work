@@ -681,6 +681,7 @@ impl Resolver {
                 "summon_facing" => extra.summon_facing = v.optional_pair(),
                 "heading" => extra.heading = v.optional_pair(),
                 "deployment_source" => extra.deployment_source = v.optional_string(),
+                "spawn_sequence" => extra.spawn_sequence = Some(v.usize()),
                 "recalled" => extra.recalled = Some(v.number()),
                 "portal" => extra.portal = Some(v.triple()),
                 "last_damage_source" => extra.last_damage_source = self.optional_ref(v),

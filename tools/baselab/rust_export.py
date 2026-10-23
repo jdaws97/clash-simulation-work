@@ -131,6 +131,7 @@ def catalog():
         "Eternal Tome": ("GrandWardenInvulnerability", 0),
         "Heroic Torch": ("GWHeroicTorch", 0),
         "Rocket Backpack": ("DragonDukeDeadlyDashMapCenter", 0),
+        "Rage Vial": ("BarbarianKingRage", 0),
     }
     equipment_abilities = {
         f"{name}|{entry['level']}": heroes._ability_data(
@@ -188,7 +189,31 @@ def catalog():
         "pet_spawn_ranges": pet_spawn_ranges,
         "resolved": {
             "equipment_abilities": equipment_abilities,
+            "revenge_ranges": {
+                str(entry["level"]): float(
+                    stats.clashking_level("Revenge Deck", entry["level"])["abilities"][
+                        0
+                    ]["ReflectedRange"]
+                )
+                / 100.0
+                for entry in reg["Revenge Deck"].get("levels", [])
+                if isinstance(entry.get("level"), int)
+            },
+            "scatter_intervals": {
+                str(entry["level"]): stats.clashking_level(
+                    "Scattershot", entry["level"]
+                )["attack_speed"]
+                / 1000.0
+                for entry in reg["Scattershot"].get("levels", [])
+                if isinstance(entry.get("level"), int)
+            },
             "spell_radii": spell_radii,
+            "zap_radii": {
+                f"{name}|{entry['level']}": spells._radius(name, entry["level"], 0.0)
+                for name in ("Lightning Spell", "Earthquake Spell")
+                for entry in reg[name].get("levels", [])
+                if isinstance(entry.get("level"), int)
+            },
             "pet_spawn_speeds": {
                 name: specs.movement_speed(name) for name in pet_spawn_ranges
             },
