@@ -7,10 +7,43 @@ Every fix goes into the Python engine first, then the Rust port
 (`docs/RUST_PORT.md`), then parity. Hunters: read this first; do not
 re-report items listed here unless you have new evidence.
 
-Policy: game data wins over the wiki for numbers it has (the wiki's flyer
-ranges were 0.5 tile long; the real replay agreed with game data).
+Policy: ClashKing static data (`data/clashking-static-data.json`, assets commit
+b8f42a7, 2026-09-28) wins for every numerical field it carries, including unit,
+hero, pet and building HP/DPS, attack speeds/ranges, equipment abilities and
+spell values. Match the entity/variant, explicit level and quantity/units first.
+The older `data/gamecsv/v18.200.9/*.csv` snapshot predates July 2026 balance
+changes; use it only for fields ClashKing lacks (timings, radii, flags,
+projectiles and ability internals), and flag CSV-only quantities affected by
+those changes. The wiki mirror is the tie-breaker for rules.
 
 ## Fixed
+
+- Data audit (2026-10-23, ClashKing b8f42a7; setup probes only): removed the
+  round-7 CSV override of current unit stats. Changed HP/DPS (old -> new):
+  Bowler L10 850/156 -> 860/160; Electro Dragon L8 6200/460 -> 6400/475,
+  L9 6700/500 -> 6900/510; Dragon Rider L6 6200/520 -> 5900/490;
+  Super Bowler L10 3600/300 -> 3700/310; Thrower L3 2600/230 -> 2500/220,
+  L4 2800/240 -> 2650/230; permanent Meteor Golem L1 13000/450 -> 14500/480,
+  L2 14500/500 -> 16000/530, L3 16000/550 -> 17500/580. Derived damage/hit:
+  Bowler L10 343.2 -> 352; Electro Dragon L8 1610 -> 1662.5;
+  Dragon Rider L6 624 -> 588; Super Bowler L10 660 -> 682;
+  Thrower L3 575 -> 550, L4 600 -> 575; Meteor Golem damage/hit follows DPS.
+  Druid L5 signed healing DPS -100 -> -105 (actual healing already 105);
+  Troop Launcher L1-4 sentinel DPS -1 -> 0; Thrower L1-4 speed 2.2 -> 2 tiles/s.
+  Giant Arrow damage L9-11 1200 -> 1100, L12-14 1500 -> 1200,
+  L15-17 1750 -> 1350, L18 2000 -> 1500; Fire Heart regeneration L15-17
+  155 -> 140, L18 175 -> 150 HP/s; Rocket Backpack damage L21-23
+  1925 -> 1875, L27 2200 -> 2150. Geared Mortar L18 DPS 86 -> 89,
+  damage/shell 129 -> 133.5 (CSV burst timing retained). Skeleton/Bat Spell
+  L1-8 radius 2.25 -> 2.2 tiles. Yeti Undertaker L1-18 reach 4 -> 0.8 tiles
+  (wiki infobox vs ClashKing; no CSV row). Spell Tower mode metadata now
+  follows ClashKing: Invisibility range 9 -> 4.5 tiles and interval 70 -> 50 s;
+  Earthquake interval 70 -> 50 s (effective triggers/recharges already matched).
+  Hero Hall L1-3 HP and Spell Tower trigger ranges already used current values.
+  Meteor Golem's 6000 HP at L3 belongs to the temporary event variant.
+  CSV-only Meteormite L1-3 HP 6500/7250/8000 and DPS 180/200/220 remain flagged
+  against wiki 7250/8000/8750 and 190/210/230; actual split HP inherits half
+  the corrected parent's base HP. ClashKing has no permanent Meteormite row.
 
 - 2026-10-22 Log Launcher logs dealt all damage along 20 tiles instantly;
   now travel at RollingLog.Speed 420 (4.2 tiles/s) from StartOffset 100.

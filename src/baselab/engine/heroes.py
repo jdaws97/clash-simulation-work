@@ -1,7 +1,8 @@
 """Heroes: equipment (all 42 pieces), pets, auras, abilities, defenders.
 
-Every number is read from the registry row of the equipment/pet at its level
-(wiki tables mirrored 2026-10-15). Defending heroes use no equipment (wiki:
+Numbers prefer ClashKing b8f42a7 through the registry and ability rows;
+missing mechanics use the older CSV and wiki mirror. Defending heroes use no
+equipment (wiki:
 "The Archer Queen does not use any Hero Equipment when defending").
 """
 
@@ -14,15 +15,34 @@ from . import effects, spells, stats, units
 from .entities import Building, Field, Pending, Unit, Wall, dist
 from .specs import game_data
 
-HEROES = {"Barbarian King", "Archer Queen", "Grand Warden", "Royal Champion", "Minion Prince", "Dragon Duke"}
+HEROES = {
+    "Barbarian King",
+    "Archer Queen",
+    "Grand Warden",
+    "Royal Champion",
+    "Minion Prince",
+    "Dragon Duke",
+}
 
 DEFAULT_LOADOUTS = {
-    "Archer Queen": HeroLoadout("Archer Queen", ("Giant Arrow", "Action Figure"), "Unicorn"),
-    "Barbarian King": HeroLoadout("Barbarian King", ("Spiky Ball", "Earthquake Boots"), "Spirit Fox"),
-    "Grand Warden": HeroLoadout("Grand Warden", ("Eternal Tome", "Rage Gem"), "Electro Owl"),
-    "Royal Champion": HeroLoadout("Royal Champion", ("Rocket Spear", "Electro Boots"), "L.A.S.S.I"),
-    "Minion Prince": HeroLoadout("Minion Prince", ("Dark Orb", "Meteor Staff"), "Angry Jelly"),
-    "Dragon Duke": HeroLoadout("Dragon Duke", ("Rocket Backpack", "Fire Heart"), "Phoenix"),
+    "Archer Queen": HeroLoadout(
+        "Archer Queen", ("Giant Arrow", "Action Figure"), "Unicorn"
+    ),
+    "Barbarian King": HeroLoadout(
+        "Barbarian King", ("Spiky Ball", "Earthquake Boots"), "Spirit Fox"
+    ),
+    "Grand Warden": HeroLoadout(
+        "Grand Warden", ("Eternal Tome", "Rage Gem"), "Electro Owl"
+    ),
+    "Royal Champion": HeroLoadout(
+        "Royal Champion", ("Rocket Spear", "Electro Boots"), "L.A.S.S.I"
+    ),
+    "Minion Prince": HeroLoadout(
+        "Minion Prince", ("Dark Orb", "Meteor Staff"), "Angry Jelly"
+    ),
+    "Dragon Duke": HeroLoadout(
+        "Dragon Duke", ("Rocket Backpack", "Fire Heart"), "Phoenix"
+    ),
 }
 
 
@@ -31,10 +51,41 @@ def _col(name, level, *frags, default=0.0):
     return stats.get(name, level, *keys, default=default)
 
 
+def _ability_data(name, level, csv_name, *, index=0):
+    # ClashKing b8f42a7: equipment levels contain explicit ability levels.
+    # CSV supplies only missing internals (e.g. regeneration pulse timing).
+    abilities = stats.clashking_level(name, level).get("abilities", ())
+    ability = abilities[index] if index < len(abilities) else {}
+    ability_level = ability.get("Level", level // 3 + 1)
+    data = dict(game_data("special_abilities", csv_name, ability_level))
+    data.update(ability)
+    return data
+
+
 class Kit:
-    __slots__ = ("hero", "equip", "levels", "pet_name", "pet_level", "pet_unit", "regen", "hp_recovery", "phoenix", "doomed_at",
-                 "spear_shots", "spear_bonus", "reduction_until", "reduction", "heal_until", "heal_rate",
-                 "next_meteor", "crown_stage", "vamp", "frozen_arrow", "mono_arrow")
+    __slots__ = (
+        "hero",
+        "equip",
+        "levels",
+        "pet_name",
+        "pet_level",
+        "pet_unit",
+        "regen",
+        "hp_recovery",
+        "phoenix",
+        "doomed_at",
+        "spear_shots",
+        "spear_bonus",
+        "reduction_until",
+        "reduction",
+        "heal_until",
+        "heal_rate",
+        "next_meteor",
+        "crown_stage",
+        "vamp",
+        "frozen_arrow",
+        "mono_arrow",
+    )
 
     def __init__(self):
         self.equip = []
@@ -146,19 +197,20 @@ def equip(battle, u: Unit, plan):
         k.levels[e] = lvl
         hp = _col(e, lvl, "hitpoint increase", "hp increase")
         dps = _col(e, lvl, "damage per second increase", "dps increase")
-        aspd = _col(e, lvl, "hero boosts / attack speed increase", "hero boost / attack speed increase")
+        aspd = _col(
+            e,
+            lvl,
+            "hero boosts / attack speed increase",
+            "hero boost / attack speed increase",
+        )
         u.max_hp += hp
         u.base_max_hp += hp
         u.hp += hp
         passive_dps += dps
         passive_speed += aspd / 100.0
         if e == "Fire Heart":
-            # Wiki: Fire Heart table, equipment L1/L3 -> ability L1/L2 (50/70).
-            # game data v18.200.9: DragonCrownRegeneration L7.Regeneration=175,
-            # RegenerationTimeBetweenHitsMS=1000 -> 175 HP/s at equipment L18.
-            ability = game_data(
-                "special_abilities", "DragonCrownRegeneration", lvl // 3 + 1
-            )
+            # ClashKing b8f42a7: L18 regeneration is 150; CSV has stale 175.
+            ability = _ability_data(e, lvl, "DragonCrownRegeneration", index=1)
             k.regen += (
                 float(ability["Regeneration"])
                 * 1000.0
@@ -166,7 +218,9 @@ def equip(battle, u: Unit, plan):
             )
         else:
             k.regen += _col(e, lvl, "self healing per second")
-        k.hp_recovery += _col(e, lvl, "hp recovery increase", "health recovery increase")
+        k.hp_recovery += _col(
+            e, lvl, "hp recovery increase", "health recovery increase"
+        )
         if e in ("Royal Gem", "Stun Blaster"):
             k.hp_recovery += _col(e, lvl, "health recovery")
         if e == "Vampstache":
@@ -175,7 +229,10 @@ def equip(battle, u: Unit, plan):
             # game data v18.200.9: Electro Boots Aura.HitTimeMS=400 -> 0.4 s.
             u.extra["boots_next"] = battle.t + 0.4
         if e == "Frozen Arrow":
-            k.frozen_arrow = (_col(e, lvl, "slow down") / 100.0, _col(e, lvl, "slow down duration"))
+            k.frozen_arrow = (
+                _col(e, lvl, "slow down") / 100.0,
+                _col(e, lvl, "slow down duration"),
+            )
         if e == "Stick Horse":
             # Duration and speed tiers (wiki: Stick Horse).
             u.extra["horse_until"] = battle.t + _col(e, lvl, "ability duration")
@@ -203,8 +260,7 @@ def equip(battle, u: Unit, plan):
     if k.has("Noble Iron"):
         # Opening shots and range come from Noble Iron's level table.
         lv = k.lv("Noble Iron")
-        # game data v18.200.9: MPTurboStart L6.DeactivateAfterNumberOfHits=9 -> equipment L15-17.
-        ability = game_data("special_abilities", "MPTurboStart", lv // 3 + 1)
+        ability = _ability_data("Noble Iron", lv, "MPTurboStart")
         k.spear_shots = int(ability["DeactivateAfterNumberOfHits"])
         k.spear_bonus = _col("Noble Iron", lv, "damage per shot increase")
         u.extra["spear_base_range"] = u.range
@@ -238,7 +294,9 @@ def _spawn_pet(battle, hero: Unit, k: Kit):
     name, lvl = k.pet_name, k.pet_level
     a = stats.attrs(name)
     hp = stats.get(name, lvl, "hitpoints", "Hitpoints", default=2000.0)
-    dps = stats.get(name, lvl, "dps", "Damage per Second", "~damage per second", default=0.0)
+    dps = stats.get(
+        name, lvl, "dps", "Damage per Second", "~damage per second", default=0.0
+    )
     if name == "Unicorn":
         dps = 0.0
     # Wiki: Spirit Fox L9's DPH conflicts with DPS; retain DPS-derived hits.
@@ -246,7 +304,12 @@ def _spawn_pet(battle, hero: Unit, k: Kit):
     battle._uid += 1
     from .specs import UnitSpec
 
-    sp = UnitSpec(name, prefer="owner", walls="fly" if a.get("is_flying") else "ignore", engages_units=True)
+    sp = UnitSpec(
+        name,
+        prefer="owner",
+        walls="fly" if a.get("is_flying") else "ignore",
+        engages_units=True,
+    )
     p = Unit(
         battle._uid,
         name,
@@ -344,9 +407,8 @@ def tick(battle, u: Unit):
         pet = None
     if heal:
         u.heal(heal * dt)
-    # Wiki: Air Sweeper, displacement blocks attacks while upkeep continues.
-    pushed = t < u.extra.get("pushed_until", 0.0)
-    if k.has("Meteor Staff") and t >= k.next_meteor and not pushed:
+    # game data v18.200.9: MPMeteorStaff.ActiveWhileAlive=TRUE -> casts continue during pushes.
+    if k.has("Meteor Staff") and t >= k.next_meteor:
         candidates = _targets(battle, defenses=True) or [
             b for b in battle.buildings if battle.building_targetable(b)
         ]
@@ -375,7 +437,8 @@ def tick(battle, u: Unit):
                     )
                 )
         k.next_meteor = t + _col("Meteor Staff", k.lv("Meteor Staff"), "cooldown time")
-    if k.has("Electro Boots") and not pushed:
+    # Wiki: Electro Boots, the passive aura persists until knockout or Recall.
+    if k.has("Electro Boots"):
         due = u.extra.get("boots_next", t)
         if t >= due or math.isclose(t, due):
             # One pulse per 0.4 seconds (wiki: Electro Boots). The wiki says
@@ -416,7 +479,15 @@ def on_damaged(battle, u: Unit, amount: float, source, effect="attack"):
         while acc >= 300.0 and made < cap:
             acc -= 300.0
             made += 1
-            battle.spawn("Snake", u.team, u.x + 0.4, u.y + 0.4, level=snake_lv, kind="summon", group=u.group)
+            battle.spawn(
+                "Snake",
+                u.team,
+                u.x + 0.4,
+                u.y + 0.4,
+                level=snake_lv,
+                kind="summon",
+                group=u.group,
+            )
         u.extra["snake_dmg"], u.extra["snakes"] = acc, made
     if (
         k.has("Revenge Deck")
@@ -470,7 +541,9 @@ def strike_bonus(battle, u: Unit, target) -> float:
     bonus = 0.0
     if k.spear_shots > 0:
         k.spear_shots -= 1
-        bonus += k.spear_bonus * battle.atk_hero_mult  # fixed boosts take the league penalty (wiki)
+        bonus += (
+            k.spear_bonus * battle.atk_hero_mult
+        )  # fixed boosts take the league penalty (wiki)
         if k.spear_shots == 0 and "spear_base_range" in u.extra:
             u.range = u.extra.pop("spear_base_range")
     if k.vamp and k.doomed_at is None:  # No healing during revival (wiki: Vampstache).
@@ -585,11 +658,8 @@ def activate(battle, u: Unit, *, on_ko=False):
     for e in sorted(k.equip, key=lambda name: ordering.get(name, 2)):
         lv = k.lv(e)
         if e == "Giant Arrow":
-            # Wiki: Giant Arrow table, equipment L1/L3 -> ability L1/L2 (750/850).
-            # game data v18.200.9: ArcherQueenPierceProjectile L7.Damage=2000 -> equipment L18.
-            ability = game_data(
-                "special_abilities", "ArcherQueenPierceProjectile", lv // 3 + 1
-            )
+            # ClashKing b8f42a7: L18 damage is 1500; CSV has stale 2000.
+            ability = _ability_data(e, lv, "ArcherQueenPierceProjectile")
             dmg = float(ability["Damage"])
             # One-tile radius and double Air Defense damage (wiki: Giant Arrow).
             _line(
@@ -635,6 +705,8 @@ def activate(battle, u: Unit, *, on_ko=False):
             # game data v18.200.9: Earthquake Boots Spell.NumberOfHits=5,
             # TimeBetweenHitsMS=400 -> five impacts, matching Earthquake Spell timing.
             spell = game_data("spells", "Earthquake Boots Spell", lv // 3 + 1)
+            # CSV-only damage percentages: recheck after balance changes;
+            # ClashKing carries SelfSpellLevel but not this spell's internals.
             count = int(spell["NumberOfHits"])
             gap = int(spell["TimeBetweenHitsMS"]) / 1000.0
             # game data v18.200.9: Earthquake Boots Spell L7.BuildingDamagePermil=80,
@@ -675,7 +747,13 @@ def activate(battle, u: Unit, *, on_ko=False):
             u.extra["gauntlet_until"] = k.reduction_until
             u.extra["gauntlet_radius"] = 2.5  # wiki: Giant Gauntlet
             # A separate primary range increase is NUMBER NOT STATED.
-        elif e in ("Barbarian Puppet", "Archer Puppet", "Hog Rider Puppet", "Healer Puppet", "Lavaloon Puppet"):
+        elif e in (
+            "Barbarian Puppet",
+            "Archer Puppet",
+            "Hog Rider Puppet",
+            "Healer Puppet",
+            "Lavaloon Puppet",
+        ):
             _puppet(battle, u, e, lv)
         elif e == "Rage Vial":
             # Independent ten-second effect (wiki: Rage Vial).
@@ -729,7 +807,7 @@ def activate(battle, u: Unit, *, on_ko=False):
             )  # "turning invisible for 1 second" (wiki: Action Figure)
         elif e == "Eternal Tome":
             # game data v18.200.9: GrandWardenInvulnerability L18.DeactivateAfterTime=7200 -> 7.2 s emission.
-            ability = game_data("special_abilities", "GrandWardenInvulnerability", lv)
+            ability = _ability_data(e, lv, "GrandWardenInvulnerability")
             dur = float(ability["DeactivateAfterTime"]) / 1000.0
             u.extra["tome_until"] = t + dur
             _moving_auras(battle, u)
@@ -761,7 +839,7 @@ def activate(battle, u: Unit, *, on_ko=False):
             )
         elif e == "Heroic Torch":
             # game data v18.200.9: GWHeroicTorch L10.DeactivateAfterTime=26500 -> 26.5 s emission.
-            ability = game_data("special_abilities", "GWHeroicTorch", lv // 3 + 1)
+            ability = _ability_data(e, lv, "GWHeroicTorch")
             dur = float(ability["DeactivateAfterTime"]) / 1000.0
             red = _col(e, lv, "incoming damage reduction") / 100.0
             u.extra["torch_until"] = t + dur
@@ -876,11 +954,8 @@ def activate(battle, u: Unit, *, on_ko=False):
         elif e == "Portal Pendant":
             _portal(battle, u, lv)
         elif e == "Rocket Backpack":
-            # Wiki: Rocket Backpack table, equipment L1/L3 -> ability L1/L2 (575/750).
-            # game data v18.200.9: DragonDukeDeadlyDashMapCenter L10.ActAsPenetratingDamage=2200 -> equipment L27.
-            ability = game_data(
-                "special_abilities", "DragonDukeDeadlyDashMapCenter", lv // 3 + 1
-            )
+            # ClashKing b8f42a7: L27 dash damage is 2150; CSV has stale 2200.
+            ability = _ability_data(e, lv, "DragonDukeDeadlyDashMapCenter")
             start_dash(battle, u, float(ability["ActAsPenetratingDamage"]))
         elif e == "Stun Blaster":
             dur = _col(e, lv, "stun duration", default=7.5)
@@ -1200,7 +1275,11 @@ def _puppet(battle, u, e, lv, *, first=0, at=None):
         _invisible(u, battle.t + 1.0)  # wiki: Hog Rider Puppet, once on activation
     troop, col = table[e]
     n = int(_col(e, lv, col, default=1))
-    lvl_col = {"Hog Rider Puppet": "hog rider level", "Healer Puppet": "healer level", "Lavaloon Puppet": "lavaloon level"}.get(e)
+    lvl_col = {
+        "Hog Rider Puppet": "hog rider level",
+        "Healer Puppet": "healer level",
+        "Lavaloon Puppet": "lavaloon level",
+    }.get(e)
     level = int(_col(e, lv, lvl_col)) if lvl_col else None
     if e in ("Barbarian Puppet", "Archer Puppet"):
         # Puppets use researched troop levels (wiki: Barbarian Puppet; Archer Puppet).
@@ -1221,8 +1300,16 @@ def _puppet(battle, u, e, lv, *, first=0, at=None):
         ang = 2 * math.pi * j / max(1, n)
         # the attacker's own Town Hall caps an unknown researched level (the
         # spawn fallback is the battle's, i.e. the defender's, Town Hall)
-        s = battle.spawn(troop, "atk", u.x + 0.6 * math.cos(ang), u.y + 0.6 * math.sin(ang), level=level, kind="summon",
-                         group=u.group, town_hall=getattr(battle.plan, "town_hall", None))
+        s = battle.spawn(
+            troop,
+            "atk",
+            u.x + 0.6 * math.cos(ang),
+            u.y + 0.6 * math.sin(ang),
+            level=level,
+            kind="summon",
+            group=u.group,
+            town_hall=getattr(battle.plan, "town_hall", None),
+        )
         if e == "Archer Puppet":
             # Wiki: Recall Spell, Archer Puppet's equipment invisibility pauses.
             _invisible(
@@ -1493,7 +1580,13 @@ def apply_auras(battle):
             ally.aura_dmg = max(ally.aura_dmg, 1.0 + increase)
     for ally in combatants:
         if ally.alive:
-            effects.health_aura(ally, *want.get(ally.id, (0.0, 0.0)))
+            percentage, cap = want.get(ally.id, (0.0, 0.0))
+            # Wiki: Meteor Golem, splitting/recombining retains damage already taken.
+            # Reconcile aura capacity without granting fresh HP to a transferred body.
+            if ally.extra.pop("meteor_aura_transfer", False) and percentage:
+                ally.aura_bonus = min(ally.base_max_hp * percentage, cap)
+                ally.max_hp = ally.base_max_hp + ally.aura_bonus
+            effects.health_aura(ally, percentage, cap)
 
 
 # --------------------------------------------------------- defending heroes
@@ -1546,12 +1639,22 @@ def guardians_tick(battle):
     th = battle.th
     if g.extra.get("waiting"):
         th_down = th is not None and not th.alive
-        near = any(a.name != "Totem" and t >= a.invisible_until and not a.underground for a in battle.attackers_near(g.x, g.y, g.extra["trigger"]))
+        near = any(
+            a.name != "Totem" and t >= a.invisible_until and not a.underground
+            for a in battle.attackers_near(g.x, g.y, g.extra["trigger"])
+        )
         if near or th_down:
             g.extra["waiting"] = False
             g.active_at = t + 0.5  # jump down
-    if "smasher" in g.spec.special and th is not None and not th.alive and not g.extra.get("enraged"):
-        g.extra["enraged"] = True  # +60% damage and speed for the rest of the battle (wiki)
+    if (
+        "smasher" in g.spec.special
+        and th is not None
+        and not th.alive
+        and not g.extra.get("enraged")
+    ):
+        g.extra["enraged"] = (
+            True  # +60% damage and speed for the rest of the battle (wiki)
+        )
         g.dmg *= 1.6
         g.speed *= 1.6
 

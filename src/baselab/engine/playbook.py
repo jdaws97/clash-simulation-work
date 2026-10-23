@@ -521,9 +521,6 @@ class PlaybookPlan(AttackPlan):
         if act == "deploy":
             if what in heroes.HEROES:
                 return what + " already deployed" if what in self._deployed else None
-            # Playbook: root-rider.json, funnel and main_ice share Ice Golem stock.
-            if self.inventory.get(what, 0) <= 0:
-                return "no " + what + " left"
             return None
         if self._impossible(battle, st.get("when")):
             return "waits on a unit that is down"
@@ -619,6 +616,17 @@ class PlaybookPlan(AttackPlan):
                     self._impossible(battle, s.get("when")) and self._ready(battle, s.get("when"), relax=True)))
                 if not forced:
                     continue
+            # Playbook: root-rider.json, exhausted main_ice still waits for its trigger.
+            if (
+                act == "deploy"
+                and s.get("what") not in heroes.HEROES
+                and self.inventory.get(s.get("what"), 0) <= 0
+            ):
+                why = "no " + s["what"] + " left"
+                self._done.setdefault(sid, t)
+                self._cancelled.add(sid)
+                self.log_steps.append((round(t, 1), sid + " (skipped: " + why + ")"))
+                continue
             ok = False
             before = self.inventory.get(s.get("what"), 0)
             if act == "release_siege":

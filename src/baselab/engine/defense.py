@@ -37,7 +37,18 @@ class Weapon:
         "ammo_time",
     )
 
-    def __init__(self, owner: Building, kind: str, *, targets="both", range_=10.0, min_range=0.0, interval=1.0, damage=0.0, extra=None):
+    def __init__(
+        self,
+        owner: Building,
+        kind: str,
+        *,
+        targets="both",
+        range_=10.0,
+        min_range=0.0,
+        interval=1.0,
+        damage=0.0,
+        extra=None,
+    ):
         self.owner = owner
         self.kind = kind
         self.targets = targets
@@ -58,7 +69,16 @@ class Weapon:
         self.ammo_time = 0.0
 
 
-FACINGS = {"N": -math.pi / 2, "NE": -math.pi / 4, "E": 0.0, "SE": math.pi / 4, "S": math.pi / 2, "SW": 3 * math.pi / 4, "W": math.pi, "NW": -3 * math.pi / 4}
+FACINGS = {
+    "N": -math.pi / 2,
+    "NE": -math.pi / 4,
+    "E": 0.0,
+    "SE": math.pi / 4,
+    "S": math.pi / 2,
+    "SW": 3 * math.pi / 4,
+    "W": math.pi,
+    "NW": -3 * math.pi / 4,
+}
 
 # TH16 Giga Inferno (wiki "Town Hall/Giga Inferno (TH16)"): 300 DPS per target,
 # 4 targets, range 10, death bomb 1,100 within 4.5 tiles plus a 12 s poison
@@ -66,7 +86,16 @@ FACINGS = {"N": -math.pi / 2, "NE": -math.pi / 4, "E": 0.0, "SE": math.pi / 4, "
 # damaged or the base is 51% destroyed.
 GIGA_INFERNO = {
     13: dict(dps=None, targets=5),
-    16: dict(dps=300.0, targets=4, range=10.0, death=1100.0, death_radius=4.5, poison_dps=180.0, poison_time=12.0, slow=0.5),
+    16: dict(
+        dps=300.0,
+        targets=4,
+        range=10.0,
+        death=1100.0,
+        death_radius=4.5,
+        poison_dps=180.0,
+        poison_time=12.0,
+        slow=0.5,
+    ),
 }
 # TH17-18 Inferno Artillery (wiki): range 12, 4 targets, 3.5 s, 210 per hit
 # (L5) plus flame pools of 75 DPS for 6.8 s; always active.
@@ -103,37 +132,114 @@ INFERNO_ARTILLERY = dict(
 # with no matching row use 100, the most common value.
 EAGLE_GROUP_RADIUS = 5.0
 EAGLE_GROUP_WEIGHT = {
-    "Apprentice Warden": 100, "Archer": 100, "Archer Queen": 500,
-    "Azure Dragon": 5000, "Baby Dragon": 1000, "Balloon": 500, "Barbarian": 100,
-    "Barbarian Kicker": 400, "Barbarian King": 2500, "Barcher": 200,
-    "Bat": 100, "Battle Blimp": 100, "Battle Drill": 100, "Battle Ram": 500,
-    "Bear": 1600, "Big Boy": 800, "Booger": 300, "Bowler": 500,
-    "Broom Witch": 2000, "C.O.O.K.I.E": 1000, "Debt Collector": 50,
-    "Dragon": 2000, "Dragon Duke": 2500, "Dragon Rider": 2500, "Druid": 1600,
-    "Electro Dragon": 2000, "Electro Titan": 3000, "Electromite": 50,
-    "Firecracker": 800, "Firemite": 50, "Flame Flinger": 100, "Frostmite": 100,
-    "Furnace": 1800, "Giant": 500, "Giant Giant": 3400, "Giant Skeleton": 2000,
-    "Giant Thrower": 600, "Goblin": 50, "Golem": 3000, "Golemite": 600,
-    "Grand Warden": 500, "Headhunter": 100, "Healer": 30, "Henchman": 800,
-    "Hog Rider": 500, "Hog Wizard": 600, "Ice Golem": 500, "Ice Hound": 1800,
-    "Ice Minion": 100, "Ice Pup": 100, "Ice Wizard": 200, "Inferno Dragon": 1500,
-    "K.A.N.E": 6000, "Lava Hound": 3000, "Lava Pup": 100, "Lavaloon": 1500,
-    "Log Launcher": 100, "M.E.C.H.A": 1000, "Meteor Golem": 3000,
-    "Meteormite": 1500, "Miner": 500, "Minion": 100, "Minion Prince": 2500,
-    "P.E.K.K.A": 2000, "Party Wizard": 200, "Phoenix Egg": 0,
-    "Pumpkin Barbarian": 100, "Ram Rider": 1000, "Rocket Balloon": 500,
-    "Root Rider": 2000, "Royal Champion": 1000, "Royal Ghost": 100,
-    "Siege Barracks": 100, "Skeleton": 100, "Skeleton Barrel": 500, "Snake": 100,
-    "Snake Barrel": 500, "Sneaky Goblin": 200, "Spell Skeleton": 100,
-    "Stone Slammer": 100, "Super Archer": 600, "Super Barbarian": 400,
-    "Super Bowler": 2500, "Super Dragon": 4000, "Super Giant": 800,
-    "Super Hog": 500, "Super Hog Rider": 1200, "Super Miner": 2400,
-    "Super Minion": 1000, "Super Rider": 500, "Super Valkyrie": 1500,
-    "Super Wall Breaker": 50, "Super Witch": 2500, "Super Wizard": 1000,
-    "Super Yeti": 3500, "The Disarmer": 4000, "Thrower": 700, "Totem": 100,
-    "Troop Launcher": 100, "Valkyrie": 500, "Wall Breaker": 50,
-    "Wall Wrecker": 100, "Witch": 200, "Witch Golem": 4000, "Wizard": 200,
-    "YEETer": 2500, "Yeti": 1800, "Yetimite": 50,
+    "Apprentice Warden": 100,
+    "Archer": 100,
+    "Archer Queen": 500,
+    "Azure Dragon": 5000,
+    "Baby Dragon": 1000,
+    "Balloon": 500,
+    "Barbarian": 100,
+    "Barbarian Kicker": 400,
+    "Barbarian King": 2500,
+    "Barcher": 200,
+    "Bat": 100,
+    "Battle Blimp": 100,
+    "Battle Drill": 100,
+    "Battle Ram": 500,
+    "Bear": 1600,
+    "Big Boy": 800,
+    "Booger": 300,
+    "Bowler": 500,
+    "Broom Witch": 2000,
+    "C.O.O.K.I.E": 1000,
+    "Debt Collector": 50,
+    "Dragon": 2000,
+    "Dragon Duke": 2500,
+    "Dragon Rider": 2500,
+    "Druid": 1600,
+    "Electro Dragon": 2000,
+    "Electro Titan": 3000,
+    "Electromite": 50,
+    "Firecracker": 800,
+    "Firemite": 50,
+    "Flame Flinger": 100,
+    "Frostmite": 100,
+    "Furnace": 1800,
+    "Giant": 500,
+    "Giant Giant": 3400,
+    "Giant Skeleton": 2000,
+    "Giant Thrower": 600,
+    "Goblin": 50,
+    "Golem": 3000,
+    "Golemite": 600,
+    "Grand Warden": 500,
+    "Headhunter": 100,
+    "Healer": 30,
+    "Henchman": 800,
+    "Hog Rider": 500,
+    "Hog Wizard": 600,
+    "Ice Golem": 500,
+    "Ice Hound": 1800,
+    "Ice Minion": 100,
+    "Ice Pup": 100,
+    "Ice Wizard": 200,
+    "Inferno Dragon": 1500,
+    "K.A.N.E": 6000,
+    "Lava Hound": 3000,
+    "Lava Pup": 100,
+    "Lavaloon": 1500,
+    "Log Launcher": 100,
+    "M.E.C.H.A": 1000,
+    "Meteor Golem": 3000,
+    "Meteormite": 1500,
+    "Miner": 500,
+    "Minion": 100,
+    "Minion Prince": 2500,
+    "P.E.K.K.A": 2000,
+    "Party Wizard": 200,
+    "Phoenix Egg": 0,
+    "Pumpkin Barbarian": 100,
+    "Ram Rider": 1000,
+    "Rocket Balloon": 500,
+    "Root Rider": 2000,
+    "Royal Champion": 1000,
+    "Royal Ghost": 100,
+    "Siege Barracks": 100,
+    "Skeleton": 100,
+    "Skeleton Barrel": 500,
+    "Snake": 100,
+    "Snake Barrel": 500,
+    "Sneaky Goblin": 200,
+    "Spell Skeleton": 100,
+    "Stone Slammer": 100,
+    "Super Archer": 600,
+    "Super Barbarian": 400,
+    "Super Bowler": 2500,
+    "Super Dragon": 4000,
+    "Super Giant": 800,
+    "Super Hog": 500,
+    "Super Hog Rider": 1200,
+    "Super Miner": 2400,
+    "Super Minion": 1000,
+    "Super Rider": 500,
+    "Super Valkyrie": 1500,
+    "Super Wall Breaker": 50,
+    "Super Witch": 2500,
+    "Super Wizard": 1000,
+    "Super Yeti": 3500,
+    "The Disarmer": 4000,
+    "Thrower": 700,
+    "Totem": 100,
+    "Troop Launcher": 100,
+    "Valkyrie": 500,
+    "Wall Breaker": 50,
+    "Wall Wrecker": 100,
+    "Witch": 200,
+    "Witch Golem": 4000,
+    "Wizard": 200,
+    "YEETer": 2500,
+    "Yeti": 1800,
+    "Yetimite": 50,
 }
 
 
@@ -161,7 +267,14 @@ def _eagle_pick(battle, w, pool):
 
 
 def _dmg(name, level, interval):
-    d = stats.get(name, level, "Damage per Shot", "Damage per Hit", "Damage per Attack", default=None)
+    d = stats.get(
+        name,
+        level,
+        "Damage per Shot",
+        "Damage per Hit",
+        "Damage per Attack",
+        default=None,
+    )
     if d is None:
         dps = stats.get(name, level, "dps", "Damage per Second", default=0.0)
         d = dps * interval
@@ -197,7 +310,14 @@ CRAFTING_PHASE = 4
 CRAFTING_WINDOW = ("2026-08-01", "2026-12-31")
 CRAFTED_MODES = ("cake", "candle", "hunter")
 # Wiki: Spell Tower, mode unlock levels (Earthquake also needs TH17).
-SPELL_TOWER_UNLOCKS = {"rage": 1, "poison": 2, "invis": 3, "eq": 4, "quake": 4, "earthquake": 4}
+SPELL_TOWER_UNLOCKS = {
+    "rage": 1,
+    "poison": 2,
+    "invis": 3,
+    "eq": 4,
+    "quake": 4,
+    "earthquake": 4,
+}
 # Wiki: X-Bow, Inferno Tower, Eagle Artillery and Scattershot ammunition.
 AMMUNITION = {"xbow": 1500, "inferno": 1000, "eagle": 90, "scatter": 90}
 # Wiki: Town Hall/Inferno Artillery, five weapon levels.
@@ -325,15 +445,38 @@ def attach_weapon(battle, b: Building):
             b.is_defense = True
         elif th >= 13:
             g = GIGA_INFERNO[16]
-            b.weapon = W(b, "giga_inferno", range_=g["range"], interval=0.128, damage=g["dps"] * 0.128, extra=dict(g))
+            b.weapon = W(
+                b,
+                "giga_inferno",
+                range_=g["range"],
+                interval=0.128,
+                damage=g["dps"] * 0.128,
+                extra=dict(g),
+            )
             b.is_defense = True
         return
     if key == "ad":
-        b.weapon = W(b, "single", targets="air", range_=10.0, interval=1.0, damage=_dmg(name, lvl, 1.0))
+        b.weapon = W(
+            b,
+            "single",
+            targets="air",
+            range_=10.0,
+            interval=1.0,
+            damage=_dmg(name, lvl, 1.0),
+        )
     elif key == "at":
-        b.weapon = W(b, "single", range_=10.0, interval=0.5, damage=_dmg(name, lvl, 0.5))
+        b.weapon = W(
+            b, "single", range_=10.0, interval=0.5, damage=_dmg(name, lvl, 0.5)
+        )
     elif key == "cannon":
-        b.weapon = W(b, "single", targets="ground", range_=9.0, interval=0.8, damage=_dmg(name, lvl, 0.8))
+        b.weapon = W(
+            b,
+            "single",
+            targets="ground",
+            range_=9.0,
+            interval=0.8,
+            damage=_dmg(name, lvl, 0.8),
+        )
     elif key == "mat":
         # Wiki: Multi-Archer Tower, charges use the Damage per Shot column.
         # 3 archers; with fewer targets several archers focus one (wiki)
@@ -347,8 +490,20 @@ def attach_weapon(battle, b: Building):
         # game data v18.200.9: MergedCannonProjectile.BounceDamageReductionPercent=30 -> 70%.
         # Wiki: Ricochet Cannon, the bounce may go to "a different unit closer
         # to the initial target".
-        b.weapon = W(b, "ricochet", targets="ground", range_=9.0, interval=0.8, damage=stats.get(name, lvl, "Damage per Shot (Primary Target)", default=312.0),
-                     extra={"bounce": stats.get(name, lvl, "Secondary Chain Damage", default=218.4), "bounce_range": 3.5})
+        b.weapon = W(
+            b,
+            "ricochet",
+            targets="ground",
+            range_=9.0,
+            interval=0.8,
+            damage=stats.get(
+                name, lvl, "Damage per Shot (Primary Target)", default=312.0
+            ),
+            extra={
+                "bounce": stats.get(name, lvl, "Secondary Chain Damage", default=218.4),
+                "bounce_range": 3.5,
+            },
+        )
     elif key == "bt":
         # game data v18.200.9: Bomb Tower L13.DieDamage=700 -> base death damage.
         # mini_levels adds DPS/HP only; supercharges retain the base DieDamage.
@@ -380,7 +535,14 @@ def attach_weapon(battle, b: Building):
             },
         )
     elif key == "wt":
-        b.weapon = W(b, "splash", range_=7.0, interval=1.3, damage=_dmg(name, lvl, 1.3), extra={"splash": 1.0, "same_type": True})
+        b.weapon = W(
+            b,
+            "splash",
+            range_=7.0,
+            interval=1.3,
+            damage=_dmg(name, lvl, 1.3),
+            extra={"splash": 1.0, "same_type": True},
+        )
     elif key == "mortar":
         # Wiki: Mortar, normal hits must not read the geared shell column.
         b.weapon = W(
@@ -395,9 +557,23 @@ def attach_weapon(battle, b: Building):
         )
     elif key == "xbow":
         both = b.mode == "both"
-        b.weapon = W(b, "single", targets="both" if both else "ground", range_=11.5 if both else 14.0, interval=0.128, damage=_dmg(name, lvl, 0.128))
+        b.weapon = W(
+            b,
+            "single",
+            targets="both" if both else "ground",
+            range_=11.5 if both else 14.0,
+            interval=0.128,
+            damage=_dmg(name, lvl, 0.128),
+        )
     elif key == "tesla":
-        b.weapon = W(b, "single", range_=7.0, interval=0.6, damage=_dmg(name, lvl, 0.6), extra={"trigger": 6.0})
+        b.weapon = W(
+            b,
+            "single",
+            range_=7.0,
+            interval=0.6,
+            damage=_dmg(name, lvl, 0.6),
+            extra={"trigger": 6.0},
+        )
     elif key == "inferno":
         if b.mode == "multi":
             # Wiki: Inferno Tower/Home Village lists the beam count per level.
@@ -426,8 +602,22 @@ def attach_weapon(battle, b: Building):
                 extra={"ramp": ramp},
             )
     elif key == "eagle":
-        b.weapon = W(b, "eagle", range_=50.0, min_range=7.0, interval=10.0, damage=stats.get(name, lvl, "Damage per Hit", default=525.0),
-                     extra={"activation": 200, "shells": 3, "gap": 0.75, "shock": stats.get(name, lvl, "Shockwave Damage", default=50.0), "splash": 0.75, "shock_radius": 3.0})
+        b.weapon = W(
+            b,
+            "eagle",
+            range_=50.0,
+            min_range=7.0,
+            interval=10.0,
+            damage=stats.get(name, lvl, "Damage per Hit", default=525.0),
+            extra={
+                "activation": 200,
+                "shells": 3,
+                "gap": 0.75,
+                "shock": stats.get(name, lvl, "Shockwave Damage", default=50.0),
+                "splash": 0.75,
+                "shock_radius": 3.0,
+            },
+        )
     elif key == "scatter":
         # Unresolved, first shot kept instant; these fields are not modelled:
         # game data v18.200.9: Scattershot.NewTargetAttackDelay=2200 -> 2.2 s on a new target.
@@ -439,8 +629,15 @@ def attach_weapon(battle, b: Building):
         # Wizard Tower (700); so are Inferno Tower AlternatePickNewTargetDelay=50
         # and Air Sweeper PrepareSpeed=600. Wiki: Scattershot, "the actual
         # attack speed is just 3.2 seconds".
-        b.weapon = W(b, "scatter", range_=10.0, min_range=3.0, interval=3.2, damage=stats.get(name, lvl, "Damage per Shot*", default=576.0),
-                     extra={"splash_max": 420.0, "splash_min": 150.0})
+        b.weapon = W(
+            b,
+            "scatter",
+            range_=10.0,
+            min_range=3.0,
+            interval=3.2,
+            damage=stats.get(name, lvl, "Damage per Shot*", default=576.0),
+            extra={"splash_max": 420.0, "splash_min": 150.0},
+        )
         hi = stats.text(name, lvl, "Damage per Shot*")
         if hi and "-" in str(hi):
             lo_, hi_ = [stats.num(x) for x in str(hi).split("-")]
@@ -451,17 +648,43 @@ def attach_weapon(battle, b: Building):
             lo_, hi_ = [stats.num(x) for x in str(sp).split("-")]
             b.weapon.extra.update(splash_min=lo_, splash_max=hi_)
     elif key == "mono":
-        b.weapon = W(b, "monolith", range_=11.0, interval=1.5, damage=stats.get(name, lvl, "Base Damage per Shot", default=289.5),
-                     extra={"pct": stats.get(name, lvl, "Bonus Damage per Shot", default=13.0) / 100.0})
+        b.weapon = W(
+            b,
+            "monolith",
+            range_=11.0,
+            interval=1.5,
+            damage=stats.get(name, lvl, "Base Damage per Shot", default=289.5),
+            extra={
+                "pct": stats.get(name, lvl, "Bonus Damage per Shot", default=13.0)
+                / 100.0
+            },
+        )
     elif key == "sweeper":
-        b.weapon = W(b, "sweeper", targets="air", range_=15.0, min_range=1.0, interval=5.0, extra={"push": stats.get(name, lvl, "Push Strength", default=4.0)})
+        b.weapon = W(
+            b,
+            "sweeper",
+            targets="air",
+            range_=15.0,
+            min_range=1.0,
+            interval=5.0,
+            extra={"push": stats.get(name, lvl, "Push Strength", default=4.0)},
+        )
         b.weapon.facing = FACINGS.get(b.mode or "E", 0.0)
     elif key == "bh":
         if lvl == 1:
             b.is_defense = False
             return
-        b.weapon = W(b, "single", range_=7.0, interval=0.4, damage=_dmg(name, lvl, 0.4),
-                     extra={"repair": stats.get(name, lvl, "Repair per Second", default=85.0), "repair_range": 7.0})
+        b.weapon = W(
+            b,
+            "single",
+            range_=7.0,
+            interval=0.4,
+            damage=_dmg(name, lvl, 0.4),
+            extra={
+                "repair": stats.get(name, lvl, "Repair per Second", default=85.0),
+                "repair_range": 7.0,
+            },
+        )
         b.is_defense = True
         position = (b.x, b.y)
         if battle.battle_mode == "multiplayer":
@@ -469,13 +692,6 @@ def attach_weapon(battle, b: Building):
             position = battle.builder_starts.get(b.id, position)
         battle.builders.append(Builder(b, *position))
     elif key == "st":
-        # Wiki: Spell Tower, per-mode infoboxes give Range 9 tiles (Rage, Poison,
-        # Earthquake) and 4.5 tiles (Invisibility). Unresolved, kept at 9:
-        # game data v18.200.9: Spell Tower.AttackRange=800 -> 8 tiles, matching no mode.
-        # The modes are separate weapon-mode rows (UnlockWeaponMode=SpellTowerRage)
-        # missing from the extracted tables, and every spell radius the wiki
-        # gives matches spells.csv (Spell Tower Rage/Poison Radius=500,
-        # Invisibility 450, Earthquake 470).
         b.weapon = W(b, "spell_tower", range_=9.0, interval=70.0)
         b.weapon.mode = b.mode or "rage"
         # Wiki: Spell Tower, Earthquake unlocks at level 4 and TH17.
@@ -484,11 +700,29 @@ def attach_weapon(battle, b: Building):
             raise ValueError("Spell Tower mode is not unlocked")
         if required == 4 and battle.town_hall < 17:
             raise ValueError("Earthquake Spell Towers require Town Hall 17")
+        # ClashKing b8f42a7: each level publishes its newly unlocked mode's
+        # profile, not the mode currently selected on a higher-level tower.
+        profile = stats.clashking_level(name, required)
+        b.weapon.range = profile.get("attack_range", 900) / 100.0
+        b.weapon.interval = profile.get("attack_speed", 70000) / 1000.0
     elif key == "mgt":
         if b.mode == "long":
-            b.weapon = W(b, "single", range_=12.0, interval=1.0, damage=stats.get(name, lvl, "Damage per Hit", default=390.0))
+            b.weapon = W(
+                b,
+                "single",
+                range_=12.0,
+                interval=1.0,
+                damage=stats.get(name, lvl, "Damage per Hit", default=390.0),
+            )
         else:
-            b.weapon = W(b, "burst", range_=8.0, interval=0.383, damage=stats.get(name, lvl, "Damage per Hit**", default=170.4), extra={"shots": 4, "gap": 0.192})
+            b.weapon = W(
+                b,
+                "burst",
+                range_=8.0,
+                interval=0.383,
+                damage=stats.get(name, lvl, "Damage per Hit**", default=170.4),
+                extra={"shots": 4, "gap": 0.192},
+            )
     elif key == "firespitter":
         # game data v18.200.9: Firespitter.AttackSpeed=1000 -> 1 s.
         b.weapon = W(
@@ -508,10 +742,28 @@ def attach_weapon(battle, b: Building):
         # game data v18.200.9: Super Wizard Tower.ChainAttackFactor=15 -> 15 chained units.
         # game data v18.200.9: Super Wizard Tower.ChainAttackDepth=1 -> every chain starts at the primary.
         # ChainAttackDelay=128 (0.128 s between chain hits) is not modelled.
-        b.weapon = W(b, "super_wizard", range_=8.0, interval=1.3, damage=stats.get(name, lvl, "Damage per Hit (Primary)", default=416.0),
-                     extra={"secondary": stats.get(name, lvl, "Damage per Hit (Secondary)", default=166.4), "chain": 15, "chain_range": 4.0})
+        b.weapon = W(
+            b,
+            "super_wizard",
+            range_=8.0,
+            interval=1.3,
+            damage=stats.get(name, lvl, "Damage per Hit (Primary)", default=416.0),
+            extra={
+                "secondary": stats.get(
+                    name, lvl, "Damage per Hit (Secondary)", default=166.4
+                ),
+                "chain": 15,
+                "chain_range": 4.0,
+            },
+        )
     elif key == "revenge":
-        b.weapon = W(b, "revenge", range_=11.0, interval=1.2, damage=stats.get(name, lvl, "Damage per Shot", default=500.0))
+        b.weapon = W(
+            b,
+            "revenge",
+            range_=11.0,
+            interval=1.2,
+            damage=stats.get(name, lvl, "Damage per Shot", default=500.0),
+        )
     elif key == "crafting":
         _attach_crafted(battle, b)
     if key in ("at", "cannon", "mortar"):
@@ -550,9 +802,12 @@ def _gear_up(battle, b):
         w.damage = stats.get(b.name, b.level, "Damage per Hit**")
         w.extra.update(shots=4, gap=0.192)
     else:
-        # game data v18.200.9: Mortar.AltAttackSpeed=3500 -> 3.5 s after the burst.
         row = game_data("buildings", b.name, b.level)
-        w.kind, w.interval = "mortar_burst", int(row["AltAttackSpeed"]) / 1000.0
+        # ClashKing b8f42a7: L18 geared DPS is 89, versus the older CSV's 86.
+        alternate = stats.clashking_level(b.name, b.level).get("alt", {})
+        interval = alternate.get("attack_speed", int(row["AltAttackSpeed"]))
+        dps = alternate.get("dps", int(row["AltDPS"]))
+        w.kind, w.interval = "mortar_burst", interval / 1000.0
         # game data v18.200.9: Mortar.AltBurstCount=3, AltBurstDelay=500 -> shells/gap.
         w.extra.update(
             shots=int(row["AltBurstCount"]), gap=int(row["AltBurstDelay"]) / 1000.0
@@ -560,7 +815,7 @@ def _gear_up(battle, b):
         cycle = w.interval + (w.extra["shots"] - 1) * w.extra["gap"]
         # game data v18.200.9: Mortar L16.AltDPS=74 -> 111 damage/shell over 4.5 s.
         # Wiki: Mortar, 123.13/shell implies a 5 s cycle; unresolved, needs video.
-        w.damage = int(row["AltDPS"]) * cycle / w.extra["shots"]
+        w.damage = dps * cycle / w.extra["shots"]
 
 
 def reveal_tesla(battle, b):
@@ -733,7 +988,11 @@ def _act_once(battle, w: Weapon):
         first = battle.first_deploy_t
         if first is not None:
             active = battle.t - first
-            w.extra["targets"] = 6 if active < w.extra["melt1"] else 4 if active < w.extra["melt2"] else 3
+            w.extra["targets"] = (
+                6
+                if active < w.extra["melt1"]
+                else 4 if active < w.extra["melt2"] else 3
+            )
         return _multi(battle, w, rage)
     if k == "cake":
         return _cake(battle, w, rage)
@@ -861,7 +1120,11 @@ def _act_once(battle, w: Weapon):
     elif k == "splash":
         # Wizard Tower damages only the target's type; Bomb Tower ground only
         air = tgt.flying if w.extra.get("same_type") else w.targets in ("air", "both")
-        ground = (not tgt.flying) if w.extra.get("same_type") else w.targets in ("ground", "both")
+        ground = (
+            (not tgt.flying)
+            if w.extra.get("same_type")
+            else w.targets in ("ground", "both")
+        )
         if b.key == "wt":
             if b.level <= 4:
                 # game data v18.200.9: ps_chr_WizardAttack_TowerProjectile.Speed=500,
@@ -994,7 +1257,9 @@ def _multi(battle, w: Weapon, rage):
             if a.alive and a.targetable(t) and dist(a.x, a.y, b.x, b.y) <= w.range
         ]
     if len(keep) < n:
-        for a in sorted(_visible(battle, w, w.range), key=lambda a: dist(a.x, a.y, b.x, b.y)):
+        for a in sorted(
+            _visible(battle, w, w.range), key=lambda a: dist(a.x, a.y, b.x, b.y)
+        ):
             if a not in keep:
                 keep.append(a)
                 if len(keep) >= n:
@@ -1045,8 +1310,21 @@ def _cake(battle, w, rage):
     if not pool:
         return
     tgt = min(pool, key=lambda a: dist(a.x, a.y, b.x, b.y))
-    battle.splash_units(tgt.x, tgt.y, w.extra["splash"], w.damage * rage, tgt.flying, not tgt.flying)
-    battle.add_pending(Pending(battle.t + w.extra["bomb_delay"], tgt.x, tgt.y, w.extra["bomb_radius"], w.extra["bomb"] * rage, True, True, "cake"))
+    battle.splash_units(
+        tgt.x, tgt.y, w.extra["splash"], w.damage * rage, tgt.flying, not tgt.flying
+    )
+    battle.add_pending(
+        Pending(
+            battle.t + w.extra["bomb_delay"],
+            tgt.x,
+            tgt.y,
+            w.extra["bomb_radius"],
+            w.extra["bomb"] * rage,
+            True,
+            True,
+            "cake",
+        )
+    )
     w.cooldown += w.interval
 
 
@@ -1058,8 +1336,14 @@ def _hunter_hit(battle, w, tgt, rage):
     slow = stats.get("Poison Spell", lvl, "Speed Decrease", default=50.0) / 100.0
     atk = stats.get("Poison Spell", lvl, "Attack Rate Decrease", default=70.0) / 100.0
     t = battle.t
-    tgt.move_slow, tgt.move_slow_until = min(tgt.move_slow if t < tgt.move_slow_until else 1.0, 1.0 - slow), t + w.extra["poison_time"]
-    tgt.atk_slow, tgt.atk_slow_until = min(tgt.atk_slow if t < tgt.atk_slow_until else 1.0, 1.0 - atk), t + w.extra["poison_time"]
+    tgt.move_slow, tgt.move_slow_until = (
+        min(tgt.move_slow if t < tgt.move_slow_until else 1.0, 1.0 - slow),
+        t + w.extra["poison_time"],
+    )
+    tgt.atk_slow, tgt.atk_slow_until = (
+        min(tgt.atk_slow if t < tgt.atk_slow_until else 1.0, 1.0 - atk),
+        t + w.extra["poison_time"],
+    )
 
 
 def _scatter(battle, w, tgt, dmg, rage):
@@ -1118,7 +1402,9 @@ def _eagle(battle, w: Weapon):
     if target is None or not target.alive:
         # the burst's target was cleared mid-burst (Totem or Invisibility
         # retargeting, or it died): pick again by group weight, or stop
-        pool = [unit for unit in _visible(battle, w, w.range) if unit.name != "Yetimite"]
+        pool = [
+            unit for unit in _visible(battle, w, w.range) if unit.name != "Yetimite"
+        ]
         if not pool:
             w.burst_left = 0
             return
@@ -1182,7 +1468,9 @@ def _sweeper(battle, w: Weapon):
         ang = math.atan2(a.y - b.y, a.x - b.x)
         # game data v18.200.9: Air Sweeper.TargetingConeAngle=105 -> +-52.5 degrees
         # (the wiki's 90, 120 and 60 degree descriptions conflict).
-        if abs((ang - w.facing + math.pi) % (2 * math.pi) - math.pi) <= math.radians(52.5):
+        if abs((ang - w.facing + math.pi) % (2 * math.pi) - math.pi) <= math.radians(
+            52.5
+        ):
             cands.append((d, ang, a))
     if not cands:
         return
@@ -1264,7 +1552,7 @@ def _spell_tower(battle, w: Weapon):
     spells.tower_cast(battle, w.owner, w.mode, [unit])
     w.extra.pop("trigger", None)
     w.extra.pop("hit_triggers", None)
-    w.cooldown += 70.0 if w.mode in ("rage", "poison") else 50.0
+    w.cooldown += w.interval
 
 
 @dataclass
@@ -1377,7 +1665,9 @@ def _inferno_artillery(battle, w, rage):
     if w.cooldown > 0:
         return
     b = w.owner
-    pool = sorted(_visible(battle, w, w.range), key=lambda a: dist(a.x, a.y, b.x, b.y))[: w.extra["targets"]]
+    pool = sorted(_visible(battle, w, w.range), key=lambda a: dist(a.x, a.y, b.x, b.y))[
+        : w.extra["targets"]
+    ]
     if not pool:
         return
     from .entities import Field

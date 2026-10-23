@@ -83,7 +83,11 @@ def warden_weights() -> dict:
         import json
         from pathlib import Path
 
-        _WARDEN = json.loads((Path(__file__).resolve().parents[3] / "data" / "warden-weights.json").read_text())
+        _WARDEN = json.loads(
+            (
+                Path(__file__).resolve().parents[3] / "data" / "warden-weights.json"
+            ).read_text()
+        )
     return _WARDEN
 
 
@@ -250,6 +254,7 @@ def smash_wall(battle, u, w):
 
 # ------------------------------------------------------------------ spawning
 
+
 def on_spawn(battle, u: Unit):
     if u.name == "Spell Skeleton":
         # Wiki: Skeleton Spell/Skeleton, 30 armor HP; overkill is discarded.
@@ -282,20 +287,30 @@ def on_spawn(battle, u: Unit):
             # game data v18.200.9: UNDERGROUND_UNIT_GROUND_SPEED_PERCENTAGE.NumberValue=70 -> 70%.
             u.speed = 4.0 * 0.7
     if "yetimites" in sp.special:
-        u.extra["mites"] = int(stats.get(u.name, u.level, "Yetimites spawned", default=14))
+        u.extra["mites"] = int(
+            stats.get(u.name, u.level, "Yetimites spawned", default=14)
+        )
         u.extra["mite_dmg"] = 0.0
     if "electromites" in sp.special:
-        u.extra["mites"] = int(stats.get(u.name, u.level, "Electromites spawned", default=14))
+        u.extra["mites"] = int(
+            stats.get(u.name, u.level, "Electromites spawned", default=14)
+        )
         u.extra["mite_dmg"] = 0.0
     if "furnace" in sp.special:
-        u.extra["mites"] = int(stats.get(u.name, u.level, "Firemites Spawned", default=22))
+        u.extra["mites"] = int(
+            stats.get(u.name, u.level, "Firemites Spawned", default=22)
+        )
         # Wiki: Furnace does not state startup or per-level spawn intervals.
         # Keep the existing timing approximation explicit.
         u.extra["next_mite"] = t + 1.0
         u.decay = u.max_hp / 60.0
     if "siege_barracks" in sp.special:
         u.decay = u.max_hp / 30.0
-        u.extra["queue"] = ["P.E.K.K.A"] * int(stats.get(u.name, u.level, "Troops Spawned / P.E.K.K.As", default=2)) + ["Wizard"] * int(stats.get(u.name, u.level, "Troops Spawned / Wizards", default=12))
+        u.extra["queue"] = ["P.E.K.K.A"] * int(
+            stats.get(u.name, u.level, "Troops Spawned / P.E.K.K.As", default=2)
+        ) + ["Wizard"] * int(
+            stats.get(u.name, u.level, "Troops Spawned / Wizards", default=12)
+        )
         u.extra["next"] = t + 0.5
     if "logs" in sp.special:
         u.extra["next_log"] = t + 1.0
@@ -513,7 +528,10 @@ def pre_tick(battle, u: Unit) -> bool:
     if "witch_skeletons" in special and u.can_act(t) and t >= u.extra["next_summon"]:
         alive = [s for s in u.extra["skeletons"] if s.alive]
         cap = int(stats.get(u.name, u.level, "Maximum Skeletons Summoned", default=16))
-        n = min(int(stats.get(u.name, u.level, "Skeletons per Summon", default=5)), cap - len(alive))
+        n = min(
+            int(stats.get(u.name, u.level, "Skeletons per Summon", default=5)),
+            cap - len(alive),
+        )
         for k in range(max(0, n)):
             s = battle.spawn(
                 "Skeleton",
@@ -535,7 +553,16 @@ def pre_tick(battle, u: Unit) -> bool:
     if "big_boy" in special and t >= u.extra["next_summon"]:
         bb = u.extra.get("bb")
         if bb is None or not bb.alive:
-            u.extra["bb"] = battle.spawn("Big Boy", u.team, u.x + 0.5, u.y, level=1, kind="summon", group=u.group, owner=u)
+            u.extra["bb"] = battle.spawn(
+                "Big Boy",
+                u.team,
+                u.x + 0.5,
+                u.y,
+                level=1,
+                kind="summon",
+                group=u.group,
+                owner=u,
+            )
             # game data v18.200.9: Super Witch.SummonCooldown=25000 -> 25 s per summon.
             u.extra["next_summon"] = (
                 t + int(game_unit_data(u.name, u.level)["SummonCooldown"]) / 1000.0
@@ -679,11 +706,28 @@ def _roll_log(battle, u):
         # Wiki: Log Launcher gives radius one and fourfold wall damage.
         battle.splash_buildings(u.x, u.y, 1.0, pb, walls=True, wall_mult=4.0)
         battle.splash_units(u.x, u.y, 1.0, pb, False, True, team="def")
-    log = Field("rolling_log", u.x, u.y, 0.0, math.inf, team=u.team, started=battle.t, extra={
-        "launcher": u, "dx": dx, "dy": dy, "dmg": dmg, "wall_dmg": wall_dmg, "launched": battle.t,
-        # samples every half tile from the start offset on, as before
-        "next": int(LOG_START * 2), "hit_b": set(), "hit_w": set(), "hit_units": set(),
-    })
+    log = Field(
+        "rolling_log",
+        u.x,
+        u.y,
+        0.0,
+        math.inf,
+        team=u.team,
+        started=battle.t,
+        extra={
+            "launcher": u,
+            "dx": dx,
+            "dy": dy,
+            "dmg": dmg,
+            "wall_dmg": wall_dmg,
+            "launched": battle.t,
+            # samples every half tile from the start offset on, as before
+            "next": int(LOG_START * 2),
+            "hit_b": set(),
+            "hit_w": set(),
+            "hit_units": set(),
+        },
+    )
     if advance_log(battle, log):
         battle.fields.append(log)
 
@@ -698,13 +742,22 @@ def advance_log(battle, f) -> bool:
             step = e["next"]
             e["next"] += 1
             px, py = f.x + e["dx"] * step * 0.5, f.y + e["dy"] * step * 0.5
-            for k in ((int(px), int(py)), (int(px + 0.5), int(py)), (int(px), int(py + 0.5))):
+            for k in (
+                (int(px), int(py)),
+                (int(px + 0.5), int(py)),
+                (int(px), int(py + 0.5)),
+            ):
                 w = battle.walls.get(k)
                 if w is not None and w.alive and k not in e["hit_w"]:
                     e["hit_w"].add(k)
                     battle.hit_building(w, e["wall_dmg"])
             for b in battle.buildings:
-                if b.alive and b.counted and b.id not in e["hit_b"] and b.edge_distance(px, py) < 0.8:
+                if (
+                    b.alive
+                    and b.counted
+                    and b.id not in e["hit_b"]
+                    and b.edge_distance(px, py) < 0.8
+                ):
                     e["hit_b"].add(b.id)
                     battle.hit_building(b, e["dmg"])
                     if len(e["hit_b"]) >= 4:
@@ -807,8 +860,23 @@ def on_death(battle, u: Unit):
             if u.team == "atk":
                 # Wall Breakers killed early still blast walls at x40 (wiki
                 # "Damage when destroyed vs. Walls")
-                wall_dmg = stats.get(u.name, u.level, sp.death_damage + " vs. Walls", sp.death_damage.replace("Damage when destroyed", "Damage when destroyed to Walls"), default=dmg)
-                battle.splash_buildings(u.x, u.y, sp.death_radius or 1.2, dmg, walls=True, wall_mult=wall_dmg / dmg)
+                wall_dmg = stats.get(
+                    u.name,
+                    u.level,
+                    sp.death_damage + " vs. Walls",
+                    sp.death_damage.replace(
+                        "Damage when destroyed", "Damage when destroyed to Walls"
+                    ),
+                    default=dmg,
+                )
+                battle.splash_buildings(
+                    u.x,
+                    u.y,
+                    sp.death_radius or 1.2,
+                    dmg,
+                    walls=True,
+                    wall_mult=wall_dmg / dmg,
+                )
                 battle.splash_units(
                     u.x, u.y, sp.death_radius or 1.2, dmg, death_air, True, team="def"
                 )
@@ -819,7 +887,12 @@ def on_death(battle, u: Unit):
     if sp.death_freeze:
         secs = stats.get(u.name, u.level, sp.death_freeze, default=0.0)
         if u.team == "def":
-            secs = stats.get(u.name, u.level, sp.death_freeze.replace("On Offense", "On Defense"), default=secs / 2.5)
+            secs = stats.get(
+                u.name,
+                u.level,
+                sp.death_freeze.replace("On Offense", "On Defense"),
+                default=secs / 2.5,
+            )
         r = sp.death_freeze_radius
         if u.name == "Ice Golem":
             if battle.offense_finished():
@@ -860,9 +933,20 @@ def on_death(battle, u: Unit):
                 a.frozen_until = max(a.frozen_until, t + secs)
     if sp.death_spawn:
         name, count = sp.death_spawn
-        n = int(count) if isinstance(count, (int, float)) else int(stats.get(u.name, u.level, count, default=0))
+        n = (
+            int(count)
+            if isinstance(count, (int, float))
+            else int(stats.get(u.name, u.level, count, default=0))
+        )
         if u.team == "def" and isinstance(count, str):
-            n = int(stats.get(u.name, u.level, count.replace("On Offense", "On Defense"), default=n))
+            n = int(
+                stats.get(
+                    u.name,
+                    u.level,
+                    count.replace("On Offense", "On Defense"),
+                    default=n,
+                )
+            )
         sub_level = stats.max_level(name, 18) or 1
         if name == "Golemite":
             sub_level = u.level
@@ -932,7 +1016,9 @@ def on_death(battle, u: Unit):
             )
     if "smasher" in special and u.team == "def":
         # Sore Loser: drops a defensive Rage Spell like the Spell Tower's (wiki)
-        battle.fields.append(Field("def_rage", u.x, u.y, 5.0, t + 18.0, team="def", value=1.6, started=t))
+        battle.fields.append(
+            Field("def_rage", u.x, u.y, 5.0, t + 18.0, team="def", value=1.6, started=t)
+        )
     if "death_rage" in special:
         # Wiki: Super Valkyrie and Rage Spell/Home Village; level-four potency.
         # game data v18.200.9: EliteValkyrieRage.NumberOfHits=60 -> 60 pulses.
@@ -960,7 +1046,9 @@ def on_death(battle, u: Unit):
         )
     if "hog_split" in special and u.team == "atk":
         _split_hog(battle, u)
-    if ("yetimites" in special or "electromites" in special) and u.extra.get("mites", 0) > 0:
+    if ("yetimites" in special or "electromites" in special) and u.extra.get(
+        "mites", 0
+    ) > 0:
         # Super Yeti's remaining-child release is inherited from Yeti, unconfirmed.
         mite = "Yetimite" if "yetimites" in special else "Electromite"
         for k in range(u.extra["mites"]):
@@ -1135,9 +1223,9 @@ def inherit_clone(battle, parent, child):
     battle._clones.append(child)
 
 
-def _spawn_meteormite(battle, u, x, y, health, small):
-    # Wiki: Meteor_Golem.txt:9, half current base HP per child, rounded down
-    # to 1% of its maximum; the child's aura is accounted for separately.
+def _spawn_meteormite(battle, u, x, y, health, small, aura_bonus, aura_hp):
+    # Wiki: Meteor Golem, damaged halves inherit current health.
+    # Preserve exact base/aura shares under the reviewed HP conservation rule.
     child = battle.spawn(
         "Meteormite",
         u.team,
@@ -1149,22 +1237,27 @@ def _spawn_meteormite(battle, u, x, y, health, small):
         owner=u,
     )
     child.base_max_hp = u.base_max_hp / 2.0
-    child.max_hp = child.base_max_hp
-    quantum = child.base_max_hp * 0.01
-    child.hp = 1.0 if small else math.floor((health / 2.0) / quantum) * quantum
+    child.aura_bonus = aura_bonus / 2.0
+    child.max_hp = child.base_max_hp + child.aura_bonus
+    share = 1.0 if small else 0.5
+    child.hp = health * share
+    child.extra["aura_hp"] = aura_hp * share
+    child.extra["meteor_aura_transfer"] = aura_bonus > 0.0
     child.extra["meteor_components"] = (("permanent", u.level),)
 
 
 def split_meteor(battle, u, pending):
     # Wiki: Meteor Golem splits on throwing; only the bottom child stays here.
-    # Wiki: Meteor_Golem.txt:9, split base health so Life Gem/Apprentice Aura
-    # is not inherited as base health and then granted a second time.
-    health = max(0.0, u.hp - u.extra.get("aura_hp", 0.0))
-    small = health < u.base_max_hp * 0.01
+    # Wiki: Meteor Golem, damage before splitting remains lost in both halves.
+    health = u.hp
+    aura_hp = u.extra.get("aura_hp", 0.0)
+    small = max(0.0, health - aura_hp) < u.base_max_hp * 0.01
     pending.extra["meteor_health"] = health
     pending.extra["meteor_small"] = small
+    pending.extra["meteor_aura_bonus"] = u.aura_bonus
+    pending.extra["meteor_aura_hp"] = aura_hp
     if not small:
-        _spawn_meteormite(battle, u, u.x, u.y, health, small)
+        _spawn_meteormite(battle, u, u.x, u.y, health, small, u.aura_bonus, aura_hp)
     u.alive = False
 
 
@@ -1214,15 +1307,16 @@ def try_merge_meteor(battle, u):
         parent = battle.spawn(
             "Meteor Golem", "atk", u.x, u.y, level=u.level, group=u.group
         )
-        # Wiki: Meteormite.txt:8 (Meteor_Golem_Meteormite), sum constituent
-        # base HP, rounded to 0.5%; aura HP is granted separately after merging.
+        # Wiki: Meteor Golem/Meteormite, merged health is the constituent sum.
+        # Preserve exact current HP, including only the aura health still left.
         parent.base_max_hp = u.base_max_hp + other.base_max_hp
-        parent.max_hp = parent.base_max_hp
-        health = max(0.0, u.hp - u.extra.get("aura_hp", 0.0)) + max(
-            0.0, other.hp - other.extra.get("aura_hp", 0.0)
+        parent.aura_bonus = u.aura_bonus + other.aura_bonus
+        parent.max_hp = parent.base_max_hp + parent.aura_bonus
+        parent.hp = u.hp + other.hp
+        parent.extra["aura_hp"] = u.extra.get("aura_hp", 0.0) + other.extra.get(
+            "aura_hp", 0.0
         )
-        quantum = parent.base_max_hp * 0.005
-        parent.hp = max(1.0, math.floor(health / quantum) * quantum)
+        parent.extra["meteor_aura_transfer"] = parent.aura_bonus > 0.0
         parent.extra["meteor_components"] = u.extra.get(
             "meteor_components", ()
         ) + other.extra.get("meteor_components", ())
@@ -1824,7 +1918,14 @@ def _spatial_strike(battle, u, target, damage):
         # game data v18.200.9: Stone Slammer.Damage2Min=350 -> 350 at three tiles at level 6.
         # game data v18.200.9: Stone Slammer.Damage2FalloffStart=200 -> falloff from 2 tiles.
         # game data v18.200.9: Stone Slammer.Damage2FalloffEnd=300 -> to 3 tiles.
-        pair = {1: (100, 200), 2: (150, 300), 3: (200, 400), 4: (250, 500), 5: (300, 600), 6: (350, 700)}.get(u.level)
+        pair = {
+            1: (100, 200),
+            2: (150, 300),
+            3: (200, 400),
+            4: (250, 500),
+            5: (300, 600),
+            6: (350, 700),
+        }.get(u.level)
         if pair is not None:
             minimum, maximum = pair
             boost = damage / stats.get(u.name, u.level, "Damage per Hit / Hitbox 1")
@@ -1852,12 +1953,23 @@ def _spatial_strike(battle, u, target, damage):
         # The impact splash reaches walls (x8, specs.py); the flame field's
         # own wall bonus (wiki) belongs to the unmodelled field.
         for _ in range(3):
-            _area_hit(battle, u, target.x, target.y, sp.splash, damage, walls=True, primary=target)
+            _area_hit(
+                battle,
+                u,
+                target.x,
+                target.y,
+                sp.splash,
+                damage,
+                walls=True,
+                primary=target,
+            )
     elif sp.attack == "suicide":
         # Wiki: Super Wall Breaker; arrival applies normal and death damage.
         # The blast is centred on the target (no SelfAsAoeCenter, unlike the
         # Balloon's), the death damage on the breaker (on_death).
-        _area_hit(battle, u, target.x, target.y, sp.splash, damage, walls=True, primary=target)
+        _area_hit(
+            battle, u, target.x, target.y, sp.splash, damage, walls=True, primary=target
+        )
         if u.name == "Wall Breaker":
             # No death damage when a Wall Breaker reaches his wall: the wiki's
             # level-12 example gives 110 to a building (his Damage alone, not
@@ -1908,9 +2020,7 @@ def _spatial_strike(battle, u, target, damage):
         # The Super Valkyrie has the same area flags:
         # game data v18.200.9: Super Valkyrie.SelfAsAoeCenter=TRUE -> centred on herself.
         # game data v18.200.9: Super Valkyrie.DamageRadius=100 -> 1 tile.
-        _area_hit(
-            battle, u, u.x, u.y, sp.splash, damage, walls=True, primary=target
-        )
+        _area_hit(battle, u, u.x, u.y, sp.splash, damage, walls=True, primary=target)
     else:
         # game data v18.200.9: Balloon/Rocket Balloon.SelfAsAoeCenter=TRUE -> self-centred splash.
         center = (
@@ -2195,6 +2305,8 @@ def projectile_impact(battle, pending):
             y,
             pending.extra["meteor_health"],
             pending.extra["meteor_small"],
+            pending.extra["meteor_aura_bonus"],
+            pending.extra["meteor_aura_hp"],
         )
     if (mode == "leap" and u.name == "Firemite") or u.name == "Flame Flinger":
         if u.team == "def" and u.name == "Firemite":
@@ -2344,7 +2456,11 @@ def strike(battle, u: Unit, target):
         battle.hit_building(target, dmg)
         if sp.splash > 0:
             for b in battle.buildings:
-                if b is not target and b.alive and b.edge_distance(target.x, target.y) <= sp.splash:
+                if (
+                    b is not target
+                    and b.alive
+                    and b.edge_distance(target.x, target.y) <= sp.splash
+                ):
                     battle.hit_building(b, dmg)
     else:
         battle.hit_building(target, dmg)
@@ -2397,7 +2513,12 @@ def _after_unit_hit(battle, u, target, dmg, *, splash=True):
                 battle.hit_unit(v, dmg, attacker=u)
         for v in battle.attackers_near(target.x, target.y, travel + sp.splash):
             px, py = v.x - target.x, v.y - target.y
-            if (px * dx + py * dy) >= -1.5 and abs(px * dy - py * dx) <= 1.5 and v.name != "Totem" and v.kind not in ("siege", "siege_idle"):
+            if (
+                (px * dx + py * dy) >= -1.5
+                and abs(px * dy - py * dx) <= 1.5
+                and v.name != "Totem"
+                and v.kind not in ("siege", "siege_idle")
+            ):
                 battle._nudge(v, dx * push, dy * push)
                 v.target = v.wall_target = None
                 reset_beam(v)
@@ -2423,7 +2544,13 @@ def _after_unit_hit(battle, u, target, dmg, *, splash=True):
         spells._poison(
             battle,
             target,
-            float(poison["PoisonDPS"]),
+            # ClashKing b8f42a7 carries Poison's max DPS as spell damage.
+            stats.get(
+                "Poison Spell",
+                int(ability["PoisonOnHitSpellLevel"]),
+                "damage",
+                default=float(poison["PoisonDPS"]),
+            ),
             slow,
             atk,
             # game data v18.200.9: Poison.HeroDamageMultiplier=5 -> 0.05x hero damage, as for the Poison spell.
@@ -2442,7 +2569,11 @@ def _after_unit_hit(battle, u, target, dmg, *, splash=True):
         and sp.splash > 0
         and "logger" not in sp.special
     ):
-        pool = battle.defenders_near(target.x, target.y, sp.splash) if u.team == "atk" else battle.attackers_near(target.x, target.y, sp.splash)
+        pool = (
+            battle.defenders_near(target.x, target.y, sp.splash)
+            if u.team == "atk"
+            else battle.attackers_near(target.x, target.y, sp.splash)
+        )
         for v in pool:
             if (
                 v is not target
@@ -2592,7 +2723,10 @@ def act_healer(battle, u: Unit):
         eligible = [
             target
             for target in eligible
-            if sum(w for x, y, w in weighted if dist(target.x, target.y, x, y) <= sp.splash) > 2
+            if sum(
+                w for x, y, w in weighted if dist(target.x, target.y, x, y) <= sp.splash
+            )
+            > 2
         ]
     target = u.target if u.target in eligible else None
     if u.follow in eligible:

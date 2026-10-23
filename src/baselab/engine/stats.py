@@ -1,8 +1,7 @@
 """Read entity statistics from the unified registry (data/registry.json).
 
-Every number the v2 engine uses for an entity comes through here, so the
-source of each value is traceable: wiki combat fields first, with extracted
-game data retained as a fallback.
+ClashKing supplies current combat numbers; the wiki supplies missing values
+and rules. The older v18.200.9 CSV tables supply missing mechanics fields.
 """
 
 from __future__ import annotations
@@ -11,6 +10,8 @@ import json
 import re
 from functools import lru_cache
 from pathlib import Path
+
+from .. import gamedata
 
 ROOT = Path(__file__).resolve().parents[3]
 REGISTRY = ROOT / "data" / "registry.json"
@@ -134,6 +135,49 @@ def attrs(name: str) -> dict:
     return registry()[name]["attrs"]
 
 
+@lru_cache(maxsize=1)
+def _clashking_entries() -> dict:
+    # ClashKing b8f42a7: repeated names can identify different units. Prefer
+    # the permanent Meteor Golem over its TH-scaled temporary event version.
+    entries = {}
+    data = gamedata.raw()
+    for section in (
+        "buildings",
+        "traps",
+        "troops",
+        "guardians",
+        "spells",
+        "heroes",
+        "pets",
+        "equipment",
+    ):
+        for entry in data[section]:
+            if entry.get("village", "home") != "home":
+                continue
+            name = entry["name"]
+            previous = entries.get(name)
+            if previous is None or not entry.get("is_seasonal"):
+                entries[name] = entry
+    return entries
+
+
+def clashking_entry(name: str) -> dict:
+    rec = registry().get(name)
+    if rec is not None and not rec.get("source", {}).get("clashking"):
+        # A puppet summon (notably Lavaloon) is not its namesake event troop.
+        return {}
+    return _clashking_entries().get(name, {})
+
+
+@lru_cache(maxsize=4096)
+def clashking_level(name: str, level) -> dict:
+    """Exact published level; never clamp or use the array position as level."""
+    for entry in clashking_entry(name).get("levels", ()):
+        if entry["level"] == level:
+            return entry
+    return {}
+
+
 def max_level(name: str, town_hall: int) -> int | None:
     rec = record(name)
     mapping = rec.get("max_level", {})
@@ -182,13 +226,8 @@ def get(name: str, level, *keys, default=None):
     lower = {k.lower(): v for k, v in r.items()}
     entry = next(e for e in record(name)["levels"] if e.get("level") == level)
     wiki = entry.get("wiki", {})
-    # Game data wins for hitpoints and DPS where it has them (registry.py:
-    # "ClashKing (game files) is authoritative for numbers it has"; checked
-    # against game data v18.200.9 Characters.csv/Heroes.csv, e.g. Lavaloon L1
-    # 1080 HP / 50 DPS, Flame Flinger L1 127 DPS, Barbarian King L1 102 DPS,
-    # where the wiki columns read 970/45, 124 and 51). The wiki column is the
-    # fallback for rows without game data. Without this the wiki "Hitpoints"
-    # column (same lowercase key) silently replaced the game value.
+    # ClashKing b8f42a7 supplies the registry's HP/DPS. The older CSV must
+    # not replace these values. Wiki columns fill rows without ClashKing.
     for alias, columns in (
         ("hitpoints", ("hitpoints",)),
         ("dps", ("damage per second", "damage per second*", "base damage per second")),

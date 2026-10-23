@@ -33,9 +33,23 @@ def _lvl(battle, name, level):
 
 
 def _radius(name, level, default):
+    # ClashKing b8f42a7 stores spell radii directly in tiles, rounded to one
+    # decimal (Skeleton/Bat 2.2 for game data 225 -> 2.25): when the older
+    # value rounds to ClashKing's, keep its exact value; otherwise ClashKing.
     r = stats.get(name, level, "radius", "Radius", default=None)
     if not r:
         r = stats.num(stats.attrs(name).get("raw", {}).get("Radius"), default)
+    try:
+        from .specs import game_data
+
+        row = game_data("spells", name, level)
+        if row.get("Radius"):
+            r = int(row["Radius"]) / 100.0
+    except (KeyError, ValueError, TypeError):
+        pass
+    current = stats.clashking_level(name, level).get("radius")
+    if current is not None and not (r and abs(r - current) <= 0.05 + 1e-9):
+        return current
     return r or default
 
 
@@ -112,7 +126,14 @@ def cast_effect(battle, name, x, y, level=None):
         battle.log.append((round(battle.t, 1), "spell", name, round(x, 1), round(y, 1)))
     f = None
     if name == "Lightning Spell":
-        f = Field("lightning", x, y, _radius(name, lv, 2.0), t, value=stats.get(name, lv, "damage", "Damage", default=640.0))
+        f = Field(
+            "lightning",
+            x,
+            y,
+            _radius(name, lv, 2.0),
+            t,
+            value=stats.get(name, lv, "damage", "Damage", default=640.0),
+        )
     elif name == "Healing Spell":
         per = stats.get(name, lv, "Healing per Pulse", default=60.0)
         # Wiki: Healing Spell/Home Village, 41 pulses including both endpoints.
@@ -132,7 +153,14 @@ def cast_effect(battle, name, x, y, level=None):
             extra={"speed": spd, "pulses": 60, "gap": 0.3},
         )  # Wiki: Rage Spell/Home Village.
     elif name == "Jump Spell":
-        f = Field("jump", x, y, _radius(name, lv, 3.5), t + stats.get(name, lv, "duration", default=60.0), extra={"cleared": []})
+        f = Field(
+            "jump",
+            x,
+            y,
+            _radius(name, lv, 3.5),
+            t + stats.get(name, lv, "duration", default=60.0),
+            extra={"cleared": []},
+        )
     elif name == "Freeze Spell":
         # Unresolved, kept: one radius and the full Freeze Time.
         # game data v18.200.9: Freeze.FreezeOuterTimeMS=4950 -> a 90% "outer" freeze (L7, FreezeTimeMS=5500).
@@ -140,12 +168,29 @@ def cast_effect(battle, name, x, y, level=None):
         # No table gives an outer radius (RandomRadius=400 is graphics only,
         # RandomRadiusAffectsOnlyGfx=TRUE). The wiki (Freeze Spell, Ice Golem)
         # quotes FreezeTimeMS only, so who gets the outer time is not stated.
-        f = Field("freeze", x, y, 3.5, t, value=stats.get(name, lv, "Freeze Time", default=2.0 + 0.5 * lv))
+        f = Field(
+            "freeze",
+            x,
+            y,
+            3.5,
+            t,
+            value=stats.get(name, lv, "Freeze Time", default=2.0 + 0.5 * lv),
+        )
     elif name == "Poison Spell":
         dur = stats.num(stats.attrs(name).get("raw", {}).get("Spell Duration"), 16.0)
-        f = Field("poison", x, y, 4.0, t + dur, value=stats.get(name, lv, "Max damage per second", default=340.0),
-                  extra={"slow": stats.get(name, lv, "Speed Decrease", default=50.0) / 100.0,
-                         "atk": stats.get(name, lv, "Attack Rate Decrease", default=72.0) / 100.0})
+        f = Field(
+            "poison",
+            x,
+            y,
+            4.0,
+            t + dur,
+            value=stats.get(name, lv, "Max damage per second", default=340.0),
+            extra={
+                "slow": stats.get(name, lv, "Speed Decrease", default=50.0) / 100.0,
+                "atk": stats.get(name, lv, "Attack Rate Decrease", default=72.0)
+                / 100.0,
+            },
+        )
     elif name == "Earthquake Spell":
         # game data v18.200.9: Earthquake.NumberOfHits=5, TimeBetweenHitsMS=400.
         # Earthquake.BuildingDamagePermil=58 (L5+) -> 5.8% per hit;
@@ -161,7 +206,14 @@ def cast_effect(battle, name, x, y, level=None):
         )
     elif name == "Haste Spell":
         dur = stats.get(name, lv, "Spell Duration", default=30.0)
-        f = Field("haste", x, y, _radius(name, lv, 4.0), t + dur, extra={"speed": stats.get(name, lv, "Speed Increase", default=52.0) / 8.0})
+        f = Field(
+            "haste",
+            x,
+            y,
+            _radius(name, lv, 4.0),
+            t + dur,
+            extra={"speed": stats.get(name, lv, "Speed Increase", default=52.0) / 8.0},
+        )
     elif name == "Clone Spell":
         f = Field(
             "clone",
@@ -176,28 +228,28 @@ def cast_effect(battle, name, x, y, level=None):
     # Spell)"); a first group lands at once, the rest follow one at a time.
     elif name == "Skeleton Spell":
         n = stats.get(name, lv, "Skeletons generated", default=19.0)
-        # game data v18.200.9: Skeleton Spell.Radius=225 -> 2.25 tiles.
+        # Radius 2.25 tiles (game data 225; ClashKing rounds it to 2.2).
         # game data v18.200.9: Skeleton Spell.SpawnFirstGroupSize=3 -> 3 on landing.
         # game data v18.200.9: Skeleton Spell.SpawnDuration=19000 -> 19 s for 19 (1 s each, every level).
         f = Field(
             "summon",
             x,
             y,
-            2.25,
+            _radius(name, lv, 2.25),
             t + (n - 3) * 1.0,
             value=n,
             extra={"unit": "Spell Skeleton", "first": 3, "gap": 1.0},
         )
     elif name == "Bat Spell":
         n = stats.get(name, lv, "Bats generated", default=22.0)
-        # game data v18.200.9: Bat Spell.Radius=225 -> 2.25 tiles.
+        # Radius 2.25 tiles (game data 225; ClashKing rounds it to 2.2).
         # game data v18.200.9: Bat Spell.SpawnFirstGroupSize=1 -> 1 on landing.
         # game data v18.200.9: Bat Spell.SpawnDuration=15000 -> 15 s for 25 (0.6 s each, every level).
         f = Field(
             "summon",
             x,
             y,
-            2.25,
+            _radius(name, lv, 2.25),
             t + (n - 1) * 0.6,
             value=n,
             extra={"unit": "Bat", "first": 1, "gap": 0.6},
@@ -215,18 +267,61 @@ def cast_effect(battle, name, x, y, level=None):
     elif name == "Invisibility Spell":
         f = Field("invis", x, y, 4.0, t + stats.get(name, lv, "Duration", default=4.25))
     elif name == "Recall Spell":
-        f = Field("recall", x, y, 5.0, t, value=stats.get(name, lv, "Recalled Capacity", default=107.0))
+        f = Field(
+            "recall",
+            x,
+            y,
+            5.0,
+            t,
+            value=stats.get(name, lv, "Recalled Capacity", default=107.0),
+        )
     elif name == "Overgrowth Spell":
-        f = Field("overgrowth", x, y, 6.0, t, value=stats.get(name, lv, "Duration", default=25.0))
+        f = Field(
+            "overgrowth",
+            x,
+            y,
+            6.0,
+            t,
+            value=stats.get(name, lv, "Duration", default=25.0),
+        )
     elif name == "Revive Spell":
-        f = Field("revive_cast", x, y, 8.0, t, value=stats.get(name, lv, "Hero Heal %", default=70.0) / 100.0)
+        f = Field(
+            "revive_cast",
+            x,
+            y,
+            8.0,
+            t,
+            value=stats.get(name, lv, "Hero Heal %", default=70.0) / 100.0,
+        )
     elif name == "Ice Block Spell":
-        f = Field("iceblock", x, y, 5.0, t, value=stats.get(name, lv, "Incoming Damage Reduction", default=92.0) / 100.0,
-                  extra={"time": stats.get(name, lv, "Duration", default=7.0)})
+        f = Field(
+            "iceblock",
+            x,
+            y,
+            5.0,
+            t,
+            value=stats.get(name, lv, "Incoming Damage Reduction", default=92.0)
+            / 100.0,
+            extra={"time": stats.get(name, lv, "Duration", default=7.0)},
+        )
     elif name == "Totem Spell":
-        f = Field("totem", x, y, 5.0, t, value=stats.get(name, lv, "Totem Hitpoints", default=11000.0))
+        f = Field(
+            "totem",
+            x,
+            y,
+            5.0,
+            t,
+            value=stats.get(name, lv, "Totem Hitpoints", default=11000.0),
+        )
     elif name == "Angry Spell":
-        f = Field("angry", x, y, 6.0, t + stats.get(name, lv, "Duration", default=5.0), value=stats.get(name, lv, "Anger Duration", default=8.0))
+        f = Field(
+            "angry",
+            x,
+            y,
+            6.0,
+            t + stats.get(name, lv, "Duration", default=5.0),
+            value=stats.get(name, lv, "Anger Duration", default=8.0),
+        )
     elif name == "Santa's Surprise":
         # Wiki: Santa's Surprise, five strikes at 0.1-second intervals.
         f = Field(
@@ -589,7 +684,11 @@ def _apply(battle, f: Field) -> bool:
                 builder.rage_speed = f.extra.get("speed", 30.0 / 8.0)
                 builder.rage_until = until
         for b in battle.buildings:
-            if b.alive and b.weapon is not None and b.edge_distance(f.x, f.y) <= f.radius:
+            if (
+                b.alive
+                and b.weapon is not None
+                and b.edge_distance(f.x, f.y) <= f.radius
+            ):
                 b.rage_mult, b.rage_until = f.value, until
         for u in battle.defenders_near(f.x, f.y, f.radius):
             # Wiki: Spell Tower, heroes receive half the damage and movement bonus.
@@ -636,7 +735,11 @@ def _apply(battle, f: Field) -> bool:
 
     if k == "freeze":
         for b in battle.buildings:
-            if b.alive and b.weapon is not None and b.edge_distance(f.x, f.y) <= f.radius:
+            if (
+                b.alive
+                and b.weapon is not None
+                and b.edge_distance(f.x, f.y) <= f.radius
+            ):
                 if b.key == "tesla" and not b.revealed:
                     continue  # hidden teslas cannot be frozen (wiki)
                 b.frozen_until = max(b.frozen_until, t + f.value)
@@ -881,13 +984,23 @@ def _apply(battle, f: Field) -> bool:
     if k == "angry":
         for u in battle.attackers_near(f.x, f.y, f.radius):
             sp = u.spec
-            if not u.alive or sp.attack in ("heal", "heal_chain") or sp.prefer in ("defense", "air_defense") and u.name not in ("Lava Hound", "Ice Hound"):
+            if (
+                not u.alive
+                or sp.attack in ("heal", "heal_chain")
+                or sp.prefer in ("defense", "air_defense")
+                and u.name not in ("Lava Hound", "Ice Hound")
+            ):
                 continue
             if u.name in ("Ruin Witch", "Totem") or u.kind in ("siege", "siege_idle"):
                 continue
-            if "angry_until" not in u.extra or u.extra["angry_until"] < t + f.value - 0.5:
+            if (
+                "angry_until" not in u.extra
+                or u.extra["angry_until"] < t + f.value - 0.5
+            ):
                 u.extra["angry_until"] = t + f.value
-                if u.target_kind != "building" or not getattr(u.target, "is_defense", False):
+                if u.target_kind != "building" or not getattr(
+                    u.target, "is_defense", False
+                ):
                     u.target = None
         return True
     if k == "revive_cast":
@@ -1106,13 +1219,13 @@ def _poison_states(battle):
             continue
         live.append(state)
         if state["ramp"]:
-            exposure[unit.id] = exposure.get(unit.id, 0.0) + t - state["since"] + battle.DT
+            exposure[unit.id] = (
+                exposure.get(unit.id, 0.0) + t - state["since"] + battle.DT
+            )
     for state in live:
         unit = state["u"]
         origin = state.get("origin", "spell")
-        fraction = (
-            min(1.0, exposure[unit.id] / POISON_RAMP) if state["ramp"] else 1.0
-        )
+        fraction = min(1.0, exposure[unit.id] / POISON_RAMP) if state["ramp"] else 1.0
         damage = state["dps"] * fraction
         previous = active.get(unit.id)
         if previous is None:
@@ -1177,7 +1290,9 @@ def tower_cast(battle, b: Building, mode, near=None):
         tgt = min(near, key=lambda a: dist(a.x, a.y, b.x, b.y), default=None)
     x, y = (tgt.x, tgt.y) if tgt is not None else (b.x, b.y)
     if mode == "rage":
-        battle.fields.append(Field("def_rage", b.x, b.y, 5.0, t + 18.0, team="def", value=1.6, started=t))
+        battle.fields.append(
+            Field("def_rage", b.x, b.y, 5.0, t + 18.0, team="def", value=1.6, started=t)
+        )
     elif mode == "poison":
         add_defensive_poison(
             battle,
@@ -1199,7 +1314,9 @@ def tower_cast(battle, b: Building, mode, near=None):
             },
         )
     elif mode == "invis":
-        battle.fields.append(Field("def_invis", b.x, b.y, 4.5, t + 4.5, team="def", started=t))
+        battle.fields.append(
+            Field("def_invis", b.x, b.y, 4.5, t + 4.5, team="def", started=t)
+        )
     elif mode in ("eq", "quake", "earthquake"):
         # Sieges are skipped (_affected). Spell Tower Earthquake sets no
         # AffectsSiegeMachines; spells that reach sieges say so (e.g.
@@ -1358,7 +1475,10 @@ def _totem(battle, f):
         spec=sp,
         level=1,
     )
-    u.decay = stats.num(stats.attrs("Totem Spell").get("raw", {}).get("Hitpoint Decay per Second"), 334.0)
+    u.decay = stats.num(
+        stats.attrs("Totem Spell").get("raw", {}).get("Hitpoint Decay per Second"),
+        334.0,
+    )
     u.spawned_at = u.active_at = battle.t
     battle.attackers.append(u)
     # Wiki: Totem Spell, only defenders in the landing area retarget.
