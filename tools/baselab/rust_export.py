@@ -122,6 +122,57 @@ def catalog():
         for name, rec in reg.items()
         if rec.get("kind") == "pet"
     }
+    # Export the reference helpers' resolved values. Rust must not repeat the
+    # ClashKing/CSV precedence rules or infer equipment ability levels itself.
+    ability_sources = {
+        "Fire Heart": ("DragonCrownRegeneration", 1),
+        "Noble Iron": ("MPTurboStart", 0),
+        "Giant Arrow": ("ArcherQueenPierceProjectile", 0),
+        "Eternal Tome": ("GrandWardenInvulnerability", 0),
+        "Heroic Torch": ("GWHeroicTorch", 0),
+        "Rocket Backpack": ("DragonDukeDeadlyDashMapCenter", 0),
+    }
+    equipment_abilities = {
+        f"{name}|{entry['level']}": heroes._ability_data(
+            name, entry["level"], csv_name, index=index
+        )
+        for name, (csv_name, index) in ability_sources.items()
+        for entry in reg[name].get("levels", [])
+        if isinstance(entry.get("level"), int)
+    }
+    radius_defaults = {
+        "Lightning Spell": 2.0,
+        "Earthquake Spell": 4.7,
+        "Jump Spell": 3.5,
+        "Haste Spell": 4.0,
+        "Skeleton Spell": 2.25,
+        "Bat Spell": 2.25,
+    }
+    spell_radii = {
+        f"{name}|{entry['level']}": spells._radius(name, entry["level"], default)
+        for name, default in radius_defaults.items()
+        for entry in reg[name].get("levels", [])
+        if isinstance(entry.get("level"), int)
+    }
+    spell_tower_profiles = {}
+    for required in sorted(set(defense.SPELL_TOWER_UNLOCKS.values())):
+        profile = stats.clashking_level("Spell Tower", required)
+        spell_tower_profiles[str(required)] = {
+            "range": profile.get("attack_range", 900) / 100.0,
+            "interval": profile.get("attack_speed", 70000) / 1000.0,
+        }
+    mortar_alternates = {}
+    for entry in reg["Mortar"].get("levels", []):
+        level = entry.get("level")
+        if not isinstance(level, int) or level < defense.GEAR_MINIMUM["mortar"]:
+            continue
+        row = specs.game_data("buildings", "Mortar", level)
+        alternate = stats.clashking_level("Mortar", level).get("alt", {})
+        mortar_alternates[str(level)] = {
+            "interval": alternate.get("attack_speed", int(row["AltAttackSpeed"]))
+            / 1000.0,
+            "dps": alternate.get("dps", int(row["AltDPS"])),
+        }
     return {
         "game_data": game_tables,
         "note": "Rust engine catalog, exported by tools/baselab/rust_export.py catalog",
@@ -135,6 +186,15 @@ def catalog():
         "poison_ramp": spells.POISON_RAMP,
         "game_ranges": specs._game_ranges(),
         "pet_spawn_ranges": pet_spawn_ranges,
+        "resolved": {
+            "equipment_abilities": equipment_abilities,
+            "spell_radii": spell_radii,
+            "pet_spawn_speeds": {
+                name: specs.movement_speed(name) for name in pet_spawn_ranges
+            },
+            "spell_tower_profiles": spell_tower_profiles,
+            "mortar_alternates": mortar_alternates,
+        },
         "trap_names": dump(mechanics.TRAP_NAMES),
         "trap_sizes": dump(mechanics.TRAP_SIZES),
         "world": mechanics.WORLD,

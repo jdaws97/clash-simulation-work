@@ -225,12 +225,7 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         passive_dps += dps;
         passive_speed += attack_speed / 100.0;
         if equipment == "Fire Heart" {
-            let ability_level = equipment_ability_level(&level);
-            let ability = battle.catalog.game_data(
-                "special_abilities",
-                "DragonCrownRegeneration",
-                Some(&ability_level),
-            );
+            let ability = battle.catalog.equipment_ability(equipment, &level);
             kit.regen += game_float(ability, "Regeneration") * 1000.0
                 / game_float(ability, "RegenerationTimeBetweenHitsMS");
         } else {
@@ -338,7 +333,8 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
     unit.interval = base_interval / (1.0 + passive_speed);
     if kit.has("Noble Iron") {
         let level = kit.lv("Noble Iron");
-        let shots = col(battle, "Noble Iron", level, &["number of attacks"], 0.0) as i64;
+        let ability = battle.catalog.equipment_ability("Noble Iron", level);
+        let shots = game_required_int(ability, "DeactivateAfterNumberOfHits");
         let bonus = col(battle, "Noble Iron", level, &["damage per shot increase"], 0.0);
         let range = col(battle, "Noble Iron", level, &["attack range"], 0.0);
         kit.spear_shots = shots;
@@ -413,12 +409,12 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
         .unwrap_or(1.0);
     // heroes.py:232-234: pet construction bypasses unit_numbers' range override.
     let range = *battle.catalog.pet_spawn_ranges.get(&name).expect("pet spawn range");
-    // specs.py:412-429: game-data movement uses the first row, including pets.
-    let row = battle.catalog.game_unit_data(&name, None);
-    let speed = row.get("Speed").map(|_| game_int(row, "Speed", 0) as f64 / 100.0)
-        .or_else(|| attrs.get("speed").and_then(|v| v.opt_f64()))
-        .or_else(|| attrs.get("speed_display").and_then(|v| v.opt_f64()).map(|v| v / 8.0))
-        .unwrap_or(0.0);
+    let speed = battle
+        .catalog
+        .resolved
+        .at("pet_spawn_speeds")
+        .at(&name)
+        .f64();
     let flying = attrs.get("is_flying").is_some_and(|v| v.bool());
     let hits_air = attrs.get("is_air_targeting").map_or(true, |v| v.bool());
     // heroes.py:204 constructs UnitSpec directly, rather than spec(name).
@@ -494,7 +490,7 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
         target: None,
         target_kind: None,
         wall_target: None,
-        group: "main".to_owned(),
+        group: owner.group.clone(),
         spawned_at: battle.t,
         active_at: 0.0,
         stuck: 0.0,
@@ -651,7 +647,7 @@ pub fn tick(battle: &mut Battle, hero: UnitRef) {
             let damage = col(battle, "Electro Boots", kit.lv("Electro Boots"), &["aura damage per hit"], 0.0);
             let unit = battle.unit(hero);
             let (x, y) = (unit.x, unit.y);
-            blast(battle, x, y, 4.5, damage, None, 0.25);
+            blast(battle, x, y, 4.5, damage, None, 0.25, false);
             battle.unit_mut(hero).extra.boots_next = Some(t + 0.4);
         }
     }
@@ -828,7 +824,7 @@ pub fn on_hit_extra(battle: &mut Battle, hero: UnitRef, target: EntityRef) {
             let (x, y) = battle.entity_position(previous);
             let mut best = None;
             let mut closest = f64::INFINITY;
-            for candidate in targets(battle, false) {
+            for candidate in target_candidates(battle, false, true) {
                 if visited.contains(&candidate) {
                     continue;
                 }
@@ -957,12 +953,7 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
         let level = battle.unit(hero).kit.as_ref().expect("hero kit").lv(&name).clone();
         match name.as_str() {
             "Giant Arrow" => {
-                let ability_level = equipment_ability_level(&level);
-                let ability = battle.catalog.game_data(
-                    "special_abilities",
-                    "ArcherQueenPierceProjectile",
-                    Some(&ability_level),
-                );
+                let ability = battle.catalog.equipment_ability(&name, &level);
                 let damage = game_float(ability, "Damage");
                 line(battle, hero, target, 75.0, 1.0, damage);
             }
@@ -1180,7 +1171,7 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
             "Stun Blaster" => {
                 let duration = col(battle, &name, &level, &["stun duration"], 7.5);
                 let radius = battle.catalog.stats.attrs(&name).at("radius").f64();
-                for target in targets(battle, false) {
+                for target in target_candidates(battle, false, true) {
                     if let EntityRef::Building(id) = target {
                         if matches!(battle.building(id).key.as_str(), "gs" | "es" | "ds") {
                             continue;
@@ -1208,17 +1199,8 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
             | "Lavaloon Puppet" => puppet(battle, hero, &name, &level, 0, None),
             "Eternal Tome" => {
                 // heroes.py:678-682: emission excludes the recipient's shield tail.
-                let ability = battle.catalog.game_data(
-                    "special_abilities",
-                    "GrandWardenInvulnerability",
-                    Some(&level),
-                );
-                let duration = ability
-                    .at("DeactivateAfterTime")
-                    .str()
-                    .parse::<f64>()
-                    .expect("Tome emission duration")
-                    / 1000.0;
+                let ability = battle.catalog.equipment_ability(&name, &level);
+                let duration = game_float(ability, "DeactivateAfterTime") / 1000.0;
                 battle.unit_mut(hero).extra.tome_until = t + duration;
                 battle.unit_mut(hero).extra.paused_timers.tome_until = true;
                 moving_auras(battle, hero, None);
@@ -1254,22 +1236,8 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                 battle.add_pending(pending);
             }
             "Heroic Torch" => {
-                // heroes.py:710-723: the ability level advances every three equipment levels.
-                let Level::Int(equipment_level) = &level else {
-                    panic!("integer Heroic Torch level");
-                };
-                let ability_level = Level::Int(equipment_level.div_euclid(3) + 1);
-                let ability = battle.catalog.game_data(
-                    "special_abilities",
-                    "GWHeroicTorch",
-                    Some(&ability_level),
-                );
-                let duration = ability
-                    .at("DeactivateAfterTime")
-                    .str()
-                    .parse::<f64>()
-                    .expect("Torch emission duration")
-                    / 1000.0;
+                let ability = battle.catalog.equipment_ability(&name, &level);
+                let duration = game_float(ability, "DeactivateAfterTime") / 1000.0;
                 let reduction =
                     col(battle, &name, &level, &["incoming damage reduction"], 0.0) / 100.0;
                 let speed = col(
@@ -1399,12 +1367,7 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
             }
             "Portal Pendant" => portal(battle, hero, &level),
             "Rocket Backpack" => {
-                let ability_level = equipment_ability_level(&level);
-                let ability = battle.catalog.game_data(
-                    "special_abilities",
-                    "DragonDukeDeadlyDashMapCenter",
-                    Some(&ability_level),
-                );
+                let ability = battle.catalog.equipment_ability(&name, &level);
                 let damage = game_float(ability, "ActAsPenetratingDamage");
                 start_dash(battle, hero, damage);
             }
@@ -1420,7 +1383,15 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                 let facing = crate::geom::py_atan2(direction.1, direction.0);
                 let half_angle = (60.0 * (std::f64::consts::PI / 180.0)) / 2.0;
                 let radius = battle.catalog.stats.attrs(&name).at("radius").f64();
-                for target in targets(battle, false) {
+                let mut targets = target_candidates(battle, false, true);
+                targets.extend(
+                    battle
+                        .walls
+                        .iter()
+                        .filter(|wall| wall.alive)
+                        .map(|wall| EntityRef::Wall(wall.id)),
+                );
+                for target in targets {
                     let (x, y) = battle.entity_position(target);
                     let unit = battle.unit(hero);
                     let angle = crate::geom::py_atan2(y - unit.y, x - unit.x);
@@ -1559,7 +1530,16 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
                 pets::poison_hit(battle, actor, target);
             }
         }
-        "blast" => blast(battle, pending.x, pending.y, pending.radius, pending.damage, None, 1.0),
+        "blast" => blast(
+            battle,
+            pending.x,
+            pending.y,
+            pending.radius,
+            pending.damage,
+            None,
+            1.0,
+            pending.effect == Some(Tag::Meteor),
+        ),
         // heroes.py:845-855: subsequent puppet batches retain the scheduled clock.
         "puppet" => {
             let Some(EntityRef::Unit(hero)) = pending.actor else {
@@ -2032,6 +2012,9 @@ pub fn end_dash(battle: &mut Battle, hero: UnitRef) {
 // heroes.py:991-1011.
 pub fn dash_step(battle: &mut Battle, hero: UnitRef) {
     let t = battle.t;
+    if t < battle.unit(hero).extra.pushed_until {
+        return;
+    }
     let dash = battle.unit(hero).dash.as_ref().expect("active dash");
     let remaining = 0.0_f64.max(dash.until - t);
     let step = 15.0 * battle.dt.min(remaining);
@@ -2082,12 +2065,43 @@ pub fn distance(battle: &Battle, target: EntityRef, x: f64, y: f64) -> f64 {
 }
 
 pub fn targets(battle: &Battle, defenses: bool) -> Vec<EntityRef> {
-    let mut result: Vec<_> = battle.buildings.iter().filter(|building| {
-        battle.building_targetable(building.id) && (!defenses || battle.is_defense_target(building.id))
-    }).map(|building| EntityRef::Building(building.id)).collect();
+    target_candidates(battle, defenses, false)
+}
+
+// heroes.py:_targets: indirect equipment damage may reach invisible targets.
+fn target_candidates(battle: &Battle, defenses: bool, indirect: bool) -> Vec<EntityRef> {
+    let mut result: Vec<_> = battle
+        .buildings
+        .iter()
+        .filter(|building| {
+            let targetable = if indirect {
+                building.alive
+                    && (building.counted || building.key == "th")
+                    && battle.t >= building.overgrown_until
+                    && battle.t >= building.extra.yellow_until
+                    && (building.key != "tesla" || building.revealed)
+            } else {
+                battle.building_targetable(building.id)
+            };
+            targetable && (!defenses || battle.is_defense_target(building.id))
+        })
+        .map(|building| EntityRef::Building(building.id))
+        .collect();
     if !defenses {
-        result.extend(battle.defenders_pool().filter(|u| u.targetable(battle))
-            .map(|u| EntityRef::Unit(u.reference())));
+        result.extend(
+            battle
+                .defenders_pool()
+                .filter(|u| {
+                    if indirect {
+                        u.indirect_targetable(battle)
+                            && u.dash.is_none()
+                            && battle.t >= u.extra.yellow_until
+                    } else {
+                        u.targetable(battle)
+                    }
+                })
+                .map(|u| EntityRef::Unit(u.reference())),
+        );
     }
     result
 }
@@ -2108,6 +2122,7 @@ pub fn blast(
     damage: f64,
     exclude: Option<EntityRef>,
     hero_mult: f64,
+    walls: bool,
 ) {
     let targets: Vec<_> = battle.buildings.iter().map(|b| EntityRef::Building(b.id))
         .chain(battle.defenders_pool().map(|u| EntityRef::Unit(u.reference()))).collect();
@@ -2133,6 +2148,15 @@ pub fn blast(
         };
         if distance(battle, target, x, y) <= radius {
             damage_target(battle, target, if hero { damage * hero_mult } else { damage });
+        }
+    }
+    if walls {
+        for index in 0..battle.walls.len() {
+            let wall = &battle.walls[index];
+            if wall.alive && wall.edge_distance(x, y) <= radius {
+                let id = wall.id;
+                damage_target(battle, EntityRef::Wall(id), damage);
+            }
         }
     }
 }
@@ -2273,7 +2297,13 @@ pub fn apply_auras(battle: &mut Battle) {
         if battle.unit(reference).alive {
             let (percentage, cap) = want.iter().find(|(unit, _)| *unit == reference)
                 .map_or((0.0, 0.0), |(_, value)| *value);
-            effects::health_aura(battle.unit_mut(reference), percentage, cap);
+            let ally = battle.unit_mut(reference);
+            let transferred = std::mem::take(&mut ally.extra.meteor_aura_transfer);
+            if transferred && percentage != 0.0 {
+                ally.aura_bonus = (ally.base_max_hp * percentage).min(cap);
+                ally.max_hp = ally.base_max_hp + ally.aura_bonus;
+            }
+            effects::health_aura(ally, percentage, cap);
         }
     }
     combatants.clear();
@@ -2297,17 +2327,43 @@ pub fn summon_tick(battle: &mut Battle, unit: UnitRef) -> bool {
     if battle.unit(unit).name_id != Name::Lavaloon {
         return false;
     }
-    if !battle.unit(unit).can_act(battle.t) {
+    if !battle.unit(unit).can_act(battle.t) || battle.t < battle.unit(unit).extra.pushed_until {
         return true;
     }
-    let target = battle.unit(unit).target;
-    let valid = matches!(target, Some(EntityRef::Building(id)) if battle.building_targetable(id));
-    if !valid {
-        let (target, kind) = battle.choose_target(unit);
-        let unit = battle.unit_mut(unit);
-        unit.target = target;
-        unit.target_kind = kind;
+    let mut target = battle.unit(unit).target;
+    let defenses_gone = !battle
+        .buildings
+        .iter()
+        .any(|building| building.alive && battle.is_defense_target(building.id));
+    let angry = battle.t < battle.unit(unit).extra.angry_until;
+    match target {
+        Some(EntityRef::Unit(foe)) => {
+            if !battle.unit(foe).targetable(battle) || !defenses_gone || angry {
+                target = None;
+            }
+        }
+        Some(EntityRef::Building(id)) if !battle.building_targetable(id) => target = None,
+        _ => {}
     }
+    if defenses_gone
+        && !angry
+        && !matches!(target, Some(EntityRef::Unit(_)))
+        && battle.t >= battle.unit(unit).extra.next_engage
+    {
+        battle.unit_mut(unit).extra.next_engage = battle.t + 0.5;
+        if battle.t < battle.unit(unit).aware_until || battle.ally_under_attack(unit) {
+            if let Some(foe) = battle.nearest_defender(unit, 7.0, false) {
+                target = Some(EntityRef::Unit(foe));
+                battle.unit_mut(unit).target_kind = Some(Tag::Unit);
+            }
+        }
+    }
+    if target.is_none() {
+        let (chosen, kind) = battle.choose_target(unit);
+        target = chosen;
+        battle.unit_mut(unit).target_kind = kind;
+    }
+    battle.unit_mut(unit).target = target;
     let mut interval = units::attack_interval(battle, unit);
     let u = battle.unit(unit);
     if battle.t < u.extra.haste_attack_until {
@@ -2332,7 +2388,7 @@ pub fn summon_tick(battle: &mut Battle, unit: UnitRef) -> bool {
         battle.unit_mut(unit).extra.bomb_next = Some(next);
     }
     let u = battle.unit(unit);
-    if let Some(target) = u.target {
+    if let Some(target) = target {
         if distance(battle, target, u.x, u.y) > u.range {
             battle.move_towards(unit, target, None);
         }

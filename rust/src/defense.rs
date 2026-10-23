@@ -1143,11 +1143,7 @@ pub fn spell_tower(battle: &mut Battle, owner: BuildingId) {
     let actual = weapon_mut(battle, owner);
     actual.extra.trigger = None;
     actual.extra.hit_triggers.clear();
-    actual.cooldown += if matches!(mode, "rage" | "poison") {
-        70.0
-    } else {
-        50.0
-    };
+    actual.cooldown += actual.interval;
 }
 
 // defense.py:1114-1141.
@@ -1163,9 +1159,7 @@ pub fn builder_spell(battle: &mut Battle, field: &Field) {
         }
         let builder = &mut battle.builders[index];
         match field.kind {
-            Tag::TeslaFreeze => {
-                builder.frozen_until = builder.frozen_until.max(field.until);
-            }
+            // defense.py:builder_spell: Freeze applies to Builders at landing.
             Tag::Freeze => {
                 builder.frozen_until = builder.frozen_until.max(t + field.value);
             }

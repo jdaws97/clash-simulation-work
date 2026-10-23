@@ -1013,6 +1013,12 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
             let required = unlocks.get(mode).unwrap_or_else(|| panic!("Spell Tower mode is not unlocked")).i64();
             assert!(matches!(level, Level::Int(lv) if lv >= required), "Spell Tower mode is not unlocked");
             assert!(required != 4 || battle.town_hall >= 17, "Earthquake Spell Towers require Town Hall 17");
+            let profile = catalog
+                .resolved
+                .at("spell_tower_profiles")
+                .at(&required.to_string());
+            w.range = profile.at("range").f64();
+            w.interval = profile.at("interval").f64();
             w.mode = Some(Tag::from(mode));
             w
         }
@@ -1130,20 +1136,24 @@ fn gear_up(battle: &Battle, building: &Building, weapon: &mut Weapon) {
         }
         _ => {
             weapon.kind = Tag::from("mortar_burst");
-            // defense.py:519: the geared Mortar waits 3.5 s after its burst.
+            // defense.py:_gear_up: resolved ClashKing/CSV interval and DPS.
             let row = battle.catalog.game_data(
                 "buildings",
                 &building.name,
                 Some(&Level::Int(*level)),
             );
-            weapon.interval =
-                crate::catalog::game_required_int(row, "AltAttackSpeed") as f64 / 1000.0;
+            let alternate = battle
+                .catalog
+                .resolved
+                .at("mortar_alternates")
+                .at(&level.to_string());
+            weapon.interval = alternate.at("interval").f64();
             // defense.py:556-563: preserve AltDPS over the entire burst cycle.
             weapon.extra.shots = crate::catalog::game_required_int(row, "AltBurstCount") as usize;
             weapon.extra.gap =
                 crate::catalog::game_required_int(row, "AltBurstDelay") as f64 / 1000.0;
             let cycle = weapon.interval + (weapon.extra.shots - 1) as f64 * weapon.extra.gap;
-            weapon.damage = crate::catalog::game_required_int(row, "AltDPS") as f64 * cycle
+            weapon.damage = alternate.at("dps").f64() * cycle
                 / weapon.extra.shots as f64;
         }
     }

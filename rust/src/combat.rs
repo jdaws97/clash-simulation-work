@@ -382,6 +382,8 @@ impl Battle {
                 self.pending.push(p);
             }
         }
+        // battle.py:_resolve_pending: stable arrival order, including ties.
+        due.sort_by(|a, b| a.at.partial_cmp(&b.at).expect("pending arrival time"));
         for mut p in due {
             if let Some(trap) = p.extra.trap_skeleton {
                 traps::spawn_skeleton(self, trap, p.x, p.y);

@@ -11,7 +11,7 @@ use crate::stats::Level;
 use crate::trace::{exported_value, round_decimal, LogValue};
 use crate::{defense, effects, geom, heroes, spells, traps, units};
 
-const BUCKET: f64 = 4.0;
+pub(crate) const BUCKET: f64 = 4.0;
 const SCOUT_TIME: f64 = 30.0;
 const TH_ACTIVATION_DELAY: f64 = 0.5;
 
@@ -81,9 +81,13 @@ impl Battle {
         self.building(id).defense_target(self.th_active())
     }
 
-    // battle.py:1079-1085: cells and their members keep first insertion order.
-    // Membership stays frozen during the tick, but queries read current x/y.
+    // battle.py:_buckets: refresh membership without reapplying health auras.
     pub fn rebuild_buckets(&mut self) {
+        self.refresh_buckets();
+        heroes::apply_auras(self);
+    }
+
+    pub fn refresh_buckets(&mut self) {
         for (_, mut members) in self.buckets.drain(..) {
             members.clear();
             self.spare_bucket_members.push(members);
@@ -111,11 +115,42 @@ impl Battle {
             self.buckets[index].1.push(reference);
         }
         self.buckets_initialized = true;
-        heroes::apply_auras(self);
     }
 
-    // Read-only users can stop early. Mutation callers still collect the exact
-    // frozen membership and live-position filter before their first callback.
+    // battle.py:_update_bucket: moves append to the destination's member list.
+    pub fn update_bucket(&mut self, reference: UnitRef, previous: (i32, i32)) {
+        if reference.team != Team::Atk || !self.buckets_initialized {
+            return;
+        }
+        let unit = self.unit(reference);
+        let current = ((unit.x / BUCKET) as i32, (unit.y / BUCKET) as i32);
+        if current == previous {
+            return;
+        }
+        if let Some(&index) = self.bucket_indices.get(&previous) {
+            let members = &mut self.buckets[index].1;
+            if let Some(position) = members.iter().position(|member| *member == reference) {
+                members.remove(position);
+            }
+            if members.is_empty() {
+                self.bucket_indices.remove(&previous);
+            }
+        }
+        let index = match self.bucket_indices.get(&current) {
+            Some(&index) => index,
+            None => {
+                let index = self.buckets.len();
+                let members = self.spare_bucket_members.pop().unwrap_or_default();
+                self.buckets.push((current, members));
+                self.bucket_indices.insert(current, index);
+                index
+            }
+        };
+        self.buckets[index].1.push(reference);
+    }
+
+    // Read-only users can stop early. Mutation callers collect current bucket
+    // membership and live positions before their first callback.
     pub fn attackers_near_iter(
         &self,
         x: f64,
@@ -683,15 +718,19 @@ impl Battle {
         if self.ended {
             return;
         }
+        self.refresh_buckets();
         self.src_obj = None;
         self.src = Source::Literal("spell");
         self.effect = Tag::Spell;
         spells::tick(self);
+        self.refresh_buckets();
         self.resolve_pending();
+        self.refresh_buckets();
         self.src = Source::Literal("trap");
         self.src_obj = None;
         self.effect = Tag::Trap;
         traps::tick(self);
+        self.refresh_buckets();
         self.castle();
         heroes::guardians_tick(self);
         defense::bell_tick(self);
@@ -708,7 +747,9 @@ impl Battle {
         }
         actors.clear();
         self.actor_scratch = actors;
+        self.refresh_buckets();
         self.separate();
+        self.rebuild_buckets();
         for index in 0..self.buildings.len() {
             let building = &self.buildings[index];
             if building.alive && building.weapon.is_some() {

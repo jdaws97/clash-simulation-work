@@ -10,33 +10,42 @@ use crate::labels::{Tag, Special, Specials};
 use crate::load::Node;
 use crate::stats::{Level, Stats};
 
-// specs.py: units.py game-data consumers use int(cell), with explicit defaults.
+// Python int(cell), accepting both CSV text and resolved ClashKing numbers.
 pub fn game_int(row: &Json, key: &str, default: i64) -> i64 {
-    row.get(key).map_or(default, |value| {
-        value
+    row.get(key).map_or(default, |value| match value {
+        Json::Num(number) => *number as i64,
+        _ => value
             .str()
             .trim()
             .parse::<i64>()
-            .expect("integer game-data cell")
+            .expect("integer game-data cell"),
     })
 }
 
 // defense.py:746-889; units.py:1244-1250: Python int(row[key]) requires the cell.
 pub fn game_required_int(row: &Json, key: &str) -> i64 {
-    row.at(key)
-        .str()
-        .trim()
-        .parse::<i64>()
-        .expect("required integer game-data cell")
+    let value = row.at(key);
+    match value {
+        Json::Num(number) => *number as i64,
+        _ => value
+            .str()
+            .trim()
+            .parse::<i64>()
+            .expect("required integer game-data cell"),
+    }
 }
 
 // heroes.py:153-160; units.py:2350-2359: preserve decimal float(row[key]) cells.
 pub fn game_float(row: &Json, key: &str) -> f64 {
-    row.at(key)
-        .str()
-        .trim()
-        .parse::<f64>()
-        .expect("floating-point game-data cell")
+    let value = row.at(key);
+    match value {
+        Json::Num(number) => *number,
+        _ => value
+            .str()
+            .trim()
+            .parse::<f64>()
+            .expect("floating-point game-data cell"),
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -237,6 +246,8 @@ pub struct Catalog {
     pub margin: f64,
     /// Static setup tables exported from the Python reference after each patch.
     pub setup: Json,
+    /// Resolved Python helpers, including ClashKing/CSV ability overlays.
+    pub resolved: Json,
 }
 
 impl Catalog {
@@ -267,6 +278,7 @@ impl Catalog {
             "world",
             "margin",
             "setup",
+            "resolved",
         ]);
         n.field("note").string();
         let stats = Stats::new(n.field("registry").value.clone());
@@ -349,6 +361,7 @@ impl Catalog {
             world: n.field("world").usize(),
             margin: n.field("margin").number(),
             setup: n.optional("setup").map_or(Json::Null, |v| v.value.clone()),
+            resolved: n.field("resolved").value.clone(),
         }
     }
 
@@ -377,6 +390,9 @@ impl Catalog {
             "Ice Pup" => "Ice Hound Pup",
             "Lavaloon" => "GW Equipment Lavaloon",
             "Lavaloon Pup" => "GW Equipment Lavaloon Pup",
+            "Snake" => "BK Equipment Snake",
+            "Bat" => "Spell Bat",
+            "Henchman" => "MP Equipment Henchman",
             "Spell Skeleton" => "Spell Shielded Skeleton",
             "L.A.S.S.I" => "LASSI",
             "Greedy Raven" => "Crow",
@@ -400,6 +416,13 @@ impl Catalog {
         let key = format!("{name}|{level}");
         self.unit_numbers.get(&key)
             .unwrap_or_else(|| panic!("catalog.unit_numbers[{key:?}]: missing unit numbers"))
+    }
+
+    // heroes.py:_ability_data, resolved by Python with explicit ability levels.
+    pub fn equipment_ability(&self, name: &str, level: &Level) -> &Json {
+        self.resolved
+            .at("equipment_abilities")
+            .at(&format!("{name}|{level}"))
     }
 
     pub fn unit(&self, name: &str) -> &CatalogUnit {

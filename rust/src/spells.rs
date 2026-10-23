@@ -97,7 +97,6 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             | Tag::DefBurn
             | Tag::Burn
             | Tag::Rage
-            | Tag::Haste
             | Tag::Invis
             | Tag::DefInvis
             | Tag::Angry
@@ -115,9 +114,6 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
         Tag::TeslaFreeze | Tag::TeslaOvergrowth => {
             if t >= f.until {
                 return false;
-            }
-            if kind == Tag::TeslaFreeze {
-                defense::builder_spell(battle, f);
             }
             for building in &mut battle.buildings {
                 if building.alive
@@ -836,19 +832,17 @@ pub fn cast_effect(
         .get("raw")
         .and_then(|r| r.get(key))
         .map_or(default, |v| stats::num(v, Some(default)).unwrap_or(default));
-    let radius = |default: f64| {
-        let r = stats.get(name, &level, &["radius", "Radius"], None)
-            .filter(|v| *v != 0.0)
-            .unwrap_or_else(|| raw("Radius", default));
-        if r == 0.0 {
-            default
-        } else {
-            r
-        }
+    let radius = || {
+        battle
+            .catalog
+            .resolved
+            .at("spell_radii")
+            .at(&format!("{name}|{level}"))
+            .f64()
     };
     let mut f = match name {
         "Lightning Spell" => {
-            let mut f = Field::new("lightning", x, y, radius(2.0), t);
+            let mut f = Field::new("lightning", x, y, radius(), t);
             f.value = get(&["damage", "Damage"], 640.0);
             f
         }
@@ -869,7 +863,7 @@ pub fn cast_effect(
             f.extra.gap = Some(0.3);
             f
         }
-        "Jump Spell" => Field::new("jump", x, y, radius(3.5), t + get(&["duration"], 60.0)),
+        "Jump Spell" => Field::new("jump", x, y, radius(), t + get(&["duration"], 60.0)),
         "Freeze Spell" => {
             let lv = if let Level::Int(lv) = &level {
                 *lv as f64
@@ -888,7 +882,7 @@ pub fn cast_effect(
             f
         }
         "Earthquake Spell" => {
-            let mut f = Field::new("quake", x, y, radius(4.7), t);
+            let mut f = Field::new("quake", x, y, radius(), t);
             // spells.py:150-164: registry percentages describe all five impacts.
             let row = battle.catalog.game_data("spells", "Earthquake", Some(&level));
             let denominator = 100.0 * game_int(row, "NumberOfHits", 0) as f64;
@@ -897,7 +891,7 @@ pub fn cast_effect(
             f
         }
         "Haste Spell" => {
-            let mut f = Field::new("haste", x, y, radius(4.0), t + get(&["Spell Duration"], 30.0));
+            let mut f = Field::new("haste", x, y, radius(), t + get(&["Spell Duration"], 30.0));
             f.extra.speed = Some(get(&["Speed Increase"], 52.0) / 8.0);
             f
         }
@@ -912,10 +906,7 @@ pub fn cast_effect(
             } else {
                 ("Bat", get(&["Bats generated"], 22.0), 1, 0.6)
             };
-            // spells.py:178-207: both summon spells use their game-data radius.
-            let row = battle.catalog.game_data("spells", name, Some(&level));
-            let radius = game_int(row, "Radius", 0) as f64 / 100.0;
-            let mut f = Field::new("summon", x, y, radius, t + (n - first as f64) * gap);
+            let mut f = Field::new("summon", x, y, radius(), t + (n - first as f64) * gap);
             f.value = n;
             f.extra.unit = Some(unit.to_owned());
             f.extra.first = Some(first);
@@ -1190,6 +1181,9 @@ fn rage(battle: &mut Battle, f: &mut Field) -> bool {
 
 // spells.py:518-531.
 fn haste(battle: &mut Battle, f: &mut Field) -> bool {
+    if battle.t > f.until {
+        return false;
+    }
     let Some(pulse) = application(f, battle.t, 0.25) else {
         return true;
     };
@@ -1209,14 +1203,17 @@ fn haste(battle: &mut Battle, f: &mut Field) -> bool {
 }
 
 // spells.py:532-540.
-fn jump(battle: &mut Battle, f: &Field) -> bool {
-    if battle.t >= f.until {
+fn jump(battle: &mut Battle, f: &mut Field) -> bool {
+    if battle.t > f.until {
         return false;
     }
+    let Some(pulse) = application(f, battle.t, 0.25) else {
+        return true;
+    };
     // spells.py:561-563: JumpBoostMS=400, rather than a one-second tail.
     let row = battle.catalog.game_data("spells", "Jump", None);
     let boost_time = game_int(row, "JumpBoostMS", 0) as f64 / 1000.0;
-    let until = battle.t + boost_time;
+    let until = pulse + boost_time;
     for reference in battle.attackers_near(f.x, f.y, f.radius) {
         let u = battle.unit_mut(reference);
         if affected(u) && !u.flying {
@@ -1416,6 +1413,9 @@ fn spawn_spots(battle: &Battle, x: f64, y: f64, radius: f64, flying: bool) -> Ve
 
 // spells.py:619-662.
 fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
+    if battle.t >= f.until {
+        return false;
+    }
     if application(f, battle.t, 0.3).is_none() {
         return true;
     }

@@ -1,5 +1,6 @@
 //! Ports battle.py:1087-1130,1428-1669: navigation and separation.
 
+use crate::battle::BUCKET;
 use crate::geom::py_hypot;
 use crate::grid::{Grid, TargetIdentity, GOAL_REACH_MIN, NORMAL_WALL_EXTRA, RES};
 use crate::labels::{Name, Tag};
@@ -7,48 +8,44 @@ use crate::state::*;
 use crate::{effects, geom, units};
 
 impl Battle {
-    // battle.py:1087-1117: frozen bucket order, live positions after each nudge.
+    // battle.py:_separate: neighboring buckets, pairs ordered by entity ID.
     pub fn separate(&mut self) {
-        // nudge only changes positions/navigation; it cannot mutate membership.
-        for cell_index in 0..self.buckets.len() {
-            let count = self.buckets[cell_index].1.len();
-            if count < 2 {
+        let mut attackers: Vec<_> = self.attackers_pool().map(Unit::reference).collect();
+        attackers.sort_by_key(|unit| unit.id.0);
+        for a in attackers {
+            let ua = self.unit(a);
+            if !ua.alive || ua.speed <= 0.0 {
                 continue;
             }
-            for i in 0..count {
-                let a = self.buckets[cell_index].1[i];
-                if !self.unit(a).alive || self.unit(a).speed <= 0.0 {
+            let ra = 0.35 + 0.015 * 30.min(ua.housing) as f64;
+            let mut neighbors = self.attackers_near(ua.x, ua.y, ra + 0.8);
+            neighbors.sort_by_key(|unit| unit.id.0);
+            for b in neighbors {
+                let ua = self.unit(a);
+                let ub = self.unit(b);
+                if b.id.0 <= a.id.0 || ub.flying != ua.flying || ub.speed <= 0.0 {
                     continue;
                 }
-                let ra = 0.35 + 0.015 * 30.min(self.unit(a).housing) as f64;
-                for j in i + 1..count {
-                    let b = self.buckets[cell_index].1[j];
-                    let ua = self.unit(a);
-                    let ub = self.unit(b);
-                    if !ub.alive || ub.flying != ua.flying || ub.speed <= 0.0 {
-                        continue;
-                    }
-                    let rb = 0.35 + 0.015 * 30.min(ub.housing) as f64;
-                    let (mut dx, mut dy) = (ub.x - ua.x, ub.y - ua.y);
-                    let d2 = dx * dx + dy * dy;
-                    let limit = ra + rb;
-                    if d2 >= limit * limit {
-                        continue;
-                    }
-                    let mut d = d2.sqrt();
-                    let push = if d < 1e-6 {
-                        let angle = (ua.id.0 as f64 * 2.399).rem_euclid(2.0 * std::f64::consts::PI);
-                        dx = geom::py_cos(angle);
-                        dy = geom::py_sin(angle);
-                        d = 1.0;
-                        limit * 0.25
-                    } else {
-                        (limit - d) * 0.25
-                    };
-                    let (ux, uy) = (dx / d * push, dy / d * push);
-                    self.nudge(a, -ux, -uy);
-                    self.nudge(b, ux, uy);
+                let rb = 0.35 + 0.015 * 30.min(ub.housing) as f64;
+                let (mut dx, mut dy) = (ub.x - ua.x, ub.y - ua.y);
+                let d2 = dx * dx + dy * dy;
+                let limit = ra + rb;
+                if d2 >= limit * limit {
+                    continue;
                 }
+                let mut d = d2.sqrt();
+                let push = if d < 1e-6 {
+                    let angle = (ua.id.0 as f64 * 2.399).rem_euclid(2.0 * std::f64::consts::PI);
+                    dx = geom::py_cos(angle);
+                    dy = geom::py_sin(angle);
+                    d = 1.0;
+                    limit * 0.25
+                } else {
+                    (limit - d) * 0.25
+                };
+                let (ux, uy) = (dx / d * push, dy / d * push);
+                self.nudge(a, -ux, -uy);
+                self.nudge(b, ux, uy);
             }
         }
     }
@@ -71,8 +68,10 @@ impl Battle {
         }
         let high = self.catalog.world as f64 - 0.1;
         let u = self.unit_mut(reference);
+        let previous = ((u.x / BUCKET) as i32, (u.y / BUCKET) as i32);
         u.x = high.min(0.1_f64.max(nx));
         u.y = high.min(0.1_f64.max(ny));
+        self.update_bucket(reference, previous);
     }
 
     // battle.py:1509-1529: path cost, then edge distance, then list order.
@@ -309,6 +308,7 @@ impl Battle {
         if d != 0.0 && u.name_id == Name::SuperHogRider {
             u.extra.heading = Some((dx / d, dy / d));
         }
+        let previous = ((u.x / BUCKET) as i32, (u.y / BUCKET) as i32);
         if d <= step || d == 0.0 {
             u.x = tx;
             u.y = ty;
@@ -316,5 +316,6 @@ impl Battle {
             u.x += dx / d * step;
             u.y += dy / d * step;
         }
+        self.update_bucket(reference, previous);
     }
 }

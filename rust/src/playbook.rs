@@ -875,6 +875,26 @@ impl PlaybookPlan {
                     return Some("nothing recalled".to_owned());
                 }
             }
+            Action::ReleaseSiege => {
+                let name = step
+                    .what
+                    .as_deref()
+                    .filter(|name| !name.is_empty())
+                    .or(self.attack.siege.as_deref())
+                    .unwrap_or("");
+                if count(&self.inventory, name) <= 0
+                    && !battle.attackers_pool().any(|unit| {
+                        unit.alive
+                            && unit.kind == Tag::Siege
+                            && step.what.as_deref().is_none_or(|what| unit.name == what)
+                    })
+                    && !battle.deployments[battle.next_deploy..]
+                        .iter()
+                        .any(|entry| entry.name == name)
+                {
+                    return Some("no siege left".to_owned());
+                }
+            }
             _ => {}
         }
         None
@@ -980,7 +1000,22 @@ impl PlaybookPlan {
                     continue;
                 }
             }
-            let before = count(&self.inventory, step.what.as_deref().unwrap_or(""));
+            let what = step.what.as_deref().unwrap_or("");
+            if step.action == Action::Deploy
+                && !plans::is_hero(what)
+                && count(&self.inventory, what) <= 0
+            {
+                if !self.done(&step.id) {
+                    self.done.push((step.id.clone(), t));
+                }
+                self.cancelled.push(step.id.clone());
+                self.log_steps.push((
+                    round_decimal(t, 1),
+                    format!("{} (skipped: no {what} left)", step.id),
+                ));
+                continue;
+            }
+            let before = count(&self.inventory, what);
             let ok = match step.action {
                 Action::ReleaseSiege => crate::units::release_siege(battle, step.what.as_deref()),
                 Action::Ability => self.ability(battle, step),

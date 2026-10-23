@@ -80,6 +80,11 @@ impl Battle {
     // battle.py:1189-1311: local target differs from u.target until assignment.
     pub fn act_attacker(&mut self, reference: UnitRef) {
         let t = self.t;
+        // battle.py:_act_attacker: upkeep continues during Sweeper pushes.
+        if units::pre_tick(self, reference) {
+            units::interrupt_attack(self, reference);
+            return;
+        }
         // battle.py:1260-1267: displacement also blocks summon/siege attacks.
         if t < self.unit(reference).extra.pushed_until {
             if self.unit(reference).can_act(t) {
@@ -91,10 +96,6 @@ impl Battle {
             return;
         }
         if heroes::summon_tick(self, reference) {
-            return;
-        }
-        if units::pre_tick(self, reference) {
-            units::interrupt_attack(self, reference);
             return;
         }
         let u = self.unit(reference);

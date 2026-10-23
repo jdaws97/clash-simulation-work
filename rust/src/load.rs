@@ -627,6 +627,8 @@ impl Resolver {
                 }
                 "armor_hp" => extra.armor_hp = v.number(),
                 "aura_hp" => extra.aura_hp = v.number(),
+                "meteor_aura_transfer" => extra.meteor_aura_transfer = v.boolean(),
+                "rage_damage_taken" => extra.rage_damage_taken = v.number(),
                 "troop_hit_at" => extra.troop_hit_at = v.number(),
                 "next_engage" => extra.next_engage = v.number(),
                 "next_retarget" => extra.next_retarget = v.number(),
@@ -990,6 +992,8 @@ impl Resolver {
                 "monolith_bonus" => extra.monolith_bonus = v.number(),
                 "meteor_health" => extra.meteor_health = v.number(),
                 "meteor_small" => extra.meteor_small = v.boolean(),
+                "meteor_aura_bonus" => extra.meteor_aura_bonus = v.number(),
+                "meteor_aura_hp" => extra.meteor_aura_hp = v.number(),
                 "length" => extra.length = v.number(),
                 "equipment" => extra.equipment = v.optional_string(),
                 "level" => extra.level = v.optional_level(),

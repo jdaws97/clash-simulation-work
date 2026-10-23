@@ -557,7 +557,7 @@ pub fn pre_tick(battle: &mut Battle, unit: UnitRef) -> bool {
         || u.extra.hp_loss_at.is_some()
         || u.kind == Tag::Pet
         || u.kit.is_some()
-        || u.name_id == Name::GiantGiant && !u.extra.enraged && u.hp <= 0.5 * u.max_hp;
+        || u.name_id == Name::GiantGiant && !u.extra.enraged;
     if !upkeep {
         return false;
     }
@@ -594,7 +594,11 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         unit.hp = 0.0;
         return true;
     }
-    // units.py:355-366: discrete losses include every skipped interval.
+    if battle.unit(unit).name_id == Name::Totem {
+        let u = battle.unit_mut(unit);
+        u.extra.hp_loss_at.get_or_insert(u.spawned_at + 0.5);
+    }
+    // units.py:pre_tick: discrete losses include every skipped interval.
     if let Some(mut at) = battle.unit(unit).extra.hp_loss_at {
         let u = battle.unit(unit);
         let row = battle.catalog.game_unit_data(&u.name, u.level.as_ref());
@@ -620,9 +624,8 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         contacts.clear();
         let u = battle.unit(unit);
         let (x, y) = (u.x, u.y);
-        // The center must lie within 1.0 on each axis: half-hit 0.5 plus
-        // contact reach 0.5. The extra tile margin also covers truncation at
-        // negative coordinates; the exact edge-distance test remains below.
+        // Half-hit 0.5 plus the 0.75-tile aura bounds wall candidates. The extra
+        // tile margin covers negative coordinates; retain the exact test below.
         if battle.wall_tiles_standard {
             let tile_x = x.floor() as i32;
             let tile_y = y.floor() as i32;
@@ -630,7 +633,7 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
                 for ty in tile_y.saturating_sub(2)..=tile_y.saturating_add(2) {
                     if let Some(&id) = battle.wall_indices.get(&(tx, ty)) {
                         let wall = &battle.walls[id.0];
-                        if wall.alive && wall.edge_distance(x, y) <= 0.5 {
+                        if wall.alive && wall.edge_distance(x, y) <= 0.75 {
                             contacts.push(id);
                         }
                     }
@@ -638,7 +641,7 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
             }
         } else {
             contacts.extend(battle.walls.iter()
-                .filter(|wall| wall.alive && wall.edge_distance(x, y) <= 0.5)
+                .filter(|wall| wall.alive && wall.edge_distance(x, y) <= 0.75)
                 .map(|wall| wall.id));
         }
         contacts.sort_unstable_by_key(|id| id.0);
@@ -657,7 +660,7 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         contacts.clear();
         battle.wall_contact_scratch = contacts;
     }
-    if battle.unit(unit).name_id == Name::Totem || battle.unit(unit).decay > 0.0 {
+    if battle.unit(unit).decay > 0.0 && battle.unit(unit).name_id != Name::Totem {
         let decay = battle.unit(unit).decay * battle.dt;
         battle.unit_mut(unit).hp -= decay;
         if battle.unit(unit).hp <= 0.0 {
@@ -691,12 +694,26 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         }
     }
     let u = battle.unit(unit);
-    if u.name_id == Name::GiantGiant && !u.extra.enraged && u.hp <= 0.5 * u.max_hp {
-        let u = battle.unit_mut(unit);
-        u.extra.enraged = true;
-        u.rage_dmg = 1.5;
-        u.rage_spd = 12.0 / 8.0;
-        u.rage_until = t + 20.0;
+    if u.name_id == Name::Totem {
+        return true;
+    }
+    if u.name_id == Name::GiantGiant && !u.extra.enraged {
+        let row = battle.catalog.game_unit_data(&u.name, u.level.as_ref());
+        let level = Level::Int(game_required_int(row, "SpecialAbilitiesLevel"));
+        let ability = battle.catalog.game_data(
+            "special_abilities",
+            row.at("SpecialAbilities").str(),
+            Some(&level),
+        );
+        if u.extra.rage_damage_taken
+            >= game_required_int(ability, "ActiveAfterTakingDamage") as f64
+        {
+            let u = battle.unit_mut(unit);
+            u.extra.enraged = true;
+            u.rage_dmg = 1.5;
+            u.rage_spd = 12.0 / 8.0;
+            u.rage_until = t + 20.0;
+        }
     }
     if special.is_empty() {
         return false;
@@ -1232,6 +1249,9 @@ pub fn advance_log(battle: &mut Battle, field: &mut Field) -> bool {
 
 // units.py:626-666: damage is accumulated before testing the child thresholds.
 pub fn on_damaged(battle: &mut Battle, unit: UnitRef, amount: f64) {
+    if battle.unit(unit).name_id == Name::GiantGiant {
+        battle.unit_mut(unit).extra.rage_damage_taken += amount;
+    }
     if battle.unit(unit).spec.has_special(Special::Electromites) {
         battle.unit_mut(unit).extra.mite_dmg += amount;
         let mut threshold = battle.unit(unit).extra.next_mite_damage;
@@ -1643,7 +1663,7 @@ pub fn release_cc_at(battle: &mut Battle, x: f64, y: f64, group: &str, siege: bo
     }
 }
 
-// units.py:1058-1074: initialize the child fully before quantizing its health.
+// units.py:_spawn_meteormite: transfer exact current base and aura HP shares.
 fn spawn_meteormite(
     battle: &mut Battle,
     unit: UnitRef,
@@ -1651,29 +1671,35 @@ fn spawn_meteormite(
     y: f64,
     health: f64,
     small: bool,
+    aura_bonus: f64,
+    aura_hp: f64,
 ) {
     let child = spawn_child(battle, unit, "Meteormite", x, y);
-    let quantum = battle.unit(child).max_hp * 0.01;
-    let health = if small {
-        1.0
-    } else {
-        ((health / 2.0) / quantum).floor() * quantum
-    };
+    let base_max_hp = battle.unit(unit).base_max_hp / 2.0;
+    let share = if small { 1.0 } else { 0.5 };
     let level = battle.unit(unit).level.clone().expect("Meteor Golem level");
     let child = battle.unit_mut(child);
-    child.hp = health;
+    child.base_max_hp = base_max_hp;
+    child.aura_bonus = aura_bonus / 2.0;
+    child.max_hp = child.base_max_hp + child.aura_bonus;
+    child.hp = health * share;
+    child.extra.aura_hp = aura_hp * share;
+    child.extra.meteor_aura_transfer = aura_bonus > 0.0;
     child.extra.meteor_components = Some(vec![("permanent".to_owned(), level)]);
 }
 
 // units.py:1077-1084: the thrown child is created only when the projectile lands.
 fn split_meteor(battle: &mut Battle, unit: UnitRef, pending: &mut Pending) {
     let u = battle.unit(unit);
-    let small = u.hp < u.max_hp * 0.01;
+    let small = (u.hp - u.extra.aura_hp).max(0.0) < u.base_max_hp * 0.01;
     let (x, y, health) = (u.x, u.y, u.hp);
+    let (aura_bonus, aura_hp) = (u.aura_bonus, u.extra.aura_hp);
     pending.extra.meteor_health = health;
     pending.extra.meteor_small = small;
+    pending.extra.meteor_aura_bonus = aura_bonus;
+    pending.extra.meteor_aura_hp = aura_hp;
     if !small {
-        spawn_meteormite(battle, unit, x, y, health, small);
+        spawn_meteormite(battle, unit, x, y, health, small, aura_bonus, aura_hp);
     }
     battle.unit_mut(unit).alive = false;
 }
@@ -1736,12 +1762,19 @@ fn try_merge_meteor(battle: &mut Battle, unit: UnitRef) -> bool {
         group: u.group.clone(),
         ..Default::default()
     });
-    let quantum = battle.unit(parent).max_hp * 0.005;
-    let hp = 1.0_f64.max(((battle.unit(unit).hp + battle.unit(other).hp) / quantum).floor() * quantum);
+    let base_max_hp = battle.unit(unit).base_max_hp + battle.unit(other).base_max_hp;
+    let aura_bonus = battle.unit(unit).aura_bonus + battle.unit(other).aura_bonus;
+    let hp = battle.unit(unit).hp + battle.unit(other).hp;
+    let aura_hp = battle.unit(unit).extra.aura_hp + battle.unit(other).extra.aura_hp;
     let mut components = battle.unit(unit).extra.meteor_components.clone().unwrap_or_default();
     components.extend(battle.unit(other).extra.meteor_components.clone().unwrap_or_default());
     let parent_unit = battle.unit_mut(parent);
+    parent_unit.base_max_hp = base_max_hp;
+    parent_unit.aura_bonus = aura_bonus;
+    parent_unit.max_hp = base_max_hp + aura_bonus;
     parent_unit.hp = hp;
+    parent_unit.extra.aura_hp = aura_hp;
+    parent_unit.extra.meteor_aura_transfer = aura_bonus > 0.0;
     parent_unit.extra.meteor_components = Some(components);
     battle.unit_mut(unit).alive = false;
     battle.unit_mut(other).alive = false;
@@ -1988,7 +2021,7 @@ pub fn valkyrie_position(
     target: EntityRef,
 ) -> Option<(f64, f64)> {
     let u = battle.unit(unit);
-    if u.name_id != Name::Valkyrie {
+    if !matches!(u.name_id, Name::Valkyrie | Name::SuperValkyrie) {
         return None;
     }
     let EntityRef::Building(target_id) = target else {
@@ -2835,7 +2868,7 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
             _ => true,
         } {
             heroes::damage_target(battle, target, pending.damage);
-            heroes::blast(battle, x, y, 0.9, pending.damage, Some(target), 1.0);
+            heroes::blast(battle, x, y, 0.9, pending.damage, Some(target), 1.0, false);
         }
         return;
     }
@@ -2888,7 +2921,9 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
             x,
             y,
             pending.extra.meteor_health,
-            pending.extra.meteor_small
+            pending.extra.meteor_small,
+            pending.extra.meteor_aura_bonus,
+            pending.extra.meteor_aura_hp,
         );
     }
     let u = battle.unit(unit);
@@ -3188,7 +3223,16 @@ fn after_unit_hit_effect(
         let duration = game_required_int(ability, "PoisonOnHitDuration") as f64 / 1000.0;
         let slow = -game_float(poison, "SpeedBoost") / 100.0;
         let attack = -game_float(poison, "AttackSpeedBoost") / 100.0;
-        let damage = game_float(poison, "PoisonDPS");
+        let damage = battle
+            .catalog
+            .stats
+            .get(
+                "Poison Spell",
+                &poison_level,
+                &["damage"],
+                Some(game_float(poison, "PoisonDPS")),
+            )
+            .expect("poison damage default");
         let ramp = poison
             .get("PoisonIncreaseSlowly")
             .is_some_and(|value| value.str() == "TRUE");
