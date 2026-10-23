@@ -10,6 +10,7 @@ Subcommands
                           the next release).
   registry OLD NEW        Changes between two registry.json builds, plus new
                           entities the engine has no model for.
+  plan --csv NEW          Print rebuild commands and invalidations; run nothing.
   report --csv NEW [--registry-old FILE]
                           All of the above against NEW, then the known-answer
                           mechanic checks and the coverage run; writes
@@ -23,6 +24,9 @@ Typical patch day (each download asks the user first):
   4. python tools/baselab/patch_update.py report --csv data/gamecsv/<version> --registry-old <copy>
   5. fix what the report flags, then rerun calibration and the SIM_ACCURACY
      checks and re-score the saved best bases and armies.
+
+Use plan --csv NEW for the complete local rebuild sequence, including Rust and
+manifest provenance. The existing report command still runs its mechanic checks.
 """
 
 from __future__ import annotations
@@ -102,15 +106,30 @@ def cmd_cites(folder: Path, out: list) -> int:
                 groups = _rows(ents, ent)
                 if not groups or not _holds(groups, field, val.rstrip(".")):
                     bad += 1
-                    vals = set().union(*({r.get(field) for r in g} for g in groups)) if groups else set()
-                    now = sorted(v for v in vals if v not in (None, ""))[:6] if groups else "entity not found"
-                    out.append(f"| {f.relative_to(ROOT)}:{n} | {ent.strip()}.{field} | cited {val} | now {now} |")
-    out.insert(0, f"Hard-coded values checked: {checked}, stale or not found: {bad}\n\n| where | field | cited | in {Path(folder).name} |\n|---|---|---|---|")
+                    vals = (
+                        set().union(*({r.get(field) for r in g} for g in groups))
+                        if groups
+                        else set()
+                    )
+                    now = (
+                        sorted(v for v in vals if v not in (None, ""))[:6]
+                        if groups
+                        else "entity not found"
+                    )
+                    out.append(
+                        f"| {f.relative_to(ROOT)}:{n} | {ent.strip()}.{field} | cited {val} | now {now} |"
+                    )
+    out.insert(
+        0,
+        f"Hard-coded values checked: {checked}, stale or not found: {bad}\n\n| where | field | cited | in {Path(folder).name} |\n|---|---|---|---|",
+    )
     if unparsed:
         # prose cites ("game data vX Traps.csv ActionFrame ... Bomb=35") the
         # pattern cannot read: listed so a patch day checks them by hand
-        out.append(f"\nLines citing game data in a form this check cannot read ({len(unparsed)}, check by hand): "
-                   + ", ".join(unparsed))
+        out.append(
+            f"\nLines citing game data in a form this check cannot read ({len(unparsed)}, check by hand): "
+            + ", ".join(unparsed)
+        )
     return bad
 
 
@@ -127,12 +146,24 @@ def cmd_csv(old: Path, new: Path, out: list):
     for ent in sorted(set(a) & set(b)):
         ra, rb = a[ent], b[ent]
         for lvl, (x, y) in enumerate(zip(ra, rb), 1):
-            diff = {k: (x.get(k), y.get(k)) for k in set(x) | set(y) if x.get(k) != y.get(k)}
+            diff = {
+                k: (x.get(k), y.get(k)) for k in set(x) | set(y) if x.get(k) != y.get(k)
+            }
             if diff:
-                changes.append(f"| {ent} | row {lvl} | " + "; ".join(f"{k}: {v[0]} -> {v[1]}" for k, v in sorted(diff.items())[:8]) + " |")
+                changes.append(
+                    f"| {ent} | row {lvl} | "
+                    + "; ".join(
+                        f"{k}: {v[0]} -> {v[1]}" for k, v in sorted(diff.items())[:8]
+                    )
+                    + " |"
+                )
         if len(ra) != len(rb):
-            changes.append(f"| {ent} | rows | {len(ra)} -> {len(rb)} (levels added or removed) |")
-    out.append(f"\nChanged rows: {len(changes)}\n\n| entity | row | changes |\n|---|---|---|")
+            changes.append(
+                f"| {ent} | rows | {len(ra)} -> {len(rb)} (levels added or removed) |"
+            )
+    out.append(
+        f"\nChanged rows: {len(changes)}\n\n| entity | row | changes |\n|---|---|---|"
+    )
     out += changes[:1500]
 
 
@@ -153,20 +184,93 @@ def cmd_registry(old: Path, new: Path, out: list):
     a = json.loads(Path(old).read_text(encoding="utf-8"))
     b = json.loads(Path(new).read_text(encoding="utf-8"))
     added = sorted(set(b) - set(a))
-    out.append(f"Registry entities added: {len(added)}" + (": " + ", ".join(added) if added else ""))
+    out.append(
+        f"Registry entities added: {len(added)}"
+        + (": " + ", ".join(added) if added else "")
+    )
     changed = []
     for k in sorted(set(a) & set(b)):
         la, lb = a[k].get("levels", []), b[k].get("levels", [])
         if la != lb or a[k].get("max_level") != b[k].get("max_level"):
             changed.append(k)
-    out.append(f"Registry entities with changed levels or caps: {len(changed)}" + (": " + ", ".join(changed[:120]) if changed else ""))
+    out.append(
+        f"Registry entities with changed levels or caps: {len(changed)}"
+        + (": " + ", ".join(changed[:120]) if changed else "")
+    )
     try:
         known = _engine_names()
-        new_units = [k for k in added if b[k].get("kind") in ("troop", "super_troop", "siege", "spell", "hero", "pet", "equipment")]
+        new_units = [
+            k
+            for k in added
+            if b[k].get("kind")
+            in ("troop", "super_troop", "siege", "spell", "hero", "pet", "equipment")
+        ]
         missing = [k for k in new_units if k not in known]
-        out.append(f"New content the engine may not model yet: {missing or 'none'} (check engine_coverage.py)")
+        out.append(
+            f"New content the engine may not model yet: {missing or 'none'} (check engine_coverage.py)"
+        )
     except Exception as e:  # the engine import is a convenience here
         out.append(f"(engine name check skipped: {e})")
+
+
+def cmd_plan(folder: Path, out: list):
+    out.append(f"\n## Updating derived data after {folder.name}\n")
+    out.append("Commands to run after reviewing the patch (printed only):\n")
+    out.append(
+        "The registry uses ClashKing plus parsed wiki data, not CSVs directly "
+        "(src/baselab/registry.py). Refresh those sources as appropriate. "
+        "A new CSV folder does not change the engine's pinned CSV version; "
+        "review and update these reader pins before exporting:"
+    )
+    for name in (
+        "src/baselab/engine/specs.py",
+        "src/baselab/engine/units.py",
+        "tools/baselab/verify_numbers.py",
+        "tools/baselab/patch_update.py",
+    ):
+        for number, line in enumerate(
+            (ROOT / name).read_text(encoding="utf-8").splitlines(), 1
+        ):
+            if re.search(r"[\"\']v\d+(?:\.\d+)+[\"\']", line):
+                out.append(f"- {name}:{number}: {line.strip()}")
+    # docs/GAP_ANALYSIS.md:152: registry, catalog and winners need one data chain.
+    commands = (
+        "python3 -B tools/baselab/wiki_mirror.py fetch",
+        "python3 -B tools/baselab/wiki_tables.py",
+        "PYTHONPATH=src python3 -B -m baselab.registry",
+        "python3 -B tools/baselab/rust_export.py catalog --out rust/data/catalog.json",
+        "python3 -B tools/baselab/data_manifest.py build "
+        "--record-derived data/registry.json --record-derived rust/data/catalog.json",
+        "python3 -B tools/baselab/data_manifest.py check",
+    )
+    out.append("\n```sh\n" + "\n".join(commands) + "\n```")
+    out.append(
+        "Use --record-derived only after actually regenerating that artifact. "
+        "Manifest build alone preserves old bindings and does not certify legacy data."
+    )
+    out.append(
+        "\nInvalidate calibration fits against the previous engine/data (retain archives as historical):"
+    )
+    calibrations = sorted(
+        set((ROOT / "data").glob("meta-calibration*.json"))
+        | set((ROOT / "data").glob("baselab-calibration*.json"))
+    )
+    out.extend(f"- {path.relative_to(ROOT).as_posix()}" for path in calibrations)
+    out.append(
+        "\nInvalidate saved scores/rankings in output/, including winner/best "
+        "evaluations and hold-out/red-team reports. data_manifest.py check names "
+        "results carrying older manifest_hash values; results without a hash "
+        "remain unverified. Keep layouts, but re-score them before reuse."
+    )
+    out.append(
+        "\nRun the proof checks before recalibration, result re-scoring or any "
+        "search (python -B verify.py when available, mechanic_tests.py and "
+        "engine_coverage.py). After the proof gate passes, refit the active "
+        "calibration with calibrate.py/calibrate_meta.py as appropriate, record "
+        "its exact path with data_manifest.py build --record-derived PATH, "
+        "then re-score saved finalists and store the new manifest_hash in results. "
+        "No calibration or search is run by this plan."
+    )
 
 
 def main():
@@ -183,6 +287,8 @@ def main():
     p = sub.add_parser("report")
     p.add_argument("--csv", required=True)
     p.add_argument("--registry-old")
+    plan = sub.add_parser("plan")
+    plan.add_argument("--csv", required=True)
     args = ap.parse_args()
     out: list = []
     if args.cmd == "cites":
@@ -191,14 +297,21 @@ def main():
         sys.exit(1 if bad else 0)
     if args.cmd == "csv":
         cmd_csv(Path(args.old), Path(args.new), out)
+        cmd_plan(Path(args.new), out)
         print("\n".join(out))
         return
     if args.cmd == "registry":
         cmd_registry(Path(args.old), Path(args.new), out)
         print("\n".join(out))
         return
+    if args.cmd == "plan":
+        cmd_plan(Path(args.csv), out)
+        print("\n".join(out))
+        return
     day = datetime.date.today().isoformat()
-    out.append(f"# Patch report {day}\n\nNew game data: `{args.csv}` (compared with `{CURRENT.relative_to(ROOT)}`)\n")
+    out.append(
+        f"# Patch report {day}\n\nNew game data: `{args.csv}` (compared with `{CURRENT.relative_to(ROOT)}`)\n"
+    )
     out.append("## Hard-coded engine values\n")
     sec: list = []
     cmd_cites(Path(args.csv), sec)
@@ -212,10 +325,26 @@ def main():
         sec = []
         cmd_registry(Path(args.registry_old), ROOT / "data" / "registry.json", sec)
         out += sec
+    sec = []
+    cmd_plan(Path(args.csv), sec)
+    out += sec
+    print("\n".join(sec))
     py = sys.executable
-    for title, cmd in (("Mechanic checks", [py, "tools/baselab/mechanic_tests.py"]),
-                       ("Coverage", [py, "tools/baselab/engine_coverage.py", "--out", "output/coverage.json"])):
-        res = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    for title, cmd in (
+        ("Mechanic checks", [py, "tools/baselab/mechanic_tests.py"]),
+        (
+            "Coverage",
+            [py, "tools/baselab/engine_coverage.py", "--out", "output/coverage.json"],
+        ),
+    ):
+        res = subprocess.run(
+            cmd,
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
         tail = "\n".join((res.stdout or res.stderr).strip().splitlines()[-15:])
         out.append(f"\n## {title}\n\n```\n{tail}\n```")
     path = ROOT / "docs" / f"patch-report-{day}.md"

@@ -7,13 +7,15 @@ data/wiki/pages/ (wikitext + rendered HTML) with retrieval metadata, then
 Usage:
     python tools/baselab/wiki_mirror.py categories   # list candidate categories
     python tools/baselab/wiki_mirror.py fetch        # mirror all pages (resumable)
+    python tools/baselab/wiki_mirror.py fetch --force
+    python tools/baselab/wiki_mirror.py fetch --dry-run  # offline cache inventory
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
-import sys
 import time
 import urllib.parse
 import urllib.request
@@ -68,7 +70,10 @@ EXTRA_PAGES = [
     "Stars",
 ]
 # Builder Base / Clan Capital pages are out of scope
-SKIP = re.compile(r"/(Builder Base|Clan Capital)$|Builder Base|Clan Capital|Capital|Gallery|Skins|Scenery|Achievements", re.I)
+SKIP = re.compile(
+    r"/(Builder Base|Clan Capital)$|Builder Base|Clan Capital|Capital|Gallery|Skins|Scenery|Achievements",
+    re.I,
+)
 
 
 def api(params: dict) -> dict:
@@ -89,8 +94,20 @@ def category_members(cat: str) -> list[str]:
     titles = []
     cont = {}
     while True:
-        data = api({"action": "query", "list": "categorymembers", "cmtitle": f"Category:{cat}", "cmlimit": 500, **cont})
-        titles += [m["title"] for m in data.get("query", {}).get("categorymembers", []) if m["ns"] == 0]
+        data = api(
+            {
+                "action": "query",
+                "list": "categorymembers",
+                "cmtitle": f"Category:{cat}",
+                "cmlimit": 500,
+                **cont,
+            }
+        )
+        titles += [
+            m["title"]
+            for m in data.get("query", {}).get("categorymembers", [])
+            if m["ns"] == 0
+        ]
         if "continue" not in data:
             break
         cont = {"cmcontinue": data["continue"]["cmcontinue"]}
@@ -103,7 +120,14 @@ def safe(title: str) -> str:
 
 
 def fetch_page(title: str) -> dict:
-    data = api({"action": "parse", "page": title, "prop": "wikitext|text|revid|categories", "redirects": 1})
+    data = api(
+        {
+            "action": "parse",
+            "page": title,
+            "prop": "wikitext|text|revid|categories",
+            "redirects": 1,
+        }
+    )
     if "error" in data:
         return {"title": title, "error": data["error"]}
     p = data["parse"]
@@ -120,7 +144,70 @@ def fetch_page(title: str) -> dict:
     }
 
 
-def main(cmd: str):
+def remote_revisions(titles: list[str]) -> dict[str, int | None]:
+    data = api(
+        {
+            "action": "query",
+            "prop": "revisions",
+            "rvprop": "ids",
+            "titles": "|".join(titles),
+            "redirects": 1,
+        }
+    )
+    if "error" in data:
+        raise RuntimeError(f"revision query failed: {data['error']}")
+    query = data.get("query", {})
+    aliases = {}
+    for key in ("normalized", "converted", "redirects"):
+        aliases.update({item["from"]: item["to"] for item in query.get(key, [])})
+    pages = query.get("pages", {})
+    revisions = {}
+    for page in pages.values():
+        rows = page.get("revisions", [])
+        revisions[page["title"]] = rows[0]["revid"] if rows else None
+    result = {}
+    for title in titles:
+        resolved = title
+        seen = set()
+        while resolved in aliases and resolved not in seen:
+            seen.add(resolved)
+            resolved = aliases[resolved]
+        result[title] = revisions.get(resolved)
+    return result
+
+
+def cached_pages() -> dict[str, dict]:
+    pages = {}
+    for path in sorted((OUT / "pages").glob("*.json")):
+        try:
+            page = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        title = page.get("requested") or page.get("title")
+        if title:
+            pages[title] = page
+    return pages
+
+
+def main(cmd: str, force: bool = False, dry_run: bool = False):
+    cached = cached_pages()
+    if dry_run:
+        if cmd == "categories":
+            print("Offline dry run: category discovery requires the network.")
+            return
+        index = OUT / "index.json"
+        indexed = (
+            json.loads(index.read_text(encoding="utf-8"))["titles"]
+            if index.exists()
+            else []
+        )
+        titles = sorted(set(EXTRA_PAGES) | set(indexed) | set(cached))
+        print(f"Offline dry run: {len(titles)} known pages; no requests or writes.")
+        for title in titles:
+            page = cached.get(title, {})
+            action = "fetch" if force or "html" not in page else "check remote revision"
+            print(f"{action}: {title} (cached revid {page.get('revid')})")
+        return
     OUT.mkdir(parents=True, exist_ok=True)
     pages_dir = OUT / "pages"
     pages_dir.mkdir(exist_ok=True)
@@ -128,7 +215,7 @@ def main(cmd: str):
         for cat in CATEGORIES:
             print(cat, len(category_members(cat)))
         return
-    titles: set[str] = set(EXTRA_PAGES)
+    titles: set[str] = set(EXTRA_PAGES) | set(cached)
     for cat in CATEGORIES:
         try:
             members = category_members(cat)
@@ -137,25 +224,67 @@ def main(cmd: str):
         titles.update(m for m in members if not SKIP.search(m))
         time.sleep(0.3)
     titles = sorted(titles)
-    (OUT / "index.json").write_text(json.dumps({"titles": titles, "categories": CATEGORIES}, indent=1), encoding="utf-8")
+    (OUT / "index.json").write_text(
+        json.dumps({"titles": titles, "categories": CATEGORIES}, indent=1),
+        encoding="utf-8",
+    )
     print(f"{len(titles)} pages to mirror", flush=True)
-    done = 0
-    for title in titles:
-        path = pages_dir / f"{safe(title)}.json"
-        if path.exists():
+    done = unchanged = failed = 0
+    pending = []
+    for start in range(0, len(titles), 50):
+        batch = titles[start : start + 50]
+        try:
+            revisions = {} if force else remote_revisions(batch)
+        except RuntimeError as e:
+            print("FAILED revision check", batch, e, flush=True)
+            failed += len(batch)
             continue
+        for title in batch:
+            page = cached.get(title, {})
+            # docs/GAP_ANALYSIS.md:154: existence alone does not establish currency.
+            if (
+                not force
+                and page.get("revid") is not None
+                and "html" in page
+                and page["revid"] == revisions.get(title)
+            ):
+                unchanged += 1
+                continue
+            pending.append(title)
+        if not force:
+            time.sleep(0.35)
+    for title in pending:
         try:
             page = fetch_page(title)
         except RuntimeError as e:
             print("FAILED", title, e, flush=True)
+            failed += 1
             continue
+        if "error" in page:
+            print("FAILED", title, page["error"], flush=True)
+            failed += 1
+            continue
+        path = pages_dir / f"{safe(title)}.json"
         path.write_text(json.dumps(page, ensure_ascii=False), encoding="utf-8")
         done += 1
         if done % 25 == 0:
             print(f"  {done} fetched", flush=True)
         time.sleep(0.35)
-    print("done", done)
+    print(f"done {done}; unchanged {unchanged}; failed {failed}")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "fetch")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "command", nargs="?", default="fetch", choices=("categories", "fetch")
+    )
+    parser.add_argument(
+        "--force", action="store_true", help="refetch unchanged revisions too"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="offline cache inventory; no requests or writes",
+    )
+    args = parser.parse_args()
+    main(args.command, force=args.force, dry_run=args.dry_run)

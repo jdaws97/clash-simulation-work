@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import glob
+import hashlib
 import itertools
 import json
 import math
@@ -25,9 +26,52 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from baselab.evaluate import SCOUT, apply_charge, attacker_trophies, group_seed, pool, skill, techniques  # noqa: E402
+from baselab.evaluate import (
+    SCOUT,
+    apply_charge,
+    attacker_trophies,
+    group_seed,
+    pool,
+    skill,
+    techniques,
+)  # noqa: E402
 from baselab.layout import Layout  # noqa: E402
 from baselab.meta_armies import compose, data, plan_for_build  # noqa: E402
+
+
+def calibration_provenance(engine="python"):
+    """Hash file bytes, including uncommitted engine changes, in path order."""
+    manifest = ROOT / "data" / "manifest.json"
+    manifest_bytes = manifest.read_bytes() if manifest.is_file() else None
+    manifest_values = json.loads(manifest_bytes) if manifest_bytes else {}
+    paths = sorted((ROOT / "src" / "baselab").rglob("*.py"))
+    if engine == "rust":
+        paths += sorted((ROOT / "rust" / "src").rglob("*.rs"))
+        paths += [ROOT / "rust" / "Cargo.toml", ROOT / "rust" / "Cargo.lock"]
+    digest = hashlib.sha256()
+    for path in sorted(paths):
+        if path.is_file():
+            digest.update(path.relative_to(ROOT).as_posix().encode())
+            digest.update(b"\0")
+            digest.update(path.read_bytes())
+            digest.update(b"\0")
+    # docs/GAP_ANALYSIS.md:153-157: tie calibration to data and engine bytes.
+    return {
+        "data_manifest_sha256": (
+            hashlib.sha256(manifest_bytes).hexdigest()
+            if manifest_bytes is not None
+            else None
+        ),
+        "data_manifest_hash": manifest_values.get("manifest_hash"),
+        "input_hash": manifest_values.get("calibration_input_hash"),
+        "engine_code_sha256": digest.hexdigest(),
+        "engine": engine,
+        "engine_hash_scope": (
+            "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
+            if engine == "rust"
+            else "src/baselab/**/*.py"
+        ),
+    }
 
 
 def _run(args):
@@ -55,7 +99,16 @@ def rate(lays, build, strength, angles, seeds):
         for k in range(angles):
             for s in seeds:
                 for tech in techs:
-                    jobs.append((lj, build, 2 * math.pi * k / angles + 0.13 * bi, group_seed(bi + s, s, k, angles), strength, tech))
+                    jobs.append(
+                        (
+                            lj,
+                            build,
+                            2 * math.pi * k / angles + 0.13 * bi,
+                            group_seed(bi + s, s, k, angles),
+                            strength,
+                            tech,
+                        )
+                    )
                     keys.append((bi, s, k))
     res = list(pool().map(_run, jobs, chunksize=2))
     sides: dict = {}
@@ -63,7 +116,9 @@ def rate(lays, build, strength, angles, seeds):
         sides.setdefault(key, []).append(r)
     groups: dict = {}
     for (bi, s, k), rows in sides.items():
-        groups.setdefault((bi, s), []).append(max(rows, key=lambda r: (attacker_trophies(*r), r[1])))
+        groups.setdefault((bi, s), []).append(
+            max(rows, key=lambda r: (attacker_trophies(*r), r[1]))
+        )
     picked = []
     for rows in groups.values():
         for combo in itertools.combinations(rows, SCOUT):
@@ -75,16 +130,25 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--angles", type=int, default=8)
     ap.add_argument("--seeds", type=int, default=2)
-    ap.add_argument("--techniques", action="store_true", help="attackers also pick hero charges (evaluate.techniques)")
+    ap.add_argument(
+        "--techniques",
+        action="store_true",
+        help="attackers also pick hero charges (evaluate.techniques)",
+    )
     ap.add_argument("--out", default=str(ROOT / "data" / "meta-calibration.json"))
     args = ap.parse_args()
+    provenance = calibration_provenance()
     global TECH
     TECH = args.techniques
     own = json.loads((ROOT / "data" / "your-levels.json").read_text())
     lays = []
     for f in sorted(glob.glob(str(ROOT / "data" / "reference-bases" / "*.json"))):
         lay = Layout.load(f)
-        lay.levels, lay.wall_level, lay.hero_levels = dict(own["levels"]), own["wall_level"], dict(own["hero_levels"])
+        lay.levels, lay.wall_level, lay.hero_levels = (
+            dict(own["levels"]),
+            own["wall_level"],
+            dict(own["hero_levels"]),
+        )
         lays.append(lay.to_json())
     seeds = tuple(range(args.seeds))
     out = {}
@@ -94,11 +158,21 @@ def main():
         bid = f"{b['archetype']}-16-{b['build']}"
         target = b["three_star"]
         lo, hi = 0.4, 2.5
-        r_lo, r_hi = rate(lays, b, lo, args.angles, seeds), rate(lays, b, hi, args.angles, seeds)
-        print(f"{bid}: real 3* {target:.0%}; sim at {lo} -> {r_lo:.0%}, at {hi} -> {r_hi:.0%}", flush=True)
+        r_lo, r_hi = rate(lays, b, lo, args.angles, seeds), rate(
+            lays, b, hi, args.angles, seeds
+        )
+        print(
+            f"{bid}: real 3* {target:.0%}; sim at {lo} -> {r_lo:.0%}, at {hi} -> {r_hi:.0%}",
+            flush=True,
+        )
         if not r_lo <= target <= r_hi:
             s = lo if target < r_lo else hi
-            out[bid] = {"strength": s, "sim": r_lo if s == lo else r_hi, "real": target, "clamped": True}
+            out[bid] = {
+                "strength": s,
+                "sim": r_lo if s == lo else r_hi,
+                "real": target,
+                "clamped": True,
+            }
             print(f"  outside the range, clamped to {s}", flush=True)
             continue
         for _ in range(6):
@@ -120,7 +194,18 @@ def main():
             continue
         bid = f"{b['archetype']}-{b['th']}-{b['build']}"
         st = by_arch.get(b["archetype"])
-        out[bid] = {"strength": (sum(st) / len(st)) if st else 1.0, "real": b["three_star"], "uncalibrated": True}
+        out[bid] = {
+            "strength": (sum(st) / len(st)) if st else 1.0,
+            "real": b["three_star"],
+            "uncalibrated": True,
+        }
+    final_provenance = calibration_provenance()
+    for row in out.values():
+        # Keep the flat build -> strength format used by evaluate._load_strength.
+        row["provenance"] = provenance
+        if provenance != final_provenance:
+            row["inputs_changed_during_run"] = True
+            row["final_provenance"] = final_provenance
     Path(args.out).write_text(json.dumps(out, indent=1))
     print(f"saved {args.out}", flush=True)
 

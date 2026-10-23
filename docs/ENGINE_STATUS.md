@@ -127,3 +127,25 @@ game observations, expert examples, model experiments, and unknowns.
 Testing is bounded by risk. Preserve useful existing coverage; add only checks
 that detect consequential simulation errors. Test count and coverage percentage
 are not success criteria.
+
+## Updating after a game patch
+
+Put new CSVs in `data/gamecsv/<version>/`, then run
+`python3 -B tools/baselab/patch_update.py plan --csv data/gamecsv/<version>`.
+This prints the reader pins to review, wiki/registry/Rust catalog rebuild commands,
+and calibrations and saved scores to invalidate; it runs no downloads or battles.
+`wiki_mirror.py fetch` checks remote revisions and refreshes changed pages;
+`--force` refreshes all pages and `--dry-run` inventories the cache offline.
+Reparse refreshed pages with `wiki_tables.py` before rebuilding the registry.
+
+Run `python3 -B tools/baselab/data_manifest.py check` before and after updates.
+`build` writes a deterministic content/source-version snapshot; after regenerating
+registry/catalog, use `build --record-derived data/registry.json --record-derived
+rust/data/catalog.json`. Ordinary builds preserve previous input bindings.
+Legacy files without regeneration evidence remain `UNVERIFIED`; a snapshot does
+not establish calibration validity. Pass the proof checks before recalibrating,
+re-scoring finalists or searching. Record each regenerated calibration with
+`build --record-derived <calibration-path>` (or embed `provenance.input_hash` using
+the manifest's `calibration_input_hash`), then save the final `manifest_hash` with
+new results. Older hashes mark saved scores stale; unversioned winners need
+re-scoring. The manifest records paths and hashes, not private input contents.
