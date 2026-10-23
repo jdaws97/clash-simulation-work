@@ -1184,7 +1184,7 @@ def _spell_tower(battle, w: Weapon):
     if w.cooldown > 0:
         return
     t = battle.t
-    trigger = w.extra.get("trigger")
+    trigger = w.extra.get("trigger", {})
     if w.mode == "invis":
         triggers = {
             unit: since
@@ -1198,12 +1198,13 @@ def _spell_tower(battle, w: Weapon):
         since = triggers[unit]
     else:
         near = _tower_candidates(battle, w)
-        if trigger is None or trigger[0] not in near:
-            w.extra.pop("trigger", None)
-            if near:
-                w.extra["trigger"] = (near[0], t)
+        # Wiki: Spell Tower, each unit must remain eligible for 1.2 seconds.
+        triggers = {unit: trigger.get(unit, t) for unit in near}
+        w.extra["trigger"] = triggers
+        if not triggers:
             return
-        unit, since = trigger
+        unit = min(triggers, key=triggers.get)
+        since = triggers[unit]
     if t - since < 1.2:  # Wiki: Spell Tower, continuous activation time.
         return
     spells.tower_cast(battle, w.owner, w.mode, [unit])

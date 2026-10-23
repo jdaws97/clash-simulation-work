@@ -43,7 +43,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 
 from ..mechanics import WORLD
-from . import heroes
+from . import heroes, stats
 from .plans import SPELL_NAMES, THREAT, AttackPlan, edge_point
 
 SPELL_KEYS = {v: k for k, v in SPELL_NAMES.items()}
@@ -96,6 +96,7 @@ class PlaybookPlan(AttackPlan):
     charge_side: str = "left"  # which flank the charge opens (knob)
     _done: dict = field(default_factory=dict)  # step id -> time it fired
     _next: dict = field(default_factory=dict)  # repeating step id -> next time
+    _cancelled: set = field(default_factory=set)  # skipped or stopped step ids
     _hurt: dict = field(default_factory=dict)  # unit id -> [(t, hp)]
     _no_target: dict = field(default_factory=dict)  # step id -> time it was first ready with no target
     log_steps: list = field(default_factory=list)
@@ -115,7 +116,12 @@ class PlaybookPlan(AttackPlan):
         """Pending while a deploy or redeploy step has not fired. The battle
         otherwise ends when every attacker is down (see on_tick: an army
         with nothing alive deploys its remaining steps, as players do)."""
-        return any(s["id"] not in self._done for s in self.steps if s["action"] in ("deploy", "redeploy"))
+        # Wiki: Healer, undeployed reserves keep the battle running.
+        return any(self.inventory.values()) or any(
+            s["id"] not in self._done
+            for s in self.steps
+            if s["action"] in ("deploy", "redeploy")
+        )
 
     def has_offensive_pending(self, battle):
         self._step_kinds()
@@ -129,7 +135,8 @@ class PlaybookPlan(AttackPlan):
             and (
                 self.auto_revive
                 or any(
-                    step["id"] not in self._done
+                    (step["id"] not in self._done or step.get("every"))
+                    and step["id"] not in self._cancelled
                     and step["action"] == "spell"
                     and step.get("what") == "Revive Spell"
                     for step in self.steps
@@ -138,6 +145,11 @@ class PlaybookPlan(AttackPlan):
         ):
             return True
         if any(unit.name != "Healer" for unit in battle.portal_stash):
+            return True
+        # Wiki: Healer, non-healing troops still in camp prevent battle end.
+        if any(
+            name != "Healer" and count > 0 for name, count in self.inventory.items()
+        ):
             return True
         return any(
             step["id"] not in self._done
@@ -539,11 +551,25 @@ class PlaybookPlan(AttackPlan):
         # a step that can no longer happen is skipped so the steps chained
         # after it go ahead, as a player moves on when a charge dies
         for st in self.steps:
-            if st["id"] not in self._done:
+            if st["id"] in self._cancelled:
+                continue
+            if st["id"] not in self._done or st.get("every"):
                 why = self._cannot(battle, st)
+                if (
+                    not why
+                    and st.get("every")
+                    and st.get("until")
+                    and self._ready(battle, st["until"])
+                ):
+                    why = "until reached"
                 if why:
-                    self._done[st["id"]] = t
+                    # Wiki: Invisibility Spell, remaining copies can support other units.
+                    self._done.setdefault(st["id"], t)
+                    self._cancelled.add(st["id"])
                     self.log_steps.append((round(t, 1), st["id"] + " (skipped: " + why + ")"))
+        # Wiki: Lightning Spell, remove defenses to pave the way for troops.
+        if not self._zap_done and self.zap_ad != (0, 0):
+            self._fallback_spells(battle, opening=True)
         # the consolidated playbook's own steps first; steps added later for
         # units it never deployed (completion) and uncited fallbacks fill in
         # when none of those is ready
@@ -554,7 +580,7 @@ class PlaybookPlan(AttackPlan):
                 break  # the player's hands are still on the last action
             sid = s["id"]
             rep = s.get("every")
-            if sid in self._done and not rep:
+            if sid in self._cancelled or (sid in self._done and not rep):
                 continue
             act = s["action"]
             forced = False
@@ -585,14 +611,16 @@ class PlaybookPlan(AttackPlan):
                 if pos is None and forced:
                     pos = self._edge(battle, "main")  # the anchor is gone: with the main push (as rest steps)
                 if pos is None:
-                    if act in ("spell", "recall") and s.get("what") != "Revive Spell" and sid not in self._done:
+                    if act in ("spell", "recall") and s.get("what") != "Revive Spell":
                         # ready but nothing to cast on (no defense firing, the
                         # group gone): after AIM_WAIT the player moves on
                         since = self._no_target.setdefault(sid, t)
                         if t - since >= AIM_WAIT:
-                            self._done[sid] = t
+                            self._done.setdefault(sid, t)
+                            self._cancelled.add(sid)
                             self.log_steps.append((round(t, 1), sid + " (skipped: no target)"))
                     continue
+                self._no_target.pop(sid, None)
                 if act == "deploy":
                     ok = self._deploy(battle, s, pos)
                 elif act in ("spell", "recall"):
@@ -615,10 +643,11 @@ class PlaybookPlan(AttackPlan):
                     self.log_steps.append((round(t, 1), sid))
                 if rep:
                     self._next[sid] = t + rep
-        if t >= LATE and t >= getattr(self, "_busy_until", 0.0):
+        if t >= getattr(self, "_busy_until", 0.0):
             # troops whose steps were skipped (their anchor unit fell) are
             # still in the camp: they go in with the main push (uncited, as
             # the rest steps of fit_steps)
+            # Wiki: Healer, undeployed non-healing reserves must still be used.
             pending = {x.get("what") for x in self.steps if x["action"] == "deploy" and x["id"] not in self._done}
             left = next((n for n, c in self.inventory.items() if c > 0 and n not in pending), None)
             if left is not None:
@@ -639,9 +668,14 @@ class PlaybookPlan(AttackPlan):
                 elif st["action"] == "spell" and st.get("what") in SPELL_KEYS:
                     kinds.add(SPELL_KEYS[st["what"]])
             self._step_spells = kinds
-            # Revive: the playbook decides when it names it; otherwise fallen
-            # heroes are revived as the scripted plans do
-            self.auto_revive = "revive" not in kinds
+        # Wiki: Revive Spell, heroes can be revived repeatedly while spells remain.
+        self.auto_revive = not any(
+            st["action"] == "spell"
+            and st.get("what") == "Revive Spell"
+            and st["id"] not in self._cancelled
+            and (st["id"] not in self._done or st.get("every"))
+            for st in self.steps
+        )
         return self._step_spells
 
     def _have(self, kind):
@@ -649,14 +683,25 @@ class PlaybookPlan(AttackPlan):
             # the playbook keeps one copy for each of its own steps for this
             # spell that has not fired yet (all of them while it repeats one);
             # copies beyond that go to the fallback
-            mine = [st for st in self.steps if (st["action"] == "recall" and kind == "recall")
-                    or (st["action"] == "spell" and SPELL_KEYS.get(st.get("what")) == kind)]
+            # Wiki: Invisibility Spell, copies are not tied to the original hero.
+            mine = [
+                st
+                for st in self.steps
+                if st["id"] not in self._cancelled
+                and (
+                    (st["action"] == "recall" and kind == "recall")
+                    or (
+                        st["action"] == "spell"
+                        and SPELL_KEYS.get(st.get("what")) == kind
+                    )
+                )
+            ]
             if any(st.get("every") for st in mine):
                 return False
             return self.spells.get(kind, 0) > sum(1 for st in mine if st["id"] not in self._done)
         return super()._have(kind)
 
-    def _fallback_spells(self, battle):
+    def _fallback_spells(self, battle, *, opening=False):
         """Spells the playbook never names are used by the general spell
         logic of the scripted plans (Freeze heavy defenses on the push, Rage
         when engaged, Heal under fire, Lightning on an Air Defense, Revive).
@@ -667,6 +712,19 @@ class PlaybookPlan(AttackPlan):
         if t < getattr(self, "_next_fallback", 0.0) or t < getattr(self, "_busy_until", 0.0):
             return
         self._next_fallback = t + 0.5
+        # Wiki: Lightning Spell, opening defense removal precedes the troop push.
+        if not self._zap_done and self.zap_ad != (0, 0):
+            self._fallback = True
+            left = sum(self.spells.values())
+            try:
+                self._zap(battle, single_cast=True)
+            finally:
+                self._fallback = False
+            if sum(self.spells.values()) < left:
+                self._busy_until = t + action_time("spell")
+                return
+        if opening:
+            return
         # Video: docs/VIDEO_MEASUREMENTS.md:31, spell drops are separate actions.
         left = sum(self.spells.values())
         self.revive_knocked_out(battle, single_cast=True)
@@ -692,8 +750,6 @@ class PlaybookPlan(AttackPlan):
                 x, y = self._fallback_quakes.pop(0)
                 if self._have("eq"):
                     self._use(battle, "eq", x, y)
-            elif not self._zap_done and self.zap_ad != (0, 0):
-                self._zap(battle, single_cast=True)
             if sum(self.spells.values()) == left:
                 self.generic_spells(battle, main, single_cast=True)
         finally:
@@ -715,9 +771,36 @@ class PlaybookPlan(AttackPlan):
                 u.ability_used = False
 
 
-
-def _usable(st, have, heroes_in):
+def _usable(st, have, heroes_in, pets, steps):
     w = st.get("what")
+    at = str(st.get("at", ""))
+    if at.startswith(("unit:", "unit_ahead:")):
+        name = at.split(":", 1)[1]
+        if name in stats.registry() and stats.record(name)["kind"] == "pet":
+            # Wiki: Spirit Fox, invisibility belongs to its assigned Hero.
+            named = []
+
+            def find_heroes(trigger):
+                if not isinstance(trigger, dict):
+                    return
+                for key in UNIT_TRIGGERS + ("dead",):
+                    if trigger.get(key) in heroes.HEROES:
+                        named.append(trigger[key])
+                for key in ("all", "any"):
+                    for part in trigger.get(key, []):
+                        find_heroes(part)
+
+            find_heroes(st.get("when"))
+            if not named:
+                named = [
+                    step["what"]
+                    for step in steps
+                    if step["action"] == "deploy"
+                    and step.get("what") in heroes.HEROES
+                    and step.get("group", "main") == st.get("group", "main")
+                ]
+            if not any(pets.get(hero) == name for hero in named or heroes_in):
+                return False
     if st["action"] in ("deploy", "release_siege"):
         return w in have
     if st["action"] == "recall":
@@ -731,13 +814,20 @@ def _usable(st, have, heroes_in):
     return True
 
 
-def pick_variants(pb: dict, inventory: dict, heroes_in: list, spells: dict) -> list:
+def pick_variants(
+    pb: dict, inventory: dict, heroes_in: list, spells: dict, loadouts=None
+) -> list:
     """The playbook's steps with its cited variants swapped in where the
     army needs them: a variant that replaces steps this army cannot play
     (e.g. a Flame Flinger it does not bring) with steps it can (its Log
     Launcher) takes their place. Best-supported variant first; additive
     variants (replacing nothing) are left out."""
     have = set(inventory) | set(heroes_in) | {SPELL_NAMES[k] for k, c in spells.items() if c}
+    # Wiki: Spirit Fox, the pet supports its assigned Hero, not another hero.
+    pets = {}
+    for hero in heroes_in:
+        loadout = (loadouts or {}).get(hero) or heroes.DEFAULT_LOADOUTS.get(hero)
+        pets[hero] = loadout.pet if loadout is not None else None
     # deep copies: plan construction edits steps (e.g. appends a cite in
     # from_playbook), which used to mutate the cached playbook itself, so
     # every later plan of the family accumulated another citation
@@ -746,10 +836,14 @@ def pick_variants(pb: dict, inventory: dict, heroes_in: list, spells: dict) -> l
         repl = set(v.get("replaces") or [])
         cur = [x for x in steps if x["id"] in repl]
         # Playbook: Yeti, KDalGKrAyL0 50.2 -> Barracks and Queen share the variant.
-        if not repl or not cur or all(_usable(x, have, heroes_in) for x in cur):
+        if (
+            not repl
+            or not cur
+            or all(_usable(x, have, heroes_in, pets, steps) for x in cur)
+        ):
             continue
         new = [dict(copy.deepcopy(x), variant=v["name"]) for x in v.get("steps", [])]
-        if not new or not all(_usable(x, have, heroes_in) for x in new):
+        if not new or not all(_usable(x, have, heroes_in, pets, new) for x in new):
             continue
         i = min(n for n, x in enumerate(steps) if x["id"] in repl)
         steps = [x for x in steps if x["id"] not in repl]
@@ -1013,7 +1107,13 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
     plan.inventory = inv
     heroes_in = [h for h in build["heroes"] if h in heroes.HEROES]
     sp = dict(plan.spells)  # brewed + Clan Castle
-    plan.steps = fit_steps(pick_variants(pb, inv, heroes_in, sp), inv, heroes_in, sp, cc=plan.cc_troops)
+    plan.steps = fit_steps(
+        pick_variants(pb, inv, heroes_in, sp, plan.loadouts),
+        inv,
+        heroes_in,
+        sp,
+        cc=plan.cc_troops,
+    )
     add_waits(plan.steps)
     # Invisibility cadence on a charging hero depends on her pet: the merged
     # playbooks' 10-second cycle relies on Spirit Fox covering the gaps; without

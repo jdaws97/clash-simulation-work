@@ -677,7 +677,8 @@ class Battle:
             # defeated (wiki: Royal Champion, "Automatically use Hero
             # Abilities on KO", on by default)
             u.hp = 1.0
-            heroes.activate(self, u)
+            # Wiki: Seeking Shield, KO activation releases without the animation.
+            heroes.activate(self, u, on_ko=True)
             if self.record:
                 self.log.append((round(self.t, 1), "ability", u.name, "on KO"))
         if u.hp <= 0:
@@ -717,7 +718,8 @@ class Battle:
                 and source.team == "atk"
                 and self._effect not in ("meteor", "spell", "poison")
             ):
-                # Wiki: Spell Tower, surviving units and equipment can trigger Invisibility.
+                # Wiki: Spell Tower, damage within the spell's area triggers Invisibility.
+                # game data v18.200.9: Spell Tower Invisibility.Radius=450 -> 4.5 tiles from building edges.
                 for tower in self.buildings:
                     weapon = tower.weapon
                     if (
@@ -726,7 +728,7 @@ class Battle:
                         and weapon.kind == "spell_tower"
                         and weapon.mode == "invis"
                         and weapon.cooldown <= 0
-                        and dist(tower.x, tower.y, b.x, b.y) <= 4.5
+                        and b.edge_distance(tower.x, tower.y) <= 4.5
                         and (b.hp > amount or tower is b)
                     ):
                         weapon.extra.setdefault("hit_triggers", {}).setdefault(
@@ -1276,8 +1278,10 @@ class Battle:
                 target = None
             elif u.target_kind == "unit" and not target.targetable(t):
                 target = None
-        if sp.prefer == "wall" and isinstance(target, Wall):
-            if units.wall_breaker_target(self, u) is not target:
+        if sp.prefer == "wall" and target is not None:
+            # Wiki: Wall Breaker, Jump bypasses only accessible walls; resume wall targeting after it expires.
+            wall = units.wall_breaker_target(self, u)
+            if wall is not target and (wall is not None or isinstance(target, Wall)):
                 target = None
                 u.wall_target = None
         if sp.prefer == "heroes" and not angry:
@@ -1295,6 +1299,9 @@ class Battle:
                     u.extra["finish_preferred"] = target
             u.extra["preferred_remaining"] = bool(preferred)
             finishing = target is not None and target is u.extra.get("finish_preferred")
+            # Wiki: Root Rider; Dragon Rider, finish each current building before retaliating.
+            if sp.prefer in ("defense", "air_defense") and isinstance(target, Building):
+                finishing = True
             # game data v18.200.9: Giant Giant.ForceRetaliation=TRUE -> may leave defenses to retaliate.
             retaliation = (
                 u.name in ("Royal Champion", "Giant Giant")
@@ -1316,12 +1323,15 @@ class Battle:
         ):
             followed = units.follow_target(self, u)
             grouped = u.extra.get("warden_group", False)
-            if followed is not None:
-                target = followed
-                u.target_kind = "wall" if isinstance(followed, Wall) else "building"
-                u.wall_target = None
-            elif followed is None and grouped:
-                target = None
+            # game data v18.200.9: Grand Warden.ForceRetaliation=TRUE -> keep a live retaliation target over group following.
+            # Wiki: Grand Warden, follow the group's building while that group rule applies.
+            if not isinstance(target, Unit):
+                if followed is not None:
+                    target = followed
+                    u.target_kind = "wall" if isinstance(followed, Wall) else "building"
+                    u.wall_target = None
+                elif grouped:
+                    target = None
             u.extra["warden_group"] = followed is not None
         elif u.name in ("Grand Warden", "Apprentice Warden"):
             u.extra["warden_group"] = False
@@ -1507,7 +1517,11 @@ class Battle:
         costs = self.navigation_grid(u).building_costs(
             u.x, u.y, WALL_COST["normal"] / RES, xs, ys, hs, reach
         )
-        k = int(np.argmin(costs))
+        # Wiki: Thrower, closest building; equal path costs use edge distance, then list order.
+        k = min(
+            range(len(pool)),
+            key=lambda i: (costs[i], pool[i].edge_distance(u.x, u.y)),
+        )
         if costs[k] >= 1e8:  # unreachable even through walls: fall back to nearest
             return min(pool, key=lambda b: b.edge_distance(u.x, u.y))
         return pool[k]

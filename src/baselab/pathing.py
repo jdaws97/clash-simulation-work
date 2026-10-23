@@ -25,18 +25,18 @@ _STEP = np.array([1.0, 1.0, 1.0, 1.0, math.sqrt(2), math.sqrt(2), math.sqrt(2), 
 
 
 @njit(cache=True)
-def _dijkstra(goal, blocked, wall, wall_extra, neighbors, step):
+def _dijkstra(goal, blocked, wall, wall_extra, neighbors, step, forward=False):
     n, m = goal.shape
     dist = np.full((n, m), 1e9, dtype=np.float32)
     for i in range(n):
         for j in range(m):
             if goal[i, j] and not blocked[i, j]:
                 dist[i, j] = 0.0
-    return _relax(dist, goal, blocked, wall, wall_extra, neighbors, step)
+    return _relax(dist, goal, blocked, wall, wall_extra, neighbors, step, forward)
 
 
 @njit(cache=True)
-def _relax(dist, seed, blocked, wall, wall_extra, neighbors, step):
+def _relax(dist, seed, blocked, wall, wall_extra, neighbors, step, forward=False):
     """Dijkstra from every seed cell at its current distance. From the goal
     cells (dist 0) this is the full field; from the cells around a removed
     obstacle it repairs a cached field exactly, since removing a wall or a
@@ -97,9 +97,13 @@ def _relax(dist, seed, blocked, wall, wall_extra, neighbors, step):
                 # no corner cutting past blocked cells
                 if blocked[ci, nj] or blocked[ni, cj]:
                     continue
-            # cost of entering (ci, cj) from (ni, nj): we expand backwards
+            # Wiki: Wall/Home Village, entering walls delays ground troops in either field direction.
             cost = step[q]
-            if wall[ci, cj]:
+            if forward:
+                in_wall = wall[ni, nj]
+            else:
+                in_wall = wall[ci, cj]
+            if in_wall:
                 cost += wall_extra
             nd = d + cost
             if nd < dist[ni, nj]:
@@ -198,7 +202,7 @@ class Grid:
         self.wall[tx * RES : (tx + 1) * RES, ty * RES : (ty + 1) * RES] = present
         self._changed(tx * RES, (tx + 1) * RES, ty * RES, (ty + 1) * RES, not present)
 
-    def _repair(self, entry, wall_extra):
+    def _repair(self, entry, wall_extra, forward=False):
         """Bring a cached field up to the current version without a full
         recompute when every change since it was built only removed obstacles.
         Returns None when a full recompute is needed."""
@@ -217,7 +221,16 @@ class Grid:
             # goal cells freed by a removed obstacle are goal cells again (distance 0)
             freed = seed & goal & ~self.blocked
             dist[freed] = 0.0
-        return _relax(dist, seed, self.blocked, self.wall, np.float32(wall_extra), _NEIGHBORS, _STEP)
+        return _relax(
+            dist,
+            seed,
+            self.blocked,
+            self.wall,
+            np.float32(wall_extra),
+            _NEIGHBORS,
+            _STEP,
+            forward,
+        )
 
     def field(self, key, cx: float, cy: float, half: float, reach: float, wall_extra: float):
         # Wiki: Wall/Home Village, troops use gaps; retain the planned wall entry cost.
@@ -253,10 +266,19 @@ class Grid:
         goal[i, j] = True
         # The source is passed as the goal so a source inside a hitbox that
         # has since fallen restarts at 0; without it the field stayed all-INF.
+        # Wiki: Wall/Home Village, source paths pay for entering the goal cell's wall too.
         if entry is not None and entry[2] == (i, j):
-            dist = self._repair((entry[0], entry[1], goal), wall_extra)
+            dist = self._repair((entry[0], entry[1], goal), wall_extra, forward=True)
         if dist is None:
-            dist = _dijkstra(goal, self.blocked, self.wall, np.float32(wall_extra), _NEIGHBORS, _STEP)
+            dist = _dijkstra(
+                goal,
+                self.blocked,
+                self.wall,
+                np.float32(wall_extra),
+                _NEIGHBORS,
+                _STEP,
+                forward=True,
+            )
         self._cache[key] = (self.version, dist, (i, j), np.float32(wall_extra))
         return dist
 

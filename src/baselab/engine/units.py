@@ -91,8 +91,23 @@ def wall_breaker_target(battle, u):
     """Find connected walls protecting an actual building."""
     from . import spells
 
-    if battle.wall_mode(u) == "ignore":
+    # Wiki: Heroic Torch, affected troops move through walls; retain other bypasses.
+    # Jump's temporary unit buff alone must not hide walls outside its fields.
+    jumped = battle.t < u.extra.get("jump_until", 0.0)
+    if battle.wall_mode(u) == "ignore" and not jumped:
         return None
+    if jumped:
+        # battle.wall_mode checks Jump first; inspect the remaining bypasses too.
+        cell = battle.grid.cell(u.x, u.y)
+        if (
+            u.team == "def"
+            or u.spec.walls == "ignore"
+            or battle.t < u.extra.get("horse_until", 0.0)
+            or effects.torch_stats(u, battle.t)[1]
+            or (u.extra.get("torches") and not u.flying and battle.grid.wall[cell])
+        ):
+            return None
+    # Wiki: Wall Breaker, ignore only walls made accessible by Jump and target other walls.
     walls = {
         key: wall
         for key, wall in battle.walls.items()
@@ -165,7 +180,8 @@ def follow_target(battle, u):
     score: dict = {}
     total_weight = 0.0
     for a in battle.attackers_near(u.x, u.y, radius):
-        if a is u or not a.alive or a.name in ("Totem", "Yetimite"):
+        # game data v18.200.9: Yetimite.FriendlyGroupWeight=50 -> include its 0.5 Warden Weight.
+        if a is u or not a.alive or a.name == "Totem":
             continue
         if a.is_hero:
             weight = ww["heroes"]
@@ -2356,7 +2372,8 @@ def _after_unit_hit(battle, u, target, dmg, *, splash=True):
             float(poison["PoisonDPS"]),
             slow,
             atk,
-            1.0,
+            # game data v18.200.9: Poison.HeroDamageMultiplier=5 -> 0.05x hero damage, as for the Poison spell.
+            spells.POISON_HERO_MULT if target.is_hero else 1.0,
             ramp=poison.get("PoisonIncreaseSlowly") == "TRUE",
             origin="headhunter",
             source=u.id,

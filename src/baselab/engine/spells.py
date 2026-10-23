@@ -857,7 +857,8 @@ def _apply(battle, f: Field) -> bool:
                     f.radius,
                 )
         for u in battle.attackers_near(f.x, f.y, f.radius):
-            if _affected(u) and not u.underground:
+            # Wiki: Rocket Backpack, Ice Block has no effect during the dash.
+            if _affected(u) and not u.underground and u.dash is None:
                 until = t + f.extra["time"]
                 u.extra.setdefault("iceblocks", {})[_source(battle, f)] = (
                     f.value,

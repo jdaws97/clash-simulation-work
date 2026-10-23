@@ -549,7 +549,7 @@ def on_death(battle, u: Unit) -> bool:
 
 
 @effects.sourced("ability")
-def activate(battle, u: Unit):
+def activate(battle, u: Unit, *, on_ko=False):
     """The hero ability: heals the hero's health recovery and fires every
     active equipment effect at once."""
     k: Kit = u.kit
@@ -758,9 +758,11 @@ def activate(battle, u: Unit):
             # DeactivateAfterTime=1200 -> no ordinary attacks for 1.2 s.
             u.extra["attack_lock_until"] = t + 1.2
             # game data v18.200.9: RoyalChampionShieldBounce.PreActivationDelayTime=933 -> 0.933 s.
+            # Wiki: Seeking Shield, automatic activation on KO releases instantly.
+            delay = 0.0 if on_ko else 0.933
             battle.add_pending(
                 Pending(
-                    t + 0.933,
+                    t + delay,
                     u.x,
                     u.y,
                     0.0,
@@ -1071,8 +1073,24 @@ def projectile_impact(battle, pending):
         at = min(battle.t, state["until"])
         distance = max(0.0, at - state["last_at"]) * state["speed"]
         dx, dy = state["direction"]
-        for target in _targets(battle):
+        # Wiki: Invisibility Spell, indirect area hits damage and frost invisible targets.
+        for target in list(battle.buildings) + list(battle.defenders):
             if target in state["visited"]:
+                continue
+            if isinstance(target, Building):
+                if (
+                    not target.alive
+                    or (not target.counted and target.key != "th")
+                    or battle.t < target.overgrown_until
+                    or battle.t < target.extra.get("yellow_until", 0.0)
+                    or (target.key == "tesla" and not target.revealed)
+                ):
+                    continue
+            elif (
+                not target.indirect_targetable(battle.t)
+                or target.dash is not None
+                or battle.t < target.extra.get("yellow_until", 0.0)
+            ):
                 continue
             along = (target.x - pending.x) * dx + (target.y - pending.y) * dy
             along = min(distance, max(0.0, along))
@@ -1210,6 +1228,8 @@ def _puppet(battle, u, e, lv, *, first=0, at=None):
 def start_dash(battle, u, damage):
     from ..mechanics import WORLD
 
+    # Wiki: Rocket Backpack, activation ends Ice Block's freeze, retaining reduction.
+    u.frozen_until = min(u.frozen_until, battle.t)
     # Through the village centre at 15 tiles/s (wiki: Rocket Backpack).
     dx, dy = WORLD / 2.0 - u.x, WORLD / 2.0 - u.y
     distance = math.hypot(dx, dy)
