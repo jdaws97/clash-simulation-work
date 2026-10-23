@@ -461,6 +461,26 @@ def meta_scenarios(
         libraries[th] = library(th, ranked=mode == "ranked")
         if not libraries[th]:
             raise ValueError(f"no saved meta builds for attacker TH{th}")
+    from .meta_armies import PLAYBOOK_FAMILY, _playbook, playbooks_on
+
+    if playbooks_on():
+        # Cited playbooks only (the Rust engine runs PlaybookPlan, not the
+        # scripted AttackPlan): builds whose family has no playbook are left
+        # out and their weight goes to the Town Hall's other builds.
+        for th, builds in libraries.items():
+            kept = [
+                (b, w)
+                for b, w in builds
+                if PLAYBOOK_FAMILY.get(b["archetype"])
+                and _playbook(PLAYBOOK_FAMILY[b["archetype"]]) is not None
+            ]
+            dropped = sorted({b["archetype"] for b, _ in builds} - {b["archetype"] for b, _ in kept})
+            if dropped:
+                META_MIX_INFO.setdefault("no_playbook", {})[th] = dropped
+                print(f"meta_scenarios: TH{th} without a cited playbook, left out: {', '.join(dropped)}", file=sys.stderr)
+            if kept:
+                total = sum(w for _, w in kept)
+                libraries[th] = [(b, w / total) for b, w in kept]
     out = []
     for th, tw in th_mix.items():
         for b, w in libraries[th]:
