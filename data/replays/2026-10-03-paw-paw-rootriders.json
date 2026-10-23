@@ -1,0 +1,184 @@
+{
+ "battle": {
+  "battleType": "ranked",
+  "defender": "jdawzzy",
+  "attacker": "paw paw",
+  "attacker_league": "Electro 31",
+  "attacker_th": null,
+  "attacker_th_guess": 18,
+  "attacker_th_note": "not shown; King/Queen 110, Warden 85, Root Rider L4 suggest TH18",
+  "when": "2026-10-03 ~00:33 local (defense log: 11h14m before 11:47)",
+  "result": {
+   "stars": 1,
+   "destruction": 83,
+   "battleTime": 180,
+   "town_hall_destroyed": false,
+   "defender_trophies": 26
+  },
+  "army": "9 Root Rider L4, 5 Healer L11, 3 Druid L3, 3 Apprentice Warden L2, 1 siege (L4-5, wooden; identity uncertain); King 110 (+pet L10, Frosty?), Queen 110 (+pet L15, L.A.S.S.I?), Warden 85 (+pet L10), Dragon Duke 25 (+pet L10, Phoenix?); spells: 2x L8 (Freeze?), 1x L4, 3x L5, 1x L5 (Totem?), 2x L8, 2x L4 (identities uncertain)",
+  "army_confidence": "troop counts/levels and hero levels high; siege, pets and spell identities low"
+ },
+ "source": {
+  "video": "//TRUENAS/Media/clash_videos/ScreenRecording_10-03-2026 11-47-05_1.MP4",
+  "recorded": "2026-10-03 11:47 local (phone screen recording, 59 fps, landscape 2796x1290)",
+  "speed": "1x for the first ~4 video s, then 4x: the 'Replay ends in' countdown drops 4 s per video second",
+  "time_base": "countdown read once per video second (resolution 4 battle s). Battle 1 (timeout): t = 180 - countdown (the damage panel appears at countdown 2m59). Battle 2 (3-star): t = 100 - countdown, first deploy estimated at countdown ~1m40 (+-4 s).",
+  "layout": "data/reference-bases/your-base.json (same day: screenshot IMG_4219, 2026-10-03)",
+  "defense_log_frame": "video 57.5 s: Ranked Battle -> Defense Log card for both battles (armies, result, trophies)",
+  "extracted_by": "Claude, 2026-10-22, from per-second crops of the timer and Overall Damage panel; armies from the troop bar and the defense-log card"
+ },
+ "deployments": [],
+ "deployments_note": "not extracted (4x playback; positions unreliable)",
+ "timeline": {
+  "t_pct": [
+   [
+    13,
+    0
+   ],
+   [
+    17,
+    2
+   ],
+   [
+    21,
+    5
+   ],
+   [
+    25,
+    8
+   ],
+   [
+    29,
+    9
+   ],
+   [
+    33,
+    12
+   ],
+   [
+    37,
+    26
+   ],
+   [
+    41,
+    29
+   ],
+   [
+    45,
+    32
+   ],
+   [
+    49,
+    35
+   ],
+   [
+    53,
+    37
+   ],
+   [
+    57,
+    42
+   ],
+   [
+    61,
+    45
+   ],
+   [
+    65,
+    49
+   ],
+   [
+    69,
+    50
+   ],
+   [
+    73,
+    52
+   ],
+   [
+    77,
+    55
+   ],
+   [
+    81,
+    58
+   ],
+   [
+    85,
+    63
+   ],
+   [
+    89,
+    65
+   ],
+   [
+    93,
+    67
+   ],
+   [
+    97,
+    70
+   ],
+   [
+    101,
+    73
+   ],
+   [
+    105,
+    75
+   ],
+   [
+    109,
+    76
+   ],
+   [
+    113,
+    77
+   ],
+   [
+    117,
+    79
+   ],
+   [
+    121,
+    80
+   ],
+   [
+    125,
+    80
+   ],
+   [
+    129,
+    80
+   ],
+   [
+    133,
+    80
+   ],
+   [
+    137,
+    82
+   ],
+   [
+    141,
+    82
+   ],
+   [
+    169,
+    82
+   ],
+   [
+    173,
+    83
+   ],
+   [
+    177,
+    83
+   ]
+  ],
+  "stars": {
+   "1": 69
+  },
+  "end": "time out, 83%"
+ }
+}

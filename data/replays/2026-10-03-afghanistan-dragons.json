@@ -1,0 +1,146 @@
+{
+ "battle": {
+  "battleType": "ranked",
+  "defender": "jdawzzy",
+  "attacker": "AFGHANISTAN clan member (name in Persian script)",
+  "attacker_league": "Electro 31",
+  "attacker_th": null,
+  "attacker_th_guess": 18,
+  "attacker_th_note": "not shown; Dragon L13, Queen 110, Warden 85 suggest TH18",
+  "when": "2026-10-03 ~11:02 local (defense log: 45m before 11:47)",
+  "result": {
+   "stars": 3,
+   "destruction": 100,
+   "battleTime": 100,
+   "battleTime_note": "+-4 s",
+   "defender_trophies": 0
+  },
+  "army": "10 Dragon L13, 5 Rocket Balloon (L6 badge), 2 Baby Dragon L9, 1 Balloon L12, 1 Minion L10, 1 siege L4; Royal Champion 55 (+pet L10, Phoenix?), Queen 110 (+pet L15), Warden 85 (+pet L15), Dragon Duke 25 (+pet L15); spells: 4x L4 (Invisibility?), 1x L6, 1x L5, 1x L7 (Freeze?), 1x L5, 1x L12, 1x L5, 1x L4 (identities uncertain)",
+  "army_confidence": "Dragon/hero counts and levels high; small troops, siege, pets and spells low"
+ },
+ "source": {
+  "video": "//TRUENAS/Media/clash_videos/ScreenRecording_10-03-2026 11-47-05_1.MP4",
+  "recorded": "2026-10-03 11:47 local (phone screen recording, 59 fps, landscape 2796x1290)",
+  "speed": "1x for the first ~4 video s, then 4x: the 'Replay ends in' countdown drops 4 s per video second",
+  "time_base": "countdown read once per video second (resolution 4 battle s). Battle 1 (timeout): t = 180 - countdown (the damage panel appears at countdown 2m59). Battle 2 (3-star): t = 100 - countdown, first deploy estimated at countdown ~1m40 (+-4 s).",
+  "layout": "data/reference-bases/your-base.json (same day: screenshot IMG_4219, 2026-10-03)",
+  "defense_log_frame": "video 57.5 s: Ranked Battle -> Defense Log card for both battles (armies, result, trophies)",
+  "extracted_by": "Claude, 2026-10-22, from per-second crops of the timer and Overall Damage panel; armies from the troop bar and the defense-log card"
+ },
+ "deployments": [],
+ "deployments_note": "not extracted (4x playback; positions unreliable)",
+ "timeline": {
+  "t_pct": [
+   [
+    3,
+    4
+   ],
+   [
+    7,
+    7
+   ],
+   [
+    11,
+    9
+   ],
+   [
+    15,
+    15
+   ],
+   [
+    19,
+    22
+   ],
+   [
+    23,
+    27
+   ],
+   [
+    27,
+    34
+   ],
+   [
+    31,
+    42
+   ],
+   [
+    35,
+    46
+   ],
+   [
+    39,
+    51
+   ],
+   [
+    43,
+    55
+   ],
+   [
+    47,
+    56
+   ],
+   [
+    51,
+    60
+   ],
+   [
+    55,
+    62
+   ],
+   [
+    59,
+    64
+   ],
+   [
+    63,
+    65
+   ],
+   [
+    67,
+    67
+   ],
+   [
+    71,
+    71
+   ],
+   [
+    75,
+    75
+   ],
+   [
+    79,
+    77
+   ],
+   [
+    83,
+    82
+   ],
+   [
+    87,
+    86
+   ],
+   [
+    91,
+    90
+   ],
+   [
+    95,
+    95
+   ],
+   [
+    99,
+    99
+   ],
+   [
+    100,
+    100
+   ]
+  ],
+  "stars": {
+   "1": 39,
+   "2": 47,
+   "3": 100
+  },
+  "end": "3 stars"
+ }
+}
