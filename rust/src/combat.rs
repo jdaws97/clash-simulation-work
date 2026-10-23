@@ -142,7 +142,6 @@ impl Battle {
         let u = self.unit(victim);
         if u.hp <= 0.0 && victim.team == Team::Atk && u.is_hero && u.kit.is_some()
             && !u.ability_used && u.alive && self.plan.auto_ability_on_ko() {
-            self.unit_mut(victim).hp = 1.0;
             heroes::activate(self, victim, true);
             let name = self.unit(victim).name.clone();
             self.log_event(vec![round_decimal(self.t, 1).into(), "ability".into(), name.into(), "on KO".into()]);
@@ -169,6 +168,12 @@ impl Battle {
         }
         effects::record_death(self, victim);
         if self.unit(victim).kit.is_some() && heroes::on_death(self, victim) {
+            // battle.py:702-706: Phoenix resumes flight when the egg hatches.
+            if let Some(pet) = self.unit(victim).pet {
+                if self.unit(pet).name_id == Name::Phoenix {
+                    self.unit_mut(pet).flying = true;
+                }
+            }
             return;
         }
         let u = self.unit_mut(victim);
@@ -433,6 +438,7 @@ impl Battle {
             if ((angle - aim + pi).rem_euclid(2.0 * pi) - pi).abs() > 5.0 * (pi / 180.0) {
                 return;
             }
+            let (old_x, old_y) = (unit.x, unit.y);
             self.nudge(
                 target,
                 geom::py_cos(angle) * p.extra.push,
@@ -441,6 +447,9 @@ impl Battle {
             let t = self.t;
             let unit = self.unit_mut(target);
             unit.extra.pushed_at = Some(t);
+            // battle.py:1037-1047: use actual displacement after map clipping.
+            let duration = 1.2_f64.min(geom::dist(old_x, old_y, unit.x, unit.y) / 6.0);
+            unit.extra.pushed_until = unit.extra.pushed_until.max(t + duration);
             units::reset_beam(unit);
             return;
         }

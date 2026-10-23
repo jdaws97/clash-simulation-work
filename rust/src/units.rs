@@ -487,13 +487,14 @@ pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
         u.extra.next = t + 0.5;
     }
     if sp.has_special(Special::Logs) {
-        let u = battle.unit_mut(unit);
-        u.decay = 156.0;
-        u.extra.next_log = t + 1.0;
+        battle.unit_mut(unit).extra.next_log = t + 1.0;
     }
-    if sp.has_special(Special::Flinger) {
-        // units.py:296-297: decay is fixed before deploy-time strength scaling.
-        battle.unit_mut(unit).decay = 17.0;
+    if sp.has_special(Special::Logs) || sp.has_special(Special::Flinger) {
+        // units.py:303-307: first discrete HP loss follows the CSV interval.
+        let u = battle.unit(unit);
+        let row = battle.catalog.game_unit_data(&u.name, u.level.as_ref());
+        let interval = game_required_int(row, "LoseHpInterval") as f64 / 1000.0;
+        battle.unit_mut(unit).extra.hp_loss_at = Some(t + interval);
     }
     if name == "Druid" {
         battle.unit_mut(unit).extra.bear_at = t + 30.0;
@@ -531,7 +532,7 @@ pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
         let u = battle.unit_mut(unit);
         u.extra.barrels = count;
         u.extra.next = t + 2.0;
-        u.extra.hp_loss_at = t + 1.0;
+        u.extra.hp_loss_at = Some(t + 1.0);
         u.extra.expires_at = t + lifetime;
     }
 }
@@ -553,6 +554,7 @@ pub fn pre_tick(battle: &mut Battle, unit: UnitRef) -> bool {
         || u.name_id == Name::RootRider && unit.team == Team::Atk
         || u.name_id == Name::Totem
         || u.decay > 0.0
+        || u.extra.hp_loss_at.is_some()
         || u.kind == Tag::Pet
         || u.kit.is_some()
         || u.name_id == Name::GiantGiant && !u.extra.enraged && u.hp <= 0.5 * u.max_hp;
@@ -592,14 +594,17 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         unit.hp = 0.0;
         return true;
     }
-    // units.py:338-345: discrete launcher HP loss precedes lifetime expiry.
-    if special.contains(Special::TroopLauncher) {
-        while t >= battle.unit(unit).extra.hp_loss_at
-            || isclose(t, battle.unit(unit).extra.hp_loss_at)
-        {
+    // units.py:355-366: discrete losses include every skipped interval.
+    if let Some(mut at) = battle.unit(unit).extra.hp_loss_at {
+        let u = battle.unit(unit);
+        let row = battle.catalog.game_unit_data(&u.name, u.level.as_ref());
+        let loss = game_required_int(row, "LoseHpPerTick") as f64;
+        let interval = game_required_int(row, "LoseHpInterval") as f64 / 1000.0;
+        while t >= at || isclose(t, at) {
             let u = battle.unit_mut(unit);
-            u.hp -= 25.0;
-            u.extra.hp_loss_at += 1.0;
+            u.hp -= loss;
+            at += interval;
+            u.extra.hp_loss_at = Some(at);
             if u.hp <= 0.0 {
                 battle.kill(unit);
                 return true;
@@ -666,7 +671,9 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
             let dt = battle.dt;
             let pet = battle.unit_mut(unit);
             pet.cooldown = (pet.cooldown - dt).max(-dt);
-            heroes::act_pet(battle, unit);
+            if t >= pet.extra.pushed_until {
+                heroes::act_pet(battle, unit);
+            }
         }
         return true;
     }
@@ -2088,6 +2095,10 @@ pub fn new_target_delays(battle: &Battle) -> &HashMap<String, f64> {
 
 // units.py:1294-1308: the exported WINDUP switch replaces the environment read.
 pub fn new_target_windup(battle: &mut Battle, unit: UnitRef) {
+    // units.py:1525-1527: consume the kill override before the WINDUP switch.
+    if std::mem::take(&mut battle.unit_mut(unit).extra.target_killed_cooldown) {
+        return;
+    }
     let u = battle.unit(unit);
     if !battle.windup || u.interval == 0.0 {
         return;
@@ -2098,6 +2109,30 @@ pub fn new_target_windup(battle: &mut Battle, unit: UnitRef) {
         .unwrap_or(u.interval);
     let cooldown = u.cooldown.max(delay);
     battle.unit_mut(unit).cooldown = cooldown;
+}
+
+// units.py:1535-1550: a kill replaces normal cadence and the next windup.
+pub fn target_killed_cooldown(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
+    if battle.entity_alive(target) {
+        return;
+    }
+    let u = battle.unit(unit);
+    let row = if u.spec.has_special(Special::RoyalRampage)
+        && unit.team == Team::Atk
+        && duke_alone(battle, unit)
+    {
+        battle
+            .catalog
+            .game_data("special_abilities", "DragonDukeRageWhenAlone", None)
+    } else {
+        battle.catalog.game_unit_data(&u.name, u.level.as_ref())
+    };
+    let delay = game_int(row, "TargetKilledCooldownTimer", 0) as f64 / 1000.0;
+    if delay > 0.0 {
+        let u = battle.unit_mut(unit);
+        u.cooldown = delay;
+        u.extra.target_killed_cooldown = true;
+    }
 }
 
 // units.py:304-306,1522,2389-2391: all burst resets read the same shot count.
@@ -2955,9 +2990,10 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     let (mut rage, _) = rage_boost(battle.unit(unit), t);
     let u = battle.unit(unit);
     rage = rage.max(u.aura_dmg).max(u.extra.bell_damage);
-    let mut multiplier = 1.0;
+    let multiplier = 1.0;
     if sp.has_special(Special::RoyalRampage) && unit.team == Team::Atk && duke_alone(battle, unit) {
-        multiplier *= 2.0;
+        // units.py:2237-2241: Rampage competes with other damage boosts.
+        rage = rage.max(2.0);
     }
     if tantrum(battle, unit) {
         rage = rage.max(2.0);

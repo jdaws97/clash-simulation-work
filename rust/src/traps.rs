@@ -70,6 +70,10 @@ pub fn effect_target(battle: &Battle, trap: TrapId, unit: &Unit, t: f64) -> bool
 
 // traps.py:134-146.
 pub fn eligible(battle: &Battle, trap: TrapId, unit: &Unit, t: f64) -> bool {
+    // traps.py:137-140: grounded Phoenix eggs never trigger traps.
+    if unit.extra.egg {
+        return false;
+    }
     if !effect_target(battle, trap, unit, t) || NO_TRIGGER.contains(&unit.name_id) {
         return false;
     }
@@ -197,10 +201,11 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
                 {
                     let distance = unit.dist(tr.x, tr.y);
                     if distance > 0.0 {
+                        let push = 1.0 / unit.housing as f64;
                         battle.nudge(
                             reference,
-                            2.0 * (unit.x - tr.x) / distance,
-                            2.0 * (unit.y - tr.y) / distance,
+                            push * (unit.x - tr.x) / distance,
+                            push * (unit.y - tr.y) / distance,
                         );
                     }
                     let unit = battle.unit_mut(reference);
@@ -239,7 +244,7 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
                 }
             }
             let unit = battle.unit(target);
-            let flight = dist(tr.x, tr.y, unit.x, unit.y) / 2.5;
+            let flight = 0.0_f64.max(dist(tr.x, tr.y, unit.x, unit.y) - 0.2) / 2.5;
             let mut pending = Pending::new(
                 t + flight,
                 unit.x,
@@ -303,9 +308,18 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
             if !battle.unit(unit).alive || !effect_target(battle, trap, battle.unit(unit), t) {
                 return;
             }
+            // traps.py:273-280: launch 0.2 tiles toward the committed target.
+            let target = battle.unit(unit);
+            let distance = dist(tr.x, tr.y, target.x, target.y);
+            let denominator = if distance != 0.0 { distance } else { 1.0 };
+            let offset = 0.2_f64.min(distance) / denominator;
+            let projectile = (
+                tr.x + (target.x - tr.x) * offset,
+                tr.y + (target.y - tr.y) * offset,
+            );
             let extra = &mut battle.traps[trap.0].extra;
             extra.state = Some("flight".to_owned());
-            extra.projectile = Some((tr.x, tr.y));
+            extra.projectile = Some(projectile);
         }
         "spring" => {
             let candidates: Vec<_> = battle

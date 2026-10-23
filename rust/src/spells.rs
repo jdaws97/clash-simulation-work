@@ -1567,10 +1567,10 @@ pub fn interaction_housing(unit: &Unit) -> i64 {
         return 20;
     }
     match unit.name.as_str() {
-        "Skeleton" | "Spell Skeleton" | "Bat" | "Frostmite" => 1,
-        "Lava Pup" | "Ice Pup" | "Yetimite" => 2,
+        "Skeleton" | "Spell Skeleton" | "Bat" | "Frostmite" | "Lava Pup" | "Ice Pup" => 1,
+        "Yetimite" => 2,
         "Golemite" => 6,
-        "Big Boy" => 10,
+        "Big Boy" => 20,
         _ => unit.housing.max(1),
     }
 }

@@ -297,6 +297,10 @@ pub fn act(battle: &mut Battle, owner: BuildingId) {
     }
     let cooldown = (weapon(battle, owner).cooldown - dt * slow(battle, owner)).max(-dt);
     weapon_mut(battle, owner).cooldown = cooldown;
+    // defense.py:696-699: charge advances once per tick, including cooling ticks.
+    if weapon(battle, owner).kind == Tag::InfernoSingle {
+        weapon_mut(battle, owner).lock_time += dt;
+    }
     for _ in 0..12 {
         let before = weapon(battle, owner).cooldown;
         act_once(battle, owner);
@@ -310,7 +314,6 @@ pub fn act(battle: &mut Battle, owner: BuildingId) {
 // defense.py:636-807: one complete firing cycle for every weapon family.
 pub fn act_once(battle: &mut Battle, owner: BuildingId) {
     let t = battle.t;
-    let dt = battle.dt;
     let (bx, by) = battle.entity_position(EntityRef::Building(owner));
     let kind = weapon(battle, owner).kind.clone();
     if kind == Tag::Hook {
@@ -394,24 +397,22 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
     }
     let target = target.expect("single-target defense target");
     if kind == Tag::InfernoSingle {
-        weapon_mut(battle, owner).lock_time += dt;
         let w = weapon(battle, owner);
-        let mut dps = 0.0;
+        if w.cooldown > 0.0 {
+            return;
+        }
+        let mut damage = 0.0;
         for &(start, value) in &w.extra.ramp {
             if w.lock_time >= start {
-                dps = value;
+                damage = value;
             }
         }
-        let mut duration = dt * slow(battle, owner);
-        if let Some(ammunition) = w.ammunition {
-            duration = duration.min(ammunition as f64 * w.interval - w.ammo_time);
-        }
-        battle.hit_unit(target, dps * duration * damage_rage, None, "normal", None);
+        // defense.py:767-780: ramp entries are full per-hit damage, at 128 ms.
+        battle.hit_unit(target, damage * damage_rage, None, "normal", None);
         let actual = weapon_mut(battle, owner);
-        actual.ammo_time += duration;
-        while actual.ammo_time + 1e-9 >= actual.interval {
-            actual.ammo_time -= actual.interval;
-            *actual.ammunition.as_mut().expect("Inferno Tower ammunition") -= 1;
+        actual.cooldown += actual.interval;
+        if let Some(ammunition) = &mut actual.ammunition {
+            *ammunition -= 1;
         }
         return;
     }
@@ -531,12 +532,12 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
             };
             let building = battle.building(owner);
             if building.key == "wt" {
-                // defense.py:802-812: higher Wizard Towers fire from a 0.7-tile offset.
+                // defense.py:866-877: every Wizard Tower starts 0.7 tiles forward.
                 let flight = if matches!(
                     building.level.as_ref(),
                     Some(Level::Int(level)) if *level <= 4
                 ) {
-                    dist(bx, by, tx, ty) / 5.0
+                    0.0_f64.max(dist(bx, by, tx, ty) - 0.7) / 5.0
                 } else {
                     0.0_f64.max(dist(bx, by, tx, ty) - 0.7) / 9.0
                 };
@@ -733,8 +734,14 @@ pub fn multi(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
     if matches!(w.kind, Tag::MultiArcher | Tag::Candle) {
         sort_concentrated(battle, &mut keep, bx, by);
         weapon_mut(battle, owner).multi = keep.clone().into();
-        // defense.py:922-928: the third archer alternates between a retained pair.
-        let spare = if w.kind == Tag::MultiArcher && keep.len() == 2 {
+        // defense.py:1009-1023: only pairs within one tile alternate the spare.
+        let spare = if w.kind == Tag::MultiArcher
+            && keep.len() == 2
+            && battle
+                .unit(keep[0])
+                .dist(battle.unit(keep[1]).x, battle.unit(keep[1]).y)
+                <= 1.0
+        {
             let spare = if w.extra.spare_target == Some(keep[0]) {
                 keep[1]
             } else {
@@ -881,7 +888,7 @@ pub fn scatter(
     for reference in battle.attackers_near(tx, ty, 5.0) {
         let unit = battle.unit(reference);
         if reference == target
-            || unit.flying != battle.unit(target).flying
+            || (unit.name_id != Name::Totem && unit.flying != battle.unit(target).flying)
             || !unit.alive
             || unit.underground
         {

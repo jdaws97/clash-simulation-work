@@ -197,6 +197,10 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
     let base_interval = battle.unit(hero).interval;
     let (mut passive_dps, mut passive_speed) = (0.0, 0.0);
     for equipment in &loadout.equipment {
+        // heroes.py:137-141: account inventories leave unowned slots empty.
+        if !battle.plan.equipment_owned(equipment) {
+            continue;
+        }
         if battle.catalog.stats.registry.get(equipment).is_none() {
             continue;
         }
@@ -928,6 +932,10 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
     let recovery = unit.kit.as_ref().expect("hero kit").hp_recovery;
     let unit = battle.unit_mut(hero);
     unit.ability_used = true;
+    // heroes.py:566-570: a KO leaves 1 HP before applying activation healing.
+    if on_ko {
+        unit.hp = 1.0;
+    }
     unit.heal(recovery);
     let t = battle.t;
     let mut target = battle.unit(hero).target;
@@ -1861,7 +1869,7 @@ fn puppet(
         _ => unreachable!("puppet equipment"),
     };
     let t = battle.t;
-    if equipment == "Hog Rider Puppet" {
+    if equipment == "Hog Rider Puppet" && first == 0 {
         invisible(battle.unit_mut(hero), t + 1.0);
     }
     let count = col(battle, equipment, equipment_level, &[count_column], 1.0) as i64;
@@ -1871,9 +1879,12 @@ fn puppet(
         }
         None => battle.plan.researched_level(troop).cloned().flatten(),
     };
+    // heroes.py:1188-1200: Hog/Healer Puppets also use three-unit batches.
     let ability = match equipment {
         "Barbarian Puppet" => Some("BarbarianKingSpawnBarbarians"),
         "Archer Puppet" => Some("ArcherQueenSpawnArchers"),
+        "Hog Rider Puppet" => Some("RCEquipSpawnHogs"),
+        "Healer Puppet" => Some("ArcherQueenSpawnHealers"),
         "Lavaloon Puppet" => Some("GrandWardenSummonLavaloon"),
         _ => None,
     };
@@ -2335,17 +2346,47 @@ pub fn summon_death(battle: &mut Battle, unit: UnitRef) {
     if u.name_id != Name::Lavaloon {
         return;
     }
-    let count = battle.catalog.stats.get("Lavaloon", u.level.as_ref().expect("Lavaloon level"),
-        &["Lavaloon Pups Spawned (After Death)"], None).expect("Lavaloon death count") as usize;
-    for _ in 0..count {
+    let count = battle
+        .catalog
+        .stats
+        .get(
+            "Lavaloon",
+            u.level.as_ref().expect("Lavaloon level"),
+            &["Lavaloon Pups Spawned (After Death)"],
+            None,
+        )
+        .expect("Lavaloon death count") as usize;
+    // heroes.py:1730-1746: draw one radius per pup, in evenly spaced order.
+    let row = battle
+        .catalog
+        .game_data("characters", "GW Equipment Lavaloon", u.level.as_ref());
+    let spawn_distance = game_required_int(row, "SecondarySpawnDist") as f64 / 100.0;
+    let spawn_offset = game_int(row, "SecondarySpawnOffset", 0) as f64 / 100.0;
+    let randomize_distance = row
+        .get("RandomizeSecSpawnDist")
+        .and_then(crate::json::Json::opt_str)
+        == Some("TRUE");
+    for index in 0..count {
+        let angle = 2.0 * std::f64::consts::PI * index as f64 / count.max(1) as f64;
+        let mut radius = spawn_distance;
+        if randomize_distance {
+            radius *= battle.rng.as_mut().expect("battle rng").random();
+        }
+        radius += spawn_offset;
         let u = battle.unit(unit);
-        battle.spawn("Lavaloon Pup", unit.team, u.x, u.y, SpawnOptions {
-            level: u.level.clone(),
-            kind: Tag::Summon,
-            owner: Some(unit),
-            group: u.group.clone(),
-            ..Default::default()
-        });
+        battle.spawn(
+            "Lavaloon Pup",
+            unit.team,
+            u.x + radius * crate::geom::py_cos(angle),
+            u.y + radius * crate::geom::py_sin(angle),
+            SpawnOptions {
+                level: u.level.clone(),
+                kind: Tag::Summon,
+                owner: Some(unit),
+                group: u.group.clone(),
+                ..Default::default()
+            },
+        );
     }
     let u = battle.unit(unit);
     let damage = battle.catalog.stats.get("Lavaloon", u.level.as_ref().expect("Lavaloon level"),

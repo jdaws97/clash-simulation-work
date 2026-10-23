@@ -822,9 +822,27 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
             w
         }
         "bt" => {
+            // defense.py:353-368: supercharges keep the last integer DieDamage.
+            let death_level = match &level {
+                Level::Int(level) => *level,
+                Level::Text(_) => catalog
+                    .stats
+                    .record(&name)
+                    .at("levels")
+                    .arr()
+                    .iter()
+                    .filter_map(|row| match row.at("level") {
+                        Json::Num(_) => Some(row.at("level").i64()),
+                        _ => None,
+                    })
+                    .max()
+                    .expect("integer Bomb Tower level"),
+            };
+            let row = catalog.game_data("buildings", &name, Some(&Level::Int(death_level)));
+            let death = crate::catalog::game_float(row, "DieDamage");
             let mut w = weapon(building, "splash", "ground", 6.0, 0.0, 1.1, damage(1.1));
             w.extra.splash = 1.5;
-            w.extra.death = s(&["Damage when destroyed"], Some(600.0));
+            w.extra.death = s(&["Damage when destroyed"], Some(death));
             w.extra.death_radius = 2.75;
             w.extra.death_delay = 1.0;
             w
@@ -881,9 +899,9 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
         "inferno" => {
             let mut w = weapon(building, "inferno_single", "both", 9.0, 0.0, 0.128, 0.0);
             w.extra.ramp = vec![
-                (0.0, s(&["Damage per Second / Initial"], Some(120.0))),
-                (1.5, s(&["Damage per Second / After 1.5s"], Some(260.0))),
-                (5.25, s(&["Damage per Second / After 5.25s"], Some(2600.0))),
+                (0.0, s(&["Damage per Hit / Initial"], None)),
+                (1.5, s(&["Damage per Hit / After 1.5s"], None)),
+                (5.25, s(&["Damage per Hit / After 5.25s"], None)),
             ].into();
             w
         }
@@ -1120,9 +1138,13 @@ fn gear_up(battle: &Battle, building: &Building, weapon: &mut Weapon) {
             );
             weapon.interval =
                 crate::catalog::game_required_int(row, "AltAttackSpeed") as f64 / 1000.0;
-            weapon.damage = get(battle, &building.name, &Level::Int(*level), &["Damage per Shot"], None);
-            weapon.extra.shots = 3;
-            weapon.extra.gap = 0.5;
+            // defense.py:556-563: preserve AltDPS over the entire burst cycle.
+            weapon.extra.shots = crate::catalog::game_required_int(row, "AltBurstCount") as usize;
+            weapon.extra.gap =
+                crate::catalog::game_required_int(row, "AltBurstDelay") as f64 / 1000.0;
+            let cycle = weapon.interval + (weapon.extra.shots - 1) as f64 * weapon.extra.gap;
+            weapon.damage = crate::catalog::game_required_int(row, "AltDPS") as f64 * cycle
+                / weapon.extra.shots as f64;
         }
     }
 }

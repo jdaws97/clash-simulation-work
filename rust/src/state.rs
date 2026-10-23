@@ -182,6 +182,7 @@ pub struct WeaponExtra {
     pub spare_target: Option<UnitRef>,
     pub inner_min: Option<f64>,
     pub wake_at: Option<f64>,
+    // defense.py:416-425: single Inferno stages carry per-hit damage, not DPS.
     pub ramp: SharedVec<(f64, f64)>,
     pub trigger: Option<WeaponTrigger>,
     pub hit_triggers: SharedVec<(UnitRef, f64)>,
@@ -314,6 +315,8 @@ pub struct UnitExtra {
     pub portal: Option<(f64, f64, f64)>,
     pub last_damage_source: Option<EntityRef>,
     pub pushed_at: Option<f64>,
+    pub pushed_until: f64,
+    pub target_killed_cooldown: bool,
     pub patrol_state: Option<String>,
     pub spin_position: Option<SpinPosition>,
     pub attack_target: Option<EntityRef>,
@@ -350,7 +353,7 @@ pub struct UnitExtra {
     pub delivery_committed: bool,
     pub enraged: bool,
     pub next_bomb: f64,
-    pub hp_loss_at: f64,
+    pub hp_loss_at: Option<f64>,
     pub vacuum: Option<(BuildingId, f64)>,
     pub wall_pulses: Vec<(WallId, f64)>,
     pub from_druid: bool,
@@ -450,6 +453,8 @@ impl Default for UnitExtra {
             portal: None,
             last_damage_source: None,
             pushed_at: None,
+            pushed_until: 0.0,
+            target_killed_cooldown: false,
             patrol_state: None,
             spin_position: None,
             attack_target: None,
@@ -485,7 +490,7 @@ impl Default for UnitExtra {
             delivery_committed: false,
             enraged: false,
             next_bomb: 0.0,
-            hp_loss_at: 0.0,
+            hp_loss_at: None,
             vacuum: None,
             wall_pulses: Vec::new(),
             from_druid: false,
@@ -1160,6 +1165,7 @@ pub enum Plan {
         loadouts: Vec<(String, crate::heroes::HeroLoadout)>,
         hero_levels: Vec<(String, Option<Level>)>,
         equipment_levels: Vec<(String, Option<Level>)>,
+        account_equipment: bool,
         pet_levels: Vec<(String, Option<Level>)>,
         auto_ability_on_ko: bool,
         observed: bool,
@@ -1167,6 +1173,21 @@ pub enum Plan {
 }
 
 impl Plan {
+    // heroes.py:131-141: complete account inventories filter by key presence.
+    pub fn equipment_owned(&self, name: &str) -> bool {
+        match self {
+            Self::Playbook(p) => {
+                !p.attack.account_equipment
+                    || p.attack.equipment_levels.iter().any(|(key, _)| key == name)
+            }
+            Self::Stage {
+                account_equipment,
+                equipment_levels,
+                ..
+            } => !*account_equipment || equipment_levels.iter().any(|(key, _)| key == name),
+        }
+    }
+
     pub fn loadout(&self, name: &str) -> Option<&crate::heroes::HeroLoadout> {
         match self {
             Self::Playbook(p) => p.attack.loadouts.iter().find(|(hero, _)| hero == name).map(|(_, loadout)| loadout),

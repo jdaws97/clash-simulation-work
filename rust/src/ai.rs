@@ -20,10 +20,21 @@ impl Battle {
             return;
         }
         let (x, y) = (b.x, b.y);
-        let intruders: Vec<_> = self.attackers_near_iter(x, y, 13.0).filter(|id| {
-            let u = self.unit(*id);
-            !spells::NO_TRIGGER.contains(&u.name_id) && u.targetable(self) && u.dash.is_none()
-        }).collect();
+        let intruders: Vec<_> = self
+            .attackers_near_iter(x, y, 13.0)
+            .filter(|id| {
+                let u = self.unit(*id);
+                !spells::NO_TRIGGER.contains(&u.name_id)
+                    && self
+                        .catalog
+                        .game_unit_data(&u.name, u.level.as_ref())
+                        .get("DoesNotOpenCC")
+                        .and_then(crate::json::Json::opt_str)
+                        != Some("TRUE")
+                    && u.targetable(self)
+                    && u.dash.is_none()
+            })
+            .collect();
         for i in 0..self.cc_queue.len() {
             let entry = &self.cc_queue[i];
             let nums = self.catalog.numbers(&entry.name, &entry.level);
@@ -69,6 +80,16 @@ impl Battle {
     // battle.py:1189-1311: local target differs from u.target until assignment.
     pub fn act_attacker(&mut self, reference: UnitRef) {
         let t = self.t;
+        // battle.py:1260-1267: displacement also blocks summon/siege attacks.
+        if t < self.unit(reference).extra.pushed_until {
+            if self.unit(reference).can_act(t) {
+                let dt = self.dt;
+                let unit = self.unit_mut(reference);
+                unit.cooldown = (unit.cooldown - dt).max(-dt);
+            }
+            units::interrupt_attack(self, reference);
+            return;
+        }
         if heroes::summon_tick(self, reference) {
             return;
         }
@@ -524,6 +545,7 @@ impl Battle {
                     interval /= 1.5;
                 }
                 self.unit_mut(reference).cooldown += interval / 0.05_f64.max(slow);
+                units::target_killed_cooldown(self, reference, target);
                 // battle.py:1627-1630: reset after a kill, then apply next-target windup.
                 if self.unit(reference).name_id == Name::Valkyrie && !self.entity_alive(target) {
                     self.unit_mut(reference).cooldown = 0.0;
@@ -679,6 +701,7 @@ impl Battle {
                 let slow = effects::slow_mult(self.unit(reference), t, false);
                 let interval = units::attack_interval(self, reference);
                 self.unit_mut(reference).cooldown += interval / 0.05_f64.max(slow);
+                units::target_killed_cooldown(self, reference, EntityRef::Unit(target));
                 // battle.py:1796-1799: defending Valkyries reset on kills too.
                 if self.unit(reference).name_id == Name::Valkyrie && !self.unit(target).alive {
                     self.unit_mut(reference).cooldown = 0.0;

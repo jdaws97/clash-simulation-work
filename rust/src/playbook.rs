@@ -385,6 +385,10 @@ impl PlaybookPlan {
                 let (x, y) = plans::centroid(battle, &units);
                 let mut best = None;
                 for (id, _) in plans::threats_near(battle, x, y, 12.0) {
+                    // playbook.py:218-226: hidden firing defenses are unavailable.
+                    if !battle.building_targetable(id) {
+                        continue;
+                    }
                     let b = battle.building(id);
                     let w = b.weapon.as_ref().expect("weapon");
                     let score = plans::threat(&b.key, 1.0);

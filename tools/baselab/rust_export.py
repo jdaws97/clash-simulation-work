@@ -67,6 +67,7 @@ def catalog():
         battle,
         defense,
         heroes,
+        plans,
         playbook,
         specs,
         spells,
@@ -170,6 +171,7 @@ def catalog():
                 }
                 for name in units
             },
+            "siege_donation_caps": dump(plans._siege_donation_caps()),
             "env": {
                 "dt": battle.DT,
                 "fast_end": battle.FAST_END,

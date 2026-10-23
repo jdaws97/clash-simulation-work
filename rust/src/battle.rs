@@ -490,6 +490,12 @@ impl Battle {
         }
         if unit.is_hero {
             heroes::equip(self, reference);
+            // battle.py:495-498: Phoenix follows as a grounded egg until hatching.
+            if let Some(pet) = self.unit(reference).pet {
+                if self.unit(pet).extra.egg {
+                    self.unit_mut(pet).flying = false;
+                }
+            }
             let multiplier = self.atk_hero_mult;
             if multiplier != 1.0 {
                 let unit = self.unit_mut(reference);
@@ -523,7 +529,9 @@ impl Battle {
             deployment.source.as_str()
         };
         self.unit_mut(reference).extra.deployment_source = Some(source.to_owned());
-        if source == "army" && ["troop", "hero", "siege"].contains(&record_kind.as_str()) {
+        if source == "army"
+            && ["troop", "super_troop", "hero", "siege"].contains(&record_kind.as_str())
+        {
             self.monolith_housing += activation_housing;
         }
         self.log_event(vec![

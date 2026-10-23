@@ -556,7 +556,11 @@ impl Resolver {
                 "spare_target" => extra.spare_target = self.optional_unit_ref(v),
                 "inner_min" => extra.inner_min = v.optional_number(),
                 "wake_at" => extra.wake_at = v.optional_number(),
-                "ramp" => extra.ramp = v.array().iter().map(Node::pair).collect(),
+                "ramp" => {
+                    // defense.py:416-425: exported single Inferno values are
+                    // per-hit damage; preserve them without DPS conversion.
+                    extra.ramp = v.array().iter().map(Node::pair).collect();
+                }
                 "trigger" => extra.trigger = self.trigger(v),
                 "hit_triggers" => extra.hit_triggers = self.hit_triggers(v).into(),
                 _ => extra.unknown.push((key, self.value(v))),
@@ -679,6 +683,8 @@ impl Resolver {
                 "portal" => extra.portal = Some(v.triple()),
                 "last_damage_source" => extra.last_damage_source = self.optional_ref(v),
                 "pushed_at" => extra.pushed_at = v.optional_number(),
+                "pushed_until" => extra.pushed_until = v.number(),
+                "target_killed_cooldown" => extra.target_killed_cooldown = v.boolean(),
                 "patrol_state" => extra.patrol_state = v.optional_string(),
                 "spin_position" => extra.spin_position = self.spin_position(v),
                 "attack_target" => extra.attack_target = self.optional_ref(v),
@@ -705,7 +711,7 @@ impl Resolver {
                 "delivery_committed" => extra.delivery_committed = v.boolean(),
                 "enraged" => extra.enraged = v.boolean(),
                 "next_bomb" => extra.next_bomb = v.number(),
-                "hp_loss_at" => extra.hp_loss_at = v.number(),
+                "hp_loss_at" => extra.hp_loss_at = Some(v.number()),
                 "vacuum" => {
                     let pair = v.tuple(2);
                     extra.vacuum = Some((self.building_ref(pair[0].clone()), pair[1].number()));
@@ -1590,6 +1596,7 @@ pub fn plan(p: Node<'_>, deployments: &[Deployment]) -> Plan {
                 "troop_levels",
                 "hero_levels",
                 "equipment_levels",
+                "account_equipment",
                 "pet_levels",
                 "clan_castle_level",
                 "auto_ability_on_ko",
@@ -1643,6 +1650,9 @@ pub fn plan(p: Node<'_>, deployments: &[Deployment]) -> Plan {
                 }).collect(),
                 hero_levels: optional_levels(p.optional("hero_levels")),
                 equipment_levels: optional_levels(p.optional("equipment_levels")),
+                account_equipment: p
+                    .optional("account_equipment")
+                    .is_some_and(|n| n.boolean()),
                 pet_levels: optional_levels(p.optional("pet_levels")),
                 auto_ability_on_ko: p.optional("auto_ability_on_ko").map_or(true, |n| n.boolean()),
                 observed: p.optional("observed").is_some_and(|n| n.boolean()),

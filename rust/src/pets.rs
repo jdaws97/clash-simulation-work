@@ -116,17 +116,19 @@ fn target_from_pools(
     defenders: &[EntityRef],
 ) -> Option<EntityRef> {
     let unit = battle.unit(pet);
-    // pets.py:78-91: the existence check precedes the targetability filter.
+    // pets.py:79-90: only targetable resources suppress the ordinary fallback.
     if unit.name == "Greedy Raven" {
-        let resources: Vec<_> = battle
-            .buildings
+        let resources: Vec<_> = buildings
             .iter()
-            .filter(|building| {
-                building.alive
-                    && (building.kind == Tag::Resource
-                        || units::RESOURCE_KEYS.contains(&building.key.as_str()))
+            .copied()
+            .filter(|target| {
+                let EntityRef::Building(id) = target else {
+                    return false;
+                };
+                let building = battle.building(*id);
+                building.kind == Tag::Resource
+                    || units::RESOURCE_KEYS.contains(&building.key.as_str())
             })
-            .map(|building| EntityRef::Building(building.id))
             .collect();
         if !resources.is_empty() {
             let origin = if owner_present {
@@ -134,10 +136,7 @@ fn target_from_pools(
             } else {
                 pet
             };
-            let candidates = resources
-                .into_iter()
-                .filter(|target| valid(battle, pet, Some(*target)));
-            return nearest(battle, EntityRef::Unit(origin), candidates);
+            return nearest(battle, EntityRef::Unit(origin), resources);
         }
     }
     if unit.attached(battle) {
@@ -273,7 +272,7 @@ pub fn owner_defeated(battle: &mut Battle, pet: UnitRef) {
     }
     let unit = battle.unit_mut(pet);
     if unit.name_id == Name::Sneezy {
-        unit.range = 1.5;
+        unit.range = 2.5;
     }
     unit.target = None;
     unit.wall_target = None;
@@ -406,11 +405,24 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
         let target = if present {
             owner.map(EntityRef::Unit)
         } else {
-            nearest(battle, EntityRef::Unit(pet), battle.attackers_pool().filter(|ally| {
-                ally.alive && ally.reference() != pet && ally.hp < ally.max_hp
-                    && !matches!(ally.kind, Tag::Siege | Tag::SiegeIdle)
-                    && !matches!(ally.spec.attack, Tag::Heal | Tag::HealChain)
-            }).map(|ally| EntityRef::Unit(ally.reference())))
+            nearest(
+                battle,
+                EntityRef::Unit(pet),
+                battle
+                    .attackers_pool()
+                    .filter(|ally| {
+                        ally.alive
+                            && ally.reference() != pet
+                            && ally.team == pet.team
+                            && t >= ally.active_at
+                            && !ally.extra.suspended
+                            && !matches!(ally.name_id, Name::Totem | Name::Furnace)
+                            && ally.hp < ally.max_hp
+                            && !matches!(ally.kind, Tag::Siege | Tag::SiegeIdle)
+                            && !matches!(ally.spec.attack, Tag::Heal | Tag::HealChain)
+                    })
+                    .map(|ally| EntityRef::Unit(ally.reference())),
+            )
         };
         battle.unit_mut(pet).target = target;
         if let Some(EntityRef::Unit(target)) = target {

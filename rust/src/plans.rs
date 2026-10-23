@@ -201,6 +201,7 @@ pub struct AttackPlan {
     pub troop_levels: SharedVec<(String, Option<Level>)>,
     pub hero_levels: SharedVec<(String, Option<Level>)>,
     pub equipment_levels: SharedVec<(String, Option<Level>)>,
+    pub account_equipment: bool,
     pub pet_levels: SharedVec<(String, Option<Level>)>,
     pub spell_levels: SharedVec<(String, Option<Level>)>,
     pub auto_ability_on_ko: bool,
@@ -218,6 +219,8 @@ pub struct AttackPlan {
     pub fallback_quakes: SharedVec<(f64, f64)>,
     pub cc_released: bool,
     pub siege_donated: bool,
+    pub siege: Option<String>,
+    pub clan_castle_level: Option<i64>,
     pub main_at: f64,
     pub cast_log: SharedVec<(f64, String)>,
     pub breakers: SharedVec<(String, i64)>,
@@ -273,6 +276,7 @@ impl AttackPlan {
             troop_levels: levels(p, "troop_levels").into(),
             hero_levels: levels(p, "hero_levels").into(),
             equipment_levels: levels(p, "equipment_levels").into(),
+            account_equipment: flag(p, "account_equipment"),
             pet_levels: levels(p, "pet_levels").into(),
             spell_levels: levels(p, "spell_levels").into(),
             auto_ability_on_ko: p.at("auto_ability_on_ko").bool(),
@@ -300,6 +304,11 @@ impl AttackPlan {
             ),
             cc_released: flag(p, "_cc_released"),
             siege_donated: flag(p, "siege_donated"),
+            siege: p.get("siege").and_then(Json::opt_str).map(str::to_owned),
+            clan_castle_level: p
+                .get("clan_castle_level")
+                .filter(|v| !v.is_null())
+                .map(Json::i64),
             main_at: number(p, "_main_at", 0.0),
             cast_log: p.at("_cast_log")
                 .arr()
@@ -421,10 +430,30 @@ impl AttackPlan {
         } else {
             &self.troop_levels
         };
-        let level = levels
-            .iter()
-            .find(|(key, _)| key == name)
-            .and_then(|(_, lv)| lv.clone());
+        let supplied = levels.iter().find(|(key, _)| key == name);
+        // plans.py:283-287,540-548: donated sieges use the Castle cap,
+        // including when the constructed plan has no explicit troop override.
+        let level = if let Some((_, level)) = supplied {
+            level.clone()
+        } else if self.siege_donated && self.siege.as_deref() == Some(name) {
+            let castle = self.clan_castle_level.unwrap_or_else(|| {
+                battle
+                    .catalog
+                    .stats
+                    .max_level("Clan Castle", self.town_hall)
+                    .unwrap_or(0)
+            });
+            let cap = battle
+                .catalog
+                .setup
+                .at("siege_donation_caps")
+                .at(name)
+                .get(&castle.min(13).to_string())
+                .map_or(0, Json::i64);
+            Some(Level::Int(cap))
+        } else {
+            None
+        };
         let deployment = Deployment {
             time: at,
             name: name.to_owned(),
