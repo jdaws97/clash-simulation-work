@@ -118,6 +118,24 @@ ranges were 0.5 tile long; the real replay agreed with game data).
   opening Lightning after the main deploy; cancelled repeating steps kept
   their spells; skipped deploys dropped their troops.
 
+- Round 6 (2026-10-22, 8 slices, output/hunt/r6-*.out, review
+  output/hunt/review6.out): Multi-Archer distant-pair rule; Inferno 128 ms
+  packets; Burst Mortar over AltDPS after round 4; Scattershot skipped
+  Totems; Wizard Tower L1-4 offset; supercharged Bomb Tower death damage;
+  Air Sweeper push lockout; Phoenix egg triggered traps; Bomb push 2 tiles;
+  air trap offsets; Duke/Inferno Dragon kill cooldowns; Rampage x Rage;
+  mites opened the Clan Castle; Clone/Recall housing of Big Boy and pups;
+  Super Troops skipped by Monolith Arrow; continuous siege decay; Hog Rider
+  Puppet batches; unowned Meteor Staff on account plans; Sneezy range;
+  Lavaloon pups stacked; orphan Unicorn healed Furnace; Raven stalled on
+  hidden resources; donated Lightning unused; donated siege levels capped
+  at the attacker's; air-mode Warden with Healers; repeated Invisibility on
+  hidden buildings; hero roles ignored; Super Troop levels; AttackPlan
+  waves dropped at once; evolution on the old opponent mix; final_compare
+  without the red team; seed overlap; SE vs bootstrap.
+  Rejected: KO auto-activation should leave 1 HP with no heal (the wiki's
+  "1 hitpoint" is before the ability's heal).
+
 ## Known, not fixed
 
 - Town Halls 13-15 get the TH16 Giga Inferno profile (defense.py
@@ -158,6 +176,12 @@ ranges were 0.5 tile long; the real replay agreed with game data).
   Barracks release cadence by level; Unicorn healing under Rage; Mighty Yak
   speed (CSV 300 vs wiki table 250 - CSV applied by the speed rule); attack
   slows baked into the whole cooldown (needs measurement).
+
+- Round 6 deferred (need video): tracking projectiles vs moving targets
+  (launch-time ETA); Tornado force vs TornadoSpeedTowardsCenter; Spring
+  Trap EjectRadius vs TriggerRadius; Sky Wagon barrel flight (no data);
+  whether burn fields keep a battle running; Burst Mortar cycle (wiki
+  123/shell implies 5 s).
 
 - Round 4 deferred: Firespitter DontTrackTarget (TH17+ defense); Blimp
   cargo emergence delay (~1.15 s after the blast, one video sample);
