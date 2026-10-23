@@ -43,7 +43,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 
 from ..mechanics import WORLD
-from . import heroes, stats
+from . import heroes, spells, stats
 from .plans import SPELL_NAMES, THREAT, AttackPlan, edge_point
 
 SPELL_KEYS = {v: k for k, v in SPELL_NAMES.items()}
@@ -246,6 +246,60 @@ class PlaybookPlan(AttackPlan):
             b = min(pool, key=lambda b: math.hypot(b.x - cx, b.y - cy))
             return (b.x, b.y)
         raise ValueError(f"unknown anchor {at}")
+
+    def _totem_anchor(self, battle, at, pos):
+        # User (TH16 ranked, 2026-10-23): spread Totems; keep the cited anchor family.
+        # game data v18.200.9: Totem.Radius=500 -> shared 5-tile spacing check.
+        if not self._totem_covered(battle, pos[0], pos[1]):
+            return pos
+        kind, _, arg = at.partition(":")
+        if kind == "defenders":
+            group = self._group(battle, arg or "main")
+            if not group:
+                return None
+            cx, cy = self.centroid(group)
+            foes = [
+                u
+                for u in battle.defenders
+                if u.alive
+                and u.target is not None
+                and math.hypot(u.x - cx, u.y - cy) <= 8.0
+                and not self._totem_covered(battle, u.x, u.y)
+            ]
+            if not foes:
+                return None
+            target = min(foes, key=lambda u: math.hypot(u.x - pos[0], u.y - pos[1]))
+            return (target.x, target.y)
+        if kind in ("threat", "group"):
+            group = self._group(battle, arg)
+            if kind == "threat":
+                group = group or self._group(battle, "main")
+            if not group:
+                return None
+            cx, cy = self.centroid(group)
+            threats = self.threats_near(battle, cx, cy, 12)
+            if kind == "threat":
+                threats = [
+                    (b, d)
+                    for b, d in threats
+                    if b.weapon.target is not None or getattr(b.weapon, "multi", None)
+                ]
+        else:
+            # Fixed, edge and unit anchors keep the original point in the spell area.
+            level = spells._lvl(battle, "Totem Spell", None)
+            radius = spells._radius("Totem Spell", level, 5.0)
+            threats = self.threats_near(battle, pos[0], pos[1], radius)
+        targets = self._totem_targets(battle, threats)
+        if not targets:
+            return None
+        target, _, _ = min(
+            targets,
+            key=lambda item: (
+                math.hypot(item[0].x - pos[0], item[0].y - pos[1]),
+                -item[2],
+            ),
+        )
+        return (target.x, target.y)
 
     # ----------------------------------------------------------- triggers
     def _inside(self, battle, u):
@@ -782,15 +836,31 @@ class PlaybookPlan(AttackPlan):
                     pos = self.anchor(battle, s.get("at", "edge:main"))
                 if pos is None and forced:
                     pos = self._edge(battle, "main")  # the anchor is gone: with the main push (as rest steps)
+                # User (TH16 ranked, 2026-10-23): wait rather than stack Totems.
+                totem_covered = False
+                if (
+                    act == "spell"
+                    and s.get("what") == "Totem Spell"
+                    and pos is not None
+                ):
+                    pos = self._totem_anchor(battle, s.get("at", "edge:main"), pos)
+                    totem_covered = pos is None
                 if pos is None:
                     if act in ("spell", "recall") and s.get("what") != "Revive Spell":
                         # ready but nothing to cast on (no defense firing, the
                         # group gone): after AIM_WAIT the player moves on
                         since = self._no_target.setdefault(sid, t)
+                        if totem_covered and t == since:
+                            self.log_steps.append(
+                                (round(t, 1), sid + " (waiting: Totem area covered)")
+                            )
                         if t - since >= AIM_WAIT:
                             self._done.setdefault(sid, t)
                             self._cancelled.add(sid)
-                            self.log_steps.append((round(t, 1), sid + " (skipped: no target)"))
+                            why = "Totem area covered" if totem_covered else "no target"
+                            self.log_steps.append(
+                                (round(t, 1), sid + " (skipped: " + why + ")")
+                            )
                     continue
                 self._no_target.pop(sid, None)
                 if act == "deploy":

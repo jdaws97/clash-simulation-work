@@ -18,6 +18,14 @@ those changes. The wiki mirror is the tie-breaker for rules.
 
 ## Fixed
 
+- 2026-10-23 Totem placement stacked casts on the push midpoint. User evidence
+  (account owner, TH16 ranked): attackers spread Totems; "dropping 3 on a spot
+  never happens". Generic casts now rank uncovered defense clusters by THREAT;
+  both generic and playbook casts avoid living Totems and drops from the last
+  5 s (policy) within the data radius (v18.200.9 Totem.Radius=500, 5 tiles).
+  Covered playbook anchors shift within their anchor family or wait, then skip
+  with a logged reason. No new random calls.
+
 - Data audit (2026-10-23, ClashKing b8f42a7; setup probes only): removed the
   round-7 CSV override of current unit stats. Changed HP/DPS (old -> new):
   Bowler L10 850/156 -> 860/160; Electro Dragon L8 6200/460 -> 6400/475,

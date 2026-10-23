@@ -239,6 +239,7 @@ class AttackPlan:
     split_main: float = 0.0         # > 0: the main wave lands on two flanks this far apart (radians), e.g. two-flank Hydra
     recalled: list = field(default_factory=list)
     _cast_log: list = field(default_factory=list)
+    _totem_casts: list = field(default_factory=list)  # (time, x, y)
     _next_brain: float = 0.0
     _phase: str = "funnel"
     _entry: tuple | None = None
@@ -520,6 +521,9 @@ class AttackPlan:
         # Wiki: Eagle Artillery, five activation spaces per spell housing.
         battle.deployed_housing += 5 * stats.attrs(name)["housing"]
         self._cast_log.append((round(battle.t, 1), key))
+        if key == "totem":
+            # User (TH16 ranked, 2026-10-23): spread Totems between drops.
+            self._totem_casts.append((battle.t, x, y))
         return field
 
     def revive_knocked_out(self, battle, *, single_cast=False):
@@ -1097,6 +1101,45 @@ class AttackPlan:
                 out.append((b, d))
         return out
 
+    def _totem_covered(self, battle, x, y):
+        # game data v18.200.9: Totem.Radius=500 -> 5 tiles at every level.
+        level = spells._lvl(battle, "Totem Spell", None)
+        radius = spells._radius("Totem Spell", level, 5.0)
+        if any(
+            u.alive and u.name == "Totem" and math.hypot(u.x - x, u.y - y) <= radius
+            for u in battle.attackers
+        ):
+            return True
+        # User (TH16 ranked, 2026-10-23): never drop three on one spot.
+        # Remember casts for 5 s (policy), including landing and early deaths.
+        return any(
+            battle.t - t <= 5.0 and math.hypot(tx - x, ty - y) <= radius
+            for t, tx, ty in self._totem_casts
+        )
+
+    def _totem_targets(self, battle, threats):
+        # User (TH16 ranked, 2026-10-23): spread casts over uncovered threats.
+        level = spells._lvl(battle, "Totem Spell", None)
+        radius = spells._radius("Totem Spell", level, 5.0)
+        uncovered = [
+            (b, d)
+            for b, d in threats
+            if battle.building_targetable(b)
+            and not self._totem_covered(battle, b.x, b.y)
+        ]
+        return [
+            (
+                b,
+                d,
+                sum(
+                    THREAT.get(other.key, 1)
+                    for other, _ in uncovered
+                    if math.hypot(other.x - b.x, other.y - b.y) <= radius
+                ),
+            )
+            for b, d in uncovered
+        ]
+
     def _breach(self, battle, units, *, single_cast=False):
         """Open walls where several push troops are stuck: Wall Breakers
         first, then Earthquake x4 / Jump if carried."""
@@ -1278,11 +1321,13 @@ class AttackPlan:
         if self._have("totem") and t - self._last("totem") > self.P("totem_gap"):
             hot = self.threats_near(battle, cx, cy, 10)
             if len(hot) >= self.P("totem_min_threats"):
-                fx = sum(b.x for b, _ in hot) / len(hot)
-                fy = sum(b.y for b, _ in hot) / len(hot)
-                self._use(battle, "totem", cx + (fx - cx) * 0.5, cy + (fy - cy) * 0.5)
-                if single_cast:
-                    return
+                # User (TH16 ranked, 2026-10-23): attackers spread Totems out.
+                targets = self._totem_targets(battle, hot)
+                if targets:
+                    b, _, _ = max(targets, key=lambda target: (target[2], -target[1]))
+                    self._use(battle, "totem", b.x, b.y)
+                    if single_cast:
+                        return
         if self._have("overgrowth"):
             best = None
             for b, d in self.threats_near(battle, cx, cy, 13):
