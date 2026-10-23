@@ -169,6 +169,32 @@ those changes. The wiki mirror is the tie-breaker for rules.
   Rejected: KO auto-activation should leave 1 HP with no heal (the wiki's
   "1 hitpoint" is before the ability's heal).
 
+- Round 7 (2026-10-23, 8 slices, review output/hunt/review7.out): troop
+  separation only within 4-tile buckets (results changed when a battle was
+  translated by one tile); defenses queried stale buckets; Pending resolved
+  in insertion order; sweeper lockout skipped upkeep (Phoenix expiry,
+  passives); Meteor Golem split/merge manufactured HP; Root Rider wall
+  radius 0.5 (0.75); Super Valkyrie positioning; Totem decay continuous;
+  Giant Giant rage threshold; exhausted deploy steps blocked dependants;
+  pets outside their hero's group; equipment area hits skipped invisible
+  targets; puppet Lavaloons never retaliated; Noble Iron shots; Flame
+  Blower/Meteor Staff skipped walls; Freeze re-applied to late Builders;
+  extra Clone application at expiry; Haste/Jump lost the final pulse;
+  defending Minion Prince level. Data audit: the v18.200.9 CSVs predate
+  the July 2026 balance; 68 values moved to ClashKing (see policy).
+
+- Round 8 (2026-10-23, 8 slices, review output/hunt/review8.out; most
+  slices now return low-impact items only): red-team plans dropped the
+  observed flag (finalist gate crash) and ran on Python under the Rust
+  engine; change guides missed additions/removals; Clone/Invisibility spent
+  on the main army before Blimp cargo; equipment-specific steps fired with
+  other equipment; opening Lightning removed the Giant Arrow's Air
+  Defenses; spare Lightning unused; Mirror clones drove named-hero
+  conditions; TH18-only pet at TH17; Rage Vial speed, Revenge Deck range,
+  Scattershot interval (ClashKing); Frost Flake instant; Healer Puppet
+  facing; bounce timing from rounded ticks; Clone order and target ties
+  depended on bucket order.
+
 ## Known, not fixed
 
 - Town Halls 13-15 get the TH16 Giga Inferno profile (defense.py
@@ -209,6 +235,14 @@ those changes. The wiki mirror is the tie-breaker for rules.
   Barracks release cadence by level; Unicorn healing under Rage; Mighty Yak
   speed (CSV 300 vs wiki table 250 - CSV applied by the speed rule); attack
   slows baked into the whole cooldown (needs measurement).
+
+- Round 7-8 deferred / unresolved: Maroon replay still ~15 s fast with raw
+  stats (RC first X-Bow 16.6 s vs 24.5 s real; Dragon wind-up from target
+  selection vs arrival explains part); the Oct 3 timeline replays cannot
+  isolate engine faults without drop times; Healer/Druid healing under
+  attack slows; Revive with Ice Block / Inferno lock; E-drag chain hop
+  measured from the previous building centre; DT sensitivity (smaller after
+  the bucket fix); 9 observed TH17 recipes with 4 donated spell spaces.
 
 - Round 6 deferred (need video): tracking projectiles vs moving targets
   (launch-time ETA); Tornado force vs TornadoSpeedTowardsCenter; Spring
