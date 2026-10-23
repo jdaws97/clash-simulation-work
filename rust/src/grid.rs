@@ -206,6 +206,7 @@ struct FieldStorage {
     distances: Vec<f32>,
     frontier: Frontier,
     wall_extra: f64,
+    forward: bool,
 }
 
 struct Change {
@@ -637,8 +638,8 @@ impl Grid {
         // is final (its stored value is below the frontier), and any goal
         // cell truly closer would also be below the frontier, hence final
         // and counted above or when popped. So every value <= best is final.
-        // Larger stored upper bounds cannot change the first argmin or its
-        // >= 1e8 fallback (pathing.py:145-169; battle.py:1432-1441).
+        // Larger stored upper bounds cannot change the minimum-cost ties or
+        // the >= 1e8 fallback (pathing.py:145-169; battle.py:1519-1529).
         let distances = &entry.distances;
         self.building_costs.clear();
         let nearest = best;
@@ -788,6 +789,8 @@ impl Grid {
         entry.version = self.version;
         let slot = &mut self.field_storage[storage];
         slot.wall_extra = entry.wall_extra;
+        // pathing.py:269-281: source fields expand forward, including repairs.
+        slot.forward = matches!(entry.key, CacheKey::Source { .. });
         slot.frontier.clear();
         // Keep contiguous building-goal scans and a sequential reset without
         // per-cell stamps or touched-cell lists. Initialize new arrays only
@@ -997,6 +1000,7 @@ impl FieldStorage {
             distances: Vec::new(),
             frontier: Frontier::new(),
             wall_extra: 0.0,
+            forward: false,
         }
     }
 
@@ -1014,26 +1018,20 @@ impl FieldStorage {
             return None;
         }
         let diagonal = 2.0_f64.sqrt() / RES as f64;
-        // pathing.py:100-104: compute each step-plus-wall cost once per pop.
-        let mut straight_cost = 0.5;
-        let mut diagonal_cost = diagonal;
-        if cell_flags[index] & WALL != 0 {
-            straight_cost += self.wall_extra;
-            diagonal_cost += self.wall_extra;
-        }
         let neighbors = &neighbor_indices[index];
         let mut moves = move_masks[index];
         while moves != 0 {
             let q = moves.trailing_zeros() as usize;
             moves &= moves - 1;
             let next = neighbors[q] as usize;
-            // pathing.py:100-109: charge the current cell's wall, and add
-            // that cost to the step before adding the popped f32 distance.
-            let cost = if q < 4 {
-                straight_cost
-            } else {
-                diagonal_cost
-            };
+            // pathing.py:100-110: source fields charge the entered cell's
+            // wall; backward fields charge the current cell's wall. Repairs
+            // use this same direction and add wall cost before the distance.
+            let mut cost = if q < 4 { 0.5 } else { diagonal };
+            let wall_cell = if self.forward { next } else { index };
+            if cell_flags[wall_cell] & WALL != 0 {
+                cost += self.wall_extra;
+            }
             let candidate: f64 = f64::from(distance) + cost;
             // Compare in f64 BEFORE either the distance or heap key is
             // rounded to f32. Even an equal rounded value is pushed.

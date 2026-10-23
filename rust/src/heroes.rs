@@ -914,13 +914,13 @@ pub fn on_death(battle: &mut Battle, hero: UnitRef) -> bool {
 }
 
 // heroes.py:508-803: stable equipment priority, under ability provenance.
-pub fn activate(battle: &mut Battle, hero: UnitRef) {
+pub fn activate(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
     effects::damage_source(battle, Some(EntityRef::Unit(hero)), Tag::Ability, |battle| {
-        activate_effect(battle, hero);
+        activate_effect(battle, hero, on_ko);
     });
 }
 
-fn activate_effect(battle: &mut Battle, hero: UnitRef) {
+fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
     let unit = battle.unit(hero);
     if unit.kit.is_none() || unit.ability_used || !unit.alive {
         return;
@@ -1283,8 +1283,10 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 unit.extra.attack_lock_until = t + 1.2;
                 unit.extra.paused_timers.attack_lock_until = true;
                 let unit = battle.unit(hero);
+                // heroes.py:761-765: automatic KO activation releases instantly.
+                let delay = if on_ko { 0.0 } else { 0.933 };
                 let mut pending = Pending::new(
-                    t + 0.933,
+                    t + delay,
                     unit.x,
                     unit.y,
                     0.0,
@@ -1688,9 +1690,43 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
             let at = battle.t.min(pending.extra.until);
             let travel = 0.0_f64.max(at - pending.extra.last_at) * pending.extra.speed;
             let (dx, dy) = pending.extra.direction.expect("Dark Orb direction");
-            for target in targets(battle, false) {
+            // heroes.py:1076-1094: indirect hits include invisible targets.
+            let targets: Vec<_> = battle
+                .buildings
+                .iter()
+                .map(|b| EntityRef::Building(b.id))
+                .chain(
+                    battle
+                        .defenders_pool()
+                        .map(|u| EntityRef::Unit(u.reference())),
+                )
+                .collect();
+            for target in targets {
                 if pending.extra.visited.contains(&target) {
                     continue;
+                }
+                match target {
+                    EntityRef::Building(id) => {
+                        let b = battle.building(id);
+                        if !b.alive
+                            || !b.counted && b.key != "th"
+                            || battle.t < b.overgrown_until
+                            || battle.t < b.extra.yellow_until
+                            || b.key == "tesla" && !b.revealed
+                        {
+                            continue;
+                        }
+                    }
+                    EntityRef::Unit(id) => {
+                        let u = battle.unit(id);
+                        if !u.indirect_targetable(battle)
+                            || u.dash.is_some()
+                            || battle.t < u.extra.yellow_until
+                        {
+                            continue;
+                        }
+                    }
+                    _ => unreachable!("Dark Orb target"),
                 }
                 let (tx, ty) = battle.entity_position(target);
                 let along = (tx - pending.x) * dx + (ty - pending.y) * dy;
@@ -1921,6 +1957,10 @@ fn puppet(
 
 // heroes.py:947-977: suspend the pet without changing its identity.
 pub fn start_dash(battle: &mut Battle, hero: UnitRef, damage: f64) {
+    // heroes.py:1231-1232: end Ice Block's freeze while retaining its reduction.
+    let t = battle.t;
+    let unit = battle.unit_mut(hero);
+    unit.frozen_until = unit.frozen_until.min(t);
     let world = battle.catalog.world as f64;
     let unit = battle.unit(hero);
     let (mut dx, mut dy) = (world / 2.0 - unit.x, world / 2.0 - unit.y);

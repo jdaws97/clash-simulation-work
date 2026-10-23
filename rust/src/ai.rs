@@ -126,8 +126,10 @@ impl Battle {
                 }
             }
         }
-        if prefer == Tag::Wall && matches!(target, Some(EntityRef::Wall(_))) {
-            if units::wall_breaker_target(self, reference).map(EntityRef::Wall) != target {
+        if prefer == Tag::Wall && target.is_some() {
+            // battle.py:1281-1287: resume wall targeting when Jump expires.
+            let wall = units::wall_breaker_target(self, reference).map(EntityRef::Wall);
+            if wall != target && (wall.is_some() || matches!(target, Some(EntityRef::Wall(_)))) {
                 target = None;
                 self.unit_mut(reference).wall_target = None;
             }
@@ -152,7 +154,14 @@ impl Battle {
                 }
             }
             u.extra.preferred_remaining = preferred;
-            let finishing = target.is_some() && target == u.extra.finish_preferred.map(EntityRef::Building);
+            let mut finishing =
+                target.is_some() && target == u.extra.finish_preferred.map(EntityRef::Building);
+            // battle.py:1302-1304: finish the current building before retaliating.
+            if matches!(prefer, Tag::Defense | Tag::AirDefense)
+                && matches!(target, Some(EntityRef::Building(_)))
+            {
+                finishing = true;
+            }
             // battle.py:1298-1305: Giant Giant may retaliate while defenses remain.
             let retaliates = matches!(u.name_id, Name::RoyalChampion | Name::GiantGiant);
             let pet = u.pet;
@@ -176,17 +185,20 @@ impl Battle {
         if warden && !angry && !attached {
             let followed = units::follow_target(self, reference);
             let u = self.unit_mut(reference);
-            if let Some(followed) = followed {
-                target = Some(followed);
-                let kind = if matches!(followed, EntityRef::Wall(_)) {
-                    "wall"
-                } else {
-                    "building"
-                };
-                u.target_kind = Some(Tag::from(kind));
-                u.wall_target = None;
-            } else if u.extra.warden_group {
-                target = None;
+            // battle.py:1326-1335: retain a live retaliation target over grouping.
+            if !matches!(target, Some(EntityRef::Unit(_))) {
+                if let Some(followed) = followed {
+                    target = Some(followed);
+                    let kind = if matches!(followed, EntityRef::Wall(_)) {
+                        "wall"
+                    } else {
+                        "building"
+                    };
+                    u.target_kind = Some(Tag::from(kind));
+                    u.wall_target = None;
+                } else if u.extra.warden_group {
+                    target = None;
+                }
             }
             u.extra.warden_group = followed.is_some();
         } else if warden {

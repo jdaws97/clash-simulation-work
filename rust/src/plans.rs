@@ -529,7 +529,7 @@ impl AttackPlan {
                 fire = true;
             }
             if fire {
-                heroes::activate(battle, reference);
+                heroes::activate(battle, reference, false);
             }
         }
     }
@@ -1119,5 +1119,5 @@ pub fn entity_is_defense(battle: &Battle, target: EntityRef) -> bool {
 // plans.py:843-849.
 pub fn fire_aimed(battle: &mut Battle, hero: UnitRef) {
     // plans.py:861-865: activation follows the hero's current firing line.
-    heroes::activate(battle, hero);
+    heroes::activate(battle, hero, false);
 }

@@ -1,4 +1,4 @@
-//! Ports playbook.py:63-69,113-681. Construction stays in Python.
+//! Ports playbook.py:63-69,114-770. Construction stays in Python.
 
 use std::rc::Rc;
 
@@ -189,6 +189,7 @@ pub struct PlaybookPlan {
     pub charge_side: String,
     pub done: SharedVec<(String, f64)>,
     pub next: SharedVec<(String, f64)>,
+    pub cancelled: SharedVec<String>,
     pub hurt: SharedVec<(HurtKey, HurtValue)>,
     // Lookup-only hints, validated against hurt after engagement-key removal.
     hurt_indices: SharedVec<Option<usize>>,
@@ -229,6 +230,9 @@ impl PlaybookPlan {
             charge_side: p.at("charge_side").str().to_owned(),
             done: plans::times(p, "_done").into(),
             next: plans::times(p, "_next").into(),
+            cancelled: p.get("_cancelled").map_or_else(SharedVec::default, |v| {
+                v.arr().iter().map(|v| v.str().to_owned()).collect()
+            }),
             hurt: hurt.into(),
             hurt_indices: SharedVec::default(),
             no_target: plans::times(p, "_no_target").into(),
@@ -253,28 +257,39 @@ impl PlaybookPlan {
         self.done.iter().any(|(key, _)| key == id)
     }
 
-    // playbook.py:113-117.
-    pub fn has_pending(&self) -> bool {
-        self.steps.iter()
-            .any(|s| matches!(s.action, Action::Deploy | Action::Redeploy) && !self.done(&s.id))
+    fn cancelled(&self, id: &str) -> bool {
+        self.cancelled.iter().any(|key| key == id)
     }
 
-    // playbook.py:119-145.
-    pub fn has_offensive_pending(&self, battle: &Battle) -> bool {
-        // playbook.py:121-136: read _step_kinds' result even before the first
-        // fallback tick; this query runs through an immutable Battle snapshot.
-        let auto_revive = if self.step_spells.is_some() {
-            self.attack.auto_revive
-        } else {
-            !self.steps.iter().any(|s| {
-                s.action == Action::Spell && s.what.as_deref() == Some("Revive Spell")
+    // playbook.py:672-678: explicit pending or repeating Revives retain control.
+    fn auto_revive(&self) -> bool {
+        !self.steps.iter().any(|step| {
+            step.action == Action::Spell
+                && step.what.as_deref() == Some("Revive Spell")
+                && !self.cancelled(&step.id)
+                && (!self.done(&step.id) || step.every.is_some())
+        })
+    }
+
+    // playbook.py:114-125: undeployed reserves keep the battle running.
+    pub fn has_pending(&self) -> bool {
+        self.inventory.iter().any(|(_, n)| *n != 0)
+            || self.steps.iter().any(|s| {
+                matches!(s.action, Action::Deploy | Action::Redeploy) && !self.done(&s.id)
             })
-        };
+    }
+
+    // playbook.py:127-165.
+    pub fn has_offensive_pending(&self, battle: &Battle) -> bool {
+        // Read the current _step_kinds result even before the first fallback
+        // tick; this query runs through an immutable Battle snapshot.
+        let auto_revive = self.auto_revive();
         if self.have("revive")
             && battle.attackers_pool().any(|h| !h.alive && h.extra.revivable)
             && (auto_revive
                 || self.steps.iter().any(|s| {
-                    !self.done(&s.id)
+                    (!self.done(&s.id) || s.every.is_some())
+                        && !self.cancelled(&s.id)
                         && s.action == Action::Spell
                         && s.what.as_deref() == Some("Revive Spell")
                 }))
@@ -282,6 +297,14 @@ impl PlaybookPlan {
             return true;
         }
         if battle.portal_units().any(|r| battle.unit(r).name_id != Name::Healer) {
+            return true;
+        }
+        // playbook.py:149-153: skipped non-healing reserves still need deployment.
+        if self
+            .inventory
+            .iter()
+            .any(|(name, n)| name != "Healer" && *n > 0)
+        {
             return true;
         }
         self.steps.iter().any(|s| {
@@ -706,7 +729,7 @@ impl PlaybookPlan {
             }
             let since = entry_time(&mut self.aim_since, &step.id, battle.t);
             if battle.t - since >= AIM_WAIT {
-                heroes::activate(battle, hero);
+                heroes::activate(battle, hero, false);
                 return true;
             }
             return false;
@@ -718,7 +741,7 @@ impl PlaybookPlan {
             }
             return false;
         }
-        heroes::activate(battle, hero);
+        heroes::activate(battle, hero, false);
         true
     }
 
@@ -738,7 +761,7 @@ impl PlaybookPlan {
             }
         }
         let Some(target) = target else {
-            heroes::activate(battle, hero);
+            heroes::activate(battle, hero, false);
             return true;
         };
         let kit = u.kit.as_ref().expect("hero kit");
@@ -785,10 +808,10 @@ impl PlaybookPlan {
             if battle.building(target).edge_distance(x, y) > radius {
                 return false;
             }
-            heroes::activate(battle, hero);
+            heroes::activate(battle, hero, false);
             return true;
         }
-        heroes::activate(battle, hero);
+        heroes::activate(battle, hero, false);
         true
     }
 
@@ -853,7 +876,7 @@ impl PlaybookPlan {
         None
     }
 
-    // playbook.py:503-606: skip pass, cited steps, completion steps, late drops.
+    // playbook.py:527-661: skip pass, cited steps, completion steps, rescue drops.
     pub fn on_tick(&mut self, battle: &mut Battle) {
         let t = battle.t;
         if (t * 10.0) as i64 % 5 == 0 {
@@ -895,12 +918,33 @@ impl PlaybookPlan {
         let stalled = t - self.last_alive > 3.0;
         let steps = self.steps.clone();
         for step in steps.iter() {
-            if !self.done(&step.id) {
-                if let Some(why) = self.cannot(battle, step) {
-                    set(&mut self.done, step.id.clone(), t);
-                    self.log_steps.push((round_decimal(t, 1), format!("{} (skipped: {why})", step.id)));
+            if self.cancelled(&step.id) {
+                continue;
+            }
+            if !self.done(&step.id) || step.every.is_some() {
+                let mut why = self.cannot(battle, step);
+                if why.is_none()
+                    && step.every.is_some()
+                    && step
+                        .until
+                        .as_ref()
+                        .is_some_and(|until| self.ready(battle, until, false))
+                {
+                    why = Some("until reached".to_owned());
+                }
+                if let Some(why) = why {
+                    entry_time(&mut self.done, &step.id, t);
+                    self.cancelled.push(step.id.clone());
+                    self.log_steps.push((
+                        round_decimal(t, 1),
+                        format!("{} (skipped: {why})", step.id),
+                    ));
                 }
             }
+        }
+        // playbook.py:570-572: opening Lightning precedes deployment actions.
+        if !self.attack.zap_done && self.attack.zap_ad != (0, 0) {
+            self.fallback_spells(battle, true);
         }
         let order = steps.iter()
             .filter(|s| !(s.completion || s.uncited))
@@ -910,7 +954,7 @@ impl PlaybookPlan {
                 break;
             }
             let done = self.done(&step.id);
-            if done && step.every.is_none() {
+            if self.cancelled(&step.id) || done && step.every.is_none() {
                 continue;
             }
             let mut forced = false;
@@ -951,15 +995,20 @@ impl PlaybookPlan {
                     let Some(position) = position else {
                         if matches!(step.action, Action::Spell | Action::Recall)
                             && step.what.as_deref() != Some("Revive Spell")
-                            && !self.done(&step.id) {
+                        {
                             let since = entry_time(&mut self.no_target, &step.id, t);
                             if t - since >= AIM_WAIT {
-                                set(&mut self.done, step.id.clone(), t);
-                                self.log_steps.push((round_decimal(t, 1), format!("{} (skipped: no target)", step.id)));
+                                entry_time(&mut self.done, &step.id, t);
+                                self.cancelled.push(step.id.clone());
+                                self.log_steps.push((
+                                    round_decimal(t, 1),
+                                    format!("{} (skipped: no target)", step.id),
+                                ));
                             }
                         }
                         continue;
                     };
+                    self.no_target.retain(|(id, _)| id != &step.id);
                     match step.action {
                         Action::Deploy => self.deploy(battle, step, position),
                         Action::Spell | Action::Recall => self.spell(battle, step, position),
@@ -994,7 +1043,7 @@ impl PlaybookPlan {
                 }
             }
         }
-        if t >= LATE && t >= self.busy_until {
+        if t >= self.busy_until {
             let left = self.inventory.iter().find(|(name, n)| {
                 *n > 0 && !self.steps.iter()
                     .any(|s| s.action == Action::Deploy
@@ -1014,39 +1063,71 @@ impl PlaybookPlan {
                 self.log_steps.push((round_decimal(t, 1), format!("late-{name}")));
             }
         }
-        self.fallback_spells(battle);
+        self.fallback_spells(battle, false);
     }
 
-    // playbook.py:609-621.
+    // playbook.py:664-679: cache spell kinds, refresh auto-revive every time.
     fn step_kinds(&mut self) {
-        if self.step_spells.is_some() {
-            return;
-        }
-        let mut kinds = Vec::new();
-        for s in self.steps.iter() {
-            let kind = match s.action {
-                Action::Recall => Some("recall"),
-                Action::Spell => s.what.as_deref().and_then(spell_key),
-                _ => None,
-            };
-            if let Some(kind) = kind {
-                if !kinds.iter().any(|k| k == kind) {
-                    kinds.push(kind.to_owned());
+        if self.step_spells.is_none() {
+            let mut kinds = Vec::new();
+            for s in self.steps.iter() {
+                let kind = match s.action {
+                    Action::Recall => Some("recall"),
+                    Action::Spell => s.what.as_deref().and_then(spell_key),
+                    _ => None,
+                };
+                if let Some(kind) = kind {
+                    if !kinds.iter().any(|k| k == kind) {
+                        kinds.push(kind.to_owned());
+                    }
                 }
             }
+            self.step_spells = Some(Rc::new(kinds));
         }
-        self.attack.auto_revive = !kinds.iter().any(|k| k == "revive");
-        self.step_spells = Some(Rc::new(kinds));
+        self.attack.auto_revive = self.auto_revive();
     }
 
-    // playbook.py:659-715: Revive precedes fallback reservations; each cast paces.
-    fn fallback_spells(&mut self, battle: &mut Battle) {
+    // playbook.py:708-770: opening zap, Revive, redeploy, other spells, abilities.
+    fn fallback_spells(&mut self, battle: &mut Battle, opening: bool) {
         self.step_kinds();
         let t = battle.t;
         if t < self.next_fallback || t < self.busy_until {
             return;
         }
         self.next_fallback = t + 0.5;
+        let kinds = self.step_spells.as_ref().expect("step kinds");
+        let reservations: Vec<_> = kinds
+            .iter()
+            .map(|kind| {
+                let mine = self.steps.iter().filter(|s| {
+                    !self.cancelled(&s.id)
+                        && (s.action == Action::Recall && kind == "recall"
+                            || s.action == Action::Spell
+                                && s.what.as_deref().and_then(spell_key) == Some(kind.as_str()))
+                });
+                let mut repeat = false;
+                let mut n = 0;
+                for step in mine {
+                    repeat |= step.every.is_some();
+                    n += i64::from(!self.done(&step.id));
+                }
+                (kind.clone(), if repeat { i64::MAX } else { n })
+            })
+            .collect();
+        let have = |attack: &AttackPlan, kind: &str| {
+            count(&attack.spells, kind) > count(&reservations, kind)
+        };
+        if !self.attack.zap_done && self.attack.zap_ad != (0, 0) {
+            let left = self.attack.spells.iter().map(|(_, n)| n).sum::<i64>();
+            self.attack.zap(battle, &have, true);
+            if self.attack.spells.iter().map(|(_, n)| n).sum::<i64>() < left {
+                self.busy_until = t + action_time(battle, Action::Spell, 1);
+                return;
+            }
+        }
+        if opening {
+            return;
+        }
         if self.attack.auto_revive {
             let fallen: Vec<_> = battle.attackers_pool()
                 .filter(|u| !u.alive && u.extra.revivable)
@@ -1074,28 +1155,6 @@ impl PlaybookPlan {
         if units.is_empty() {
             return;
         }
-        let kinds = self.step_spells.as_ref().expect("step kinds").clone();
-        let reservations: Vec<_> = kinds.iter().map(|kind| {
-            let mine = self.steps.iter().filter(|s| {
-                s.action == Action::Recall
-                    && kind == "recall"
-                    || s.action == Action::Spell
-                    && s.what.as_deref()
-                    .and_then(spell_key) == Some(kind.as_str())
-            });
-            let mut repeat = false;
-            let mut n = 0;
-            for step in mine {
-                repeat |= step.every.is_some();
-                n += i64::from(!self.done(&step.id));
-            }
-            (kind.clone(), if repeat {
-                i64::MAX
-            } else {
-                n
-            })
-        }).collect();
-        let have = |attack: &AttackPlan, kind: &str| count(&attack.spells, kind) > count(&reservations, kind);
         let left = self.attack.spells.iter()
             .map(|(_, n)| n)
             .sum::<i64>();
@@ -1104,8 +1163,6 @@ impl PlaybookPlan {
             if have(&self.attack, "eq") {
                 self.attack.use_spell(battle, "eq", x, y);
             }
-        } else if !self.attack.zap_done && self.attack.zap_ad != (0, 0) {
-            self.attack.zap(battle, &have, true);
         }
         if self.attack.spells.iter().map(|(_, n)| n).sum::<i64>() == left {
             self.attack.generic_spells(

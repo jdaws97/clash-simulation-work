@@ -1099,18 +1099,34 @@ pub fn spell_tower(battle: &mut Battle, owner: BuildingId) {
         (unit, since)
     } else {
         let near = tower_candidates(battle, owner);
-        let trigger = match w.extra.trigger {
-            Some(WeaponTrigger::UnitSince(unit, since)) => Some((unit, since)),
-            None => None,
+        // defense.py:1201-1207: each eligible unit retains its own timer.
+        let previous = match w.extra.trigger.as_ref() {
+            Some(WeaponTrigger::Units(triggers)) => triggers.as_slice(),
+            None => &[],
             Some(WeaponTrigger::Radius(_)) => panic!("Spell Tower unit trigger"),
         };
-        if trigger.map_or(true, |(unit, _)| !near.contains(&unit)) {
-            weapon_mut(battle, owner).extra.trigger = near
-                .first()
-                .map(|unit| WeaponTrigger::UnitSince(*unit, t));
+        let triggers: Vec<_> = near
+            .into_iter()
+            .map(|unit| {
+                let since = previous
+                    .iter()
+                    .find(|(candidate, _)| *candidate == unit)
+                    .map_or(t, |(_, since)| *since);
+                (unit, since)
+            })
+            .collect();
+        weapon_mut(battle, owner).extra.trigger =
+            Some(WeaponTrigger::Units(triggers.clone().into()));
+        let Some(&(mut unit, mut since)) = triggers.first() else {
             return;
+        };
+        for &(candidate, time) in &triggers[1..] {
+            if time < since {
+                unit = candidate;
+                since = time;
+            }
         }
-        trigger.expect("continuous Spell Tower trigger")
+        (unit, since)
     };
     if t - since < 1.2 {
         return;

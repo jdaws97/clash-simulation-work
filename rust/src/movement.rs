@@ -75,7 +75,7 @@ impl Battle {
         u.y = high.min(0.1_f64.max(ny));
     }
 
-    // battle.py:1428-1442: first argmin, first nearest fallback.
+    // battle.py:1509-1529: path cost, then edge distance, then list order.
     pub fn path_target(&mut self, reference: UnitRef, pool: &[BuildingId]) -> BuildingId {
         let mut geometry = std::mem::take(&mut self.building_geometry_scratch);
         geometry.clear();
@@ -95,7 +95,13 @@ impl Battle {
         );
         let mut k = 0;
         for i in 1..costs.len() {
-            if costs[i] < costs[k] {
+            let (cx, cy, half) = geometry[i];
+            let (best_x, best_y, best_half) = geometry[k];
+            if costs[i] < costs[k]
+                || costs[i] == costs[k]
+                    && geom::edge_distance(x, y, cx, cy, half)
+                        < geom::edge_distance(x, y, best_x, best_y, best_half)
+            {
                 k = i;
             }
         }

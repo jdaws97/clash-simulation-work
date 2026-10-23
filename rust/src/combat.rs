@@ -143,7 +143,7 @@ impl Battle {
         if u.hp <= 0.0 && victim.team == Team::Atk && u.is_hero && u.kit.is_some()
             && !u.ability_used && u.alive && self.plan.auto_ability_on_ko() {
             self.unit_mut(victim).hp = 1.0;
-            heroes::activate(self, victim);
+            heroes::activate(self, victim, true);
             let name = self.unit(victim).name.clone();
             self.log_event(vec![round_decimal(self.t, 1).into(), "ability".into(), name.into(), "on KO".into()]);
         }
@@ -208,6 +208,7 @@ impl Battle {
                     && !matches!(self.effect, Tag::Meteor | Tag::Spell | Tag::Poison) {
                     let (x, y) = self.entity_position(target);
                     let hp = self.building(id).hp;
+                    let half_hit = self.building(id).half_hit;
                     let t = self.t;
                     for tower in &mut self.buildings {
                         let Some(w) = &mut tower.weapon else {
@@ -217,7 +218,9 @@ impl Battle {
                             && w.kind == Tag::SpellTower
                             && w.mode.as_deref() == Some("invis")
                             && w.cooldown <= 0.0
-                            && py_hypot(tower.x - x, tower.y - y) <= 4.5 && (hp > amount || tower.id == id)
+                            // battle.py:731: Invisibility coverage includes building edges.
+                            && geom::edge_distance(tower.x, tower.y, x, y, half_hit) <= 4.5
+                            && (hp > amount || tower.id == id)
                             && !w.extra.hit_triggers.iter().any(|(unit, _)| *unit == source)
                         {
                             w.extra.hit_triggers.push((source, t));

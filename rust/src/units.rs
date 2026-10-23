@@ -178,8 +178,24 @@ pub fn segment_entry(
 // units.py:92-163: connectivity is membership-only; building and route order
 // determine the selected wall. Cached access components treat walls as solid.
 pub fn wall_breaker_target(battle: &mut Battle, unit: UnitRef) -> Option<WallId> {
-    if battle.wall_mode(unit) == Tag::Ignore {
+    // units.py:94-109: Jump only opens its covered walls; retain other bypasses.
+    let u = battle.unit(unit);
+    let jumped = battle.t < u.extra.jump_until;
+    if battle.wall_mode(unit) == Tag::Ignore && !jumped {
         return None;
+    }
+    if jumped {
+        let (i, j) = battle.grid.cell(u.x, u.y);
+        if u.team == Team::Def
+            || u.spec.walls == Tag::Ignore
+            || battle.t < u.extra.horse_until
+            || effects::torch_stats(u, battle.t).1 != 0.0
+            || !u.extra.torches.is_empty()
+                && !u.flying
+                && battle.grid.wall[battle.grid.index(i, j)]
+        {
+            return None;
+        }
     }
     let walls: Vec<_> = battle
         .walls
@@ -277,7 +293,8 @@ fn follow_target_with_scores(
     let mut total_weight = 0.0;
     for ally in battle.attackers_near_iter(u.x, u.y, radius) {
         let a = battle.unit(ally);
-        if ally == unit || !a.alive || matches!(a.name_id, Name::Totem | Name::Yetimite) {
+        // units.py:183-184: Yetimites contribute their catalog Warden weight.
+        if ally == unit || !a.alive || a.name_id == Name::Totem {
             continue;
         }
         let weight = if a.is_hero {
@@ -3140,13 +3157,19 @@ fn after_unit_hit_effect(
             .get("PoisonIncreaseSlowly")
             .is_some_and(|value| value.str() == "TRUE");
         let source = Some(("unit".to_owned(), unit.id.0 as i64));
+        // units.py:2375-2376: share the Poison spell's hero damage multiplier.
+        let multiplier = if battle.unit(target).is_hero {
+            spells::POISON_HERO_MULT
+        } else {
+            1.0
+        };
         spells::poison(
             battle,
             target,
             damage,
             slow,
             attack,
-            1.0,
+            multiplier,
             spells::PoisonOptions {
                 ramp,
                 origin: "headhunter",

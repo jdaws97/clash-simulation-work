@@ -14,6 +14,9 @@ use crate::{defense, traps, units};
 
 pub const NO_TRIGGER: &[Name] = &[Name::SpellSkeleton, Name::Skeleton, Name::Bat, Name::Totem];
 
+// spells.py:24: also used by Headhunter poison (units.py:2376).
+pub const POISON_HERO_MULT: f64 = 0.05;
+
 // spells.py:1199-1211: marking a KO does not cast a Revive Spell.
 pub fn maybe_revive(battle: &mut Battle, hero: UnitRef) {
     let unit = battle.unit(hero);
@@ -1249,7 +1252,7 @@ fn freeze(battle: &mut Battle, f: &mut Field) -> bool {
 fn attacker_poison(battle: &mut Battle, f: &mut Field) -> bool {
     for reference in battle.defenders_near(f.x, f.y, f.radius) {
         let multiplier = if battle.unit(reference).is_hero {
-            0.05
+            POISON_HERO_MULT
         } else {
             1.0
         };
@@ -1650,7 +1653,8 @@ fn iceblock(battle: &mut Battle, f: &mut Field) -> bool {
     }
     for reference in battle.attackers_near(f.x, f.y, f.radius) {
         let u = battle.unit(reference);
-        if affected(u) && !u.underground {
+        // spells.py:860-861: Ice Block has no effect during Rocket Backpack.
+        if affected(u) && !u.underground && u.dash.is_none() {
             let key = source(battle, f);
             let u = battle.unit_mut(reference);
             crate::plans::set(&mut u.extra.iceblocks, key, (f.value, until));

@@ -407,8 +407,7 @@ impl Resolver {
         if let Json::Num(value) = n.value {
             return Some(WeaponTrigger::Radius(*value));
         }
-        let pair = n.tuple(2);
-        Some(WeaponTrigger::UnitSince(self.unit_ref(pair[0].clone()), pair[1].number()))
+        Some(WeaponTrigger::Units(self.hit_triggers(n).into()))
     }
 
     fn hit_triggers(&self, n: Node<'_>) -> Vec<(UnitRef, f64)> {

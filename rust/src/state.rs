@@ -93,7 +93,8 @@ pub struct PoisonConfig {
 #[derive(Clone, Debug)]
 pub enum WeaponTrigger {
     Radius(f64),
-    UnitSince(UnitRef, f64),
+    // defense.py:1201-1207: current candidate order, with each unit's start time.
+    Units(SharedVec<(UnitRef, f64)>),
 }
 
 #[derive(Clone, Debug)]
