@@ -230,7 +230,7 @@ impl<'a> Node<'a> {
 fn known_type(name: &str) -> bool {
     matches!(name, "Building" | "Wall" | "Unit" | "UnitSpec" | "Weapon" | "Trap"
         | "Field" | "Pending" | "Builder" | "Deployment" | "Stage" | "BuildingType"
-        | "HeroLoadout" | "Kit" | "PlaybookPlan" | "SpellStock" | "Wave")
+        | "HeroLoadout" | "Kit" | "AttackPlan" | "PlaybookPlan" | "SpellStock" | "Wave")
 }
 
 fn status_source(key: &str) -> StatusSource {
@@ -1585,6 +1585,36 @@ pub fn plan(p: Node<'_>, deployments: &[Deployment]) -> Plan {
         trap_count: 0,
     };
     let plan = match p.field("$type").string().as_str() {
+        "AttackPlan" => {
+            p.keys(&[
+                "angle", "town_hall", "seed", "label", "funnel_heroes", "flank",
+                "main", "support", "push_heroes", "cleanup", "breakers", "siege",
+                "siege_donated", "cc_troops", "cc_spells", "spells", "ground",
+                "auto_ability_on_ko", "zap_ad", "main_min", "main_max", "strength",
+                "loadouts", "troop_levels", "spell_levels", "cc_spell_levels",
+                "spell_factory_level", "dark_spell_factory_level", "laboratory_level",
+                "clan_castle_level", "event_ruleset", "auto_revive", "equipment_levels",
+                "account_equipment", "pet_levels", "hero_levels", "revive_delay",
+                "freeze_first", "pol", "charge_hero", "charge_lat", "charge_at",
+                "charge_recall_hp", "charge_len", "recall_funnel", "split_main",
+                "recalled", "_cast_log", "_next_brain", "_phase", "_entry", "_main_at",
+                "_zap_done", "_cc_released", "_charge_n", "_later", "_distracts",
+                "_lured", "_spells0", "_cc_spells0", "_spell_stock", "observed",
+                "build_id", "cc_levels", "_entry_lat", "_zap_left", "_fallback_quakes",
+                "_cargo_wait_since", "_battle_portal", "_snipe_t", "_snipe_pts",
+            ]);
+            for key in ["main", "support"] {
+                for wave in p.field(key).array() {
+                    wave.require_type("Wave");
+                    wave.keys(&["group", "units", "spread"]);
+                }
+            }
+            let phase = p.field("_phase").string();
+            if !matches!(phase.as_str(), "funnel" | "support" | "push" | "done") {
+                p.field("_phase").fail("unknown AttackPlan phase");
+            }
+            Plan::Attack(Box::new(crate::plans::AttackPlan::load(p.value)))
+        }
         "PlaybookPlan" => Plan::Playbook(Box::new(crate::playbook::PlaybookPlan::load(p.value))),
         "Stage" => {
             p.require_type("Stage");
@@ -1724,6 +1754,11 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
     let nd_version = s.field("_nd_version").optional_integer().map(|version| {
         u64::try_from(version).unwrap_or_else(|_| s.field("_nd_version").fail("negative grid version"))
     });
+    // battle.py drop_targets(): the cached list is not exported, only its grid
+    // version; a cache built at the current version is rebuilt below.
+    let dt_version = s.optional("_dt_version").and_then(|node| node.optional_integer()).map(|version| {
+        u64::try_from(version).unwrap_or_else(|_| s.field("_dt_version").fail("negative grid version"))
+    });
     // The cache itself is excluded from the export. Recompute it on first use.
     let no_deploy = tiles(s.field("no_deploy"));
     // The Python process's switches (BASELAB_DT, BASELAB_FAST_END, ...) are
@@ -1852,6 +1887,7 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
         nd_bitmap: Vec::new(),
         no_deploy,
         dt_version: None,
+        // set from _dt_version after construction (cache rebuilt there)
         dt_cache: Vec::new(),
         onboard_cargo: s.field("_onboard_cargo").array().into_iter().map(|n| resolver.cargo(n)).collect(),
         deployments,
@@ -1929,6 +1965,7 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
         "destroyed_counted",
         "_banner_tiles",
         "_nd_version",
+        "_dt_version",
         "no_deploy",
         "_onboard_cargo",
         "_next_deploy",
@@ -1943,6 +1980,9 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
     }
     if battle.nd_version != Some(battle.grid.version) {
         battle.nd_version = None;
+    }
+    if dt_version == Some(battle.grid.version) {
+        battle.deploy_tiles();
     }
     if battle.next_deploy > battle.deployments.len() {
         s.field("_next_deploy").fail("deployment cursor outside list");

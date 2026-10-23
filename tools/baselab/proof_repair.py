@@ -57,9 +57,13 @@ def batch_search(start, minutes, *, k=13, seed=1, log=print):
     cur_c = paired([cur], check)[0]
     t0 = _t.time()
     rnd = 0
+    diag, diag_of = None, None
     while _t.time() - t0 < minutes * 60:
         rnd += 1
-        diag = diagnose(cur, guide)
+        # the diagnosis (traced Python battles) depends only on the current
+        # layout: recompute it only after a change was accepted
+        if diag_of is not cur:
+            diag, diag_of = diagnose(cur, guide), cur
         cands, descs = [], []
         while len(cands) < k:
             m, d = mutate(cur, rng, diag)

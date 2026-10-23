@@ -495,9 +495,10 @@ impl Battle {
             },
         );
         let strength = self.plan.strength();
-        let default_mode = match &self.plan {
-            Plan::Playbook(p) if !p.attack.ground => "air",
-            _ => "ground",
+        let default_mode = if self.plan.attack().is_some_and(|p| !p.ground) {
+            "air"
+        } else {
+            "ground"
         };
         let warden_air_range = if self.flyer_range == "gamedata" {
             self.catalog.game_ranges.get("Grand Warden|alt").copied()
@@ -557,7 +558,7 @@ impl Battle {
         // battle.py:502-518: donated sieges still count for Eagle activation,
         // but carry their own source and do not count for Monolith Arrow.
         let donated_siege = kind == "siege"
-            && matches!(&self.plan, Plan::Playbook(plan) if plan.attack.siege_donated);
+            && self.plan.attack().is_some_and(|plan| plan.siege_donated);
         let source = if donated_siege {
             "donated_siege"
         } else {
@@ -612,15 +613,16 @@ impl Battle {
         }
         if self.deployments[self.next_deploy..].iter().any(|d| d.name != "Healer")
             || match &self.plan {
+                Plan::Attack(p) => p.has_offensive_pending(self),
                 Plan::Playbook(p) => p.has_offensive_pending(self),
                 Plan::Stage { .. } => self.plan.has_pending(),
             } {
             return false;
         }
         if !self.fast_end {
-            if let Plan::Playbook(p) = &self.plan {
-                if crate::plans::count(&p.attack.spells, "lightning") != 0
-                    || crate::plans::count(&p.attack.spells, "eq") != 0 {
+            if let Some(p) = self.plan.attack() {
+                if crate::plans::count(&p.spells, "lightning") != 0
+                    || crate::plans::count(&p.spells, "eq") != 0 {
                     return false;
                 }
             }
@@ -800,7 +802,12 @@ impl Battle {
     }
 
     fn plan_on_tick(&mut self) {
-        if let Plan::Playbook(plan) = &self.plan {
+        if let Plan::Attack(plan) = &self.plan {
+            let mut running = (**plan).clone();
+            running.on_tick(self);
+            running.cc_released |= self.plan.cc_released();
+            self.plan = Plan::Attack(Box::new(running));
+        } else if let Plan::Playbook(plan) = &self.plan {
             // Callbacks read the previous plan while on_tick updates its own
             // copy. SharedVec keeps these lists shared until the first write.
             let mut running = (**plan).clone();

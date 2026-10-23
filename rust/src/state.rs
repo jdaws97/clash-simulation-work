@@ -1164,6 +1164,7 @@ pub struct CargoEntry {
 
 #[derive(Clone, Debug)]
 pub enum Plan {
+    Attack(Box<crate::plans::AttackPlan>),
     Playbook(Box<crate::playbook::PlaybookPlan>),
     Stage {
         constructed: crate::json::Json,
@@ -1183,9 +1184,20 @@ pub enum Plan {
 }
 
 impl Plan {
+    pub fn attack(&self) -> Option<&crate::plans::AttackPlan> {
+        match self {
+            Self::Attack(p) => Some(p),
+            Self::Playbook(p) => Some(&p.attack),
+            Self::Stage { .. } => None,
+        }
+    }
+
     // heroes.py:131-141: complete account inventories filter by key presence.
     pub fn equipment_owned(&self, name: &str) -> bool {
         match self {
+            Self::Attack(p) => {
+                !p.account_equipment || p.equipment_levels.iter().any(|(key, _)| key == name)
+            }
             Self::Playbook(p) => {
                 !p.attack.account_equipment
                     || p.attack.equipment_levels.iter().any(|(key, _)| key == name)
@@ -1200,6 +1212,10 @@ impl Plan {
 
     pub fn loadout(&self, name: &str) -> Option<&crate::heroes::HeroLoadout> {
         match self {
+            Self::Attack(p) => p.loadouts
+                .iter()
+                .find(|(hero, _)| hero == name)
+                .map(|(_, loadout)| loadout),
             Self::Playbook(p) => p.attack.loadouts.iter().find(|(hero, _)| hero == name).map(|(_, loadout)| loadout),
             Self::Stage { loadouts, .. } => loadouts
                 .iter()
@@ -1210,6 +1226,10 @@ impl Plan {
 
     pub fn equipment_level(&self, name: &str) -> Option<&Level> {
         match self {
+            Self::Attack(p) => p.equipment_levels
+                .iter()
+                .find(|(key, _)| key == name)
+                .and_then(|(_, level)| level.as_ref()),
             Self::Playbook(p) => p.attack.equipment_levels.iter().find(|(key, _)| key == name).and_then(|(_, lv)| lv.as_ref()),
             Self::Stage { equipment_levels, .. } => equipment_levels
                 .iter()
@@ -1220,6 +1240,10 @@ impl Plan {
 
     pub fn pet_level(&self, name: &str) -> Option<&Level> {
         match self {
+            Self::Attack(p) => p.pet_levels
+                .iter()
+                .find(|(key, _)| key == name)
+                .and_then(|(_, level)| level.as_ref()),
             Self::Playbook(p) => p.attack.pet_levels.iter().find(|(key, _)| key == name).and_then(|(_, lv)| lv.as_ref()),
             Self::Stage { pet_levels, .. } => pet_levels
                 .iter()
@@ -1230,6 +1254,7 @@ impl Plan {
 
     pub fn auto_ability_on_ko(&self) -> bool {
         match self {
+            Self::Attack(p) => p.auto_ability_on_ko,
             Self::Playbook(p) => p.attack.auto_ability_on_ko,
             Self::Stage { auto_ability_on_ko, .. } => *auto_ability_on_ko,
         }
@@ -1237,6 +1262,7 @@ impl Plan {
 
     pub fn observed(&self) -> bool {
         match self {
+            Self::Attack(p) => p.observed,
             Self::Playbook(p) => p.attack.observed,
             Self::Stage { observed, .. } => *observed,
         }
@@ -1244,6 +1270,7 @@ impl Plan {
 
     pub fn town_hall(&self) -> i64 {
         match self {
+            Self::Attack(p) => p.town_hall,
             Self::Playbook(p) => p.attack.town_hall,
             Self::Stage { town_hall, .. } => *town_hall,
         }
@@ -1251,6 +1278,10 @@ impl Plan {
 
     pub fn researched_level(&self, name: &str) -> Option<&Option<Level>> {
         match self {
+            Self::Attack(p) => p.troop_levels
+                .iter()
+                .find(|(key, _)| key == name)
+                .map(|(_, level)| level),
             Self::Playbook(p) => p.attack.troop_levels.iter().find(|(key, _)| key == name).map(|(_, lv)| lv),
             Self::Stage { troop_levels, .. } => troop_levels
                 .iter()
@@ -1261,6 +1292,7 @@ impl Plan {
 
     pub fn cc_released(&self) -> bool {
         match self {
+            Self::Attack(p) => p.cc_released,
             Self::Playbook(p) => p.attack.cc_released,
             Self::Stage { cc_released, .. } => *cc_released,
         }
@@ -1268,6 +1300,7 @@ impl Plan {
 
     pub fn release_cc(&mut self) {
         match self {
+            Self::Attack(p) => p.cc_released = true,
             Self::Playbook(p) => p.attack.cc_released = true,
             Self::Stage { cc_released, .. } => *cc_released = true,
         }
@@ -1275,6 +1308,7 @@ impl Plan {
 
     pub fn strength(&self) -> f64 {
         match self {
+            Self::Attack(p) => p.strength,
             Self::Playbook(p) => p.attack.strength,
             Self::Stage {
                 strength,
@@ -1287,6 +1321,7 @@ impl Plan {
     // mechanic_tests.py:43-48: Stage has no pending work and no exported callbacks.
     pub fn has_pending(&self) -> bool {
         match self {
+            Self::Attack(p) => p.has_pending(),
             Self::Playbook(p) => p.has_pending(),
             Self::Stage {
                 ..

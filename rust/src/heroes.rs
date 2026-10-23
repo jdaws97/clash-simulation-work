@@ -198,6 +198,7 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
     }) {
         // heroes.py:176-215: reserve explicit assignments and live replacements.
         let loadouts: &[(String, HeroLoadout)] = match &battle.plan {
+            Plan::Attack(plan) => &plan.loadouts,
             Plan::Playbook(plan) => &plan.attack.loadouts,
             Plan::Stage { loadouts, .. } => loadouts,
         };

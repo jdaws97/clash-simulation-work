@@ -20,6 +20,8 @@ data comes from a catalog regenerated after every game patch.
       compare Rust setup field by field, then compare every trace tick
       stage 6: --n 40 covers five troop/siege armies, two bases and four sides
       stage 7: --n 184 covers 23 hero loadouts, two bases and four sides
+      stage 8: --n 1584 covers 34 scripted meta builds (99 build/charge pairs),
+               four STAGE4_BASES and four sides, including observed Witch/PEKKA
 
 Trace format, one record per line: `T <t>` before each step, then after it
 `U <team> <id> <name> <x> <y> <hp>` for every living unit (attackers then
@@ -40,6 +42,8 @@ import math
 import os
 import struct
 import sys
+from contextlib import contextmanager
+from functools import lru_cache
 from pathlib import Path
 
 os.environ.setdefault("BASELAB_PLAYBOOKS", "1")
@@ -449,6 +453,44 @@ STAGE7_LOADOUTS = [
 ]
 STAGE7_SIDES = 4
 STAGE7_N = len(STAGE7_LOADOUTS) * len(STAGE1_BASES) * STAGE7_SIDES  # 184
+STAGE8_SIDES = 4
+
+
+@contextmanager
+def scripted_plans():
+    """Force the non-playbook scoring path, restoring the caller's setting."""
+    previous = os.environ.get("BASELAB_PLAYBOOKS")
+    os.environ["BASELAB_PLAYBOOKS"] = "0"
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop("BASELAB_PLAYBOOKS", None)
+        else:
+            os.environ["BASELAB_PLAYBOOKS"] = previous
+
+
+@lru_cache(maxsize=1)
+def stage8_cases():
+    """Stage-5 ranked builds with every scripted technique, before side/base.
+
+    Pin all three ranked Town Halls so local logs and BASELAB_TH_MIX cannot
+    omit a family. The current catalog has 34 builds, including all 12 decoded
+    observed builds (witch-17-1 and pekka-17-1), and 99 build/technique pairs.
+    Full coverage is len(stage8_cases()) * len(STAGE4_BASES) * STAGE8_SIDES = 1584.
+    These are synthetic parity scenarios, not real-game calibration.
+    """
+    from baselab.evaluate import meta_scenarios
+
+    with scripted_plans():
+        scenarios = meta_scenarios(
+            "ranked",
+            n_angles=1,
+            seeds=(0,),
+            th_mix={16: 1.0, 17: 1.0, 18: 1.0},
+            techniques_on=True,
+        )
+    return tuple(dict.fromkeys((sc.army, sc.charge) for sc in scenarios))
 
 
 def equipment_stage(loadout, angle, seed):
@@ -624,6 +666,24 @@ def scenario_inputs(stage, k):
             equipment_stage(loadout, angle, seed),
             {"seed": seed, "town_hall": 16},
         )
+    if stage == 8:
+        from baselab.engine.plans import AttackPlan
+        from baselab.evaluate import STRENGTH, apply_charge, skill
+        from baselab.meta_armies import make_plan
+
+        cases = stage8_cases()
+        army, charge = cases[k % len(cases)]
+        base = STAGE4_BASES[(k // len(cases)) % len(STAGE4_BASES)]
+        side = k // (len(cases) * len(STAGE4_BASES)) % STAGE8_SIDES
+        angle, seed = 2 * math.pi * side / STAGE8_SIDES + 0.1, 800 + k
+        lay = own_layout(base)
+        with scripted_plans():
+            plan = make_plan(army, angle, 16, seed)
+            if charge is not None:
+                apply_charge(plan, charge)
+        assert type(plan) is AttackPlan, f"stage 8 requires AttackPlan: {army}"
+        plan.strength = STRENGTH.get(army, 1.0) * skill(seed)
+        return lay, plan, {"seed": seed, "town_hall": 16}
     raise ValueError(f"no stage {stage}")
 
 

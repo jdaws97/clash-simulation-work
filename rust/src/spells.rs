@@ -812,8 +812,8 @@ pub fn cast_effect(
 ) -> usize {
     use crate::stats::{self, Level};
     let level = level.filter(|lv| *lv != Level::Int(0)).or_else(|| {
-        if let Plan::Playbook(p) = &battle.plan {
-            p.attack.spell_levels.iter()
+        if let Some(p) = battle.plan.attack() {
+            p.spell_levels.iter()
                 .find(|(key, _)| key == name)
                 .and_then(|(_, lv)| lv.clone())
         } else {

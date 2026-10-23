@@ -94,10 +94,10 @@ fn nonzero(level: Option<Level>) -> Option<Level> {
     })
 }
 
-/// Both supported deployments() implementations leave the battle RNG untouched.
+/// Scripted deployments need the completed layout; other plans can load directly.
 fn deployments(plan: &Json, margin: f64) -> Vec<Deployment> {
     match plan.at("$type").str() {
-        "PlaybookPlan" => Vec::new(),
+        "AttackPlan" | "PlaybookPlan" => Vec::new(),
         "Stage" => {
             let mut result: Vec<_> = plan.at("drops").arr().iter().map(|drop| {
                 let values = Node::new(drop, "plan.drops").tuple(5);
@@ -253,6 +253,10 @@ pub fn build(
     battle.total_counted = battle.buildings.iter().filter(|b| b.counted).count();
     battle.no_deploy = battle.live_no_deploy().clone();
     battle.onboard_cargo = attack_cargo(&battle, plan_json);
+    if let Plan::Attack(plan) = &battle.plan {
+        let opening = (**plan).clone();
+        battle.deployments = opening.deployments(&mut battle);
+    }
     battle
 }
 

@@ -1399,21 +1399,15 @@ impl PlaybookPlan {
             self.busy_until = t + action_time(battle, Action::Spell, 1);
             return;
         }
-        if self.attack.auto_revive {
-            let fallen: Vec<_> = battle.attackers_pool()
-                .filter(|u| !u.alive && u.extra.revivable)
-                .map(Unit::reference)
-                .collect();
-            for hero in fallen {
-                let u = battle.unit(hero);
-                if self.have("revive")
-                    && t >= u.extra.ko_at.expect("KO time") + self.attack.revive_delay {
-                    let (x, y) = (u.x, u.y);
-                    self.attack.use_spell(battle, "revive", x, y);
-                    self.busy_until = t + action_time(battle, Action::Spell, 1);
-                    return;
-                }
-            }
+        let before_revive = self.attack.cast_log.len();
+        self.attack.revive_knocked_out(
+            battle,
+            &|attack, kind| count(&attack.spells, kind) > 0,
+            true,
+        );
+        if self.attack.cast_log.len() > before_revive {
+            self.busy_until = t + action_time(battle, Action::Spell, 1);
+            return;
         }
         if !battle.portal_stash.is_empty() && t >= battle.portal_ready_at && !self.steps.iter()
             .any(|s| s.action == Action::Redeploy && !self.done(&s.id)) {

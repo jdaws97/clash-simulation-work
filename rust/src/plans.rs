@@ -1,9 +1,9 @@
-//! Ports plans.py:140-157,227-229,423-463,581-598,713-721,791-1047.
+//! Ports plans.py: AttackPlan deployments, phased runtime and shared fallbacks.
 //! Python constructs the inventory; runtime dictionaries retain insertion order.
 
 use std::rc::Rc;
 
-use crate::geom::{py_cos, py_hypot, py_sin, round_half_even};
+use crate::geom::{py_atan2, py_cos, py_hypot, py_sin, round_half_even};
 use crate::heroes::{self, HeroLoadout};
 use crate::json::Json;
 use crate::labels::{Name, Tag};
@@ -55,6 +55,24 @@ pub fn is_hero(name: &str) -> bool {
             | "Royal Champion"
             | "Minion Prince"
             | "Dragon Duke"
+    )
+}
+
+// plans.py:90-91: tank membership only; iteration never consumes this set.
+fn is_tank(name: &str) -> bool {
+    matches!(
+        name,
+        "Ice Golem"
+            | "Golem"
+            | "Lava Hound"
+            | "Ice Hound"
+            | "Giant"
+            | "Super Giant"
+            | "Electro Titan"
+            | "P.E.K.K.A"
+            | "Yeti"
+            | "Meteor Golem"
+            | "Headhunter"
     )
 }
 
@@ -146,6 +164,22 @@ struct ZapTarget {
     id: BuildingId,
     hp: f64,
     eq_hits: usize,
+}
+
+#[derive(Clone, Debug)]
+struct Wave {
+    units: Vec<(String, i64)>,
+    spread: f64,
+}
+
+#[derive(Clone, Debug)]
+struct LaterDrop {
+    time: f64,
+    name: String,
+    x: f64,
+    y: f64,
+    group: String,
+    jitter: f64,
 }
 
 // plans.py:1197-1231: cargo and support steps are fixed at construction time.
@@ -277,6 +311,29 @@ pub struct AttackPlan {
     pub distracts: i64,
     pub snipe_t: Option<f64>,
     pub snipe_points: SharedVec<(f64, f64)>,
+    funnel_heroes: SharedVec<(String, f64)>,
+    flank: SharedVec<(String, i64, f64)>,
+    main: SharedVec<Wave>,
+    support: SharedVec<Wave>,
+    push_heroes: SharedVec<String>,
+    cc_names: SharedVec<String>,
+    main_min: f64,
+    main_max: f64,
+    charge_hero: Option<String>,
+    charge_n: i64,
+    charge_lat: f64,
+    charge_at: f64,
+    charge_recall_hp: f64,
+    charge_len: f64,
+    recall_funnel: bool,
+    split_main: f64,
+    recalled: SharedVec<String>,
+    later: SharedVec<LaterDrop>,
+    phase: String,
+    entry: Option<(f64, f64)>,
+    next_brain: f64,
+    lured: bool,
+    battle_portal: bool,
 }
 
 impl AttackPlan {
@@ -286,6 +343,20 @@ impl AttackPlan {
                 .arr()
                 .iter()
                 .map(|v| (v.arr()[0].str().to_owned(), v.arr()[1].i64()))
+                .collect()
+        };
+        let waves = |key: &str| -> SharedVec<Wave> {
+            p.at(key)
+                .arr()
+                .iter()
+                .map(|wave| Wave {
+                    units: wave.at("units")
+                        .arr()
+                        .iter()
+                        .map(|unit| (unit.arr()[0].str().to_owned(), unit.arr()[1].i64()))
+                        .collect(),
+                    spread: wave.at("spread").f64(),
+                })
                 .collect()
         };
         let stock: Vec<_> = p.at("_spell_stock").arr().iter().map(|v| {
@@ -333,7 +404,12 @@ impl AttackPlan {
             spells: counts(p, "spells").into(),
             cc_spells: counts(p, "cc_spells").into(),
             stock: stock.into(),
-            pol: times(p, "pol").into(),
+            pol: p.at("pol")
+                .obj()
+                .iter()
+                .filter(|(_, v)| !v.is_null())
+                .map(|(key, v)| (key.clone(), v.f64()))
+                .collect(),
             auto_revive: flag(p, "auto_revive"),
             revive_delay: number(p, "revive_delay", 1.5),
             freeze_first: p.at("freeze_first").arr().iter().map(|v| v.str().to_owned()).collect(),
@@ -369,8 +445,89 @@ impl AttackPlan {
             breakers: pairs("breakers").into(),
             cleanup: pairs("cleanup").into(),
             distracts: number(p, "_distracts", 0.0) as i64,
-            snipe_t: None,
-            snipe_points: SharedVec::default(),
+            snipe_t: p.get("_snipe_t").filter(|v| !v.is_null()).map(Json::f64),
+            snipe_points: p.get("_snipe_pts").map_or_else(SharedVec::default, |v| {
+                v.arr()
+                    .iter()
+                    .map(|point| (point.arr()[0].f64(), point.arr()[1].f64()))
+                    .collect()
+            }),
+            funnel_heroes: p.at("funnel_heroes")
+                .arr()
+                .iter()
+                .map(|entry| (entry.arr()[0].str().to_owned(), entry.arr()[1].f64()))
+                .collect(),
+            flank: p.at("flank")
+                .arr()
+                .iter()
+                .map(|entry| {
+                    (
+                        entry.arr()[0].str().to_owned(),
+                        entry.arr()[1].i64(),
+                        entry.arr()[2].f64(),
+                    )
+                })
+                .collect(),
+            main: waves("main"),
+            support: waves("support"),
+            push_heroes: p.at("push_heroes")
+                .arr()
+                .iter()
+                .map(|v| v.str().to_owned())
+                .collect(),
+            cc_names: p.at("cc_troops")
+                .arr()
+                .iter()
+                .map(|entry| match entry {
+                    Json::Str(name) => name.clone(),
+                    _ => entry.get("name")
+                        .filter(|v| truth(v))
+                        .unwrap_or_else(|| entry.at("type"))
+                        .str()
+                        .to_owned(),
+                })
+                .collect(),
+            main_min: number(p, "main_min", 8.0),
+            main_max: number(p, "main_max", 22.0),
+            charge_hero: p.get("charge_hero")
+                .and_then(Json::opt_str)
+                .map(str::to_owned),
+            charge_n: number(p, "_charge_n", 0.0) as i64,
+            charge_lat: number(p, "charge_lat", 0.0),
+            charge_at: number(p, "charge_at", 0.0),
+            charge_recall_hp: number(p, "charge_recall_hp", 0.35),
+            charge_len: number(p, "charge_len", 25.0),
+            recall_funnel: flag(p, "recall_funnel"),
+            split_main: number(p, "split_main", 0.0),
+            // plans.py:871: cleanup uses only names from the legacy recall tuples.
+            recalled: p.at("recalled")
+                .arr()
+                .iter()
+                .map(|v| v.arr()[0].str().to_owned())
+                .collect(),
+            later: p.get("_later").map_or_else(SharedVec::default, |v| {
+                v.arr()
+                    .iter()
+                    .map(|entry| {
+                        let values = entry.arr();
+                        LaterDrop {
+                            time: values[0].f64(),
+                            name: values[1].str().to_owned(),
+                            x: values[2].f64(),
+                            y: values[3].f64(),
+                            group: values[4].str().to_owned(),
+                            jitter: values[5].f64(),
+                        }
+                    })
+                    .collect()
+            }),
+            phase: text(p, "_phase", "funnel").to_owned(),
+            entry: p.get("_entry")
+                .filter(|v| !v.is_null())
+                .map(|v| (v.arr()[0].f64(), v.arr()[1].f64())),
+            next_brain: number(p, "_next_brain", 0.0),
+            lured: flag(p, "_lured"),
+            battle_portal: flag(p, "_battle_portal"),
         }
     }
 
@@ -380,6 +537,7 @@ impl AttackPlan {
             return *v;
         }
         match name {
+            "commit_progress" => 3.0,
             "freeze_min_threat" => 5.0,
             "freeze_reach" => 1.5,
             "freeze_min_units" => 0.0,
@@ -400,7 +558,8 @@ impl AttackPlan {
             "hero_time" => 25.0,
             "warden_hurt" => 1.0 / 3.0,
             "arrow_aim" | "dash_aim" | "angry_min" | "skeleton_on" | "bat_on"
-            | "eq_core_dist" | "distract_reach" => 0.0,
+            | "eq_core_dist" | "distract_reach" | "deep_drop" | "tank_lead" => 0.0,
+            "lure_time" => -1.0,
             "arrow_reach" => 12.0,
             "arrow_threat" | "dash_threat" => 7.0,
             "dash_reach" | "distract_threat" => 8.0,
@@ -446,7 +605,157 @@ impl AttackPlan {
         self.cast_spell(battle, spell_name(kind), x, y, None, None)
     }
 
-    // plans.py:581-598. Jitter consumes x before y, even when deployment relocates.
+    // plans.py:540-548. Construction resolves donated siege caps in the catalog.
+    fn level(&self, battle: &Battle, name: &str) -> Option<Level> {
+        let levels = if is_hero(name) {
+            &self.hero_levels
+        } else {
+            &self.troop_levels
+        };
+        if let Some((_, level)) = levels.iter().find(|(key, _)| key == name) {
+            return level.clone();
+        }
+        if self.siege_donated && self.siege.as_deref() == Some(name) {
+            let castle = self.clan_castle_level.unwrap_or_else(|| {
+                battle.catalog.stats
+                    .max_level("Clan Castle", self.town_hall)
+                    .unwrap_or(0)
+            });
+            let cap = battle.catalog.setup
+                .at("siege_donation_caps")
+                .at(name)
+                .get(&castle.min(13).to_string())
+                .map_or(0, Json::i64);
+            return Some(Level::Int(cap));
+        }
+        None
+    }
+
+    // plans.py:596-615: opening drops do not consume random draws or clamp points.
+    pub fn deployments(&self, battle: &mut Battle) -> Vec<Deployment> {
+        let mut out = Vec::new();
+        let mut add = |battle: &Battle, time, name: &str, x, y, group: &str| {
+            out.push(Deployment {
+                time,
+                name: name.to_owned(),
+                x,
+                y,
+                group: group.to_owned(),
+                level: self.level(battle, name),
+                town_hall: Some(self.town_hall),
+                source: "army".to_owned(),
+                mode: None,
+            });
+        };
+        for (name, lateral) in &self.funnel_heroes {
+            let (x, y) = edge_point(battle, self.angle, *lateral);
+            add(battle, 0.0, name, x, y, "funnel");
+        }
+        if let Some(hero) = &self.charge_hero {
+            let mut point = edge_point(battle, self.angle, self.charge_lat);
+            if self.p("deep_drop") > 0.5 {
+                point = self.deep_charge_point(battle, point);
+            }
+            add(battle, self.charge_at, hero, point.0, point.1, "charge");
+            for k in 0..self.charge_n {
+                add(
+                    battle,
+                    self.charge_at + 0.6 + 0.1 * k as f64,
+                    "Healer",
+                    point.0,
+                    point.1,
+                    "charge",
+                );
+            }
+        }
+        let mut t = 0.5;
+        for (name, count, lateral) in &self.flank {
+            for k in 0..*count {
+                let (x, y) = edge_point(
+                    battle,
+                    self.angle,
+                    *lateral + (k as f64 - *count as f64 / 2.0) * 0.6,
+                );
+                add(battle, t, name, x, y, "funnel");
+                t += 0.15;
+            }
+        }
+        out.sort_by(|a, b| a.time.partial_cmp(&b.time).expect("deployment time"));
+        out
+    }
+
+    // plans.py:617-662: only non-Healer reserves keep a wiped offense alive.
+    pub fn has_offensive_pending(&self, battle: &Battle) -> bool {
+        if self.auto_revive
+            && self.have("revive")
+            && battle.attackers_pool().any(|hero| !hero.alive && hero.extra.revivable)
+        {
+            return true;
+        }
+        if battle.portal_units().any(|r| battle.unit(r).name_id != Name::Healer)
+            || self.recalled.iter().any(|name| name != "Healer")
+            || self.later.iter().any(|drop| drop.name != "Healer")
+            || self.cleanup
+                .iter()
+                .chain(self.breakers.iter())
+                .any(|(name, n)| name != "Healer" && *n > 0)
+        {
+            return true;
+        }
+        if self.phase == "funnel" {
+            if self.siege.as_ref().is_some_and(|name| !name.is_empty())
+                || !self.push_heroes.is_empty()
+                || self.cc_names.iter().any(|name| name != "Healer")
+                || self.main.iter().any(|wave| {
+                    wave.units.iter().any(|(name, n)| name != "Healer" && *n > 0)
+                })
+            {
+                return true;
+            }
+        }
+        matches!(self.phase.as_str(), "funnel" | "support")
+            && self.support.iter().any(|wave| {
+                wave.units.iter().any(|(name, n)| name != "Healer" && *n > 0)
+            })
+    }
+
+    // plans.py:664-665: the portal list snapshot lasts until the next plan tick.
+    pub fn has_pending(&self) -> bool {
+        self.phase != "done" || self.battle_portal
+    }
+
+    fn have(&self, kind: &str) -> bool {
+        count(&self.spells, kind) > 0
+    }
+
+    // plans.py:526-538: iterate the original attacker order, even after a revival.
+    pub fn revive_knocked_out(
+        &mut self,
+        battle: &mut Battle,
+        have: &impl Fn(&Self, &str) -> bool,
+        single_cast: bool,
+    ) {
+        if !self.auto_revive {
+            return;
+        }
+        let heroes: Vec<_> = battle.attackers_pool().map(Unit::reference).collect();
+        for reference in heroes {
+            let hero = battle.unit(reference);
+            if !hero.alive
+                && hero.extra.revivable
+                && have(self, "revive")
+                && battle.t >= hero.extra.ko_at.expect("KO time") + self.revive_delay
+            {
+                let (x, y) = (hero.x, hero.y);
+                self.use_spell(battle, "revive", x, y);
+                if single_cast {
+                    return;
+                }
+            }
+        }
+    }
+
+    // plans.py:667-692. Jitter consumes x before y, even when deployment relocates.
     pub fn drop(
         &self,
         battle: &mut Battle,
@@ -460,7 +769,7 @@ impl AttackPlan {
         self.drop_at(battle, name, x, y, group, jitter, at);
     }
 
-    // plans.py:581-609: jitter draws happen when scheduling, in step order.
+    // plans.py:667-692: jitter draws happen when scheduling, in step order.
     pub fn drop_at(
         &self,
         battle: &mut Battle,
@@ -476,35 +785,7 @@ impl AttackPlan {
             y += battle.rng.as_mut().expect("battle rng").uniform(-jitter, jitter);
         }
         let world = battle.catalog.world as f64;
-        let levels = if is_hero(name) {
-            &self.hero_levels
-        } else {
-            &self.troop_levels
-        };
-        let supplied = levels.iter().find(|(key, _)| key == name);
-        // plans.py:283-287,540-548: donated sieges use the Castle cap,
-        // including when the constructed plan has no explicit troop override.
-        let level = if let Some((_, level)) = supplied {
-            level.clone()
-        } else if self.siege_donated && self.siege.as_deref() == Some(name) {
-            let castle = self.clan_castle_level.unwrap_or_else(|| {
-                battle
-                    .catalog
-                    .stats
-                    .max_level("Clan Castle", self.town_hall)
-                    .unwrap_or(0)
-            });
-            let cap = battle
-                .catalog
-                .setup
-                .at("siege_donation_caps")
-                .at(name)
-                .get(&castle.min(13).to_string())
-                .map_or(0, Json::i64);
-            Some(Level::Int(cap))
-        } else {
-            None
-        };
+        let level = self.level(battle, name);
         let deployment = Deployment {
             time: at,
             name: name.to_owned(),
@@ -527,7 +808,345 @@ impl AttackPlan {
         }
     }
 
-    // plans.py:713-721: first maximum over the sixteen candidate edges.
+    // plans.py:694-743: stable first minimum over edges, holes, then sectors.
+    fn entry_score(battle: &Battle, x: f64, y: f64, lateral: f64) -> Option<f64> {
+        let center = battle.catalog.world as f64 / 2.0;
+        let mut nearest = None;
+        let mut distance = 1e9;
+        for building in &battle.buildings {
+            if building.alive && building.counted {
+                let d = building.edge_distance(x, y);
+                if d < distance {
+                    distance = d;
+                    nearest = Some(building);
+                }
+            }
+        }
+        nearest.map(|building| {
+            let cheb = (building.x - center).abs().max((building.y - center).abs());
+            0.5 * cheb + 2.0 * 0.0_f64.max(distance - 1.5) + 0.3 * lateral.abs()
+        })
+    }
+
+    fn best_entry(&mut self, battle: &mut Battle) -> (f64, f64) {
+        let mut best: Option<(f64, f64, f64)> = None;
+        for lateral in -5..=5 {
+            let (x, y) = edge_point(battle, self.angle, lateral as f64);
+            if let Some(score) = Self::entry_score(battle, x, y, lateral as f64) {
+                if best.is_none_or(|previous| score < previous.0) {
+                    best = Some((score, x, y));
+                }
+            }
+        }
+        let spots = battle.inside_spots();
+        for &(x, y) in spots.iter().step_by(1.max(spots.len() / 40)) {
+            if let Some(score) = Self::entry_score(battle, x, y, 0.0) {
+                if best.is_none_or(|previous| score < previous.0) {
+                    best = Some((score, x, y));
+                }
+            }
+        }
+        if self.p("deep_drop") > 0.5 {
+            for &(x, y) in Self::sector_tiles(battle, self.angle, 0.7).iter().step_by(3) {
+                if let Some(score) = Self::entry_score(battle, x, y, 0.0) {
+                    if best.is_none_or(|previous| score < previous.0) {
+                        best = Some((score, x, y));
+                    }
+                }
+            }
+        }
+        best.map(|entry| (entry.1, entry.2))
+            .unwrap_or_else(|| edge_point(battle, self.angle, 0.0))
+    }
+
+    // plans.py:746-752: Python's positive-divisor floating remainder.
+    fn sector_tiles(battle: &mut Battle, angle: f64, half_width: f64) -> Vec<(f64, f64)> {
+        let center = battle.catalog.world as f64 / 2.0;
+        let pi = std::f64::consts::PI;
+        battle.deploy_tiles()
+            .iter()
+            .copied()
+            .filter(|&(x, y)| {
+                let a = py_atan2(y - center, x - center);
+                ((a - angle + pi).rem_euclid(2.0 * pi) - pi).abs() <= half_width
+            })
+            .collect()
+    }
+
+    // plans.py:754-764: first highest threat, then nearest default.
+    fn deep_charge_point(&self, battle: &mut Battle, default: (f64, f64)) -> (f64, f64) {
+        let center = battle.catalog.world as f64 / 2.0;
+        let pi = std::f64::consts::PI;
+        let angle = py_atan2(default.1 - center, default.0 - center);
+        let mut target: Option<(f64, f64, f64, f64)> = None;
+        for b in &battle.buildings {
+            if !b.alive || b.weapon.is_none() || threat(&b.key, 0.0) < 5.0 {
+                continue;
+            }
+            let difference = (py_atan2(b.y - center, b.x - center) - angle + pi)
+                .rem_euclid(2.0 * pi) - pi;
+            if !(difference.abs() <= 0.8) {
+                continue;
+            }
+            let weight = threat(&b.key, 0.0);
+            let distance = -py_hypot(b.x - default.0, b.y - default.1);
+            if target.is_none_or(|old| (weight, distance) > (old.0, old.1)) {
+                target = Some((weight, distance, b.x, b.y));
+            }
+        }
+        let tiles = Self::sector_tiles(battle, angle, 0.6);
+        let Some((_, _, tx, ty)) = target else {
+            return default;
+        };
+        let mut best = None;
+        for (x, y) in tiles {
+            let distance = py_hypot(x - tx, y - ty);
+            if best.is_none_or(|(d, _, _)| distance < d) {
+                best = Some((distance, x, y));
+            }
+        }
+        best.map_or(default, |(_, x, y)| (x, y))
+    }
+
+    // plans.py:766-768: destroyed counted buildings near the approach edge.
+    fn funnel_progress(&self, battle: &mut Battle) -> usize {
+        let (x, y) = edge_point(battle, self.angle, 0.0);
+        battle.buildings
+            .iter()
+            .filter(|b| !b.alive && b.counted && py_hypot(b.x - x, b.y - y) < 10.0)
+            .count()
+    }
+
+    // plans.py:770-806: jitter is drawn in wave order when scheduling taps.
+    fn launch_main(&mut self, battle: &mut Battle) {
+        let (ex, ey) = self.best_entry(battle);
+        self.entry = Some((ex, ey));
+        if let Some(siege) = self.siege.as_deref().filter(|name| !name.is_empty()) {
+            self.drop(battle, siege, ex, ey, "main", 0.0);
+        } else if !self.cc_names.is_empty() && !self.cc_released {
+            crate::units::release_cc_at(battle, ex, ey, "main", false);
+        }
+        let second = (self.split_main > 0.05)
+            .then(|| edge_point(battle, self.angle + self.split_main, 0.0));
+        let mut k = 0;
+        let mut tank_k = 0;
+        let mut damage_k = 0;
+        let lead = self.p("tank_lead");
+        for wave in &self.main {
+            for (name, count) in &wave.units {
+                for _ in 0..*count {
+                    let (x, y) = second.filter(|_| k % 2 != 0).unwrap_or((ex, ey));
+                    let at = if lead > 0.3 && is_tank(name) {
+                        let at = battle.t + tank_k as f64 * 0.133;
+                        tank_k += 1;
+                        at
+                    } else if lead > 0.3 {
+                        let at = battle.t + lead + damage_k as f64 * 0.133;
+                        damage_k += 1;
+                        at
+                    } else {
+                        battle.t + k as f64 * 0.133
+                    };
+                    self.drop_at(battle, name, x, y, "main", wave.spread, at);
+                    k += 1;
+                }
+            }
+        }
+        for hero in &self.push_heroes {
+            self.drop(battle, hero, ex, ey, "main", 0.5);
+        }
+        if self.charge_hero.is_some() && !battle.portal_stash.is_empty() {
+            heroes::portal_redeploy(battle, ex, ey);
+        }
+        self.main_at = battle.t;
+        self.phase = "support".to_owned();
+    }
+
+    // plans.py:551-568: Invisibility precedes Recall on the same brain tick.
+    fn charge_spells(&mut self, battle: &mut Battle, charge: &[UnitRef]) {
+        let hero = charge.iter().copied().find(|r| {
+            let u = battle.unit(*r);
+            u.is_hero && self.charge_hero.as_deref() == Some(u.name.as_str())
+        });
+        let Some(reference) = hero else {
+            return;
+        };
+        let hero = battle.unit(reference);
+        let frac = hero.hp / 1.0_f64.max(hero.max_hp);
+        let (x, y, invisible_until) = (hero.x, hero.y, hero.invisible_until);
+        let locked = battle.buildings.iter().any(|b| {
+            b.alive
+                && b.weapon.as_ref().is_some_and(|w| w.target == Some(reference))
+                && threat(&b.key, 0.0) >= 4.0
+        });
+        let t = battle.t;
+        if self.have("invis")
+            && t - self.last("invis") > self.p("invis_gap")
+            && t >= invisible_until
+            && (locked || frac < 0.6)
+        {
+            self.use_spell(battle, "invis", x, y);
+        }
+        let done = t - self.charge_at > self.charge_len;
+        if self.have("recall")
+            && self.last("recall_charge") < 0.0
+            && (frac < self.charge_recall_hp || done)
+        {
+            self.use_spell(battle, "recall", x, y);
+            self.cast_log.push((round_decimal(t, 1), "recall_charge".to_owned()));
+        }
+    }
+
+    // plans.py:827-905: phases advance once per tick, before the half-second brain.
+    pub fn on_tick(&mut self, battle: &mut Battle) {
+        let t = battle.t;
+        self.revive_knocked_out(battle, &Self::have, false);
+        // Python retains the old list when portal_redeploy replaces the stash.
+        self.battle_portal = !battle.portal_stash.is_empty();
+        let due: Vec<_> = self.later
+            .iter()
+            .filter(|drop| drop.time <= t)
+            .cloned()
+            .collect();
+        self.later.retain(|drop| drop.time > t);
+        for drop in due {
+            self.drop(battle, &drop.name, drop.x, drop.y, &drop.group, drop.jitter);
+        }
+        let mut hold = self.charge_hero.is_some()
+            && self.phase == "funnel"
+            && !self.recall_funnel;
+        if !battle.portal_stash.is_empty()
+            && t >= battle.portal_ready_at
+            && self.recall_funnel
+            && self.charge_hero.is_some()
+            && self.phase == "funnel"
+        {
+            let lateral = if self.charge_lat.abs() > 1.0 {
+                -self.charge_lat
+            } else {
+                8.0
+            };
+            let (x, y) = edge_point(battle, self.angle, lateral);
+            heroes::portal_redeploy(battle, x, y);
+            hold = true;
+        }
+        if !battle.portal_stash.is_empty() && t >= battle.portal_ready_at && !hold {
+            let (x, y) = self.portal_point(battle);
+            heroes::portal_redeploy(battle, x, y);
+        }
+        if self.phase == "funnel" {
+            if !self.zap_done && self.zap_ad != (0, 0) {
+                self.zap(battle, &Self::have, false, &[]);
+            }
+            if t >= self.main_max
+                || (t >= self.main_min
+                    && self.funnel_progress(battle) as f64 >= self.p("commit_progress"))
+            {
+                self.launch_main(battle);
+            }
+        } else if self.phase == "support" && t >= self.main_at + 2.0 {
+            let (x, y) = self.entry.expect("main entry before support");
+            let mut k = 0;
+            for wave in &self.support {
+                for (name, count) in &wave.units {
+                    for _ in 0..*count {
+                        self.drop_at(
+                            battle,
+                            name,
+                            x,
+                            y,
+                            "main",
+                            wave.spread,
+                            t + k as f64 * 0.133,
+                        );
+                        k += 1;
+                    }
+                }
+            }
+            self.phase = "push".to_owned();
+        } else if self.phase == "push" && t >= self.main_at + 25.0 {
+            self.deploy_cleanup(battle);
+            self.phase = "done".to_owned();
+        }
+        if !self.lured && self.p("lure_time") >= 0.0 && t >= self.p("lure_time") {
+            self.lured = true;
+            let cc = battle.buildings
+                .iter()
+                .find(|b| b.key == "cc" && b.alive)
+                .map(|b| (b.x, b.y));
+            if let Some((x, y)) = cc {
+                if let Some(name) = self.spare_troop() {
+                    let (x, y) = self.snipe_point(battle, x, y);
+                    self.drop(battle, &name, x, y, "cleanup", 0.2);
+                    self.cast_log.push((round_decimal(t, 1), "lure".to_owned()));
+                }
+            }
+        }
+        if t >= self.next_brain {
+            self.next_brain = t + 0.5;
+            self.hero_abilities(battle);
+            if self.charge_hero.is_some() && self.last("recall_charge") < 0.0 {
+                let charge = main_units(battle, "charge");
+                if !charge.is_empty() {
+                    self.charge_spells(battle, &charge);
+                    if self.phase == "funnel" {
+                        self.generic_spells(battle, &charge, &Self::have, None, false, 0);
+                    }
+                }
+            }
+            if matches!(self.phase.as_str(), "support" | "push" | "done") {
+                let units = main_units(battle, "main");
+                self.generic_spells(battle, &units, &Self::have, None, false, 0);
+            }
+        }
+    }
+
+    // plans.py:867-884: clear reserves before deploying the distant ring.
+    fn deploy_cleanup(&mut self, battle: &mut Battle) {
+        let mut names = Vec::new();
+        for (name, count) in &self.cleanup {
+            for _ in 0..*count {
+                names.push(name.clone());
+            }
+        }
+        names.extend(self.recalled.iter().cloned());
+        self.cleanup.clear();
+        self.recalled.clear();
+        let army = main_units(battle, "main");
+        let center = battle.catalog.world as f64 / 2.0;
+        let (cx, cy) = if army.is_empty() {
+            (center, center)
+        } else {
+            centroid(battle, &army)
+        };
+        let mut far: Vec<_> = battle.buildings
+            .iter()
+            .filter(|b| b.alive && b.counted)
+            .map(|b| (b.x, b.y))
+            .collect();
+        far.sort_by(|a, b| {
+            (-py_hypot(a.0 - cx, a.1 - cy)).total_cmp(&(-py_hypot(b.0 - cx, b.1 - cy)))
+        });
+        for (k, name) in names.iter().enumerate() {
+            let (x, y) = if far.is_empty() {
+                edge_point(battle, self.angle + std::f64::consts::PI, 0.0)
+            } else {
+                let targets = far.len().min(1.max(names.len() / 2 + 1));
+                let target = far[k % targets];
+                self.snipe_point(battle, target.0, target.1)
+            };
+            self.drop(battle, name, x, y, "cleanup", 0.3);
+        }
+    }
+
+    // plans.py:1411-1417: consume the first positive cleanup reserve.
+    fn spare_troop(&mut self) -> Option<String> {
+        let entry = self.cleanup.iter_mut().find(|(_, n)| *n > 0)?;
+        entry.1 -= 1;
+        Some(entry.0.clone())
+    }
+
+    // plans.py:817-825: first maximum over the sixteen candidate edges.
     pub fn portal_point(&self, battle: &mut Battle) -> (f64, f64) {
         let mut best = (0.0, 0.0);
         let mut score = None;
@@ -1224,11 +1843,9 @@ impl AttackPlan {
                     && w.range < d
                     && d <= w.range + reach {
                     let (x, y) = (b.x + (b.x - cx), b.y + (b.y - cy));
-                    let Some(index) = self.cleanup.iter().position(|(_, n)| *n > 0) else {
+                    let Some(name) = self.spare_troop() else {
                         break;
                     };
-                    self.cleanup[index].1 -= 1;
-                    let name = self.cleanup[index].0.clone();
                     let point = self.snipe_point(battle, x, y);
                     self.drop(battle, &name, point.0, point.1, "cleanup", 0.3);
                     self.distracts += 1;
