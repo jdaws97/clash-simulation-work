@@ -13,8 +13,10 @@ reinforcement lands with the push).
 
 from __future__ import annotations
 
+import json
 import math
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 from ..loadouts import HeroLoadout as L
 from ..mechanics import WORLD
@@ -116,6 +118,24 @@ SPELL_NAMES = {
 }
 
 
+@lru_cache(maxsize=1)
+def _siege_donation_caps():
+    # Wiki: Clan Castle, Siege Machine Level Cap table (Castle L6 through L13+).
+    path = stats.ROOT / "data" / "wiki" / "tables" / "Clan_Castle.json"
+    table = next(
+        table
+        for table in json.loads(path.read_text(encoding="utf-8"))["tables"]
+        if table.get("heading") == "Siege Machine Level Cap"
+    )
+    return {
+        row[0]: {
+            castle: int(stats.num(value, default=0))
+            for castle, value in zip(range(6, 14), row[1:])
+        }
+        for row in table["rows"]
+    }
+
+
 @dataclass
 class SpellStock:
     name: str
@@ -203,6 +223,8 @@ class AttackPlan:
     event_ruleset: dict = field(default_factory=dict)
     auto_revive: bool = True
     equipment_levels: dict = field(default_factory=dict)
+    # data/your-levels.json: only account-built plans enforce equipment ownership.
+    account_equipment: bool = False
     pet_levels: dict = field(default_factory=dict)
     hero_levels: dict = field(default_factory=dict)
     revive_delay: float = 1.5  # Attacker policy assumption; no wiki delay.
@@ -257,6 +279,11 @@ class AttackPlan:
     # ----------------------------------------------------------- inventory
     def _building_level(self, name, supplied):
         return stats.max_level(name, self.town_hall) if supplied is None else supplied
+
+    def _siege_level_cap(self):
+        # Wiki: Clan Castle, siege donations use their own cap, not the Laboratory.
+        castle = self._building_level("Clan Castle", self.clan_castle_level)
+        return _siege_donation_caps()[self.siege].get(min(castle or 0, 13), 0)
 
     def _cc_capacity(self, castle):
         """Clan Castle troop housing for this attack (uses CC_HOUSING)."""
@@ -395,10 +422,23 @@ class AttackPlan:
             # Dragon L11/L12.LaboratoryLevel=14/15 -> cap explicit overrides.
             # game data v18.200.9: Archer Queen L96.RequiredTownHallLevel=17.
             lab = self._building_level("Laboratory", self.laboratory_level)
-            for levels in (self.troop_levels, self.hero_levels):
+            troop_levels = self.troop_levels
+            if self.siege and self.siege_donated:
+                # Wiki: Clan Castle, also validate the default donated siege level.
+                troop_levels = {self.siege: self._level(self.siege), **troop_levels}
+            for levels in (troop_levels, self.hero_levels):
                 for name, level in levels.items():
                     if type(level) is not int or level <= 0:
                         raise ValueError(f"Invalid {name} level {level}")
+                    if name == self.siege and self.siege_donated:
+                        # Wiki: Clan Castle, separate Siege Machine Level Cap table.
+                        stats.row(name, level)
+                        cap = self._siege_level_cap()
+                        if level > cap:
+                            raise ValueError(
+                                f"{name} level {level} exceeds Clan Castle donation cap {cap}"
+                            )
+                        continue
                     stats.validate_level(name, level, self.town_hall)
                     research = name
                     # Wiki: Super Troops, their level follows the original troop.
@@ -500,6 +540,9 @@ class AttackPlan:
     def _level(self, name):
         if name in heroes.HEROES:
             return self.hero_levels.get(name)
+        if name == self.siege and self.siege_donated:
+            # Wiki: Clan Castle, pass its donation cap explicitly to battle.spawn.
+            return self.troop_levels.get(name, self._siege_level_cap())
         return self.troop_levels.get(name)
 
     # ------------------------------------------------------------ deploying
@@ -735,15 +778,25 @@ class AttackPlan:
             units.release_cc_at(battle, ex, ey, "main")
         e2 = edge_point(battle, self.angle + self.split_main, 0.0) if self.split_main > 0.05 else None
         k = 0
+        tank_k = 0
+        damage_k = 0
+        lead = self.P("tank_lead")
+        # Video: docs/VIDEO_MEASUREMENTS.md:30 -> each sequence uses 0.133 s per troop.
+        # Attacker policy: tanks start now; damage starts tank_lead seconds later.
+        # Jitter draws keep wave/unit order (x then y) when scheduling each troop.
         for wave in self.main:
             for name, c in wave.units:
                 for _ in range(c):
                     px, py = (e2[0], e2[1]) if e2 is not None and k % 2 else (ex, ey)
-                    lead = self.P("tank_lead")
-                    if lead > 0.3 and name not in TANKS:
-                        self._later.append((battle.t + lead, name, px, py, "main", wave.spread))
+                    if lead > 0.3 and name in TANKS:
+                        at = battle.t + tank_k * 0.133
+                        tank_k += 1
+                    elif lead > 0.3:
+                        at = battle.t + lead + damage_k * 0.133
+                        damage_k += 1
                     else:
-                        self._drop(battle, name, px, py, "main", jitter=wave.spread)
+                        at = battle.t + k * 0.133
+                    self._drop(battle, name, px, py, "main", jitter=wave.spread, at=at)
                     k += 1
         for name in self.push_heroes:
             self._drop(battle, name, ex, ey, "main", jitter=0.5)
@@ -795,10 +848,21 @@ class AttackPlan:
                 self._launch_main(battle)
         elif self._phase == "support" and t >= self._main_at + 2.0:
             ex, ey = self._entry
+            # Video: docs/VIDEO_MEASUREMENTS.md:30 -> support uses the same queue.
+            k = 0
             for wave in self.support:
                 for name, c in wave.units:
                     for _ in range(c):
-                        self._drop(battle, name, ex, ey, "main", jitter=wave.spread)
+                        self._drop(
+                            battle,
+                            name,
+                            ex,
+                            ey,
+                            "main",
+                            jitter=wave.spread,
+                            at=t + k * 0.133,
+                        )
+                        k += 1
             self._phase = "push"
         elif self._phase == "push" and t >= self._main_at + 25.0:
             # cleanup: each spare troop goes to the legal spot nearest a

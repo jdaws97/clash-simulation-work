@@ -25,7 +25,7 @@ from ..mechanics import BUILDING_TYPES, MARGIN, TRAP_NAMES, WORLD
 from ..pathing import RES, Grid
 from . import defense, effects, heroes, spells, stats, traps, units
 from .entities import Building, Pending, Unit, Wall, dist
-from .specs import spec, unit_numbers
+from .specs import game_unit_data, spec, unit_numbers
 
 # BASELAB_DT: time step for fast screening runs only (default 0.1 s; a
 # coarser step changes results and must be validated against the full sim:
@@ -492,6 +492,9 @@ class Battle:
             u.extra["strength"] = k
         if u.is_hero:
             heroes.equip(self, u, self.plan)
+            if u.pet is not None and u.pet.extra.get("egg"):
+                # game data v18.200.9: Phoenix Egg.IsFlying=FALSE -> grounded until hatching.
+                u.pet.flying = False
             if self.atk_hero_mult != 1.0:  # league penalty incl. equipment boosts (wiki)
                 m = self.atk_hero_mult
                 u.hp *= m
@@ -512,6 +515,8 @@ class Battle:
         u.extra["deployment_source"] = source
         if source == "army" and stats.record(d.name)["kind"] in (
             "troop",
+            # Wiki: Monolith Arrow, deployed troop housing includes Super Troops.
+            "super_troop",
             "hero",
             "siege",
         ):
@@ -676,7 +681,8 @@ class Battle:
             # an unused ability fires on its own when the hero is about to be
             # defeated (wiki: Royal Champion, "Automatically use Hero
             # Abilities on KO", on by default)
-            u.hp = 1.0
+            # Wiki: Grand Warden / Minion Prince, the lethal hit leaves 1 HP,
+            # then ability healing applies; activate(on_ko=True) owns that order.
             # Wiki: Seeking Shield, KO activation releases without the animation.
             heroes.activate(self, u, on_ko=True)
             if self.record:
@@ -693,6 +699,9 @@ class Battle:
             return
         effects.record_death(self, u)
         if u.kit is not None and heroes.on_death(self, u):
+            if u.pet is not None and u.pet.name == "Phoenix":
+                # game data v18.200.9: Phoenix.IsFlying=TRUE -> flight resumes on hatching.
+                u.pet.flying = True
             return
         u.alive = False
         u.hp = 0.0
@@ -1025,8 +1034,16 @@ class Battle:
                         continue
                     # Wiki: Air Sweeper, push is normal to the curved blast.
                     push = pending.extra["push"]
+                    old_x, old_y = target.x, target.y
                     self._nudge(target, math.cos(ang) * push, math.sin(ang) * push)
                     target.extra["pushed_at"] = t
+                    # Wiki: Air Sweeper, no attacks while pushed, at most 1.2 s.
+                    # Use the puff's 6 tiles/s (Air Blaster Ammo1.Speed=600)
+                    # for the actual displacement, including map-edge clipping.
+                    duration = min(1.2, dist(old_x, old_y, target.x, target.y) / 6.0)
+                    target.extra["pushed_until"] = max(
+                        target.extra.get("pushed_until", 0.0), t + duration
+                    )
                     # Wiki: Air Sweeper, knockback resets Inferno Dragon's charge.
                     units.reset_beam(target)
                     continue
@@ -1195,6 +1212,8 @@ class Battle:
             unit
             for unit in self.attackers_near(castle.x, castle.y, CC_TRIGGER_RADIUS)
             if unit.name not in spells.NO_TRIGGER
+            # game data v18.200.9: Yetimite/Electromite/Firemite Spawn/Icemite.DoesNotOpenCC=TRUE.
+            and game_unit_data(unit.name, unit.level).get("DoesNotOpenCC") != "TRUE"
             and unit.targetable(self.t)
             and unit.dash is None
         ]
@@ -1238,6 +1257,12 @@ class Battle:
 
     def _act_attacker(self, u: Unit):
         t = self.t
+        if t < u.extra.get("pushed_until", 0.0):
+            # Wiki: Air Sweeper, displacement blocks normal and special attacks.
+            if u.can_act(t):
+                u.cooldown = max(u.cooldown - DT, -DT)
+            units.interrupt_attack(u)
+            return
         if heroes.summon_tick(self, u):
             return
         if units.pre_tick(self, u):
@@ -1672,6 +1697,8 @@ class Battle:
                 if u.name == "Dragon Duke" and units.duke_alone(self, u):
                     interval /= 1.5  # wiki: Dragon Duke, Royal Rampage
                 u.cooldown += interval / max(0.05, slow)
+                # game data v18.200.9: TargetKilledCooldownTimer overrides normal cadence on a kill.
+                units.target_killed_cooldown(self, u, target)
                 if u.name == "Valkyrie" and not target.alive:
                     # Wiki: Valkyrie, a kill resets her attack pattern; the next
                     # target uses NewTargetAttackDelay=600 ms (game data v18.200.9).
@@ -1841,6 +1868,8 @@ class Battle:
                 units.strike(self, u, target)
                 slow = effects.slow_mult(u, t)
                 u.cooldown += units.attack_interval(u, self) / max(0.05, slow)
+                # game data v18.200.9: Inferno Dragon.TargetKilledCooldownTimer=600 -> defending kills too.
+                units.target_killed_cooldown(self, u, target)
                 if u.name == "Valkyrie" and not target.alive:
                     # Wiki: Valkyrie, kills reset the defending attack cycle too.
                     u.cooldown = 0.0

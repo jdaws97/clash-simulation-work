@@ -298,10 +298,11 @@ def on_spawn(battle, u: Unit):
         u.extra["queue"] = ["P.E.K.K.A"] * int(stats.get(u.name, u.level, "Troops Spawned / P.E.K.K.As", default=2)) + ["Wizard"] * int(stats.get(u.name, u.level, "Troops Spawned / Wizards", default=12))
         u.extra["next"] = t + 0.5
     if "logs" in sp.special:
-        u.decay = 156.0
         u.extra["next_log"] = t + 1.0
-    if "flinger" in sp.special:
-        u.decay = 17.0
+    if "logs" in sp.special or "flinger" in sp.special:
+        # game data v18.200.9: Log Launcher/Flame Flinger.LoseHpInterval=1000 -> first loss at 1 s.
+        row = game_unit_data(u.name, u.level)
+        u.extra["hp_loss_at"] = t + int(row["LoseHpInterval"]) / 1000.0
     if u.name == "Druid":
         u.extra["bear_at"] = t + 30.0
     if "witch_skeletons" in sp.special:
@@ -351,11 +352,13 @@ def pre_tick(battle, u: Unit) -> bool:
         u.alive = False
         u.hp = 0.0
         return True
-    if "troop_launcher" in sp.special:
-        # game data v18.200.9: Troop Launcher.LoseHpPerTick=25, LoseHpInterval=1000 -> discrete HP loss.
+    if "hp_loss_at" in u.extra:
+        # game data v18.200.9: Log Launcher/Flame Flinger/Troop Launcher.LoseHpPerTick=156/17/25,
+        # LoseHpInterval=1000 -> discrete losses, including skipped intervals.
+        row = game_unit_data(u.name, u.level)
         while t >= u.extra["hp_loss_at"] or math.isclose(t, u.extra["hp_loss_at"]):
-            u.hp -= 25.0
-            u.extra["hp_loss_at"] += 1.0
+            u.hp -= int(row["LoseHpPerTick"])
+            u.extra["hp_loss_at"] += int(row["LoseHpInterval"]) / 1000.0
             if u.hp <= 0:
                 battle.kill(u)
                 return True
@@ -387,7 +390,9 @@ def pre_tick(battle, u: Unit) -> bool:
         heroes.pet_passives(battle, u)
         if u.can_act(t):
             u.cooldown = max(u.cooldown - battle.DT, -battle.DT)
-            heroes.act_pet(battle, u)
+            # Wiki: Air Sweeper, pushed flying pets cannot attack until displacement ends.
+            if t >= u.extra.get("pushed_until", 0.0):
+                heroes.act_pet(battle, u)
         return True
     if u.kit is not None:
         from . import heroes
@@ -1517,10 +1522,27 @@ def new_target_windup(u):
     data sets NewTargetAttackDelay only below the attack interval (Balloon
     2.25 vs 3.0 s, Valkyrie 0.6 vs 1.8 s), i.e. as a shortening of a default
     wait. BASELAB_WINDUP=0 turns this off."""
+    # game data v18.200.9: TargetKilledCooldownTimer replaces the next target's windup.
+    if u.extra.pop("target_killed_cooldown", False):
+        return
     if not WINDUP or not u.interval:
         return
     delay = _new_target_delays().get(u.name, u.interval)
     u.cooldown = max(u.cooldown, delay)
+
+
+def target_killed_cooldown(battle, u, target):
+    if target.alive:
+        return
+    row = game_unit_data(u.name, u.level)
+    if "royal_rampage" in u.spec.special and u.team == "atk" and duke_alone(battle, u):
+        # game data v18.200.9: DragonDukeRageWhenAlone.TargetKilledCooldownTimer=200 -> 0.2 s.
+        row = game_data("special_abilities", "DragonDukeRageWhenAlone")
+    # game data v18.200.9: Inferno Dragon.TargetKilledCooldownTimer=600 -> 0.6 s, either team.
+    delay = int(row.get("TargetKilledCooldownTimer", 0)) / 1000.0
+    if delay > 0:
+        u.cooldown = delay
+        u.extra["target_killed_cooldown"] = True
 
 
 def attack_interval(u, battle=None):
@@ -2213,7 +2235,9 @@ def strike(battle, u: Unit, target):
     rage = max(rage, u.aura_dmg, u.extra.get("bell_damage", 1.0))
     mult = 1.0
     if "royal_rampage" in sp.special and u.team == "atk" and duke_alone(battle, u):
-        mult *= 2.0  # +100% damage; cadence is applied separately (wiki: Dragon Duke).
+        # Wiki: Rage Spell/Home Village, the strongest damage boost wins.
+        # game data v18.200.9: DragonDukeRageWhenAlone.BoostDamagePercentage=100 -> x2.
+        rage = max(rage, 2.0)
     if tantrum(battle, u):
         # Wiki: Baby Dragon, best damage bonus competes with Rage.
         rage = max(rage, 2.0)

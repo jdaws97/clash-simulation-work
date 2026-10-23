@@ -128,11 +128,17 @@ def equip(battle, u: Unit, plan):
     th = getattr(plan, "town_hall", battle.town_hall)
     pet_level = _pet_level(battle, u, lo, plan, th)
     levels_override = getattr(plan, "equipment_levels", {}) or {}
+    # data/your-levels.json: account construction explicitly marks complete inventories.
+    account_equipment = getattr(plan, "account_equipment", False)
     k = Kit()
     k.hero = u.name
     base_interval = u.interval
     passive_dps = passive_speed = 0.0
     for e in lo.equipment:
+        # Account inventory: data/your-levels.json equipment_levels lists owned items.
+        # Unowned slots stay empty; plans without an inventory keep meta defaults.
+        if account_equipment and e not in levels_override:
+            continue
         if e not in stats.registry():
             continue
         lvl = levels_override.get(e) or stats.max_level(e, th)
@@ -557,6 +563,10 @@ def activate(battle, u: Unit, *, on_ko=False):
         return
     t = battle.t
     u.ability_used = True
+    # Wiki: Grand Warden / Minion Prince, KO leaves 1 HP before ability healing.
+    if on_ko:
+        u.hp = 1.0
+    # HealOnActivation applies once; the caller must retain the recovered HP.
     u.heal(k.hp_recovery)
     tgt = u.target
     if isinstance(tgt, Building) and not battle.building_targetable(tgt):
@@ -1166,8 +1176,8 @@ def _puppet(battle, u, e, lv, *, first=0, at=None):
         "Healer Puppet": ("Healer", "summoned healers"),
         "Lavaloon Puppet": ("Lavaloon", "summoned lavaloons"),
     }
-    if e == "Hog Rider Puppet":
-        _invisible(u, battle.t + 1.0)  # wiki: Hog Rider Puppet
+    if e == "Hog Rider Puppet" and first == 0:
+        _invisible(u, battle.t + 1.0)  # wiki: Hog Rider Puppet, once on activation
     troop, col = table[e]
     n = int(_col(e, lv, col, default=1))
     lvl_col = {"Hog Rider Puppet": "hog rider level", "Healer Puppet": "healer level", "Lavaloon Puppet": "lavaloon level"}.get(e)
@@ -1177,10 +1187,14 @@ def _puppet(battle, u, e, lv, *, first=0, at=None):
         level = (getattr(battle.plan, "troop_levels", {}) or {}).get(troop)
     # game data v18.200.9: BarbarianKingSpawnBarbarians.SpawnnedTroopsPerHit=5, SpawnDelayBetweenHitsMS=500.
     # game data v18.200.9: ArcherQueenSpawnArchers.SpawnnedTroopsPerHit=5, SpawnDelayBetweenHitsMS=1000.
+    # game data v18.200.9: RCEquipSpawnHogs.SpawnnedTroopsPerHit=3, SpawnDelayBetweenHitsMS=250.
+    # game data v18.200.9: ArcherQueenSpawnHealers.SpawnnedTroopsPerHit=3, SpawnDelayBetweenHitsMS=250.
     # game data v18.200.9: GrandWardenSummonLavaloon.SpawnnedTroopsPerHit=1, SpawnDelayBetweenHitsMS=250.
     batch, delay = {
         "Barbarian Puppet": (5, 0.5),
         "Archer Puppet": (5, 1.0),
+        "Hog Rider Puppet": (3, 0.25),
+        "Healer Puppet": (3, 0.25),
         "Lavaloon Puppet": (1, 0.25),
     }.get(e, (n, 0.0))
     for j in range(first, min(first + batch, n)):
@@ -1713,12 +1727,25 @@ def summon_death(battle, unit):
     count = int(
         stats.get("Lavaloon", unit.level, "Lavaloon Pups Spawned (After Death)")
     )
-    for _ in range(count):
+    row = game_data("characters", "GW Equipment Lavaloon", unit.level)
+    # game data v18.200.9: GW Equipment Lavaloon.SecondarySpawnDist=350 -> 3.5 tiles.
+    # game data v18.200.9: GW Equipment Lavaloon.RandomizeSecSpawnDist=TRUE -> scatter radii.
+    spawn_distance = int(row["SecondarySpawnDist"]) / 100.0
+    spawn_offset = int(row.get("SecondarySpawnOffset", 0)) / 100.0
+    randomize_distance = row.get("RandomizeSecSpawnDist") == "TRUE"
+    for k in range(count):
+        ang = 2 * math.pi * k / max(1, count)
+        radius = spawn_distance
+        if randomize_distance:
+            # Match hound spread: one radius draw per pup in spawn order.
+            # Angles remain evenly spaced; no angle draws.
+            radius *= battle.rng.random()
+        radius += spawn_offset
         battle.spawn(
             "Lavaloon Pup",
             unit.team,
-            unit.x,
-            unit.y,
+            unit.x + radius * math.cos(ang),
+            unit.y + radius * math.sin(ang),
             level=unit.level,
             kind="summon",
             group=unit.group,

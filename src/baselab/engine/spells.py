@@ -1256,11 +1256,13 @@ def interaction_housing(unit):
         "Spell Skeleton": 1,
         "Bat": 1,
         "Frostmite": 1,
-        "Lava Pup": 2,
-        "Ice Pup": 2,
+        # game data v18.200.9: Lava Pup/Ice Hound Pup.HousingSpace=1 -> one capacity each.
+        "Lava Pup": 1,
+        "Ice Pup": 1,
         "Yetimite": 2,
         "Golemite": 6,
-        "Big Boy": 10,
+        # game data v18.200.9: Big Boy.HousingSpace=20 -> twenty capacity.
+        "Big Boy": 20,
     }
     return weights.get(unit.name, max(1, unit.housing))
 

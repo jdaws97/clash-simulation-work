@@ -76,17 +76,17 @@ def _target(battle, pet):
     buildings = [b for b in battle.buildings if _valid(battle, pet, b)]
     defenders = [u for u in battle.defenders if _valid(battle, pet, u)]
     if pet.name == "Greedy Raven":
+        # Wiki: Invisibility Spell, hidden resource buildings redirect targeting.
         resources = [
             building
-            for building in battle.buildings
-            if building.alive
-            and (building.kind == "resource" or building.key in units.RESOURCE_KEYS)
+            for building in buildings
+            if building.kind == "resource" or building.key in units.RESOURCE_KEYS
         ]
         if resources:
             # Prefer resources near the Hero; no hard leash is stated.
             return _nearest(
                 hero if owner_present else pet,
-                [building for building in resources if _valid(battle, pet, building)],
+                resources,
             )
     if pet.attached(battle.t):
         return _nearest(
@@ -158,7 +158,8 @@ def owner_defeated(battle, pet):
             battle.t + stats.num(raw["Rage Duration"]),
         )
     if pet.name == "Sneezy":
-        pet.range = 1.5  # wiki: Sneezy, attack range after owner defeat
+        # game data v18.200.9: Sneezy.AttackRange=250 -> 2.5 tiles after owner defeat.
+        pet.range = 2.5
     pet.target = pet.wall_target = None
 
 
@@ -253,6 +254,11 @@ def act(battle, pet):
                     for ally in battle.attackers
                     if ally.alive
                     and ally is not pet
+                    and ally.team == pet.team
+                    and t >= ally.active_at
+                    and not ally.extra.get("suspended")
+                    # Wiki: Furnace, neither Healers nor Unicorns target it.
+                    and ally.name not in ("Totem", "Furnace")
                     and ally.hp < ally.max_hp
                     and ally.kind not in ("siege", "siege_idle")
                     and ally.spec.attack not in ("heal", "heal_chain")

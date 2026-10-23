@@ -215,8 +215,14 @@ class PlaybookPlan(AttackPlan):
             if not g:
                 return None
             cx, cy = self.centroid(g)
-            firing = [(THREAT.get(b.key, 1), b) for b, d in self.threats_near(battle, cx, cy, 12)
-                      if b.weapon is not None and (b.weapon.target is not None or getattr(b.weapon, "multi", None))]
+            # Wiki: Fireball, hide frontline defenses to filter its available targets.
+            firing = [
+                (THREAT.get(b.key, 1), b)
+                for b, d in self.threats_near(battle, cx, cy, 12)
+                if battle.building_targetable(b)
+                and b.weapon is not None
+                and (b.weapon.target is not None or getattr(b.weapon, "multi", None))
+            ]
             if not firing:
                 return None
             b = max(firing, key=lambda tb: tb[0])[1]
@@ -1097,6 +1103,10 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
     kw = {f.name: getattr(base, f.name) for f in fields(AttackPlan) if not f.name.startswith("_")}
     kw["spells"] = dict(base._spells0)
     kw["auto_revive"] = False
+    # data/your-levels.json: own-level builds use a complete equipment inventory.
+    kw["account_equipment"] = bool(
+        build.get("own_levels") or build["archetype"].startswith("user-")
+    )
     kw["event_ruleset"] = dict(pb.get("event_ruleset", base.event_ruleset))
     plan = PlaybookPlan(**kw)
     plan.build_id = getattr(base, "build_id", None)
@@ -1114,6 +1124,37 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
         sp,
         cc=plan.cc_troops,
     )
+    # data/custom-armies.json: explicit roles apply only to unreferenced groups.
+    # Playbook group anchors and group conditions retain their original heroes.
+    # Wiki: Healer Puppet, send the Queen alongside the main army in smash attacks.
+    referenced_groups = set()
+    conditions = []
+    for st in plan.steps:
+        choices = (overrides or {}).get(st["id"], {})
+        for key in ("at", "aim"):
+            anchor = choices.get(key, st.get(key, ""))
+            kind, _, group = str(anchor).partition(":")
+            if kind in ("group", "threat", "defenders"):
+                referenced_groups.add(group or "main")
+        conditions.extend((st.get("when"), st.get("until")))
+    while conditions:
+        condition = conditions.pop()
+        if not isinstance(condition, dict):
+            continue
+        for key in ("group_inside", "near_th", "defenders_near"):
+            if key in condition:
+                referenced_groups.add(condition[key])
+        conditions.extend(condition.get("all", []))
+        conditions.extend(condition.get("any", []))
+    for st in plan.steps:
+        if st["action"] != "deploy" or st.get("what") not in heroes_in:
+            continue
+        if st.get("group", "main") in referenced_groups:
+            continue
+        if st["what"] in build.get("funnel", []):
+            st["at"], st["group"] = "edge:funnel", "funnel"
+        elif st["what"] in build.get("push", []):
+            st["at"], st["group"] = "edge:main", "main"
     add_waits(plan.steps)
     # Invisibility cadence on a charging hero depends on her pet: the merged
     # playbooks' 10-second cycle relies on Spirit Fox covering the gaps; without
@@ -1128,5 +1169,15 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
                 st["every"] = 4.0
                 st.setdefault("cite", []).append({"video": "L_LKqcL56NE", "t": 63.8, "quote": "invisibility spells every 4 seconds to"})
     apply_overrides(plan.steps, overrides)
+    # Wiki: Healer, cannot heal air units; a Warden walk with attached Healers
+    # therefore uses ground mode, regardless of the rest of this army.
+    if plan.inventory.get("Healer", 0) > 0 and any(
+        st["action"] == "deploy"
+        and st.get("what") == "Healer"
+        and st.get("at") in ("unit:Grand Warden", "unit_ahead:Grand Warden")
+        and st.get("count", "all") != 0
+        for st in plan.steps
+    ):
+        plan.ground = True
     plan.flank_offset, plan.charge_side = flank_offset, charge_side
     return plan

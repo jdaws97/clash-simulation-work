@@ -71,10 +71,9 @@ TORNADO_INNER, TORNADO_INNER_PCT, TORNADO_OUTER_PCT = 0.7, 1.0, 0.65
 # game data v18.200.9: Tornado Trap.TornadoRotationSpeed=-180 -> -pi radians/s.
 # Wiki: Tornado Trap, counter-clockwise motion (the engine's y axis points down).
 TORNADO_ROTATION = -math.pi
-# game data v18.200.9: Traps.csv Bomb/GiantBomb.Pushback=100 and
-# PushbackHousingLimit=3, the same values as Mortar, whose push the wiki
-# states as 2 tiles (wiki: Barbarian, Mortar knocks Barbarians back 2 tiles).
-TRAP_PUSH = 2.0
+# game data v18.200.9: Bomb/GiantBomb.Pushback=100 -> 1 tile,
+# PushbackHousingLimit=3 -> the same housing eligibility as Mortar.
+TRAP_PUSH = 1.0
 # game data v18.200.9: Traps.csv GigaBomb.RadialThrowDistance=200 -> 2 tiles,
 # RadialThrowRadius=450 -> 4.5 tiles.
 GIGA_THROW = 2.0
@@ -135,6 +134,10 @@ def _effect_target(tr: Trap, u, t) -> bool:
 
 
 def _eligible(tr: Trap, u, t=0.0) -> bool:
+    if u.extra.get("egg"):
+        # game data v18.200.9: Phoenix Egg.TriggersTraps=FALSE.
+        # Conflicts with Wiki: Phoenix, eggs trigger aerial traps; game data wins.
+        return False
     if not _effect_target(tr, u, t) or u.name in NO_TRIGGER:
         return False
     if u.name == "Dragon Duke" and u.dash is not None:
@@ -198,8 +201,8 @@ def _fire_effect(battle, tr: Trap):
         battle.splash_units(tr.x, tr.y, tr.radius, tr.damage, tr.air, tr.ground, team="atk", src=src, kind="trap")
         # Bomb/Giant Bomb: surviving ground troops of housing <=3 are knocked
         # away from the blast, even through Tome (wiki: Bomb; Giant Bomb).
-        # TRAP_PUSH is the Mortar-equivalent 2 tiles; the wiki's smaller push
-        # for larger housing is NUMBER NOT STATED, so all <=3 get 2 tiles.
+        # Wiki: Bomb, larger housing reduces knockback; use inverse housing
+        # within Mortar's <=3 housing rule (the exact reduction is unstated).
         for u in battle.attackers_near(tr.x, tr.y, tr.radius):
             if (
                 u.alive
@@ -211,7 +214,8 @@ def _fire_effect(battle, tr: Trap):
             ):
                 d = dist(u.x, u.y, tr.x, tr.y)
                 if d > 0:
-                    battle._nudge(u, TRAP_PUSH * (u.x - tr.x) / d, TRAP_PUSH * (u.y - tr.y) / d)
+                    push = TRAP_PUSH / u.housing
+                    battle._nudge(u, push * (u.x - tr.x) / d, push * (u.y - tr.y) / d)
                 u.target = u.wall_target = None
     elif k == "airbomb":
         # Opening time: FUSE (ActionFrame=7).
@@ -227,8 +231,8 @@ def _fire_effect(battle, tr: Trap):
             return
         u = min(cands, key=lambda a: dist(a.x, a.y, tr.x, tr.y))
         # game data v18.200.9: Projectiles.csv AirTrapBalloon.Speed=250 -> 2.5 tiles/s,
-        # DontTrackTarget=TRUE: it flies to the acquired location.
-        flight = dist(tr.x, tr.y, u.x, u.y) / 2.5
+        # StartOffset=20 -> 0.2 tiles forward; DontTrackTarget=TRUE -> acquired location.
+        flight = max(0.0, dist(tr.x, tr.y, u.x, u.y) - 0.2) / 2.5
         battle.add_pending(
             Pending(
                 t + flight,
@@ -266,7 +270,13 @@ def _fire_effect(battle, tr: Trap):
             return  # Seeking Air Mine: a committed dead target wastes the mine.
         # Opening time: FUSE (ActionFrame=7); then the homing flight.
         tr.extra["state"] = "flight"
-        tr.extra["projectile"] = (tr.x, tr.y)
+        # game data v18.200.9: LargeDarkElixirBalloon.StartOffset=20 -> 0.2 tiles toward target.
+        distance = dist(tr.x, tr.y, u.x, u.y)
+        offset = min(0.2, distance) / (distance or 1.0)
+        tr.extra["projectile"] = (
+            tr.x + (u.x - tr.x) * offset,
+            tr.y + (u.y - tr.y) * offset,
+        )
     elif k == "spring":
         # Spring Trap: select among units still in the stated trigger radius
         # (wiki). game data v18.200.9 EjectRadius=200 is not used: with it no

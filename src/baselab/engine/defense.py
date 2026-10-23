@@ -350,8 +350,35 @@ def attach_weapon(battle, b: Building):
         b.weapon = W(b, "ricochet", targets="ground", range_=9.0, interval=0.8, damage=stats.get(name, lvl, "Damage per Shot (Primary Target)", default=312.0),
                      extra={"bounce": stats.get(name, lvl, "Secondary Chain Damage", default=218.4), "bounce_range": 3.5})
     elif key == "bt":
-        b.weapon = W(b, "splash", targets="ground", range_=6.0, interval=1.1, damage=_dmg(name, lvl, 1.1),
-                     extra={"splash": 1.5, "death": stats.get(name, lvl, "Damage when destroyed", default=600.0), "death_radius": 2.75, "death_delay": 1.0})
+        # game data v18.200.9: Bomb Tower L13.DieDamage=700 -> base death damage.
+        # mini_levels adds DPS/HP only; supercharges retain the base DieDamage.
+        death_level = lvl
+        if not isinstance(death_level, int):
+            death_level = max(
+                row["level"]
+                for row in stats.record(name)["levels"]
+                if isinstance(row["level"], int)
+            )
+        death = stats.get(
+            name,
+            lvl,
+            "Damage when destroyed",
+            default=float(game_data("buildings", name, death_level)["DieDamage"]),
+        )
+        b.weapon = W(
+            b,
+            "splash",
+            targets="ground",
+            range_=6.0,
+            interval=1.1,
+            damage=_dmg(name, lvl, 1.1),
+            extra={
+                "splash": 1.5,
+                "death": death,
+                "death_radius": 2.75,
+                "death_delay": 1.0,
+            },
+        )
     elif key == "wt":
         b.weapon = W(b, "splash", range_=7.0, interval=1.3, damage=_dmg(name, lvl, 1.3), extra={"splash": 1.0, "same_type": True})
     elif key == "mortar":
@@ -384,12 +411,20 @@ def attach_weapon(battle, b: Building):
                 extra={"targets": int(stats.get(name, lvl, "Number of Targets"))},
             )
         else:
+            # game data v18.200.9: Inferno Tower.AttackSpeed=128 -> 0.128 s packets.
+            # Wiki: Inferno Tower/Home Village, use each charge stage's per-hit value.
             ramp = [
-                (0.0, stats.get(name, lvl, "Damage per Second / Initial", default=120.0)),
-                (1.5, stats.get(name, lvl, "Damage per Second / After 1.5s", default=260.0)),
-                (5.25, stats.get(name, lvl, "Damage per Second / After 5.25s", default=2600.0)),
+                (0.0, stats.get(name, lvl, "Damage per Hit / Initial")),
+                (1.5, stats.get(name, lvl, "Damage per Hit / After 1.5s")),
+                (5.25, stats.get(name, lvl, "Damage per Hit / After 5.25s")),
             ]
-            b.weapon = W(b, "inferno_single", range_=9.0, interval=0.128, extra={"ramp": ramp})
+            b.weapon = W(
+                b,
+                "inferno_single",
+                range_=9.0,
+                interval=0.128,
+                extra={"ramp": ramp},
+            )
     elif key == "eagle":
         b.weapon = W(b, "eagle", range_=50.0, min_range=7.0, interval=10.0, damage=stats.get(name, lvl, "Damage per Hit", default=525.0),
                      extra={"activation": 200, "shells": 3, "gap": 0.75, "shock": stats.get(name, lvl, "Shockwave Damage", default=50.0), "splash": 0.75, "shock_radius": 3.0})
@@ -518,8 +553,14 @@ def _gear_up(battle, b):
         # game data v18.200.9: Mortar.AltAttackSpeed=3500 -> 3.5 s after the burst.
         row = game_data("buildings", b.name, b.level)
         w.kind, w.interval = "mortar_burst", int(row["AltAttackSpeed"]) / 1000.0
-        w.damage = stats.get(b.name, b.level, "Damage per Shot")
-        w.extra.update(shots=3, gap=0.5)
+        # game data v18.200.9: Mortar.AltBurstCount=3, AltBurstDelay=500 -> shells/gap.
+        w.extra.update(
+            shots=int(row["AltBurstCount"]), gap=int(row["AltBurstDelay"]) / 1000.0
+        )
+        cycle = w.interval + (w.extra["shots"] - 1) * w.extra["gap"]
+        # game data v18.200.9: Mortar L16.AltDPS=74 -> 111 damage/shell over 4.5 s.
+        # Wiki: Mortar, 123.13/shell implies a 5 s cycle; unresolved, needs video.
+        w.damage = int(row["AltDPS"]) * cycle / w.extra["shots"]
 
 
 def reveal_tesla(battle, b):
@@ -652,6 +693,9 @@ def act(battle, w: Weapon):
     # cooldowns carry their remainder so intervals that are not multiples of
     # the tick (X-Bow 0.128 s, Firespitter 0.064 s) keep their true rate
     w.cooldown = max(w.cooldown - dt * _slow(battle, b), -dt)
+    if w.kind == "inferno_single":
+        # Wiki: Inferno Tower, charge time follows the lock, not the packet count.
+        w.lock_time += dt
     for _ in range(12):
         before = w.cooldown
         _act_once(battle, w)
@@ -662,7 +706,6 @@ def act(battle, w: Weapon):
 def _act_once(battle, w: Weapon):
     b = w.owner
     t = battle.t
-    dt = battle.DT
     k = w.kind
     if k == "hook":
         if w.cooldown > 0:
@@ -722,19 +765,17 @@ def _act_once(battle, w: Weapon):
         w.target = tgt
         w.lock_time = 0.0
     if k == "inferno_single":
-        w.lock_time += dt
-        dps = 0.0
+        if w.cooldown > 0:
+            return
+        damage = 0.0
         for start, value in w.extra["ramp"]:
             if w.lock_time >= start:
-                dps = value
-        duration = dt * _slow(battle, b)
-        if w.ammunition is not None:
-            duration = min(duration, w.ammunition * w.interval - w.ammo_time)
-        battle.hit_unit(tgt, dps * duration * rage)
-        w.ammo_time += duration
+                damage = value
+        # game data v18.200.9: Inferno Tower.AttackSpeed=128 -> one full hit per packet.
+        battle.hit_unit(tgt, damage * rage)
+        w.cooldown += w.interval
         # Wiki: Inferno Tower, one round per 0.128 seconds at every charge stage.
-        while w.ammo_time + 1e-9 >= w.interval:
-            w.ammo_time -= w.interval
+        if w.ammunition is not None:
             w.ammunition -= 1
         return
     if w.cooldown > 0:
@@ -823,8 +864,9 @@ def _act_once(battle, w: Weapon):
         ground = (not tgt.flying) if w.extra.get("same_type") else w.targets in ("ground", "both")
         if b.key == "wt":
             if b.level <= 4:
-                # game data v18.200.9: wizardTower_projectile.Speed=500 -> 5 tiles/s.
-                flight = dist(b.x, b.y, tgt.x, tgt.y) / 5.0
+                # game data v18.200.9: ps_chr_WizardAttack_TowerProjectile.Speed=500,
+                # StartOffset=70 -> 5 tiles/s from 0.7 tiles forward.
+                flight = max(0.0, dist(b.x, b.y, tgt.x, tgt.y) - 0.7) / 5.0
             else:
                 # game data v18.200.9: ps_chr_WizardAttack_TowerProjectile_lvl2/3/4:
                 # Speed=900, StartOffset=70 -> 9 tiles/s from 0.7 tiles;
@@ -964,9 +1006,15 @@ def _multi(battle, w: Weapon, rage):
         keep.sort(key=lambda a: (dist(a.x, a.y, b.x, b.y), a.spawned_at, a.id))
         # Wiki: Multi-Archer Tower and Hot Candle, concentrate unused shots.
         arrows = [keep[i % len(keep)] for i in range(n)]
-        if w.kind == "multi_archer" and len(keep) == 2:
-            # Wiki: Multi-Archer Tower, the spare archer alternates between two
-            # nearby targets. Proximity cutoff is unstated; alternate this pair.
+        # Wiki: Multi-Archer Tower, distant pairs give the nearer unit two
+        # archers (equal-distance ties use deployment order via the sort above).
+        # Close pairs alternate: use <=1 tile between centers as an adjacent-tile
+        # approximation; the wiki states no numeric proximity cutoff.
+        if (
+            w.kind == "multi_archer"
+            and len(keep) == 2
+            and dist(keep[0].x, keep[0].y, keep[1].x, keep[1].y) <= 1.0
+        ):
             previous = w.extra.get("spare_target")
             spare = keep[1] if previous is keep[0] else keep[0]
             arrows[-1] = spare
@@ -1026,7 +1074,13 @@ def _scatter(battle, w, tgt, dmg, rage):
     smax, smin = w.extra["splash_max"] * rage, w.extra["splash_min"] * rage
     inner_min = w.extra.get("inner_min", w.extra["splash_max"]) * rage
     for a in battle.attackers_near(tgt.x, tgt.y, 5.0):
-        if a is tgt or a.flying != tgt.flying or not a.alive or a.underground:
+        # game data v18.200.9: Totem.TargetableByGroundAndAir=TRUE -> air splash too.
+        if (
+            a is tgt
+            or (a.name != "Totem" and a.flying != tgt.flying)
+            or not a.alive
+            or a.underground
+        ):
             continue
         dx, dy = a.x - tgt.x, a.y - tgt.y
         d = math.hypot(dx, dy)
