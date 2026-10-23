@@ -984,6 +984,10 @@ class Battle:
                     self, pending.extra["trap_skeleton"], pending.x, pending.y
                 )
                 continue
+            # game data v18.200.9: CommandTower Barrel3.FixedTravelTime=2200 -> delayed healing and cargo.
+            if "launcher_barrel" in pending.extra:
+                units.barrel_impact(self, pending)
+                continue
             if pending.extra.get("summon"):
                 name, level, group, owner = pending.extra["summon"]
                 self.spawn(
@@ -1003,6 +1007,26 @@ class Battle:
                 if "quake" in pending.extra:
                     # game data v18.200.9: Earthquake.TimeBetweenHitsMS=400.
                     spells.quake_hit(self, pending.extra["quake"])
+                    continue
+                if "sweeper" in pending.extra:
+                    # Wiki: Air Sweeper, blasts push flying units within their arc.
+                    # Recheck the current position against the launch aim and range.
+                    target = pending.target
+                    if not target.alive or not target.flying:
+                        continue
+                    if dist(target.x, target.y, pending.x, pending.y) > pending.radius:
+                        continue
+                    ang = math.atan2(target.y - pending.y, target.x - pending.x)
+                    if abs(
+                        (ang - pending.extra["aim"] + math.pi) % (2 * math.pi) - math.pi
+                    ) > math.radians(5):
+                        continue
+                    # Wiki: Air Sweeper, push is normal to the curved blast.
+                    push = pending.extra["push"]
+                    self._nudge(target, math.cos(ang) * push, math.sin(ang) * push)
+                    target.extra["pushed_at"] = t
+                    # Wiki: Air Sweeper, knockback resets Inferno Dragon's charge.
+                    units.reset_beam(target)
                     continue
                 if "hero_impact" in pending.extra:
                     heroes.projectile_impact(self, pending)
@@ -1072,7 +1096,7 @@ class Battle:
                                 )
                                 unit.target = unit.wall_target = None
                 if pending.src == "mortar":
-                    # Wiki: Barbarian/Home Village states two tiles of knockback.
+                    # game data v18.200.9: Mortar.Pushback=100 -> 1 tile of knockback.
                     # Travel duration and exact direction convention are unstated.
                     for unit in self.attackers_near(x, y, pending.radius):
                         if (
@@ -1088,9 +1112,7 @@ class Battle:
                             dx, dy = unit.x - origin_x, unit.y - origin_y
                             distance = math.hypot(dx, dy)
                             if distance:
-                                self._nudge(
-                                    unit, 2.0 * dx / distance, 2.0 * dy / distance
-                                )
+                                self._nudge(unit, dx / distance, dy / distance)
                             unit.target = unit.wall_target = None
                 if pending.extra.get("buildings"):
                     self.splash_buildings(
@@ -1273,8 +1295,11 @@ class Battle:
                     u.extra["finish_preferred"] = target
             u.extra["preferred_remaining"] = bool(preferred)
             finishing = target is not None and target is u.extra.get("finish_preferred")
+            # game data v18.200.9: Giant Giant.ForceRetaliation=TRUE -> may leave defenses to retaliate.
             retaliation = (
-                u.name == "Royal Champion" or u.pet is not None and u.pet.attached(t)
+                u.name in ("Royal Champion", "Giant Giant")
+                or u.pet is not None
+                and u.pet.attached(t)
             )  # Wiki: Royal Champion and Angry Jelly permit retaliation.
             engages = retaliation or not preferred and not finishing
             if preferred and isinstance(target, Unit) and not retaliation:

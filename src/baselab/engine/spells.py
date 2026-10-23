@@ -735,6 +735,15 @@ def _apply(battle, f: Field) -> bool:
                     kind="summon",
                     group=source.group,
                 )
+                # Wiki: Clone Spell, copies match the original and start at full health.
+                # Preserve its calibrated strength as Battle.deploy does.
+                strength = source.extra.get("strength", 1.0)
+                if strength != 1.0:
+                    child.hp *= strength
+                    child.max_hp *= strength
+                    child.base_max_hp *= strength
+                    child.dmg *= strength
+                    child.extra["strength"] = strength
                 child.extra["clone_casts"] = source.extra.get("clone_casts", set()) | {
                     _source(battle, f)
                 }

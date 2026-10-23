@@ -176,7 +176,16 @@ SPECS: dict[str, UnitSpec] = {
         S("Super Hog Rider", prefer="defense", walls="ignore", special=("hog_split",)),
         S("Super Yeti", special=("electromites",)),
         # ---------------- Siege machines
-        S("Wall Wrecker", prefer="th", vs_walls=10.0, engages_units=False, special=("siege_cc",)),
+        # game data v18.200.9: Wall Wrecker.DamageRadius=150 -> splash walls and buildings within 1.5 tiles.
+        S(
+            "Wall Wrecker",
+            prefer="th",
+            attack="splash",
+            splash=1.5,
+            vs_walls=10.0,
+            engages_units=False,
+            special=("siege_cc",),
+        ),
         # Death blast when it breaks at the Town Hall or is shot down: game data
         # v18.200.9: Battle Blimp.DieDamageRadius=300 -> 3 tiles,
         # DieDamageDelay=700 -> 0.7 s, DieDamage=700 (L1, the wiki's "Damage
@@ -242,9 +251,8 @@ SPECS: dict[str, UnitSpec] = {
         ),
         S("Big Boy"),
         S("Ruin Knight", vs_walls=3.0),  # Wiki: Ruin Witch/Ruin Knight.
-        S(
-            "Firemite", walls="ignore", attack="splash", splash=0.8
-        ),  # Wiki: Furnace/Firemite.
+        # game data v18.200.9: Firemite Spawn.DamageRadius=10 -> 0.1-tile direct impact; burn radius is separate.
+        S("Firemite", walls="ignore", attack="splash", splash=0.1),
         S("Bear", prefer="defense"),
         # ---------------- TH18 Guardians (defend from the Town Hall)
         # game data v18.200.9: Longshot.DieDamageDelay=200 -> death damage 0.2 s after death.
@@ -270,12 +278,13 @@ SPECS: dict[str, UnitSpec] = {
         S("Lavaloon", prefer="defense", walls="fly", attack="splash", splash=1.8, engages_units=False),
         S("Booger"),
         # game data v18.200.9: Giant Giant.DamageRadius=150 -> 1.5 tiles.
+        # game data v18.200.9: Giant Giant.ForceRetaliation=TRUE -> engage attacking defenders even while defenses remain.
         S(
             "Giant Giant",
             prefer="defense",
             attack="splash",
             splash=1.5,
-            engages_units=False,
+            engages_units=True,
             vs_walls=2.0,
         ),
         # ---------------- Heroes (equipment handled in heroes.py)
@@ -395,6 +404,8 @@ def game_unit_data(name, level=1):
         "Lavaloon Pup": "GW Equipment Lavaloon Pup",
         "Spell Skeleton": "Spell Shielded Skeleton",
         "L.A.S.S.I": "LASSI",
+        # game data v18.200.9: Crow.Projectile=CrowProjectile -> Greedy Raven's ranged attack.
+        "Greedy Raven": "Crow",
     }
     name = aliases.get(name, name)
     for table in ("characters", "heroes", "pets"):

@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 from . import effects, stats
 from .entities import Building, Pending, Unit, dist
+from .specs import game_data
 
 
 class Weapon:
@@ -514,7 +515,9 @@ def _gear_up(battle, b):
         w.damage = stats.get(b.name, b.level, "Damage per Hit**")
         w.extra.update(shots=4, gap=0.192)
     else:
-        w.kind, w.interval = "mortar_burst", 4.0
+        # game data v18.200.9: Mortar.AltAttackSpeed=3500 -> 3.5 s after the burst.
+        row = game_data("buildings", b.name, b.level)
+        w.kind, w.interval = "mortar_burst", int(row["AltAttackSpeed"]) / 1000.0
         w.damage = stats.get(b.name, b.level, "Damage per Shot")
         w.extra.update(shots=3, gap=0.5)
 
@@ -571,7 +574,8 @@ def on_destroyed(battle, b: Building):
                         "dps": g["poison_dps"],
                         "time": g["poison_time"],
                         "slow": g["slow"],
-                        "radius": g["death_radius"],
+                        # game data v18.200.9: TH15 Poison.Radius=400 -> 4 tiles.
+                        "radius": 4.0,
                     }
                 },
             )
@@ -740,7 +744,9 @@ def _act_once(battle, w: Weapon):
             w.burst_left = w.extra["shots"]
         if b.key == "mgt":
             # game data v18.200.9: merged_cat_cannon_projectile_lvl1.Speed=1200 -> 12 tiles/s.
-            _projectile(battle, w, tgt, w.damage * rage, 12.0)
+            # game data v18.200.9: merged_cat_cannon_projectile_lvl1.StartOffset=135 -> 1.35 tiles.
+            offset = int(_projectile_data(b, alternate=True)["StartOffset"]) / 100.0
+            _projectile(battle, w, tgt, w.damage * rage, 12.0, offset=offset)
         elif b.key == "cannon":
             # game data v18.200.9: Cannonball16.Speed=1200, StartOffset=76
             # -> 12 tiles/s from 0.76 tiles; DontTrackTarget=FALSE -> tracking.
@@ -768,17 +774,33 @@ def _act_once(battle, w: Weapon):
     if k == "single":
         if b.key == "cannon":
             # game data v18.200.9: Cannonball.Speed=1200 -> 12 tiles/s.
-            _projectile(battle, w, tgt, dmg, 12.0)
+            # game data v18.200.9: Cannonball/Cannonball16.StartOffset=50/76 -> 0.5/0.76 tiles.
+            offset = int(_projectile_data(b)["StartOffset"]) / 100.0
+            _projectile(battle, w, tgt, dmg, 12.0, offset=offset)
         elif b.key == "at":
             # game data v18.200.9: Tower Arrow.Speed=1800 -> 18 tiles/s.
-            _projectile(battle, w, tgt, dmg, 18.0)
+            # game data v18.200.9: Tower Arrow Fire3/LOW.StartOffset=50 -> 0.5 tiles in both modes.
+            alternate = b.mode not in (None, "normal")
+            offset = (
+                int(_projectile_data(b, alternate=alternate)["StartOffset"]) / 100.0
+            )
+            _projectile(battle, w, tgt, dmg, 18.0, offset=offset)
         elif b.key == "ad":
             # game data v18.200.9: Firework.Speed=800 -> 8 tiles/s.
-            _projectile(battle, w, tgt, dmg, 8.0)
+            # game data v18.200.9: Firework9.StartOffset=20 -> 0.2 tiles.
+            offset = int(_projectile_data(b)["StartOffset"]) / 100.0
+            _projectile(battle, w, tgt, dmg, 8.0, offset=offset)
+        elif b.key == "bh":
+            # game data v18.200.9: Nail Ammo 2.Speed=1800, StartOffset=100 -> 18 tiles/s from 1 tile.
+            projectile = _projectile_data(b)
+            speed = int(projectile["Speed"]) / 100.0
+            offset = int(projectile["StartOffset"]) / 100.0
+            _projectile(battle, w, tgt, dmg, speed, offset=offset)
         elif b.key == "mgt":
             # game data v18.200.9: merged_cat_archer_projectile_lvl2.Speed=800,
             # StartOffset=150 -> 8 tiles/s from 1.5 tiles; DontTrackTarget=FALSE.
-            _projectile(battle, w, tgt, dmg, 8.0, offset=1.5)
+            offset = int(_projectile_data(b)["StartOffset"]) / 100.0
+            _projectile(battle, w, tgt, dmg, 8.0, offset=offset)
         else:
             battle.hit_unit(tgt, dmg)
     elif k == "monolith":
@@ -822,9 +844,12 @@ def _act_once(battle, w: Weapon):
             )
         elif b.key == "bt":
             # game data v18.200.9: Bomb Tower Ammo1.Speed=800 -> 8 tiles/s.
+            # game data v18.200.9: Bomb Tower Ammo1/3.StartOffset=10 -> 0.1 tiles.
+            offset = int(_projectile_data(b)["StartOffset"]) / 100.0
+            flight = max(0.0, dist(b.x, b.y, tgt.x, tgt.y) - offset) / 8.0
             battle.add_pending(
                 Pending(
-                    t + dist(b.x, b.y, tgt.x, tgt.y) / 8.0,
+                    t + flight,
                     tgt.x,
                     tgt.y,
                     w.extra["splash"],
@@ -842,6 +867,26 @@ def _act_once(battle, w: Weapon):
         _scatter(battle, w, tgt, dmg, rage)
     elif k == "hunter":
         _hunter_hit(battle, w, tgt, rage)
+
+
+def _projectile_data(b, *, alternate=False):
+    # game data v18.200.9: buildings.Projectile/AltProjectile -> projectiles.csv row.
+    names = {
+        "bh": "Builders Hut",
+        "mat": "Multi Archer Tower",
+        "mgt": "Multi Gear Tower",
+    }
+    level = b.level
+    if not isinstance(level, int):
+        # Supercharges retain the final base level's projectile.
+        level = max(
+            row["level"]
+            for row in stats.record(b.name)["levels"]
+            if isinstance(row["level"], int)
+        )
+    row = game_data("buildings", names.get(b.key, b.name), level)
+    projectile = row["AltProjectile" if alternate else "Projectile"]
+    return game_data("projectiles", projectile)
 
 
 def _projectile(battle, w, target, damage, speed, *, offset=0.0):
@@ -929,7 +974,9 @@ def _multi(battle, w: Weapon, rage):
         for a in arrows:
             if w.kind == "multi_archer":
                 # game data v18.200.9: super_archer_tower_projectile.Speed=1800 -> 18 tiles/s.
-                _projectile(battle, w, a, w.damage * rage, 18.0)
+                # game data v18.200.9: super_archer_tower_projectile.StartOffset=50 -> 0.5 tiles.
+                offset = int(_projectile_data(b)["StartOffset"]) / 100.0
+                _projectile(battle, w, a, w.damage * rage, 18.0, offset=offset)
             else:
                 battle.hit_unit(a, w.damage * rage)
         w.cooldown += w.interval
@@ -1087,17 +1134,32 @@ def _sweeper(battle, w: Weapon):
         return
     _, aim, _ = min(cands, key=lambda c: c[0])  # ties must not compare units
     push = w.extra["push"]
-    for a in battle.attackers_near(b.x, b.y, w.range):
+    # Enqueue by distance, then unit ID, so equal-time arrivals keep a stable order.
+    for a in sorted(
+        battle.attackers_near(b.x, b.y, w.range),
+        key=lambda unit: (dist(unit.x, unit.y, b.x, b.y), unit.id),
+    ):
         if not a.flying or a.name == "Totem":
             continue
         ang = math.atan2(a.y - b.y, a.x - b.x)
         if abs((ang - aim + math.pi) % (2 * math.pi) - math.pi) <= math.radians(5):
-            battle._nudge(a, math.cos(ang) * push, math.sin(ang) * push)
-            a.extra["pushed_at"] = battle.t
-            # Wiki: Air Sweeper, knockback resets Inferno Dragon's charge.
-            from . import units
-
-            units.reset_beam(a)
+            # game data v18.200.9: Air Blaster Ammo1.Speed=600, StartOffset=125 -> 6 tiles/s from 1.25 tiles.
+            flight = max(0.0, dist(a.x, a.y, b.x, b.y) - 1.25) / 6.0
+            battle.add_pending(
+                Pending(
+                    battle.t + flight,
+                    b.x,
+                    b.y,
+                    w.range,
+                    0.0,
+                    True,
+                    False,
+                    b.key,
+                    extra={"sweeper": True, "aim": aim, "push": push},
+                    actor=b,
+                    target=a,
+                )
+            )
     w.cooldown += w.interval
 
 

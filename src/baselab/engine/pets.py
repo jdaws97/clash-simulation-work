@@ -335,6 +335,7 @@ def act(battle, pet):
         pet.extra["yak_second"] = True
     if pet.cooldown > 0 and not math.isclose(t + pet.cooldown, t):
         return
+    pending_start = len(battle.pending)
     with effects.damage_source(battle, pet, "attack"):
         units.strike(battle, pet, target)
     interval = pet.interval
@@ -346,27 +347,15 @@ def act(battle, pet):
     else:
         pet.cooldown += delay
     if pet.name == "Poison Lizard" and isinstance(target, Unit):
-        from . import spells
-
-        movement = stats.get(pet.name, pet.level, "Poison Speed Decrease") / 100.0
-        attack = stats.get(pet.name, pet.level, "Poison Attack Rate Decrease") / 100.0
-        # game data v18.200.9: Poison Lizard.SpecialAbilitiesLevel=1/2/3/4 at L1/5/10/15 -> LizardPetPoison.
-        # game data v18.200.9: PoisonLizardAttack.PoisonDPS=80/100/120/140, PoisonIncreaseSlowly=FALSE -> no ramp.
-        spells._poison(
-            battle,
-            target,
-            stats.get(pet.name, pet.level, "Poison Max Damage per Second"),
-            movement,
-            attack,
-            1.0,
-            ramp=False,
-            origin="lizard",
-            source=pet.id,
-        )
-        # game data v18.200.9: LizardPetPoison.PoisonOnHitDuration=3000 -> 3 s.
-        poison = battle._poison.get((target.id, "lizard", pet.id))
-        if poison is not None:
-            poison["until"] = t + 3.0
+        # game data v18.200.9: LizardPetPoison.PoisonOnHitSpell=PoisonLizardAttack
+        # -> resolve poison with the projectile, preserving its travel time and target.
+        for pending in battle.pending[pending_start:]:
+            if (
+                pending.actor is pet
+                and pending.target is target
+                and pending.extra.get("troop_impact") == "single"
+            ):
+                pending.extra["hero_impact"] = "lizard"
     if pet.name == "Electro Owl":
         # Two targets, with 80% damage on the second (wiki: Electro Owl).
         candidates = [
@@ -401,6 +390,30 @@ def act(battle, pet):
                     target=second,
                 )
             )
+
+
+def poison_hit(battle, pet, target):
+    from . import spells
+
+    movement = stats.get(pet.name, pet.level, "Poison Speed Decrease") / 100.0
+    attack = stats.get(pet.name, pet.level, "Poison Attack Rate Decrease") / 100.0
+    # game data v18.200.9: Poison Lizard.SpecialAbilitiesLevel=1/2/3/4 at L1/5/10/15 -> LizardPetPoison.
+    # game data v18.200.9: PoisonLizardAttack.PoisonDPS=80/100/120/140, PoisonIncreaseSlowly=FALSE -> no ramp.
+    spells._poison(
+        battle,
+        target,
+        stats.get(pet.name, pet.level, "Poison Max Damage per Second"),
+        movement,
+        attack,
+        1.0,
+        ramp=False,
+        origin="lizard",
+        source=pet.id,
+    )
+    # game data v18.200.9: LizardPetPoison.PoisonOnHitDuration=3000 -> 3 s.
+    poison = battle._poison.get((target.id, "lizard", pet.id))
+    if poison is not None:
+        poison["until"] = battle.t + 3.0
 
 
 def _owl_link(first, second):

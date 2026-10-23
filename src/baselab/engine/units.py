@@ -312,7 +312,8 @@ def on_spawn(battle, u: Unit):
     if "troop_launcher" in sp.special:
         u.extra["barrels"] = int(stats.get(u.name, u.level, "Barrel Count", default=7))
         u.extra["next"] = t + 2.0
-        # Wiki: Troop Launcher states lifetime, but no HP-decay curve.
+        # game data v18.200.9: Troop Launcher.LoseHpPerTick=25, LoseHpInterval=1000 -> 25 HP each second.
+        u.extra["hp_loss_at"] = t + 1.0
         u.extra["expires_at"] = t + stats.get(u.name, u.level, "Lifetime")
 
 
@@ -334,6 +335,14 @@ def pre_tick(battle, u: Unit) -> bool:
         u.alive = False
         u.hp = 0.0
         return True
+    if "troop_launcher" in sp.special:
+        # game data v18.200.9: Troop Launcher.LoseHpPerTick=25, LoseHpInterval=1000 -> discrete HP loss.
+        while t >= u.extra["hp_loss_at"] or math.isclose(t, u.extra["hp_loss_at"]):
+            u.hp -= 25.0
+            u.extra["hp_loss_at"] += 1.0
+            if u.hp <= 0:
+                battle.kill(u)
+                return True
     if t >= u.extra.get("expires_at", math.inf):
         battle.kill(u)
         return True
@@ -543,7 +552,8 @@ def pre_tick(battle, u: Unit) -> bool:
 
     if "blimp_bombs" in special and u.can_act(t) and t >= u.extra.get("next_bomb", 0.0):
         dmg = stats.get(u.name, u.level, "Damage per Attack", default=450.0)
-        battle.splash_buildings(u.x, u.y, 1.5, dmg, walls=False)
+        # game data v18.200.9: Battle Blimp.DamageRadius=300, GroundTargets=TRUE -> 3 tiles, including walls and ground troops.
+        _area_hit(battle, u, u.x, u.y, 3.0, dmg, walls=True)
         u.extra["next_bomb"] = t + 1.5
     return False
 
@@ -572,7 +582,15 @@ def update_burrow(battle, u, target):
         for wall in battle.walls.values():
             if wall.alive and math.isclose(wall.edge_distance(u.x, u.y), 0.0):
                 battle.hit_building(wall, wall.hp)
-        # Emergence stun radius and duration are not stated by its wiki page.
+        # game data v18.200.9: DrillerSurfacing.Radius=150, StunTimeMS=2000 -> stun defenses within 1.5 tiles for 2 s.
+        # Wiki: Battle Drill, surfacing stuns all defenses in the area.
+        for building in battle.buildings:
+            if (
+                building.alive
+                and battle.is_defense_target(building)
+                and building.edge_distance(u.x, u.y) <= 1.5
+            ):
+                building.stun_until = max(building.stun_until, battle.t + 2.0)
 
 
 def _transform_bear(battle, u):
@@ -1126,8 +1144,7 @@ def try_merge_meteor(battle, u):
             or not other.alive
             or other.name != "Meteormite"
             or other.extra.get("clone")
-            or other.level != u.level
-            or other.extra.get("meteor_components") != u.extra.get("meteor_components")
+            # Wiki: Meteor Golem, different-level Meteormites can recombine.
             or not other.can_act(battle.t)
             or other.extra.get("leaping")
             or dist(u.x, u.y, other.x, other.y) > radius
@@ -1150,6 +1167,8 @@ def try_merge_meteor(battle, u):
             battle.move_towards(u, other, position=(other.x, other.y))
             if (u.x, u.y) != (other.x, other.y):
                 return True
+        # Wiki: Meteor Golem, a mixed pair can produce a lower or higher level.
+        # No averaging rule is stated; retain the initiating mite's level.
         parent = battle.spawn(
             "Meteor Golem", "atk", u.x, u.y, level=u.level, group=u.group
         )
@@ -1173,18 +1192,26 @@ def launcher_target(battle, u):
         for ally in battle.attackers
         if ally is not u
         and ally.alive
+        and battle.t >= ally.active_at
         and not ally.extra.get("suspended")
         and ally.name not in excluded
         and ally.kind not in ("siege", "siege_idle")
-        and (ally.is_hero or ally.housing >= 2)
     ]
-    # Wiki: Troop Launcher requires two housing. Grouping radius is not stated;
-    # only independently qualifying recipients are resolved here.
-    return max(
-        candidates,
-        key=lambda ally: (25 if ally.is_hero else ally.housing, -ally.id),
-        default=None,
-    )
+    # Wiki: Troop Launcher, highest total housing; two nearby 1-housing troops qualify.
+    # Define each group as eligible attackers within the infobox's 1-tile radius
+    # of its recipient. Recalculate per barrel; ties keep the lowest entity ID.
+    best, best_weight = None, 0
+    for ally in candidates:
+        weight = sum(
+            25 if member.is_hero else member.housing
+            for member in candidates
+            if dist(ally.x, ally.y, member.x, member.y) <= 1.0
+        )
+        if weight >= 2 and (
+            weight > best_weight or weight == best_weight and ally.id < best.id
+        ):
+            best, best_weight = ally, weight
+    return best
 
 
 def launch_barrel(battle, u, target):
@@ -1214,46 +1241,97 @@ def launch_barrel(battle, u, target):
                 )
         battle.hit_building(target, stats.get(u.name, u.level, "Damage per Hit*"))
     else:
-        # Wiki: Troop Launcher, per-level barrel contents and six-point healing.
-        level = int(stats.get(u.name, u.level, "Troop Level"))
-        for name, column in (
-            ("Barbarian", "Barbarians"),
-            ("Archer", "Archers"),
-            ("Giant", "Giants"),
-            ("Wall Breaker", "Wall Breakers"),
+        projectile = _projectile_data(u)
+        spell = game_data(
+            "spells", projectile["HitSpell"], int(projectile["HitSpellLevel"])
+        )
+        # game data v18.200.9: CommandTower Barrel3.FixedTravelTime=2200 -> delivery after 2.2 s.
+        landing = battle.t + int(projectile["FixedTravelTime"]) / 1000.0
+        # game data v18.200.9: TroopCatapultSummonTroopNew.SummonTroop=Giant;Barbarian;Archer;Wall Breaker.
+        # Wiki: Troop Launcher, the Giant always spawns first.
+        names = spell["SummonTroop"].split(";")
+        counts = [int(value) for value in spell["UnitsToSpawn"].split(";")]
+        levels = [int(value) for value in spell["SpawnUpgradeLevel"].split(";")]
+        # game data v18.200.9: TroopCatapultSummonTroopNew.SpawnDuration=200;1000;1500;1200 ms.
+        durations = [
+            int(value) / 1000.0
+            for value in spell.get("SpawnDuration", "0;0;0;0").split(";")
+        ]
+        first_groups = [
+            int(value)
+            for value in spell.get("SpawnFirstGroupSize", "1;1;1;1").split(";")
+        ]
+        group_start = landing
+        for name, count, level, duration, first in zip(
+            names, counts, levels, durations, first_groups
         ):
-            count = int(stats.get(u.name, u.level, "Troops Spawned / " + column))
-            for _ in range(count):
-                battle.spawn(
-                    name,
-                    u.team,
-                    x,
-                    y,
-                    level=level,
-                    kind="summon",
-                    group=u.group,
-                    owner=u,
+            gap = duration / count if count else 0.0
+            for index in range(count):
+                battle.add_pending(
+                    Pending(
+                        group_start + max(0, index - first + 1) * gap,
+                        x,
+                        y,
+                        0.0,
+                        0.0,
+                        False,
+                        False,
+                        u.name,
+                        team=u.team,
+                        extra={"summon": (name, level, u.group, u)},
+                        actor=u,
+                    )
                 )
-        for ally in battle.attackers:
-            if (
-                ally.alive
-                and not ally.flying
-                and ally.name
-                not in ("Furnace", "Firemite", "Totem", "Spell Skeleton", "Bat")
-                and ally.kind not in ("siege", "siege_idle")
-                and dist(x, y, ally.x, ally.y) <= 1.0
-            ):
-                ally.heal(6.0)
+            group_start += duration
     cargo = onboard_cargo(battle)
-    if cargo:
-        # Wiki: Launcher and Wagon carry at most one CC troop per barrel.
-        spawn_cargo(battle, cargo.pop(0), x, y, u.group, siege=True)
-        if not cargo:
-            battle.plan._cc_released = True
-    # Flight, startup and final-barrel ordering are unstated; retain immediate landing.
+    # Wiki: Launcher and Wagon carry at most one CC troop per barrel.
+    entry = cargo.pop(0) if cargo else None
+    if u.name == "Sky Wagon":
+        if entry is not None:
+            spawn_cargo(battle, entry, x, y, u.group, siege=True)
+    else:
+        # game data v18.200.9: CommandTower Barrel3.HasBunkerTroops=TRUE -> cargo shares the delayed delivery.
+        battle.add_pending(
+            Pending(
+                landing,
+                x,
+                y,
+                1.0,
+                0.0,
+                False,
+                False,
+                u.name,
+                team=u.team,
+                extra={"launcher_barrel": entry},
+                actor=u,
+            )
+        )
+    if entry is not None and not cargo:
+        battle.plan._cc_released = True
     u.extra["next"] = battle.t + u.interval
     if u.extra["barrels"] == 0:
         battle.kill(u)
+
+
+def barrel_impact(battle, pending):
+    # Wiki: Troop Launcher, six healing per barrel hit, ground allies only.
+    for ally in battle.attackers:
+        if (
+            ally.alive
+            and battle.t >= ally.active_at
+            and not ally.extra.get("suspended")
+            and not ally.flying
+            and ally.name
+            not in ("Furnace", "Firemite", "Totem", "Spell Skeleton", "Bat")
+            and ally.kind not in ("siege", "siege_idle")
+            and dist(pending.x, pending.y, ally.x, ally.y) <= pending.radius
+        ):
+            ally.heal(6.0)
+    entry = pending.extra["launcher_barrel"]
+    if entry is not None:
+        spawn_cargo(
+            battle, entry, pending.x, pending.y, pending.actor.group, siege=True
+        )
 
 
 def tantrum(battle, u):
@@ -1290,6 +1368,8 @@ SPATIAL_TROOPS = {
     "Stone Slammer",
     "Phoenix",
     "Flame Flinger",
+    # game data v18.200.9: Wall Wrecker.DamageRadius=150 -> use the wall-inclusive area path.
+    "Wall Wrecker",
     "Giant Giant",
     "Super Archer",
     "Super Wizard",
@@ -1467,16 +1547,21 @@ def _split_hog(battle, u):
     # Facing before any movement/targeting is not supplied by this engine.
     dx, dy = heading if heading is not None else (0.0, 0.0)
     # Wiki: Super Hog Rider/Super Rider; five tiles backward.
-    # Launch travel time/landing delay: NUMBER NOT STATED; place immediately.
-    battle.spawn(
-        "Super Rider",
-        u.team,
-        u.x - 5.0 * dx,
-        u.y - 5.0 * dy,
-        level=u.level,
-        kind="summon",
-        group=u.group,
-        owner=u,
+    # game data v18.200.9: JumpingRiderProjectile10.FixedTravelTime=1300 -> no active Rider before landing.
+    battle.add_pending(
+        Pending(
+            battle.t + 1.3,
+            u.x - 5.0 * dx,
+            u.y - 5.0 * dy,
+            0.0,
+            0.0,
+            False,
+            False,
+            u.name,
+            team=u.team,
+            extra={"summon": ("Super Rider", u.level, u.group, u)},
+            actor=u,
+        )
     )
 
 
@@ -1686,7 +1771,7 @@ def _spatial_strike(battle, u, target, damage):
                     _hit_target(battle, u, victim, amount)
     elif u.name in ("Yetimite", "Firemite"):
         u.extra["leaping"] = True
-        # Wiki: Yeti/Yetimite and Furnace/Firemite have one 0.8-radius impact.
+        # Wiki: Yeti/Yetimite, one impact; Firemite uses its separate direct-hit radius.
         # Preparation and leap timings are not stated; retain immediate impact.
         _area_hit(
             battle, u, target.x, target.y, sp.splash, damage, walls=True, primary=target
@@ -1810,24 +1895,30 @@ def _mult_vs(u, target, battle=None):
     return m
 
 
-def _projectile_data(u):
+def _projectile_data(u, *, noble_iron=False):
     # game data v18.200.9: characters/heroes/pets.Projectile -> projectiles.csv row.
     projectile = game_unit_data(u.name, u.level).get("Projectile")
+    if noble_iron:
+        # game data v18.200.9: MPTurboStart.Projectile=TurboStartProjectile -> empowered projectile.
+        # game data v18.200.9: TurboStartProjectile.Speed=2000 -> 20 tiles/s.
+        projectile = "TurboStartProjectile"
     if u.name == "Super Minion" and u.extra.get("long_shots", 0) > 0:
         # game data v18.200.9: SuperMinionSpecialProjectiles.Projectile=super_gargoyle_projectile_big.
         projectile = "super_gargoyle_projectile_big"
     return game_data("projectiles", projectile) if projectile else {}
 
 
-def projectile_speed(u):
+def projectile_speed(u, *, noble_iron=False):
     # game data v18.200.9: projectiles.Speed / 100 -> tiles/s at every troop level.
     # game data v18.200.9: ps_chr_WizardAttack_Projectile_lvl2.Speed=900 -> 9 tiles/s.
     # game data v18.200.9: ArcherQueen arrow lvl1.Speed=1650 -> 16.5 tiles/s.
-    speed = _projectile_data(u).get("Speed")
+    speed = _projectile_data(u, noble_iron=noble_iron).get("Speed")
     return int(speed) / 100.0 if speed and int(speed) > 0 else None
 
 
-def launch_projectile(battle, u, target, damage, speed, *, rocket=False):
+def launch_projectile(
+    battle, u, target, damage, speed, *, rocket=False, noble_iron=False
+):
     sp = u.spec
     length = dist(u.x, u.y, target.x, target.y)
     dx = (target.x - u.x) / (length or 1.0)
@@ -1839,7 +1930,7 @@ def launch_projectile(battle, u, target, damage, speed, *, rocket=False):
     projectile = (
         game_data("projectiles", "RocketSpearProjectile")
         if rocket
-        else _projectile_data(u)
+        else _projectile_data(u, noble_iron=noble_iron)
     )
     # game data v18.200.9: MeteoriteGolemProjectile.StartOffset=65 -> starts 0.65 tiles out.
     # Apply each projectile's offset, including Archer Queen's 65 and Archer's 50.
@@ -1883,12 +1974,12 @@ def launch_projectile(battle, u, target, damage, speed, *, rocket=False):
         # game data v18.200.9: MeteoriteGolemProjectile.Speed=800 -> 8 tiles/s.
         mode = "meteor"
     elif u.name == "Flame Flinger":
-        # Wiki: Flame Flinger fires three shots per burst; preserve that count.
+        # game data v18.200.9: Flame Flinger.BurstCount=3, BurstDelay=128 -> three separate impacts 0.128 s apart.
         # game data v18.200.9: FireCatapultProjectile1.Speed=500 -> 5 tiles/s.
-        for _ in range(3):
+        for index in range(3):
             battle.add_pending(
                 Pending(
-                    battle.t + flight,
+                    battle.t + flight + index * 0.128,
                     x,
                     y,
                     sp.splash,
@@ -2119,6 +2210,8 @@ def strike(battle, u: Unit, target):
     ordinary = dmg
     dmg *= rage
     rocket = u.kit is not None and u.kit.has("Rocket Spear") and u.kit.spear_shots > 0
+    # game data v18.200.9: MPTurboStart.Projectile=TurboStartProjectile -> capture before strike_bonus consumes the final shot.
+    noble_iron = u.kit is not None and u.kit.has("Noble Iron") and u.kit.spear_shots > 0
     if u.kit is not None:
         from . import heroes
 
@@ -2131,9 +2224,9 @@ def strike(battle, u: Unit, target):
         # game data v18.200.9: RocketSpearProjectile.Speed=1200 -> 12 tiles/s.
         launch_projectile(battle, u, target, dmg, 12.0, rocket=True)
         return
-    speed = projectile_speed(u)
+    speed = projectile_speed(u, noble_iron=noble_iron)
     if speed is not None:
-        launch_projectile(battle, u, target, dmg, speed)
+        launch_projectile(battle, u, target, dmg, speed, noble_iron=noble_iron)
     if "long_shot" in sp.special and u.extra.get("long_shots", 0) > 0:
         u.extra["long_shots"] -= 1
     if speed is not None:
@@ -2242,16 +2335,35 @@ def _after_unit_hit(battle, u, target, dmg, *, splash=True):
     if "hh_poison" in sp.special and not (
         target.kind == "guardian" and target.extra.get("waiting")
     ):
-        # game data v18.200.9: HeadhunterPoison.PoisonOnHitDuration=3000 -> 3 s.
-        duration = 3.0 if u.level <= 3 else 2.0
-        slow = stats.get("Headhunter", u.level, "Speed Decrease", default=46.0) / 100.0
-        atk = stats.get("Headhunter", u.level, "Attack Rate Decrease", default=68.0) / 100.0
+        # game data v18.200.9: HeadhunterPoison.PoisonOnHitSpell=Poison, level 7 at Headhunter L3; duration 3000 ms.
+        row = game_unit_data(u.name, u.level)
+        ability = game_data(
+            "special_abilities", "HeadhunterPoison", int(row["SpecialAbilitiesLevel"])
+        )
+        poison = game_data(
+            "spells", ability["PoisonOnHitSpell"], int(ability["PoisonOnHitSpellLevel"])
+        )
+        duration = int(ability["PoisonOnHitDuration"]) / 1000.0
+        # game data v18.200.9: Poison L7.SpeedBoost=-44, AttackSpeedBoost=-65 -> poison slows.
+        slow = -float(poison["SpeedBoost"]) / 100.0
+        atk = -float(poison["AttackSpeedBoost"]) / 100.0
         from . import spells
 
-        _, slow, atk = spells.poison_factors(target, 0.0, slow, atk)
-        target.move_slow, target.move_slow_until = 1.0 - slow, t + duration
-        target.atk_slow, target.atk_slow_until = 1.0 - atk, t + duration
-        # Poison damage, accumulation and the residual tail remain unresolved.
+        # game data v18.200.9: Poison L7.PoisonDPS=280, PoisonIncreaseSlowly=TRUE -> use the shared poison ramp and stacking.
+        spells._poison(
+            battle,
+            target,
+            float(poison["PoisonDPS"]),
+            slow,
+            atk,
+            1.0,
+            ramp=poison.get("PoisonIncreaseSlowly") == "TRUE",
+            origin="headhunter",
+            source=u.id,
+        )
+        state = battle._poison.get((target.id, "headhunter", u.id))
+        if state is not None:
+            state["until"] = t + duration
     if (
         splash
         and u.name not in SPATIAL_TROOPS

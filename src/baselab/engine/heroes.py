@@ -11,7 +11,7 @@ import math
 
 from ..loadouts import HeroLoadout
 from . import effects, spells, stats, units
-from .entities import Building, Pending, Unit, Wall, dist
+from .entities import Building, Field, Pending, Unit, Wall, dist
 from .specs import game_data
 
 HEROES = {"Barbarian King", "Archer Queen", "Grand Warden", "Royal Champion", "Minion Prince", "Dragon Duke"}
@@ -146,7 +146,20 @@ def equip(battle, u: Unit, plan):
         u.hp += hp
         passive_dps += dps
         passive_speed += aspd / 100.0
-        k.regen += _col(e, lvl, "self healing per second")
+        if e == "Fire Heart":
+            # Wiki: Fire Heart table, equipment L1/L3 -> ability L1/L2 (50/70).
+            # game data v18.200.9: DragonCrownRegeneration L7.Regeneration=175,
+            # RegenerationTimeBetweenHitsMS=1000 -> 175 HP/s at equipment L18.
+            ability = game_data(
+                "special_abilities", "DragonCrownRegeneration", lvl // 3 + 1
+            )
+            k.regen += (
+                float(ability["Regeneration"])
+                * 1000.0
+                / float(ability["RegenerationTimeBetweenHitsMS"])
+            )
+        else:
+            k.regen += _col(e, lvl, "self healing per second")
         k.hp_recovery += _col(e, lvl, "hp recovery increase", "health recovery increase")
         if e in ("Royal Gem", "Stun Blaster"):
             k.hp_recovery += _col(e, lvl, "health recovery")
@@ -200,6 +213,12 @@ def equip(battle, u: Unit, plan):
             "Meteor Staff", k.lv("Meteor Staff"), "cooldown time"
         )
     u.kit = k
+    if any(
+        k.has(name) for name in ("Action Figure", "Magic Mirror", "Henchmen Puppet")
+    ):
+        # game data v18.200.9: equipment SpawnPattern uses the Hero's facing.
+        u.extra["summon_position"] = (u.x, u.y)
+        u.extra["summon_facing"] = u.extra["facing"]
 
 
 PET_FOLLOW = 3.0
@@ -296,6 +315,8 @@ def tick(battle, u: Unit):
     k: Kit = u.kit
     t = battle.t
     dt = battle.DT
+    if "summon_position" in u.extra:
+        _summon_facing(u, None)
     if k.doomed_at is not None:
         if t >= k.doomed_at:
             k.doomed_at = None
@@ -547,7 +568,12 @@ def activate(battle, u: Unit):
     for e in sorted(k.equip, key=lambda name: ordering.get(name, 2)):
         lv = k.lv(e)
         if e == "Giant Arrow":
-            dmg = _col(e, lv, "projectile damage")
+            # Wiki: Giant Arrow table, equipment L1/L3 -> ability L1/L2 (750/850).
+            # game data v18.200.9: ArcherQueenPierceProjectile L7.Damage=2000 -> equipment L18.
+            ability = game_data(
+                "special_abilities", "ArcherQueenPierceProjectile", lv // 3 + 1
+            )
+            dmg = float(ability["Damage"])
             # One-tile radius and double Air Defense damage (wiki: Giant Arrow).
             _line(
                 battle,
@@ -588,40 +614,43 @@ def activate(battle, u: Unit):
                 )
 
         elif e == "Earthquake Boots":
-            # Damage percentages and eight-tile radius (wiki: Earthquake Boots).
-            # All five hits apply at once, as for the Earthquake Spell. The
-            # spell row spaces them 0.4 s apart after ChargingTimeMS=300 and
-            # HitTimeMS=400, but how those two combine into a first-hit time
-            # is not stated, so the timing is left instant.
-            # game data v18.200.9: Earthquake Boots Spell.TimeBetweenHitsMS=400 -> 0.4 s between hits.
-            pct = _col(e, lv, "building damage %") / 100.0
-            for b in battle.buildings:
-                if b.alive and b.counted and b.edge_distance(u.x, u.y) <= 8.0:
-                    battle.hit_building(b, b.max_hp * pct / (2 * b.eq_hits + 1))
-                    b.eq_hits += 1
+            # Wiki: Earthquake Boots table, equipment L1/L3 -> spell L1/L2 (10%/20% total).
+            # game data v18.200.9: Earthquake Boots Spell.NumberOfHits=5,
+            # TimeBetweenHitsMS=400 -> five impacts, matching Earthquake Spell timing.
+            spell = game_data("spells", "Earthquake Boots Spell", lv // 3 + 1)
+            count = int(spell["NumberOfHits"])
+            gap = int(spell["TimeBetweenHitsMS"]) / 1000.0
+            # game data v18.200.9: Earthquake Boots Spell L7.BuildingDamagePermil=80,
+            # TroopDamagePermil=20 -> 8% building / 2% troop max HP per hit.
+            field = Field(
+                "boots_quake",
+                u.x,
+                u.y,
+                8.0,
+                t + (count - 1) * gap,
+                value=float(spell["BuildingDamagePermil"]) / 1000.0,
+                extra={"troop": float(spell["TroopDamagePermil"]) / 1000.0},
+                started=t,
+            )
+            for index in range(count):
+                battle.add_pending(
+                    Pending(
+                        round(t + index * gap, 6),
+                        u.x,
+                        u.y,
+                        field.radius,
+                        0.0,
+                        False,
+                        True,
+                        u.name,
+                        team="def",
+                        extra={"hero_impact": "boots_quake", "field": field},
+                        actor=u,
+                    )
+                )
             for key, w in list(battle.walls.items()):
                 if w.alive and dist(w.x, w.y, u.x, u.y) <= 8.0:
                     battle.hit_building(w, 1e9)  # boots destroy walls instantly (wiki)
-            # The wiki's troop column is half the building column, but the
-            # game data agrees with it only at level 1. Five hits per quake:
-            # game data v18.200.9: Earthquake Boots Spell.NumberOfHits=5 -> five hits.
-            # Per-hit troop permil by spell level, keyed by the per-hit building
-            # permil (the building column matches the wiki at every level):
-            # game data v18.200.9: Earthquake Boots Spell.BuildingDamagePermil=80 -> 8% per hit at level 7.
-            # game data v18.200.9: Earthquake Boots Spell.TroopDamagePermil=20 -> 2% per hit at level 7.
-            troop_permil = {20: 10, 40: 12, 60: 14, 68: 14, 72: 16, 76: 18, 80: 20}.get(round(pct * 200))
-            troop_pct = (
-                troop_permil * 5 / 1000.0
-                if troop_permil is not None
-                else _col(e, lv, "troop damage %") / 100.0
-            )
-            for f in battle.defenders_near(u.x, u.y, 8.0):
-                if f.flying:
-                    continue
-                if f.kind == "trap_skeleton":
-                    # Immunity versus nonlethal damage is unresolved (wiki: Earthquake Boots).
-                    continue
-                spells.quake_unit(battle, f, troop_pct)
         elif e == "Giant Gauntlet":
             k.reduction = _col(e, lv, "incoming damage reduction") / 100.0
             # Duration and ground splash radius (wiki: Giant Gauntlet).
@@ -647,12 +676,15 @@ def activate(battle, u: Unit):
             u.extra["vial_until"] = t + dur
             u.extra["vial_bonus"] = _col(e, lv, "damage per shot increase")
         elif e == "Magic Mirror":
-            for j in range(int(_col(e, lv, "clones", default=2))):
+            count = int(_col(e, lv, "clones", default=2))
+            for j in range(count):
+                # game data v18.200.9: AQCloningCloak.SpawnPattern=SemiCircleBehind.
+                x, y = _summon_position(u, tgt, j, count, behind=True)
                 c = battle.spawn(
                     "Archer Queen",
                     "atk",
-                    u.x + 0.6 * (j - 0.5),
-                    u.y + 0.4,
+                    x,
+                    y,
                     level=u.level,
                     kind="hero_clone",
                     group=u.group,
@@ -670,7 +702,11 @@ def activate(battle, u: Unit):
             _invisible(u, t + 1.0)  # wiki: Magic Mirror
         elif e == "Action Figure":
             gg_lv = int(_col(e, lv, "giant giant level", default=10))
-            battle.spawn("Giant Giant", "atk", u.x + 0.5, u.y + 0.5, level=gg_lv, kind="summon", group=u.group)
+            # game data v18.200.9: AQSummonGiantGiant.SpawnPattern=InFront.
+            x, y = _summon_position(u, tgt, 0, 1, radius=math.hypot(0.5, 0.5))
+            battle.spawn(
+                "Giant Giant", "atk", x, y, level=gg_lv, kind="summon", group=u.group
+            )
             _invisible(
                 u, t + 1.0
             )  # "turning invisible for 1 second" (wiki: Action Figure)
@@ -806,17 +842,34 @@ def activate(battle, u: Unit):
             k.reduction_until = t + _col(e, lv, "ability duration", default=15.0)
         elif e == "Henchmen Puppet":
             for j in range(2):
-                battle.spawn("Henchman", "atk", u.x + 0.5 * j, u.y + 0.5, level=int(_col(e, lv, "henchmen level", default=7)), kind="summon", group=u.group)
+                # game data v18.200.9: MinionSummonAbility.SpawnPattern=SemiCircleInFront.
+                x, y = _summon_position(u, tgt, j, 2)
+                battle.spawn(
+                    "Henchman",
+                    "atk",
+                    x,
+                    y,
+                    level=int(_col(e, lv, "henchmen level", default=7)),
+                    kind="summon",
+                    group=u.group,
+                )
             _invisible(u, t + 1.0)  # wiki: Henchmen Puppet
         elif e == "Portal Pendant":
             _portal(battle, u, lv)
         elif e == "Rocket Backpack":
-            start_dash(battle, u, _col(e, lv, "ability damage"))
+            # Wiki: Rocket Backpack table, equipment L1/L3 -> ability L1/L2 (575/750).
+            # game data v18.200.9: DragonDukeDeadlyDashMapCenter L10.ActAsPenetratingDamage=2200 -> equipment L27.
+            ability = game_data(
+                "special_abilities", "DragonDukeDeadlyDashMapCenter", lv // 3 + 1
+            )
+            start_dash(battle, u, float(ability["ActAsPenetratingDamage"]))
         elif e == "Stun Blaster":
             dur = _col(e, lv, "stun duration", default=7.5)
             # Radius and stun from Stun Blaster; pulse timing is unstated.
             for target in _targets(battle):
-                if isinstance(target, Building) and target.key in units.RESOURCE_KEYS:
+                # game data v18.200.9: DDBlastSpell.ImmunityStorages=TRUE,
+                # ImmunityTH_CC=FALSE, ImmunityOtherBuildings=FALSE -> only storages immune.
+                if isinstance(target, Building) and target.key in spells.STORAGES:
                     continue
                 if _distance(target, u.x, u.y) <= stats.attrs(e)["radius"]:
                     target.stun_until = max(target.stun_until, t + dur)
@@ -842,8 +895,72 @@ def activate(battle, u: Unit):
         battle.log.append((round(t, 1), "ability", u.name))
 
 
+def _summon_facing(u, target):
+    # Facing means current target direction, else last movement direction;
+    # before any movement, retain Battle.spawn's initial facing convention.
+    previous = u.extra.get("summon_position", (u.x, u.y))
+    if (u.x, u.y) != previous:
+        u.extra["summon_facing"] = (u.x - previous[0], u.y - previous[1])
+    u.extra["summon_position"] = (u.x, u.y)
+    dx, dy = u.extra.get("summon_facing", u.extra["facing"])
+    if target is not None and (target.x, target.y) != (u.x, u.y):
+        dx, dy = target.x - u.x, target.y - u.y
+    return math.atan2(dy, dx)
+
+
+def _summon_position(u, target, index, count, *, behind=False, radius=0.5):
+    # game data v18.200.9: equipment SpawnPattern selects the front/back half-circle.
+    # Exact spacing is unstated; use deterministic arc midpoints and small offsets.
+    angle = _summon_facing(u, target)
+    if behind:
+        angle += math.pi
+    angle += math.pi * ((index + 0.5) / count - 0.5)
+    return u.x + radius * math.cos(angle), u.y + radius * math.sin(angle)
+
+
+def _boots_quake_hit(battle, field):
+    # Wiki: Earthquake Boots/Earthquake Spell, 1, 1/3, 1/5 diminishing per cast.
+    # All five pending hits share the cast's cached count, as spells.quake_hit does.
+    hits = field.extra.setdefault("hits", {})
+    for building in battle.buildings:
+        if (
+            building.alive
+            and building.counted
+            and building.edge_distance(field.x, field.y) <= field.radius
+        ):
+            key = ("building", building.id)
+            if key not in hits:
+                building.eq_hits += 1
+                hits[key] = building.eq_hits
+            battle.hit_building(
+                building, building.max_hp * field.value / (2 * hits[key] - 1)
+            )
+    for defender in battle.defenders_near(field.x, field.y, field.radius):
+        if defender.flying or defender.kind == "trap_skeleton":
+            continue
+        key = ("unit", defender.id)
+        if key not in hits:
+            defender.extra["eq_n"] = defender.extra.get("eq_n", 0) + 1
+            hits[key] = defender.extra["eq_n"]
+        battle.hit_unit(
+            defender,
+            defender.max_hp * field.extra["troop"] / (2 * hits[key] - 1),
+        )
+
+
 def projectile_impact(battle, pending):
     mode = pending.extra["hero_impact"]
+    if mode == "boots_quake":
+        _boots_quake_hit(battle, pending.extra["field"])
+        return
+    if mode == "lizard":
+        from . import pets
+
+        # game data v18.200.9: LizardPetPoison.PoisonOnHitSpell=PoisonLizardAttack.
+        units.projectile_impact(battle, pending)
+        if pending.target.indirect_targetable(battle.t):
+            pets.poison_hit(battle, pending.actor, pending.target)
+        return
     if mode == "blast":
         _blast(battle, pending.x, pending.y, pending.radius, pending.damage)
         return

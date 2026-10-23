@@ -351,7 +351,9 @@ def spawn_skeleton(battle, tr: Trap, x, y):
     s.hp = s.max_hp = s.base_max_hp = stats.get(tr.name, lv, "Hitpoints")
     s.dmg = stats.get(tr.name, lv, "Damage per Hit")
     s.interval = _raw(tr.name, "Attack Speed", None)
-    s.range = _raw(tr.name, "Range", None)
+    # game data v18.200.9: Trap Air Skeleton.AttackRange=0 -> 0 tiles;
+    # Trap Skeleton.AttackRange=40 -> 0.4 tiles.
+    s.range = 0.0 if tr.mode == "air" else 0.4
     s.flying = tr.mode == "air"
     s.hits_air, s.hits_ground = s.flying, not s.flying
     s.speed = 2.2 if s.flying else 3.0  # Skeleton Trap: 17.6/24 display speed.
