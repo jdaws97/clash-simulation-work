@@ -19,6 +19,7 @@ data comes from a catalog regenerated after every game patch.
   parity-setup --stage S --n N
       compare Rust setup field by field, then compare every trace tick
       stage 6: --n 40 covers five troop/siege armies, two bases and four sides
+      stage 7: --n 184 covers 23 hero loadouts, two bases and four sides
 
 Trace format, one record per line: `T <t>` before each step, then after it
 `U <team> <id> <name> <x> <y> <hp>` for every living unit (attackers then
@@ -327,6 +328,71 @@ STAGE6_ARMIES = [
 STAGE3_ARMIES = ["custom:user-rr", "custom:user-druid-ruin"]
 
 
+# Stage 7: declared synthetic fixed-drop equipment/pet coverage. Each row
+# brings one attacking Hero, so a full village can force the automatic on-KO
+# ability instead of a complete hero squad clearing it with unused abilities.
+# All 43 equipment pieces and all 12 pets appear in this table. Each row runs
+# eight times (two STAGE1_BASES x four sides), exceeding two uses per piece.
+# Columns: Hero, equipment pair, pet. Attacker TH18 unlocks every listed pet;
+# the defending villages retain their own TH16 content and defending Heroes.
+STAGE7_LOADOUTS = [
+    ("Barbarian King", ("Barbarian Puppet", "Rage Vial"), "Mighty Yak"),
+    ("Barbarian King", ("Giant Gauntlet", "Vampstache"), "Sneezy"),
+    ("Barbarian King", ("Spiky Ball", "Earthquake Boots"), "Greedy Raven"),
+    ("Barbarian King", ("Snake Bracelet", "Stick Horse"), "Spirit Fox"),
+    ("Archer Queen", ("Archer Puppet", "Invisibility Vial"), "Unicorn"),
+    ("Archer Queen", ("Frozen Arrow", "Monolith Arrow"), "Electro Owl"),
+    ("Archer Queen", ("Giant Arrow", "Healer Puppet"), "Phoenix"),
+    ("Archer Queen", ("Magic Mirror", "Action Figure"), "Diggy"),
+    ("Grand Warden", ("Eternal Tome", "Life Gem"), "Poison Lizard"),
+    ("Grand Warden", ("Rage Gem", "Healing Tome"), "Frosty"),
+    ("Grand Warden", ("Fireball", "Lavaloon Puppet"), "Angry Jelly"),
+    ("Grand Warden", ("Heroic Torch", "Life Gem"), "L.A.S.S.I"),
+    ("Royal Champion", ("Seeking Shield", "Royal Gem"), "Mighty Yak"),
+    ("Royal Champion", ("Hog Rider Puppet", "Haste Vial"), "Sneezy"),
+    ("Royal Champion", ("Rocket Spear", "Electro Boots"), "Greedy Raven"),
+    ("Royal Champion", ("Frost Flake", "Royal Gem"), "Unicorn"),
+    ("Minion Prince", ("Dark Crown", "Henchmen Puppet"), "Spirit Fox"),
+    ("Minion Prince", ("Dark Orb", "Meteor Staff"), "Electro Owl"),
+    ("Minion Prince", ("Metal Pants", "Noble Iron"), "Diggy"),
+    ("Minion Prince", ("Portal Pendant", "Dark Crown"), "Phoenix"),
+    ("Dragon Duke", ("Rocket Backpack", "Flame Blower"), "Angry Jelly"),
+    ("Dragon Duke", ("Fire Heart", "Revenge Deck"), "L.A.S.S.I"),
+    ("Dragon Duke", ("Electro Fangs", "Stun Blaster"), "Frosty"),
+]
+STAGE7_SIDES = 4
+STAGE7_N = len(STAGE7_LOADOUTS) * len(STAGE1_BASES) * STAGE7_SIDES  # 184
+
+
+def equipment_stage(loadout, angle, seed):
+    """Synthetic Stage plan: fixed drops, capped levels, automatic KO ability."""
+    from baselab.engine import stats
+    from baselab.loadouts import HeroLoadout
+    from mechanic_tests import Stage
+
+    hero, equipment, pet = loadout
+    town_hall = 18
+    # Modest escorts give Life Gem/Healing Tome recipients and Dark Crown
+    # deaths without replacing the isolated Hero with a full clearing army.
+    troops = [("Giant", 6), ("Barbarian", 12), ("Archer", 12)]
+    hero_level = stats.max_level(hero, town_hall)
+    drops = edge_drops([(hero, 1)] + troops, angle, seed)
+    drops = [
+        (t, name, x, y, hero_level if name == hero else None)
+        for t, name, x, y, _ in drops
+    ]
+    plan = Stage(drops, town_hall=town_hall)
+    plan.loadouts = {hero: HeroLoadout(hero, equipment, pet)}
+    plan.hero_levels = {hero: hero_level}
+    plan.equipment_levels = {
+        name: stats.max_level(name, town_hall) for name in equipment
+    }
+    plan.pet_levels = {pet: stats.max_level(pet, town_hall)}
+    plan.troop_levels = {name: stats.max_level(name, town_hall) for name, _ in troops}
+    plan.auto_ability_on_ko = True
+    return plan
+
+
 def hero_stage(army_id, angle, seed):
     """Stage plan carrying a real build's heroes, loadouts and levels."""
     from baselab.meta_armies import build_by_id, make_plan
@@ -459,6 +525,18 @@ def scenario_inputs(stage, k):
         plan = Stage(drops, town_hall=17)
         plan.cc_troops = list(cargo)
         return lay, plan, {"seed": seed, "town_hall": 17}
+    if stage == 7:
+        loadout = STAGE7_LOADOUTS[k % len(STAGE7_LOADOUTS)]
+        base = STAGE1_BASES[(k // len(STAGE7_LOADOUTS)) % len(STAGE1_BASES)]
+        side = k // (len(STAGE7_LOADOUTS) * len(STAGE1_BASES)) % STAGE7_SIDES
+        angle = 2 * math.pi * side / STAGE7_SIDES + 0.1
+        seed = 700 + k
+        lay = own_layout(base)
+        return (
+            lay,
+            equipment_stage(loadout, angle, seed),
+            {"seed": seed, "town_hall": 16},
+        )
     raise ValueError(f"no stage {stage}")
 
 

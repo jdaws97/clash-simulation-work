@@ -594,6 +594,15 @@ impl Resolver {
                 "torch_speed" => extra.torch_speed = v.number(),
                 "torch_reduction" => extra.torch_reduction = v.number(),
                 "fire_heart_done" => extra.fire_heart_done = v.boolean(),
+                "snake_dmg" => extra.snake_dmg = v.number(),
+                "snakes" => extra.snakes = v.integer(),
+                "crown_housing" => extra.crown_housing = v.integer(),
+                "flame_direction" => extra.flame_direction = v.optional_pair(),
+                "hero_target" => extra.hero_target = self.optional_ref(v),
+                "yak_first" => extra.yak_first = v.boolean(),
+                "yak_second" => extra.yak_second = v.boolean(),
+                "summon_at" => extra.summon_at = v.optional_number(),
+                "summon_until" => extra.summon_until = v.number(),
                 "egg" => extra.egg = v.boolean(),
                 "phoenix_until" => {
                     extra.phoenix_until = v.number();

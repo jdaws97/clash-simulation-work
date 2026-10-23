@@ -1,4 +1,4 @@
-//! Ports heroes.py:28-1140,1348-1476. setup.rs constructs defending heroes.
+//! Ports committed heroes.py:29-1776. setup.rs constructs defending heroes.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -234,18 +234,99 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         }
         kit.hp_recovery += col(battle, equipment, &level,
             &["hp recovery increase", "health recovery increase"], 0.0);
-        if equipment == "Stun Blaster" {
+        if matches!(equipment.as_str(), "Royal Gem" | "Stun Blaster") {
             kit.hp_recovery += col(battle, equipment, &level, &["health recovery"], 0.0);
         }
+        // heroes.py:166-192: equipment-specific passive state.
         match equipment.as_str() {
+            "Vampstache" => {
+                kit.vamp = col(battle, equipment, &level, &["heal per hit"], 0.0);
+            }
             "Electro Boots" => battle.unit_mut(hero).extra.boots_next = Some(battle.t + 0.4),
-            "Rocket Spear" | "Revenge Deck" | "Fire Heart" | "Action Figure" | "Giant Arrow"
-            | "Eternal Tome" | "Rage Gem" | "Fireball" | "Rocket Backpack"
-            | "Spiky Ball" | "Earthquake Boots" | "Dark Orb" | "Meteor Staff"
-            | "Barbarian Puppet" | "Archer Puppet" | "Hog Rider Puppet" | "Healer Puppet"
-            | "Lavaloon Puppet" | "Seeking Shield" | "Haste Vial" | "Heroic Torch"
-            | "Magic Mirror" | "Henchmen Puppet" | "Stun Blaster" | "Noble Iron" => {}
-            _ => todo!("stage 3+: equip {equipment}"),
+            "Frozen Arrow" => {
+                kit.frozen_arrow = Some((
+                    col(battle, equipment, &level, &["slow down"], 0.0) / 100.0,
+                    col(battle, equipment, &level, &["slow down duration"], 0.0),
+                ));
+            }
+            "Stick Horse" => {
+                let until = battle.t
+                    + col(battle, equipment, &level, &["ability duration"], 0.0);
+                let speed = col(
+                    battle,
+                    equipment,
+                    &level,
+                    &["movement speed increase"],
+                    0.0,
+                ) / 8.0;
+                let attack = col(
+                    battle,
+                    equipment,
+                    &level,
+                    &["ability attributes / attack speed increase"],
+                    0.0,
+                ) / 100.0;
+                let unit = battle.unit_mut(hero);
+                unit.extra.horse_until = until;
+                unit.extra.paused_timers.horse_until = true;
+                unit.extra.horse_speed = speed;
+                unit.extra.horse_attack = attack;
+                unit.extra.horse_interval = base_interval;
+            }
+            "Monolith Arrow" => {
+                kit.mono_arrow = Some([
+                    col(battle, equipment, &level, &["highest extra damage"], 0.0) / 100.0,
+                    col(battle, equipment, &level, &["extra damage (181-250"], 0.0) / 100.0,
+                    col(battle, equipment, &level, &["extra damage (251+"], 0.0) / 100.0,
+                ]);
+                kit.reduction = col(
+                    battle,
+                    equipment,
+                    &level,
+                    &["incoming damage reduction"],
+                    0.0,
+                ) / 100.0;
+                kit.reduction_until = 1e9;
+            }
+            "Rocket Spear"
+            | "Revenge Deck"
+            | "Fire Heart"
+            | "Action Figure"
+            | "Giant Arrow"
+            | "Eternal Tome"
+            | "Rage Gem"
+            | "Fireball"
+            | "Rocket Backpack"
+            | "Spiky Ball"
+            | "Earthquake Boots"
+            | "Dark Orb"
+            | "Meteor Staff"
+            | "Barbarian Puppet"
+            | "Archer Puppet"
+            | "Hog Rider Puppet"
+            | "Healer Puppet"
+            | "Lavaloon Puppet"
+            | "Seeking Shield"
+            | "Haste Vial"
+            | "Heroic Torch"
+            | "Magic Mirror"
+            | "Henchmen Puppet"
+            | "Stun Blaster"
+            | "Noble Iron"
+            | "Rage Vial"
+            | "Giant Gauntlet"
+            | "Snake Bracelet"
+            | "Invisibility Vial"
+            | "Life Gem"
+            | "Healing Tome"
+            | "Royal Gem"
+            | "Frost Flake"
+            | "Dark Crown"
+            | "Metal Pants"
+            | "Portal Pendant"
+            | "Flame Blower"
+            | "Electro Fangs" => {}
+            _ => panic!("unsupported hero equipment {equipment}"),
         }
     }
     let unit = battle.unit_mut(hero);
@@ -297,10 +378,24 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
 fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
     let name = kit.pet_name.as_deref().expect("pet name").to_owned();
     let level = kit.pet_level.clone().expect("pet level");
-    if !matches!(name.as_str(), "Unicorn" | "Phoenix" | "Frosty" | "Poison Lizard" | "Spirit Fox"
-        | "Electro Owl" | "Angry Jelly" | "L.A.S.S.I" | "Diggy") {
-        todo!("stage 3+: pet {name}");
-    }
+    assert!(
+        matches!(
+            name.as_str(),
+            "Unicorn"
+                | "Phoenix"
+                | "Frosty"
+                | "Poison Lizard"
+                | "Spirit Fox"
+                | "Electro Owl"
+                | "Angry Jelly"
+                | "L.A.S.S.I"
+                | "Diggy"
+                | "Mighty Yak"
+                | "Sneezy"
+                | "Greedy Raven"
+        ),
+        "unsupported attacking pet {name}"
+    );
     let stats = &battle.catalog.stats;
     let attrs = stats.attrs(&name);
     let hp = stats.get(&name, &level, &["hitpoints", "Hitpoints"], Some(2000.0)).expect("pet HP");
@@ -357,6 +452,14 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
     if name == "Phoenix" {
         spec.attack = Tag::Splash;
         spec.splash = 0.3;
+    }
+    // heroes.py:289-297: wall ramming and resource damage multipliers.
+    if name == "Mighty Yak" {
+        spec.walls = Tag::Normal;
+        spec.vs_walls = 20.0;
+    }
+    if name == "Greedy Raven" {
+        spec.vs_resources = 5.0;
     }
     battle.uid += 1;
     let owner = battle.unit(hero);
@@ -461,6 +564,9 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
             battle.catalog.stats.attrs(&name).at("raw").at("Summon Cooldown"), None)
             .expect("Frosty summon cooldown");
     }
+    if name == "Sneezy" {
+        pet.extra.next_summon = battle.t + 10.0;
+    }
     let reference = pet.reference();
     battle.register_unit(pet.id, Team::Atk, battle.attackers.len());
     battle.attackers.push(pet);
@@ -561,14 +667,53 @@ pub fn tick(battle: &mut Battle, hero: UnitRef) {
 pub fn on_damaged(
     battle: &mut Battle,
     hero: UnitRef,
-    _amount: f64,
+    amount: f64,
     source: Option<EntityRef>,
     effect: &str,
 ) {
     let kit = battle.unit(hero).kit.as_ref().expect("hero kit");
     if kit.has("Snake Bracelet") {
-        todo!("stage 3+: Snake Bracelet damage reaction");
+        // heroes.py:398-408: every 300 damage, up to the lifetime summon cap.
+        let level = kit.lv("Snake Bracelet");
+        let cap = col(
+            battle,
+            "Snake Bracelet",
+            level,
+            &["max summoned snakes"],
+            54.0,
+        ) as i64;
+        let snake_level = col(
+            battle,
+            "Snake Bracelet",
+            level,
+            &["snake level"],
+            10.0,
+        ) as i64;
+        let unit = battle.unit(hero);
+        let mut accumulated = unit.extra.snake_dmg + amount;
+        let mut made = unit.extra.snakes;
+        while accumulated >= 300.0 && made < cap {
+            accumulated -= 300.0;
+            made += 1;
+            let unit = battle.unit(hero);
+            battle.spawn(
+                "Snake",
+                hero.team,
+                unit.x + 0.4,
+                unit.y + 0.4,
+                SpawnOptions {
+                    level: Some(Level::Int(snake_level)),
+                    kind: Tag::Summon,
+                    group: unit.group.clone(),
+                    ..Default::default()
+                },
+            );
+        }
+        let unit = battle.unit_mut(hero);
+        unit.extra.snake_dmg = accumulated;
+        unit.extra.snakes = made;
     }
+    let kit = battle.unit(hero).kit.as_ref().expect("hero kit");
     let Some(source) = source else {
         return;
     };
@@ -666,11 +811,51 @@ pub fn monolith_bonus(battle: &Battle, hero: UnitRef, target: EntityRef) -> f64 
     tiers[stage] * hp
 }
 
-// heroes.py:443-471: these items are outside the requested loadouts.
-pub fn on_hit_extra(battle: &mut Battle, hero: UnitRef, _target: EntityRef) {
+// heroes.py:484-512: stable chain selection, then the primary target's slow.
+pub fn on_hit_extra(battle: &mut Battle, hero: UnitRef, target: EntityRef) {
     let kit = battle.unit(hero).kit.as_ref().expect("hero kit");
-    if kit.has("Electro Fangs") || kit.frozen_arrow.is_some() {
-        todo!("stage 3+: Electro Fangs/Frozen Arrow on-hit effects");
+    if kit.has("Electro Fangs") {
+        let level = kit.lv("Electro Fangs");
+        let mut damage = col(battle, "Electro Fangs", level, &["damage per hit"], 0.0);
+        let count = col(battle, "Electro Fangs", level, &["number of targets"], 0.0) as i64;
+        let mut previous = target;
+        let mut visited = vec![target];
+        for _ in 0..count {
+            let (x, y) = battle.entity_position(previous);
+            let mut best = None;
+            let mut closest = f64::INFINITY;
+            for candidate in targets(battle, false) {
+                if visited.contains(&candidate) {
+                    continue;
+                }
+                let distance = distance(battle, candidate, x, y);
+                if distance <= 3.0 && (best.is_none() || distance < closest) {
+                    best = Some(candidate);
+                    closest = distance;
+                }
+            }
+            let Some(next) = best else {
+                break;
+            };
+            visited.push(next);
+            damage_target(battle, next, damage);
+            previous = next;
+            damage *= 0.8;
+        }
+    }
+    let kit = battle.unit(hero).kit.as_ref().expect("hero kit");
+    if let Some((slow, duration)) = kit.frozen_arrow {
+        if matches!(target, EntityRef::Building(_) | EntityRef::Unit(_)) {
+            let until = battle.t + duration;
+            add_target_slow(
+                battle,
+                target,
+                StatusSource::Actor("Frozen Arrow".to_owned(), hero.id),
+                1.0 - slow,
+                1.0 - slow,
+                until,
+            );
+        }
     }
 }
 
@@ -847,6 +1032,44 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                     }
                 }
             }
+            // heroes.py:654-677: active reduction, independent Rage, and shot bonus.
+            "Giant Gauntlet" => {
+                let reduction = col(
+                    battle,
+                    &name,
+                    &level,
+                    &["incoming damage reduction"],
+                    0.0,
+                ) / 100.0;
+                let until = t + col(battle, &name, &level, &["ability duration"], 0.0);
+                let unit = battle.unit_mut(hero);
+                let kit = unit.kit.as_mut().expect("hero kit");
+                kit.reduction = reduction;
+                kit.reduction_until = until;
+                unit.extra.gauntlet_until = until;
+                unit.extra.paused_timers.gauntlet_until = true;
+                unit.extra.gauntlet_radius = 2.5;
+            }
+            "Rage Vial" => {
+                let damage = 1.0 + col(battle, &name, &level, &["damage increase"], 0.0) / 100.0;
+                let speed = col(battle, &name, &level, &["movement speed increase"], 0.0) / 8.0;
+                units::add_rage(
+                    battle.unit_mut(hero),
+                    StatusSource::Name(name.clone()),
+                    damage,
+                    speed,
+                    t + 10.0,
+                );
+            }
+            "Invisibility Vial" => {
+                let until = t + col(battle, &name, &level, &["ability duration"], 0.0);
+                let bonus = col(battle, &name, &level, &["damage per shot increase"], 0.0);
+                let unit = battle.unit_mut(hero);
+                invisible(unit, until);
+                unit.extra.vial_until = until;
+                unit.extra.paused_timers.vial_until = true;
+                unit.extra.vial_bonus = bonus;
+            }
             "Dark Orb" => {
                 let u = battle.unit(hero);
                 let (dx, dy) = u.extra.facing;
@@ -992,6 +1215,14 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 battle.unit_mut(hero).extra.paused_timers.tome_until = true;
                 moving_auras(battle, hero, None);
             }
+            // heroes.py:719-721.
+            "Healing Tome" => {
+                let rate = col(battle, &name, &level, &["healing per second"], 0.0);
+                let until = t + col(battle, &name, &level, &["ability duration"], 20.0);
+                let kit = battle.unit_mut(hero).kit.as_mut().expect("hero kit");
+                kit.heal_rate = rate;
+                kit.heal_until = until;
+            }
             "Fireball" => {
                 let mut candidates = targets(battle, true);
                 if candidates.is_empty() {
@@ -1101,6 +1332,62 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 unit.extra.paused_timers.haste_attack_until = true;
                 // heroes.py:721-722: preserve the current ordinary attack cooldown.
             }
+            // heroes.py:794-811: each target is chosen again after the previous hit.
+            "Frost Flake" => {
+                let count = col(battle, &name, &level, &["number of targets"], 7.0) as i64;
+                let mut visited = Vec::new();
+                for _ in 0..count {
+                    let mut candidates = targets(battle, true);
+                    candidates.retain(|target| !visited.contains(target));
+                    if candidates.is_empty() {
+                        candidates = targets(battle, false);
+                        candidates.retain(|target| !visited.contains(target));
+                    }
+                    let unit = battle.unit(hero);
+                    let mut best = None;
+                    let mut closest = f64::INFINITY;
+                    for candidate in candidates {
+                        let distance = distance(battle, candidate, unit.x, unit.y);
+                        if best.is_none() || distance < closest {
+                            best = Some(candidate);
+                            closest = distance;
+                        }
+                    }
+                    let Some(target) = best else {
+                        break;
+                    };
+                    visited.push(target);
+                    let damage = col(battle, &name, &level, &["projectile damage"], 0.0);
+                    damage_target(battle, target, damage);
+                    let until = t + col(battle, &name, &level, &["slow down duration"], 0.0);
+                    match target {
+                        EntityRef::Building(id) => {
+                            let building = battle.building_mut(id);
+                            building.frozen_until = building.frozen_until.max(until);
+                        }
+                        EntityRef::Unit(id) => {
+                            let unit = battle.unit_mut(id);
+                            unit.frozen_until = unit.frozen_until.max(until);
+                        }
+                        _ => unreachable!(),
+                    }
+                }
+            }
+            // heroes.py:840-842.
+            "Metal Pants" => {
+                let reduction = col(
+                    battle,
+                    &name,
+                    &level,
+                    &["incoming damage reduction"],
+                    0.0,
+                ) / 100.0;
+                let until = t + col(battle, &name, &level, &["ability duration"], 15.0);
+                let kit = battle.unit_mut(hero).kit.as_mut().expect("hero kit");
+                kit.reduction = reduction;
+                kit.reduction_until = until;
+            }
+            "Portal Pendant" => portal(battle, hero, &level),
             "Rocket Backpack" => {
                 let ability_level = equipment_ability_level(&level);
                 let ability = battle.catalog.game_data(
@@ -1111,10 +1398,50 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 let damage = game_float(ability, "ActAsPenetratingDamage");
                 start_dash(battle, hero, damage);
             }
+            // heroes.py:877-893: Backpack's dash direction takes priority.
+            "Flame Blower" => {
+                let damage = col(battle, &name, &level, &["ability damage"], 0.0);
+                let unit = battle.unit(hero);
+                let direction = unit
+                    .dash
+                    .as_ref()
+                    .map_or(unit.extra.facing, |dash| dash.direction);
+                battle.unit_mut(hero).extra.flame_direction = Some(direction);
+                let facing = crate::geom::py_atan2(direction.1, direction.0);
+                let half_angle = (60.0 * (std::f64::consts::PI / 180.0)) / 2.0;
+                let radius = battle.catalog.stats.attrs(&name).at("radius").f64();
+                for target in targets(battle, false) {
+                    let (x, y) = battle.entity_position(target);
+                    let unit = battle.unit(hero);
+                    let angle = crate::geom::py_atan2(y - unit.y, x - unit.x);
+                    let offset = ((angle - facing + std::f64::consts::PI)
+                        .rem_euclid(2.0 * std::f64::consts::PI)
+                        - std::f64::consts::PI)
+                        .abs();
+                    if offset <= half_angle
+                        && distance(battle, target, unit.x, unit.y) <= radius
+                    {
+                        damage_target(battle, target, damage);
+                    }
+                }
+            }
             // These pieces have passive effects only in Python's activate.
-            "Electro Boots" | "Revenge Deck" | "Fire Heart" | "Rage Gem" | "Meteor Staff"
-            | "Noble Iron" => {}
-            _ => todo!("stage 3+: activate {name}"),
+            "Electro Boots"
+            | "Revenge Deck"
+            | "Fire Heart"
+            | "Rage Gem"
+            | "Meteor Staff"
+            | "Noble Iron"
+            | "Vampstache"
+            | "Snake Bracelet"
+            | "Frozen Arrow"
+            | "Monolith Arrow"
+            | "Life Gem"
+            | "Stick Horse"
+            | "Royal Gem"
+            | "Dark Crown"
+            | "Electro Fangs" => {}
+            _ => panic!("unsupported hero ability equipment {name}"),
         }
     }
     let name = battle.unit(hero).name.clone();
@@ -1395,7 +1722,8 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
                 battle.add_pending(pending);
             }
         }
-        mode => todo!("stage 3+: hero projectile {mode}"),
+        // heroes.py:951-1097 defines all equipment/pet modes above.
+        mode => panic!("unsupported hero projectile mode {mode}"),
     }
 }
 
@@ -1811,8 +2139,8 @@ pub fn apply_auras(battle: &mut Battle) {
     let mut want = std::mem::take(&mut battle.aura_want_scratch);
     want.clear();
     for &reference in &combatants {
+        let boost = effects::crown_buff(battle, reference);
         let unit = battle.unit_mut(reference);
-        let boost = effects::crown_buff(unit);
         unit.aura_dmg = 1.0 + boost;
         for (_, (until, increase)) in &unit.extra.rage_auras {
             if t < *until {
@@ -2050,6 +2378,54 @@ pub fn pet_passives(battle: &mut Battle, unit: UnitRef) {
 }
 pub fn act_pet(battle: &mut Battle, unit: UnitRef) {
     pets::act(battle, unit);
+}
+
+// heroes.py:1477-1508: stable hero/housing/spawn-time selection, excluding free pets.
+fn portal(battle: &mut Battle, hero: UnitRef, level: &Level) {
+    let name = "Portal Pendant";
+    let radius = col(battle, name, level, &["portal tile radius"], 0.0);
+    let mut capacity = col(battle, name, level, &["recall capacity"], 0.0);
+    let unit = battle.unit(hero);
+    let mut candidates = battle.attackers_near(unit.x, unit.y, radius);
+    candidates.retain(|reference| {
+        let unit = battle.unit(*reference);
+        *reference != hero
+            && unit.name_id != Name::Totem
+            && !matches!(unit.kind, Tag::Siege | Tag::SiegeIdle)
+            && !free_pet(battle, *reference)
+    });
+    candidates.sort_by(|first, second| {
+        let first = battle.unit(*first);
+        let second = battle.unit(*second);
+        (!first.is_hero, -spells::interaction_housing(first))
+            .cmp(&(!second.is_hero, -spells::interaction_housing(second)))
+            .then_with(|| {
+                first
+                    .spawned_at
+                    .partial_cmp(&second.spawned_at)
+                    .expect("spawn time")
+            })
+    });
+    let mut taken = vec![hero];
+    for candidate in candidates {
+        let housing = spells::interaction_housing(battle.unit(candidate)) as f64;
+        if housing <= capacity {
+            capacity -= housing;
+            taken.push(candidate);
+        }
+    }
+    let heal = col(battle, name, level, &["healing on redeploy"], 0.0) / 100.0;
+    let duration = col(battle, name, level, &["haste on redeploy"], 0.0);
+    let speed = battle
+        .catalog
+        .stats
+        .attrs(name)
+        .at("raw")
+        .get("Redeploy Speed Increase")
+        .and_then(|value| stats::num(value, Some(56.0)))
+        .unwrap_or(56.0)
+        / 8.0;
+    stash(battle, taken, (heal, duration, speed));
 }
 
 // heroes.py:1237-1245: these pets travel free with their paired hero.

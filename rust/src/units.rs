@@ -1,5 +1,5 @@
 //! Ports units.py troop behavior through the ranked stage-6 armies.
-//! Later-stage defending content and hero equipment retain unsupported branches.
+//! TH18 defending Guardians retain explicit unsupported branches.
 
 use std::sync::Arc;
 
@@ -3004,7 +3004,9 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     if battle.unit(unit).kit.is_some() {
         damage += heroes::monolith_bonus(battle, unit, target);
         if t < battle.unit(unit).extra.gauntlet_until {
-            todo!("stage 3+: Giant Gauntlet strike");
+            gauntlet_hit(battle, unit, target, damage);
+            heroes::on_hit_extra(battle, unit, target);
+            return;
         }
     }
     if let EntityRef::Unit(victim) = target {
@@ -3050,6 +3052,39 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     }
     if battle.unit(unit).kit.is_some() {
         heroes::on_hit_extra(battle, unit, target);
+    }
+}
+
+// units.py:2289-2309: primary first, buildings then walls, then ground defenders.
+fn gauntlet_hit(battle: &mut Battle, unit: UnitRef, target: EntityRef, damage: f64) {
+    let radius = battle.unit(unit).extra.gauntlet_radius;
+    if let EntityRef::Unit(victim) = target {
+        battle.hit_unit(victim, damage, None, "normal", Some(EntityRef::Unit(unit)));
+    } else {
+        battle.unit_mut(unit).damage_dealt += damage;
+        battle.hit_building(target, damage, None, "normal");
+    }
+    let structures: Vec<_> = battle
+        .buildings
+        .iter()
+        .map(|building| EntityRef::Building(building.id))
+        .chain(battle.walls.iter().map(|wall| EntityRef::Wall(wall.id)))
+        .collect();
+    for structure in structures {
+        let (x, y) = battle.entity_position(target);
+        if structure != target
+            && battle.entity_alive(structure)
+            && heroes::distance(battle, structure, x, y) <= radius
+        {
+            battle.hit_building(structure, damage, None, "normal");
+        }
+    }
+    let (x, y) = battle.entity_position(target);
+    for defender in battle.defenders_near(x, y, radius) {
+        let victim = battle.unit(defender);
+        if EntityRef::Unit(defender) != target && !victim.flying && !victim.underground {
+            battle.hit_unit(defender, damage, None, "normal", Some(EntityRef::Unit(unit)));
+        }
     }
 }
 

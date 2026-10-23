@@ -106,23 +106,68 @@ pub fn health_aura(unit: &mut Unit, percentage: f64, cap: f64) {
 // effects.py:77-105: only hero equipment can receive death housing.
 pub fn record_death(battle: &mut Battle, victim: UnitRef) {
     let unit = battle.unit(victim);
-    if unit.team != Team::Atk || matches!(unit.kind, Tag::Siege | Tag::SiegeIdle)
-        || unit.extra.clone || unit.extra.mirror_clone || unit.extra.recalled.is_some()
+    if unit.team != Team::Atk
+        || matches!(unit.kind, Tag::Siege | Tag::SiegeIdle)
+        || unit.extra.clone
+        || unit.extra.mirror_clone
+        || unit.extra.recalled.is_some()
     {
         return;
     }
-    for prince in battle.attackers_pool() {
-        if prince.kit.as_ref().is_some_and(|kit| kit.has("Dark Crown"))
-            && prince.reference() != victim && prince.extra.recalled.is_none() {
-            todo!("stage 3+: effects.py:96 Dark Crown death housing");
-        }
+    let housing = if unit.name == "Totem" {
+        20
+    } else if unit.is_hero {
+        25
+    } else if unit.kind == Tag::Pet {
+        20
+    } else {
+        unit.housing
+    };
+    let recipients: Vec<_> = battle
+        .attackers_pool()
+        .filter(|prince| {
+            prince.kit.as_ref().is_some_and(|kit| kit.has("Dark Crown"))
+                && prince.reference() != victim
+                && prince.extra.recalled.is_none()
+        })
+        .map(Unit::reference)
+        .collect();
+    for prince in recipients {
+        battle.unit_mut(prince).extra.crown_housing += housing;
     }
 }
 
 // effects.py:108-124.
-pub fn crown_buff(unit: &mut Unit) -> f64 {
+pub fn crown_buff(battle: &mut Battle, reference: UnitRef) -> f64 {
+    let unit = battle.unit(reference);
     if !unit.kit.as_ref().is_some_and(|kit| kit.has("Dark Crown")) {
         return 0.0;
     }
-    todo!("stage 3+: effects.py:110 Dark Crown equipment buff");
+    let stage = 3.min(unit.extra.crown_housing.div_euclid(60)) as usize;
+    let level = unit
+        .kit
+        .as_ref()
+        .expect("Dark Crown kit")
+        .lv("Dark Crown")
+        .clone();
+    battle
+        .unit_mut(reference)
+        .kit
+        .as_mut()
+        .expect("Dark Crown kit")
+        .crown_stage = stage;
+    if stage == 0 {
+        return 0.0;
+    }
+    let columns = [
+        "~first health & damage increase",
+        "~second health & damage increase",
+        "~max health increase",
+    ];
+    battle
+        .catalog
+        .stats
+        .get("Dark Crown", &level, &[columns[stage - 1]], None)
+        .expect("Dark Crown stage buff")
+        / 100.0
 }

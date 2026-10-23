@@ -1,5 +1,4 @@
-//! Ports pets.py:9-412 for the stage-3 and ranked stage-5 pets.
-//! Other pets retain explicit unsupported branches at equip.
+//! Ports pets.py:9-454 for every attacking pet.
 
 use crate::battle::SpawnOptions;
 use crate::geom::{dist, py_pow};
@@ -117,6 +116,30 @@ fn target_from_pools(
     defenders: &[EntityRef],
 ) -> Option<EntityRef> {
     let unit = battle.unit(pet);
+    // pets.py:78-91: the existence check precedes the targetability filter.
+    if unit.name == "Greedy Raven" {
+        let resources: Vec<_> = battle
+            .buildings
+            .iter()
+            .filter(|building| {
+                building.alive
+                    && (building.kind == Tag::Resource
+                        || units::RESOURCE_KEYS.contains(&building.key.as_str()))
+            })
+            .map(|building| EntityRef::Building(building.id))
+            .collect();
+        if !resources.is_empty() {
+            let origin = if owner_present {
+                hero.expect("present owner")
+            } else {
+                pet
+            };
+            let candidates = resources
+                .into_iter()
+                .filter(|target| valid(battle, pet, Some(*target)));
+            return nearest(battle, EntityRef::Unit(origin), candidates);
+        }
+    }
     if unit.attached(battle) {
         let candidates = buildings.iter().copied().filter(|target| match target {
             EntityRef::Building(id) => battle.is_defense_target(*id)
@@ -148,7 +171,45 @@ fn target_from_pools(
             return Some(target);
         }
     }
+    // pets.py:113-116: Sneezy chooses defenses independently of the Hero.
+    if unit.name_id == Name::Sneezy {
+        let defenses: Vec<_> = buildings
+            .iter()
+            .copied()
+            .filter(|target| {
+                matches!(target, EntityRef::Building(id) if battle.is_defense_target(*id))
+            })
+            .collect();
+        let candidates = if defenses.is_empty() {
+            buildings
+        } else {
+            &defenses
+        };
+        return nearest(battle, EntityRef::Unit(pet), candidates.iter().copied());
+    }
     if owner_present {
+        // pets.py:120-127: a new Hero target restarts Yak's wall selection.
+        if battle.unit(pet).name_id == Name::MightyYak {
+            let owner = battle.unit(hero.expect("present owner"));
+            let hero_target = owner.target;
+            if hero_target != battle.unit(pet).extra.hero_target {
+                let unit = battle.unit_mut(pet);
+                unit.wall_target = None;
+                unit.extra.hero_target = hero_target;
+            }
+            let wall = battle
+                .unit(hero.expect("present owner"))
+                .wall_target
+                .map(EntityRef::Wall);
+            if valid(battle, pet, wall) {
+                return wall;
+            }
+            let wall = battle.unit(pet).wall_target.map(EntityRef::Wall);
+            if valid(battle, pet, wall) {
+                return wall;
+            }
+        }
+        let unit = battle.unit(pet);
         let hero = battle.unit(hero.expect("present owner"));
         let preference = battle.catalog.stats.attrs(&unit.name).get("preferred_target")
             .map_or("", |value| value.str());
@@ -186,11 +247,34 @@ pub fn owner_defeated(battle: &mut Battle, pet: UnitRef) {
     if !unit.alive || unit.extra.owner_defeated {
         return;
     }
+    battle.unit_mut(pet).extra.owner_defeated = true;
+    let unit = battle.unit(pet);
     if matches!(unit.name_id, Name::MightyYak | Name::Sneezy) {
-        todo!("stage 3+: pet owner-loss rage");
+        // pets.py:147-163: independent damage and additive movement Rage.
+        let name = unit.name.clone();
+        let raw = battle.catalog.stats.attrs(&name).at("raw");
+        let damage = 1.0
+            + stats::num(raw.at("Rage Damage Increase"), None).expect("pet Rage damage")
+                / 100.0;
+        let speed = raw
+            .get("Rage Speed Increase")
+            .and_then(|value| stats::num(value, Some(0.0)))
+            .unwrap_or(0.0)
+            / 8.0;
+        let until = battle.t
+            + stats::num(raw.at("Rage Duration"), None).expect("pet Rage duration");
+        units::add_rage(
+            battle.unit_mut(pet),
+            crate::state::StatusSource::Name(name),
+            damage,
+            speed,
+            until,
+        );
     }
     let unit = battle.unit_mut(pet);
-    unit.extra.owner_defeated = true;
+    if unit.name_id == Name::Sneezy {
+        unit.range = 1.5;
+    }
     unit.target = None;
     unit.wall_target = None;
 }
@@ -198,38 +282,85 @@ pub fn owner_defeated(battle: &mut Battle, pet: UnitRef) {
 // pets.py:166-216: Frosty's children spawn at the pet, in count order.
 fn summon(battle: &mut Battle, pet: UnitRef) -> bool {
     let unit = battle.unit(pet);
-    if unit.name_id == Name::Sneezy {
-        todo!("stage 3+: Sneezy summons");
-    }
-    if unit.name_id != Name::Frosty {
+    if !matches!(unit.name_id, Name::Frosty | Name::Sneezy) {
         return false;
     }
-    if battle.t < unit.extra.next_summon {
-        return false;
+    let summon_at = unit.extra.summon_at;
+    if summon_at.is_some_and(|at| battle.t < at) {
+        return true;
     }
-    let mut alive: Vec<_> = unit.extra.children.iter().copied()
-        .filter(|child| battle.unit(*child).alive).collect();
-    let level = unit.level.as_ref().expect("Frosty level");
-    let count = battle.catalog.stats.get("Frosty", level, &["Frostmites per Summon"], None)
-        .expect("Frostmite count") as i64;
-    let cap = battle.catalog.stats.get("Frosty", level, &["Maximum Frostmites Summoned"], None)
-        .expect("Frostmite cap") as i64;
-    let cooldown = stats::num(battle.catalog.stats.attrs("Frosty").at("raw").at("Summon Cooldown"), None)
+    if summon_at.is_none() && battle.t < unit.extra.next_summon {
+        return battle.t < unit.extra.summon_until;
+    }
+    let mut alive: Vec<_> = unit
+        .extra
+        .children
+        .iter()
+        .copied()
+        .filter(|child| battle.unit(*child).alive)
+        .collect();
+    let (name, level, count, cap, cooldown) = if unit.name_id == Name::Sneezy {
+        ("Booger", unit.level.clone().expect("Sneezy level"), 1, 2, 10.0)
+    } else {
+        let level = unit.level.as_ref().expect("Frosty level");
+        let count = battle
+            .catalog
+            .stats
+            .get("Frosty", level, &["Frostmites per Summon"], None)
+            .expect("Frostmite count") as i64;
+        let cap = battle
+            .catalog
+            .stats
+            .get("Frosty", level, &["Maximum Frostmites Summoned"], None)
+            .expect("Frostmite cap") as i64;
+        let cooldown = stats::num(
+            battle.catalog.stats.attrs("Frosty").at("raw").at("Summon Cooldown"),
+            None,
+        )
         .expect("Frostmite cooldown");
+        ("Frostmite", Level::Int(1), count, cap, cooldown)
+    };
+    if name == "Booger" && summon_at.is_none() {
+        let next = battle.t + cooldown;
+        let at = battle.t + 1.0;
+        let until = battle.t + 1.5;
+        let unit = battle.unit_mut(pet);
+        unit.extra.next_summon = next;
+        if alive.len() as i64 >= cap {
+            return true;
+        }
+        unit.extra.summon_at = Some(at);
+        unit.extra.summon_until = until;
+        return true;
+    }
     for _ in 0..count.min(0.max(cap - alive.len() as i64)) {
         let unit = battle.unit(pet);
-        let child = battle.spawn("Frostmite", pet.team, unit.x, unit.y, SpawnOptions {
-            level: Some(Level::Int(1)),
-            kind: Tag::Summon,
-            owner: Some(pet),
-            group: unit.group.clone(),
-            ..Default::default()
-        });
+        let child = battle.spawn(
+            name,
+            pet.team,
+            unit.x,
+            unit.y,
+            SpawnOptions {
+                level: Some(level.clone()),
+                kind: Tag::Summon,
+                owner: Some(pet),
+                group: unit.group.clone(),
+                ..Default::default()
+            },
+        );
+        if name == "Booger" {
+            battle.unit_mut(child).flying = true;
+        }
         alive.push(child);
     }
-    let next = battle.t + cooldown;
+    let t = battle.t;
+    let next = t + cooldown;
     let unit = battle.unit_mut(pet);
     unit.extra.children = alive;
+    if name == "Booger" {
+        unit.extra.summon_at = None;
+        return t < unit.extra.summon_until;
+    }
     unit.extra.next_summon = next;
     false
 }
@@ -239,7 +370,14 @@ fn move_pet(battle: &mut Battle, pet: UnitRef, target: EntityRef) {
     if battle.t < battle.unit(pet).held_until {
         return;
     }
+    let unit = battle.unit(pet);
+    let previous = (unit.x, unit.y);
     battle.move_towards(pet, target, None);
+    let unit = battle.unit_mut(pet);
+    if unit.name_id == Name::MightyYak && (unit.x, unit.y) != previous {
+        unit.extra.yak_first = true;
+        unit.cooldown = 0.0;
+    }
 }
 
 // pets.py:230-374: passives run here as well as before the can-act check.
@@ -311,6 +449,18 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
     if summon(battle, pet) {
         return;
     }
+    // pets.py:302-305: Sneezy only summons and follows until owner defeat.
+    let unit = battle.unit(pet);
+    if unit.name_id == Name::Sneezy && !unit.extra.owner_defeated {
+        if present {
+            let owner = owner.expect("present owner");
+            let hero = battle.unit(owner);
+            if dist(unit.x, unit.y, hero.x, hero.y) > unit.range {
+                move_pet(battle, pet, EntityRef::Unit(owner));
+            }
+        }
+        return;
+    }
     let target = target(battle, pet);
     battle.unit_mut(pet).target = target;
     let Some(target) = target else {
@@ -346,6 +496,15 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
             }
         }
     }
+    // pets.py:331-336: first ram after moving has a half-second windup.
+    let unit = battle.unit(pet);
+    if unit.name_id == Name::MightyYak && unit.extra.yak_first {
+        let cooldown = 0.5 / 0.05_f64.max(effects::slow_mult(unit, t, false));
+        let unit = battle.unit_mut(pet);
+        unit.extra.yak_first = false;
+        unit.extra.yak_second = true;
+        unit.cooldown = cooldown;
+    }
     let unit = battle.unit(pet);
     if unit.cooldown > 0.0 && !units::isclose(t + unit.cooldown, t) {
         return;
@@ -355,8 +514,20 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
         units::strike(battle, pet, target);
     });
     let unit = battle.unit(pet);
-    let delay = unit.interval / 0.05_f64.max(effects::slow_mult(unit, t, false));
-    battle.unit_mut(pet).cooldown += delay;
+    let yak = unit.name_id == Name::MightyYak;
+    let interval = if yak && unit.extra.yak_second {
+        1.6
+    } else {
+        unit.interval
+    };
+    let delay = interval / 0.05_f64.max(effects::slow_mult(unit, t, false));
+    let unit = battle.unit_mut(pet);
+    if yak {
+        unit.extra.yak_second = false;
+        unit.cooldown = delay;
+    } else {
+        unit.cooldown += delay;
+    }
     if battle.unit(pet).name_id == Name::PoisonLizard {
         if matches!(target, EntityRef::Unit(_)) {
             // pets.py:350-360: attach poison to the newly released single shot.
