@@ -105,6 +105,19 @@ ranges were 0.5 tile long; the real replay agreed with game data).
   Lizard poisoned at launch; Clone ignored strength; air trap skeletons
   range 0.4 (0).
 
+- Round 5 (2026-10-22, output/hunt/r5-*.out, review output/hunt/review5.out):
+  Warden flipped targets every tick (never attacked); in-range buildings
+  chosen by list order (now closest); source fields undercounted the goal
+  wall cost; Jump made Wall Breakers skip all walls; Yetimites ignored in
+  Warden weight; Root/Dragon Riders dropped cleanup targets to retaliate;
+  Invisibility Tower trigger used centre distance; Headhunter poison hit
+  heroes 20x (round-4 regression); Spell Tower timer restarted when the
+  first trigger troop died; Dark Orb skipped invisible targets; Ice Block
+  stopped Rocket Backpack; Seeking Shield KO release delayed 0.93 s.
+  Plans: variant used a pet on the wrong hero; surplus Revives unusable;
+  opening Lightning after the main deploy; cancelled repeating steps kept
+  their spells; skipped deploys dropped their troops.
+
 ## Known, not fixed
 
 - Town Halls 13-15 get the TH16 Giga Inferno profile (defense.py
