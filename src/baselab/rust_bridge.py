@@ -97,6 +97,12 @@ def plan_json(plan):
 
 
 _PLANS: dict = {}
+_BATCH_STATISTICS = {"calls": 0, "battles": 0}
+
+
+def batch_statistics() -> dict[str, int]:
+    """Successful engine calls and battles, including finalist attack searches."""
+    return dict(_BATCH_STATISTICS)
 
 
 def scenario_plan(sc, strength: float) -> str:
@@ -132,9 +138,12 @@ def run_jobs_file(path: Path, threads: int | None = None) -> list[dict]:
         run = subprocess.run(command, capture_output=True, text=True)
         if run.returncode != 0:
             raise RuntimeError(f"baselab-engine failed: {run.stderr.strip()[-2000:]}")
-        return [
+        results = [
             json.loads(line) for line in out.read_text().splitlines() if line.strip()
         ]
+        _BATCH_STATISTICS["calls"] += 1
+        _BATCH_STATISTICS["battles"] += len(results)
+        return results
 
 
 def run_batch(jobs, threads: int | None = None):
@@ -158,10 +167,16 @@ def run_plan_batch(jobs, threads: int | None = None):
 
 
 def _run_serialized_jobs(jobs, threads: int | None = None):
-    """Share layout/plan deduplication and one engine invocation per batch."""
+    """One invocation for all submitted jobs; coalesce exact duplicate battles.
+
+    Racing callers batch every active child's chunk together to amortize
+    the catalog load in rust/src/main.rs:70-72 across the whole wave.
+    """
     layouts, layout_index = [], {}
     plans, plan_index = [], {}
     entries = []
+    entry_index = {}
+    result_order = []
     for layout_json, plan_text, seed, modifier in jobs:
         lk = json.dumps(layout_json, sort_keys=True)
         if lk not in layout_index:
@@ -170,15 +185,26 @@ def _run_serialized_jobs(jobs, threads: int | None = None):
         if plan_text not in plan_index:
             plan_index[plan_text] = len(plans)
             plans.append(plan_text)
-        entries.append(
-            {
-                "layout": layout_index[lk],
-                "plan": plan_index[plan_text],
-                "seed": seed,
-                "town_hall": layout_json.get("town_hall", 16),
-                "modifier": modifier,
-            }
+        key = (
+            layout_index[lk],
+            plan_index[plan_text],
+            seed,
+            layout_json.get("town_hall", 16),
+            modifier,
         )
+        # rust/src/jobs.rs:135-137: each job owns its seeded battle state.
+        if key not in entry_index:
+            entry_index[key] = len(entries)
+            entries.append(
+                {
+                    "layout": key[0],
+                    "plan": key[1],
+                    "seed": seed,
+                    "town_hall": key[3],
+                    "modifier": modifier,
+                }
+            )
+        result_order.append(entry_index[key])
     if not entries:
         return []
     with tempfile.TemporaryDirectory() as tmp:
@@ -198,6 +224,7 @@ def _run_serialized_jobs(jobs, threads: int | None = None):
         raise RuntimeError(
             f"baselab-engine returned {len(results)} results for {len(entries)} jobs"
         )
-    return [
+    rows = [
         (r["stars"], r["destruction"], r["th_destroyed"], r["time"]) for r in results
     ]
+    return [rows[index] for index in result_order]

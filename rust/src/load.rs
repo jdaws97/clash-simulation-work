@@ -1598,6 +1598,7 @@ pub fn plan(p: Node<'_>, deployments: &[Deployment]) -> Plan {
                 "freeze_first", "pol", "charge_hero", "charge_lat", "charge_at",
                 "charge_recall_hp", "charge_len", "recall_funnel", "split_main",
                 "recalled", "_cast_log", "_next_brain", "_phase", "_entry", "_main_at",
+                "_totem_casts",
                 "_zap_done", "_cc_released", "_charge_n", "_later", "_distracts",
                 "_lured", "_spells0", "_cc_spells0", "_spell_stock", "observed",
                 "build_id", "cc_levels", "_entry_lat", "_zap_left", "_fallback_quakes",

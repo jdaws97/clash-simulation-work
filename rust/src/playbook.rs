@@ -467,6 +467,82 @@ impl PlaybookPlan {
         }
     }
 
+    // playbook.py:250-302: redirect within the anchor family, retaining first ties.
+    fn totem_anchor(
+        &self,
+        battle: &Battle,
+        at: &str,
+        position: (f64, f64),
+    ) -> Option<(f64, f64)> {
+        if !self.attack.totem_covered(battle, position.0, position.1) {
+            return Some(position);
+        }
+        let (kind, arg) = at.split_once(':').unwrap_or((at, ""));
+        if kind == "defenders" {
+            let group = plans::main_units(
+                battle,
+                if arg.is_empty() { "main" } else { arg },
+            );
+            if group.is_empty() {
+                return None;
+            }
+            let (cx, cy) = plans::centroid(battle, &group);
+            let foes: Vec<_> = battle
+                .defenders_pool()
+                .filter(|unit| {
+                    unit.alive
+                        && unit.target.is_some()
+                        && py_hypot(unit.x - cx, unit.y - cy) <= 8.0
+                        && !self.attack.totem_covered(battle, unit.x, unit.y)
+                })
+                .collect();
+            let mut best: Option<(f64, (f64, f64))> = None;
+            for unit in foes {
+                let distance = py_hypot(unit.x - position.0, unit.y - position.1);
+                if best.is_none_or(|(previous, _)| distance < previous) {
+                    best = Some((distance, (unit.x, unit.y)));
+                }
+            }
+            return best.map(|(_, point)| point);
+        }
+        let threats = if matches!(kind, "threat" | "group") {
+            let mut group = plans::main_units(battle, arg);
+            if kind == "threat" && group.is_empty() {
+                group = plans::main_units(battle, "main");
+            }
+            if group.is_empty() {
+                return None;
+            }
+            let (cx, cy) = plans::centroid(battle, &group);
+            let mut threats = plans::threats_near(battle, cx, cy, 12.0);
+            if kind == "threat" {
+                threats.retain(|&(id, _)| {
+                    let weapon = battle.building(id).weapon.as_ref().expect("weapon");
+                    weapon.target.is_some() || !weapon.multi.is_empty()
+                });
+            }
+            threats
+        } else {
+            let radius = plans::totem_radius(battle);
+            plans::threats_near(battle, position.0, position.1, radius)
+        };
+        let mut best: Option<((f64, f64), BuildingId)> = None;
+        for (id, _, score) in self.attack.totem_targets(battle, &threats) {
+            let building = battle.building(id);
+            let key = (
+                py_hypot(building.x - position.0, building.y - position.1),
+                -score,
+            );
+            if best.is_none_or(|(previous, _)| key < previous) {
+                best = Some((key, id));
+            }
+        }
+        best.map(|(_, id)| {
+            let building = battle.building(id);
+            (building.x, building.y)
+        })
+    }
+
     // playbook.py:226-231.
     fn inside(&self, battle: &mut Battle, unit: UnitRef) -> bool {
         let u = battle.unit(unit);
@@ -1195,17 +1271,38 @@ impl PlaybookPlan {
                     if position.is_none() && forced {
                         position = Some(self.edge(battle, "main"));
                     }
+                    // playbook.py:839-851: wait when every suitable Totem area is covered.
+                    let mut totem_covered = false;
+                    if step.action == Action::Spell
+                        && step.what.as_deref() == Some("Totem Spell")
+                    {
+                        if let Some(point) = position {
+                            position = self.totem_anchor(battle, &step.at, point);
+                            totem_covered = position.is_none();
+                        }
+                    }
                     let Some(position) = position else {
                         if matches!(step.action, Action::Spell | Action::Recall)
                             && step.what.as_deref() != Some("Revive Spell")
                         {
                             let since = entry_time(&mut self.no_target, &step.id, t);
+                            if totem_covered && t == since {
+                                self.log_steps.push((
+                                    round_decimal(t, 1),
+                                    format!("{} (waiting: Totem area covered)", step.id),
+                                ));
+                            }
                             if t - since >= AIM_WAIT {
                                 entry_time(&mut self.done, &step.id, t);
                                 self.cancelled.push(step.id.clone());
+                                let why = if totem_covered {
+                                    "Totem area covered"
+                                } else {
+                                    "no target"
+                                };
                                 self.log_steps.push((
                                     round_decimal(t, 1),
-                                    format!("{} (skipped: no target)", step.id),
+                                    format!("{} (skipped: {why})", step.id),
                                 ));
                             }
                         }

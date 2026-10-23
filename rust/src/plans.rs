@@ -306,6 +306,7 @@ pub struct AttackPlan {
     pub clan_castle_level: Option<i64>,
     pub main_at: f64,
     pub cast_log: SharedVec<(f64, String)>,
+    pub totem_casts: SharedVec<(f64, f64, f64)>,
     pub breakers: SharedVec<(String, i64)>,
     pub cleanup: SharedVec<(String, i64)>,
     pub distracts: i64,
@@ -442,6 +443,19 @@ impl AttackPlan {
                 .iter()
                 .map(|v| (v.arr()[0].f64(), v.arr()[1].str().to_owned()))
                 .collect(),
+            totem_casts: p.get("_totem_casts").map_or_else(SharedVec::default, |casts| {
+                casts
+                    .arr()
+                    .iter()
+                    .map(|cast| {
+                        (
+                            cast.arr()[0].f64(),
+                            cast.arr()[1].f64(),
+                            cast.arr()[2].f64(),
+                        )
+                    })
+                    .collect()
+            }),
             breakers: pairs("breakers").into(),
             cleanup: pairs("cleanup").into(),
             distracts: number(p, "_distracts", 0.0) as i64,
@@ -598,6 +612,10 @@ impl AttackPlan {
         set(&mut self.spells, key.to_owned(), remaining);
         battle.deployed_housing += 5 * battle.catalog.stats.attrs(name).at("housing").i64();
         self.cast_log.push((round_decimal(battle.t, 1), key.to_owned()));
+        // plans.py:524-526: retain the unrounded time and original cast point.
+        if key == "totem" {
+            self.totem_casts.push((battle.t, x, y));
+        }
         field
     }
 
@@ -1382,6 +1400,52 @@ impl AttackPlan {
             || reserved.is_empty();
     }
 
+    // plans.py:1104-1118: living Totems and casts within 5 s cover their radius.
+    pub fn totem_covered(&self, battle: &Battle, x: f64, y: f64) -> bool {
+        let radius = totem_radius(battle);
+        if battle.attackers_pool().any(|unit| {
+            unit.alive
+                && unit.name_id == Name::Totem
+                && py_hypot(unit.x - x, unit.y - y) <= radius
+        }) {
+            return true;
+        }
+        self.totem_casts.iter().any(|&(time, tx, ty)| {
+            battle.t - time <= 5.0 && py_hypot(tx - x, ty - y) <= radius
+        })
+    }
+
+    // plans.py:1120-1141: both candidate and score loops retain threat order.
+    pub fn totem_targets(
+        &self,
+        battle: &Battle,
+        threats: &[(BuildingId, f64)],
+    ) -> Vec<(BuildingId, f64, f64)> {
+        let radius = totem_radius(battle);
+        let uncovered: Vec<_> = threats
+            .iter()
+            .copied()
+            .filter(|&(id, _)| {
+                let building = battle.building(id);
+                battle.building_targetable(id)
+                    && !self.totem_covered(battle, building.x, building.y)
+            })
+            .collect();
+        let mut targets = Vec::new();
+        for &(id, distance) in &uncovered {
+            let building = battle.building(id);
+            let mut score = 0.0;
+            for &(other_id, _) in &uncovered {
+                let other = battle.building(other_id);
+                if py_hypot(other.x - building.x, other.y - building.y) <= radius {
+                    score += threat(&other.key, 1.0);
+                }
+            }
+            targets.push((id, distance, score));
+        }
+        targets
+    }
+
     // plans.py:1007-1040: breakers precede Jump and paced Earthquakes.
     fn breach(
         &mut self,
@@ -1617,15 +1681,22 @@ impl AttackPlan {
             && t - self.last("totem") > self.p("totem_gap") {
             let hot = threats_near(battle, cx, cy, 10.0);
             if hot.len() as f64 >= self.p("totem_min_threats") {
-                let fx = hot.iter()
-                    .map(|(b, _)| battle.building(*b).x)
-                    .sum::<f64>() / hot.len() as f64;
-                let fy = hot.iter()
-                    .map(|(b, _)| battle.building(*b).y)
-                    .sum::<f64>() / hot.len() as f64;
-                self.use_spell(battle, "totem", cx + (fx - cx) * 0.5, cy + (fy - cy) * 0.5);
-                if single_cast {
-                    return;
+                // plans.py:1324-1330: max(score, -distance), first complete tie.
+                let mut best: Option<(BuildingId, f64, f64)> = None;
+                for target in self.totem_targets(battle, &hot) {
+                    if best.is_none_or(|previous| {
+                        (target.2, -target.1) > (previous.2, -previous.1)
+                    }) {
+                        best = Some(target);
+                    }
+                }
+                if let Some((id, _, _)) = best {
+                    let building = battle.building(id);
+                    let (x, y) = (building.x, building.y);
+                    self.use_spell(battle, "totem", x, y);
+                    if single_cast {
+                        return;
+                    }
                 }
             }
         }
@@ -1927,6 +1998,38 @@ pub fn centroid(battle: &Battle, units: &[UnitRef]) -> (f64, f64) {
         u.y * u.housing.max(1) as f64
     }).sum::<f64>() / w;
     (x, y)
+}
+
+// spells.py:27-56, plans.py:1106-1107: _lvl(None) and exported _radius(..., 5.0).
+pub fn totem_radius(battle: &Battle) -> f64 {
+    let level = battle
+        .plan
+        .attack()
+        .and_then(|plan| {
+            plan.spell_levels
+                .iter()
+                .find(|(name, _)| name == "Totem Spell")
+                .and_then(|(_, level)| level.clone())
+        })
+        .filter(|level| match level {
+            Level::Int(value) => *value != 0,
+            Level::Text(value) => !value.is_empty(),
+        })
+        .unwrap_or_else(|| {
+            Level::Int(
+                battle
+                    .catalog
+                    .stats
+                    .max_level("Totem Spell", battle.plan.town_hall())
+                    .expect("Totem spell max level"),
+            )
+        });
+    battle
+        .catalog
+        .resolved
+        .at("spell_radii")
+        .at(&format!("Totem Spell|{level}"))
+        .f64()
 }
 
 // plans.py:888-897.

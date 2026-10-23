@@ -152,6 +152,7 @@ def catalog():
         "Haste Spell": 4.0,
         "Skeleton Spell": 2.25,
         "Bat Spell": 2.25,
+        "Totem Spell": 5.0,
     }
     spell_radii = {
         f"{name}|{entry['level']}": spells._radius(name, entry["level"], default)
