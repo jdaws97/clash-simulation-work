@@ -1112,7 +1112,14 @@ fn gear_up(battle: &Battle, building: &Building, weapon: &mut Weapon) {
         }
         _ => {
             weapon.kind = Tag::from("mortar_burst");
-            weapon.interval = 4.0;
+            // defense.py:519: the geared Mortar waits 3.5 s after its burst.
+            let row = battle.catalog.game_data(
+                "buildings",
+                &building.name,
+                Some(&Level::Int(*level)),
+            );
+            weapon.interval =
+                crate::catalog::game_required_int(row, "AltAttackSpeed") as f64 / 1000.0;
             weapon.damage = get(battle, &building.name, &Level::Int(*level), &["Damage per Shot"], None);
             weapon.extra.shots = 3;
             weapon.extra.gap = 0.5;

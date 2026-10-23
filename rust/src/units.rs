@@ -11,7 +11,7 @@ use crate::effects;
 use crate::fast_hash::FastMap as HashMap;
 use crate::geom;
 use crate::grid::{TargetIdentity, RES};
-use crate::catalog::game_int;
+use crate::catalog::{game_float, game_int, game_required_int};
 use crate::heroes;
 use crate::labels::{Name, Special, Tag};
 use crate::spells;
@@ -92,6 +92,7 @@ const SPATIAL_TROOPS: &[Name] = &[
     Name::StoneSlammer,
     Name::Phoenix,
     Name::FlameFlinger,
+    Name::WallWrecker,
     Name::GiantGiant,
     Name::SuperArcher,
     Name::SuperWizard,
@@ -414,7 +415,14 @@ pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
         );
     }
     if sp.has_special(Special::Burrow) {
-        todo!("stage 2: units.py:272 burrowing troop spawn");
+        let u = battle.unit_mut(unit);
+        u.underground = unit.team == Team::Atk;
+        if name == "Miner" && unit.team == Team::Def {
+            u.speed = 2.5;
+        }
+        if name == "Super Miner" && unit.team == Team::Def {
+            u.speed = 4.0 * 0.7;
+        }
     }
     if sp.has_special(Special::Yetimites) {
         let count = unit_stat(battle, unit, &["Yetimites spawned"], Some(14.0)) as i64;
@@ -466,7 +474,8 @@ pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
         u.extra.next_log = t + 1.0;
     }
     if sp.has_special(Special::Flinger) {
-        todo!("stage 2: units.py:299 Flame Flinger decay");
+        // units.py:296-297: decay is fixed before deploy-time strength scaling.
+        battle.unit_mut(unit).decay = 17.0;
     }
     if name == "Druid" {
         battle.unit_mut(unit).extra.bear_at = t + 30.0;
@@ -498,6 +507,7 @@ pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
         let u = battle.unit_mut(unit);
         u.extra.barrels = count;
         u.extra.next = t + 2.0;
+        u.extra.hp_loss_at = t + 1.0;
         u.extra.expires_at = t + lifetime;
     }
 }
@@ -557,6 +567,20 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
         unit.alive = false;
         unit.hp = 0.0;
         return true;
+    }
+    // units.py:338-345: discrete launcher HP loss precedes lifetime expiry.
+    if special.contains(Special::TroopLauncher) {
+        while t >= battle.unit(unit).extra.hp_loss_at
+            || isclose(t, battle.unit(unit).extra.hp_loss_at)
+        {
+            let u = battle.unit_mut(unit);
+            u.hp -= 25.0;
+            u.extra.hp_loss_at += 1.0;
+            if u.hp <= 0.0 {
+                battle.kill(unit);
+                return true;
+            }
+        }
     }
     if t >= battle.unit(unit).extra.expires_at {
         battle.kill(unit);
@@ -873,17 +897,64 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
     }
     let u = battle.unit(unit);
     if special.contains(Special::BlimpBombs) && u.can_act(t) && t >= u.extra.next_bomb {
-        todo!("stage 2: units.py:538 Battle Blimp bomb drops");
+        let damage = unit_stat(battle, unit, &["Damage per Attack"], Some(450.0));
+        let u = battle.unit(unit);
+        let (x, y) = (u.x, u.y);
+        area_hit(battle, unit, x, y, 3.0, damage, true, None);
+        battle.unit_mut(unit).extra.next_bomb = t + 1.5;
     }
     false
 }
 
-// units.py:545-568.
-pub fn update_burrow(battle: &mut Battle, unit: UnitRef, _target: Option<EntityRef>) {
+// units.py:560-594: burrow transitions and Battle Drill emergence.
+pub fn update_burrow(battle: &mut Battle, unit: UnitRef, target: Option<EntityRef>) {
     if !battle.unit(unit).spec.has_special(Special::Burrow) {
         return;
     }
-    todo!("stage 2: units.py:548 burrow retreat, hiding and Battle Drill emergence");
+    if unit.team == Team::Def {
+        battle.unit_mut(unit).underground = false;
+        return;
+    }
+    let u = battle.unit(unit);
+    let was_underground = u.underground;
+    let retreating = target.is_none_or(|target| {
+        target_distance(battle, EntityRef::Unit(unit), target) > effective_range(battle, u)
+    });
+    let t = battle.t;
+    if u.name_id == Name::Miner && retreating && !was_underground {
+        let u = battle.unit_mut(unit);
+        let hide_at = *u.extra.hide_at.get_or_insert(t + 1.0);
+        u.held_until = u.held_until.max(hide_at);
+        u.underground = t >= hide_at;
+    } else {
+        let u = battle.unit_mut(unit);
+        u.underground = retreating;
+        let hide_at = u.extra.hide_at.take();
+        if !retreating && hide_at.is_some_and(|hide_at| u.held_until == hide_at) {
+            u.held_until = t;
+        }
+    }
+    let u = battle.unit(unit);
+    if u.name_id == Name::BattleDrill && was_underground && !u.underground {
+        let (x, y) = (u.x, u.y);
+        for index in 0..battle.walls.len() {
+            let wall = &battle.walls[index];
+            if wall.alive && isclose(wall.edge_distance(x, y), 0.0) {
+                battle.hit_building(EntityRef::Wall(wall.id), wall.hp, None, "normal");
+            }
+        }
+        // units.py:585-594: surfacing stuns nearby defense targets for 2 s.
+        for index in 0..battle.buildings.len() {
+            let building = &battle.buildings[index];
+            if building.alive
+                && battle.is_defense_target(building.id)
+                && building.edge_distance(x, y) <= 1.5
+            {
+                let building = &mut battle.buildings[index];
+                building.stun_until = building.stun_until.max(t + 2.0);
+            }
+        }
+    }
 }
 
 // units.py:572-577: transformation does not run the Druid's death callbacks.
@@ -1549,8 +1620,7 @@ fn try_merge_meteor(battle: &mut Battle, unit: UnitRef) -> bool {
     for candidate in battle.attackers_pool() {
         let reference = candidate.reference();
         if reference == unit || !candidate.alive || candidate.name_id != Name::Meteormite
-            || candidate.extra.clone || candidate.level != u.level
-            || candidate.extra.meteor_components != u.extra.meteor_components
+            || candidate.extra.clone
             || !candidate.can_act(battle.t) || candidate.extra.leaping
             || geom::dist(u.x, u.y, candidate.x, candidate.y) > radius {
             continue;
@@ -1602,37 +1672,48 @@ fn try_merge_meteor(battle: &mut Battle, unit: UnitRef) -> bool {
     true
 }
 
-// units.py:1062-1080: Python max keeps the first (housing, -id) extreme.
+// units.py:1188-1220: rank eligible one-tile groups by total housing, then ID.
 fn launcher_target(battle: &Battle, unit: UnitRef) -> Option<UnitRef> {
-    let mut best = None;
-    let mut best_key = (i64::MIN, i64::MIN);
-    for ally in battle.attackers_pool() {
-        if ally.reference() == unit || !ally.alive || ally.extra.suspended
-            || matches!(
-                ally.name_id,
-                Name::SpellSkeleton | Name::Bat | Name::Totem | Name::Furnace | Name::Firemite
-            )
-            || matches!(ally.kind, Tag::Siege | Tag::SiegeIdle)
-            || !(ally.is_hero || ally.housing >= 2)
-        {
-            continue;
-        }
-        let key = (if ally.is_hero { 25 } else { ally.housing }, -(ally.id.0 as i64));
-        if best.is_none() || key > best_key {
+    let candidates: Vec<_> = battle
+        .attackers_pool()
+        .filter(|ally| {
+            ally.reference() != unit
+                && ally.alive
+                && battle.t >= ally.active_at
+                && !ally.extra.suspended
+                && !matches!(
+                    ally.name_id,
+                    Name::SpellSkeleton | Name::Bat | Name::Totem | Name::Furnace | Name::Firemite
+                )
+                && !matches!(ally.kind, Tag::Siege | Tag::SiegeIdle)
+        })
+        .collect();
+    let mut best: Option<UnitRef> = None;
+    let mut best_weight = 0;
+    for ally in &candidates {
+        let weight: i64 = candidates
+            .iter()
+            .filter(|member| geom::dist(ally.x, ally.y, member.x, member.y) <= 1.0)
+            .map(|member| if member.is_hero { 25 } else { member.housing })
+            .sum();
+        let heavier = weight > best_weight;
+        let earlier = weight == best_weight && best.is_some_and(|best| ally.id.0 < best.id.0);
+        if weight >= 2 && (heavier || earlier) {
             best = Some(ally.reference());
-            best_key = key;
+            best_weight = weight;
         }
     }
     best
 }
 
-// units.py:1083-1149: contents, healing, one cargo entry, clock, then final death.
+// units.py:1223-1319: enqueue launcher occupants before its delayed healing/cargo.
 pub fn launch_barrel(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     if battle.unit(unit).extra.barrels <= 0 {
         return;
     }
     let (x, y) = battle.entity_position(target);
     battle.unit_mut(unit).extra.barrels -= 1;
+    let mut landing = None;
     if battle.unit(unit).name_id == Name::SkyWagon {
         for (name, column) in [
             ("Minion", "Minions"),
@@ -1655,50 +1736,137 @@ pub fn launch_barrel(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
         let damage = unit_stat(battle, unit, &["Damage per Hit*"], None);
         battle.hit_building(target, damage, None, "normal");
     } else {
-        let level = unit_stat(battle, unit, &["Troop Level"], None) as i64;
-        for (name, column) in [
-            ("Barbarian", "Barbarians"),
-            ("Archer", "Archers"),
-            ("Giant", "Giants"),
-            ("Wall Breaker", "Wall Breakers"),
-        ] {
-            let count = unit_stat(battle, unit, &[&format!("Troops Spawned / {column}")], None) as i64;
-            for _ in 0..count {
+        // units.py:1244-1291: HitSpell order, durations and first group sizes.
+        let projectile = projectile_data(battle, battle.unit(unit), false);
+        let spell_level = Level::Int(game_required_int(projectile, "HitSpellLevel"));
+        let spell = battle.catalog.game_data(
+            "spells",
+            projectile.at("HitSpell").str(),
+            Some(&spell_level),
+        );
+        let at = battle.t + game_required_int(projectile, "FixedTravelTime") as f64 / 1000.0;
+        landing = Some(at);
+        let names: Vec<_> = spell
+            .at("SummonTroop")
+            .str()
+            .split(';')
+            .map(str::to_owned)
+            .collect();
+        let parse = |key: &str, default: &str| -> Vec<i64> {
+            spell
+                .get(key)
+                .map_or(default, crate::json::Json::str)
+                .split(';')
+                .map(|value| value.trim().parse().expect("barrel integer cell"))
+                .collect()
+        };
+        let counts = parse("UnitsToSpawn", "");
+        let levels = parse("SpawnUpgradeLevel", "");
+        let durations = parse("SpawnDuration", "0;0;0;0");
+        let first_groups = parse("SpawnFirstGroupSize", "1;1;1;1");
+        let mut group_start = at;
+        let groups = names
+            .into_iter()
+            .zip(counts)
+            .zip(levels)
+            .zip(durations)
+            .zip(first_groups);
+        for ((((name, count), level), duration), first) in groups {
+            let duration = duration as f64 / 1000.0;
+            let gap = if count != 0 {
+                duration / count as f64
+            } else {
+                0.0
+            };
+            for index in 0..count {
                 let u = battle.unit(unit);
-                battle.spawn(name, unit.team, x, y, SpawnOptions {
-                    level: Some(Level::Int(level)),
-                    kind: Tag::Summon,
-                    group: u.group.clone(),
-                    owner: Some(unit),
-                    ..Default::default()
-                });
+                let mut pending = Pending::new(
+                    group_start + (index - first + 1).max(0) as f64 * gap,
+                    x,
+                    y,
+                    0.0,
+                    0.0,
+                    false,
+                    false,
+                    &u.name,
+                );
+                pending.team = unit.team;
+                pending.extra.summon = Some((
+                    name.clone(),
+                    Level::Int(level),
+                    u.group.clone(),
+                    Some(unit),
+                ));
+                pending.actor = Some(EntityRef::Unit(unit));
+                battle.add_pending(pending);
             }
-        }
-        let recipients: Vec<_> = battle.attackers_pool().filter(|ally| {
-            ally.alive && !ally.flying
-                && !matches!(
-                    ally.name_id,
-                    Name::Furnace | Name::Firemite | Name::Totem | Name::SpellSkeleton | Name::Bat
-                )
-                && !matches!(ally.kind, Tag::Siege | Tag::SiegeIdle)
-                && geom::dist(x, y, ally.x, ally.y) <= 1.0
-        }).map(Unit::reference).collect();
-        for ally in recipients {
-            battle.unit_mut(ally).heal(6.0);
+            group_start += duration;
         }
     }
-    if !battle.onboard_cargo.is_empty() {
-        let entry = battle.onboard_cargo.remove(0);
-        let group = battle.unit(unit).group.clone();
-        spawn_cargo(battle, entry, x, y, &group, true);
-        if battle.onboard_cargo.is_empty() {
-            battle.plan.release_cc();
+    let entry = if battle.onboard_cargo.is_empty() {
+        None
+    } else {
+        Some(battle.onboard_cargo.remove(0))
+    };
+    let had_entry = entry.is_some();
+    if battle.unit(unit).name_id == Name::SkyWagon {
+        if let Some(entry) = entry {
+            let group = battle.unit(unit).group.clone();
+            spawn_cargo(battle, entry, x, y, &group, true);
         }
+    } else {
+        let mut pending = Pending::new(
+            landing.expect("launcher landing time"),
+            x,
+            y,
+            1.0,
+            0.0,
+            false,
+            false,
+            &battle.unit(unit).name,
+        );
+        pending.team = unit.team;
+        pending.extra.launcher_barrel = Some(entry);
+        pending.actor = Some(EntityRef::Unit(unit));
+        battle.add_pending(pending);
+    }
+    if had_entry && battle.onboard_cargo.is_empty() {
+        battle.plan.release_cc();
     }
     let next = battle.t + battle.unit(unit).interval;
     battle.unit_mut(unit).extra.next = next;
     if battle.unit(unit).extra.barrels == 0 {
         battle.kill(unit);
+    }
+}
+
+// units.py:1322-1344: heal eligible ground allies, then deliver this barrel's cargo.
+pub fn barrel_impact(battle: &mut Battle, pending: Pending) {
+    let recipients: Vec<_> = battle
+        .attackers_pool()
+        .filter(|ally| {
+            ally.alive
+                && battle.t >= ally.active_at
+                && !ally.extra.suspended
+                && !ally.flying
+                && !matches!(
+                    ally.name_id,
+                    Name::Furnace | Name::Firemite | Name::Totem | Name::SpellSkeleton | Name::Bat
+                )
+                && !matches!(ally.kind, Tag::Siege | Tag::SiegeIdle)
+                && geom::dist(pending.x, pending.y, ally.x, ally.y) <= pending.radius
+        })
+        .map(Unit::reference)
+        .collect();
+    for ally in recipients {
+        battle.unit_mut(ally).heal(6.0);
+    }
+    if let Some(entry) = pending.extra.launcher_barrel.expect("launcher barrel") {
+        let Some(EntityRef::Unit(actor)) = pending.actor else {
+            panic!("launcher barrel actor");
+        };
+        let group = battle.unit(actor).group.clone();
+        spawn_cargo(battle, entry, pending.x, pending.y, &group, true);
     }
 }
 
@@ -1905,19 +2073,26 @@ fn split_hog(battle: &mut Battle, unit: UnitRef) {
     }
     let (dx, dy) = heading.unwrap_or((0.0, 0.0));
     let u = battle.unit(unit);
-    battle.spawn(
-        "Super Rider",
-        unit.team,
+    // units.py:1550-1567: Rider becomes active only when its 1.3 s flight lands.
+    let mut pending = Pending::new(
+        battle.t + 1.3,
         u.x - 5.0 * dx,
         u.y - 5.0 * dy,
-        SpawnOptions {
-            level: u.level.clone(),
-            kind: Tag::Summon,
-            group: u.group.clone(),
-            owner: Some(unit),
-            ..Default::default()
-        },
+        0.0,
+        0.0,
+        false,
+        false,
+        &u.name,
     );
+    pending.team = unit.team;
+    pending.extra.summon = Some((
+        "Super Rider".to_owned(),
+        u.level.clone().expect("Super Hog Rider level"),
+        u.group.clone(),
+        Some(unit),
+    ));
+    pending.actor = Some(EntityRef::Unit(unit));
+    battle.add_pending(pending);
 }
 
 // units.py:1364-1380: snapshot buildings, optional walls, then opposing units.
@@ -2343,27 +2518,25 @@ pub fn mult_vs(battle: &Battle, unit: UnitRef, target: EntityRef) -> f64 {
     multiplier
 }
 
-// units.py:1630-1689: compare integer troop levels only in the named branches.
-fn level_between(unit: &Unit, low: i64, high: i64) -> bool {
-    match unit.level.as_ref().expect("numeric troop level") {
-        Level::Int(level) => low <= *level && *level <= high,
-        Level::Text(_) => panic!("numeric troop level required"),
-    }
-}
-
 // units.py:1760-1778: resolve the per-level projectile before consuming Long Shot.
-fn projectile_data<'a>(battle: &'a Battle, unit: &Unit) -> &'a crate::json::Json {
+fn projectile_data<'a>(
+    battle: &'a Battle,
+    unit: &Unit,
+    noble_iron: bool,
+) -> &'a crate::json::Json {
     let row = battle.catalog.game_unit_data(&unit.name, unit.level.as_ref());
     let projectile = if unit.name_id == Name::SuperMinion && unit.extra.long_shots > 0 {
         Some("super_gargoyle_projectile_big")
+    } else if noble_iron {
+        Some("TurboStartProjectile")
     } else {
         row.get("Projectile").map(crate::json::Json::str)
     };
     battle.catalog.game_data("projectiles", projectile.unwrap_or(""), None)
 }
 
-pub fn projectile_speed(battle: &Battle, unit: &Unit) -> Option<f64> {
-    let speed = game_int(projectile_data(battle, unit), "Speed", 0);
+pub fn projectile_speed(battle: &Battle, unit: &Unit, noble_iron: bool) -> Option<f64> {
+    let speed = game_int(projectile_data(battle, unit, noble_iron), "Speed", 0);
     (speed > 0).then_some(speed as f64 / 100.0)
 }
 
@@ -2375,6 +2548,7 @@ pub fn launch_projectile(
     damage: f64,
     speed: f64,
     rocket: bool,
+    noble_iron: bool,
 ) {
     let u = battle.unit(unit);
     let sp = Arc::clone(&u.spec);
@@ -2388,7 +2562,7 @@ pub fn launch_projectile(
     let projectile = if rocket {
         battle.catalog.game_data("projectiles", "RocketSpearProjectile", None)
     } else {
-        projectile_data(battle, u)
+        projectile_data(battle, u, noble_iron)
     };
     let start_offset = game_int(projectile, "StartOffset", 0) as f64 / 100.0;
     let flight = 0.0_f64.max(length - start_offset) / speed;
@@ -2427,9 +2601,18 @@ pub fn launch_projectile(
     } else if name == Name::MeteorGolem {
         mode = "meteor";
     } else if name == Name::FlameFlinger {
-        for _ in 0..3 {
-            let mut pending = Pending::new(battle.t + flight, x, y, sp.splash, damage,
-                hits_air, hits_ground, source.clone());
+        // units.py:1977-1995: preserve the three separate 128 ms arrivals.
+        for index in 0..3 {
+            let mut pending = Pending::new(
+                battle.t + flight + index as f64 * 0.128,
+                x,
+                y,
+                sp.splash,
+                damage,
+                hits_air,
+                hits_ground,
+                source.clone(),
+            );
             pending.team = if unit.team == Team::Atk {
                 Team::Def
             } else {
@@ -2603,17 +2786,17 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
                 None,
             )
         } else {
-            projectile_data(battle, u)
+            projectile_data(battle, u, false)
         };
-        let level = Level::Int(game_int(projectile, "HitSpellLevel", 0));
+        let level = Level::Int(game_required_int(projectile, "HitSpellLevel"));
         let spell = battle.catalog.game_data(
             "spells",
             projectile.at("HitSpell").str(),
             Some(&level),
         );
-        let hits = game_int(spell, "NumberOfHits", 0);
-        let gap = game_int(spell, "TimeBetweenHitsMS", 0) as f64 / 1000.0;
-        let radius = game_int(spell, "Radius", 0) as f64 / 100.0;
+        let hits = game_required_int(spell, "NumberOfHits");
+        let gap = game_required_int(spell, "TimeBetweenHitsMS") as f64 / 1000.0;
+        let radius = game_required_int(spell, "Radius") as f64 / 100.0;
         let damage = spell
             .at("PoisonDPS")
             .str()
@@ -2705,6 +2888,8 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     damage *= rage;
     let rocket = battle.unit(unit).kit.as_ref()
         .is_some_and(|kit| kit.has("Rocket Spear") && kit.spear_shots > 0);
+    let noble_iron = battle.unit(unit).kit.as_ref()
+        .is_some_and(|kit| kit.has("Noble Iron") && kit.spear_shots > 0);
     if battle.unit(unit).kit.is_some() {
         let u = battle.unit(unit);
         if t < u.extra.vial_until {
@@ -2714,13 +2899,13 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
         damage = damage.max(ordinary + heroes::strike_bonus(battle, unit));
     }
     if rocket {
-        launch_projectile(battle, unit, target, damage, 12.0, true);
+        launch_projectile(battle, unit, target, damage, 12.0, true, false);
         return;
     }
     // units.py:2028-2037: choose and launch before consuming a Long Shot.
-    let speed = projectile_speed(battle, battle.unit(unit));
+    let speed = projectile_speed(battle, battle.unit(unit), noble_iron);
     if let Some(speed) = speed {
-        launch_projectile(battle, unit, target, damage, speed, false);
+        launch_projectile(battle, unit, target, damage, speed, false, noble_iron);
     }
     if sp.has_special(Special::LongShot) && battle.unit(unit).extra.long_shots > 0 {
         battle.unit_mut(unit).extra.long_shots -= 1;
@@ -2823,30 +3008,48 @@ fn after_unit_hit_effect(
     let victim = battle.unit(target);
     if sp.has_special(Special::HhPoison) && !(victim.kind == Tag::Guardian && victim.extra.waiting) {
         let u = battle.unit(unit);
-        let level = u.level.as_ref().expect("Headhunter level");
-        let duration = if level_between(u, i64::MIN, 3) {
-            3.0
-        } else {
-            2.0
-        };
-        let slow = battle
-            .catalog
-            .stats
-            .get("Headhunter", level, &["Speed Decrease"], Some(46.0))
-            .expect("Headhunter speed default")
-            / 100.0;
-        let attack = battle
-            .catalog
-            .stats
-            .get("Headhunter", level, &["Attack Rate Decrease"], Some(68.0))
-            .expect("Headhunter attack default")
-            / 100.0;
-        let (_, slow, attack) = spells::poison_factors(battle.unit(target), 0.0, slow, attack);
-        let victim = battle.unit_mut(target);
-        victim.move_slow = 1.0 - slow;
-        victim.move_slow_until = t + duration;
-        victim.atk_slow = 1.0 - attack;
-        victim.atk_slow_until = t + duration;
+        // units.py:2338-2367: Headhunter uses the shared, source-keyed poison ramp.
+        let row = battle.catalog.game_unit_data(&u.name, u.level.as_ref());
+        let ability_level = Level::Int(game_required_int(row, "SpecialAbilitiesLevel"));
+        let ability = battle.catalog.game_data(
+            "special_abilities",
+            "HeadhunterPoison",
+            Some(&ability_level),
+        );
+        let poison_level = Level::Int(game_required_int(ability, "PoisonOnHitSpellLevel"));
+        let poison = battle.catalog.game_data(
+            "spells",
+            ability.at("PoisonOnHitSpell").str(),
+            Some(&poison_level),
+        );
+        let duration = game_required_int(ability, "PoisonOnHitDuration") as f64 / 1000.0;
+        let slow = -game_float(poison, "SpeedBoost") / 100.0;
+        let attack = -game_float(poison, "AttackSpeedBoost") / 100.0;
+        let damage = game_float(poison, "PoisonDPS");
+        let ramp = poison
+            .get("PoisonIncreaseSlowly")
+            .is_some_and(|value| value.str() == "TRUE");
+        let source = Some(("unit".to_owned(), unit.id.0 as i64));
+        spells::poison(
+            battle,
+            target,
+            damage,
+            slow,
+            attack,
+            1.0,
+            spells::PoisonOptions {
+                ramp,
+                origin: "headhunter",
+                source: source.clone(),
+                source_until: None,
+                refresh: 0.2,
+            },
+        );
+        if let Some(state) = battle.poison.iter_mut().find(|state| {
+            state.unit == target && state.origin == "headhunter" && state.source == source
+        }) {
+            state.until = t + duration;
+        }
     }
     if splash && !SPATIAL_TROOPS.contains(&battle.unit(unit).name_id)
         && matches!(sp.attack, Tag::Splash | Tag::Spin)

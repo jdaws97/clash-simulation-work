@@ -423,7 +423,12 @@ pub fn spawn_skeleton(battle: &mut Battle, trap: TrapId, x: f64, y: f64) {
         .get(&tr.name, &level, &["Damage per Hit"], None)
         .expect("Skeleton Trap damage");
     let interval = raw(battle, &tr.name, "Attack Speed", None).expect("Skeleton Trap attack speed");
-    let range = raw(battle, &tr.name, "Range", None).expect("Skeleton Trap range");
+    // traps.py:354-356: airborne trap skeletons attack at zero range.
+    let range = if tr.mode.as_deref() == Some("air") {
+        0.0
+    } else {
+        0.4
+    };
     let unit = battle.unit_mut(reference);
     unit.hp = hp;
     unit.max_hp = hp;

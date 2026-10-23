@@ -153,9 +153,11 @@ impl Battle {
             }
             u.extra.preferred_remaining = preferred;
             let finishing = target.is_some() && target == u.extra.finish_preferred.map(EntityRef::Building);
-            let royal_champion = u.name_id == Name::RoyalChampion;
+            // battle.py:1298-1305: Giant Giant may retaliate while defenses remain.
+            let retaliates = matches!(u.name_id, Name::RoyalChampion | Name::GiantGiant);
             let pet = u.pet;
-            let retaliation = royal_champion || pet.is_some_and(|pet| self.unit(pet).attached(self));
+            let retaliation =
+                retaliates || pet.is_some_and(|pet| self.unit(pet).attached(self));
             engages = retaliation || !preferred && !finishing;
             if preferred && matches!(target, Some(EntityRef::Unit(_))) && !retaliation {
                 target = None;

@@ -350,6 +350,7 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
     if unit.cooldown > 0.0 && !units::isclose(t + unit.cooldown, t) {
         return;
     }
+    let pending_start = battle.pending.len();
     effects::damage_source(battle, Some(EntityRef::Unit(pet)), Tag::Attack, |battle| {
         units::strike(battle, pet, target);
     });
@@ -357,23 +358,15 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
     let delay = unit.interval / 0.05_f64.max(effects::slow_mult(unit, t, false));
     battle.unit_mut(pet).cooldown += delay;
     if battle.unit(pet).name_id == Name::PoisonLizard {
-        if let EntityRef::Unit(target) = target {
-            let unit = battle.unit(pet);
-            let level = unit.level.as_ref().expect("Poison Lizard level");
-            let movement = battle.catalog.stats.get(&unit.name, level, &["Poison Speed Decrease"], None)
-                .expect("lizard movement slow") / 100.0;
-            let attack = battle.catalog.stats.get(&unit.name, level, &["Poison Attack Rate Decrease"], None)
-                .expect("lizard attack slow") / 100.0;
-            // pets.py:353-370: Lizard doses enter the shared poison state, without ramp.
-            let damage = battle.catalog.stats.get(&unit.name, level, &["Poison Max Damage per Second"], None)
-                .expect("lizard poison damage");
-            let source = Some(("unit".to_owned(), pet.id.0 as i64));
-            spells::poison(battle, target, damage, movement, attack, 1.0, spells::PoisonOptions {
-                ramp: false, origin: "lizard", source: source.clone(), source_until: None, refresh: 0.2,
-            });
-            if let Some(state) = battle.poison.iter_mut().find(|state|
-                state.unit == target && state.origin == "lizard" && state.source == source) {
-                state.until = t + 3.0;
+        if matches!(target, EntityRef::Unit(_)) {
+            // pets.py:350-360: attach poison to the newly released single shot.
+            for pending in &mut battle.pending[pending_start..] {
+                if pending.actor == Some(EntityRef::Unit(pet))
+                    && pending.target == Some(target)
+                    && pending.extra.troop_impact.as_deref() == Some("single")
+                {
+                    pending.extra.hero_impact = Some("lizard".to_owned());
+                }
             }
         }
     }
@@ -394,6 +387,51 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
             pending.target = Some(second);
             battle.add_pending(pending);
         }
+    }
+}
+
+// pets.py:395-418: apply a three-second, non-ramping dose on projectile impact.
+pub fn poison_hit(battle: &mut Battle, pet: UnitRef, target: UnitRef) {
+    let unit = battle.unit(pet);
+    let level = unit.level.as_ref().expect("Poison Lizard level");
+    let movement = battle
+        .catalog
+        .stats
+        .get(&unit.name, level, &["Poison Speed Decrease"], None)
+        .expect("lizard movement slow")
+        / 100.0;
+    let attack = battle
+        .catalog
+        .stats
+        .get(&unit.name, level, &["Poison Attack Rate Decrease"], None)
+        .expect("lizard attack slow")
+        / 100.0;
+    let damage = battle
+        .catalog
+        .stats
+        .get(&unit.name, level, &["Poison Max Damage per Second"], None)
+        .expect("lizard poison damage");
+    let source = Some(("unit".to_owned(), pet.id.0 as i64));
+    spells::poison(
+        battle,
+        target,
+        damage,
+        movement,
+        attack,
+        1.0,
+        spells::PoisonOptions {
+            ramp: false,
+            origin: "lizard",
+            source: source.clone(),
+            source_until: None,
+            refresh: 0.2,
+        },
+    );
+    let t = battle.t;
+    if let Some(state) = battle.poison.iter_mut().find(|state| {
+        state.unit == target && state.origin == "lizard" && state.source == source
+    }) {
+        state.until = t + 3.0;
     }
 }
 

@@ -102,6 +102,7 @@ def catalog():
     # resolved rows, so Rust reads the same data without a second CSV reader.
     game_tables = {}
     for table in (
+        "buildings",
         "characters",
         "heroes",
         "pets",

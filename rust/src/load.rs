@@ -663,6 +663,8 @@ impl Resolver {
                 "mirror_clone" => extra.mirror_clone = v.boolean(),
                 "suicided" => extra.suicided = v.boolean(),
                 "facing" => extra.facing = v.pair(),
+                "summon_position" => extra.summon_position = v.optional_pair(),
+                "summon_facing" => extra.summon_facing = v.optional_pair(),
                 "heading" => extra.heading = v.optional_pair(),
                 "deployment_source" => extra.deployment_source = v.optional_string(),
                 "recalled" => extra.recalled = Some(v.number()),
@@ -695,6 +697,7 @@ impl Resolver {
                 "delivery_committed" => extra.delivery_committed = v.boolean(),
                 "enraged" => extra.enraged = v.boolean(),
                 "next_bomb" => extra.next_bomb = v.number(),
+                "hp_loss_at" => extra.hp_loss_at = v.number(),
                 "vacuum" => {
                     let pair = v.tuple(2);
                     extra.vacuum = Some((self.building_ref(pair[0].clone()), pair[1].number()));
@@ -954,6 +957,20 @@ impl Resolver {
                 "hero_impact" => extra.hero_impact = v.optional_string(),
                 "remaining" => extra.remaining = v.usize(),
                 "quake" => extra.quake = Some(std::rc::Rc::new(std::cell::RefCell::new(self.field(v)))),
+                "field" => {
+                    extra.field = Some(std::rc::Rc::new(std::cell::RefCell::new(self.field(v))));
+                }
+                "sweeper" => {
+                    v.boolean();
+                }
+                "aim" => extra.sweeper_aim = Some(v.number()),
+                "launcher_barrel" => {
+                    extra.launcher_barrel = Some(if v.value.is_null() {
+                        None
+                    } else {
+                        Some(self.cargo(v))
+                    });
+                }
                 "primary" => extra.primary = self.optional_ref(v),
                 "base_damage" => extra.base_damage = v.number(),
                 "monolith_bonus" => extra.monolith_bonus = v.number(),

@@ -3,6 +3,7 @@
 
 use std::f64::consts::PI;
 
+use crate::catalog::game_required_int;
 use crate::combat::SplashUnitsOptions;
 use crate::geom::{dist, py_hypot};
 use crate::labels::{Name, Tag};
@@ -11,7 +12,7 @@ use crate::state::{
     Weapon, WeaponTrigger,
 };
 use crate::stats::Level;
-use crate::{effects, geom, spells, units};
+use crate::{effects, geom, spells};
 
 // defense.py:17-57: access the original weapon across damage callbacks.
 fn weapon(battle: &Battle, owner: BuildingId) -> &Weapon {
@@ -182,7 +183,8 @@ pub fn on_destroyed(battle: &mut Battle, owner: BuildingId) {
             dps: w.extra.poison_dps,
             time: Some(w.extra.poison_time),
             slow: Some(w.extra.slow),
-            radius: Some(w.extra.death_radius),
+            // defense.py:577-578: poison has its own radius, separate from the blast.
+            radius: Some(4.0),
             atk: None,
             ramp: false,
             hero_mult: 1.0,
@@ -424,7 +426,9 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
             weapon_mut(battle, owner).burst_left = w.extra.shots as i64;
         }
         if battle.building(owner).key == "mgt" {
-            projectile(battle, owner, target, w.damage * damage_rage, 12.0, 0.0);
+            let data = projectile_data(battle, owner, true);
+            let offset = game_required_int(data, "StartOffset") as f64 / 100.0;
+            projectile(battle, owner, target, w.damage * damage_rage, 12.0, offset);
         } else if battle.building(owner).key == "cannon" {
             // defense.py:744-748: geared Cannon projectile offset is level-specific.
             let Level::Int(level) = battle.building(owner).level.as_ref().expect("Cannon level") else {
@@ -471,11 +475,20 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
     let damage = w.damage * damage_rage;
     match kind {
         Tag::Single => match battle.building(owner).key.as_str() {
-            "cannon" => projectile(battle, owner, target, damage, 12.0, 0.0),
-            "at" => projectile(battle, owner, target, damage, 18.0, 0.0),
-            "ad" => projectile(battle, owner, target, damage, 8.0, 0.0),
-            // defense.py:778-781: long-range Multi-Gear tracks its projectile.
-            "mgt" => projectile(battle, owner, target, damage, 8.0, 1.5),
+            "cannon" | "at" | "ad" | "bh" | "mgt" => {
+                let building = battle.building(owner);
+                let alternate = building.key == "at"
+                    && !matches!(building.mode.as_deref(), None | Some("normal"));
+                let data = projectile_data(battle, owner, alternate);
+                let offset = game_required_int(data, "StartOffset") as f64 / 100.0;
+                let speed = match building.key.as_str() {
+                    "cannon" => 12.0,
+                    "at" => 18.0,
+                    "bh" => game_required_int(data, "Speed") as f64 / 100.0,
+                    _ => 8.0,
+                };
+                projectile(battle, owner, target, damage, speed, offset);
+            }
             _ => {
                 battle.hit_unit(target, damage, None, "normal", None);
             }
@@ -538,8 +551,11 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
                     "wizard_tower",
                 ));
             } else if building.key == "bt" {
+                let data = projectile_data(battle, owner, false);
+                let offset = game_required_int(data, "StartOffset") as f64 / 100.0;
+                let flight = 0.0_f64.max(dist(bx, by, tx, ty) - offset) / 8.0;
                 battle.add_pending(Pending::new(
-                    t + dist(bx, by, tx, ty) / 8.0,
+                    t + flight,
                     tx,
                     ty,
                     w.extra.splash,
@@ -582,7 +598,39 @@ fn nearest(battle: &Battle, pool: &[UnitRef], x: f64, y: f64) -> Option<UnitRef>
     best
 }
 
-// defense.py:810-825.
+// defense.py:872-889: supercharges retain the final integer level's projectile.
+fn projectile_data(battle: &Battle, owner: BuildingId, alternate: bool) -> &crate::json::Json {
+    let building = battle.building(owner);
+    let level = match building.level.as_ref().expect("defense level") {
+        Level::Int(level) => *level,
+        Level::Text(_) => battle
+            .catalog
+            .stats
+            .record(&building.name)
+            .at("levels")
+            .arr()
+            .iter()
+            .filter_map(|row| match row.at("level") {
+                crate::json::Json::Num(_) => Some(row.at("level").i64()),
+                _ => None,
+            })
+            .max()
+            .expect("integer building level"),
+    };
+    let name = match building.key.as_str() {
+        "bh" => "Builders Hut",
+        "mat" => "Multi Archer Tower",
+        "mgt" => "Multi Gear Tower",
+        _ => &building.name,
+    };
+    let row = battle
+        .catalog
+        .game_data("buildings", name, Some(&Level::Int(level)));
+    let projectile = row.at(if alternate { "AltProjectile" } else { "Projectile" }).str();
+    battle.catalog.game_data("projectiles", projectile, None)
+}
+
+// defense.py:892-906: tracking flight starts at the selected projectile offset.
 pub fn projectile(
     battle: &mut Battle,
     owner: BuildingId,
@@ -704,7 +752,9 @@ pub fn multi(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
                 keep[index % keep.len()]
             };
             if w.kind == Tag::MultiArcher {
-                projectile(battle, owner, reference, w.damage * damage_rage, 18.0, 0.0);
+                let data = projectile_data(battle, owner, false);
+                let offset = game_required_int(data, "StartOffset") as f64 / 100.0;
+                projectile(battle, owner, reference, w.damage * damage_rage, 18.0, offset);
             } else {
                 battle.hit_unit(reference, w.damage * damage_rage, None, "normal", None);
             }
@@ -939,7 +989,7 @@ pub fn eagle(battle: &mut Battle, owner: BuildingId) {
     };
 }
 
-// defense.py:1012-1050: aim at the first nearest eligible flyer.
+// defense.py:1110-1167: aim at the first nearest flyer, then enqueue wave arrivals.
 pub fn sweeper(battle: &mut Battle, owner: BuildingId) {
     let w = weapon(battle, owner).clone();
     if w.cooldown > 0.0 {
@@ -969,22 +1019,37 @@ pub fn sweeper(battle: &mut Battle, owner: BuildingId) {
     let Some(aim) = aim else {
         return;
     };
-    for reference in battle.attackers_near(bx, by, w.range) {
+    let mut arrivals = battle.attackers_near(bx, by, w.range);
+    arrivals.sort_by(|a, b| {
+        let a = battle.unit(*a);
+        let b = battle.unit(*b);
+        (dist(a.x, a.y, bx, by), a.id.0)
+            .partial_cmp(&(dist(b.x, b.y, bx, by), b.id.0))
+            .expect("Sweeper arrival order")
+    });
+    for reference in arrivals {
         let unit = battle.unit(reference);
         if !unit.flying || unit.name_id == Name::Totem {
             continue;
         }
         let angle = geom::py_atan2(unit.y - by, unit.x - bx);
         if ((angle - aim + PI).rem_euclid(2.0 * PI) - PI).abs() <= 5.0 * (PI / 180.0) {
-            battle.nudge(
-                reference,
-                geom::py_cos(angle) * w.extra.push,
-                geom::py_sin(angle) * w.extra.push,
+            let flight = 0.0_f64.max(dist(unit.x, unit.y, bx, by) - 1.25) / 6.0;
+            let mut pending = Pending::new(
+                battle.t + flight,
+                bx,
+                by,
+                w.range,
+                0.0,
+                true,
+                false,
+                &battle.building(owner).key,
             );
-            let t = battle.t;
-            let unit = battle.unit_mut(reference);
-            unit.extra.pushed_at = Some(t);
-            units::reset_beam(unit);
+            pending.extra.sweeper_aim = Some(aim);
+            pending.extra.push = w.extra.push;
+            pending.actor = Some(EntityRef::Building(owner));
+            pending.target = Some(EntityRef::Unit(reference));
+            battle.add_pending(pending);
         }
     }
     weapon_mut(battle, owner).cooldown += w.interval;

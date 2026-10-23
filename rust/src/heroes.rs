@@ -1,7 +1,10 @@
 //! Ports heroes.py:28-1140,1348-1476. setup.rs constructs defending heroes.
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use crate::battle::SpawnOptions;
-use crate::catalog::{game_int, UnitSpec};
+use crate::catalog::{game_float, game_int, game_required_int, UnitSpec};
 use crate::combat::{SplashBuildingsOptions, SplashUnitsOptions};
 use crate::geom::{dist, py_hypot};
 use crate::labels::{Name, Specials, Tag};
@@ -99,6 +102,14 @@ pub fn col(battle: &Battle, name: &str, level: &Level, fragments: &[&str], defau
     let keys: Vec<_> = fragments.iter().map(|fragment| format!("~{fragment}")).collect();
     let keys: Vec<_> = keys.iter().map(String::as_str).collect();
     battle.catalog.stats.get(name, level, &keys, Some(default)).expect("numeric default")
+}
+
+// heroes.py:153,575,623,864: equipment levels map to ability/spell levels.
+fn equipment_ability_level(level: &Level) -> Level {
+    let Level::Int(level) = level else {
+        panic!("integer equipment level");
+    };
+    Level::Int(level.div_euclid(3) + 1)
 }
 
 fn default_loadout(battle: &Battle, hero: &str) -> Option<HeroLoadout> {
@@ -209,22 +220,48 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         unit.hp += hp;
         passive_dps += dps;
         passive_speed += attack_speed / 100.0;
-        kit.regen += col(battle, equipment, &level, &["self healing per second"], 0.0);
+        if equipment == "Fire Heart" {
+            let ability_level = equipment_ability_level(&level);
+            let ability = battle.catalog.game_data(
+                "special_abilities",
+                "DragonCrownRegeneration",
+                Some(&ability_level),
+            );
+            kit.regen += game_float(ability, "Regeneration") * 1000.0
+                / game_float(ability, "RegenerationTimeBetweenHitsMS");
+        } else {
+            kit.regen += col(battle, equipment, &level, &["self healing per second"], 0.0);
+        }
         kit.hp_recovery += col(battle, equipment, &level,
             &["hp recovery increase", "health recovery increase"], 0.0);
+        if equipment == "Stun Blaster" {
+            kit.hp_recovery += col(battle, equipment, &level, &["health recovery"], 0.0);
+        }
         match equipment.as_str() {
             "Electro Boots" => battle.unit_mut(hero).extra.boots_next = Some(battle.t + 0.4),
             "Rocket Spear" | "Revenge Deck" | "Fire Heart" | "Action Figure" | "Giant Arrow"
             | "Eternal Tome" | "Rage Gem" | "Fireball" | "Rocket Backpack"
             | "Spiky Ball" | "Earthquake Boots" | "Dark Orb" | "Meteor Staff"
             | "Barbarian Puppet" | "Archer Puppet" | "Hog Rider Puppet" | "Healer Puppet"
-            | "Lavaloon Puppet" | "Seeking Shield" | "Haste Vial" | "Heroic Torch" => {}
+            | "Lavaloon Puppet" | "Seeking Shield" | "Haste Vial" | "Heroic Torch"
+            | "Magic Mirror" | "Henchmen Puppet" | "Stun Blaster" | "Noble Iron" => {}
             _ => todo!("stage 3+: equip {equipment}"),
         }
     }
     let unit = battle.unit_mut(hero);
     unit.dmg += passive_dps * base_interval;
     unit.interval = base_interval / (1.0 + passive_speed);
+    if kit.has("Noble Iron") {
+        let level = kit.lv("Noble Iron");
+        let shots = col(battle, "Noble Iron", level, &["number of attacks"], 0.0) as i64;
+        let bonus = col(battle, "Noble Iron", level, &["damage per shot increase"], 0.0);
+        let range = col(battle, "Noble Iron", level, &["attack range"], 0.0);
+        kit.spear_shots = shots;
+        kit.spear_bonus = bonus;
+        let unit = battle.unit_mut(hero);
+        unit.extra.spear_base_range = Some(unit.range);
+        unit.range = range;
+    }
     kit.hp_recovery += battle.catalog.stats.get(&name,
         battle.unit(hero).level.as_ref().expect("hero level"), &["Health Recovery"], Some(0.0))
         .expect("numeric default");
@@ -244,7 +281,15 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
                 0.0,
             );
     }
-    battle.unit_mut(hero).kit = Some(kit);
+    let tracks_summons = ["Action Figure", "Magic Mirror", "Henchmen Puppet"]
+        .iter()
+        .any(|name| kit.has(name));
+    let unit = battle.unit_mut(hero);
+    unit.kit = Some(kit);
+    if tracks_summons {
+        unit.extra.summon_position = Some((unit.x, unit.y));
+        unit.extra.summon_facing = Some(unit.extra.facing);
+    }
 }
 
 // heroes.py:188-266: pets use a fresh owner-following specification and Unit
@@ -428,6 +473,9 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
 // heroes.py:275-345: called inside units.pre_tick's aura provenance.
 pub fn tick(battle: &mut Battle, hero: UnitRef) {
     let t = battle.t;
+    if battle.unit(hero).extra.summon_position.is_some() {
+        summon_facing(battle, hero, None);
+    }
     let kit = battle.unit(hero).kit.as_ref().expect("hero kit");
     if kit.doomed_at.is_some_and(|until| t >= until) {
         let unit = battle.unit_mut(hero);
@@ -716,7 +764,13 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
         let level = battle.unit(hero).kit.as_ref().expect("hero kit").lv(&name).clone();
         match name.as_str() {
             "Giant Arrow" => {
-                let damage = col(battle, &name, &level, &["projectile damage"], 0.0);
+                let ability_level = equipment_ability_level(&level);
+                let ability = battle.catalog.game_data(
+                    "special_abilities",
+                    "ArcherQueenPierceProjectile",
+                    Some(&ability_level),
+                );
+                let damage = game_float(ability, "Damage");
                 line(battle, hero, target, 75.0, 1.0, damage);
             }
             "Spiky Ball" => {
@@ -747,42 +801,49 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 }
             }
             "Earthquake Boots" => {
-                let percentage = col(battle, &name, &level, &["building damage %"], 0.0) / 100.0;
-                for index in 0..battle.buildings.len() {
-                    let b = &battle.buildings[index];
+                let spell_level = equipment_ability_level(&level);
+                let spell = battle.catalog.game_data(
+                    "spells",
+                    "Earthquake Boots Spell",
+                    Some(&spell_level),
+                );
+                let count = game_required_int(spell, "NumberOfHits");
+                let gap = game_required_int(spell, "TimeBetweenHitsMS") as f64 / 1000.0;
+                let u = battle.unit(hero);
+                let mut field = Field::new(
+                    "boots_quake",
+                    u.x,
+                    u.y,
+                    8.0,
+                    t + (count - 1) as f64 * gap,
+                );
+                field.value = game_float(spell, "BuildingDamagePermil") / 1000.0;
+                field.extra.troop = game_float(spell, "TroopDamagePermil") / 1000.0;
+                field.started = t;
+                let field = Rc::new(RefCell::new(field));
+                for index in 0..count {
                     let u = battle.unit(hero);
-                    if b.alive && b.counted && b.edge_distance(u.x, u.y) <= 8.0 {
-                        let id = b.id;
-                        let damage = b.max_hp * percentage / (2 * b.eq_hits + 1) as f64;
-                        battle.hit_building(EntityRef::Building(id), damage, None, "normal");
-                        battle.building_mut(id).eq_hits += 1;
-                    }
+                    let mut pending = Pending::new(
+                        crate::geom::round6(t + index as f64 * gap),
+                        u.x,
+                        u.y,
+                        8.0,
+                        0.0,
+                        false,
+                        true,
+                        &u.name,
+                    );
+                    pending.team = Team::Def;
+                    pending.extra.hero_impact = Some("boots_quake".to_owned());
+                    pending.extra.field = Some(Rc::clone(&field));
+                    pending.actor = Some(EntityRef::Unit(hero));
+                    battle.add_pending(pending);
                 }
                 for index in 0..battle.walls.len() {
                     let wall = &battle.walls[index];
                     let u = battle.unit(hero);
                     if wall.alive && dist(wall.x, wall.y, u.x, u.y) <= 8.0 {
                         battle.hit_building(EntityRef::Wall(wall.id), 1e9, None, "normal");
-                    }
-                }
-                let permil = match crate::geom::round_half_even(percentage * 200.0) as i64 {
-                    20 => Some(10.0),
-                    40 => Some(12.0),
-                    60 | 68 => Some(14.0),
-                    72 => Some(16.0),
-                    76 => Some(18.0),
-                    80 => Some(20.0),
-                    _ => None,
-                };
-                let troop_percentage = permil.map_or_else(
-                    || col(battle, &name, &level, &["troop damage %"], 0.0) / 100.0,
-                    |value| value * 5.0 / 1000.0,
-                );
-                let u = battle.unit(hero);
-                for foe in battle.defenders_near(u.x, u.y, 8.0) {
-                    let f = battle.unit(foe);
-                    if !f.flying && f.kind != Tag::TrapSkeleton {
-                        spells::quake_unit(battle, foe, troop_percentage);
                     }
                 }
             }
@@ -812,14 +873,105 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
             }
             "Action Figure" => {
                 let level = col(battle, &name, &level, &["giant giant level"], 10.0) as i64;
+                let (x, y) =
+                    summon_position(battle, hero, target, 0, 1, false, py_hypot(0.5, 0.5));
                 let unit = battle.unit(hero);
-                battle.spawn("Giant Giant", Team::Atk, unit.x + 0.5, unit.y + 0.5, SpawnOptions {
-                    level: Some(Level::Int(level)),
-                    kind: Tag::Summon,
-                    group: unit.group.clone(),
-                    ..Default::default()
-                });
+                battle.spawn(
+                    "Giant Giant",
+                    Team::Atk,
+                    x,
+                    y,
+                    SpawnOptions {
+                        level: Some(Level::Int(level)),
+                        kind: Tag::Summon,
+                        group: unit.group.clone(),
+                        ..Default::default()
+                    },
+                );
                 invisible(battle.unit_mut(hero), t + 1.0);
+            }
+            "Magic Mirror" => {
+                let count = col(battle, &name, &level, &["clones"], 2.0) as i64;
+                for index in 0..count {
+                    let (x, y) = summon_position(battle, hero, target, index, count, true, 0.5);
+                    let unit = battle.unit(hero);
+                    let child = battle.spawn(
+                        "Archer Queen",
+                        Team::Atk,
+                        x,
+                        y,
+                        SpawnOptions {
+                            level: unit.level.clone(),
+                            kind: Tag::HeroClone,
+                            group: unit.group.clone(),
+                            ..Default::default()
+                        },
+                    );
+                    let health = col(battle, &name, &level, &["clone health"], 0.0);
+                    let dps = col(battle, &name, &level, &["clone dps"], 0.0);
+                    let duration = col(battle, &name, &level, &["clone duration"], 0.0);
+                    let multiplier = battle.atk_hero_mult;
+                    let child = battle.unit_mut(child);
+                    child.hp = health;
+                    child.max_hp = health;
+                    child.base_max_hp = health;
+                    child.dmg = dps * child.interval;
+                    child.hp *= multiplier;
+                    child.max_hp *= multiplier;
+                    child.base_max_hp *= multiplier;
+                    child.dmg *= multiplier;
+                    child.extra.mirror_clone = true;
+                    child.extra.expire_at = t + duration;
+                    child.ability_used = true;
+                }
+                invisible(battle.unit_mut(hero), t + 1.0);
+            }
+            "Henchmen Puppet" => {
+                for index in 0..2 {
+                    let (x, y) = summon_position(battle, hero, target, index, 2, false, 0.5);
+                    let level = col(battle, &name, &level, &["henchmen level"], 7.0) as i64;
+                    let group = battle.unit(hero).group.clone();
+                    battle.spawn(
+                        "Henchman",
+                        Team::Atk,
+                        x,
+                        y,
+                        SpawnOptions {
+                            level: Some(Level::Int(level)),
+                            kind: Tag::Summon,
+                            group,
+                            ..Default::default()
+                        },
+                    );
+                }
+                invisible(battle.unit_mut(hero), t + 1.0);
+            }
+            "Stun Blaster" => {
+                let duration = col(battle, &name, &level, &["stun duration"], 7.5);
+                let radius = battle.catalog.stats.attrs(&name).at("radius").f64();
+                for target in targets(battle, false) {
+                    if let EntityRef::Building(id) = target {
+                        if matches!(battle.building(id).key.as_str(), "gs" | "es" | "ds") {
+                            continue;
+                        }
+                    }
+                    let u = battle.unit(hero);
+                    if distance(battle, target, u.x, u.y) <= radius {
+                        match target {
+                            EntityRef::Building(id) => {
+                                let building = battle.building_mut(id);
+                                building.stun_until = building.stun_until.max(t + duration);
+                            }
+                            EntityRef::Unit(id) => {
+                                let unit = battle.unit_mut(id);
+                                unit.stun_until = unit.stun_until.max(t + duration);
+                            }
+                            _ => panic!("Stun Blaster target"),
+                        }
+                        let damage = col(battle, &name, &level, &["ability total damage"], 0.0);
+                        damage_target(battle, target, damage);
+                    }
+                }
             }
             "Barbarian Puppet" | "Archer Puppet" | "Hog Rider Puppet" | "Healer Puppet"
             | "Lavaloon Puppet" => puppet(battle, hero, &name, &level, 0, None),
@@ -950,11 +1102,18 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
                 // heroes.py:721-722: preserve the current ordinary attack cooldown.
             }
             "Rocket Backpack" => {
-                let damage = col(battle, &name, &level, &["ability damage"], 0.0);
+                let ability_level = equipment_ability_level(&level);
+                let ability = battle.catalog.game_data(
+                    "special_abilities",
+                    "DragonDukeDeadlyDashMapCenter",
+                    Some(&ability_level),
+                );
+                let damage = game_float(ability, "ActAsPenetratingDamage");
                 start_dash(battle, hero, damage);
             }
             // These pieces have passive effects only in Python's activate.
-            "Electro Boots" | "Revenge Deck" | "Fire Heart" | "Rage Gem" | "Meteor Staff" => {}
+            "Electro Boots" | "Revenge Deck" | "Fire Heart" | "Rage Gem" | "Meteor Staff"
+            | "Noble Iron" => {}
             _ => todo!("stage 3+: activate {name}"),
         }
     }
@@ -962,9 +1121,107 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef) {
     battle.log_event(vec![round_decimal(t, 1).into(), "ability".into(), name.into()]);
 }
 
-// heroes.py:806-870: delayed blasts and Dark Orb's swept path.
+// heroes.py:898-921: movement updates the fallback facing even without a target.
+fn summon_facing(battle: &mut Battle, hero: UnitRef, target: Option<EntityRef>) -> f64 {
+    let target_position = target.map(|target| battle.entity_position(target));
+    let unit = battle.unit_mut(hero);
+    let previous = unit.extra.summon_position.unwrap_or((unit.x, unit.y));
+    if (unit.x, unit.y) != previous {
+        unit.extra.summon_facing = Some((unit.x - previous.0, unit.y - previous.1));
+    }
+    unit.extra.summon_position = Some((unit.x, unit.y));
+    let (mut dx, mut dy) = unit.extra.summon_facing.unwrap_or(unit.extra.facing);
+    if let Some((x, y)) = target_position.filter(|position| *position != (unit.x, unit.y)) {
+        dx = x - unit.x;
+        dy = y - unit.y;
+    }
+    crate::geom::py_atan2(dy, dx)
+}
+
+fn summon_position(
+    battle: &mut Battle,
+    hero: UnitRef,
+    target: Option<EntityRef>,
+    index: i64,
+    count: i64,
+    behind: bool,
+    radius: f64,
+) -> (f64, f64) {
+    let mut angle = summon_facing(battle, hero, target);
+    if behind {
+        angle += std::f64::consts::PI;
+    }
+    angle += std::f64::consts::PI * ((index as f64 + 0.5) / count as f64 - 0.5);
+    let unit = battle.unit(hero);
+    (
+        unit.x + radius * crate::geom::py_cos(angle),
+        unit.y + radius * crate::geom::py_sin(angle),
+    )
+}
+
+// heroes.py:924-953: all pending impacts share this cast's diminishing counts.
+fn boots_quake_hit(battle: &mut Battle, field: &mut Field) {
+    for index in 0..battle.buildings.len() {
+        let building = &battle.buildings[index];
+        if !(building.alive
+            && building.counted
+            && building.edge_distance(field.x, field.y) <= field.radius)
+        {
+            continue;
+        }
+        let id = building.id;
+        let target = EntityRef::Building(id);
+        let cached = field.extra.quake_hits.iter().find(|(key, _)| *key == target);
+        let count = if let Some((_, count)) = cached {
+            *count
+        } else {
+            battle.building_mut(id).eq_hits += 1;
+            let count = battle.building(id).eq_hits;
+            field.extra.quake_hits.push((target, count));
+            count
+        };
+        let damage = battle.building(id).max_hp * field.value / (2 * count - 1) as f64;
+        battle.hit_building(target, damage, None, "normal");
+    }
+    for defender in battle.defenders_near(field.x, field.y, field.radius) {
+        let unit = battle.unit(defender);
+        if unit.flying || unit.kind == Tag::TrapSkeleton {
+            continue;
+        }
+        let target = EntityRef::Unit(defender);
+        let cached = field.extra.quake_hits.iter().find(|(key, _)| *key == target);
+        let count = if let Some((_, count)) = cached {
+            *count
+        } else {
+            battle.unit_mut(defender).extra.eq_n += 1;
+            let count = battle.unit(defender).extra.eq_n;
+            field.extra.quake_hits.push((target, count));
+            count
+        };
+        let damage = battle.unit(defender).max_hp * field.extra.troop / (2 * count - 1) as f64;
+        battle.hit_unit(defender, damage, None, "normal", None);
+    }
+}
+
+// heroes.py:956-1147: delayed blasts and Dark Orb's swept path.
 pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
     match pending.extra.hero_impact.as_deref().expect("hero impact mode") {
+        "boots_quake" => {
+            let field = pending.extra.field.as_ref().expect("Earthquake Boots field");
+            boots_quake_hit(battle, &mut field.borrow_mut());
+        }
+        "lizard" => {
+            let Some(EntityRef::Unit(actor)) = pending.actor else {
+                panic!("Poison Lizard actor");
+            };
+            let Some(EntityRef::Unit(target)) = pending.target else {
+                panic!("Poison Lizard target");
+            };
+            units::projectile_impact(battle, pending);
+            if battle.unit(target).indirect_targetable(battle) {
+                pets::poison_hit(battle, actor, target);
+            }
+        }
         "blast" => blast(battle, pending.x, pending.y, pending.radius, pending.damage, None, 1.0),
         // heroes.py:845-855: subsequent puppet batches retain the scheduled clock.
         "puppet" => {

@@ -1449,7 +1449,16 @@ fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
                 ..Default::default()
             });
             let t = battle.t;
+            let strength = battle.unit(reference).extra.strength;
             let u = battle.unit_mut(child);
+            // spells.py:738-746: copies retain the original's calibrated strength.
+            if strength != 1.0 {
+                u.hp *= strength;
+                u.max_hp *= strength;
+                u.base_max_hp *= strength;
+                u.dmg *= strength;
+                u.extra.strength = strength;
+            }
             u.extra.clone_casts = casts.clone();
             if !u.extra.clone_casts.contains(&key) {
                 u.extra.clone_casts.push(key.clone());

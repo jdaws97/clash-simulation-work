@@ -5,7 +5,7 @@ use crate::geom::py_hypot;
 use crate::labels::{Name, Tag};
 use crate::state::*;
 use crate::trace::{round_decimal, LogValue};
-use crate::{defense, effects, heroes, spells, traps, units};
+use crate::{defense, effects, geom, heroes, spells, traps, units};
 
 pub struct SplashBuildingsOptions<'a> {
     pub walls: bool,
@@ -379,6 +379,10 @@ impl Battle {
                 traps::spawn_skeleton(self, trap, p.x, p.y);
                 continue;
             }
+            if p.extra.launcher_barrel.is_some() {
+                units::barrel_impact(self, p);
+                continue;
+            }
             if let Some((name, level, group, owner)) = p.extra.summon.take() {
                 self.spawn(
                     &name,
@@ -407,6 +411,34 @@ impl Battle {
         // battle.py:997-1001: quake hits resolve in the normal pending order.
         if let Some(quake) = &p.extra.quake {
             spells::quake_hit(self, &mut quake.borrow_mut());
+            return;
+        }
+        // battle.py:1011-1030: a Sweeper wave rechecks its target on arrival.
+        if let Some(aim) = p.extra.sweeper_aim {
+            let Some(EntityRef::Unit(target)) = p.target else {
+                panic!("Sweeper unit target");
+            };
+            let unit = self.unit(target);
+            if !unit.alive
+                || !unit.flying
+                || geom::dist(unit.x, unit.y, p.x, p.y) > p.radius
+            {
+                return;
+            }
+            let angle = geom::py_atan2(unit.y - p.y, unit.x - p.x);
+            let pi = std::f64::consts::PI;
+            if ((angle - aim + pi).rem_euclid(2.0 * pi) - pi).abs() > 5.0 * (pi / 180.0) {
+                return;
+            }
+            self.nudge(
+                target,
+                geom::py_cos(angle) * p.extra.push,
+                geom::py_sin(angle) * p.extra.push,
+            );
+            let t = self.t;
+            let unit = self.unit_mut(target);
+            unit.extra.pushed_at = Some(t);
+            units::reset_beam(unit);
             return;
         }
         if p.extra.hero_impact.is_some() {
@@ -497,7 +529,7 @@ impl Battle {
                     let (dx, dy) = (u.x - ox, u.y - oy);
                     let distance = py_hypot(dx, dy);
                     if distance != 0.0 {
-                        self.nudge(reference, 2.0 * dx / distance, 2.0 * dy / distance);
+                        self.nudge(reference, dx / distance, dy / distance);
                     }
                     self.unit_mut(reference).target = None;
                     self.unit_mut(reference).wall_target = None;

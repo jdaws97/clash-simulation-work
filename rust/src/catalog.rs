@@ -21,6 +21,24 @@ pub fn game_int(row: &Json, key: &str, default: i64) -> i64 {
     })
 }
 
+// defense.py:746-889; units.py:1244-1250: Python int(row[key]) requires the cell.
+pub fn game_required_int(row: &Json, key: &str) -> i64 {
+    row.at(key)
+        .str()
+        .trim()
+        .parse::<i64>()
+        .expect("required integer game-data cell")
+}
+
+// heroes.py:153-160; units.py:2350-2359: preserve decimal float(row[key]) cells.
+pub fn game_float(row: &Json, key: &str) -> f64 {
+    row.at(key)
+        .str()
+        .trim()
+        .parse::<f64>()
+        .expect("floating-point game-data cell")
+}
+
 #[derive(Clone, Debug)]
 pub struct UnitSpec {
     pub name: String,
@@ -209,6 +227,7 @@ pub struct Catalog {
     /// heroes.py _spawn_pet: range_ck, falling back to specs.attack_range.
     pub pet_spawn_ranges: HashMap<String, f64>,
     /// specs.py:352-409: inherited game CSV rows, retaining per-entry level order.
+    /// Includes buildings for defense.py projectile selection and geared Mortars.
     pub game_data: HashMap<String, HashMap<String, Vec<Json>>>,
     /// units.py warden_weights(): data/warden-weights.json as read.
     pub warden_weights: Json,
@@ -360,6 +379,7 @@ impl Catalog {
             "Lavaloon Pup" => "GW Equipment Lavaloon Pup",
             "Spell Skeleton" => "Spell Shielded Skeleton",
             "L.A.S.S.I" => "LASSI",
+            "Greedy Raven" => "Crow",
             other => other,
         };
         for table in ["characters", "heroes", "pets"] {
