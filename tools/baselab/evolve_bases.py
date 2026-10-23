@@ -39,10 +39,11 @@ sys.path.insert(0, str(ROOT / "src"))
 from baselab.archetypes import design  # noqa: E402
 from baselab.diagnose import diagnose  # noqa: E402
 from baselab.evaluate import (
+    HOLDOUT_SEED_GROUPS,
+    VALIDATION_SEED_GROUPS,
     adaptive_scenarios,
     blend,
     meta_scenarios,
-    ranked_scenarios,
     war_scenarios,
 )  # noqa: E402
 from baselab.meta_armies import library  # noqa: E402
@@ -60,10 +61,9 @@ META = False
 
 
 def scen(mode, n, seeds, angle_offset=0.0):
-    if META:
+    # data/live/battles.jsonl: ranked defaults to the observed opponent mix.
+    if META or mode == "ranked":
         return meta_scenarios(mode, n, seeds, angle_offset=angle_offset)
-    if mode == "ranked":
-        return ranked_scenarios(n_angles=n, seeds=seeds, angle_offset=angle_offset)
     return war_scenarios(n_angles=n, seeds=seeds, angle_offset=angle_offset)
 
 
@@ -100,7 +100,7 @@ def main():
     ap.add_argument(
         "--meta",
         action="store_true",
-        help="real TrophyCoach builds (meta_armies.py) instead of the 4 scripted armies",
+        help="real TrophyCoach builds (already the ranked default; opt in for war)",
     )
     ap.add_argument("--search-angles", type=int, default=4)
     ap.add_argument("--search-seeds", type=int, default=2)
@@ -145,11 +145,11 @@ def main():
 
     rng = random.Random(args.seed)
     global META
-    META = args.meta
+    META = args.meta or args.mode == "ranked"
     search0 = scen(args.mode, args.search_angles, tuple(range(args.search_seeds)))
     # validation and hold-out face sides the search never uses (the angles
     # depend on the angle count and offset only, not on the seeds)
-    validate0 = scen(args.mode, 6, (8, 9), math.pi / 4)
+    validate0 = scen(args.mode, 6, VALIDATION_SEED_GROUPS, math.pi / 4)
     holdout_extra = []
     if args.rr_sides > 0:
         from baselab.evaluate import side_scenarios
@@ -163,9 +163,11 @@ def main():
             search0, side_scenarios(rr, (0, 1), args.rr_sides), args.rr_sides
         )
         validate0 = blend(
-            validate0, side_scenarios(rr, (8, 9), args.rr_sides), args.rr_sides
+            validate0,
+            side_scenarios(rr, VALIDATION_SEED_GROUPS, args.rr_sides),
+            args.rr_sides,
         )
-        holdout_extra = side_scenarios(rr, (21, 22, 23), args.rr_sides)
+        holdout_extra = side_scenarios(rr, HOLDOUT_SEED_GROUPS, args.rr_sides)
     search, validate = list(search0), list(validate0)
     archive: dict = {}
     attackers = (
@@ -174,7 +176,7 @@ def main():
         else [(a, 16) for a in ("hydra", "edrag", "rootrider", "throwers")]
     )
     weights = None
-    if args.meta:
+    if META:
         # co-evolving attackers: the 4 most-used real builds for the attacking Town Hall
         th_a = 18 if args.mode == "ranked" else 16
         lib = sorted(library(th_a), key=lambda bw: -bw[1])[:4]
@@ -183,16 +185,16 @@ def main():
         ]
         weights = {a: w for (a, _), (_, w) in zip(attackers, lib)}
     guide = scen(args.mode, 4, (0,))
-    holdout = scen(args.mode, 8, (21, 22, 23), math.pi / 8)  # seed 1 is a search seed
+    holdout = scen(args.mode, 8, HOLDOUT_SEED_GROUPS, math.pi / 8)
     if holdout_extra:
         holdout = blend(holdout, holdout_extra, args.rr_sides)
     # redteam.py:425: legacy scripted IDs are ineligible for cited attacks.
     gate_holdout = (
         holdout
-        if args.meta
-        else meta_scenarios(args.mode, 8, (21, 22, 23), angle_offset=math.pi / 8)
+        if META
+        else meta_scenarios(args.mode, 8, HOLDOUT_SEED_GROUPS, angle_offset=math.pi / 8)
     )
-    if not args.meta and holdout_extra:
+    if not META and holdout_extra:
         gate_holdout = blend(gate_holdout, holdout_extra, args.rr_sides)
     own = json.loads((ROOT / "data" / "your-levels.json").read_text())
 
@@ -275,7 +277,11 @@ def main():
             validate = blend(
                 validate0,
                 adaptive_scenarios(
-                    archive, args.mode, (8, 9), args.adapt_share, weights
+                    archive,
+                    args.mode,
+                    VALIDATION_SEED_GROUPS,
+                    args.adapt_share,
+                    weights,
                 ),
                 args.adapt_share,
             )
@@ -409,7 +415,7 @@ def main():
         bench.append(lay)
     for lay in [d.lay for d in finals] + bench:
         ev = evaluate(lay, holdout)
-        gate_ordinary_ev = ev if args.meta else evaluate(lay, gate_holdout)
+        gate_ordinary_ev = ev if META else evaluate(lay, gate_holdout)
         redteam_ev = evaluate(lay, gate_holdout, redteam=True)
         if holdout_extra:
             rr = evaluate(lay, holdout_extra)
@@ -436,7 +442,7 @@ def main():
             f"  {lay.name:34s} hold-out {sc:7.2f}  {ev.summary()}  holes {hole_tiles(lay)}"
         )
         log(f"    red-team meta hold-out {redteam_score:7.2f}  {redteam_ev.summary()}")
-        if not args.meta:
+        if not META:
             log(
                 f"    ordinary meta hold-out {gate_ordinary_score:7.2f}  {gate_ordinary_ev.summary()}"
             )

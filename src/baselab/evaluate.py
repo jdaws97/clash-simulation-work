@@ -16,6 +16,13 @@ from dataclasses import dataclass, replace
 from .layout import Layout
 
 
+# docs/GOAL.md:5: judge selected layouts on battles outside their search.
+# Group IDs become 5 * (group * n_angles + side) + skill, so check RNG seeds too.
+VALIDATION_SEED_GROUPS = range(8, 10)
+HOLDOUT_SEED_GROUPS = range(21, 24)  # evolve_bases.py and qd_search.py hold-outs
+FINAL_SEED_GROUPS = range(101, 104)  # beyond validation and funnel/qd selection
+
+
 # Per-army strength multipliers on attacking unit HP and DPS, fitted so that
 # simulated same-TH 3-star rates on typical generated bases match TrophyCoach's
 # real ranked rates (see tools/baselab/calibrate.py). 1.0 = raw game stats.
@@ -39,6 +46,26 @@ def _load_strength():
         base.update(
             {"meta:" + k: v["strength"] for k, v in json.loads(m.read_text()).items()}
         )
+    except (OSError, ValueError, KeyError):
+        pass
+    # builds decoded from the account's real attackers (data/observed-armies.json)
+    # borrow their archetype's calibration: TH16 builds first (calibrated), else
+    # any Town Hall's; 1.0 when the archetype has none
+    try:
+        o = Path(__file__).resolve().parents[2] / "data" / "observed-armies.json"
+        data = json.loads(o.read_text(encoding="utf-8"))
+        for b in data["builds"] if isinstance(data, dict) else data:
+            key = f"meta:{b['archetype']}-{b['th']}-{b['build']}"
+            if key in base:
+                continue
+            fam = [
+                v for k, v in base.items() if k.startswith(f"meta:{b['archetype']}-16-")
+            ] or [
+                v
+                for k, v in base.items()
+                if k.startswith(f"meta:{b['archetype']}-") and not k.startswith(key)
+            ]
+            base[key] = sum(fam) / len(fam) if fam else 1.0
     except (OSError, ValueError, KeyError):
         pass
     # new strategies (data/custom-armies.json) borrow their family's calibration
@@ -243,7 +270,11 @@ def angles(n: int, offset: float = 0.0):
 
 
 def ranked_scenarios(n_angles=8, seeds=(0,), mix=None, angle_offset=0.0):
-    """TH17/TH18 attackers, weighted by the real ranked meta."""
+    """Legacy scripted TH17/TH18 mix, normalized to unit total weight.
+
+    optimize_base.py, final_eval.py and the guided A/B probes still use this;
+    ranked evolution uses meta_scenarios() and the observed opponent mix.
+    """
     mix = mix or {
         ("hydra", 18): 0.27,
         ("throwers", 18): 0.26,
@@ -254,6 +285,7 @@ def ranked_scenarios(n_angles=8, seeds=(0,), mix=None, angle_offset=0.0):
         ("edrag", 17): 0.07,
         ("rootrider", 17): 0.05,
     }
+    tot = sum(mix.values())
     out = []
     for (army, th), w in mix.items():
         for k, a in enumerate(
@@ -266,7 +298,7 @@ def ranked_scenarios(n_angles=8, seeds=(0,), mix=None, angle_offset=0.0):
                         th,
                         a,
                         s * n_angles + k,
-                        w / (n_angles * len(seeds)),
+                        w / tot / (n_angles * len(seeds)),
                         group=s,
                     )
                 )
@@ -590,14 +622,19 @@ class Evaluation:
         )
 
 
-def evaluate(layout: Layout, scenarios, *, strength=None, parallel=True) -> Evaluation:
+def evaluate(
+    layout: Layout, scenarios, *, strength=None, parallel=True, mode="ranked"
+) -> Evaluation:
     strength = strength or STRENGTH
     if os.environ.get("BASELAB_REDTEAM") == "1":
         # opt-in: playbook armies attack with their red-team best attack
         # (redteam.py, docs/REDTEAM.md); a few hundred battles per army
         from .redteam import redteam_rows
 
-        rt_sc, rt_r, scenarios, _found = redteam_rows(layout, scenarios, strength)
+        # the red team picks its attack by this mode's objective (war: 3 stars first)
+        rt_sc, rt_r, scenarios, _found = redteam_rows(
+            layout, scenarios, strength, mode=mode
+        )
         lj = layout.to_json()
         jobs = [(lj, sc, strength.get(sc.army, 1.0)) for sc in scenarios]
         results = run_batch(jobs, parallel=parallel) if jobs else []

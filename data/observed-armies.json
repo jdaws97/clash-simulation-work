@@ -1,0 +1,917 @@
+{
+  "source": "data/live/battles.jsonl: real ranked defenses, decoded by tools/baselab/decode_battlelog.py; only families without a saved build at the actual attacker Town Hall are included. No names, player tags or raw share codes are retained.",
+  "share_rule": "Count of identical decoded armies / all observed armies in this family at this Town Hall; equipment, pets and hero modes distinguish recipes.",
+  "calibration": "Uncalibrated: compositions and frequencies are observed, not simulation calibration. three_star is null because no same-TH TrophyCoach target exists. Family strength should transfer from TH16 as in tools/baselab/calibrate_meta.py:190-201; a family without a TH16 fit uses 1.0.",
+  "capacity_note": "Nine TH17 recipes encode four donated spell spaces; data/registry.json and data/wiki/tables/Clan_Castle.json still cap a TH17 Castle at three. Preserve the actual decoded inventories and use the existing observed replay path (engine/plans.py:489-492); do not infer different troops, levels or spell counts.",
+  "builds": [
+    {
+      "th": 17,
+      "archetype": "e-drag-spam",
+      "family": "electro-dragon",
+      "build": 1,
+      "share": 0.14285714285714285,
+      "n": 1,
+      "three_star": null,
+      "uncalibrated": true,
+      "observed": true,
+      "source_battle_timestamps": [
+        "20261012T220738.000Z"
+      ],
+      "troops": {
+        "Electro Dragon": 5,
+        "Log Launcher": 1,
+        "Healer": 2,
+        "Balloon": 2,
+        "Super Dragon": 4,
+        "Archer": 4
+      },
+      "spells": {
+        "Lightning Spell": 3,
+        "Rage Spell": 3,
+        "Freeze Spell": 2
+      },
+      "siege": {
+        "name": "Log Launcher",
+        "source": "army"
+      },
+      "cc": {
+        "Balloon": 2,
+        "Ice Golem": 3,
+        "Lightning Spell": 3
+      },
+      "heroes": [
+        "Barbarian King",
+        "Archer Queen",
+        "Grand Warden",
+        "Royal Champion"
+      ],
+      "loadouts": {
+        "Barbarian King": [
+          "Rage Vial",
+          "Giant Gauntlet",
+          "Mighty Yak"
+        ],
+        "Archer Queen": [
+          "Archer Puppet",
+          "Invisibility Vial",
+          "Unicorn"
+        ],
+        "Grand Warden": [
+          "Eternal Tome",
+          "Healing Tome",
+          "Electro Owl"
+        ],
+        "Royal Champion": [
+          "Seeking Shield",
+          "Royal Gem",
+          "L.A.S.S.I"
+        ]
+      },
+      "hero_modes": {
+        "Barbarian King": null,
+        "Archer Queen": null,
+        "Grand Warden": 1,
+        "Royal Champion": null
+      },
+      "playbook_family": "electro-dragon",
+      "defaults": {
+        "levels": "TH17 maximum; army share codes carry no levels.",
+        "deployment": "Existing compose roles/timing, or the family playbook when enabled."
+      }
+    },
+    {
+      "th": 17,
+      "archetype": "e-drag-spam",
+      "family": "electro-dragon",
+      "build": 2,
+      "share": 0.14285714285714285,
+      "n": 1,
+      "three_star": null,
+      "uncalibrated": true,
+      "observed": true,
+      "source_battle_timestamps": [
+        "20261013T003653.000Z"
+      ],
+      "troops": {
+        "Electro Dragon": 11,
+        "Minion": 2,
+        "Balloon": 1,
+        "Baby Dragon": 1
+      },
+      "spells": {
+        "Haste Spell": 2,
+        "Clone Spell": 3
+      },
+      "siege": {
+        "name": "Log Launcher",
+        "source": "cc"
+      },
+      "cc": {
+        "Log Launcher": 1,
+        "Sneaky Goblin": 1,
+        "Super Hog Rider": 1,
+        "Super Witch": 1,
+        "Earthquake Spell": 1,
+        "Clone Spell": 1
+      },
+      "heroes": [
+        "Barbarian King",
+        "Archer Queen",
+        "Grand Warden",
+        "Minion Prince"
+      ],
+      "loadouts": {
+        "Barbarian King": [
+          "Spiky Ball",
+          "Snake Bracelet",
+          "Spirit Fox"
+        ],
+        "Archer Queen": [
+          "Action Figure",
+          "Frozen Arrow",
+          "Greedy Raven"
+        ],
+        "Grand Warden": [
+          "Fireball",
+          "Lavaloon Puppet",
+          "Sneezy"
+        ],
+        "Minion Prince": [
+          "Meteor Staff",
+          "Dark Orb",
+          "Angry Jelly"
+        ]
+      },
+      "hero_modes": {
+        "Barbarian King": null,
+        "Archer Queen": null,
+        "Grand Warden": 1,
+        "Minion Prince": null
+      },
+      "playbook_family": "electro-dragon",
+      "defaults": {
+        "levels": "TH17 maximum; army share codes carry no levels.",
+        "deployment": "Existing compose roles/timing, or the family playbook when enabled."
+      }
+    },
+    {
+      "th": 17,
+      "archetype": "e-drag-spam",
+      "family": "electro-dragon",
+      "build": 3,
+      "share": 0.14285714285714285,
+      "n": 1,
+      "three_star": null,
+      "uncalibrated": true,
+      "observed": true,
+      "source_battle_timestamps": [
+        "20261013T110032.000Z"
+      ],
+      "troops": {
+        "Electro Dragon": 8,
+        "Sky Wagon": 1,
+        "Furnace": 1,
+        "Dragon Rider": 3,
+        "Headhunter": 2,
+        "Archer": 3,
+        "Minion": 2
+      },
+      "spells": {
+        "Recall Spell": 1,
+        "Totem Spell": 7,
+        "Revive Spell": 1
+      },
+      "siege": {
+        "name": "Sky Wagon",
+        "source": "army"
+      },
+      "cc": {
+        "Balloon": 1,
+        "Dragon": 1,
+        "Electro Dragon": 1,
+        "Rage Spell": 1,
+        "Poison Spell": 1,
+        "Totem Spell": 1
+      },
+      "heroes": [
+        "Archer Queen",
+        "Grand Warden",
+        "Royal Champion",
+        "Minion Prince"
+      ],
+      "loadouts": {
+        "Archer Queen": [
+          "Giant Arrow",
+          "Healer Puppet",
+          "Unicorn"
+        ],
+        "Grand Warden": [
+          "Eternal Tome",
+          "Rage Gem",
+          "Phoenix"
+        ],
+        "Royal Champion": [
+          "Rocket Spear",
+          "Electro Boots",
+          "Spirit Fox"
+        ],
+        "Minion Prince": [
+          "Dark Orb",
+          "Noble Iron",
+          "Angry Jelly"
+        ]
+      },
+      "hero_modes": {
+        "Archer Queen": null,
+        "Grand Warden": null,
+        "Royal Champion": null,
+        "Minion Prince": null
+      },
+      "playbook_family": "electro-dragon",
+      "defaults": {
+        "levels": "TH17 maximum; army share codes carry no levels.",
+        "deployment": "Existing compose roles/timing, or the family playbook when enabled."
+      }
+    },
+    {
+      "th": 17,
+      "archetype": "e-drag-spam",
+      "family": "electro-dragon",
+      "build": 4,
+      "share": 0.14285714285714285,
+      "n": 1,
+      "three_star": null,
+      "uncalibrated": true,
+      "observed": true,
+      "source_battle_timestamps": [
+        "20261015T143543.000Z"
+      ],
+      "troops": {
+        "Electro Dragon": 9,
+        "Balloon": 16,
+        "Minion": 1
+      },
+      "spells": {
+        "Rage Spell": 4,
+        "Freeze Spell": 3
+      },
+      "siege": {
+        "name": "Sky Wagon",
+        "source": "cc"
+      },
+      "cc": {
+        "Sky Wagon": 1,
+        "Balloon": 1,
+        "Dragon Rider": 2,
+        "Freeze Spell": 2,
+        "Rage Spell": 1
+      },
+      "heroes": [
+        "Grand Warden",
+        "Royal Champion",
+        "Minion Prince",
+        "Dragon Duke"
+      ],
+      "loadouts": {
+        "Grand Warden": [
+          "Eternal Tome",
+          "Fireball",
+          "Sneezy"
+        ],
+        "Royal Champion": [
+          "Seeking Shield",
+          "Electro Boots",
+          "Phoenix"
+        ],
+        "Minion Prince": [
+          "Dark Orb",
+          "Metal Pants",
+          "Spirit Fox"
+        ],
+        "Dragon Duke": [
+          "Revenge Deck",
+          "Electro Fangs",
+          "Greedy Raven"
+        ]
+      },
+      "hero_modes": {
+        "Grand Warden": 1,
+        "Royal Champion": null,
+        "Minion Prince": null,
+        "Dragon Duke": null
+      },
+      "playbook_family": "electro-dragon",
+      "defaults": {
+        "levels": "TH17 maximum; army share codes carry no levels.",
+        "deployment": "Existing compose roles/timing, or the family playbook when enabled."
+      }
+    },
+    {
+      "th": 17,
+      "archetype": "e-drag-spam",
+      "family": "electro-dragon",
+      "build": 5,
+      "share": 0.14285714285714285,
+      "n": 1,
+      "three_star": null,
+      "uncalibrated": true,
+      "observed": true,
+      "source_battle_timestamps": [
+        "20261017T102748.000Z"
+      ],
+      "troops": {
+        "Electro Dragon": 11,
+        "Log Launcher": 1,
+        "Dragon": 1,
+        "Minion": 1
+      },
+      "spells": {
+        "Lightning Spell": 11
+      },
+      "siege": {
+        "name": "Log Launcher",
+        "source": "army"
+      },
+      "cc": {
+        "Balloon": 1,
+        "Dragon": 1,
+        "Electro Dragon": 1,
+        "Lightning Spell": 4
+      },
+      "heroes": [
+        "Barbarian King",
+        "Archer Queen",
+        "Grand Warden",
+        "Royal Champion"
+      ],
+      "loadouts": {
+        "Barbarian King": [
+          "Earthquake Boots",
+          "Spiky Ball",
+          "Diggy"
+        ],
+        "Archer Queen": [
+          "Action Figure",
+          "Healer Puppet",
+          "Unicorn"
+        ],
+        "Grand Warden": [
+          "Fireball",
+          "Heroic Torch",
+          "Electro Owl"
+        ],
+        "Royal Champion": [
+          "Seeking Shield",
+          "Rocket Spear",
+          "Spirit Fox"
+        ]
+      },
+      "hero_modes": {
+        "Barbarian King": null,
+        "Archer Queen": null,
+        "Grand Warden": 1,
+        "Royal Champion": null
+      },
+      "playbook_family": "electro-dragon",
+      "defaults": {
+        "levels": "TH17 maximum; army share codes carry no levels.",
+        "deployment": "Existing compose roles/timing, or the family playbook when enabled."
+      }
+    },
+    {
+      "th": 17,
+      "archetype": "e-drag-spam",
+      "family": "electro-dragon",
+      "build": 6,
+      "share": 0.14285714285714285,
+      "n": 1,
+      "three_star": null,
+      "uncalibrated": true,
+      "observed": true,
+      "source_battle_timestamps": [
+        "20261019T182314.000Z"
+      ],
+      "troops": {
+        "Electro Dragon": 8,
+        "Balloon": 22,
+        "Archer": 2
+      },
+      "spells": {
+        "Freeze Spell": 5,
+        "Rage Spell": 3
+      },
+      "siege": {
+        "name": "Log Launcher",
+        "source": "cc"
+      },
+      "cc": {
+        "Log Launcher": 1,
+        "Balloon": 3,
+        "Dragon": 2,
+        "Freeze Spell": 2,
+        "Rage Spell": 1
+      },
+      "heroes": [
+        "Archer Queen",
+        "Grand Warden",
+        "Royal Champion",
+        "Dragon Duke"
+      ],
+      "loadouts": {
+        "Archer Queen": [
+          "Action Figure",
+          "Magic Mirror",
+          "Unicorn"
+        ],
+        "Grand Warden": [
+          "Eternal Tome",
+          "Rage Gem",
+          "Phoenix"
+        ],
+        "Royal Champion": [
+          "Electro Boots",
+          "Rocket Spear",
+          "Spirit Fox"
+        ],
+        "Dragon Duke": [
+          "Fire Heart",
+          "Stun Blaster",
+          "Greedy Raven"
+        ]
+      },
+      "hero_modes": {
+        "Archer Queen": null,
+        "Grand Warden": 1,
+        "Royal Champion": null,
+        "Dragon Duke": null
+      },
+      "playbook_family": "electro-dragon",
+      "defaults": {
+        "levels": "TH17 maximum; army share codes carry no levels.",
+        "deployment": "Existing compose roles/timing, or the family playbook when enabled."
+      }
+    },
+    {
+      "th": 17,
+      "archetype": "e-drag-spam",
+      "family": "electro-dragon",
+      "build": 7,
+      "share": 0.14285714285714285,
+      "n": 1,
+      "three_star": null,
+      "uncalibrated": true,
+      "observed": true,
+      "source_battle_timestamps": [
+        "20261020T174321.000Z"
+      ],
+      "troops": {
+        "Electro Dragon": 8,
+        "Dragon Rider": 4,
+        "Baby Dragon": 1,
+        "Minion": 1
+      },
+      "spells": {
+        "Invisibility Spell": 11
+      },
+      "siege": {
+        "name": "Sky Wagon",
+        "source": "cc"
+      },
+      "cc": {
+        "Sky Wagon": 1,
+        "Inferno Dragon": 1,
+        "Super Dragon": 1,
+        "Revive Spell": 2
+      },
+      "heroes": [
+        "Grand Warden",
+        "Royal Champion",
+        "Minion Prince",
+        "Dragon Duke"
+      ],
+      "loadouts": {
+        "Grand Warden": [
+          "Eternal Tome",
+          "Rage Gem",
+          "Sneezy"
+        ],
+        "Royal Champion": [
+          "Electro Boots",
+          "Rocket Spear",
+          "Phoenix"
+        ],
+        "Minion Prince": [
+          "Meteor Staff",
+          "Dark Orb",
+          "Electro Owl"
+        ],
+        "Dragon Duke": [
+          "Stun Blaster",
+          "Revenge Deck",
+          "Angry Jelly"
+        ]
+      },
+      "hero_modes": {
+        "Grand Warden": 1,
+        "Royal Champion": null,
+        "Minion Prince": null,
+        "Dragon Duke": null
+      },
+      "playbook_family": "electro-dragon",
+      "defaults": {
+        "levels": "TH17 maximum; army share codes carry no levels.",
+        "deployment": "Existing compose roles/timing, or the family playbook when enabled."
+      }
+    },
+    {
+      "th": 17,
+      "archetype": "root-rider",
+      "family": "root-rider",
+      "build": 1,
+      "share": 0.3333333333333333,
+      "n": 1,
+      "three_star": null,
+      "uncalibrated": true,
+      "observed": true,
+      "source_battle_timestamps": [
+        "20261014T161142.000Z"
+      ],
+      "troops": {
+        "P.E.K.K.A": 2,
+        "Root Rider": 3,
+        "Electro Titan": 6,
+        "Headhunter": 2,
+        "Wizard": 1,
+        "Dragon": 1,
+        "Healer": 1
+      },
+      "spells": {
+        "Lightning Spell": 9,
+        "Healing Spell": 1
+      },
+      "siege": {
+        "name": "Flame Flinger",
+        "source": "cc"
+      },
+      "cc": {
+        "Flame Flinger": 1,
+        "Wizard": 1,
+        "Headhunter": 1,
+        "Dragon": 1,
+        "P.E.K.K.A": 1,
+        "Freeze Spell": 2,
+        "Rage Spell": 1
+      },
+      "heroes": [
+        "Barbarian King",
+        "Archer Queen",
+        "Grand Warden",
+        "Royal Champion"
+      ],
+      "loadouts": {
+        "Barbarian King": [
+          "Earthquake Boots",
+          "Vampstache",
+          "Spirit Fox"
+        ],
+        "Archer Queen": [
+          "Action Figure",
+          "Magic Mirror",
+          "Unicorn"
+        ],
+        "Grand Warden": [
+          "Eternal Tome",
+          "Healing Tome",
+          "Electro Owl"
+        ],
+        "Royal Champion": [
+          "Rocket Spear",
+          "Electro Boots",
+          "Phoenix"
+        ]
+      },
+      "hero_modes": {
+        "Barbarian King": null,
+        "Archer Queen": null,
+        "Grand Warden": 1,
+        "Royal Champion": null
+      },
+      "playbook_family": "root-rider",
+      "defaults": {
+        "levels": "TH17 maximum; army share codes carry no levels.",
+        "deployment": "Existing compose roles/timing, or the family playbook when enabled."
+      }
+    },
+    {
+      "th": 17,
+      "archetype": "root-rider",
+      "family": "root-rider",
+      "build": 2,
+      "share": 0.3333333333333333,
+      "n": 1,
+      "three_star": null,
+      "uncalibrated": true,
+      "observed": true,
+      "source_battle_timestamps": [
+        "20261016T150216.000Z"
+      ],
+      "troops": {
+        "Lava Hound": 1,
+        "Battle Blimp": 1,
+        "Healer": 4,
+        "Yeti": 7,
+        "Root Rider": 7
+      },
+      "spells": {
+        "Invisibility Spell": 3,
+        "Clone Spell": 2,
+        "Rage Spell": 1
+      },
+      "siege": {
+        "name": "Battle Blimp",
+        "source": "army"
+      },
+      "cc": {
+        "Archer": 3,
+        "Wizard": 1,
+        "Super Archer": 4,
+        "Invisibility Spell": 4
+      },
+      "heroes": [
+        "Barbarian King",
+        "Archer Queen",
+        "Grand Warden",
+        "Dragon Duke"
+      ],
+      "loadouts": {
+        "Barbarian King": [
+          "Barbarian Puppet",
+          "Spiky Ball",
+          "Mighty Yak"
+        ],
+        "Archer Queen": [
+          "Magic Mirror",
+          "Giant Arrow",
+          "Unicorn"
+        ],
+        "Grand Warden": [
+          "Healing Tome",
+          "Fireball",
+          "Frosty"
+        ],
+        "Dragon Duke": [
+          "Revenge Deck",
+          "Flame Blower",
+          "Sneezy"
+        ]
+      },
+      "hero_modes": {
+        "Barbarian King": null,
+        "Archer Queen": null,
+        "Grand Warden": null,
+        "Dragon Duke": null
+      },
+      "playbook_family": "root-rider",
+      "defaults": {
+        "levels": "TH17 maximum; army share codes carry no levels.",
+        "deployment": "Existing compose roles/timing, or the family playbook when enabled."
+      }
+    },
+    {
+      "th": 17,
+      "archetype": "root-rider",
+      "family": "root-rider",
+      "build": 3,
+      "share": 0.3333333333333333,
+      "n": 1,
+      "three_star": null,
+      "uncalibrated": true,
+      "observed": true,
+      "source_battle_timestamps": [
+        "20261020T142104.000Z"
+      ],
+      "troops": {
+        "Wizard": 4,
+        "Ice Golem": 1,
+        "Root Rider": 8,
+        "Valkyrie": 8,
+        "Healer": 4,
+        "Baby Dragon": 1,
+        "Apprentice Warden": 1,
+        "Balloon": 2,
+        "Archer": 1
+      },
+      "spells": {
+        "Invisibility Spell": 7,
+        "Recall Spell": 1,
+        "Freeze Spell": 2
+      },
+      "siege": {
+        "name": "Siege Barracks",
+        "source": "cc"
+      },
+      "cc": {
+        "Siege Barracks": 1,
+        "Archer": 3,
+        "Wizard": 1,
+        "Valkyrie": 6,
+        "Poison Spell": 1,
+        "Rage Spell": 1,
+        "Freeze Spell": 1
+      },
+      "heroes": [
+        "Barbarian King",
+        "Archer Queen",
+        "Grand Warden",
+        "Royal Champion"
+      ],
+      "loadouts": {
+        "Barbarian King": [
+          "Earthquake Boots",
+          "Spiky Ball",
+          "Mighty Yak"
+        ],
+        "Archer Queen": [
+          "Action Figure",
+          "Healer Puppet",
+          "Unicorn"
+        ],
+        "Grand Warden": [
+          "Fireball",
+          "Eternal Tome",
+          "Sneezy"
+        ],
+        "Royal Champion": [
+          "Seeking Shield",
+          "Electro Boots",
+          "Phoenix"
+        ]
+      },
+      "hero_modes": {
+        "Barbarian King": null,
+        "Archer Queen": null,
+        "Grand Warden": null,
+        "Royal Champion": null
+      },
+      "playbook_family": "root-rider",
+      "defaults": {
+        "levels": "TH17 maximum; army share codes carry no levels.",
+        "deployment": "Existing compose roles/timing, or the family playbook when enabled."
+      }
+    },
+    {
+      "th": 17,
+      "archetype": "witch",
+      "family": "witch",
+      "build": 1,
+      "share": 1.0,
+      "n": 1,
+      "three_star": null,
+      "uncalibrated": true,
+      "observed": true,
+      "source_battle_timestamps": [
+        "20261014T022307.000Z"
+      ],
+      "troops": {
+        "Log Launcher": 1,
+        "Healer": 6,
+        "Super Bowler": 1,
+        "Witch": 5,
+        "P.E.K.K.A": 2,
+        "Wizard": 8,
+        "Giant": 3,
+        "Valkyrie": 5,
+        "Archer": 9,
+        "Wall Breaker": 4
+      },
+      "spells": {
+        "Earthquake Spell": 4,
+        "Rage Spell": 2,
+        "Healing Spell": 1,
+        "Poison Spell": 1
+      },
+      "siege": {
+        "name": "Log Launcher",
+        "source": "army"
+      },
+      "cc": {
+        "Witch": 1,
+        "Furnace": 1,
+        "P.E.K.K.A": 1
+      },
+      "heroes": [
+        "Barbarian King",
+        "Archer Queen",
+        "Grand Warden",
+        "Royal Champion"
+      ],
+      "loadouts": {
+        "Barbarian King": [
+          "Snake Bracelet",
+          "Earthquake Boots",
+          "Electro Owl"
+        ],
+        "Archer Queen": [
+          "Magic Mirror",
+          "Invisibility Vial",
+          "Mighty Yak"
+        ],
+        "Grand Warden": [
+          "Fireball",
+          "Lavaloon Puppet",
+          "Sneezy"
+        ],
+        "Royal Champion": [
+          "Hog Rider Puppet",
+          "Frost Flake",
+          "Unicorn"
+        ]
+      },
+      "hero_modes": {
+        "Barbarian King": null,
+        "Archer Queen": null,
+        "Grand Warden": null,
+        "Royal Champion": null
+      },
+      "playbook_family": null,
+      "defaults": {
+        "levels": "TH17 maximum; army share codes carry no levels.",
+        "deployment": "Existing compose roles/timing, or the family playbook when enabled.",
+        "cc_spells": "Empty, as compose defaults; no donated spell section was encoded."
+      }
+    },
+    {
+      "th": 17,
+      "archetype": "pekka",
+      "family": "pekka",
+      "build": 1,
+      "share": 1.0,
+      "n": 1,
+      "three_star": null,
+      "uncalibrated": true,
+      "observed": true,
+      "source_battle_timestamps": [
+        "20261019T192155.000Z"
+      ],
+      "troops": {
+        "Golem": 3,
+        "P.E.K.K.A": 4,
+        "Wizard": 37,
+        "Stone Slammer": 1,
+        "Archer": 2,
+        "Wall Breaker": 6
+      },
+      "spells": {
+        "Earthquake Spell": 4,
+        "Rage Spell": 2,
+        "Freeze Spell": 1,
+        "Healing Spell": 1
+      },
+      "siege": {
+        "name": "Stone Slammer",
+        "source": "army"
+      },
+      "cc": {},
+      "heroes": [
+        "Barbarian King",
+        "Archer Queen",
+        "Grand Warden",
+        "Royal Champion"
+      ],
+      "loadouts": {
+        "Barbarian King": [
+          "Spiky Ball",
+          "Snake Bracelet",
+          "Phoenix"
+        ],
+        "Archer Queen": [
+          "Action Figure",
+          "Magic Mirror",
+          "Unicorn"
+        ],
+        "Grand Warden": [
+          "Eternal Tome",
+          "Fireball",
+          "Sneezy"
+        ],
+        "Royal Champion": [
+          "Hog Rider Puppet",
+          "Electro Boots",
+          "Spirit Fox"
+        ]
+      },
+      "hero_modes": {
+        "Barbarian King": null,
+        "Archer Queen": null,
+        "Grand Warden": 1,
+        "Royal Champion": null
+      },
+      "playbook_family": null,
+      "defaults": {
+        "levels": "TH17 maximum; army share codes carry no levels.",
+        "deployment": "Existing compose roles/timing, or the family playbook when enabled.",
+        "cc": "Empty, as compose defaults; no reinforcement sections were encoded."
+      }
+    }
+  ]
+}

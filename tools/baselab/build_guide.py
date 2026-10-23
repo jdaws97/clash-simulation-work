@@ -37,6 +37,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from baselab.layout import Layout  # noqa: E402
 from baselab.mechanics import BUILDING_TYPES, VILLAGE  # noqa: E402
+from baselab.optimize import cc_entries  # noqa: E402
 from baselab.render import (
     COLORS,
     LABELS,
@@ -205,7 +206,6 @@ def trap_mode(t):
 def defensive_setup(lay, out: Path, number):
     """A complete target checklist, also when only non-spatial setup changed."""
     from baselab.engine import stats
-    from baselab.optimize import cc_entries
 
     c = Canvas(f"Step {number}: defensive setup (numbers identify hero banners)")
     for x, y in sorted(lay.walls):
@@ -452,7 +452,10 @@ def edit_cost(old, new):
     walls = len(set(old.walls) ^ set(new.walls))
     ot = {(t.key, t.x, t.y, trap_mode(t)) for t in old.traps}
     traps = sum(1 for t in new.traps if (t.key, t.x, t.y, trap_mode(t)) not in ot)
-    setup = int(Counter(old.cc_troops) != Counter(new.cc_troops))
+    # optimize.py:cc_entries preserves levels and expands structured counts.
+    setup = int(
+        Counter(cc_entries(old.cc_troops)) != Counter(cc_entries(new.cc_troops))
+    )
     setup += sum(a != b for a, b in zip_longest(old.heroes, new.heroes))
     setup += int(new.town_hall >= 18 and old.guardian != new.guardian)
     return moves + walls + traps + setup, moves, walls, traps

@@ -184,7 +184,7 @@ def eval_many(lays, scenarios, mode, *, redteam=False, return_results=False):
             raise ValueError("raw paired results are available for ordinary scoring")
         out = []
         for lay in lays:
-            ev = evaluate_attacker(lay, scenarios, redteam=True)
+            ev = evaluate_attacker(lay, scenarios, redteam=True, mode=mode)
             out.append((objective(ev, mode, lay), ev))
         return out
     jobs = []

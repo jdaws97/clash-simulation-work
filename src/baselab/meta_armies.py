@@ -1,5 +1,7 @@
-"""Attack plans built from real meta army builds (data/meta-armies-*.json,
-TrophyCoach ranked data: exact compositions with their real 3-star rates).
+"""Attack plans built from real meta and observed army builds.
+
+data/meta-armies-*.json has TrophyCoach compositions and real 3-star rates;
+data/observed-armies.json adds missing families from ranked defense codes.
 
 `compose(build)` turns one build into an AttackPlan by role:
   siege          a siege machine from troops or Clan Castle
@@ -30,6 +32,7 @@ from .engine.plans import SPELL_NAMES, AttackPlan, Wave
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data" / "meta-armies-2026-10-15.json"
+OBSERVED = ROOT / "data" / "observed-armies.json"
 CUSTOM = (
     ROOT / "data" / "custom-armies.json"
 )  # new strategies to test (ids "custom:<name>")
@@ -56,7 +59,12 @@ FUNNEL_ORDER = ("Barbarian King", "Dragon Duke", "Royal Champion")
 
 @lru_cache(maxsize=1)
 def data():
-    return json.loads(DATA.read_text(encoding="utf-8"))
+    meta = json.loads(DATA.read_text(encoding="utf-8"))
+    # data/observed-armies.json: missing TH17 families, with decoded loadouts.
+    if OBSERVED.exists():
+        observed = json.loads(OBSERVED.read_text(encoding="utf-8"))
+        meta["builds"].extend(observed["builds"])
+    return meta
 
 
 def _flying(name):
@@ -113,12 +121,16 @@ def compose(build: dict, angle: float = 0.0, seed: int = 0) -> AttackPlan:
     air = sum(
         c * int(stats.attrs(n).get("housing") or 1) for n, c in main if _flying(n)
     ) > 0.5 * sum(c * int(stats.attrs(n).get("housing") or 1) for n, c in main)
-    lightning = spells.get("lightning", 0)
+    # Wiki: Clan Castle, donated spells can be used alongside brewed spells.
+    lightning = spells.get("lightning", 0) + cc_spells.get("lightning", 0)
+    # data/observed-armies.json: no same-TH calibration rate for these recipes.
+    rate = build.get("three_star")
+    evidence = "observed, uncalibrated" if rate is None else f"real 3* {rate:.0%}"
     plan = AttackPlan(
         angle=angle,
         town_hall=th,
         seed=seed,
-        label=f"{build['archetype']} #{build['build']} (TH{th}, real 3* {build['three_star']:.0%})",
+        label=f"{build['archetype']} #{build['build']} (TH{th}, {evidence})",
         funnel_heroes=[(h, (-6.0 if i == 0 else 6.0)) for i, h in enumerate(funnel)],
         flank=flank,
         main=[Wave("main", main, spread=3.0 if air else 2.5)],
@@ -136,6 +148,8 @@ def compose(build: dict, angle: float = 0.0, seed: int = 0) -> AttackPlan:
         main_min=10.0 if air else 8.0,
         main_max=20.0 if air else 18.0,
     )
+    # tools/baselab/replay_log.py:116: preserve real inventories despite stale caps.
+    plan.observed = bool(build.get("observed"))
     plan.build_id = f"{build['archetype']}-{build['th']}-{build['build']}"
     # a siege from the Clan Castle is a reinforcement, not the attacker's own
     # (Monolith counts only the own siege: battle.deploy)
@@ -144,6 +158,8 @@ def compose(build: dict, angle: float = 0.0, seed: int = 0) -> AttackPlan:
         # the user's own armies attack at the account's live levels
         # (data/your-levels.json, from the API), not the Town Hall max
         own = user_levels()
+        # equip only what the account owns (heroes.py ownership filter)
+        plan.account_equipment = True
         plan.hero_levels = dict(own.get("hero_levels", {}))
         attack = own.get("attack_levels", {})
         # spells are cast at their own researched levels (AttackPlan reads
@@ -154,6 +170,15 @@ def compose(build: dict, angle: float = 0.0, seed: int = 0) -> AttackPlan:
             for n, l in attack.items()
             if n not in SPELL_KEYS and not (plan.siege_donated and n == siege)
         }  # a donated siege is the donor's
+        # Wiki: Super Troops / Super Minion, boosted levels follow the base troop.
+        for name in troops:
+            if not stats.record(name).get("super"):
+                continue
+            for column in stats.attrs(name).get("raw", {}):
+                base = column.removesuffix(" Level Required")
+                if column.endswith(" Level Required") and base in plan.troop_levels:
+                    plan.troop_levels[name] = plan.troop_levels[base]
+                    break
         plan.equipment_levels = dict(own.get("equipment_levels", {}))
         plan.pet_levels = dict(own.get("pet_levels", {}))
         # the account's Clan Castle caps donated spell levels (wiki: Clan Castle)
@@ -271,7 +296,7 @@ def plan_for_build(build: dict, angle: float, seed: int):
         from .engine.playbook import from_playbook
 
         # the charge flank alternates with the seed (the player's choice per base)
-        return from_playbook(
+        plan = from_playbook(
             pb,
             angle=angle,
             seed=seed,
@@ -279,6 +304,9 @@ def plan_for_build(build: dict, angle: float, seed: int):
             build=build,
             charge_side="left" if seed % 2 == 0 else "right",
         )
+        # engine/playbook.py:1103-1109 copies dataclass fields, not observed.
+        plan.observed = bool(build.get("observed"))
+        return plan
     return compose(build, angle=angle, seed=seed)
 
 
@@ -417,7 +445,7 @@ def library(th: int, *, ranked: bool = False):
         for b, weight in zip(rows, w):
             coverage[family_of(b)] += weight
         w = [
-            shares[family_of(b)] * weight / coverage[family_of(b)]
+            shares.get(family_of(b), 0.0) * weight / coverage[family_of(b)]
             for b, weight in zip(rows, w)
         ]
     tot = sum(w) or 1.0

@@ -36,8 +36,9 @@ Refinement stops early when the coarse winner already three-stars every
 search seed, and when `max_battles` would be exceeded.
 
 Seeds map to the five attacker-skill quantiles (evaluate.skill), so every
-5 consecutive seeds cover all skills once. Score: expected attacker
-trophies (evaluate.attacker_trophies), ties broken by destruction.
+5 consecutive seeds cover all skills once. Ranked scores expected attacker
+trophies (evaluate.attacker_trophies); war uses optimize.objective weights
+for triples, stars and destruction. Destruction breaks score ties.
 """
 
 from __future__ import annotations
@@ -111,7 +112,7 @@ class Budget:
     coarse_seeds: int = 5
     halving: tuple = ((8, 10), (3, 20))  # (keep, seeds) per round
     refine_seeds: int = 5  # screening seeds for each single change
-    min_gain: float = 0.5  # trophies a change must add to be kept
+    min_gain: float = 0.5  # mode objective points a change must add to be kept
     fresh_seeds: int = 10
     max_battles: int = 500  # hard cap on search battles (fresh replay not counted)
 
@@ -127,7 +128,8 @@ class RedTeamResult:
     battles: int
     seconds: float
     log: list = field(default_factory=list)
-    sides: dict = field(default_factory=dict)  # coarse: angle deg -> best-flank trophies
+    # Coarse: entry angle in degrees -> best-flank mode score.
+    sides: dict = field(default_factory=dict)
 
     @property
     def three_star(self):
@@ -285,8 +287,9 @@ def step_knobs(army: str, keys: set) -> list:
 class _Evaluator:
     """Caches (attack, seed) -> result and counts battles."""
 
-    def __init__(self, lj, army, strength, parallel=True, modifier=None):
+    def __init__(self, lj, army, strength, parallel=True, modifier=None, mode="ranked"):
         self.lj, self.army, self.strength, self.parallel, self.modifier = lj, army, strength, parallel, modifier
+        self.mode = mode
         self.cache: dict = {}
         self.battles = 0
 
@@ -304,7 +307,16 @@ class _Evaluator:
 
     def score(self, attack, seeds):
         rs = [self.cache[(attack, s)] for s in seeds]
-        return (sum(attacker_trophies(r[0], r[1]) for r in rs) / len(rs), sum(r[1] for r in rs) / len(rs))
+        if self.mode == "war":
+            # Wiki: Clan Wars, stars decide attacks; destruction breaks ties.
+            # optimize.objective: maximize 100 - defender war objective (no layout penalty).
+            score = sum(
+                100.0 * (r[0] >= 3) + 10.0 * r[0] + 0.05 * r[1] for r in rs
+            ) / len(rs)
+        else:
+            # Wiki: Ranked Battles, trophies depend on stars and destruction.
+            score = sum(attacker_trophies(r[0], r[1]) for r in rs) / len(rs)
+        return score, sum(r[1] for r in rs) / len(rs)
 
 
 def redteam(
@@ -319,9 +331,12 @@ def redteam(
     search_seeds=None,
     fresh_seeds=None,
     angles=None,
+    mode="ranked",
 ) -> RedTeamResult:
-    """The best attack (by expected attacker trophies) the army's cited
-    playbook allows against `layout`, with its fresh-seed replay."""
+    """The best attack by the requested mode's objective, within the army's
+    cited playbook, with its fresh-seed replay."""
+    if mode not in ("ranked", "war"):
+        raise ValueError(f"unsupported red-team objective mode: {mode}")
     b = budget or Budget()
     search_seeds = tuple(SEARCH_SEEDS if search_seeds is None else search_seeds)
     fresh_seeds = tuple(FRESH_SEEDS if fresh_seeds is None else fresh_seeds)
@@ -339,7 +354,10 @@ def redteam(
         raise ValueError("red-team search requires at least one approach angle")
     t0 = time.time()
     lj = layout.to_json()
-    ev = _Evaluator(lj, army, (strength or STRENGTH).get(army, 1.0), parallel, modifier)
+    ev = _Evaluator(
+        lj, army, (strength or STRENGTH).get(army, 1.0), parallel, modifier, mode
+    )
+    score_unit = "war score" if mode == "war" else "tr"
     log = []
 
     def note(msg):
@@ -352,7 +370,7 @@ def redteam(
     cands = [Attack(angle, side) for angle in angles for side in ("left", "right")]
     seeds = search_seeds[: b.coarse_seeds]
     ev.run(cands, seeds)
-    sides = {}  # entry angle (deg) -> best-flank trophies on the coarse seeds
+    sides = {}  # entry angle (deg) -> best-flank mode score on the coarse seeds
     for a in cands:
         k = round(math.degrees(a.angle) % 360, 1)
         sides[k] = max(sides.get(k, 0.0), ev.score(a, seeds)[0])
@@ -362,7 +380,9 @@ def redteam(
         ev.run(cands, seeds)
     cands = sorted(cands, key=lambda a: ev.score(a, seeds), reverse=True)
     coarse = cands[0]
-    note(f"coarse {coarse.describe()} {ev.score(coarse, seeds)[0]:.1f} tr on {len(seeds)} seeds ({ev.battles} battles)")
+    note(
+        f"coarse {coarse.describe()} {ev.score(coarse, seeds)[0]:.1f} {score_unit} on {len(seeds)} seeds ({ev.battles} battles)"
+    )
 
     # 3. one coordinate-descent pass over the playbook's choices
     rseeds = search_seeds[: b.refine_seeds]
@@ -374,7 +394,7 @@ def redteam(
     groups = [("angle", [best.angle - half, best.angle + half]),
               ("flank_offset", [x for x in (0.6, 1.2) if x != best.flank_offset])]
     groups += [((sid, fld), alts) for sid, fld, alts in step_knobs(army, keys)]
-    if ev.score(coarse, seeds)[0] >= attacker_trophies(3, 100):
+    if all(ev.cache[(coarse, seed)][0] >= 3 for seed in seeds):
         note("three stars on every search seed: nothing to refine")
         groups = []
     for name, alts in groups:
@@ -394,11 +414,18 @@ def redteam(
         ev.run([top], final_seeds)
         gain = ev.score(top, final_seeds)[0] - ev.score(best, final_seeds)[0]
         if gain > b.min_gain:
-            note(f"{name}: +{gain:.1f} tr on {len(final_seeds)} seeds -> {top.describe()}")
+            note(
+                f"{name}: +{gain:.1f} {score_unit} on {len(final_seeds)} seeds -> {top.describe()}"
+            )
             best = top
         else:
-            note(f"{name}: screened +, but {gain:+.1f} tr on {len(final_seeds)} seeds; not kept")
-    search_tr = ev.score(best, final_seeds)[0]
+            note(
+                f"{name}: screened +, but {gain:+.1f} {score_unit} on {len(final_seeds)} seeds; not kept"
+            )
+    search_rows = [ev.cache[(best, seed)] for seed in final_seeds]
+    search_tr = sum(attacker_trophies(r[0], r[1]) for r in search_rows) / len(
+        search_rows
+    )
     n_search = ev.battles
 
     # 4. fresh seeds
@@ -410,7 +437,15 @@ def redteam(
     return RedTeamResult(army, best, search_tr, fresh_tr, fresh, coarse, ev.battles, time.time() - t0, log, sides)
 
 
-def evaluate_redteam(layout, armies, budget: Budget | None = None, *, verbose=False, modifier=None):
+def evaluate_redteam(
+    layout,
+    armies,
+    budget: Budget | None = None,
+    *,
+    verbose=False,
+    modifier=None,
+    mode="ranked",
+):
     """Base score against red-team attackers, for a base search to call.
     `armies`: [(army id, weight)], each with a cited playbook. Returns
     (Evaluation, {army: RedTeamResult}); the Evaluation is summarise() over
@@ -418,7 +453,9 @@ def evaluate_redteam(layout, armies, budget: Budget | None = None, *, verbose=Fa
     from .evaluate import Scenario, summarise
 
     scs = [Scenario(a, _build(a)["th"], 0.0, 0, w, modifier) for a, w in armies]
-    sc, res, rest, found = redteam_rows(layout, scs, budget=budget, verbose=verbose)
+    sc, res, rest, found = redteam_rows(
+        layout, scs, budget=budget, verbose=verbose, mode=mode
+    )
     if rest:
         raise ValueError(f"no cited playbook for {[s.army for s in rest]}")
     return summarise(sc, res), {k[0]: r for k, r in found.items()}
@@ -435,7 +472,15 @@ def budget_from_env() -> Budget:
     return b
 
 
-def redteam_rows(layout, scenarios, strength=None, budget: Budget | None = None, verbose=False):
+def redteam_rows(
+    layout,
+    scenarios,
+    strength=None,
+    budget: Budget | None = None,
+    verbose=False,
+    *,
+    mode="ranked",
+):
     """BASELAB_REDTEAM=1 in evaluate.evaluate(): every scenario army with a
     cited playbook is replaced by its red-team attack. Its total scenario
     weight (per army, Town Hall and league modifier) is spread over the
@@ -447,6 +492,7 @@ def redteam_rows(layout, scenarios, strength=None, budget: Budget | None = None,
     RedTeamResult}. Supplied seeds are split between search and fresh replay;
     a short seed list is extended consecutively above its maximum. Supplied
     angles seed the coarse search, including any hold-out angle offset.
+    `mode` selects the scenario objective independently of league modifiers.
     """
     keyed: dict = {}
     rest = []
@@ -481,6 +527,7 @@ def redteam_rows(layout, scenarios, strength=None, budget: Budget | None = None,
             search_seeds=search_seeds,
             fresh_seeds=fresh_seeds,
             angles=angles,
+            mode=mode,
         )
         found[key] = r
         for seed, res in zip(fresh_seeds, r.fresh):
