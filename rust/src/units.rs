@@ -1,5 +1,5 @@
-//! Ports units.py troop behavior through the ranked stage-5 armies.
-//! Unrelated troops and later-stage content retain explicit unsupported branches.
+//! Ports units.py troop behavior through the ranked stage-6 armies.
+//! Later-stage defending content and hero equipment retain unsupported branches.
 
 use std::sync::Arc;
 
@@ -415,6 +415,7 @@ pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
         );
     }
     if sp.has_special(Special::Burrow) {
+        // units.py:260-267: attackers start underground; defenders keep ground speed.
         let u = battle.unit_mut(unit);
         u.underground = unit.team == Team::Atk;
         if name == "Miner" && unit.team == Team::Def {
@@ -481,9 +482,13 @@ pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
         battle.unit_mut(unit).extra.bear_at = t + 30.0;
     }
     if sp.has_special(Special::WitchSkeletons) {
-        todo!("stage 2: units.py:303 Witch summon initialization");
+        // units.py:291-293: each Witch owns a separate living-skeleton cap.
+        let u = battle.unit_mut(unit);
+        u.extra.next_summon = t + 3.0;
+        u.extra.skeletons.clear();
     }
     if sp.has_special(Special::BigBoy) {
+        // units.py:294-295: Big Boy starts one second after Witch skeletons.
         battle.unit_mut(unit).extra.next_summon = t + 4.0;
     }
     if sp.has_special(Special::RuinWitch) {
@@ -493,7 +498,9 @@ pub fn on_spawn(battle: &mut Battle, unit: UnitRef) {
         battle.unit_mut(unit).extra.long_shots = if unit.team == Team::Atk { 8 } else { 3 };
     }
     if sp.has_special(Special::Burst) {
-        todo!("stage 2: units.py:314 Super Dragon burst initialization");
+        // units.py:302-306: use the wiki's shot count without DPS rescaling.
+        let shots = burst_shots(battle, unit);
+        battle.unit_mut(unit).extra.burst_left = shots;
     }
     if sp.has_special(Special::SkyWagon) {
         let count = unit_stat(battle, unit, &["Barrel Count"], Some(5.0)) as i64;
@@ -799,9 +806,45 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
     }
     let u = battle.unit(unit);
     if special.contains(Special::WitchSkeletons) && u.can_act(t) && t >= u.extra.next_summon {
-        todo!("stage 2: units.py:469 Witch skeleton summons");
+        // units.py:481-502: prune in list order, then append this summon's children.
+        let mut alive: Vec<_> = u
+            .extra
+            .skeletons
+            .iter()
+            .copied()
+            .filter(|skeleton| battle.unit(*skeleton).alive)
+            .collect();
+        let cap = unit_stat(battle, unit, &["Maximum Skeletons Summoned"], Some(16.0)) as i64;
+        let count = unit_stat(battle, unit, &["Skeletons per Summon"], Some(5.0)) as i64;
+        let n = count.min(cap - alive.len() as i64);
+        for k in 0..n.max(0) {
+            let level = unit_stat(battle, unit, &["Skeleton Level"], None) as i64;
+            let u = battle.unit(unit);
+            let skeleton = battle.spawn(
+                "Skeleton",
+                unit.team,
+                u.x + 0.6 * geom::py_cos(k as f64),
+                u.y + 0.6 * geom::py_sin(k as f64),
+                SpawnOptions {
+                    level: Some(Level::Int(level)),
+                    kind: Tag::Summon,
+                    group: u.group.clone(),
+                    owner: Some(unit),
+                    ..Default::default()
+                },
+            );
+            alive.push(skeleton);
+        }
+        let u = battle.unit_mut(unit);
+        u.extra.skeletons = alive;
+        u.extra.next_summon = t + 7.0;
+        if n > 0 {
+            return true;
+        }
     }
+    let u = battle.unit(unit);
     if special.contains(Special::BigBoy) && t >= u.extra.next_summon {
+        // units.py:503-510: a live Big Boy prevents replacement after the cooldown.
         if u.extra.bb.is_none_or(|boy| !battle.unit(boy).alive) {
             let child = battle.spawn(
                 "Big Boy",
@@ -897,6 +940,7 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
     }
     let u = battle.unit(unit);
     if special.contains(Special::BlimpBombs) && u.can_act(t) && t >= u.extra.next_bomb {
+        // units.py:553-557: bombs hit ground units, buildings and walls before moving.
         let damage = unit_stat(battle, unit, &["Damage per Attack"], Some(450.0));
         let u = battle.unit(unit);
         let (x, y) = (u.x, u.y);
@@ -906,7 +950,7 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
     false
 }
 
-// units.py:560-594: burrow transitions and Battle Drill emergence.
+// units.py:561-593: burrow transitions and Battle Drill emergence.
 pub fn update_burrow(battle: &mut Battle, unit: UnitRef, target: Option<EntityRef>) {
     if !battle.unit(unit).spec.has_special(Special::Burrow) {
         return;
@@ -1318,8 +1362,17 @@ fn on_death_effect(battle: &mut Battle, unit: UnitRef) {
                 seconds = [2.0, 2.25, 2.5, 2.75, 3.0, 3.25][((*level).clamp(1, 6) - 1) as usize];
             }
         } else if u.name_id == Name::IceHound {
-            // This troop remains outside the stage-2 armies.
-            todo!("stage 2: units.py:729 Ice Hound death freeze");
+            // units.py:804-815: offense uses the Hound freeze; defense uses
+            // the defensive Ice Golem spell and its separate level mapping.
+            if unit.team == Team::Atk {
+                radius = 6.5;
+            } else {
+                radius = 5.5;
+                let Level::Int(level) = level else {
+                    panic!("Ice Hound level must be numeric")
+                };
+                seconds = if *level <= 5 { 2.0 } else { 2.25 };
+            }
         }
         let (x, y) = (u.x, u.y);
         if unit.team == Team::Atk {
@@ -1461,7 +1514,7 @@ fn on_death_effect(battle: &mut Battle, unit: UnitRef) {
         }
     }
     if sp.has_special(Special::Smasher) && unit.team == Team::Def {
-        todo!("stage 2: units.py:799 defending Smasher death Rage");
+        todo!("later defending content: units.py:897 defending Smasher death Rage");
     }
     if sp.has_special(Special::DeathRage) {
         let u = battle.unit(unit);
@@ -2030,7 +2083,13 @@ pub fn new_target_windup(battle: &mut Battle, unit: UnitRef) {
     battle.unit_mut(unit).cooldown = cooldown;
 }
 
-// units.py:1311-1324.
+// units.py:304-306,1522,2389-2391: all burst resets read the same shot count.
+fn burst_shots(battle: &Battle, unit: UnitRef) -> i64 {
+    let raw = battle.catalog.stats.attrs(&battle.unit(unit).name).at("raw");
+    crate::stats::num(raw.at("Shots per Burst"), None).expect("burst shot count") as i64
+}
+
+// units.py:1510-1523: decrement after each shot; the final shot starts the gap.
 pub fn attack_interval(battle: &mut Battle, unit: UnitRef) -> f64 {
     if tantrum(battle, unit) {
         return battle.unit(unit).interval / 1.5;
@@ -2038,7 +2097,16 @@ pub fn attack_interval(battle: &mut Battle, unit: UnitRef) -> f64 {
     if !battle.unit(unit).spec.has_special(Special::Burst) {
         return battle.unit(unit).interval;
     }
-    todo!("stage 2: units.py:1319 Super Dragon burst cadence");
+    battle.unit_mut(unit).extra.burst_left -= 1;
+    if battle.unit(unit).extra.burst_left > 0 {
+        let raw = battle.catalog.stats.attrs(&battle.unit(unit).name).at("raw");
+        return crate::stats::num(raw.at("Time Between Shots"), None)
+            .expect("burst shot interval");
+    }
+    let shots = burst_shots(battle, unit);
+    battle.unit_mut(unit).extra.burst_left = shots;
+    let raw = battle.catalog.stats.attrs(&battle.unit(unit).name).at("raw");
+    crate::stats::num(raw.at("Time Between Bursts"), None).expect("burst interval")
 }
 
 // units.py:1327-1361: Super Hog is allocated before choosing the Rider heading.
@@ -2879,10 +2947,13 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     }
     let mut damage = battle.unit(unit).dmg * multiplier;
     if sp.has_special(Special::Burst) && battle.unit(unit).extra.burst_target != Some(target) {
-        todo!("stage 2: units.py:1849 Super Dragon burst target switch");
+        // units.py:2205-2207: reset before binding the new target.
+        interrupt_attack(battle, unit);
+        battle.unit_mut(unit).extra.burst_target = Some(target);
     }
     if sp.attack == Tag::Beam {
-        todo!("stage 2: units.py:1852 Inferno Dragon and Super Miner beam damage");
+        // units.py:2208-2209: stage damage replaces the unit's ordinary hit.
+        damage = beam(battle, unit, target) * multiplier;
     }
     let ordinary = damage;
     damage *= rage;
@@ -2947,7 +3018,9 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
             && unit.team == Team::Atk
             && !battle.entity_alive(target)
         {
-            todo!("stage 2: units.py:1903 Miner reburrow after a unit kill");
+            // units.py:2265-2267: the Miner hides; the Super Miner burrows now.
+            battle.unit_mut(unit).target = None;
+            update_burrow(battle, unit, None);
         }
         return;
     }
@@ -3003,7 +3076,9 @@ fn after_unit_hit_effect(
     let t = battle.t;
     let sp = Arc::clone(&battle.unit(unit).spec);
     if sp.has_special(Special::Logger) {
-        todo!("stage 2: units.py:1951 Logger collateral and pushback");
+        // specs.py:257-261: Logger is a TH18 defending Guardian, not an
+        // attacking troop or a legal Clan Castle donation.
+        todo!("later defending content: units.py:2313 Logger collateral and pushback");
     }
     let victim = battle.unit(target);
     if sp.has_special(Special::HhPoison) && !(victim.kind == Tag::Guardian && victim.extra.waiting) {
@@ -3074,22 +3149,25 @@ fn after_unit_hit_effect(
     }
 }
 
-// units.py:2003-2010: interruption always discards beam state first.
+// units.py:2385-2392: interruption always discards beam state first.
 pub fn interrupt_attack(battle: &mut Battle, unit: UnitRef) {
     reset_beam(battle.unit_mut(unit));
     if battle.unit(unit).spec.has_special(Special::Burst) {
-        todo!("stage 2: units.py:2005 interrupted Super Dragon burst reset");
+        let shots = burst_shots(battle, unit);
+        let u = battle.unit_mut(unit);
+        u.extra.burst_left = shots;
+        u.extra.burst_target = None;
     }
 }
 
-// units.py:2013-2016: None models removal, separately from a stored zero.
+// units.py:2395-2398: None models removal, separately from a stored zero.
 pub fn reset_beam(unit: &mut Unit) {
     unit.extra.beam_target = None;
     unit.extra.beam_time = None;
     unit.extra.beam_tick = None;
 }
 
-// units.py:2019-2030: common tracking state; beam damage remains stage 2.
+// units.py:2401-2412: track uninterrupted time even between damage pulses.
 pub fn track_beam(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     if battle.unit(unit).spec.attack != Tag::Beam {
         return;
@@ -3111,6 +3189,42 @@ pub fn track_beam(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     }
     u.extra.beam_target = Some(target);
     u.extra.beam_tick = Some(t);
+}
+
+// units.py:2415-2440: staged DPS uses Python's operation order and isclose.
+fn beam(battle: &mut Battle, unit: UnitRef, target: EntityRef) -> f64 {
+    if battle.unit(unit).extra.beam_target != Some(target) {
+        track_beam(battle, unit, target);
+    }
+    let u = battle.unit(unit);
+    let held = u.extra.beam_time.unwrap_or(0.0);
+    let stages = if u.name_id == Name::SuperMiner {
+        [
+            (0.0, "Damage per Second / Initial"),
+            (1.5, "Damage per Second / After 1.5s"),
+            (3.0, "Damage per Second / After 3s"),
+        ]
+    } else {
+        [
+            (0.0, "Damage per Second / Initial"),
+            (1.7, "Damage per Second / After 1.7s"),
+            (3.2, "Damage per Second / After 3.2s"),
+        ]
+    };
+    let mut dps = u.dmg / u.interval;
+    for (start, column) in stages {
+        if held >= start || isclose(held, start) {
+            if let Some(value) = battle.catalog.stats.get(
+                &u.name,
+                u.level.as_ref().expect("beam level"),
+                &[column],
+                None,
+            ) {
+                dps = value;
+            }
+        }
+    }
+    dps * u.interval
 }
 
 // units.py:2063-2092: primary and secondary healing have different eligibility.

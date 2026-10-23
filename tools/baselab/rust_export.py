@@ -18,6 +18,7 @@ data comes from a catalog regenerated after every game patch.
       prepared layouts/plans/options without constructing Python battles
   parity-setup --stage S --n N
       compare Rust setup field by field, then compare every trace tick
+      stage 6: --n 40 covers five troop/siege armies, two bases and four sides
 
 Trace format, one record per line: `T <t>` before each step, then after it
 `U <team> <id> <name> <x> <y> <hp>` for every living unit (attackers then
@@ -282,6 +283,44 @@ STAGE2_ARMIES = [
 ]
 
 
+# Stage 6: declared synthetic coverage for the remaining ranked attacking
+# troop paths. Fixed drops, siege and cargo; no heroes or spells. TH17 camp
+# housing is 334/340/334/340/340; every cargo uses at most 55 housing.
+# Run --stage 6 --n 40: five armies x both STAGE1_BASES x four sides.
+STAGE6_ARMIES = [
+    (
+        # Witch skeleton caps/cooldowns, Super Witch Big Boys, Golem deaths.
+        [("Golem", 3), ("Witch", 7), ("Super Witch", 4)],
+        "Siege Barracks",
+        ["Super Witch", "Witch", "Archer", "Archer", "Archer"],
+    ),
+    (
+        # Super Dragon bursts/retargets/interruptions and Inferno Dragon beams.
+        [("Super Dragon", 4), ("Inferno Dragon", 6), ("Balloon", 18)],
+        "Stone Slammer",
+        ["Inferno Dragon"] * 3 + ["Balloon"] * 2,
+    ),
+    (
+        # Miner hiding/reburrowing, Super Miner beam ramps/deaths, Healer support.
+        [("Miner", 24), ("Super Miner", 5), ("Healer", 5)],
+        "Wall Wrecker",
+        ["Super Miner", "Super Miner", "Miner", "Archer"],
+    ),
+    (
+        # Ice Hound freezes/chill, both hounds' scattered pups, Blimp bombs/cargo.
+        [("Ice Hound", 2), ("Lava Hound", 3), ("Balloon", 34)],
+        "Battle Blimp",
+        ["Balloon"] * 11,
+    ),
+    (
+        # Battle Drill wall emergence/defense stuns and Bowler bounces.
+        [("Golem", 4), ("Bowler", 30), ("Wizard", 10)],
+        "Battle Drill",
+        ["Bowler"] * 8 + ["Wizard", "Archer", "Archer", "Archer"],
+    ),
+]
+
+
 # Stage 3: heroes on both sides, with the user's loadouts (equipment, pets);
 # abilities fire through the plan's automatic on-KO use. Fixed drops: the
 # heroes first, then the army; no spells. (army id, base)
@@ -408,6 +447,18 @@ def scenario_inputs(stage, k):
         plan = make_plan(army, angle, 16, seed)
         plan.strength = STRENGTH.get(army, 1.0) * skill(seed)
         return lay, plan, {"seed": seed, "town_hall": 16}
+    if stage == 6:
+        n_sides = 4
+        army, siege, cargo = STAGE6_ARMIES[k % len(STAGE6_ARMIES)]
+        base = STAGE1_BASES[(k // len(STAGE6_ARMIES)) % len(STAGE1_BASES)]
+        side = k // (len(STAGE6_ARMIES) * len(STAGE1_BASES)) % n_sides
+        angle, seed = 2 * math.pi * side / n_sides + 0.1, 600 + k
+        lay = own_layout(base)
+        lay.heroes = []
+        drops = edge_drops(army + [(siege, 1)], angle, seed)
+        plan = Stage(drops, town_hall=17)
+        plan.cc_troops = list(cargo)
+        return lay, plan, {"seed": seed, "town_hall": 17}
     raise ValueError(f"no stage {stage}")
 
 
