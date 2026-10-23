@@ -43,8 +43,14 @@ def _load_strength():
             os.environ.get("BASELAB_CALIBRATION")
             or Path(__file__).resolve().parents[2] / "data" / "meta-calibration-r8.json"
         )
+        # skip entries without a strength (notes, metadata) instead of
+        # dropping the whole file on the first KeyError
         base.update(
-            {"meta:" + k: v["strength"] for k, v in json.loads(m.read_text()).items()}
+            {
+                "meta:" + k: v["strength"]
+                for k, v in json.loads(m.read_text()).items()
+                if isinstance(v, dict) and "strength" in v
+            }
         )
     except (OSError, ValueError, KeyError):
         pass

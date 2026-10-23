@@ -64,7 +64,42 @@ def data():
     if OBSERVED.exists():
         observed = json.loads(OBSERVED.read_text(encoding="utf-8"))
         meta["builds"].extend(observed["builds"])
+    _fill_missing_cc(meta["builds"])
     return meta
+
+
+def _fill_missing_cc(builds):
+    """Builds saved without a Clan Castle (the TH17 Dragon builds in
+    data/meta-armies-2026-10-15.json) borrow their archetype's Clan Castle
+    from the nearest Town Hall build that has one, spells trimmed to the
+    castle's capacity (plans.CC_SPELLS), marked cc_assumed_from. Real ranked
+    attackers fill their castle; an empty one made TH17 armies weaker than
+    the same TH16 armies."""
+    from .engine.plans import CC_SPELLS
+
+    for b in builds:
+        if b.get("cc"):
+            continue
+        donors = [
+            d
+            for d in builds
+            if d is not b and d["archetype"] == b["archetype"] and d.get("cc")
+        ]
+        if not donors:
+            continue
+        donor = min(donors, key=lambda d: (abs(d["th"] - b["th"]), -d["th"], d["build"]))
+        cc, room = {}, CC_SPELLS.get(b["th"], 3)
+        for name, count in donor["cc"].items():
+            if name in SPELL_KEYS:
+                # spell housing space, not count (Rage/Revive take 2)
+                space = int(stats.attrs(name)["housing"])
+                count = min(count, room // space)
+                room -= count * space
+                if count <= 0:
+                    continue
+            cc[name] = count
+        b["cc"] = cc
+        b["cc_assumed_from"] = f"{donor['archetype']}-{donor['th']}-{donor['build']}"
 
 
 def _flying(name):

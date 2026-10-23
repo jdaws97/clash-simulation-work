@@ -1,6 +1,6 @@
 {
  "mass-dragons-18-1": {
-  "strength": 0.8301726772818557,
+  "strength": 0.9318373237922679,
   "real": 0.551,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 0.8301726772818557,
@@ -15,14 +15,15 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false,
+  "capped_from": 0.8301726772818557
  },
  "mass-dragons-18-2": {
-  "strength": 0.8301726772818557,
+  "strength": 0.9318373237922679,
   "real": 0.574,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 0.8301726772818557,
@@ -37,11 +38,12 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false,
+  "capped_from": 0.8301726772818557
  },
  "mass-thrower-18-1": {
   "strength": 1.124227774770702,
@@ -59,11 +61,11 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "mass-thrower-18-2": {
   "strength": 1.124227774770702,
@@ -81,11 +83,11 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "e-drag-spam-18-1": {
   "strength": 1.0,
@@ -103,11 +105,11 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "e-drag-spam-18-2": {
   "strength": 1.0,
@@ -125,11 +127,11 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "root-rider-18-1": {
   "strength": 1.1875673814385301,
@@ -147,11 +149,11 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "root-rider-18-2": {
   "strength": 1.1875673814385301,
@@ -169,11 +171,11 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "super-bowler-smash-18-1": {
   "strength": 1.0,
@@ -191,11 +193,11 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "super-bowler-smash-18-3": {
   "strength": 1.0,
@@ -213,11 +215,11 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "mass-super-yeti-18-1": {
   "strength": 1.0,
@@ -235,11 +237,11 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "mass-super-yeti-18-4": {
   "strength": 1.0,
@@ -257,11 +259,11 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "mass-meteor-golem-18-1": {
   "strength": 1.0,
@@ -279,532 +281,636 @@
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "mass-dragons-17-1": {
-  "strength": 0.750145694534034,
+  "strength": 0.9318373237922679,
   "real": 0.401,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 0.8301726772818557,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 1.122462048309373,
+  "defense_group": "TH17:dragon",
+  "n": 3,
   "family_n": 3,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "mass-dragons-17-2": {
-  "strength": 0.750145694534034,
+  "strength": 0.9318373237922679,
   "real": 0.236,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 0.8301726772818557,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 1.122462048309373,
+  "defense_group": "TH17:dragon",
+  "n": 3,
   "family_n": 3,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "mass-thrower-17-1": {
-  "strength": 1.0158544697966436,
+  "strength": 1.0015730834409844,
   "real": 0.47,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.124227774770702,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 0.8908987181403393,
+  "defense_group": "TH17:thrower",
+  "n": 2,
   "family_n": 2,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "mass-thrower-17-2": {
-  "strength": 1.0158544697966436,
+  "strength": 1.0015730834409844,
   "real": 0.382,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.124227774770702,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 0.8908987181403393,
+  "defense_group": "TH17:thrower",
+  "n": 2,
   "family_n": 2,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "mass-thrower-16-1": {
-  "strength": 1.2784950987026735,
+  "strength": 1.0015730834409844,
   "real": 0.68,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.0438868768235887,
-  "correction": 1.224744871391589,
+  "correction": 1.122462048309373,
   "defense_group": "TH16:pooled",
-  "n": 4,
+  "n": 2,
   "family_n": 1,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false,
+  "capped_from": 1.1717234019626797
  },
  "mass-thrower-16-2": {
-  "strength": 1.4752893041501174,
+  "strength": 1.0015730834409844,
   "real": 0.75,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.204568672717815,
-  "correction": 1.224744871391589,
+  "correction": 1.122462048309373,
   "defense_group": "TH16:pooled",
-  "n": 4,
+  "n": 2,
   "family_n": 1,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false,
+  "capped_from": 1.3520826197081415
  },
  "mass-dragons-16-1": {
-  "strength": 1.0167497288703775,
+  "strength": 0.9318373237922679,
   "real": 0.42,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 0.8301726772818557,
-  "correction": 1.224744871391589,
-  "defense_group": "TH16:pooled",
-  "n": 4,
+  "correction": 1.122462048309373,
+  "defense_group": "TH16:dragon",
+  "n": 2,
   "family_n": 2,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "root-rider-16-1": {
-  "strength": 1.4752893041501174,
+  "strength": 1.1875673814385301,
   "real": 0.61,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.204568672717815,
-  "correction": 1.224744871391589,
+  "correction": 1.122462048309373,
   "defense_group": "TH16:pooled",
-  "n": 4,
+  "n": 2,
   "family_n": 1,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false,
+  "capped_from": 1.3520826197081415
  },
  "root-rider-16-2": {
-  "strength": 1.4336448155474402,
+  "strength": 1.1875673814385301,
   "real": 0.581,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.1705660901592454,
-  "correction": 1.224744871391589,
+  "correction": 1.122462048309373,
   "defense_group": "TH16:pooled",
-  "n": 4,
+  "n": 2,
   "family_n": 1,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false,
+  "capped_from": 1.3139160112416408
  },
  "e-drag-spam-17-1": {
-  "strength": 0.9036020036098449,
+  "strength": 0.7937005259840997,
   "real": null,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.0,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 0.7937005259840997,
+  "defense_group": "TH17:electro-dragon",
+  "n": 7,
   "family_n": 7,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "e-drag-spam-17-2": {
-  "strength": 0.9036020036098449,
+  "strength": 0.7937005259840997,
   "real": null,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.0,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 0.7937005259840997,
+  "defense_group": "TH17:electro-dragon",
+  "n": 7,
   "family_n": 7,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "e-drag-spam-17-3": {
-  "strength": 0.9036020036098449,
+  "strength": 0.7937005259840997,
   "real": null,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.0,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 0.7937005259840997,
+  "defense_group": "TH17:electro-dragon",
+  "n": 7,
   "family_n": 7,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "e-drag-spam-17-4": {
-  "strength": 0.9036020036098449,
+  "strength": 0.7937005259840997,
   "real": null,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.0,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 0.7937005259840997,
+  "defense_group": "TH17:electro-dragon",
+  "n": 7,
   "family_n": 7,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "e-drag-spam-17-5": {
-  "strength": 0.9036020036098449,
+  "strength": 0.7937005259840997,
   "real": null,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.0,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 0.7937005259840997,
+  "defense_group": "TH17:electro-dragon",
+  "n": 7,
   "family_n": 7,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "e-drag-spam-17-6": {
-  "strength": 0.9036020036098449,
+  "strength": 0.7937005259840997,
   "real": null,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.0,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 0.7937005259840997,
+  "defense_group": "TH17:electro-dragon",
+  "n": 7,
   "family_n": 7,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "e-drag-spam-17-7": {
-  "strength": 0.9036020036098449,
+  "strength": 0.7937005259840997,
   "real": null,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.0,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 0.7937005259840997,
+  "defense_group": "TH17:electro-dragon",
+  "n": 7,
   "family_n": 7,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "root-rider-17-1": {
-  "strength": 1.0730882652895528,
+  "strength": 1.1875673814385301,
   "real": null,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.1875673814385301,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 1.0,
+  "defense_group": "TH17:root-rider",
+  "n": 3,
   "family_n": 3,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "root-rider-17-2": {
-  "strength": 1.0730882652895528,
+  "strength": 1.1875673814385301,
   "real": null,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.1875673814385301,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 1.0,
+  "defense_group": "TH17:root-rider",
+  "n": 3,
   "family_n": 3,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "root-rider-17-3": {
-  "strength": 1.0730882652895528,
+  "strength": 1.1875673814385301,
   "real": null,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.1875673814385301,
-  "correction": 0.9036020036098449,
-  "defense_group": "TH17:pooled",
-  "n": 17,
+  "correction": 1.0,
+  "defense_group": "TH17:root-rider",
+  "n": 3,
   "family_n": 3,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "witch-17-1": {
-  "strength": 0.9036020036098449,
+  "strength": 1.122462048309373,
   "real": null,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.0,
-  "correction": 0.9036020036098449,
+  "correction": 1.122462048309373,
   "defense_group": "TH17:pooled",
-  "n": 17,
+  "n": 2,
   "family_n": 1,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "pekka-17-1": {
-  "strength": 0.9036020036098449,
+  "strength": 1.122462048309373,
   "real": null,
   "real_source": "TrophyCoach same-TH rate; not the defense fit target",
   "prior_strength": 1.0,
-  "correction": 0.9036020036098449,
+  "correction": 1.122462048309373,
   "defense_group": "TH17:pooled",
-  "n": 17,
+  "n": 2,
   "family_n": 1,
-  "uncalibrated": true,
+  "uncalibrated": false,
   "weakly_constrained": true,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
  "defense-th15-pooled": {
   "strength": 1.0,
   "strength_kind": "correction to each family's current strength",
   "n": 1,
   "correction_interval_95": [
-   0.7377879464668811,
-   1.5
+   0.7937005259840997,
+   1.5874010519681996
   ],
-  "uncalibrated": true,
+  "uncalibrated": false,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
+ },
+ "defense-th16-dragon": {
+  "strength": 1.122462048309373,
+  "strength_kind": "correction to each family's current strength",
+  "n": 2,
+  "correction_interval_95": [
+   0.8908987181403393,
+   1.5874010519681996
+  ],
+  "uncalibrated": false,
+  "dry_run": false,
+  "provenance": {
+   "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
+   "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
+   "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
+   "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
+  },
+  "inputs_changed_during_run": false
  },
  "defense-th16-pooled": {
-  "strength": 1.224744871391589,
+  "strength": 1.122462048309373,
   "strength_kind": "correction to each family's current strength",
-  "n": 4,
+  "n": 2,
   "correction_interval_95": [
-   0.9036020036098449,
-   1.5
+   0.7937005259840997,
+   1.5874010519681996
   ],
-  "uncalibrated": true,
+  "uncalibrated": false,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
  },
- "defense-th17-pooled": {
-  "strength": 0.9036020036098449,
+ "defense-th17-dragon": {
+  "strength": 1.122462048309373,
   "strength_kind": "correction to each family's current strength",
-  "n": 17,
+  "n": 3,
   "correction_interval_95": [
-   0.816496580927726,
+   0.8908987181403393,
+   1.414213562373095
+  ],
+  "uncalibrated": false,
+  "dry_run": false,
+  "provenance": {
+   "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
+   "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
+   "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
+   "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
+  },
+  "inputs_changed_during_run": false
+ },
+ "defense-th17-electro-dragon": {
+  "strength": 0.7937005259840997,
+  "strength_kind": "correction to each family's current strength",
+  "n": 7,
+  "correction_interval_95": [
+   0.7071067811865476,
    1.0
   ],
-  "uncalibrated": true,
+  "uncalibrated": false,
   "dry_run": false,
   "provenance": {
    "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
    "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
    "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
-   "engine_code_sha256": "40cad69fe4b61fd0bea5db316658540d751190f9818fa380359b0828c3937678",
-   "engine": "python+rust",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
    "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
   },
-  "inputs_changed_during_run": true
+  "inputs_changed_during_run": false
+ },
+ "defense-th17-pooled": {
+  "strength": 1.122462048309373,
+  "strength_kind": "correction to each family's current strength",
+  "n": 2,
+  "correction_interval_95": [
+   0.8908987181403393,
+   1.414213562373095
+  ],
+  "uncalibrated": false,
+  "dry_run": false,
+  "provenance": {
+   "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
+   "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
+   "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
+   "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
+  },
+  "inputs_changed_during_run": false
+ },
+ "defense-th17-root-rider": {
+  "strength": 1.0,
+  "strength_kind": "correction to each family's current strength",
+  "n": 3,
+  "correction_interval_95": [
+   0.7937005259840997,
+   1.2599210498948732
+  ],
+  "uncalibrated": false,
+  "dry_run": false,
+  "provenance": {
+   "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
+   "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
+   "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
+   "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
+  },
+  "inputs_changed_during_run": false
+ },
+ "defense-th17-thrower": {
+  "strength": 0.8908987181403393,
+  "strength_kind": "correction to each family's current strength",
+  "n": 2,
+  "correction_interval_95": [
+   0.7071067811865476,
+   1.122462048309373
+  ],
+  "uncalibrated": false,
+  "dry_run": false,
+  "provenance": {
+   "data_manifest_sha256": "29dce76a312298ba3ff6513659cacd7711365004f9bf4b13b21fe1db775072a6",
+   "data_manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389",
+   "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
+   "engine_code_sha256": "bfd6a2a663e8f00249196b2986d3e3c6a8e69ac2fbabf861cdeca0a5f903e2b3",
+   "engine": "rust",
+   "engine_hash_scope": "src/baselab/**/*.py; rust/src/**/*.rs + Cargo files"
+  },
+  "inputs_changed_during_run": false
  }
 }
