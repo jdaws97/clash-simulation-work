@@ -86,6 +86,25 @@ ranges were 0.5 tile long; the real replay agreed with game data).
   spells cast together in one tick; level overrides not checked against
   Town Hall/Laboratory; one-star trophies counted from 0% (now above 1%).
 
+- Round 4 (2026-10-22, output/hunt/r4-*.out): TH death poison radius 4.5
+  (game data 4); Air Sweeper pushes were instant (wave 6 tiles/s); Geared
+  Mortar cooldown 4 s (AltAttackSpeed 3.5); Builder's Hut nails instant;
+  missing projectile StartOffsets (Cannon, Archer Tower, Air Defense,
+  Multi-Archer, Bomb Tower, Multi-Gear); Mortar pushback 2 tiles (1);
+  Troop Launcher picked the largest single troop, delivered instantly, no
+  HP decay, wrong occupant order; Battle Drill no surfacing stun; Blimp
+  bombs 1.5 tiles, buildings only (3 tiles, walls, ground defenders); Wall
+  Wrecker no splash; Super Hog rider landed instantly; Meteormites of
+  different levels never merged; Firemite direct radius 0.8 (0.1); Flame
+  Flinger shots simultaneous (128 ms apart); Headhunter poison had no
+  damage; Giant Giant ignored defenders; Noble Iron used the normal
+  projectile; Greedy Raven had no projectile; Giant Arrow 1500 (2000),
+  Fire Heart 150/s (175), Rocket Backpack 2150 (2200); Stun Blaster skipped
+  TH/CC/collectors; Earthquake Boots instant (5 hits 400 ms apart);
+  equipment summons at fixed world offsets (now facing-relative); Poison
+  Lizard poisoned at launch; Clone ignored strength; air trap skeletons
+  range 0.4 (0).
+
 ## Known, not fixed
 
 - Town Halls 13-15 get the TH16 Giga Inferno profile (defense.py
@@ -126,6 +145,11 @@ ranges were 0.5 tile long; the real replay agreed with game data).
   Barracks release cadence by level; Unicorn healing under Rage; Mighty Yak
   speed (CSV 300 vs wiki table 250 - CSV applied by the speed rule); attack
   slows baked into the whole cooldown (needs measurement).
+
+- Round 4 deferred: Firespitter DontTrackTarget (TH17+ defense); Blimp
+  cargo emergence delay (~1.15 s after the blast, one video sample);
+  Tornado radius 3 (trap) vs 4 (spell row); Heroic Torch half speed for
+  other heroes (wiki) vs SpeedBoost2=9 (game data).
 
 - Round 2 deferred: defensive troop stat variants (CC troops use attacker
   stats); calibrated strength for pets and hero equipment summons;
