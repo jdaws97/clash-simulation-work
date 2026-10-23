@@ -2,7 +2,8 @@
 
 Each layout faces the same ranked meta attacks (same armies, sides, seeds);
 reports defender trophies and 3-star rate, and every layout's difference
-from the first one with its paired standard error.
+from the first one with its paired standard error, bootstrap interval and
+practical-tie verdict.
 
 Usage: python tools/baselab/compare_layouts.py A.json B.json ... [--angles 8] [--seeds 2]
 """
@@ -20,7 +21,9 @@ sys.path.insert(0, str(ROOT / "tools" / "baselab"))
 
 from baselab.evaluate import meta_scenarios  # noqa: E402
 from baselab.layout import Layout  # noqa: E402
-from proof_scorer import own, score  # noqa: E402
+from baselab.uncertainty import group_trophies, paired_comparison  # noqa: E402
+from funnel import eval_many  # noqa: E402
+from proof_scorer import own  # noqa: E402
 
 
 def main():
@@ -31,17 +34,23 @@ def main():
     args = ap.parse_args()
     lays = [own(Layout.load(f)) for f in args.layouts]
     sc = meta_scenarios("ranked", args.angles, tuple(range(args.seeds)))
-    # evaluate.summarise: use scouted outcomes, paired by attacker group.
-    results, w, per = score(lays, sc, return_samples=True)
+    results, battles = eval_many(lays, sc, "ranked", return_results=True)
     k = len(sc)
     print(f"{k} battles per layout (identical across layouts)")
-    base = per[0]
-    for f, t, (m, _se, three) in zip(args.layouts, per, results):
-        d = t - base
-        md = (w * d).sum()
-        se = math.sqrt((w ** 2 * (d - md) ** 2).sum())
+    w, base = group_trophies(sc, battles[0])
+    for f, raw, (_score, ev) in zip(args.layouts, battles, results):
+        comparison = paired_comparison(sc, raw, battles[0])
+        _, trophies = group_trophies(sc, raw)
+        d = [t - b for t, b in zip(trophies, base)]
+        md = comparison.difference
+        se = math.sqrt(
+            sum(weight**2 * (delta - md) ** 2 for weight, delta in zip(w, d))
+        )
         print(
-            f"{Path(f).stem:28s} trophies {m:6.2f}  3-star {three:5.1%}  vs first {md:+6.2f} +- {se:.2f}  (z {md / se if se else 0:+.1f})"
+            f"{Path(f).stem:28s} trophies {ev.ranked_trophies:6.2f}  3-star {ev.three_star_rate:5.1%}  vs first {md:+6.2f} +- {se:.2f}  (z {md / se if se else 0:+.1f})"
+        )
+        print(
+            f"  A=this layout, B=first: {comparison.summary()} ({comparison.groups} scouting groups)"
         )
 
 

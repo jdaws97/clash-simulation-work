@@ -47,8 +47,25 @@ from baselab.render import render  # noqa: E402
 from baselab.unconventional import STYLES, unconventional  # noqa: E402
 from funnel import KINDS, eval_many, own_levels  # noqa: E402
 
-DEF = {"inferno", "eagle", "scatter", "xbow", "mono", "ad", "mat", "ric", "wt", "bt", "mortar", "at", "cannon",
-       "sweeper", "tesla", "st", "crafting"}
+DEF = {
+    "inferno",
+    "eagle",
+    "scatter",
+    "xbow",
+    "mono",
+    "ad",
+    "mat",
+    "ric",
+    "wt",
+    "bt",
+    "mortar",
+    "at",
+    "cannon",
+    "sweeper",
+    "tesla",
+    "st",
+    "crafting",
+}
 
 
 def descriptor(lay: Layout):
@@ -68,7 +85,9 @@ def descriptor(lay: Layout):
     pct = sum(d < r(eagle) for d in dists) / len(dists)
     e = 0 if pct < 0.1 else 1 if pct < 0.3 else 2
     zone = {"center": 0, "mid": 1, "edge": 2}.get(th_zone(lay), 1)
-    n = sum(len(c) >= 4 for c in compartments(lay.walls)[0])  # enclosed areas of 4+ tiles
+    n = sum(
+        len(c) >= 4 for c in compartments(lay.walls)[0]
+    )  # enclosed areas of 4+ tiles
     c = 0 if n <= 6 else 1 if n <= 14 else 2
     defs = [r(b) for b in bs if b.key in DEF]
     spread = sum(defs) / max(1, len(defs))
@@ -84,9 +103,13 @@ def _child(args):
     try:
         if op == "new":
             if rng.random() < 0.35:
-                lay = unconventional(rng.choice(STYLES), seed)  # open cram, onion, scatter
+                lay = unconventional(
+                    rng.choice(STYLES), seed
+                )  # open cram, onion, scatter
             else:
-                lay = design(rng.choice(KINDS), seed, zone=rng.choice(["center", "mid", "edge"]))
+                lay = design(
+                    rng.choice(KINDS), seed, zone=rng.choice(["center", "mid", "edge"])
+                )
         elif op == "cross":
             lay = crossover(Layout.from_json(a_json), Layout.from_json(b_json), rng)
             if lay is None:
@@ -99,7 +122,11 @@ def _child(args):
                     lay = m
         if lay.problems():
             return None
-        lay.levels, lay.wall_level, lay.hero_levels = dict(own["levels"]), own["wall_level"], dict(own["hero_levels"])
+        lay.levels, lay.wall_level, lay.hero_levels = (
+            dict(own["levels"]),
+            own["wall_level"],
+            dict(own["hero_levels"]),
+        )
         return lay.to_json()
     except (RuntimeError, ValueError, IndexError, KeyError):
         return None
@@ -112,10 +139,22 @@ def main():
     ap.add_argument("--batches", type=int, default=30)
     ap.add_argument("--batch", type=int, default=64)
     ap.add_argument("--init", type=int, default=192)
-    ap.add_argument("--final", type=int, default=16, help="elites given the full battle set")
+    ap.add_argument(
+        "--final", type=int, default=16, help="elites given the full battle set"
+    )
     ap.add_argument("--seed", type=int, default=1)
-    ap.add_argument("--margin", type=float, default=1.0, help="stage-1 slack below the elite's quick score")
-    ap.add_argument("--seed-files", nargs="*", default=[], help="layouts to start from (e.g. digitized builder bases)")
+    ap.add_argument(
+        "--margin",
+        type=float,
+        default=1.0,
+        help="stage-1 slack below the elite's quick score",
+    )
+    ap.add_argument(
+        "--seed-files",
+        nargs="*",
+        default=[],
+        help="layouts to start from (e.g. digitized builder bases)",
+    )
     args = ap.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -144,8 +183,11 @@ def main():
         scored = eval_many([l for l, _ in lays], quick, args.mode)
         # stage 1: a child goes on if its cell is empty or it comes within
         # `margin` of the elite's quick score
-        keep = [(l, d, qs) for (l, d), (qs, _) in zip(lays, scored)
-                if d not in archive or qs >= archive[d][3] - args.margin]
+        keep = [
+            (l, d, qs)
+            for (l, d), (qs, _) in zip(lays, scored)
+            if d not in archive or qs >= archive[d][3] - args.margin
+        ]
         if not keep:
             return 0
         full = eval_many([l for l, _, _ in keep], confirm, args.mode)
@@ -164,7 +206,11 @@ def main():
         if l.problems():
             say(f"skipping seed {f}: {l.problems()[:3]}")
             continue
-        l.levels, l.wall_level, l.hero_levels = dict(own_lv["levels"]), own_lv["wall_level"], dict(own_lv["hero_levels"])
+        l.levels, l.wall_level, l.hero_levels = (
+            dict(own_lv["levels"]),
+            own_lv["wall_level"],
+            dict(own_lv["hero_levels"]),
+        )
         l.name = "seed-" + Path(f).stem
         seeds_json.append(l.to_json())
     won = offer(seeds_json + list(pool().map(_child, jobs, chunksize=4)))
@@ -183,12 +229,21 @@ def main():
             else:
                 # parents weighted toward the better elites, all cells still chosen
                 ranked = sorted(cells, key=lambda c: -archive[c][0])
-                c = ranked[min(int(rng.expovariate(1 / max(1.0, len(ranked) / 3))), len(ranked) - 1)]
+                c = ranked[
+                    min(
+                        int(rng.expovariate(1 / max(1.0, len(ranked) / 3))),
+                        len(ranked) - 1,
+                    )
+                ]
                 jobs.append(("mutate", seed, archive[c][1], None))
         won = offer(list(pool().map(_child, jobs, chunksize=4)))
         best = max(archive.values(), key=lambda v: v[0])
-        say(f"batch {bt}: {won} improvements, {len(archive)} cells, best confirmed {best[0]:.2f} | {best[2]}  t={time.time() - t0:.0f}s")
-        json.dump({str(k): v[:2] for k, v in archive.items()}, open(out / "archive.json", "w"))
+        say(
+            f"batch {bt}: {won} improvements, {len(archive)} cells, best confirmed {best[0]:.2f} | {best[2]}  t={time.time() - t0:.0f}s"
+        )
+        json.dump(
+            {str(k): v[:2] for k, v in archive.items()}, open(out / "archive.json", "w")
+        )
 
     # full battle set for the best elites, then hold-out against the references
     full = meta_scenarios(args.mode, 8, (0, 1))
@@ -196,32 +251,58 @@ def main():
     lays = [Layout.from_json(v[1]) for _, v in top]
     for (cell, _), l in zip(top, lays):
         l.name = "qd-" + "".join(map(str, cell))
-    scored = eval_many(lays, full, args.mode)
-    order = sorted(zip(lays, scored), key=lambda x: -x[1][0])
+    ordinary = eval_many(lays, full, args.mode)
+    # docs/GAP_ANALYSIS.md:85-87: finalists must survive adaptive attackers.
+    scored = eval_many(lays, full, args.mode, redteam=True)
+    order = sorted(zip(lays, scored, ordinary), key=lambda x: -x[1][0])
     say("== full battle set (TH zone, Eagle depth, compartments, spread)")
-    for l, (s, ev) in order:
-        say(f"  {l.name}  {s:6.2f}  {ev.summary()}")
-    # fresh battles: sides halfway between the full set's 8 (same angles
-    # would repeat it; seed group 21 alone has group 1's skill and flank)
+    for l, (s, ev), (normal, normal_ev) in order:
+        say(f"  {l.name} red-team {s:6.2f}  {ev.summary()}")
+        say(f"    ordinary {normal:6.2f}  {normal_ev.summary()}")
+    # review5 #2: redteam_rows now uses these disjoint seeds for both a new
+    # attack search and unseen replay battles, with shifted coarse sides.
     hold = meta_scenarios(args.mode, 8, (21, 22, 23), angle_offset=math.pi / 8)
     own = own_levels()
     refs = []
     for f in [ROOT / "data/reference-bases/your-base.json"]:
         if f.exists():
             l = Layout.load(f)
-            l.levels, l.wall_level, l.hero_levels = dict(own["levels"]), own["wall_level"], dict(own["hero_levels"])
+            l.levels, l.wall_level, l.hero_levels = (
+                dict(own["levels"]),
+                own["wall_level"],
+                dict(own["hero_levels"]),
+            )
             l.name = "ref-" + f.stem
             refs.append(l)
-    finalists = [l for l, _ in order[:5]] + refs
+    finalists = [l for l, _, _ in order[:5]] + refs
     say("== hold-out")
-    for l, (s, ev) in zip(finalists, eval_many(finalists, hold, args.mode)):
-        say(f"  {l.name:22s} {s:6.2f}  {ev.summary()}")
+    ordinary = eval_many(finalists, hold, args.mode)
+    gated = eval_many(finalists, hold, args.mode, redteam=True)
+    ranked = sorted(zip(finalists, gated, ordinary), key=lambda row: -row[1][0])
+    rows = []
+    winner_saved = False
+    for l, (s, ev), (normal, normal_ev) in ranked:
+        say(f"  {l.name:22s} red-team {s:6.2f}  {ev.summary()}")
+        say(f"    ordinary {normal:6.2f}  {normal_ev.summary()}")
+        rows.append(
+            {
+                "name": l.name,
+                "score": s,
+                "summary": ev.summary(),
+                "ordinary_score": normal,
+                "ordinary_summary": normal_ev.summary(),
+            }
+        )
         if not l.name.startswith("ref-"):
+            if not winner_saved:
+                l.save(out / "best.json")
+                winner_saved = True
             (out / f"{l.name}.json").write_text(json.dumps(l.to_json(), indent=1))
             try:
                 render(l, out / f"{l.name}.png")
             except Exception as e:  # rendering is a convenience
                 say(f"  (render failed: {e})")
+    (out / "holdout.json").write_text(json.dumps(rows, indent=1))
     say(f"done in {time.time() - t0:.0f}s")
 
 

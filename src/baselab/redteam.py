@@ -307,11 +307,36 @@ class _Evaluator:
         return (sum(attacker_trophies(r[0], r[1]) for r in rs) / len(rs), sum(r[1] for r in rs) / len(rs))
 
 
-def redteam(layout, army: str, budget: Budget | None = None, *, parallel=True, verbose=False,
-            modifier=None, strength=None) -> RedTeamResult:
+def redteam(
+    layout,
+    army: str,
+    budget: Budget | None = None,
+    *,
+    parallel=True,
+    verbose=False,
+    modifier=None,
+    strength=None,
+    search_seeds=None,
+    fresh_seeds=None,
+    angles=None,
+) -> RedTeamResult:
     """The best attack (by expected attacker trophies) the army's cited
     playbook allows against `layout`, with its fresh-seed replay."""
     b = budget or Budget()
+    search_seeds = tuple(SEARCH_SEEDS if search_seeds is None else search_seeds)
+    fresh_seeds = tuple(FRESH_SEEDS if fresh_seeds is None else fresh_seeds)
+    required = max([b.coarse_seeds, b.refine_seeds] + [n for _, n in b.halving])
+    if len(search_seeds) < required or len(fresh_seeds) < b.fresh_seeds:
+        raise ValueError("not enough red-team search or fresh seeds for the budget")
+    if set(search_seeds) & set(fresh_seeds[: b.fresh_seeds]):
+        raise ValueError("red-team search and fresh seeds must be disjoint")
+    angles = (
+        tuple(angles)
+        if angles is not None
+        else tuple(2 * math.pi * k / b.sides + 0.1 for k in range(b.sides))
+    )
+    if not angles:
+        raise ValueError("red-team search requires at least one approach angle")
     t0 = time.time()
     lj = layout.to_json()
     ev = _Evaluator(lj, army, (strength or STRENGTH).get(army, 1.0), parallel, modifier)
@@ -323,8 +348,9 @@ def redteam(layout, army: str, budget: Budget | None = None, *, parallel=True, v
             print(f"  [{army}] {msg}", flush=True)
 
     # 1-2. coarse sides and flanks, then successive halving on seeds
-    cands = [Attack(2 * math.pi * k / b.sides + 0.1, side) for k in range(b.sides) for side in ("left", "right")]
-    seeds = SEARCH_SEEDS[: b.coarse_seeds]
+    # review5 #2: caller-supplied sides and seeds also control the attack search.
+    cands = [Attack(angle, side) for angle in angles for side in ("left", "right")]
+    seeds = search_seeds[: b.coarse_seeds]
     ev.run(cands, seeds)
     sides = {}  # entry angle (deg) -> best-flank trophies on the coarse seeds
     for a in cands:
@@ -332,18 +358,18 @@ def redteam(layout, army: str, budget: Budget | None = None, *, parallel=True, v
         sides[k] = max(sides.get(k, 0.0), ev.score(a, seeds)[0])
     for keep, n in b.halving:
         cands = sorted(cands, key=lambda a: ev.score(a, seeds), reverse=True)[:keep]
-        seeds = SEARCH_SEEDS[:n]
+        seeds = search_seeds[:n]
         ev.run(cands, seeds)
     cands = sorted(cands, key=lambda a: ev.score(a, seeds), reverse=True)
     coarse = cands[0]
     note(f"coarse {coarse.describe()} {ev.score(coarse, seeds)[0]:.1f} tr on {len(seeds)} seeds ({ev.battles} battles)")
 
     # 3. one coordinate-descent pass over the playbook's choices
-    rseeds = SEARCH_SEEDS[: b.refine_seeds]
+    rseeds = search_seeds[: b.refine_seeds]
     keys = {bb.key for bb in layout.buildings}
-    half = math.pi / b.sides
+    half = math.pi / len(angles)
     best = coarse
-    final_seeds = SEARCH_SEEDS[: max([n for _k, n in b.halving] + [b.coarse_seeds])]
+    final_seeds = search_seeds[: max([n for _k, n in b.halving] + [b.coarse_seeds])]
     ev.run([best], rseeds + final_seeds)
     groups = [("angle", [best.angle - half, best.angle + half]),
               ("flank_offset", [x for x in (0.6, 1.2) if x != best.flank_offset])]
@@ -376,7 +402,7 @@ def redteam(layout, army: str, budget: Budget | None = None, *, parallel=True, v
     n_search = ev.battles
 
     # 4. fresh seeds
-    fs = FRESH_SEEDS[: b.fresh_seeds]
+    fs = fresh_seeds[: b.fresh_seeds]
     ev.run([best], fs)
     fresh = [ev.cache[(best, s)] for s in fs]
     fresh_tr = sum(attacker_trophies(r[0], r[1]) for r in fresh) / len(fresh)
@@ -418,20 +444,46 @@ def redteam_rows(layout, scenarios, strength=None, budget: Budget | None = None,
     tactics of those armies are absorbed: the red team plays the playbook).
     Returns (scenarios, results) for those rows, the scenarios left for the
     normal path (armies without a playbook) and {(army, th, modifier):
-    RedTeamResult}."""
+    RedTeamResult}. Supplied seeds are split between search and fresh replay;
+    a short seed list is extended consecutively above its maximum. Supplied
+    angles seed the coarse search, including any hold-out angle offset.
+    """
     keyed: dict = {}
     rest = []
     for sc in scenarios:
         if sc.army.startswith(("meta:", "custom:")) and playbook_for(sc.army)[1] is not None:
-            keyed.setdefault((sc.army, sc.town_hall, sc.modifier), [sc, 0.0])[1] += sc.weight
+            keyed.setdefault((sc.army, sc.town_hall, sc.modifier), []).append(sc)
         else:
             rest.append(sc)
     out_sc, out_r, found = [], [], {}
     g = 900000
-    for key, (sc0, w) in keyed.items():
-        r = redteam(layout, key[0], budget or budget_from_env(), modifier=key[2], strength=strength, verbose=verbose)
+    for key, rows in keyed.items():
+        sc0 = rows[0]
+        w = sum(sc.weight for sc in rows)
+        b = budget or budget_from_env()
+        count = max([b.coarse_seeds, b.refine_seeds] + [n for _, n in b.halving])
+        # evaluate._assign_skill: sorted seeds cover fixed quantiles in blocks of five.
+        # review5 #2: disjoint scenario ranges produce fresh searches AND replay battles.
+        seeds = sorted({sc.seed for sc in rows})
+        need = count + b.fresh_seeds - len(seeds)
+        if need > 0:
+            seeds.extend(range(seeds[-1] + 1, seeds[-1] + 1 + need))
+        search_seeds = tuple(seeds[:count])
+        fresh_seeds = tuple(seeds[count : count + b.fresh_seeds])
+        angles = tuple(sorted({sc.angle for sc in rows}))
+        r = redteam(
+            layout,
+            key[0],
+            b,
+            modifier=key[2],
+            strength=strength,
+            verbose=verbose,
+            search_seeds=search_seeds,
+            fresh_seeds=fresh_seeds,
+            angles=angles,
+        )
         found[key] = r
-        for seed, res in zip(FRESH_SEEDS, r.fresh):
+        for seed, res in zip(fresh_seeds, r.fresh):
             g += 1
             out_sc.append(replace(sc0, angle=r.attack.angle, seed=seed, weight=w / len(r.fresh), group=g,
                                   tactic=None, charge=None))

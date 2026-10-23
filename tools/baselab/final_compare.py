@@ -10,6 +10,7 @@ from __future__ import annotations
 import glob
 import json
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -19,10 +20,15 @@ sys.path.insert(0, str(ROOT / "tools" / "baselab"))
 from baselab.evaluate import meta_scenarios  # noqa: E402
 from baselab.layout import Layout  # noqa: E402
 from baselab.render import render  # noqa: E402
+from baselab.uncertainty import paired_comparison  # noqa: E402
 from funnel import eval_many, own_levels  # noqa: E402
 
-REFS = {"your current base": "data/reference-bases/your-base.json", "your l6x": "data/reference-bases/real-l6x.json",
-        "ranked remix": "output/bases-deep/ranked-winner.json", "war remix": "output/bases-deep/war-winner.json"}
+REFS = {
+    "your current base": "data/reference-bases/your-base.json",
+    "your l6x": "data/reference-bases/real-l6x.json",
+    "ranked remix": "output/bases-deep/ranked-winner.json",
+    "war remix": "output/bases-deep/war-winner.json",
+}
 
 
 def main():
@@ -30,26 +36,60 @@ def main():
     out = {}
     for mode in ("ranked", "war"):
         cands = dict(REFS)
-        for f in sorted(glob.glob(str(ROOT / "output" / "funnel" / f"{mode}-*" / "evolve" / "best.json"))):
+        for f in sorted(
+            glob.glob(
+                str(ROOT / "output" / "funnel" / f"{mode}-*" / "evolve" / "best.json")
+            )
+        ):
             cands[f"funnel {Path(f).parents[1].name}"] = f
         lays, names = [], []
         for n, f in cands.items():
             p = ROOT / f if not Path(f).is_absolute() else Path(f)
             if p.exists():
                 lay = Layout.load(p)
-                lay.levels, lay.wall_level, lay.hero_levels = dict(own["levels"]), own["wall_level"], dict(own["hero_levels"])
+                lay.levels, lay.wall_level, lay.hero_levels = (
+                    dict(own["levels"]),
+                    own["wall_level"],
+                    dict(own["hero_levels"]),
+                )
                 lays.append(lay)
                 names.append(n)
         sc = meta_scenarios(mode, 8, (5, 6, 7))
-        res = eval_many(lays, sc, mode)
+        res, battles = eval_many(lays, sc, mode, return_results=True)
+        comparisons = {
+            name: paired_comparison(sc, raw, battles[0])
+            for name, raw in zip(names, battles)
+        }
         rows = sorted(zip(names, res, lays), key=lambda r: -r[1][0])
-        print(f"== {mode}: {len(sc)} fresh battles per base (real meta armies, your levels)", flush=True)
+        print(
+            f"== {mode}: {len(sc)} fresh battles per base (real meta armies, your levels)",
+            flush=True,
+        )
         for n, (s, ev), lay in rows:
             print(f"  {n:24s} score {s:6.2f}  {ev.summary()}", flush=True)
-        out[mode] = [{"name": n, "score": s, "summary": ev.summary()} for n, (s, ev), _ in rows]
+            comparison = comparisons[n]
+            print(
+                f"    ranked trophies vs {names[0]} (A=this, B=reference): {comparison.summary()}",
+                flush=True,
+            )
+        out[mode] = [
+            {
+                "name": n,
+                "score": s,
+                "summary": ev.summary(),
+                "paired_reference": names[0],
+                "paired_trophies": asdict(comparisons[n])
+                | {"practical_tie": comparisons[n].practical_tie},
+            }
+            for n, (s, ev), _ in rows
+        ]
         for n, (s, ev), lay in rows:
             if n.startswith("funnel"):
-                render(lay, ROOT / "output" / "funnel" / f"final-{mode}-{n.split()[-1]}.png", title=f"{mode} {n}: {ev.summary()}")
+                render(
+                    lay,
+                    ROOT / "output" / "funnel" / f"final-{mode}-{n.split()[-1]}.png",
+                    title=f"{mode} {n}: {ev.summary()}",
+                )
     (ROOT / "output" / "funnel" / "final.json").write_text(json.dumps(out, indent=1))
 
 

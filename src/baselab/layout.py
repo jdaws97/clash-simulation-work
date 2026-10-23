@@ -198,6 +198,17 @@ class Layout:
                 issues.append(f"too many {key} traps: {trap_counts[key]} > {n}")
             elif require_full and trap_counts[key] < n:
                 issues.append(f"missing {key} traps: {trap_counts[key]} < {n}")
+        # Wiki: Archer Tower, "Like with other gear ups, only one" copy may be
+        # geared (Cannon, Archer Tower, Mortar).
+        geared = Counter(
+            b.key
+            for b in self.buildings
+            if b.key in ("cannon", "at", "mortar")
+            and b.mode in ("geared", "fast", "burst")
+        )
+        for key, n in geared.items():
+            if n > 1:
+                issues.append(f"too many geared {key}: {n} > 1")
         return issues
 
 

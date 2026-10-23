@@ -28,6 +28,7 @@ import argparse
 import glob
 import json
 import math
+import os
 import random
 import sys
 import time
@@ -39,13 +40,30 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from baselab.archetypes import TH_ZONES, design, th_zone  # noqa: E402
-from baselab.evaluate import STRENGTH, meta_scenarios, pool, run_batch, summarise  # noqa: E402
+from baselab.evaluate import (
+    STRENGTH,
+    evaluate,
+    meta_scenarios,
+    pool,
+    run_batch,
+    summarise,
+)  # noqa: E402
 from baselab.evolve import crossover  # noqa: E402
 from baselab.layout import Layout  # noqa: E402
 from baselab.optimize import hole_tiles, mutate, objective  # noqa: E402
 from baselab.surrogate import FEATURES, Ridge, features  # noqa: E402
 
-KINDS = ["organic", "organic", "organic", "free", "free", "grid", "offset", "rings", "wide"]
+KINDS = [
+    "organic",
+    "organic",
+    "organic",
+    "free",
+    "free",
+    "grid",
+    "offset",
+    "rings",
+    "wide",
+]
 
 
 def own_levels():
@@ -54,7 +72,10 @@ def own_levels():
 
 def seed_bases():
     files = sorted(glob.glob(str(ROOT / "data" / "reference-bases" / "*.json")))
-    files += [str(ROOT / "output" / "bases-deep" / f) for f in ("ranked-winner.json", "war-winner.json")]
+    files += [
+        str(ROOT / "output" / "bases-deep" / f)
+        for f in ("ranked-winner.json", "war-winner.json")
+    ]
     out = []
     for f in files:
         if Path(f).exists():
@@ -84,14 +105,22 @@ def _make(args):
                     lay = m
         else:  # crossover of a seed base with another seed base or an original
             a = Layout.from_json(seeds_json[rng.randrange(len(seeds_json))])
-            b = Layout.from_json(seeds_json[rng.randrange(len(seeds_json))]) if rng.random() < 0.5 else design(rng.choice(KINDS), seed)
+            b = (
+                Layout.from_json(seeds_json[rng.randrange(len(seeds_json))])
+                if rng.random() < 0.5
+                else design(rng.choice(KINDS), seed)
+            )
             lay = crossover(a, b, rng)
             if lay is None:
                 return None
             origin = "x-" + a.name
         if lay.problems() or hole_tiles(lay) > 20:
             return None
-        lay.levels, lay.wall_level, lay.hero_levels = dict(own["levels"]), own["wall_level"], dict(own["hero_levels"])
+        lay.levels, lay.wall_level, lay.hero_levels = (
+            dict(own["levels"]),
+            own["wall_level"],
+            dict(own["hero_levels"]),
+        )
         lay.name = f"{kind[:1]}{seed}"
         return lay.to_json(), origin, features(lay).tolist()
     except (RuntimeError, ValueError, IndexError, KeyError):
@@ -107,14 +136,57 @@ def generate(n, seed, mix=(0.4, 0.45, 0.15), originals_only=False):
             kind = "original:" + TH_ZONES[i % 3]  # equal numbers per Town Hall zone
         else:
             r = rng.random()
-            kind = "original" if r < mix[0] else "variant" if r < mix[0] + mix[1] else "cross"
+            kind = (
+                "original"
+                if r < mix[0]
+                else "variant" if r < mix[0] + mix[1] else "cross"
+            )
         jobs.append((kind, seed * 1_000_000 + i, seeds_json))
     out = [r for r in pool().map(_make, jobs, chunksize=8) if r is not None]
     return out
 
 
-def eval_many(lays, scenarios, mode):
-    """Score many layouts in one parallel batch (keeps every core busy)."""
+def evaluate_attacker(layout, scenarios, *, redteam=False, **kwargs):
+    """Explicitly choose evaluate()'s attacker and restore the caller's mode."""
+    scenarios = list(scenarios)
+    if redteam:
+        from baselab.redteam import playbook_for
+
+        # redteam.py:425: bare scripted army IDs cannot exercise the gate.
+        armies = dict.fromkeys(sc.army for sc in scenarios)
+        if not any(
+            army.startswith(("meta:", "custom:")) and playbook_for(army)[1] is not None
+            for army in armies
+        ):
+            raise ValueError("red-team gate requires an army with a cited playbook")
+    previous = os.environ.get("BASELAB_REDTEAM")
+    # evaluate.py:595-604: only finalist calls enable the expensive branch.
+    os.environ["BASELAB_REDTEAM"] = "1" if redteam else "0"
+    try:
+        return evaluate(layout, scenarios, **kwargs)
+    finally:
+        if previous is None:
+            os.environ.pop("BASELAB_REDTEAM", None)
+        else:
+            os.environ["BASELAB_REDTEAM"] = previous
+
+
+def eval_many(lays, scenarios, mode, *, redteam=False, return_results=False):
+    """Batch ordinary scores, or evaluate finalists through the red-team branch.
+
+    return_results also returns each layout's raw ordinary battle rows, for
+    paired uncertainty without repeating simulations. Existing calls return
+    just the original list of (objective, Evaluation) pairs.
+    """
+    lays, scenarios = list(lays), list(scenarios)
+    if redteam:
+        if return_results:
+            raise ValueError("raw paired results are available for ordinary scoring")
+        out = []
+        for lay in lays:
+            ev = evaluate_attacker(lay, scenarios, redteam=True)
+            out.append((objective(ev, mode, lay), ev))
+        return out
     jobs = []
     for lay in lays:
         lj = lay.to_json()
@@ -122,14 +194,22 @@ def eval_many(lays, scenarios, mode):
     res = run_batch(jobs)
     k = len(scenarios)
     out = []
+    per_layout = []
     for n, lay in enumerate(lays):
-        ev = summarise(scenarios, res[n * k:(n + 1) * k])
+        results = res[n * k : (n + 1) * k]
+        ev = summarise(scenarios, results)
         out.append((objective(ev, mode, lay), ev))
+        per_layout.append(results)
+    if return_results:
+        return out, per_layout
     return out
 
 
 def quick_sets():
-    return {"ranked": meta_scenarios("ranked", 2, (0,)), "war": meta_scenarios("war", 4, (0,))}
+    return {
+        "ranked": meta_scenarios("ranked", 2, (0,)),
+        "war": meta_scenarios("war", 4, (0,)),
+    }
 
 
 def cmd_data(args):
@@ -141,7 +221,7 @@ def cmd_data(args):
     sets = quick_sets()
     with open(out, "a", encoding="utf-8") as f:
         for b0 in range(0, len(cands), 40):
-            chunk = cands[b0:b0 + 40]
+            chunk = cands[b0 : b0 + 40]
             lays = [Layout.from_json(c[0]) for c in chunk]
             scores = {mode: eval_many(lays, sc, mode) for mode, sc in sets.items()}
             for n, (lj, origin, feat) in enumerate(chunk):
@@ -150,14 +230,28 @@ def cmd_data(args):
                     row[mode] = scores[mode][n][0]
                 f.write(json.dumps(row, separators=(",", ":")) + "\n")
             f.flush()
-            print(f"  {b0 + len(chunk)}/{len(cands)}  t={time.time() - t0:.0f}s", flush=True)
+            print(
+                f"  {b0 + len(chunk)}/{len(cands)}  t={time.time() - t0:.0f}s",
+                flush=True,
+            )
     print(f"done in {time.time() - t0:.0f}s", flush=True)
 
 
 def load_data(path):
-    rows = [json.loads(l) for l in Path(path).read_text(encoding="utf-8").splitlines() if l.strip()]
+    rows = [
+        json.loads(l)
+        for l in Path(path).read_text(encoding="utf-8").splitlines()
+        if l.strip()
+    ]
     X = np.array([r["features"] for r in rows])
-    groups = [r["origin"].split("-")[0] + "-" + r["origin"].split("-")[1] if r["origin"].startswith(("orig", "x")) else r["origin"] for r in rows]
+    groups = [
+        (
+            r["origin"].split("-")[0] + "-" + r["origin"].split("-")[1]
+            if r["origin"].startswith(("orig", "x"))
+            else r["origin"]
+        )
+        for r in rows
+    ]
     return rows, X, groups
 
 
@@ -187,11 +281,24 @@ def cmd_train(args):
         kept = len(true_top & set(np.argsort(-preds)[:k10])) / len(true_top)
         model = Ridge(alpha).fit(X, y)
         Path(args.out_dir).mkdir(parents=True, exist_ok=True)
-        (Path(args.out_dir) / f"surrogate-{mode}.json").write_text(json.dumps(model.to_json() | {"rho": rho, "top_kept": kept, "n": len(y)}))
-        report[mode] = {"rho_leave_family_out": rho, "alpha": alpha, "top5_kept_by_top10": kept, "n": len(y), "families": len(ug)}
-        print(f"{mode}: {len(y)} bases, {len(ug)} families; leave-one-family-out rank correlation {rho:.3f} (alpha {alpha}); "
-              f"the predicted top 10% keeps {kept:.0%} of the true top 5%", flush=True)
-    (Path(args.out_dir) / "surrogate-report.json").write_text(json.dumps(report, indent=1))
+        (Path(args.out_dir) / f"surrogate-{mode}.json").write_text(
+            json.dumps(model.to_json() | {"rho": rho, "top_kept": kept, "n": len(y)})
+        )
+        report[mode] = {
+            "rho_leave_family_out": rho,
+            "alpha": alpha,
+            "top5_kept_by_top10": kept,
+            "n": len(y),
+            "families": len(ug),
+        }
+        print(
+            f"{mode}: {len(y)} bases, {len(ug)} families; leave-one-family-out rank correlation {rho:.3f} (alpha {alpha}); "
+            f"the predicted top 10% keeps {kept:.0%} of the true top 5%",
+            flush=True,
+        )
+    (Path(args.out_dir) / "surrogate-report.json").write_text(
+        json.dumps(report, indent=1)
+    )
 
 
 def cmd_screen(args):
@@ -206,11 +313,17 @@ def cmd_screen(args):
         log.flush()
 
     t0 = time.time()
-    model = Ridge.from_json(json.loads((Path(args.model_dir) / f"surrogate-{mode}.json").read_text()))
+    model = Ridge.from_json(
+        json.loads((Path(args.model_dir) / f"surrogate-{mode}.json").read_text())
+    )
     cands = []
     batch = 2000
     for b0 in range(0, args.candidates, batch):
-        cands += generate(min(batch, args.candidates - b0), args.seed * 100 + b0 // batch, originals_only=args.originals_only)
+        cands += generate(
+            min(batch, args.candidates - b0),
+            args.seed * 100 + b0 // batch,
+            originals_only=args.originals_only,
+        )
         say(f"  stage A: {len(cands)} legal candidates  t={time.time() - t0:.0f}s")
     X = np.array([c[2] for c in cands])
     pred = model.predict(X)
@@ -219,52 +332,120 @@ def cmd_screen(args):
     def pick(idx, k):
         order = sorted(idx, key=lambda i: -pred[i])
         n_explore = k // 6  # random explorers: the predictor is only a coarse filter
-        return order[: k - n_explore] + rng.sample(order[k - n_explore:], min(n_explore, len(order[k - n_explore:])))
+        return order[: k - n_explore] + rng.sample(
+            order[k - n_explore :], min(n_explore, len(order[k - n_explore :]))
+        )
 
     def zone_of(i):
         return cands[i][1].rsplit("-", 1)[-1] if args.originals_only else "all"
 
     zones = sorted({zone_of(i) for i in range(len(cands))})
     # equal quick-sim quota per Town Hall zone (originals-only), so no zone is crowded out early
-    picked = [i for z in zones for i in pick([i for i in range(len(cands)) if zone_of(i) == z], args.quick // len(zones))]
+    picked = [
+        i
+        for z in zones
+        for i in pick(
+            [i for i in range(len(cands)) if zone_of(i) == z], args.quick // len(zones)
+        )
+    ]
     origins: dict = {}
     for i in picked:
         origins[cands[i][1]] = origins.get(cands[i][1], 0) + 1
-    say(f"stage A done: {len(cands)} candidates ranked by the predictor; {len(picked)} go to quick sims "
-        f"(by origin: {dict(sorted(origins.items(), key=lambda kv: -kv[1])[:8])})")
+    say(
+        f"stage A done: {len(cands)} candidates ranked by the predictor; {len(picked)} go to quick sims "
+        f"(by origin: {dict(sorted(origins.items(), key=lambda kv: -kv[1])[:8])})"
+    )
     quick = quick_sets()[mode]
     scored = []
     for b0 in range(0, len(picked), 50):
-        idx = picked[b0:b0 + 50]
+        idx = picked[b0 : b0 + 50]
         res = eval_many([Layout.from_json(cands[i][0]) for i in idx], quick, mode)
         scored += [(sc, i) for (sc, _ev), i in zip(res, idx)]
         say(f"  stage B: {b0 + len(idx)}/{len(picked)}  t={time.time() - t0:.0f}s")
     scored.sort(reverse=True)
-    say(f"stage B done: quick-sim best {scored[0][0]:.2f}, 50th {scored[min(49, len(scored) - 1)][0]:.2f}")
+    say(
+        f"stage B done: quick-sim best {scored[0][0]:.2f}, 50th {scored[min(49, len(scored) - 1)][0]:.2f}"
+    )
     full = meta_scenarios(mode, 8, (0, 1))
     finals = []
     per_zone = args.full // len(zones)
-    to_full = [i for z in zones for i in [i for _, i in scored if zone_of(i) == z][:per_zone]]
+    to_full = [
+        i for z in zones for i in [i for _, i in scored if zone_of(i) == z][:per_zone]
+    ]
     for b0 in range(0, len(to_full), 10):
-        idx = to_full[b0:b0 + 10]
-        res = eval_many([Layout.from_json(cands[i][0]) for i in idx], full, mode)
-        finals += [(sc, i, ev.summary()) for (sc, ev), i in zip(res, idx)]
+        idx = to_full[b0 : b0 + 10]
+        lays = [Layout.from_json(cands[i][0]) for i in idx]
+        ordinary = eval_many(lays, full, mode)
+        res = eval_many(lays, full, mode, redteam=True)
+        finals += [
+            (sc, i, ev.summary(), normal, normal_ev.summary())
+            for (sc, ev), (normal, normal_ev), i in zip(res, ordinary, idx)
+        ]
     finals.sort(reverse=True)
-    say(f"stage C done (272 battles each): top {finals[0][0]:.2f} {finals[0][2]} [{cands[finals[0][1]][1]}]")
-    for s, i, summ in finals[:10]:
-        say(f"    {s:7.2f}  {summ}  origin {cands[i][1]}")
+    say(
+        f"stage C done ({len(full)} ordinary battles plus red team each): top {finals[0][0]:.2f} {finals[0][2]} [{cands[finals[0][1]][1]}]"
+    )
+    for s, i, summ, normal, normal_summ in finals[:10]:
+        say(f"    red-team {s:7.2f}  {summ}  origin {cands[i][1]}")
+        say(f"    ordinary {normal:7.2f}  {normal_summ}")
+    reference_rows = []
+    ref_path = ROOT / "data/reference-bases/your-base.json"
+    if ref_path.exists():
+        ref = Layout.load(ref_path)
+        own = own_levels()
+        ref.levels, ref.wall_level, ref.hero_levels = (
+            dict(own["levels"]),
+            own["wall_level"],
+            dict(own["hero_levels"]),
+        )
+        normal, normal_ev = eval_many([ref], full, mode)[0]
+        s, ev = eval_many([ref], full, mode, redteam=True)[0]
+        say(f"  reference {ref_path.stem}: red-team {s:.2f} {ev.summary()}")
+        say(f"    ordinary {normal:.2f} {normal_ev.summary()}")
+        reference_rows.append(
+            {
+                "name": ref_path.stem,
+                "score": s,
+                "summary": ev.summary(),
+                "ordinary_score": normal,
+                "ordinary_summary": normal_ev.summary(),
+            }
+        )
     keep_per_zone = max(1, args.keep // len(zones))
-    top_idx = [i for z in zones for i in [i for _, i, _ in finals if zone_of(i) == z][:keep_per_zone]]
+    top_idx = [
+        i
+        for z in zones
+        for i in [i for _, i, *_ in finals if zone_of(i) == z][:keep_per_zone]
+    ]
     top = [Layout.from_json(cands[i][0]) for i in top_idx]
     for z in zones:
-        zs = [s for s, i, _ in finals if zone_of(i) == z]
+        zs = [s for s, i, *_ in finals if zone_of(i) == z]
         if zs:
-            say(f"  zone {z:6s}: best full score {max(zs):.2f} ({len(zs)} fully scored)")
+            say(
+                f"  zone {z:6s}: best full score {max(zs):.2f} ({len(zs)} fully scored)"
+            )
     for k, lay in enumerate(top):
         lay.name = f"f{args.seed}-{k}"
     (out / "population.json").write_text(json.dumps([l.to_json() for l in top]))
-    (out / "stage-c.json").write_text(json.dumps([{"score": s, "origin": cands[i][1], "summary": su} for s, i, su in finals], indent=1))
-    say(f"wrote {len(top)} bases to {out / 'population.json'} in {time.time() - t0:.0f}s")
+    (out / "stage-c.json").write_text(
+        json.dumps(
+            [
+                {
+                    "score": s,
+                    "origin": cands[i][1],
+                    "summary": su,
+                    "ordinary_score": normal,
+                    "ordinary_summary": normal_summ,
+                }
+                for s, i, su, normal, normal_summ in finals
+            ],
+            indent=1,
+        )
+    )
+    (out / "stage-c-references.json").write_text(json.dumps(reference_rows, indent=1))
+    say(
+        f"wrote {len(top)} bases to {out / 'population.json'} in {time.time() - t0:.0f}s"
+    )
 
 
 def main():
@@ -285,7 +466,11 @@ def main():
     s.add_argument("--full", type=int, default=50)
     s.add_argument("--keep", type=int, default=20)
     s.add_argument("--model-dir", default=str(ROOT / "output" / "funnel"))
-    s.add_argument("--originals-only", action="store_true", help="only from-scratch designs, equal quotas per Town Hall zone")
+    s.add_argument(
+        "--originals-only",
+        action="store_true",
+        help="only from-scratch designs, equal quotas per Town Hall zone",
+    )
     s.add_argument("--out", default=str(ROOT / "output" / "funnel" / "ranked-1"))
     args = ap.parse_args()
     {"data": cmd_data, "train": cmd_train, "screen": cmd_screen}[args.cmd](args)

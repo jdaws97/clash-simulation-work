@@ -19,7 +19,7 @@ from .deploy import outside
 from .generator import top_up_walls
 from .layout import Layout, Placement, TrapPlacement
 from .mechanics import BUILDING_TYPES, INVENTORY, TRAP_INVENTORY, VILLAGE, WALL_COUNT
-from .optimize import _fill_hole, _fits, _occupied
+from .optimize import _fill_hole, _fits, _occupied, _repair_gears
 
 TRAP_SIZE = {"giant": 2, "giga": 2}
 
@@ -145,6 +145,8 @@ def crossover(a: Layout, b: Layout, rng: random.Random) -> Layout | None:
     for _ in range(12):
         if not _fill_hole(child, rng):
             break
+    # Wiki: Archer Tower, only one gear-up per type; parents may use different copies.
+    _repair_gears(child)
     if child.problems():
         return None
     return child

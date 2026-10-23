@@ -38,7 +38,13 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from baselab.archetypes import design  # noqa: E402
 from baselab.diagnose import diagnose  # noqa: E402
-from baselab.evaluate import adaptive_scenarios, blend, evaluate, meta_scenarios, ranked_scenarios, war_scenarios  # noqa: E402
+from baselab.evaluate import (
+    adaptive_scenarios,
+    blend,
+    meta_scenarios,
+    ranked_scenarios,
+    war_scenarios,
+)  # noqa: E402
 from baselab.meta_armies import library  # noqa: E402
 from baselab import tactics  # noqa: E402
 from baselab.surrogate import Ridge, features  # noqa: E402
@@ -47,6 +53,7 @@ from baselab.evolve import crossover, wall_similarity  # noqa: E402
 from baselab.layout import Layout  # noqa: E402
 from baselab.optimize import hole_tiles, mutate, objective  # noqa: E402
 from baselab.render import render  # noqa: E402
+from funnel import evaluate_attacker as evaluate  # noqa: E402
 
 
 META = False
@@ -74,21 +81,57 @@ def main():
     ap.add_argument("--gens", type=int, default=30)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--dup", type=float, default=0.85)
-    ap.add_argument("--seed-files", nargs="*", default=[], help="extra layouts added to the first population")
+    ap.add_argument(
+        "--seed-files",
+        nargs="*",
+        default=[],
+        help="extra layouts added to the first population",
+    )
     ap.add_argument("--resume", help="population.json from an earlier run")
     ap.add_argument("--compare", nargs="*", default=[])
     ap.add_argument("--adapt-every", type=int, default=0)
     ap.add_argument("--adapt-share", type=float, default=0.35)
     ap.add_argument("--adapt-keep", type=int, default=2, help="tactics kept per army")
-    ap.add_argument("--final-adaptive", action="store_true", help="tune fresh attacks against each finalist at the end")
-    ap.add_argument("--meta", action="store_true", help="real TrophyCoach builds (meta_armies.py) instead of the 4 scripted armies")
+    ap.add_argument(
+        "--final-adaptive",
+        action="store_true",
+        help="tune fresh attacks against each finalist at the end",
+    )
+    ap.add_argument(
+        "--meta",
+        action="store_true",
+        help="real TrophyCoach builds (meta_armies.py) instead of the 4 scripted armies",
+    )
     ap.add_argument("--search-angles", type=int, default=4)
     ap.add_argument("--search-seeds", type=int, default=2)
-    ap.add_argument("--rr-sides", type=float, default=0.0, help="share of the score from Root Rider + RC charge attacks on the weakest side")
-    ap.add_argument("--niche", action="store_true", help="keep at least pop/4 survivors per Town Hall zone (center / mid / edge)")
-    ap.add_argument("--surrogate", type=int, default=0, help="propose this many times more children and simulate the ones the learned predictor ranks best (0 = off)")
-    ap.add_argument("--no-random", action="store_true", help="start from --seed-files only (a polish, not a search)")
-    ap.add_argument("--max-holes", type=int, default=20, help="children with more drop-pocket tiles are discarded")
+    ap.add_argument(
+        "--rr-sides",
+        type=float,
+        default=0.0,
+        help="share of the score from Root Rider + RC charge attacks on the weakest side",
+    )
+    ap.add_argument(
+        "--niche",
+        action="store_true",
+        help="keep at least pop/4 survivors per Town Hall zone (center / mid / edge)",
+    )
+    ap.add_argument(
+        "--surrogate",
+        type=int,
+        default=0,
+        help="propose this many times more children and simulate the ones the learned predictor ranks best (0 = off)",
+    )
+    ap.add_argument(
+        "--no-random",
+        action="store_true",
+        help="start from --seed-files only (a polish, not a search)",
+    )
+    ap.add_argument(
+        "--max-holes",
+        type=int,
+        default=20,
+        help="children with more drop-pocket tiles are discarded",
+    )
     ap.add_argument("--out", default=str(ROOT / "output" / "evolve"))
     args = ap.parse_args()
     out = Path(args.out)
@@ -111,28 +154,54 @@ def main():
     if args.rr_sides > 0:
         from baselab.evaluate import side_scenarios
 
-        rr = [("custom:user-rr", 16), ("meta:root-rider-16-1", 16), ("meta:root-rider-18-1", 18)]
-        search0 = blend(search0, side_scenarios(rr, (0, 1), args.rr_sides), args.rr_sides)
-        validate0 = blend(validate0, side_scenarios(rr, (8, 9), args.rr_sides), args.rr_sides)
+        rr = [
+            ("custom:user-rr", 16),
+            ("meta:root-rider-16-1", 16),
+            ("meta:root-rider-18-1", 18),
+        ]
+        search0 = blend(
+            search0, side_scenarios(rr, (0, 1), args.rr_sides), args.rr_sides
+        )
+        validate0 = blend(
+            validate0, side_scenarios(rr, (8, 9), args.rr_sides), args.rr_sides
+        )
         holdout_extra = side_scenarios(rr, (21, 22, 23), args.rr_sides)
     search, validate = list(search0), list(validate0)
     archive: dict = {}
-    attackers = [(a, 18) for a in ("hydra", "throwers", "edrag", "rootrider")] if args.mode == "ranked" else         [(a, 16) for a in ("hydra", "edrag", "rootrider", "throwers")]
+    attackers = (
+        [(a, 18) for a in ("hydra", "throwers", "edrag", "rootrider")]
+        if args.mode == "ranked"
+        else [(a, 16) for a in ("hydra", "edrag", "rootrider", "throwers")]
+    )
     weights = None
     if args.meta:
         # co-evolving attackers: the 4 most-used real builds for the attacking Town Hall
         th_a = 18 if args.mode == "ranked" else 16
         lib = sorted(library(th_a), key=lambda bw: -bw[1])[:4]
-        attackers = [(f"meta:{b['archetype']}-{b['th']}-{b['build']}", th_a) for b, _ in lib]
+        attackers = [
+            (f"meta:{b['archetype']}-{b['th']}-{b['build']}", th_a) for b, _ in lib
+        ]
         weights = {a: w for (a, _), (_, w) in zip(attackers, lib)}
     guide = scen(args.mode, 4, (0,))
     holdout = scen(args.mode, 8, (21, 22, 23), math.pi / 8)  # seed 1 is a search seed
     if holdout_extra:
         holdout = blend(holdout, holdout_extra, args.rr_sides)
+    # redteam.py:425: legacy scripted IDs are ineligible for cited attacks.
+    gate_holdout = (
+        holdout
+        if args.meta
+        else meta_scenarios(args.mode, 8, (21, 22, 23), angle_offset=math.pi / 8)
+    )
+    if not args.meta and holdout_extra:
+        gate_holdout = blend(gate_holdout, holdout_extra, args.rr_sides)
     own = json.loads((ROOT / "data" / "your-levels.json").read_text())
 
     def levels(lay):
-        lay.levels, lay.wall_level, lay.hero_levels = dict(own["levels"]), own["wall_level"], dict(own["hero_levels"])
+        lay.levels, lay.wall_level, lay.hero_levels = (
+            dict(own["levels"]),
+            own["wall_level"],
+            dict(own["hero_levels"]),
+        )
         return lay
 
     memory: list = []  # (features, score) of every simulated layout, for the predictor
@@ -151,7 +220,16 @@ def main():
             pop.append(score(levels(Layout.from_json(lj))))
         log(f"resumed {len(pop)} from {args.resume}")
     elif not args.no_random:
-        kinds = ["organic", "organic", "free", "grid", "offset", "rings", "wide", "organic"]
+        kinds = [
+            "organic",
+            "organic",
+            "free",
+            "grid",
+            "offset",
+            "rings",
+            "wide",
+            "organic",
+        ]
         i = 0
         while len(pop) < args.pop:
             kind = kinds[i % len(kinds)]
@@ -179,17 +257,37 @@ def main():
         leader = pop[0]
         if args.adapt_every and gen % args.adapt_every == 0:
             for army, th in attackers:
-                r = tactics.optimize(leader.lay, army, th, iters=4, pop=16, k=2, seed=gen)
+                r = tactics.optimize(
+                    leader.lay, army, th, iters=4, pop=16, k=2, seed=gen
+                )
                 archive.setdefault((army, th), []).append(tuple(map(float, r.vec)))
-                archive[(army, th)] = archive[(army, th)][-args.adapt_keep:]
-                log(f"  adaptive {army}@TH{th} vs {leader.lay.name}: {r.summary()}  {tactics.describe(r.vec)}")
-            search = blend(search0, adaptive_scenarios(archive, args.mode, (0, 1), args.adapt_share, weights), args.adapt_share)
-            validate = blend(validate0, adaptive_scenarios(archive, args.mode, (8, 9), args.adapt_share, weights), args.adapt_share)
+                archive[(army, th)] = archive[(army, th)][-args.adapt_keep :]
+                log(
+                    f"  adaptive {army}@TH{th} vs {leader.lay.name}: {r.summary()}  {tactics.describe(r.vec)}"
+                )
+            search = blend(
+                search0,
+                adaptive_scenarios(
+                    archive, args.mode, (0, 1), args.adapt_share, weights
+                ),
+                args.adapt_share,
+            )
+            validate = blend(
+                validate0,
+                adaptive_scenarios(
+                    archive, args.mode, (8, 9), args.adapt_share, weights
+                ),
+                args.adapt_share,
+            )
             pop = sorted((score(d.lay) for d in pop), key=lambda d: -d.score)
             leader = pop[0]
             if best_val is not None:
-                best_val.val = objective(evaluate(best_val.lay, validate), args.mode, best_val.lay)
-            log(f"  re-scored population with {len(search)} scenarios ({sum(len(v) for v in archive.values())} tactics); leader {leader.lay.name} {leader.score:.2f}")
+                best_val.val = objective(
+                    evaluate(best_val.lay, validate), args.mode, best_val.lay
+                )
+            log(
+                f"  re-scored population with {len(search)} scenarios ({sum(len(v) for v in archive.values())} tactics); leader {leader.lay.name} {leader.score:.2f}"
+            )
         # battle traces for the top parents (A/B 2026-10-15: guided moves gained
         # +1.10 on hold-out vs +0.16 for random moves, same compute)
         top_ids = {id(d) for d in pop[:4]}
@@ -201,6 +299,7 @@ def main():
             if id(ind) not in diags:
                 diags[id(ind)] = diagnose(ind.lay, guide)
             return diags[id(ind)]
+
         kids = []
         tries = 0
         want = args.children * max(1, args.surrogate)
@@ -241,7 +340,7 @@ def main():
             order = list(np.argsort(-pred))
             n_explore = max(1, args.children // 5)
             chosen = order[: args.children - n_explore]
-            rest = order[args.children - n_explore:]
+            rest = order[args.children - n_explore :]
             chosen += list(rng.sample(rest, min(n_explore, len(rest))))
             kids = [kids[i] for i in chosen]
         else:
@@ -252,14 +351,24 @@ def main():
         if args.niche:
             from baselab.archetypes import TH_ZONES, th_zone
 
-            for z in TH_ZONES:  # protected niches: the best few of every Town Hall zone survive
+            for (
+                z
+            ) in (
+                TH_ZONES
+            ):  # protected niches: the best few of every Town Hall zone survive
                 nxt += [d for d in everyone if th_zone(d.lay) == z][: args.pop // 4]
         for d in everyone:
             if len(nxt) >= args.pop:
                 break
             if d in nxt:
                 continue
-            if any(wall_similarity(d.lay, k.lay) > args.dup and d.score <= k.score for k in nxt[:8]) and len(nxt) < args.pop - 2:
+            if (
+                any(
+                    wall_similarity(d.lay, k.lay) > args.dup and d.score <= k.score
+                    for k in nxt[:8]
+                )
+                and len(nxt) < args.pop - 2
+            ):
                 continue
             nxt.append(d)
         nxt.sort(key=lambda d: -d.score)
@@ -271,19 +380,27 @@ def main():
         if best_val is None or lead.val > best_val.val:
             best_val = lead
             best_val.lay.save(out / "best.json")
-            render(best_val.lay, out / "best.png", title=f"evolved {args.mode} gen {gen} ({best_val.ev.summary()})")
+            render(
+                best_val.lay,
+                out / "best.png",
+                title=f"evolved {args.mode} gen {gen} ({best_val.ev.summary()})",
+            )
         med = sorted(d.score for d in pop)[len(pop) // 2]
-        log(f"gen {gen:3d}  best {lead.score:7.2f} ({lead.lay.name}) val {lead.val:7.2f}  median {med:7.2f}  "
+        log(
+            f"gen {gen:3d}  best {lead.score:7.2f} ({lead.lay.name}) val {lead.val:7.2f}  median {med:7.2f}  "
             f"kids {len(kids)} (x {sum(k.name.split('-')[1].startswith('x') for k in kids)})  "
-            f"best-validated {best_val.lay.name} {best_val.val:.2f}  {lead.ev.summary()}  t={time.time() - t0:.0f}s")
+            f"best-validated {best_val.lay.name} {best_val.val:.2f}  {lead.ev.summary()}  t={time.time() - t0:.0f}s"
+        )
         (out / "population.json").write_text(json.dumps([d.lay.to_json() for d in pop]))
 
     log("== hold-out")
     finals, seen = [], set()
     for d in [best_val] + pop[:3]:
-        if d.lay.name not in seen:  # the population is re-scored into new objects
-            seen.add(d.lay.name)
-            finals.append(d)
+        # The population is re-scored into new objects.
+        if d is None or d.lay.name in seen:
+            continue
+        seen.add(d.lay.name)
+        finals.append(d)
     rows = []
     bench = []
     for f in args.compare:
@@ -292,15 +409,44 @@ def main():
         bench.append(lay)
     for lay in [d.lay for d in finals] + bench:
         ev = evaluate(lay, holdout)
+        gate_ordinary_ev = ev if args.meta else evaluate(lay, gate_holdout)
+        redteam_ev = evaluate(lay, gate_holdout, redteam=True)
         if holdout_extra:
             rr = evaluate(lay, holdout_extra)
-            log(f"  {lay.name:34s} Root Rider + RC charge, weakest side: 3* {rr.three_star_rate:5.1%}  avg {rr.avg_stars:.2f}*  {rr.avg_destruction:5.1f}%")
+            log(
+                f"  {lay.name:34s} Root Rider + RC charge, weakest side: 3* {rr.three_star_rate:5.1%}  avg {rr.avg_stars:.2f}*  {rr.avg_destruction:5.1f}%"
+            )
         sc = objective(ev, args.mode, lay)
-        rows.append({"name": lay.name, "holdout": sc, "summary": ev.summary(), "holes": hole_tiles(lay)})
-        log(f"  {lay.name:34s} hold-out {sc:7.2f}  {ev.summary()}  holes {hole_tiles(lay)}")
+        gate_ordinary_score = objective(gate_ordinary_ev, args.mode, lay)
+        redteam_score = objective(redteam_ev, args.mode, lay)
+        rows.append(
+            {
+                "name": lay.name,
+                "holdout": sc,
+                "summary": ev.summary(),
+                "holes": hole_tiles(lay),
+                "redteam_holdout": redteam_score,
+                "redteam_summary": redteam_ev.summary(),
+                "redteam_scenarios": "meta",
+                "redteam_baseline_holdout": gate_ordinary_score,
+                "redteam_baseline_summary": gate_ordinary_ev.summary(),
+            }
+        )
+        log(
+            f"  {lay.name:34s} hold-out {sc:7.2f}  {ev.summary()}  holes {hole_tiles(lay)}"
+        )
+        log(f"    red-team meta hold-out {redteam_score:7.2f}  {redteam_ev.summary()}")
+        if not args.meta:
+            log(
+                f"    ordinary meta hold-out {gate_ordinary_score:7.2f}  {gate_ordinary_ev.summary()}"
+            )
     if args.final_adaptive:
         log("== adaptive attackers (fresh tactic search per finalist)")
-        meta = {"hydra": 0.271, "throwers": 0.260, "edrag": 0.115, "rootrider": 0.097} if args.mode == "ranked" else             {"hydra": 0.375, "edrag": 0.257, "rootrider": 0.146, "throwers": 0.061}
+        meta = (
+            {"hydra": 0.271, "throwers": 0.260, "edrag": 0.115, "rootrider": 0.097}
+            if args.mode == "ranked"
+            else {"hydra": 0.375, "edrag": 0.257, "rootrider": 0.146, "throwers": 0.061}
+        )
         for row, lay in zip(rows, [d.lay for d in finals] + bench):
             per = {}
             for army, th in attackers:
@@ -308,8 +454,30 @@ def main():
                 per[army] = r.three_star
             row["adaptive_3star"] = per
             ww = weights or meta
-            row["adaptive_3star_meta"] = sum(ww.get(a, 0.05) * v for a, v in per.items()) / sum(ww.get(a, 0.05) for a in per)
-            log(f"  {lay.name:34s} adaptive 3* (meta-weighted) {row['adaptive_3star_meta']:5.1%}  {per}")
+            row["adaptive_3star_meta"] = sum(
+                ww.get(a, 0.05) * v for a, v in per.items()
+            ) / sum(ww.get(a, 0.05) for a in per)
+            log(
+                f"  {lay.name:34s} adaptive 3* (meta-weighted) {row['adaptive_3star_meta']:5.1%}  {per}"
+            )
+    rows.sort(key=lambda row: -row["redteam_holdout"])
+    log("== final ranking by red-team-inclusive hold-out")
+    finalist_layouts = {d.lay.name: d.lay for d in finals}
+    winner_saved = False
+    for rank, row in enumerate(rows, 1):
+        row["rank"] = rank
+        log(
+            f"  {rank:2d}. {row['name']:34s} red-team {row['redteam_holdout']:7.2f}  ordinary {row['holdout']:7.2f}"
+        )
+        if not winner_saved and row["name"] in finalist_layouts:
+            winner = finalist_layouts[row["name"]]
+            winner.save(out / "best.json")
+            render(
+                winner,
+                out / "best.png",
+                title=f"evolved {args.mode}: {row['redteam_summary']}",
+            )
+            winner_saved = True
     (out / "holdout.json").write_text(json.dumps(rows, indent=1))
     log(f"done in {time.time() - t0:.0f}s")
 
