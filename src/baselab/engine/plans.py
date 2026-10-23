@@ -1363,7 +1363,16 @@ def edrag(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
         ground=False,
         loadouts={
             "Barbarian King": L("Barbarian King", ("Spiky Ball", "Snake Bracelet"), "Spirit Fox"),
-            "Archer Queen": L("Archer Queen", ("Action Figure", "Frozen Arrow"), "Greedy Raven"),
+            # Wiki: Greedy Raven, requires TH18; lower THs use the Queen's default pet.
+            "Archer Queen": L(
+                "Archer Queen",
+                ("Action Figure", "Frozen Arrow"),
+                (
+                    "Greedy Raven"
+                    if town_hall == 18
+                    else heroes.DEFAULT_LOADOUTS["Archer Queen"].pet
+                ),
+            ),
             "Grand Warden": L("Grand Warden", ("Eternal Tome", "Life Gem"), "Electro Owl"),
             "Minion Prince": L("Minion Prince", ("Meteor Staff", "Dark Orb"), "Angry Jelly"),
         },

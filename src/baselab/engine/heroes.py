@@ -203,7 +203,9 @@ def equip(battle, u: Unit, plan):
     if k.has("Noble Iron"):
         # Opening shots and range come from Noble Iron's level table.
         lv = k.lv("Noble Iron")
-        k.spear_shots = int(_col("Noble Iron", lv, "number of attacks"))
+        # game data v18.200.9: MPTurboStart L6.DeactivateAfterNumberOfHits=9 -> equipment L15-17.
+        ability = game_data("special_abilities", "MPTurboStart", lv // 3 + 1)
+        k.spear_shots = int(ability["DeactivateAfterNumberOfHits"])
         k.spear_bonus = _col("Noble Iron", lv, "damage per shot increase")
         u.extra["spear_base_range"] = u.range
         u.range = _col("Noble Iron", lv, "attack range")
@@ -266,6 +268,8 @@ def _spawn_pet(battle, hero: Unit, k: Kit):
         level=lvl,
     )
     p.owner = hero
+    # Wiki: Sneezy/Frosty, paired pets and their summons support their Hero.
+    p.group = hero.group
     p.spawned_at = battle.t
     if name == "Angry Jelly":
         # game data v18.200.9: Angry Jelly.AttackRange=500 -> 5 tiles.
@@ -340,7 +344,9 @@ def tick(battle, u: Unit):
         pet = None
     if heal:
         u.heal(heal * dt)
-    if k.has("Meteor Staff") and t >= k.next_meteor:
+    # Wiki: Air Sweeper, displacement blocks attacks while upkeep continues.
+    pushed = t < u.extra.get("pushed_until", 0.0)
+    if k.has("Meteor Staff") and t >= k.next_meteor and not pushed:
         candidates = _targets(battle, defenses=True) or [
             b for b in battle.buildings if battle.building_targetable(b)
         ]
@@ -369,7 +375,7 @@ def tick(battle, u: Unit):
                     )
                 )
         k.next_meteor = t + _col("Meteor Staff", k.lv("Meteor Staff"), "cooldown time")
-    if k.has("Electro Boots"):
+    if k.has("Electro Boots") and not pushed:
         due = u.extra.get("boots_next", t)
         if t >= due or math.isclose(t, due):
             # One pulse per 0.4 seconds (wiki: Electro Boots). The wiki says
@@ -493,11 +499,12 @@ def on_hit_extra(battle, u: Unit, target):
         damage = _col("Electro Fangs", k.lv("Electro Fangs"), "damage per hit")
         count = int(_col("Electro Fangs", k.lv("Electro Fangs"), "number of targets"))
         # Each secondary chains within three tiles at 80% (wiki: Electro Fangs).
+        # Wiki: Invisibility Spell, secondary lightning hits invisible targets.
         previous, visited = target, {target}
         for _ in range(count):
             candidates = [
                 candidate
-                for candidate in _targets(battle)
+                for candidate in _targets(battle, indirect=True)
                 if candidate not in visited
                 and _distance(candidate, previous.x, previous.y) <= 3.0
             ]
@@ -878,7 +885,8 @@ def activate(battle, u: Unit, *, on_ko=False):
         elif e == "Stun Blaster":
             dur = _col(e, lv, "stun duration", default=7.5)
             # Radius and stun from Stun Blaster; pulse timing is unstated.
-            for target in _targets(battle):
+            # Wiki: Invisibility Spell, indirect area damage hits invisible targets.
+            for target in _targets(battle, indirect=True):
                 # game data v18.200.9: DDBlastSpell.ImmunityStorages=TRUE,
                 # ImmunityTH_CC=FALSE, ImmunityOtherBuildings=FALSE -> only storages immune.
                 if isinstance(target, Building) and target.key in spells.STORAGES:
@@ -895,7 +903,11 @@ def activate(battle, u: Unit, *, on_ko=False):
             facing = math.atan2(dy, dx)
             # game data v18.200.9: DragonDukeFireBlast.ConeAngle=60 -> 60 degrees.
             half_angle = math.radians(60.0) / 2.0
-            for target in _targets(battle):
+            # Wiki: Invisibility Spell, indirect area damage hits invisible targets.
+            targets = _targets(battle, indirect=True)
+            # game data v18.200.9: DragonDukeFireBlast.ImmunityWalls unset -> walls take damage.
+            targets += [wall for wall in battle.walls.values() if wall.alive]
+            for target in targets:
                 angle = math.atan2(target.y - u.y, target.x - u.x)
                 offset = abs((angle - facing + math.pi) % (2 * math.pi) - math.pi)
                 if (
@@ -974,7 +986,15 @@ def projectile_impact(battle, pending):
             pets.poison_hit(battle, pending.actor, pending.target)
         return
     if mode == "blast":
-        _blast(battle, pending.x, pending.y, pending.radius, pending.damage)
+        # game data v18.200.9: MPMeteorStaffSpell.ImmunityWalls unset -> walls take damage.
+        _blast(
+            battle,
+            pending.x,
+            pending.y,
+            pending.radius,
+            pending.damage,
+            walls=pending.effect == "meteor",
+        )
         return
     if mode == "puppet":
         _puppet(
@@ -1286,6 +1306,9 @@ def end_dash(battle, u):
 
 
 def dash_step(battle, u):
+    # Wiki: Air Sweeper, displacement blocks special attacks during upkeep too.
+    if battle.t < u.extra.get("pushed_until", 0.0):
+        return
     dsh = u.dash
     remaining = max(0.0, dsh["until"] - battle.t)
     step = 15.0 * min(battle.DT, remaining)  # wiki: Rocket Backpack
@@ -1314,15 +1337,36 @@ def _distance(target, x, y):
     return target.edge_distance(x, y)
 
 
-def _targets(battle, *, defenses=False):
-    buildings = [
-        b
-        for b in battle.buildings
-        if battle.building_targetable(b)
-        and (not defenses or battle.is_defense_target(b))
-    ]
+def _targets(battle, *, defenses=False, indirect=False):
+    if indirect:
+        # Wiki: Invisibility Spell, only direct selection excludes invisible targets.
+        buildings = [
+            b
+            for b in battle.buildings
+            if b.alive
+            and (b.counted or b.key == "th")
+            and battle.t >= b.overgrown_until
+            and battle.t >= b.extra.get("yellow_until", 0.0)
+            and (b.key != "tesla" or b.revealed)
+            and (not defenses or battle.is_defense_target(b))
+        ]
+    else:
+        buildings = [
+            b
+            for b in battle.buildings
+            if battle.building_targetable(b)
+            and (not defenses or battle.is_defense_target(b))
+        ]
     if defenses:
         return buildings
+    if indirect:
+        return buildings + [
+            u
+            for u in battle.defenders
+            if u.indirect_targetable(battle.t)
+            and u.dash is None
+            and battle.t >= u.extra.get("yellow_until", 0.0)
+        ]
     return buildings + [u for u in battle.defenders if u.targetable(battle.t)]
 
 
@@ -1333,7 +1377,7 @@ def _damage(battle, target, damage):
         battle.hit_building(target, damage)
 
 
-def _blast(battle, x, y, radius, damage, *, exclude=None, hero_mult=1.0):
+def _blast(battle, x, y, radius, damage, *, exclude=None, hero_mult=1.0, walls=False):
     # Secondary blasts retain Overgrowth immunity, including enemy troops.
     for target in list(battle.buildings) + list(battle.defenders):
         if (
@@ -1348,6 +1392,10 @@ def _blast(battle, x, y, radius, damage, *, exclude=None, hero_mult=1.0):
         if _distance(target, x, y) <= radius:
             hero = isinstance(target, Unit) and target.is_hero
             _damage(battle, target, damage * hero_mult if hero else damage)
+    if walls:
+        for wall in battle.walls.values():
+            if wall.alive and wall.edge_distance(x, y) <= radius:
+                _damage(battle, wall, damage)
 
 
 def _moving_auras(battle, warden, members=None):
@@ -1683,12 +1731,34 @@ def is_hero(name):
 def summon_tick(battle, unit):
     if unit.name != "Lavaloon":
         return False
-    if not unit.can_act(battle.t):
+    # Wiki: Air Sweeper, displacement blocks bomb attacks as well as movement.
+    if not unit.can_act(battle.t) or battle.t < unit.extra.get("pushed_until", 0.0):
         return True
     target = unit.target
-    if target is None or not target.alive or not battle.building_targetable(target):
+    defenses_gone = battle._defenses_gone()
+    angry = battle.t < unit.extra.get("angry_until", 0.0)
+    if isinstance(target, Unit):
+        if not target.targetable(battle.t) or not defenses_gone or angry:
+            target = None
+    elif target is not None and not battle.building_targetable(target):
+        target = None
+    # Wiki: Lavaloon Puppet/Lavaloon, retaliate against nearby units once defenses are gone.
+    if (
+        defenses_gone
+        and not angry
+        and not isinstance(target, Unit)
+        and battle.t >= unit.extra.get("next_engage", 0.0)
+    ):
+        from .battle import ENGAGE_RADIUS
+
+        unit.extra["next_engage"] = battle.t + 0.5
+        if battle.t < unit.aware_until or battle._ally_under_attack(unit):
+            foe = battle._nearest_defender(unit, ENGAGE_RADIUS)
+            if foe is not None:
+                target, unit.target_kind = foe, "unit"
+    if target is None:
         target, unit.target_kind = battle.choose_target(unit)
-        unit.target = target
+    unit.target = target
     # game data v18.200.9: GW Equipment Lavaloon.AttackSpeed=2500 -> normal 2.5 s attack cadence.
     # Wiki: Poison Spell, attack slows also affect these troop attacks.
     interval = units.attack_interval(unit, battle)

@@ -1290,9 +1290,8 @@ def builder_spell(battle, field):
             continue
         if dist(builder.x, builder.y, field.x, field.y) > field.radius:
             continue
-        if field.kind == "tesla_freeze":
-            builder.frozen_until = max(builder.frozen_until, field.until)
-        elif field.kind == "freeze":
+        # game data v18.200.9: Freeze.NumberOfHits=1 -> Builders freeze only at landing.
+        if field.kind == "freeze":
             builder.frozen_until = max(builder.frozen_until, t + field.value)
         elif field.kind == "poison":
             builder.repair_slow = 1.0 - field.extra["atk"]

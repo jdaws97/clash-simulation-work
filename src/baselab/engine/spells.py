@@ -305,7 +305,6 @@ def _apply(battle, f: Field) -> bool:
             "def_burn",
             "burn",
             "rage",
-            "haste",
             "invis",
             "def_invis",
             "angry",
@@ -318,8 +317,7 @@ def _apply(battle, f: Field) -> bool:
     if k in ("tesla_freeze", "tesla_overgrowth"):
         if t >= f.until:
             return False
-        if k == "tesla_freeze":
-            defense.builder_spell(battle, f)
+        # Wiki: Freeze Spell, Teslas revealed during the effect can still be frozen.
         for building in battle.buildings:
             if (
                 building.alive
@@ -605,7 +603,10 @@ def _apply(battle, f: Field) -> bool:
             )
         return True
     if k == "haste":
-        # game data v18.200.9: Haste.TimeBetweenHitsMS=250 -> 0.25 s.
+        # game data v18.200.9: Haste.NumberOfHits=121 (L5+), TimeBetweenHitsMS=250
+        # -> includes the pulse at 30 s, granting a boost through 31 s.
+        if t > f.until:
+            return False
         pulse = _application(f, t, 0.25)
         if pulse is None:
             return True
@@ -619,12 +620,17 @@ def _apply(battle, f: Field) -> bool:
                 )
         return True
     if k == "jump":
-        if t >= f.until:
+        # game data v18.200.9: Jump.NumberOfHits=81..401, TimeBetweenHitsMS=250
+        # -> 0.25 s pulses include the duration endpoint at every level.
+        if t > f.until:
             return False
+        pulse = _application(f, t, 0.25)
+        if pulse is None:
+            return True
         for u in battle.attackers_near(f.x, f.y, f.radius):
             if _affected(u) and not u.flying:
                 # game data v18.200.9: Jump.JumpBoostMS=400 -> 0.4 s.
-                u.extra["jump_until"] = max(u.extra.get("jump_until", 0.0), t + 0.4)
+                u.extra["jump_until"] = max(u.extra.get("jump_until", 0.0), pulse + 0.4)
                 u.wall_target = None
         return True
 
@@ -702,7 +708,10 @@ def _apply(battle, f: Field) -> bool:
             )
         return False
     if k == "clone":
-        # game data v18.200.9: Clone.TimeBetweenHitsMS=300 -> 0.3 s.
+        # game data v18.200.9: Clone.NumberOfHits=60, TimeBetweenHitsMS=300
+        # -> applications at 0..17.7 s, with none at expiry (18 s).
+        if t >= f.until:
+            return False
         if _application(f, t, 0.3) is None:
             return True
         cap = f.value

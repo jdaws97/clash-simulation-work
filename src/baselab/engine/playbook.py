@@ -519,7 +519,12 @@ class PlaybookPlan(AttackPlan):
         if target and self._down(battle, target):
             return target + " down"  # Recall a dead Champion, Invisibility on her
         if act == "deploy":
-            return what + " already deployed" if what in heroes.HEROES and what in self._deployed else None
+            if what in heroes.HEROES:
+                return what + " already deployed" if what in self._deployed else None
+            # Playbook: root-rider.json, funnel and main_ice share Ice Golem stock.
+            if self.inventory.get(what, 0) <= 0:
+                return "no " + what + " left"
+            return None
         if self._impossible(battle, st.get("when")):
             return "waits on a unit that is down"
         if act in ("spell", "recall"):
@@ -537,6 +542,20 @@ class PlaybookPlan(AttackPlan):
         elif act == "redeploy":
             if not battle.portal_stash and self.spells.get("recall", 0) <= 0 and battle.t - self._last("recall") > 5.0:
                 return "nothing recalled"
+        elif act == "release_siege":
+            # Wiki: Siege Barracks, destruction already releases the Clan Castle troops.
+            name = what or self.siege
+            if (
+                self.inventory.get(name, 0) <= 0
+                and not any(
+                    u.alive and u.kind == "siege" and (what is None or u.name == what)
+                    for u in battle.attackers
+                )
+                and not any(
+                    d.name == name for d in battle.deployments[battle._next_deploy :]
+                )
+            ):
+                return "no siege left"
         return None
 
     def on_tick(self, battle):

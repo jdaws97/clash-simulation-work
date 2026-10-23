@@ -933,15 +933,20 @@ class Battle:
         self.plan.on_tick(self)
         if self.ended:
             return
+        # Wiki: Scattershot, splash uses troops' current positions, including spawns.
+        self._buckets(apply_auras=False)
         self._src_obj = None
         self._src = "spell"
         self._effect = "spell"
         spells.tick(self)
+        self._buckets(apply_auras=False)
         self._resolve_pending()
+        self._buckets(apply_auras=False)
         self._src = "trap"
         self._src_obj = None
         self._effect = "trap"
         traps.tick(self)
+        self._buckets(apply_auras=False)
         self._castle()
         heroes.guardians_tick(self)
         defense.bell_tick(self)
@@ -950,7 +955,10 @@ class Battle:
             if u.alive:
                 with effects.damage_source(self, u, "attack"):
                     self._act_attacker(u)
+        # Wiki: Dragon, spreading troops changes splash exposure after movement.
+        self._buckets(apply_auras=False)
         self._separate()
+        self._buckets()
         for b in self.buildings:
             if b.alive and b.weapon is not None:
                 self._src = b.key
@@ -988,6 +996,9 @@ class Battle:
         t = self.t
         due = [p for p in self.pending if p.at <= t]
         self.pending = [p for p in self.pending if p.at > t]
+        # game data v18.200.9: Cannonball16/UnicornHealEnergy.Speed=1200 -> resolve
+        # arrival deadlines first; stable sorting preserves equal-time insertion order.
+        due.sort(key=lambda p: p.at)
         for pending in due:
             # game data v18.200.9: SkeletonTrap.TimeBetweenSpawnsMs=150 -> staggered births.
             if "trap_skeleton" in pending.extra:
@@ -1143,45 +1154,59 @@ class Battle:
                     )
 
     # ======================================================== spatial index
-    def _buckets(self):
+    def _buckets(self, *, apply_auras=True):
         grid: dict = {}
         for u in self.attackers:
             if u.alive:
                 grid.setdefault((int(u.x / BUCKET), int(u.y / BUCKET)), []).append(u)
         self._bucket_grid = grid
-        heroes.apply_auras(self)
+        if apply_auras:
+            heroes.apply_auras(self)
+
+    def _update_bucket(self, u, previous):
+        # Wiki: Scattershot, troops within the splash area use current positions.
+        if u.team != "atk" or not hasattr(self, "_bucket_grid"):
+            return
+        current = (int(u.x / BUCKET), int(u.y / BUCKET))
+        if current == previous:
+            return
+        members = self._bucket_grid.get(previous, [])
+        if u in members:
+            members.remove(u)
+        if not members:
+            self._bucket_grid.pop(previous, None)
+        self._bucket_grid.setdefault(current, []).append(u)
 
     def _separate(self):
-        for cell in self._bucket_grid.values():
-            n = len(cell)
-            if n < 2:
+        # Wiki: Dragon, spread troops to reduce splash exposure; bucket edges
+        # do not limit separation. Entity IDs fix pair order across translations.
+        for a in sorted(self.attackers, key=lambda u: u.id):
+            if not a.alive or a.speed <= 0:
                 continue
-            for i in range(n):
-                a = cell[i]
-                if not a.alive or a.speed <= 0:
+            ra = 0.35 + 0.015 * min(30, a.housing)
+            neighbors = sorted(
+                self.attackers_near(a.x, a.y, ra + 0.8), key=lambda u: u.id
+            )
+            for b in neighbors:
+                if b.id <= a.id or b.flying != a.flying or b.speed <= 0:
                     continue
-                ra = 0.35 + 0.015 * min(30, a.housing)
-                for j in range(i + 1, n):
-                    b = cell[j]
-                    if not b.alive or b.flying != a.flying or b.speed <= 0:
-                        continue
-                    rb = 0.35 + 0.015 * min(30, b.housing)
-                    dx = b.x - a.x
-                    dy = b.y - a.y
-                    d2 = dx * dx + dy * dy
-                    lim = ra + rb
-                    if d2 >= lim * lim:
-                        continue
-                    d = math.sqrt(d2)
-                    if d < 1e-6:
-                        ang = (a.id * 2.399) % (2 * math.pi)
-                        dx, dy, d = math.cos(ang), math.sin(ang), 1.0
-                        push = lim * 0.25
-                    else:
-                        push = (lim - d) * 0.25
-                    ux, uy = dx / d * push, dy / d * push
-                    self._nudge(a, -ux, -uy)
-                    self._nudge(b, ux, uy)
+                rb = 0.35 + 0.015 * min(30, b.housing)
+                dx = b.x - a.x
+                dy = b.y - a.y
+                d2 = dx * dx + dy * dy
+                lim = ra + rb
+                if d2 >= lim * lim:
+                    continue
+                d = math.sqrt(d2)
+                if d < 1e-6:
+                    ang = (a.id * 2.399) % (2 * math.pi)
+                    dx, dy, d = math.cos(ang), math.sin(ang), 1.0
+                    push = lim * 0.25
+                else:
+                    push = (lim - d) * 0.25
+                ux, uy = dx / d * push, dy / d * push
+                self._nudge(a, -ux, -uy)
+                self._nudge(b, ux, uy)
 
     def _nudge(self, u, dx, dy):
         if self.t < u.extra.get("tornado_wall_until", 0.0):
@@ -1193,8 +1218,10 @@ class Battle:
                 self.navigation_grid(u).wall[i, j] and self.wall_mode(u) == "normal"
             ):
                 return
+        previous = (int(u.x / BUCKET), int(u.y / BUCKET))
         u.x = min(WORLD - 0.1, max(0.1, nx))
         u.y = min(WORLD - 0.1, max(0.1, ny))
+        self._update_bucket(u, previous)
 
     # ================================================================ castle
     def _castle(self):
@@ -1257,6 +1284,11 @@ class Battle:
 
     def _act_attacker(self, u: Unit):
         t = self.t
+        # Wiki: Phoenix, knock out immediately at revival expiry; Air Sweeper
+        # blocks attacks during a push, while passive upkeep continues.
+        if units.pre_tick(self, u):
+            units.interrupt_attack(u)
+            return
         if t < u.extra.get("pushed_until", 0.0):
             # Wiki: Air Sweeper, displacement blocks normal and special attacks.
             if u.can_act(t):
@@ -1264,9 +1296,6 @@ class Battle:
             units.interrupt_attack(u)
             return
         if heroes.summon_tick(self, u):
-            return
-        if units.pre_tick(self, u):
-            units.interrupt_attack(u)
             return
         if not u.can_act(t) or t < u.held_until and u.speed > 0 and u.target is None:
             units.interrupt_attack(u)
@@ -1783,11 +1812,13 @@ class Battle:
         d = math.hypot(dx, dy)
         if d and u.name == "Super Hog Rider":
             u.extra["heading"] = (dx / d, dy / d)
+        previous = (int(u.x / BUCKET), int(u.y / BUCKET))
         if d <= step or d == 0:
             u.x, u.y = tx, ty
         else:
             u.x += dx / d * step
             u.y += dy / d * step
+        self._update_bucket(u, previous)
 
     # ========================================================== defender AI
     def _act_defender(self, u: Unit):

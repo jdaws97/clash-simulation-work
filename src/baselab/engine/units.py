@@ -352,6 +352,10 @@ def pre_tick(battle, u: Unit) -> bool:
         u.alive = False
         u.hp = 0.0
         return True
+    if u.name == "Totem":
+        # game data v18.200.9: Totem.LoseHpPerTick=167, LoseHpInterval=500
+        # -> first discrete loss 0.5 s after spawning, including spell-created Totems.
+        u.extra.setdefault("hp_loss_at", u.spawned_at + 0.5)
     if "hp_loss_at" in u.extra:
         # game data v18.200.9: Log Launcher/Flame Flinger/Troop Launcher.LoseHpPerTick=156/17/25,
         # LoseHpInterval=1000 -> discrete losses, including skipped intervals.
@@ -368,18 +372,15 @@ def pre_tick(battle, u: Unit) -> bool:
     if u.name == "Root Rider" and u.team == "atk":
         contacts = set()
         for wall in battle.walls.values():
-            # contact starts when her body reaches the wall, half a tile before
-            # her centre does: at normal speed walls "will be destroyed as she
-            # passes through them" (wiki: Root Rider), which needs the 3 hits
-            # (0.8 s) that a centre-only contact cuts to 2
-            if wall.alive and wall.edge_distance(u.x, u.y) <= 0.5:
+            # game data v18.200.9: TreantWallDamageAura.Radius=75 -> 0.75 tiles.
+            if wall.alive and wall.edge_distance(u.x, u.y) <= 0.75:
                 contacts.add(wall.id)
                 smash_wall(battle, u, wall)
         clocks = u.extra.get("wall_pulses", {})
         for key in list(clocks):
             if key not in contacts:
                 clocks.pop(key)
-    if u.name == "Totem" or u.decay > 0:
+    if u.decay > 0 and u.name != "Totem":
         u.hp -= u.decay * battle.DT
         if u.hp <= 0:
             battle.kill(u)
@@ -407,10 +408,20 @@ def pre_tick(battle, u: Unit) -> bool:
     if u.name == "Totem":
         return True
     # before the no-special return: the Giant Giant has no special tag (found by the 2026-10-18 audit)
-    if u.name == "Giant Giant" and not u.extra.get("enraged") and u.hp <= 0.5 * u.max_hp:
-        # enrages at half health: +50% damage, +12 speed for 20 s (wiki: Giant Giant)
-        u.extra["enraged"] = True
-        u.rage_dmg, u.rage_spd, u.rage_until = 1.5, 12.0 / 8.0, t + 20.0
+    if u.name == "Giant Giant" and not u.extra.get("enraged"):
+        row = game_unit_data(u.name, u.level)
+        ability = game_data(
+            "special_abilities",
+            row["SpecialAbilities"],
+            int(row["SpecialAbilitiesLevel"]),
+        )
+        # game data v18.200.9: April25_GTG_DamageRage L4.ActiveAfterTakingDamage=2150
+        # -> cumulative damage taken, independent of maximum HP and healing.
+        if u.extra.get("rage_damage_taken", 0.0) >= int(
+            ability["ActiveAfterTakingDamage"]
+        ):
+            u.extra["enraged"] = True
+            u.rage_dmg, u.rage_spd, u.rage_until = 1.5, 12.0 / 8.0, t + 20.0
     special = sp.special
     if not special:
         return False
@@ -715,6 +726,10 @@ def advance_log(battle, f) -> bool:
 # --------------------------------------------------------------- damage in
 def on_damaged(battle, u: Unit, amount: float):
     sp = u.spec
+    if u.name == "Giant Giant":
+        # game data v18.200.9: April25_GTG_DamageRage.ActiveAfterTakingDamage
+        # -> count damage packets, including damage later healed.
+        u.extra["rage_damage_taken"] = u.extra.get("rage_damage_taken", 0.0) + amount
     if "electromites" in sp.special:
         # One Electromite per 400 damage taken (wiki: Super Yeti/Electromite).
         # The Super Yeti page's "400, then every 800" has no game-data
@@ -1121,7 +1136,8 @@ def inherit_clone(battle, parent, child):
 
 
 def _spawn_meteormite(battle, u, x, y, health, small):
-    # Wiki: Meteor Golem, each child's health rounds down to 1% of its maximum.
+    # Wiki: Meteor_Golem.txt:9, half current base HP per child, rounded down
+    # to 1% of its maximum; the child's aura is accounted for separately.
     child = battle.spawn(
         "Meteormite",
         u.team,
@@ -1132,18 +1148,23 @@ def _spawn_meteormite(battle, u, x, y, health, small):
         group=u.group,
         owner=u,
     )
-    quantum = child.max_hp * 0.01
+    child.base_max_hp = u.base_max_hp / 2.0
+    child.max_hp = child.base_max_hp
+    quantum = child.base_max_hp * 0.01
     child.hp = 1.0 if small else math.floor((health / 2.0) / quantum) * quantum
     child.extra["meteor_components"] = (("permanent", u.level),)
 
 
 def split_meteor(battle, u, pending):
     # Wiki: Meteor Golem splits on throwing; only the bottom child stays here.
-    small = u.hp < u.max_hp * 0.01
-    pending.extra["meteor_health"] = u.hp
+    # Wiki: Meteor_Golem.txt:9, split base health so Life Gem/Apprentice Aura
+    # is not inherited as base health and then granted a second time.
+    health = max(0.0, u.hp - u.extra.get("aura_hp", 0.0))
+    small = health < u.base_max_hp * 0.01
+    pending.extra["meteor_health"] = health
     pending.extra["meteor_small"] = small
     if not small:
-        _spawn_meteormite(battle, u, u.x, u.y, u.hp, small)
+        _spawn_meteormite(battle, u, u.x, u.y, health, small)
     u.alive = False
 
 
@@ -1193,8 +1214,15 @@ def try_merge_meteor(battle, u):
         parent = battle.spawn(
             "Meteor Golem", "atk", u.x, u.y, level=u.level, group=u.group
         )
-        quantum = parent.max_hp * 0.005
-        parent.hp = max(1.0, math.floor((u.hp + other.hp) / quantum) * quantum)
+        # Wiki: Meteormite.txt:8 (Meteor_Golem_Meteormite), sum constituent
+        # base HP, rounded to 0.5%; aura HP is granted separately after merging.
+        parent.base_max_hp = u.base_max_hp + other.base_max_hp
+        parent.max_hp = parent.base_max_hp
+        health = max(0.0, u.hp - u.extra.get("aura_hp", 0.0)) + max(
+            0.0, other.hp - other.extra.get("aura_hp", 0.0)
+        )
+        quantum = parent.base_max_hp * 0.005
+        parent.hp = max(1.0, math.floor(health / quantum) * quantum)
         parent.extra["meteor_components"] = u.extra.get(
             "meteor_components", ()
         ) + other.extra.get("meteor_components", ())
@@ -1406,7 +1434,9 @@ SPATIAL_TROOPS = {
 
 
 def valkyrie_position(battle, u, target):
-    if u.name != "Valkyrie" or not isinstance(target, Building):
+    # game data v18.200.9: Valkyrie/Super Valkyrie.AttackMultipleBuildings=TRUE,
+    # SelfAsAoeCenter=TRUE -> both position between adjacent buildings.
+    if u.name not in ("Valkyrie", "Super Valkyrie") or not isinstance(target, Building):
         return None
     saved = u.extra.get("spin_position")
     if saved is not None:

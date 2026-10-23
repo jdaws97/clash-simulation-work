@@ -512,11 +512,23 @@ def unit_numbers(name: str, level: int) -> dict:
     # lowercase keys; the wiki columns are the fallback). This also covers the
     # wiki's Inferno Dragon table, which repeats level 11.
     hp = stats.get(name, level, "hitpoints", "Hitpoints", default=0.0)
+    first = game_unit_data(name)
+    # game data v18.200.9: Super Barbarian.VisualLevel starts at 5 -> match
+    # actual levels, and retain registry numbers for levels absent from the CSV.
+    game_level = level - int(first.get("VisualLevel", 1)) + 1
+    row = game_unit_data(name, game_level) if game_level > 0 else {}
+    if int(row.get("VisualLevel", 0)) != level:
+        row = {}
+    # game data v18.200.9: Dragon Rider L6.Hitpoints=6200, DPS=520,
+    # AttackSpeed=1200 -> CSV numbers take precedence over registry snapshots.
+    hp = stats.num(row.get("Hitpoints"), hp)
     interval = a.get("attack_interval")
     if interval is None:
         interval = a.get("attack_interval_ck")
     if interval is None:
         interval = 1.0
+    if row.get("AttackSpeed") is not None:
+        interval = int(row["AttackSpeed"]) / 1000.0
     wiki_dps = stats.get(
         name,
         level,
@@ -526,6 +538,7 @@ def unit_numbers(name: str, level: int) -> dict:
         default=None,
     )
     dps = stats.get(name, level, "dps", default=None)
+    dps = stats.num(row.get("DPS"), dps)
     if dps is None:
         dps = wiki_dps
     dmg = stats.get(
