@@ -176,7 +176,8 @@ class PlaybookPlan(AttackPlan):
 
     def _unit(self, battle, name):
         for u in battle.attackers:
-            if u.alive and u.name == name:
+            # Wiki: Magic Mirror, clones keep fighting after the real Queen falls.
+            if u.alive and u.name == name and u.kind != "hero_clone":
                 return u
         return None
 
@@ -268,7 +269,10 @@ class PlaybookPlan(AttackPlan):
         return (
             name in self._deployed
             and self._unit(battle, name) is None
-            and not any(u.name == name for u in battle.portal_stash)
+            # Wiki: Magic Mirror, a recalled clone is not the real Hero either.
+            and not any(
+                u.name == name and u.kind != "hero_clone" for u in battle.portal_stash
+            )
             # Video: docs/VIDEO_MEASUREMENTS.md:30, later taps may still be queued.
             and not any(
                 d.name == name for d in battle.deployments[battle._next_deploy :]
@@ -357,8 +361,14 @@ class PlaybookPlan(AttackPlan):
             return not battle.th.alive or math.hypot(cx - battle.th.x, cy - battle.th.y) <= w.get("r", 8.0)
         if "heavy_fire" in w:
             # any unit of that name under heavy fire (several Throwers, etc.)
-            return any(u.alive and u.name == w["heavy_fire"] and self._heavy_fire(battle, u, w.get("frac", 0.15))
-                       for u in battle.attackers)
+            # Wiki: Magic Mirror, a clone is separate from the real Hero.
+            return any(
+                u.alive
+                and u.name == w["heavy_fire"]
+                and u.kind != "hero_clone"
+                and self._heavy_fire(battle, u, w.get("frac", 0.15))
+                for u in battle.attackers
+            )
         if "hp_below" in w:
             u = self._unit(battle, w["hp_below"])
             return u is not None and u.hp < w.get("frac", 0.5) * u.max_hp
@@ -366,8 +376,15 @@ class PlaybookPlan(AttackPlan):
             return self.spells.get(SPELL_KEYS.get(w["spells_left"], w["spells_left"]), 0) <= w.get("n", 0)
         if "dead" in w:
             # knocked out, not recalled into the portal stash
-            return (self._unit(battle, w["dead"]) is None and w["dead"] in self._deployed
-                    and not any(u.name == w["dead"] for u in battle.portal_stash))
+            # Wiki: Magic Mirror, only the real Queen satisfies named-Hero checks.
+            return (
+                self._unit(battle, w["dead"]) is None
+                and w["dead"] in self._deployed
+                and not any(
+                    u.name == w["dead"] and u.kind != "hero_clone"
+                    for u in battle.portal_stash
+                )
+            )
         if "defenders_near" in w:
             return self.anchor(battle, "defenders:" + w["defenders_near"]) is not None
         if "destruction" in w:
@@ -436,9 +453,120 @@ class PlaybookPlan(AttackPlan):
         )
         return True
 
+    def _missing_equipment(self, st, u=None):
+        # Wiki: Hero Equipment, an ability requires its equipment to be equipped.
+        # Only the action names its required item; citations can discuss other kits.
+        if not hasattr(self, "_equipment_steps"):
+            self._equipment_steps = {}
+        if st["id"] not in self._equipment_steps:
+            text = str(st.get("ability") or st["id"]).replace("_", " ").lower()
+            required = st.get("equipment") or next(
+                (
+                    name
+                    for name, record in stats.registry().items()
+                    if record["kind"] == "equipment"
+                    and record.get("attrs", {}).get("raw", {}).get("User") == st["what"]
+                    and name.lower() in text
+                ),
+                None,
+            )
+            aliases = {
+                "Archer Queen": (
+                    ("arrow", "Giant Arrow"),
+                    ("queen shot", "Giant Arrow"),
+                    ("healers out", "Healer Puppet"),
+                ),
+                "Grand Warden": (("tome", "Eternal Tome"), ("torch", "Heroic Torch")),
+                "Royal Champion": (("spear", "Rocket Spear"),),
+                "Dragon Duke": (
+                    ("backpack", "Rocket Backpack"),
+                    ("jetpack", "Rocket Backpack"),
+                    ("blaster", "Stun Blaster"),
+                    ("stun", "Stun Blaster"),
+                ),
+            }
+            for word, equipment in aliases.get(st["what"], ()):
+                if word in text and not required:
+                    required = equipment
+            aim = st.get("aim", "")
+            if not st.get("equipment"):
+                if aim == "arrow" or (
+                    aim.startswith("building:") and st["what"] == "Archer Queen"
+                ):
+                    required = "Giant Arrow"
+                elif aim == "dash":
+                    required = "Rocket Backpack"
+                elif aim.startswith("building:") and st["what"] == "Grand Warden":
+                    required = "Fireball"
+            self._equipment_steps[st["id"]] = [required] if required else []
+        loadout = self.loadouts.get(st["what"]) or heroes.DEFAULT_LOADOUTS.get(
+            st["what"]
+        )
+        equipped = (
+            u.kit.equip
+            if u is not None and u.kit is not None
+            else (loadout.equipment if loadout is not None else ())
+        )
+        return next(
+            (
+                name
+                for name in self._equipment_steps[st["id"]]
+                if name not in equipped
+                or (self.account_equipment and name not in self.equipment_levels)
+            ),
+            None,
+        )
+
+    def _ad_target_count(self, st):
+        # Wiki: Giant Arrow, multiple Air Defenses can share a shot; the step's
+        # citations specify how many targets the later hero ability intends.
+        if st["action"] != "ability":
+            return 0
+        aim = st.get("aim", "")
+        # Wiki: Giant Arrow/Fireball, aimed damaging abilities can remove defenses.
+        # Protective abilities mentioning Air Defenses do not reserve targets.
+        equipment = {
+            "Archer Queen": "Giant Arrow",
+            "Grand Warden": "Fireball",
+        }.get(st["what"])
+        if (
+            equipment is None
+            or aim not in ("arrow", "building:ad")
+            or (aim == "arrow" and st["what"] != "Archer Queen")
+            or st.get("equipment", equipment) != equipment
+        ):
+            return 0
+        quotes = " ".join(
+            c.get("quote", "") for c in st.get("aim_cite", []) + st.get("cite", [])
+        ).lower()
+        if aim != "building:ad" and "air defense" not in quotes:
+            return 0
+        count = 1
+        for word, number in (
+            ("two", 2),
+            ("three", 3),
+            ("four", 4),
+            ("both", 2),
+            ("both those", 2),
+            ("couple of", 2),
+        ):
+            if word + " air defenses" in quotes:
+                count = max(count, number)
+        return count
+
     def _ability(self, battle, s):
         u = self._unit(battle, s["what"])
-        if u is None or u.kit is None or u.ability_used:
+        if (
+            u is None
+            or u.kit is None
+            or u.ability_used
+            or self._missing_equipment(s, u)
+        ):
+            return False
+        # Wiki: Giant Arrow, the cited Air Defense shot needs a surviving target.
+        if self._ad_target_count(s) and not any(
+            b.alive and b.key == "ad" for b in battle.buildings
+        ):
             return False
         if str(s.get("aim", "")).startswith("building:"):
             if self._aim_building(battle, u, s["aim"].split(":", 1)[1]):
@@ -474,6 +602,9 @@ class PlaybookPlan(AttackPlan):
         tgt = min((b for b in battle.buildings if b.alive and b.key == key),
                   key=lambda b: math.hypot(b.x - u.x, b.y - u.y), default=None)
         if tgt is None:
+            # Wiki: Giant Arrow, do not replace the cited Air Defense shot.
+            if key == "ad":
+                return False
             heroes.activate(battle, u)
             return True
         if u.kit.has("Giant Arrow"):
@@ -534,8 +665,16 @@ class PlaybookPlan(AttackPlan):
                 return "Town Hall gone"
         elif act == "ability":
             u = self._unit(battle, what)
+            missing = self._missing_equipment(st, u)
+            if missing:
+                return "missing " + missing
             if u is not None and (u.kit is None or u.ability_used):
                 return "ability already used"
+            # Wiki: Giant Arrow, skip an Air Defense shot when its targets are gone.
+            if self._ad_target_count(st) and not any(
+                b.alive and b.key == "ad" for b in battle.buildings
+            ):
+                return "ad gone"
         elif act == "redeploy":
             if not battle.portal_stash and self.spells.get("recall", 0) <= 0 and battle.t - self._last("recall") > 5.0:
                 return "nothing recalled"
@@ -734,6 +873,59 @@ class PlaybookPlan(AttackPlan):
             return self.spells.get(kind, 0) > sum(1 for st in mine if st["id"] not in self._done)
         return super()._have(kind)
 
+    def _zap(self, battle, *, single_cast=False):
+        # Wiki: Giant Arrow, line up Air Defenses and save Lightning for others.
+        if not hasattr(self, "_ad_reservations"):
+            self._ad_reservations = {}
+        reserved = set()
+        for st in self.steps:
+            count = self._ad_target_count(st)
+            if not count or st["id"] in self._done or st["id"] in self._cancelled:
+                continue
+            # Wiki: Hero Equipment, only an unused equipped ability can fire.
+            u = self._unit(battle, st["what"])
+            if self._missing_equipment(st, u) or (
+                u is not None and (u.kit is None or u.ability_used)
+            ):
+                continue
+            if u is None and not (
+                any(
+                    s["action"] == "deploy"
+                    and s.get("what") == st["what"]
+                    and s["id"] not in self._done
+                    and s["id"] not in self._cancelled
+                    for s in self.steps
+                )
+                or any(
+                    d.name == st["what"]
+                    for d in battle.deployments[battle._next_deploy :]
+                )
+            ):
+                continue
+            if st["id"] not in self._ad_reservations:
+                deploy = next(
+                    (
+                        s
+                        for s in self.steps
+                        if s["action"] == "deploy" and s.get("what") == st["what"]
+                    ),
+                    {},
+                )
+                pos = self.anchor(battle, deploy.get("at", "edge:main")) or self._edge(
+                    battle, "main"
+                )
+                ads = sorted(
+                    (
+                        b
+                        for b in battle.buildings
+                        if b.alive and b.key == "ad" and b.id not in reserved
+                    ),
+                    key=lambda b: math.hypot(b.x - pos[0], b.y - pos[1]),
+                )
+                self._ad_reservations[st["id"]] = [b.id for b in ads[:count]]
+            reserved.update(self._ad_reservations[st["id"]])
+        super()._zap(battle, single_cast=single_cast, reserved=reserved)
+
     def _fallback_spells(self, battle, *, opening=False):
         """Spells the playbook never names are used by the general spell
         logic of the scripted plans (Freeze heavy defenses on the push, Rage
@@ -758,6 +950,15 @@ class PlaybookPlan(AttackPlan):
                 return
         if opening:
             return
+        # Wiki: Electro Dragon, spare Lightning can remove an Air Sweeper.
+        self._fallback = True
+        try:
+            cast = self._spare_lightning(battle)
+        finally:
+            self._fallback = False
+        if cast:
+            self._busy_until = t + action_time("spell")
+            return
         # Video: docs/VIDEO_MEASUREMENTS.md:31, spell drops are separate actions.
         left = sum(self.spells.values())
         self.revive_knocked_out(battle, single_cast=True)
@@ -775,7 +976,10 @@ class PlaybookPlan(AttackPlan):
             return
         main = self.main_units(battle)
         if not main:
-            return
+            # Wiki: Battle Blimp, cargo support continues without a surviving push.
+            main = self._cargo_support(battle) or []
+            if not main:
+                return
         self._fallback = True
         left = sum(self.spells.values())
         try:

@@ -629,12 +629,13 @@ def attach_weapon(battle, b: Building):
         # Wizard Tower (700); so are Inferno Tower AlternatePickNewTargetDelay=50
         # and Air Sweeper PrepareSpeed=600. Wiki: Scattershot, "the actual
         # attack speed is just 3.2 seconds".
+        # ClashKing b8f42a7: attack_speed=3228 -> 3.228 s takes precedence.
         b.weapon = W(
             b,
             "scatter",
             range_=10.0,
             min_range=3.0,
-            interval=3.2,
+            interval=stats.clashking_level(name, lvl)["attack_speed"] / 1000.0,
             damage=stats.get(name, lvl, "Damage per Shot*", default=576.0),
             extra={"splash_max": 420.0, "splash_min": 150.0},
         )
@@ -1474,7 +1475,8 @@ def _sweeper(battle, w: Weapon):
             cands.append((d, ang, a))
     if not cands:
         return
-    _, aim, _ = min(cands, key=lambda c: c[0])  # ties must not compare units
+    # nearest troop; equal distances by unit id, not spatial-bucket order
+    _, aim, _ = min(cands, key=lambda c: (c[0], c[2].id))
     push = w.extra["push"]
     # Enqueue by distance, then unit ID, so equal-time arrivals keep a stable order.
     for a in sorted(

@@ -972,18 +972,23 @@ class AttackPlan:
         heroes.activate(battle, u)
 
     # -------------------------------------------------------------- spells
-    def _zap(self, battle, *, single_cast=False):
+    def _zap(self, battle, *, single_cast=False, reserved=()):
         if self._zap_done:
             return
         if not hasattr(self, "_zap_left"):
             self._zap_left = list(self.zap_ad)
         ex, ey = edge_point(battle, self.angle, 0.0)
         ads = sorted(
-            (b for b in battle.buildings if b.alive and b.key == "ad"),
+            # Wiki: Giant Arrow, preserve the playbook's later Air Defense targets.
+            (
+                b
+                for b in battle.buildings
+                if b.alive and b.key == "ad" and b.id not in reserved
+            ),
             key=lambda b: math.hypot(b.x - ex, b.y - ey),
         )
         if not ads:
-            self._zap_done = True
+            self._zap_done = not reserved
             return
         hp = {b.id: b.hp for b in ads}
         eq_hits = {b.id: b.eq_hits for b in ads}
@@ -1026,15 +1031,39 @@ class AttackPlan:
             if not self._have(kind):
                 self._zap_left[index] = 0
                 continue
+            if reserved:
+                # Wiki: Lightning Spell/Home Village, its area damage also hits
+                # nearby buildings; keep the reserved hero targets out of it.
+                stock = next(
+                    s
+                    for s in self._spell_stock
+                    if s.name == SPELL_NAMES[kind] and s.remaining > 0
+                )
+                radius = spells._radius(stock.name, self._spell_level(stock), 0.0)
+                target = next(
+                    (
+                        b
+                        for b in ads
+                        if hp[b.id] > 1e-9
+                        and all(
+                            r.edge_distance(b.x, b.y) > radius
+                            for r in battle.buildings
+                            if r.alive and r.id in reserved
+                        )
+                    ),
+                    None,
+                )
+                if target is None:
+                    break
             field = self._use(battle, kind, target.x, target.y)
             self._zap_left[index] -= 1
             account(field, 5 if kind == "eq" else 1)
             if single_cast:
-                self._zap_done = not any(self._zap_left) or all(
-                    hp[b.id] <= 1e-9 for b in ads
+                self._zap_done = not any(self._zap_left) or (
+                    not reserved and all(hp[b.id] <= 1e-9 for b in ads)
                 )
                 return
-        self._zap_done = True
+        self._zap_done = not any(self._zap_left) or not reserved
 
     def _have(self, kind):
         return self.spells.get(kind, 0) > 0
@@ -1102,9 +1131,127 @@ class AttackPlan:
                 self._use(battle, "eq", w.x, w.y)
             self._cast_log.append((round(battle.t, 1), "breach"))
 
+    def _spare_lightning(self, battle):
+        # Wiki: Electro Dragon, Lightning removes Air Sweepers; Lightning Spell/
+        # Home Village, it also destroys other defenses when enough casts remain.
+        if not self._have("lightning"):
+            return False
+        available = self.spells.get("lightning", 0)
+        if getattr(self, "_fallback", False):
+            available -= sum(
+                1
+                for st in getattr(self, "steps", [])
+                if st["action"] == "spell"
+                and st.get("what") == "Lightning Spell"
+                and st["id"] not in self._done
+                and st["id"] not in self._cancelled
+            )
+        damage = 0.0
+        for stock in self._spell_stock:
+            if stock.name != "Lightning Spell" or stock.remaining <= 0:
+                continue
+            count = min(available, stock.remaining)
+            damage += count * stats.get(
+                stock.name, self._spell_level(stock), "damage", "Damage"
+            )
+            available -= count
+        hp = {
+            b.id: b.hp
+            - sum(
+                f.value
+                for f in battle.fields
+                if f.kind == "lightning" and b.edge_distance(f.x, f.y) <= f.radius
+            )
+            for b in battle.buildings
+            if b.alive
+        }
+        if any(b.alive and b.key == "ad" and hp[b.id] > 1e-9 for b in battle.buildings):
+            return False
+        targets = [
+            b
+            for b in battle.buildings
+            if b.alive
+            and b.is_defense
+            and b.key not in spells.STORAGES | {"th", "cc"}
+            and not (b.key == "tesla" and not b.revealed)
+            and 1e-9 < hp[b.id] <= damage
+        ]
+        if not targets:
+            return False
+        target = min(
+            targets,
+            key=lambda b: (
+                0 if not self.ground and b.key == "sweeper" else 1,
+                hp[b.id],
+            ),
+        )
+        self._use(battle, "lightning", target.x, target.y)
+        return True
+
+    def _cargo_support(self, battle):
+        # Wiki: Battle Blimp, Super Archer/Wizard invisibility and Clone Balloon
+        # strategies support released cargo. Other payloads keep main-group casts.
+        if not self.siege or not self.cc_troops:
+            return None
+        names = {
+            entry if isinstance(entry, str) else entry.get("name") or entry["type"]
+            for entry in self.cc_troops
+        }
+        supported = names & {"Super Archer", "Super Wizard"}
+        if self.siege == "Battle Blimp" and (
+            self._spells0.get("clone", 0) or self._cc_spells0.get("clone", 0)
+        ):
+            supported.update(names & {"Balloon"})
+        for st in getattr(self, "steps", []):
+            if st["action"] == "spell" and st.get("what") in (
+                "Clone Spell",
+                "Invisibility Spell",
+            ):
+                at = st.get("at", "")
+                if at in ("group:cargo", "group:cc"):
+                    supported.update(names)
+                elif at.startswith(("unit:", "unit_ahead:")):
+                    supported.update(names & {at.split(":", 1)[1]})
+        if not supported:
+            return None
+        delivered = [
+            u
+            for u in battle.attackers
+            if u.name in supported and u.extra.get("deployment_source") == "siege"
+        ]
+        groups = {u.group for u in delivered}
+        cargo = [
+            u
+            for u in battle.attackers
+            if u.alive
+            and u.name in supported
+            and (
+                u.extra.get("deployment_source") == "siege"
+                or (u.extra.get("clone") and u.group in groups)
+            )
+        ]
+        if cargo:
+            return cargo
+        # Wiki: Battle Blimp, Clone/Invisibility support the surviving payload.
+        # Once it is lost, remaining spells can support the main army instead.
+        if delivered or self._cc_released:
+            return None
+        carriers = [u for u in battle.attackers if u.name == self.siege]
+        if carriers and not any(u.alive for u in carriers):
+            return None
+        # Attacker policy assumption: hold at most 30 s from the first generic
+        # support check if the siege never releases; this is not a game timer.
+        if not hasattr(self, "_cargo_wait_since"):
+            self._cargo_wait_since = battle.t
+        return [] if battle.t - self._cargo_wait_since < 30.0 else None
+
     def generic_spells(self, battle, units, *, single_cast=False):
+        # Wiki: Lightning Spell/Home Village, surplus casts remove other defenses.
+        if self._spare_lightning(battle) and single_cast:
+            return
         if not units:
             return
+        cargo = self._cargo_support(battle)
         t = battle.t
         if t - self._last("breach") > 3:
             before = len(self._cast_log)
@@ -1156,12 +1303,18 @@ class AttackPlan:
             self._use(battle, "heal", cx, cy)
             if single_cast:
                 return
-        if self._have("invis") and t - self._last("invis") > self.P("invis_gap"):
+        if (
+            self._have("invis")
+            and t - self._last("invis") > self.P("invis_gap")
+            and (cargo is None or cargo)
+        ):
             # players chain Invisibility over the push whenever heavy
             # defenses are shooting it (wiki: 4.25 s per spell)
             hot = [b for b, d in self.threats_near(battle, cx, cy, 11) if THREAT.get(b.key, 0) >= 4 and (b.weapon.target is not None or b.weapon.multi)]
-            if avg_hp < self.P("invis_hp") or len(hot) >= self.P("invis_hot"):
-                self._use(battle, "invis", cx, cy)
+            # Wiki: Battle Blimp, keep its Super Archer/Wizard cargo invisible.
+            if cargo or avg_hp < self.P("invis_hp") or len(hot) >= self.P("invis_hot"):
+                ix, iy = self.centroid(cargo) if cargo else (cx, cy)
+                self._use(battle, "invis", ix, iy)
                 if single_cast:
                     return
         if self._have("recall") and t - self._last("recall") > 6.0 and t - self._main_at > self.P("recall_after"):
@@ -1172,7 +1325,12 @@ class AttackPlan:
                 if single_cast:
                     return
         if self._have("clone") and t - self._main_at > 1.0 and t - self._last("clone") > 1.0:
-            big = [u for u in units if u.housing >= 10 and not u.extra.get("clone")]
+            # Wiki: Battle Blimp, Clone supports its released payload, not the push.
+            big = [
+                u
+                for u in (units if cargo is None else cargo)
+                if (cargo is not None or u.housing >= 10) and not u.extra.get("clone")
+            ]
             if big:
                 bx, by = self.centroid(big)
                 self._use(battle, "clone", bx, by)

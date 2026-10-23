@@ -819,8 +819,13 @@ def _apply(battle, f: Field) -> bool:
             return True
         cap = f.value
         # Wiki: Clone Spell permits repeated copies and cloning existing clones.
+        # Wiki: Clone Spell, the troop spawned first is cloned first, even in one tick.
         sources = sorted(
-            battle.attackers_near(f.x, f.y, f.radius), key=lambda unit: unit.spawned_at
+            battle.attackers_near(f.x, f.y, f.radius),
+            key=lambda unit: (
+                unit.spawned_at,
+                unit.extra.get("spawn_sequence", unit.id),
+            ),
         )
         for source in sources:
             if (
@@ -1287,7 +1292,9 @@ def tower_cast(battle, b: Building, mode, near=None):
     if near:
         if mode in ("eq", "quake", "earthquake"):
             near = [unit for unit in near if not unit.flying]
-        tgt = min(near, key=lambda a: dist(a.x, a.y, b.x, b.y), default=None)
+        # Wiki: Spell Tower, Poison/Earthquake target an entering troop; ties are unstated.
+        # Use entity ID to break equal-distance ties independently of bucket order.
+        tgt = min(near, key=lambda a: (dist(a.x, a.y, b.x, b.y), a.id), default=None)
     x, y = (tgt.x, tgt.y) if tgt is not None else (b.x, b.y)
     if mode == "rage":
         battle.fields.append(
@@ -1422,7 +1429,15 @@ def _recall(battle, f):
             and unit.kind in ("troop", "hero", "hero_clone", "pet", "summon")
         }.values()
     )
-    cands.sort(key=lambda u: (not u.is_hero, -interaction_housing(u), u.spawned_at))
+    # Wiki: Recall Spell, equal-housing troops are prioritized by deployment order.
+    cands.sort(
+        key=lambda u: (
+            not u.is_hero,
+            -interaction_housing(u),
+            u.spawned_at,
+            u.extra.get("spawn_sequence", u.id),
+        )
+    )
     taken = []
     for u in cands:
         h = interaction_housing(u)

@@ -10,7 +10,7 @@ Full build (an original base):
   6. defensive Clan Castle troops, banner assignments and all modes.
 Change list (--from an existing layout, e.g. a remix of the user's base):
   copy the existing layout in the editor, then only the differences:
-  buildings to move (old -> new spot, numbered), walls to remove (red),
+  buildings to remove, move or add (numbered), walls to remove (red),
   walls to add (green), traps to move or switch, and defensive setup.
 
 Images use the editor's camera angle: tile (0,0) at the top corner, +x
@@ -337,25 +337,37 @@ def full_guide(lay, out: Path):
     return steps
 
 
-def change_guide(old, new, out: Path):
-    steps = []
-    # buildings: match each key's copies so the fewest moves are needed
-    moves = []
-    for key in sorted({b.key for b in new.buildings}):
+def building_changes(old, new):
+    """Match copies by position, then pair moves; None marks a tray transfer."""
+    removals, moves, additions = [], [], []
+    # mechanics.py:145: optional Crafting Stations can exist on only one side.
+    keys = {b.key for b in old.buildings} | {b.key for b in new.buildings}
+    for key in sorted(keys):
         a = [b for b in old.buildings if b.key == key]
         bnew = [b for b in new.buildings if b.key == key]
         stay_old = {(b.x, b.y) for b in a}
         target = [b for b in bnew if (b.x, b.y) not in stay_old]
         source = [b for b in a if (b.x, b.y) not in {(q.x, q.y) for q in bnew}]
-        for s, t in zip(
+        for s, t in zip_longest(
             sorted(source, key=lambda b: (b.x, b.y)),
             sorted(target, key=lambda b: (b.x, b.y)),
         ):
-            moves.append((s, t))
+            if t is None:
+                removals.append((s, None))
+            elif s is None:
+                additions.append((None, t))
+            else:
+                moves.append((s, t))
         for b in bnew:  # same spot, changed mode
             o = next((q for q in a if (q.x, q.y) == (b.x, b.y)), None)
             if o is not None and (o.mode or None) != (b.mode or None):
                 moves.append((o, b))
+    return removals + moves + additions
+
+
+def change_guide(old, new, out: Path):
+    steps = []
+    changes = building_changes(old, new)
     removed = sorted(set(old.walls) - set(new.walls))
     added = sorted(set(new.walls) - set(old.walls))
     c = Canvas(f"Step 1: walls - remove {len(removed)} (red), add {len(added)} (green)")
@@ -370,47 +382,66 @@ def change_guide(old, new, out: Path):
     )
     steps.append(
         (
-            "Step 1: walls (do removals first, so buildings have room)",
+            "Step 1: walls (remove first; park blocking buildings in the tray)",
             "1-walls.png",
             [f"remove wall at ({x}, {y})" for x, y in removed]
             + [f"add wall at ({x}, {y})" for x, y in added],
         )
     )
     c = Canvas(
-        f"Step 2: move {len(moves)} buildings (dark 'was N' = old spot, numbered = new spot)"
+        f"Step 2: {len(changes)} building changes (red = remove, green = add, dark = old spot)"
     )
     for x, y in new.walls:
         c.tile(x, y, 1, faded((205, 205, 215)), None)
-    moved_new = {id(t) for _, t in moves}
+    moved_new = {id(t) for _, t in changes if t is not None}
     for b in new.buildings:
         if id(b) not in moved_new:
             c.tile(b.x, b.y, b.size, faded(bcolor(b)), (70, 90, 60))
     rows = []
     # old spots first, then new spots, then the numbers, so chains and swaps stay readable
-    for i, (s, t) in enumerate(moves, 1):
-        if (s.x, s.y) != (t.x, t.y):
-            c.tile(s.x, s.y, s.size, (60, 60, 60), (255, 230, 0))
-            c.label(s.x, s.y, s.size, f"was {i}", (255, 230, 0))
-    for s, t in moves:
+    for i, (s, t) in enumerate(changes, 1):
+        if s is None:
+            continue
+        if t is None or (s.x, s.y) != (t.x, t.y):
+            color = (220, 40, 40) if t is None else (60, 60, 60)
+            c.tile(s.x, s.y, s.size, color, (255, 230, 0))
+            label = f"remove {i}" if t is None else f"was {i}"
+            c.label(s.x, s.y, s.size, label, (255, 230, 0))
+    for s, t in changes:
+        if t is None:
+            continue
         m = mode_text(t)
-        c.tile(t.x, t.y, t.size, bcolor(t))
+        outline = (40, 220, 60) if s is None else (20, 20, 20)
+        c.tile(t.x, t.y, t.size, bcolor(t), outline)
         c.label(t.x, t.y, t.size, LABELS.get(t.key, t.key) + ("\n" + m if m else ""))
-    for i, (s, t) in enumerate(moves, 1):
-        c.badge(t.x, t.y, t.size, i)
-    for i, (s, t) in enumerate(moves, 1):
+    for i, (s, t) in enumerate(changes, 1):
+        b = t if t is not None else s
+        c.badge(b.x, b.y, b.size, i)
+    for i, (s, t) in enumerate(changes, 1):
+        if t is None:
+            rows.append(
+                f"{i}. Remove {NAMES[s.key]} at ({s.x}, {s.y}) to the editor tray."
+            )
+            continue
         m = mode_text(t)
-        if (s.x, s.y) == (t.x, t.y):
+        if s is None:
+            rows.append(
+                f"{i}. Add {NAMES[t.key]} from the editor tray: top tile ({t.x}, {t.y}){', mode ' + m if m else ''}"
+            )
+        elif (s.x, s.y) == (t.x, t.y):
             rows.append(f"{i}. {NAMES[t.key]} at ({t.x}, {t.y}): switch mode to {m}")
         else:
             rows.append(
                 f"{i}. {NAMES[t.key]}: ({s.x}, {s.y}) -> ({t.x}, {t.y}){', mode ' + m if m else ''}"
             )
     c.save(
-        out / "2-moves.png", [b.key for b in new.buildings], [t.key for t in new.traps]
+        out / "2-moves.png",
+        [b.key for b in old.buildings] + [b.key for b in new.buildings],
+        [t.key for t in new.traps],
     )
     steps.append(
         (
-            "Step 2: move buildings (tip: park blocking buildings off the grid first)",
+            "Step 2: buildings (remove to the tray, move, then add from the tray)",
             "2-moves.png",
             rows,
         )
@@ -439,16 +470,9 @@ def change_guide(old, new, out: Path):
 
 
 def edit_cost(old, new):
-    """Editor actions to turn `old` into `new`: building moves, wall pieces
-    removed or added, trap moves/modes and defensive setup."""
-    moves = 0
-    for key in {b.key for b in new.buildings}:
-        have = {(b.x, b.y, b.mode or None) for b in old.buildings if b.key == key}
-        moves += sum(
-            1
-            for b in new.buildings
-            if b.key == key and (b.x, b.y, b.mode or None) not in have
-        )
+    """Editor actions: building removals/moves/additions/modes, wall pieces,
+    trap moves/modes and defensive setup. The second count covers buildings."""
+    moves = len(building_changes(old, new))
     walls = len(set(old.walls) ^ set(new.walls))
     ot = {(t.key, t.x, t.y, trap_mode(t)) for t in old.traps}
     traps = sum(1 for t in new.traps if (t.key, t.x, t.y, trap_mode(t)) not in ot)
@@ -521,6 +545,7 @@ def main():
         steps = change_guide(old, new, out)
         intro = (
             f"Start from a copy of {Path(args.src).stem} in the layout editor, then make only these changes. "
+            "Return removed buildings and park blocking buildings in the tray before placing walls or buildings. "
             "Tile numbers match the grid lines on the images (every 4th line is numbered). "
             "Finish by applying every defensive setup setting, including Clan Castle troops and heroes."
         )

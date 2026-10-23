@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import time
 from dataclasses import dataclass, field, replace
 from functools import lru_cache
@@ -63,19 +64,39 @@ FRESH_SEEDS = tuple(range(5000, 5020))
 # at load: a target whose rule is not found is dropped.
 READING = {
     "Giant Arrow": {
-        "ad": ("electro-dragon", "Align the opening Giant Arrow through two Air Defenses"),
+        "ad": (
+            "electro-dragon",
+            "Align the opening Giant Arrow through two Air Defenses",
+        ),
         "sweeper": ("electro-dragon", "Use Giant Arrow to remove Air Sweepers"),
-        "cc": ("super-minion-air", "Giant Arrow line through valuable defenses, especially the Clan Castle"),
-        "revenge": ("super-minion-air", "especially the Clan Castle, Revenge Tower or Monolith"),
-        "mono": ("super-minion-air", "especially the Clan Castle, Revenge Tower or Monolith"),
-        "st": ("root-rider", "Use Giant Arrow during the Queen's funnel to trigger Invisibility Spell Towers"),
+        "cc": (
+            "super-minion-air",
+            "Giant Arrow line through valuable defenses, especially the Clan Castle",
+        ),
+        "revenge": (
+            "super-minion-air",
+            "especially the Clan Castle, Revenge Tower or Monolith",
+        ),
+        "mono": (
+            "super-minion-air",
+            "especially the Clan Castle, Revenge Tower or Monolith",
+        ),
+        "st": (
+            "root-rider",
+            "Use Giant Arrow during the Queen's funnel to trigger Invisibility Spell Towers",
+        ),
     },
     # "Choose the Fireball area for both funnel pathing and clustered
     # defensive value" (druid-ruin-witch), "the target varies with the
     # layout" (super-minion-air): the heavy defenses (plans.THREAT >= 5)
     "Fireball": {
-        **{k: ("druid-ruin-witch", "Choose the Fireball area for both funnel pathing and clustered defensive value")
-           for k in ("inferno", "scatter", "eagle", "xbow", "mono", "mgt", "swt")},
+        **{
+            k: (
+                "druid-ruin-witch",
+                "Choose the Fireball area for both funnel pathing and clustered defensive value",
+            )
+            for k in ("inferno", "scatter", "eagle", "xbow", "mono", "mgt", "swt")
+        },
     },
 }
 
@@ -90,7 +111,14 @@ class Attack:
     def with_override(self, sid, fld, value):
         o = {(a, b): c for a, b, c in self.overrides}
         o[(sid, fld)] = value
-        return replace(self, overrides=tuple(sorted(((a, b, c) for (a, b), c in o.items()), key=lambda x: (x[0], x[1]))))
+        return replace(
+            self,
+            overrides=tuple(
+                sorted(
+                    ((a, b, c) for (a, b), c in o.items()), key=lambda x: (x[0], x[1])
+                )
+            ),
+        )
 
     def override_dict(self):
         out: dict = {}
@@ -99,8 +127,11 @@ class Attack:
         return out
 
     def describe(self):
-        d = {"angle_deg": round(math.degrees(self.angle) % 360, 1), "charge_side": self.side,
-             "flank_offset": self.flank_offset}
+        d = {
+            "angle_deg": round(math.degrees(self.angle) % 360, 1),
+            "charge_side": self.side,
+            "flank_offset": self.flank_offset,
+        }
         if self.overrides:
             d["steps"] = {f"{s}.{f}": v for s, f, v in self.overrides}
         return d
@@ -156,14 +187,28 @@ def playbook_for(army):
 
 def make_attack_plan(army: str, attack: Attack, seed: int):
     from .engine.playbook import from_playbook
+    from .meta_armies import compose
 
     build = _build(army)
     _fam, pb = playbook_for(army)
     if pb is None:
         raise ValueError(f"{army}: no cited playbook")
-    return from_playbook(pb, angle=attack.angle, seed=seed, th=build["th"], build=build,
-                         flank_offset=attack.flank_offset, charge_side=attack.side,
-                         overrides=attack.override_dict())
+    plan = from_playbook(
+        pb,
+        angle=attack.angle,
+        seed=seed,
+        th=build["th"],
+        build=build,
+        flank_offset=attack.flank_offset,
+        charge_side=attack.side,
+        overrides=attack.override_dict(),
+    )
+    # meta_armies.py:152-217,308: retain runtime metadata beyond the field copy.
+    reference = compose(build, angle=attack.angle, seed=seed)
+    for name, value in vars(reference).items():
+        if not hasattr(plan, name):
+            setattr(plan, name, value)
+    return plan
 
 
 def _run(job):
@@ -178,6 +223,22 @@ def _run(job):
     return (r.stars, r.destruction, r.th_destroyed, r.time)
 
 
+def _run_batch(jobs, *, parallel=True):
+    # evaluate.py:252-259: search and fresh replay use the selected batch engine.
+    if os.environ.get("BASELAB_ENGINE") == "rust":
+        from .rust_bridge import run_plan_batch
+
+        prepared = []
+        for lj, army, attack, seed, strength, modifier in jobs:
+            plan = make_attack_plan(army, attack, seed)
+            plan.strength = strength * skill(seed)
+            prepared.append((lj, plan, seed, modifier))
+        return run_plan_batch(prepared, threads=None if parallel else 1)
+    if parallel and len(jobs) > 1:
+        return list(pool().map(_run, jobs, chunksize=1))
+    return [_run(job) for job in jobs]
+
+
 # ------------------------------------------------------------ the choices
 @lru_cache(maxsize=1)
 def _cited_anchors():
@@ -188,12 +249,16 @@ def _cited_anchors():
         if f.stem.startswith("test-"):
             continue
         pb = json.loads(f.read_text(encoding="utf-8"))
-        steps = list(pb["steps"]) + [s for v in pb.get("variants", []) for s in v.get("steps", [])]
+        steps = list(pb["steps"]) + [
+            s for v in pb.get("variants", []) for s in v.get("steps", [])
+        ]
         for s in steps:
             at = str(s.get("at", ""))
             if at.startswith("building:") or at in ("th", "threat:main"):
                 out.setdefault((s["action"], s.get("what")), set()).add(at)
-            if s["action"] == "ability" and str(s.get("aim", "")).startswith("building:"):
+            if s["action"] == "ability" and str(s.get("aim", "")).startswith(
+                "building:"
+            ):
                 out.setdefault(("aim", s.get("what")), set()).add(s["aim"])
     return out
 
@@ -207,7 +272,10 @@ def _reading_targets():
     for equip, rows in READING.items():
         for key, (fam, words) in rows.items():
             pb = _playbook(fam) or {}
-            rules = [str(r.get("rule", r)) if isinstance(r, dict) else str(r) for r in pb.get("base_reading", [])]
+            rules = [
+                str(r.get("rule", r)) if isinstance(r, dict) else str(r)
+                for r in pb.get("base_reading", [])
+            ]
             if any(words in r for r in rules):
                 ok.setdefault(equip, set()).add("building:" + key)
     return ok
@@ -219,7 +287,9 @@ def _repeats_cited(what):
         if f.stem.startswith("test-"):
             continue
         pb = json.loads(f.read_text(encoding="utf-8"))
-        for s in list(pb["steps"]) + [s for v in pb.get("variants", []) for s in v.get("steps", [])]:
+        for s in list(pb["steps"]) + [
+            s for v in pb.get("variants", []) for s in v.get("steps", [])
+        ]:
             if s.get("what") == what and s.get("every"):
                 out.add(float(s["every"]))
     return out
@@ -238,7 +308,9 @@ def step_knobs(army: str, keys: set) -> list:
         if st.get("uncited"):
             continue
         act, what, at = st["action"], st.get("what"), str(st.get("at", ""))
-        if act in ("deploy", "spell") and (at.startswith("building:") or at in ("th", "threat:main")):
+        if act in ("deploy", "spell") and (
+            at.startswith("building:") or at in ("th", "threat:main")
+        ):
             alts = sorted((cited.get((act, what), set()) & present) - {at})
             if alts:
                 knobs.append((st["id"], "at", alts))
@@ -264,7 +336,9 @@ def step_knobs(army: str, keys: set) -> list:
             # one keeps the 4 s chain
             hero = at.split(":", 1)[1] if ":" in at else None
             lo = plan.loadouts.get(hero) if hero else None
-            if what != "Invisibility Spell" or (lo is not None and lo.pet == "Spirit Fox"):
+            if what != "Invisibility Spell" or (
+                lo is not None and lo.pet == "Spirit Fox"
+            ):
                 alts = sorted(_repeats_cited(what) - {float(st["every"])})
                 if alts:
                     knobs.append((st["id"], "every", alts))
@@ -272,10 +346,19 @@ def step_knobs(army: str, keys: set) -> list:
     # follows another step after a measured gap (top level or in "all")
     for st in plan.steps:
         w = st.get("when") or {}
-        if st["action"] != "deploy" or st.get("uncited") or st.get("at", "edge:main") != "edge:main" \
-                or st.get("what") in ("Archer", "Minion") or not isinstance(w, dict):
+        if (
+            st["action"] != "deploy"
+            or st.get("uncited")
+            or st.get("at", "edge:main") != "edge:main"
+            or st.get("what") in ("Archer", "Minion")
+            or not isinstance(w, dict)
+        ):
             continue
-        parts = [w] if "after" in w else [x for x in w.get("all", []) if isinstance(x, dict) and "after" in x]
+        parts = (
+            [w]
+            if "after" in w
+            else [x for x in w.get("all", []) if isinstance(x, dict) and "after" in x]
+        )
         d = max((float(x.get("delay", 0.0)) for x in parts), default=0.0)
         if d > 0:
             knobs.append((st["id"], "delay", [round(0.5 * d, 2), round(1.5 * d, 2)]))
@@ -288,7 +371,13 @@ class _Evaluator:
     """Caches (attack, seed) -> result and counts battles."""
 
     def __init__(self, lj, army, strength, parallel=True, modifier=None, mode="ranked"):
-        self.lj, self.army, self.strength, self.parallel, self.modifier = lj, army, strength, parallel, modifier
+        self.lj, self.army, self.strength, self.parallel, self.modifier = (
+            lj,
+            army,
+            strength,
+            parallel,
+            modifier,
+        )
         self.mode = mode
         self.cache: dict = {}
         self.battles = 0
@@ -297,11 +386,11 @@ class _Evaluator:
         todo = [(a, s) for a in attacks for s in seeds if (a, s) not in self.cache]
         todo = list(dict.fromkeys(todo))
         if todo:
-            jobs = [(self.lj, self.army, a, s, self.strength, self.modifier) for a, s in todo]
-            if self.parallel and len(jobs) > 1:
-                res = list(pool().map(_run, jobs, chunksize=1))
-            else:
-                res = [_run(j) for j in jobs]
+            jobs = [
+                (self.lj, self.army, a, s, self.strength, self.modifier)
+                for a, s in todo
+            ]
+            res = _run_batch(jobs, parallel=self.parallel)
             self.cache.update(zip(todo, res))
             self.battles += len(todo)
 
@@ -391,8 +480,10 @@ def redteam(
     best = coarse
     final_seeds = search_seeds[: max([n for _k, n in b.halving] + [b.coarse_seeds])]
     ev.run([best], rseeds + final_seeds)
-    groups = [("angle", [best.angle - half, best.angle + half]),
-              ("flank_offset", [x for x in (0.6, 1.2) if x != best.flank_offset])]
+    groups = [
+        ("angle", [best.angle - half, best.angle + half]),
+        ("flank_offset", [x for x in (0.6, 1.2) if x != best.flank_offset]),
+    ]
     groups += [((sid, fld), alts) for sid, fld, alts in step_knobs(army, keys)]
     if all(ev.cache[(coarse, seed)][0] >= 3 for seed in seeds):
         note("three stars on every search seed: nothing to refine")
@@ -433,8 +524,21 @@ def redteam(
     ev.run([best], fs)
     fresh = [ev.cache[(best, s)] for s in fs]
     fresh_tr = sum(attacker_trophies(r[0], r[1]) for r in fresh) / len(fresh)
-    note(f"pick {best.describe()} search {search_tr:.1f} fresh {fresh_tr:.1f} tr ({n_search} search battles)")
-    return RedTeamResult(army, best, search_tr, fresh_tr, fresh, coarse, ev.battles, time.time() - t0, log, sides)
+    note(
+        f"pick {best.describe()} search {search_tr:.1f} fresh {fresh_tr:.1f} tr ({n_search} search battles)"
+    )
+    return RedTeamResult(
+        army,
+        best,
+        search_tr,
+        fresh_tr,
+        fresh,
+        coarse,
+        ev.battles,
+        time.time() - t0,
+        log,
+        sides,
+    )
 
 
 def evaluate_redteam(
@@ -497,7 +601,10 @@ def redteam_rows(
     keyed: dict = {}
     rest = []
     for sc in scenarios:
-        if sc.army.startswith(("meta:", "custom:")) and playbook_for(sc.army)[1] is not None:
+        if (
+            sc.army.startswith(("meta:", "custom:"))
+            and playbook_for(sc.army)[1] is not None
+        ):
             keyed.setdefault((sc.army, sc.town_hall, sc.modifier), []).append(sc)
         else:
             rest.append(sc)
@@ -532,7 +639,16 @@ def redteam_rows(
         found[key] = r
         for seed, res in zip(fresh_seeds, r.fresh):
             g += 1
-            out_sc.append(replace(sc0, angle=r.attack.angle, seed=seed, weight=w / len(r.fresh), group=g,
-                                  tactic=None, charge=None))
+            out_sc.append(
+                replace(
+                    sc0,
+                    angle=r.attack.angle,
+                    seed=seed,
+                    weight=w / len(r.fresh),
+                    group=g,
+                    tactic=None,
+                    charge=None,
+                )
+            )
             out_r.append(res)
     return out_sc, out_r, rest, found

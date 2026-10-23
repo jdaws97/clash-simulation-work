@@ -51,14 +51,22 @@ def dump(obj, depth=0):
         if isinstance(obj, Unit):
             return {"$unit": obj.id, "team": obj.team}
     if isinstance(obj, dict):
-        return {(k if isinstance(k, str) else json.dumps(dump(k, 1))): dump(v, depth + 1) for k, v in obj.items()}
+        return {
+            (k if isinstance(k, str) else json.dumps(dump(k, 1))): dump(v, depth + 1)
+            for k, v in obj.items()
+        }
     if isinstance(obj, (list, tuple)):
         return [dump(v, depth + 1) for v in obj]
     if isinstance(obj, (set, frozenset)):
         return sorted((dump(v, depth + 1) for v in obj), key=repr)
     if dataclasses.is_dataclass(obj):
         out = {"$type": type(obj).__name__}
-        out.update({f.name: dump(getattr(obj, f.name), depth + 1) for f in dataclasses.fields(obj)})
+        out.update(
+            {
+                f.name: dump(getattr(obj, f.name), depth + 1)
+                for f in dataclasses.fields(obj)
+            }
+        )
         # runtime plan state such as _spell_stock is created after dataclass init
         for name, value in getattr(obj, "__dict__", {}).items():
             if name not in out:
@@ -72,7 +80,9 @@ def dump(obj, depth=0):
             if hasattr(obj, name):
                 v = getattr(obj, name)
                 if callable(v) and not isinstance(v, type):
-                    raise TypeError(f"cannot export callable {type(obj).__name__}.{name}")
+                    raise TypeError(
+                        f"cannot export callable {type(obj).__name__}.{name}"
+                    )
                 out[name] = dump(v, depth + 1)
         return out
     raise TypeError(f"cannot export {type(obj).__name__}")
@@ -122,30 +132,72 @@ def run_jobs_file(path: Path, threads: int | None = None) -> list[dict]:
         run = subprocess.run(command, capture_output=True, text=True)
         if run.returncode != 0:
             raise RuntimeError(f"baselab-engine failed: {run.stderr.strip()[-2000:]}")
-        return [json.loads(line) for line in out.read_text().splitlines() if line.strip()]
+        return [
+            json.loads(line) for line in out.read_text().splitlines() if line.strip()
+        ]
 
 
 def run_batch(jobs, threads: int | None = None):
     """evaluate.run_batch in the Rust engine. jobs: [(layout_json, Scenario,
     strength)] -> [(stars, destruction, th_destroyed, time)] in job order."""
+    prepared = (
+        (layout_json, scenario_plan(sc, strength), sc.seed, sc.modifier)
+        for layout_json, sc, strength in jobs
+    )
+    return _run_serialized_jobs(prepared, threads)
+
+
+def run_plan_batch(jobs, threads: int | None = None):
+    """Run [(layout_json, plan, seed, modifier)] with run_batch's result shape."""
+    # data/playbooks/*.json: per-step choices are absent from Scenario.
+    prepared = (
+        (layout_json, json.dumps(plan_json(plan)), seed, modifier)
+        for layout_json, plan, seed, modifier in jobs
+    )
+    return _run_serialized_jobs(prepared, threads)
+
+
+def _run_serialized_jobs(jobs, threads: int | None = None):
+    """Share layout/plan deduplication and one engine invocation per batch."""
     layouts, layout_index = [], {}
     plans, plan_index = [], {}
     entries = []
-    for layout_json, sc, strength in jobs:
+    for layout_json, plan_text, seed, modifier in jobs:
         lk = json.dumps(layout_json, sort_keys=True)
         if lk not in layout_index:
             layout_index[lk] = len(layouts)
             layouts.append(lk)
-        pk = (sc, strength)
-        if pk not in plan_index:
-            plan_index[pk] = len(plans)
-            plans.append(scenario_plan(sc, strength))
-        entries.append({"layout": layout_index[lk], "plan": plan_index[pk], "seed": sc.seed,
-                        "town_hall": layout_json.get("town_hall", 16), "modifier": sc.modifier})
+        if plan_text not in plan_index:
+            plan_index[plan_text] = len(plans)
+            plans.append(plan_text)
+        entries.append(
+            {
+                "layout": layout_index[lk],
+                "plan": plan_index[plan_text],
+                "seed": seed,
+                "town_hall": layout_json.get("town_hall", 16),
+                "modifier": modifier,
+            }
+        )
+    if not entries:
+        return []
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "jobs.json"
         # plans are cached as JSON text: splice them in without re-encoding
-        path.write_text('{"layouts": [' + ",".join(layouts) + '], "plans": [' + ",".join(plans)
-                        + '], "jobs": ' + json.dumps(entries) + "}")
+        path.write_text(
+            '{"layouts": ['
+            + ",".join(layouts)
+            + '], "plans": ['
+            + ",".join(plans)
+            + '], "jobs": '
+            + json.dumps(entries)
+            + "}"
+        )
         results = run_jobs_file(path, threads)
-    return [(r["stars"], r["destruction"], r["th_destroyed"], r["time"]) for r in results]
+    if len(results) != len(entries):
+        raise RuntimeError(
+            f"baselab-engine returned {len(results)} results for {len(entries)} jobs"
+        )
+    return [
+        (r["stars"], r["destruction"], r["th_destroyed"], r["time"]) for r in results
+    ]

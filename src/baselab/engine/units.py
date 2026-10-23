@@ -211,7 +211,11 @@ def follow_target(battle, u):
         score[target] = score.get(target, 0.0) + weight
     if total_weight < threshold or not score:
         return None
-    return max(score.items(), key=lambda kv: kv[1])[0]
+    # Wiki: Grand Warden, follow the heaviest concentration; ties are unstated.
+    # Use entity IDs for ties, with buildings before walls, independent of buckets.
+    return min(
+        score, key=lambda target: (-score[target], isinstance(target, Wall), target.id)
+    )
 
 
 def rubble_target(battle, u):
@@ -256,6 +260,9 @@ def smash_wall(battle, u, w):
 
 
 def on_spawn(battle, u: Unit):
+    # Wiki: Clone Spell, the troop spawned first is cloned first.
+    # Battle.spawn allocates increasing IDs before this hook, including same-tick births.
+    u.extra["spawn_sequence"] = u.id
     if u.name == "Spell Skeleton":
         # Wiki: Skeleton Spell/Skeleton, 30 armor HP; overkill is discarded.
         u.extra["armor_hp"] = 30.0
@@ -2698,10 +2705,23 @@ def heal_effectiveness(battle, healer, recipient):
     return HEAL_STACK[min(index, len(HEAL_STACK) - 1)]
 
 
+def _healer_grouped(target, weighted, radius):
+    # Wiki: Healer, combined housing must exceed two; all housing is nonnegative.
+    weight = 0
+    for x, y, housing in weighted:
+        if dist(target.x, target.y, x, y) <= radius:
+            weight += housing
+            if weight > 2:
+                return True
+    return False
+
+
 def act_healer(battle, u: Unit):
     """Heal friendly recipients using the troop's pulse and recipient rules."""
     t = battle.t
     sp = u.spec
+    due = u.extra.get("heal_next", t)
+    heal_ready = t >= due or math.isclose(t, due)
     u.extra["healing_targets"] = set()
     if u.team == "def" and any(
         state["u"] is u and t < state["until"] for state in battle._poison.values()
@@ -2714,20 +2734,38 @@ def act_healer(battle, u: Unit):
     if u.name == "Healer":
         # Wiki: Healer ignores groups of at most two housing.
         # Use the stated healing area; no wider clustering radius is known.
-        # (eligibility is computed once per pulse, not once per candidate)
+        # Fully filter groups only when a heal is ready. During cooldown, check
+        # candidates lazily so movement and healing-source bookkeeping stay unchanged.
         weighted = [
             (ally.x, ally.y, 25 if ally.is_hero else ally.housing)
             for ally in allies
             if _heal_eligible(battle, u, ally)
         ]
-        eligible = [
-            target
-            for target in eligible
-            if sum(
-                w for x, y, w in weighted if dist(target.x, target.y, x, y) <= sp.splash
-            )
-            > 2
-        ]
+        if heal_ready:
+            eligible = [
+                target
+                for target in eligible
+                if _healer_grouped(target, weighted, sp.splash)
+            ]
+        else:
+            target = None
+            for candidate in (u.follow, u.target):
+                if candidate in eligible and _healer_grouped(
+                    candidate, weighted, sp.splash
+                ):
+                    target = candidate
+                    break
+            if target is None:
+                candidates = eligible
+                if u.team == "def":
+                    candidates = [ally for ally in candidates if ally.hp < ally.max_hp]
+                for candidate in sorted(
+                    candidates, key=lambda ally: dist(u.x, u.y, ally.x, ally.y)
+                ):
+                    if _healer_grouped(candidate, weighted, sp.splash):
+                        target = candidate
+                        break
+            eligible = [target] if target is not None else []
     target = u.target if u.target in eligible else None
     if u.follow in eligible:
         target = u.follow
@@ -2778,8 +2816,7 @@ def act_healer(battle, u: Unit):
             recipients.append(current)
     u.extra["healing_targets"] = set(recipients)
     effectiveness = {ally: heal_effectiveness(battle, u, ally) for ally in recipients}
-    due = u.extra.get("heal_next", t)
-    if t < due and not math.isclose(t, due):
+    if not heal_ready:
         return
     # Wiki: Healer pulses every 0.7 seconds; Druid heals every one second.
     # The existing initial pulse phase is retained.

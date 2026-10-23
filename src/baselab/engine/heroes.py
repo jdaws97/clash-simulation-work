@@ -125,11 +125,7 @@ def _pet_level(battle, hero, loadout, plan, town_hall):
     # Pet House unlocks and level caps come from the individual pet pages.
     maximum = stats.max_level(name, town_hall)
     if maximum is None:
-        if not getattr(plan, "observed", False):
-            raise ValueError(f"{name} is unavailable at Town Hall {town_hall}")
-        # a real attacker brought it, so our unlock data is behind: use its
-        # highest known level
-        maximum = max(r["level"] for r in stats.record(name)["levels"])
+        raise ValueError(f"{name} is unavailable at Town Hall {town_hall}")
     level = (getattr(plan, "pet_levels", {}) or {}).get(name, maximum)
     if level is None:
         level = maximum
@@ -177,6 +173,46 @@ def equip(battle, u: Unit, plan):
         if owner != u.name:
             raise ValueError(f"{equipment} belongs to {owner}, not {u.name}")
     th = getattr(plan, "town_hall", battle.town_hall)
+    if (
+        lo.pet
+        and lo.pet in stats.registry()
+        and stats.record(lo.pet)["kind"] == "pet"
+        and getattr(plan, "observed", False)
+        and stats.max_level(lo.pet, th) is None
+    ):
+        # ClashKing b8f42a7: Greedy Raven.required_townhall=18 -> unavailable at TH17.
+        # Wiki: Pet House, each pet can be assigned to only one Hero at a time.
+        # Reserve explicit assignments and replacements already in the battle.
+        assigned = {other.pet for other in loadouts.values() if other.hero != u.name}
+        for unit in battle.attackers + battle.portal_stash:
+            if unit is u:
+                continue
+            if unit.kit is not None:
+                assigned.add(unit.kit.pet_name)
+            if unit.kind == "pet":
+                assigned.add(unit.name)
+        # Wiki: Pet House, its required levels define the pet unlock order.
+        # Replacement policy: Hero default first, then that order (no RNG).
+        pets = sorted(
+            (
+                name
+                for name, record in stats.registry().items()
+                if record["kind"] == "pet"
+            ),
+            key=lambda name: (
+                stats.num(stats.attrs(name)["raw"]["Pet House Level Required"]),
+                name,
+            ),
+        )
+        pet = next(
+            (
+                name
+                for name in [DEFAULT_LOADOUTS[u.name].pet] + pets
+                if name not in assigned and stats.max_level(name, th) is not None
+            ),
+            None,
+        )
+        lo = HeroLoadout(lo.hero, lo.equipment, pet)
     pet_level = _pet_level(battle, u, lo, plan, th)
     levels_override = getattr(plan, "equipment_levels", {}) or {}
     # data/your-levels.json: account construction explicitly marks complete inventories.
@@ -278,7 +314,13 @@ def equip(battle, u: Unit, plan):
         )
     u.kit = k
     if any(
-        k.has(name) for name in ("Action Figure", "Magic Mirror", "Henchmen Puppet")
+        k.has(name)
+        for name in (
+            "Action Figure",
+            "Magic Mirror",
+            "Henchmen Puppet",
+            "Healer Puppet",
+        )
     ):
         # game data v18.200.9: equipment SpawnPattern uses the Hero's facing.
         u.extra["summon_position"] = (u.x, u.y)
@@ -466,7 +508,7 @@ def on_damaged(battle, u: Unit, amount: float, source, effect="attack"):
 
     Snake Bracelet: a Snake per 300 damage taken, up to the summon cap.
     Revenge Deck: counters each attacker (defense or unit) once per 0.8 s,
-    within 25 tiles, healing the Duke; never traps or spells (wiki).
+    within the ability's range, healing the Duke; never traps or spells (wiki).
     """
     k: Kit = u.kit
     t = battle.t
@@ -512,14 +554,17 @@ def on_damaged(battle, u: Unit, amount: float, source, effect="attack"):
             )
         )
     ):
-        if dist(source.x, source.y, u.x, u.y) > 25.0:
+        lv = k.lv("Revenge Deck")
+        ability = stats.clashking_level("Revenge Deck", lv)["abilities"][0]
+        # ClashKing b8f42a7: ReflectedRange=100000 -> 1000 tiles, beyond the village.
+        counter_range = float(ability["ReflectedRange"]) / 100.0
+        if dist(source.x, source.y, u.x, u.y) > counter_range:
             return
         cds = u.extra.setdefault("revenge_cd", {})
         key = id(source)
         if t < cds.get(key, -1.0):
             return
         cds[key] = t + 0.8
-        lv = k.lv("Revenge Deck")
         dmg = _col("Revenge Deck", lv, "counter damage", default=225.0)
         u.heal(_col("Revenge Deck", lv, "heal per counter"))
         with effects.damage_source(battle, u, "counter"):
@@ -757,11 +802,13 @@ def activate(battle, u: Unit, *, on_ko=False):
             _puppet(battle, u, e, lv)
         elif e == "Rage Vial":
             # Independent ten-second effect (wiki: Rage Vial).
+            # ClashKing b8f42a7: ability L7.SpeedBoost=480 -> 4.8 tiles/s.
+            ability = _ability_data(e, lv, "BarbarianKingRage")
             units.add_rage(
                 u,
                 e,
                 1.0 + _col(e, lv, "damage increase") / 100.0,
-                _col(e, lv, "movement speed increase") / 8.0,
+                float(ability["SpeedBoost"]) / 100.0,
                 t + 10.0,
             )
         elif e == "Invisibility Vial":
@@ -901,10 +948,25 @@ def activate(battle, u: Unit, *, on_ko=False):
                     break
                 target = min(candidates, key=lambda a: _distance(a, u.x, u.y))
                 visited.add(target)
-                _damage(battle, target, _col(e, lv, "projectile damage"))
-                # A complete stop for the listed duration (wiki: Frost Flake).
-                target.frozen_until = max(
-                    target.frozen_until, t + _col(e, lv, "slow down duration")
+                # game data v18.200.9: rc_gear_frostblast_Projectile.Speed=1500,
+                # StartOffset=0 -> 15 tiles/s from the Champion's position.
+                battle.add_pending(
+                    Pending(
+                        t + dist(u.x, u.y, target.x, target.y) / 15.0,
+                        target.x,
+                        target.y,
+                        0.0,
+                        _col(e, lv, "projectile damage"),
+                        True,
+                        True,
+                        u.name,
+                        extra={
+                            "hero_impact": "frost",
+                            "duration": _col(e, lv, "slow down duration"),
+                        },
+                        actor=u,
+                        target=target,
+                    )
                 )
         elif e == "Dark Orb":
             dx, dy = u.extra["facing"]
@@ -1081,6 +1143,17 @@ def projectile_impact(battle, pending):
             at=pending.at,
         )
         return
+    if mode == "frost":
+        target = pending.target
+        if target.alive and (
+            not isinstance(target, Unit) or target.indirect_targetable(battle.t)
+        ):
+            # Wiki: Frost Flake, damage and a complete freeze apply on impact.
+            _damage(battle, target, pending.damage)
+            target.frozen_until = max(
+                target.frozen_until, battle.t + pending.extra["duration"]
+            )
+        return
     if mode == "ball":
         target = pending.target
         pending.x, pending.y = target.x, target.y
@@ -1100,7 +1173,8 @@ def projectile_impact(battle, pending):
         )
         pending.extra["visited"].add(target)
         # game data v18.200.9: BarbarianKingGearFootball.Speed=1500 -> each bounce travels at 15 tiles/s.
-        pending.at = battle.t + dist(pending.x, pending.y, target.x, target.y) / 15.0
+        # Continue from the exact arrival deadline, before tick rounding.
+        pending.at += dist(pending.x, pending.y, target.x, target.y) / 15.0
         pending.target = target
         battle.add_pending(pending)
         return
@@ -1169,7 +1243,8 @@ def projectile_impact(battle, pending):
         )
         visited.add(target)
         # game data v18.200.9: AmazonQueen_shield.Speed=2000 -> 20 tiles/s.
-        pending.at = battle.t + dist(pending.x, pending.y, target.x, target.y) / 20.0
+        # Continue from the exact arrival deadline, before tick rounding.
+        pending.at += dist(pending.x, pending.y, target.x, target.y) / 20.0
         pending.target = target
         battle.add_pending(pending)
         return
@@ -1297,14 +1372,19 @@ def _puppet(battle, u, e, lv, *, first=0, at=None):
         "Lavaloon Puppet": (1, 0.25),
     }.get(e, (n, 0.0))
     for j in range(first, min(first + batch, n)):
-        ang = 2 * math.pi * j / max(1, n)
+        if e == "Healer Puppet":
+            # game data v18.200.9: ArcherQueenSpawnHealers.SpawnPattern=SemiCircleBehind.
+            x, y = _summon_position(u, u.target, j, n, behind=True, radius=0.6)
+        else:
+            ang = 2 * math.pi * j / max(1, n)
+            x, y = u.x + 0.6 * math.cos(ang), u.y + 0.6 * math.sin(ang)
         # the attacker's own Town Hall caps an unknown researched level (the
         # spawn fallback is the battle's, i.e. the defender's, Town Hall)
         s = battle.spawn(
             troop,
             "atk",
-            u.x + 0.6 * math.cos(ang),
-            u.y + 0.6 * math.sin(ang),
+            x,
+            y,
             level=level,
             kind="summon",
             group=u.group,
