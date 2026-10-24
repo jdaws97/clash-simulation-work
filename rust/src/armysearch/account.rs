@@ -275,6 +275,9 @@ impl AccountRules {
                 return Err(format!("inactive tactic {index} must remain frozen"));
             }
         }
+        if let Some(program) = &plan.program {
+            program.validate(genome)?;
+        }
         Ok(())
     }
 
@@ -319,7 +322,7 @@ impl AccountRules {
             }
             pets.insert(hero.pet.clone());
         }
-        if genome.plan.family == "generic" {
+        if genome.plan.family == "generic" && genome.plan.program.is_none() {
             genome.plan.tactics = TACTIC_DEFAULTS;
             genome.plan.step_timing.clear();
             genome.plan.charge_side = "left".to_owned();
@@ -327,7 +330,13 @@ impl AccountRules {
             genome.plan.snipe_mode = "value".to_owned();
         }
         genome.normalize();
-        self.check(genome)
+        // Army repair precedes program fitting in operators::admit. Check the
+        // repaired account choices here, then validate the reconciled program
+        // at admission before it can enter the archive or a battle.
+        let program = genome.plan.program.take();
+        let checked = self.check(genome);
+        genome.plan.program = program;
+        checked
     }
 
     pub fn compile(
@@ -452,6 +461,7 @@ impl AccountRules {
             }
             crate::armies::put(&mut plan, "steps", Json::Arr(steps));
         }
+        super::program::install(&mut plan, genome)?;
         compiler.require_legal(&mut plan)?;
         let problems = compiler.account_legal(&build, &plan);
         if !problems.is_empty() {

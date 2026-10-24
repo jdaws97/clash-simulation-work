@@ -617,6 +617,7 @@ pub fn run(
     descriptor_and_novelty_proofs(account, &small, &templates[0])?;
     proposal_proofs(account, compiler, &catalog, templates)?;
     let themed_main_types = themed_proofs(account, compiler, &catalog)?;
+    let programs = super::program::proof::run(account, compiler, Arc::clone(&catalog), templates, iterations)?;
     let mut candidates: Vec<ArmyGenome> = templates.iter().take(2).cloned().collect();
     let main = account
         .roster
@@ -627,6 +628,24 @@ pub fn run(
     let mut themed_native = themed::for_main(account, &catalog, main, &mut Random(123))?;
     operators::admit(account, compiler, &catalog, &mut themed_native)?;
     candidates.push(themed_native);
+    // Exercise program identities through the real evaluator cache, racing,
+    // archive and resume representation at every native worker count.
+    for candidate in &mut candidates {
+        super::program::enable(account, compiler, &catalog, candidate)?;
+        operators::admit(account, compiler, &catalog, candidate)?;
+    }
+    let mut program_rng = Random(123);
+    let mut program_child = None;
+    for _ in 0..256 {
+        if let Ok(mut child) = super::program::mutate::random(&candidates[0], &mut program_rng) {
+            if child.identity() != candidates[0].identity() {
+                operators::admit(account, compiler, &catalog, &mut child)?;
+                program_child = Some(child);
+                break;
+            }
+        }
+    }
+    candidates.push(program_child.ok_or("native proof found no distinct program mutation")?);
     let mut expected = None;
     for threads in [1, 4, 16] {
         eprintln!("armysearch-proof native determinism threads={threads}");
@@ -670,6 +689,10 @@ pub fn run(
         "immigrant quotas and family filtering",
         "proposal resume determinism",
         "roster-wide themed admission",
+        "program validity fuzz and rejection reasons",
+        "program canonical identity and checkpoint roundtrip",
+        "program native determinism at 1/4/16 threads",
+        "program mutation discovers better native Rage timing",
     ];
     Ok(object([
         ("status", string("passed")),
@@ -677,6 +700,7 @@ pub fn run(
         ("accepted", number(accepted)),
         ("rejected_with_reason", number(rejected)),
         ("themed_main_types", number(themed_main_types)),
+        ("programs", programs),
         ("rejection_reasons", Json::Obj(reasons.into_iter()
             .map(|(reason, count)| (reason, number(count))).collect())),
         ("native_thread_counts", Json::Arr([1, 4, 16].into_iter().map(number).collect())),

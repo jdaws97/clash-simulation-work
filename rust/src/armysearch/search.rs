@@ -11,6 +11,7 @@ use super::account::AccountRules;
 use super::eval::Evaluator;
 use super::genome::ArmyGenome;
 use super::operators;
+use super::program;
 use super::score::{paired_interval, CandidateEstimate, Stage, TargetManifest};
 use super::themed;
 use super::util::{array, number, object, string, text, Random};
@@ -56,6 +57,8 @@ pub struct ProposalSettings {
     pub themed_fraction: f64,
     pub random_fraction: f64,
     pub families: Families,
+    pub programs: bool,
+    pub program_mutation_rate: f64,
 }
 
 impl Default for ProposalSettings {
@@ -64,12 +67,19 @@ impl Default for ProposalSettings {
             themed_fraction: 0.25,
             random_fraction: 0.05,
             families: Families::All,
+            programs: true,
+            program_mutation_rate: 0.5,
         }
     }
 }
 
 impl ProposalSettings {
     pub fn validate(self) -> Result<(), String> {
+        if !self.program_mutation_rate.is_finite()
+            || !(0.0..=1.0).contains(&self.program_mutation_rate)
+        {
+            return Err("program mutation rate must be finite and in [0,1]".to_owned());
+        }
         if !self.themed_fraction.is_finite()
             || !self.random_fraction.is_finite()
             || !(0.0..=1.0).contains(&self.themed_fraction)
@@ -307,7 +317,21 @@ pub fn proposals(
                 break;
             }
             let parent = &pool[state.rng.index(pool.len())];
-            if state.rng.index(5) == 0 {
+            if settings.programs && state.rng.unit() < settings.program_mutation_rate {
+                let mut parent = parent.clone();
+                let enabled = program::enable(account, compiler, catalog, &mut parent);
+                enabled.and_then(|()| {
+                    let compatible: Vec<_> = pool.iter().filter(|other| {
+                        other.plan.program.is_some()
+                            && program::army_identity(other) == program::army_identity(&parent)
+                    }).collect();
+                    if !compatible.is_empty() && state.rng.index(5) == 0 {
+                        program::mutate::crossover(&parent, compatible[state.rng.index(compatible.len())], &mut state.rng)
+                    } else {
+                        program::mutate::random(&parent, &mut state.rng)
+                    }
+                })
+            } else if state.rng.index(5) == 0 {
                 let compatible: Vec<&ArmyGenome> = pool.iter().filter(|other| other.plan.family == parent.plan.family).collect();
                 let other = compatible[state.rng.index(compatible.len())];
                 operators::crossover(parent, other, account, compiler, catalog, &mut state.rng)
@@ -327,6 +351,15 @@ pub fn proposals(
                 )
             }
         };
+        let candidate = candidate.and_then(|mut genome| {
+            if settings.programs {
+                program::enable(account, compiler, catalog, &mut genome)?;
+            } else {
+                genome.plan.program = None;
+            }
+            operators::admit(account, compiler, catalog, &mut genome)?;
+            Ok(genome)
+        });
         match candidate {
             Ok(candidate) => {
                 if settings.families.allows(&candidate) && state.seen.insert(candidate.identity()) {

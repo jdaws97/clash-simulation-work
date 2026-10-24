@@ -7,6 +7,7 @@ use crate::compile::TACTIC_DEFAULTS;
 use crate::json::Json;
 
 use super::account::AccountRules;
+use super::program::AttackProgram;
 use super::util::{array, encode, number, numeric, object, string, text};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -33,6 +34,7 @@ pub struct PlanGenes {
     pub tactics: [f64; 19],
     /// Relative offsets on fitted, cited dependency delays; redteam.py:360-383.
     pub step_timing: BTreeMap<String, f64>,
+    pub program: Option<AttackProgram>,
 }
 
 impl Default for PlanGenes {
@@ -45,6 +47,7 @@ impl Default for PlanGenes {
             snipe_mode: "value".to_owned(),
             tactics: TACTIC_DEFAULTS,
             step_timing: BTreeMap::new(),
+            program: None,
         }
     }
 }
@@ -143,12 +146,21 @@ impl ArmyGenome {
             }
         }
         self.plan.step_timing.retain(|_, offset| *offset != 0.0);
+        if let Some(program) = &mut self.plan.program {
+            program.normalize();
+        }
     }
 
     pub fn identity(&self) -> String {
         let mut canonical = self.clone();
         canonical.normalize();
-        encode(&canonical.to_json())
+        let mut identity = canonical.to_json();
+        if let Some(program) = &canonical.plan.program {
+            let mut genes = identity.at("plan_genes").clone();
+            armies::put(&mut genes, "program", program.identity_json());
+            armies::put(&mut identity, "plan_genes", genes);
+        }
+        encode(&identity)
     }
 
     /// meta_armies.py:150-158 selects bulk by housing. Search additionally
@@ -235,6 +247,7 @@ impl ArmyGenome {
                 ("tactics", Json::Arr(self.plan.tactics.iter().copied().map(Json::Num).collect())),
                 ("step_timing", Json::Obj(self.plan.step_timing.iter().map(|(key, value)| (key
                     .clone(), Json::Num(*value))).collect())),
+                ("program", self.plan.program.as_ref().map_or(Json::Null, AttackProgram::to_json)),
             ])),
         ])
     }
@@ -258,6 +271,11 @@ impl ArmyGenome {
         if let Some(values) = plan.get("step_timing") {
             genome.plan.step_timing = values.obj().iter().map(|(key, value)| (key.clone(), value
                 .f64())).collect();
+        }
+        if let Some(value) = plan.get("program").filter(|value| !value.is_null()) {
+            let program = AttackProgram::from_json(value)?;
+            program.validate(&genome)?;
+            genome.plan.program = Some(program);
         }
         genome.normalize();
         Ok(genome)

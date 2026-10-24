@@ -143,6 +143,16 @@ pub fn admit(
     catalog: &Catalog,
     genome: &mut ArmyGenome,
 ) -> Result<(), String> {
+    super::program::reconcile(account, compiler, catalog, genome)?;
+    if genome.plan.program.is_some() {
+        // Tactics were materialized into the seed steps. The editable program
+        // owns their execution now; freeze redundant legacy timing genes.
+        genome.plan.tactics = TACTIC_DEFAULTS;
+        genome.plan.step_timing.clear();
+        genome.normalize();
+        account.compile(compiler, catalog, genome, genome.plan.angle_offset, 0)?;
+        return Ok(());
+    }
     account.check(genome)?;
     let mut neutral = genome.clone();
     neutral.plan.tactics = TACTIC_DEFAULTS;

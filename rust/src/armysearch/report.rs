@@ -49,7 +49,7 @@ pub fn resume(
     };
     let value = read(path)?;
     if value.at("version").usize() != CHECKPOINT_VERSION || text(&value, "input_identity", "") != identity {
-        return Err("checkpoint version or inputs differ (account, catalog, targets, compiler, seed, batch, budgets, objective, immigrant fractions, families)".to_owned());
+        return Err("checkpoint version or inputs differ (account, catalog, targets, compiler, seed, batch, budgets, objective, immigrant fractions, families, programs)".to_owned());
     }
     SearchState::from_json(value.at("development"), objective, account)
 }
@@ -264,11 +264,13 @@ pub fn army_report(
     seed: u64,
     account: &AccountRules,
     novelty: Json,
+    program: Json,
 ) -> Result<(), String> {
     write(path, &object([
         ("rank_before_holdout", number(rank)),
         ("archive_cell", string(elite.genome.cell(account))),
         ("novelty", novelty),
+        ("program", program),
         ("genome", elite.genome.to_json()),
         ("identity", string(elite.genome.identity())),
         ("strength", Json::Num(1.0)),

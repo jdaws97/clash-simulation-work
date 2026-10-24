@@ -17,6 +17,7 @@ pub mod genome;
 pub mod novelty;
 pub mod operators;
 pub mod proof;
+pub mod program;
 pub mod report;
 pub mod score;
 pub mod search;
@@ -44,14 +45,17 @@ const USAGE: &str = concat!(
     "--confirm-budget C --top N --resume checkpoint.json ",
     "--objective ranked|stars|destruction --holdout-budget H ",
     "--themed-fraction 0.25 --random-fraction 0.05 ",
-    "--families all|playbook|generic --root REPO --catalog C.json]\n",
+    "--families all|playbook|generic --programs on|off ",
+    "--program-mutation-rate 0.5 --root REPO --catalog C.json]\n",
     "       baselab-engine armysearch-proof [--manifest M.json --fuzz 4096 ",
     "--out DIR --root REPO --catalog C.json]\n",
     "Budgets are per-candidate battle ceilings. Minimum coverage is two sides per base. ",
     "Holdout defaults to 8 sides x 16 fresh seed groups per base. ",
     "Immigrant fractions are in [0,1], sum to at most 1, and reserve nearest-whole ",
     "slots in every batch before seeds/offspring. Families default to all. ",
-    "Playbook-only mode uses compatible seeds/offspring for every slot.",
+    "Playbook-only mode uses compatible seeds/offspring for every slot. ",
+    "Programs default to on; program mutation rate is the fraction of offspring ",
+    "attempts devoted to program mutation/crossover (default 0.5).",
 );
 
 #[derive(Clone, Debug)]
@@ -124,6 +128,8 @@ impl Config {
                     | "--themed-fraction"
                     | "--random-fraction"
                     | "--families"
+                    | "--programs"
+                    | "--program-mutation-rate"
             ) {
                 return Err(format!("unknown option {key}\n{USAGE}"));
             }
@@ -157,6 +163,16 @@ impl Config {
                     .transpose()?
                     .unwrap_or("all"),
             )?,
+            programs: match argument("--programs")
+                .map(|value| value.to_str().ok_or("non-UTF8 programs"))
+                .transpose()?
+                .unwrap_or("on")
+            {
+                "on" => true,
+                "off" => false,
+                _ => return Err("--programs must be on or off".to_owned()),
+            },
+            program_mutation_rate: fraction("--program-mutation-rate", 0.5)?,
         };
         proposals.validate()?;
         let config = Self {
@@ -193,6 +209,8 @@ impl Config {
             ("themed_fraction", Json::Num(self.proposals.themed_fraction)),
             ("random_fraction", Json::Num(self.proposals.random_fraction)),
             ("families", string(self.proposals.families.name())),
+            ("programs", Json::Bool(self.proposals.programs)),
+            ("program_mutation_rate", Json::Num(self.proposals.program_mutation_rate)),
             ("strength", Json::Num(1.0)),
         ])
     }
@@ -217,7 +235,7 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
     compiler.playbooks.retain(|(family, _)| !family.starts_with("test-"));
     let account = AccountRules::load(&catalog, &compiler)?;
     let manifest = TargetManifest::load(&config.root, config.manifest.as_deref())?;
-    let (templates, seed_rejections) = operators::seeds(&config.root, &account, &compiler, &catalog)?;
+    let (mut templates, seed_rejections) = operators::seeds(&config.root, &account, &compiler, &catalog)?;
     eprintln!("armysearch: {} legal seeds, {} rejected recipes", templates.len(), seed_rejections.len());
     if proof {
         let result = proof::run(&account, &compiler, Arc::clone(&catalog), &manifest, &templates, config.fuzz)?;
@@ -225,6 +243,13 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
         write(&config.out.join("armysearch-proof.json"), &result)?;
         println!("{}", encode(&result));
         return Ok(());
+    }
+    if config.proposals.programs {
+        for genome in &mut templates {
+            program::enable(&account, &compiler, &catalog, genome)?;
+            operators::admit(&account, &compiler, &catalog, genome)?;
+        }
+        templates.sort_by_key(genome::ArmyGenome::identity);
     }
     run(&config, &account, &compiler, Arc::clone(&catalog), &manifest, &templates, &seed_rejections)
 }
@@ -365,6 +390,7 @@ pub fn run(
             config.seed,
             account,
             novelty::report(&elite.genome, templates, account),
+            program::report(&elite.genome, compiler),
         )?;
         index.push(object([
             ("rank_before_holdout", number(position + 1)),
