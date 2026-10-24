@@ -8,6 +8,7 @@ pub mod defense;
 pub mod effects;
 pub mod geom;
 pub mod grid;
+mod field_profile;
 pub mod heroes;
 pub mod pets;
 pub mod json;

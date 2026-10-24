@@ -2537,6 +2537,7 @@ fn chain_hit(
     }
     let u = battle.unit(unit);
     let sp = Arc::clone(&u.spec);
+    let is_electro_dragon = u.name_id == Name::ElectroDragon;
     let origin = if sp.chain_from_primary {
         primary
     } else {
@@ -2548,8 +2549,21 @@ fn chain_hit(
         if hit.contains(&victim) {
             continue;
         }
-        let distance = target_distance(battle, origin, victim);
-        if distance <= sp.chain_range {
+        let mut distance = target_distance(battle, origin, victim);
+        let mut reach = sp.chain_range;
+        if is_electro_dragon {
+            if let (EntityRef::Building(origin), EntityRef::Building(victim)) = (origin, victim) {
+                let origin = battle.building(origin);
+                let victim = battle.building(victim);
+                let half_size = (origin.size + victim.size) as f64 / 2.0;
+                distance = geom::py_hypot(
+                    0.0_f64.max((origin.x - victim.x).abs() - half_size),
+                    0.0_f64.max((origin.y - victim.y).abs() - half_size),
+                );
+                reach = 1.0;
+            }
+        }
+        if distance <= reach {
             let max_hp = match victim {
                 EntityRef::Building(id) => battle.building(id).max_hp,
                 EntityRef::Wall(id) => battle.walls[id.0].max_hp,

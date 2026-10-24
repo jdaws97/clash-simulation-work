@@ -10,6 +10,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use crate::catalog::Catalog;
+use crate::field_profile;
 use crate::json::{self, Json};
 use crate::load::{self, Node};
 use crate::setup;
@@ -34,6 +35,9 @@ fn build_job(input: &Json, index: usize, catalog: Arc<Catalog>) -> Battle {
         .expect("job layout index out of range");
     let plan = input.at("plans").arr().get(plan_index)
         .expect("job plan index out of range");
+    if field_profile::enabled() {
+        field_profile::set_layout(layout_index);
+    }
     setup::build(layout, plan, job, catalog)
 }
 
@@ -117,6 +121,7 @@ fn run(input: &Json, output: &Path, threads: usize, catalog: Arc<Catalog>) -> Re
     Node::new(input, "jobs").keys(&["layouts", "plans", "jobs"]);
     let count = input.at("jobs").arr().len();
     let counter = AtomicUsize::new(0);
+    let profiling = field_profile::enabled().then(field_profile::Session::default);
     let started = Instant::now();
     // Json inputs and the catalog are shared read-only. Rc plan vectors and all
     // mutable simulation state are created and dropped within their worker.
@@ -125,6 +130,7 @@ fn run(input: &Json, output: &Path, threads: usize, catalog: Arc<Catalog>) -> Re
         for _ in 0..threads.min(count) {
             let catalog = &catalog;
             let counter = &counter;
+            let profiling = &profiling;
             handles.push(scope.spawn(move || {
                 let mut results = Vec::new();
                 loop {
@@ -132,9 +138,18 @@ fn run(input: &Json, output: &Path, threads: usize, catalog: Arc<Catalog>) -> Re
                     if index >= count {
                         break;
                     }
+                    if profiling.is_some() {
+                        field_profile::begin_job(index);
+                    }
                     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                         let mut battle = build_job(input, index, Arc::clone(catalog));
+                        if profiling.is_some() {
+                            field_profile::begin_battle();
+                        }
                         let result = battle.run();
+                        if profiling.is_some() {
+                            field_profile::end_battle();
+                        }
                         Metrics {
                             stars: result.stars,
                             destruction: result.destruction,
@@ -144,6 +159,9 @@ fn run(input: &Json, output: &Path, threads: usize, catalog: Arc<Catalog>) -> Re
                         }
                     }))
                     .map_err(panic_message);
+                    if let Some(profiling) = profiling {
+                        profiling.finish_job(result.is_err());
+                    }
                     results.push((index, result));
                 }
                 results
@@ -207,6 +225,12 @@ fn difference<T: Debug>(path: &str, expected: &T, actual: &T) -> usize {
     println!("{path}:");
     let expected: Vec<_> = expected.lines().collect();
     let actual: Vec<_> = actual.lines().collect();
+    // context: the enclosing field names above the first difference
+    if let Some(first) = (0..expected.len().min(actual.len())).find(|&i| expected[i] != actual[i]) {
+        for line in &expected[first.saturating_sub(12)..first] {
+            println!("  context: {line}");
+        }
+    }
     for index in 0..expected.len().max(actual.len()) {
         let left = expected.get(index).copied().unwrap_or("<missing>");
         let right = actual.get(index).copied().unwrap_or("<missing>");

@@ -143,6 +143,8 @@ pub fn build(
     let deployments = deployments(plan_json, catalog.margin);
     let plan = load::plan(Node::new(plan_json, "plan"), &deployments);
     let mut battle = Battle {
+        cluster_cache: crate::plans::ClusterCache::default(),
+        opening_reachable: None,
         follow_scores_scratch: Vec::new(),
         pet_buildings_scratch: Vec::new(),
         pet_defenders_scratch: Vec::new(),
@@ -250,12 +252,18 @@ pub fn build(
     };
     assert!(battle.dt.is_finite() && battle.dt > 0.0, "env.dt must be positive");
     setup_layout(&mut battle, layout, options);
+    battle.grid.profile_initial_state();
     battle.total_counted = battle.buildings.iter().filter(|b| b.counted).count();
     battle.no_deploy = battle.live_no_deploy().clone();
     battle.onboard_cargo = attack_cargo(&battle, plan_json);
     if let Plan::Attack(plan) = &battle.plan {
-        let opening = (**plan).clone();
+        let mut opening = (**plan).clone();
         battle.deployments = opening.deployments(&mut battle);
+        battle.plan = Plan::Attack(Box::new(opening));
+    } else if let Plan::Playbook(plan) = &battle.plan {
+        let mut opening = (**plan).clone();
+        battle.deployments = opening.deployments(&mut battle);
+        battle.plan = Plan::Playbook(Box::new(opening));
     }
     battle
 }

@@ -1,6 +1,7 @@
 use std::collections::hash_map::Entry;
 
 use crate::fast_hash::FastMap as HashMap;
+use crate::field_profile::{self, GoalKey, Row, Span};
 use crate::geom::round_half_even;
 
 pub const RES: usize = 2;
@@ -143,7 +144,7 @@ pub struct NextStep {
 }
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
-enum CacheKey {
+pub(crate) enum CacheKey {
     Breaker(usize),
     Rubble(usize, u64),
     Target {
@@ -161,6 +162,21 @@ enum CacheKey {
 }
 
 impl CacheKey {
+    fn profile_kind(self) -> &'static str {
+        match self {
+            Self::Breaker(_) => "wall_breaker",
+            Self::Rubble(..) => "rubble_goal",
+            Self::Source { .. } => "source",
+            Self::Target { identity, .. } => match identity {
+                TargetIdentity::Building(_) => "building_goal",
+                TargetIdentity::Wall(..) => "wall_goal",
+                TargetIdentity::Unit(_) => "unit_chase",
+                TargetIdentity::Breaker(_) => "wall_breaker",
+                TargetIdentity::Rubble(_) => "rubble_goal",
+            },
+        }
+    }
+
     fn target(
         identity: TargetIdentity,
         cx: f64,
@@ -229,6 +245,8 @@ pub struct Grid {
     pub blocked: Vec<bool>,
     pub wall: Vec<bool>,
     pub version: u64,
+    profile_enabled: bool,
+    profile_initial_version: Option<u64>,
     cache: Vec<CachedField>,
     cache_indices: HashMap<CacheKey, usize>,
     neighbors: Vec<[u32; 8]>,
@@ -265,6 +283,8 @@ impl Grid {
             blocked: vec![false; n * n],
             wall: vec![false; n * n],
             version: 0,
+            profile_enabled: field_profile::enabled(),
+            profile_initial_version: None,
             cache: Vec::new(),
             cache_indices: HashMap::default(),
             neighbors: neighbor_indices(n),
@@ -288,6 +308,74 @@ impl Grid {
             pool_spans: Vec::new(),
             pool_goal_mask: Vec::new(),
             building_costs: Vec::new(),
+        }
+    }
+
+    // Called after all starting buildings/walls are installed, before opening
+    // plan queries. Jump views are independent grids and never marked initial.
+    pub fn profile_initial_state(&mut self) {
+        if self.profile_enabled {
+            self.profile_initial_version = Some(self.version);
+        }
+    }
+
+    fn profile_row(&self, kind: &'static str) -> Row {
+        Row {
+            kind,
+            source: if self.profile_initial_version.is_some() {
+                "main"
+            } else {
+                "jump"
+            },
+            initial: self.profile_initial_version == Some(self.version),
+        }
+    }
+
+    fn profile_span(&self, kind: &'static str) -> Option<Span> {
+        if self.profile_enabled {
+            Span::start(self.profile_row(kind))
+        } else {
+            None
+        }
+    }
+
+    fn profile_field_span(&self, field: Field) -> Option<Span> {
+        if self.profile_enabled {
+            Span::start(self.profile_row(self.cache[field.0].key.profile_kind()))
+        } else {
+            None
+        }
+    }
+
+    fn profile_build(
+        &self,
+        kind: &'static str,
+        cache: Option<CacheKey>,
+        geometry: (u64, u64, u64, u64),
+        wall_extra: u64,
+    ) {
+        if self.profile_enabled {
+            field_profile::build(
+                self.profile_row(kind),
+                self.profile_initial_version,
+                GoalKey {
+                    cache,
+                    geometry,
+                    wall_extra,
+                },
+            );
+        }
+    }
+
+    fn profile_field_build(&self, field: Field) {
+        if self.profile_enabled {
+            let entry = &self.cache[field.0];
+            self.profile_build(
+                entry.key.profile_kind(),
+                Some(entry.key),
+                entry.goal_geometry,
+                entry.wall_extra.to_bits(),
+            );
         }
     }
 
@@ -350,6 +438,7 @@ impl Grid {
         if self.topology_version == Some(self.version) {
             return;
         }
+        let _profile = self.profile_span("topology");
         // Public blocked/wall arrays are also copied into newly created Jump
         // grids. Derive these packed arrays lazily, once per grid version.
         for (cell, flags) in self.cell_flags.iter_mut().enumerate() {
@@ -376,6 +465,7 @@ impl Grid {
             self.move_masks[cell] = mask;
         }
         self.topology_version = Some(self.version);
+        self.profile_build("topology", None, (0, 0, 0, 0), 0);
     }
 
     // With wall_extra=inf, only non-wall cells can relax a neighbor. Hence
@@ -396,13 +486,22 @@ impl Grid {
         x: f64,
         y: f64,
     ) -> bool {
+        let _profile = self.profile_span("rubble_goal");
         self.refresh_topology();
-        self.connectivity.ensure(
-            self.version,
-            &self.cell_flags,
-            &self.move_masks,
-            &self.neighbors,
-        );
+        if self.connectivity.version != Some(self.version) {
+            let _profile = self.profile_span("rubble_connectivity");
+            let pops = self.connectivity.ensure(
+                self.version,
+                &self.cell_flags,
+                &self.move_masks,
+                &self.neighbors,
+                self.profile_enabled,
+            );
+            self.profile_build("rubble_connectivity", None, (0, 0, 0, 0), 0);
+            if self.profile_enabled {
+                field_profile::work(self.profile_row("rubble_connectivity"), pops, 0);
+            }
+        }
         let key = CacheKey::target(
             TargetIdentity::Rubble(building),
             cx,
@@ -425,6 +524,7 @@ impl Grid {
                     components.push(label);
                 }
             });
+            self.profile_field_build(field);
         }
         let (i, j) = self.cell(x, y);
         let cell = self.index(i, j);
@@ -484,6 +584,7 @@ impl Grid {
             self.use_field(field);
             return field;
         }
+        let _profile = self.profile_field_span(field);
         self.refresh_topology();
         let entry = &mut self.cache[field.0];
         let mut same_goals = !inserted && same_cost;
@@ -519,6 +620,7 @@ impl Grid {
             self.use_field(field);
             return field;
         }
+        let _profile = self.profile_span("source");
         self.refresh_topology();
         let cell = self.index(i, j);
         if inserted {
@@ -536,6 +638,7 @@ impl Grid {
         if let Some(&index) = self.building_goal_indices.get(&key) {
             return index;
         }
+        let _profile = self.profile_span("goal_geometry");
         let mut goals: Vec<GoalSpan> = Vec::new();
         // Use exactly the original bounding box, cell order and f64 test.
         // Adjacent goal cells form spans for contiguous distance scans.
@@ -554,6 +657,7 @@ impl Grid {
         let index = self.building_goals.len();
         self.building_goals.push(goals);
         self.building_goal_indices.insert(key, index);
+        self.profile_build("goal_geometry", None, key, 0);
         index
     }
 
@@ -561,6 +665,7 @@ impl Grid {
         if self.pool_reach == Some(float_key(reach)) && self.pool_geometry.as_slice() == geometry {
             return;
         }
+        let _profile = self.profile_span("goal_geometry");
         self.pool_geometry.clear();
         self.pool_geometry.extend_from_slice(geometry);
         self.pool_reach = Some(float_key(reach));
@@ -605,6 +710,7 @@ impl Grid {
         geometry: &[(f64, f64, f64)],
         reach: f64,
     ) -> &[f32] {
+        let _profile = self.profile_span("source");
         self.prepare_building_goals(geometry, reach);
         let field = self.source_field(x, y, wall_extra);
         let storage = self.cache[field.0].storage.expect("source field storage");
@@ -621,18 +727,24 @@ impl Grid {
                 }
             }
         }
-        while let Some(key) = entry.frontier.min_key() {
-            if f32::from_bits(key) > best {
-                break;
-            }
-            if let Some((distance, cell)) =
-                entry.expand(&self.cell_flags, &self.move_masks, &self.neighbors)
-            {
-                if self.pool_goal_mask[cell] && distance < best {
-                    best = distance;
-                }
-            }
-        }
+        // Specialize outside the loop: the disabled version has no pop counter.
+        let pops = if self.profile_enabled {
+            entry.expand_building_goals::<true>(
+                &mut best,
+                &self.pool_goal_mask,
+                &self.cell_flags,
+                &self.move_masks,
+                &self.neighbors,
+            )
+        } else {
+            entry.expand_building_goals::<false>(
+                &mut best,
+                &self.pool_goal_mask,
+                &self.cell_flags,
+                &self.move_masks,
+                &self.neighbors,
+            )
+        };
 
         // Once the frontier minimum exceeds best, the goal cell holding best
         // is final (its stored value is below the frontier), and any goal
@@ -658,6 +770,9 @@ impl Grid {
                 }
             }
             self.building_costs.push(best);
+        }
+        if self.profile_enabled {
+            field_profile::work(self.profile_row("source"), pops, 0);
         }
         &self.building_costs
     }
@@ -784,6 +899,7 @@ impl Grid {
     }
 
     fn restart_field(&mut self, field: Field) {
+        let _profile = self.profile_field_span(field);
         let storage = self.storage_slot(field);
         let entry = &mut self.cache[field.0];
         entry.version = self.version;
@@ -807,6 +923,7 @@ impl Grid {
                 slot.frontier.push(0.0_f32.to_bits(), cell as u32);
             }
         }
+        self.profile_field_build(field);
     }
 
     fn storage_slot(&mut self, field: Field) -> usize {
@@ -903,6 +1020,7 @@ impl Grid {
     }
 
     fn repair_field(&mut self, field: Field) -> bool {
+        let _profile = self.profile_field_span(field);
         let Some(storage) = self.cache[field.0].storage else {
             return false;
         };
@@ -961,6 +1079,13 @@ impl Grid {
         // it and every smaller neighbor match a full repair exactly. Keeping
         // the old frontier is essential: lazy fields are only partly expanded.
         entry.version = self.version;
+        if self.profile_enabled {
+            field_profile::work(
+                self.profile_row(self.cache[field.0].key.profile_kind()),
+                0,
+                1,
+            );
+        }
         true
     }
 
@@ -973,25 +1098,81 @@ impl Grid {
             Some(storage) => storage,
             None => self.use_field(field),
         };
-        let entry = &mut self.field_storage[storage];
+        let entry = &self.field_storage[storage];
         // last is a lower bound on unfinished work even before redistribution.
         // Strictly smaller values are final; equality still drains below.
         if entry.frontier.occupied == 0 || entry.distances[cell].to_bits() < entry.frontier.last {
             return storage;
         }
+        let _profile = self.profile_field_span(field);
+        let entry = &mut self.field_storage[storage];
         // Drain equal keys too: afterwards this cell and all lower values are
         // final, even if the cell started with an INF upper bound.
-        while let Some(key) = entry.frontier.min_key() {
-            if f32::from_bits(key) > entry.distances[cell] {
-                break;
-            }
-            let _ = entry.expand(&self.cell_flags, &self.move_masks, &self.neighbors);
+        if self.profile_enabled {
+            let pops = entry.expand_to::<true>(
+                cell,
+                &self.cell_flags,
+                &self.move_masks,
+                &self.neighbors,
+            );
+            field_profile::work(
+                self.profile_row(self.cache[field.0].key.profile_kind()),
+                pops,
+                0,
+            );
+        } else {
+            entry.expand_to::<false>(cell, &self.cell_flags, &self.move_masks, &self.neighbors);
         }
         storage
     }
 }
 
 impl FieldStorage {
+    fn expand_building_goals<const PROFILE: bool>(
+        &mut self,
+        best: &mut f32,
+        goal_mask: &[bool],
+        cell_flags: &[u8],
+        move_masks: &[u8],
+        neighbors: &[[u32; 8]],
+    ) -> u64 {
+        let mut pops = 0;
+        while let Some(key) = self.frontier.min_key() {
+            if f32::from_bits(key) > *best {
+                break;
+            }
+            if PROFILE {
+                pops += 1;
+            }
+            if let Some((distance, cell)) = self.expand(cell_flags, move_masks, neighbors) {
+                if goal_mask[cell] && distance < *best {
+                    *best = distance;
+                }
+            }
+        }
+        pops
+    }
+
+    fn expand_to<const PROFILE: bool>(
+        &mut self,
+        cell: usize,
+        cell_flags: &[u8],
+        move_masks: &[u8],
+        neighbors: &[[u32; 8]],
+    ) -> u64 {
+        let mut pops = 0;
+        while let Some(key) = self.frontier.min_key() {
+            if f32::from_bits(key) > self.distances[cell] {
+                break;
+            }
+            if PROFILE {
+                pops += 1;
+            }
+            let _ = self.expand(cell_flags, move_masks, neighbors);
+        }
+        pops
+    }
+
     fn new() -> Self {
         Self {
             owner: None,
@@ -1069,14 +1250,16 @@ impl Connectivity {
         cell_flags: &[u8],
         move_masks: &[u8],
         neighbors: &[[u32; 8]],
-    ) {
+        profile: bool,
+    ) -> u64 {
         if self.version == Some(version) {
-            return;
+            return 0;
         }
         self.labels.resize(cell_flags.len(), NO_COMPONENT);
         self.labels.fill(NO_COMPONENT);
         self.pending.clear();
         let mut label = 0_u32;
+        let mut pops = 0;
         for cell in 0..cell_flags.len() {
             if cell_flags[cell] != 0 || self.labels[cell] != NO_COMPONENT {
                 continue;
@@ -1098,7 +1281,17 @@ impl Connectivity {
             }
             label += 1;
         }
+        // Every labelled cell is pushed and popped exactly once. Count the
+        // completed labels in one scan, leaving the flood-fill loop untouched.
+        if profile {
+            pops = self
+                .labels
+                .iter()
+                .filter(|&&label| label != NO_COMPONENT)
+                .count() as u64;
+        }
         self.version = Some(version);
+        pops
     }
 }
 

@@ -104,6 +104,51 @@ pub fn col(battle: &Battle, name: &str, level: &Level, fragments: &[&str], defau
     battle.catalog.stats.get(name, level, &keys, Some(default)).expect("numeric default")
 }
 
+// heroes.py:574-578: use the same CSV range for scouting and activation.
+pub fn spear_range(battle: &Battle) -> f64 {
+    game_float(battle.catalog.game_data("special_abilities", "RocketSpears", None), "AttackRange") / 100.0
+}
+
+// heroes.py:1504-1518: the current target determines the forward arrow band.
+pub fn arrow_geometry(battle: &Battle, hero: UnitRef, target: Option<EntityRef>) -> (f64, f64, f64, f64) {
+    let u = battle.unit(hero);
+    let (dx, dy) = target.map_or(u.extra.facing, |target| {
+        let (x, y) = battle.entity_position(target);
+        (x - u.x, y - u.y)
+    });
+    let distance = py_hypot(dx, dy);
+    let distance = if distance == 0.0 { 1.0 } else { distance };
+    let data = battle.catalog.game_data("special_abilities", "ArcherQueenPierceProjectile", Some(&Level::Int(1)));
+    (dx / distance, dy / distance,
+        distance + game_float(data, "PenetratingExtraRange") / 100.0,
+        game_float(data, "PenetratingRadius") / 100.0)
+}
+
+// heroes.py:1521-1540: center-facing dash, bounded by the world edge.
+pub fn dash_geometry(battle: &Battle, x: f64, y: f64, facing: (f64, f64)) -> (f64, f64, f64, f64) {
+    let world = battle.catalog.world as f64;
+    let data = battle.catalog.game_data("special_abilities", "DragonDukeDeadlyDashMapCenter", Some(&Level::Int(1)));
+    let (mut dx, mut dy) = (world / 2.0 - x, world / 2.0 - y);
+    let mut distance = py_hypot(dx, dy);
+    if distance == 0.0 {
+        (dx, dy) = facing;
+        distance = py_hypot(dx, dy);
+        if distance == 0.0 {
+            distance = 1.0;
+        }
+    }
+    (dx, dy) = (dx / distance, dy / distance);
+    let mut travel = game_float(data, "MovementOverrideDistance");
+    for (position, direction) in [(x, dx), (y, dy)] {
+        if direction > 0.0 {
+            travel = travel.min((world - 0.5 - position) / direction);
+        } else if direction < 0.0 {
+            travel = travel.min((0.5 - position) / direction);
+        }
+    }
+    (dx, dy, 0.0_f64.max(travel), game_float(data, "ActAsPenetratingRadius") / 100.0)
+}
+
 // heroes.py:153,575,623,864: equipment levels map to ability/spell levels.
 fn equipment_ability_level(level: &Level) -> Level {
     let Level::Int(level) = level else {
@@ -1336,6 +1381,7 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                 battle.add_pending(pending);
             }
             "Rocket Spear" => {
+                let spear_range = spear_range(battle);
                 let shots = col(battle, &name, &level, &["number of attacks"], 9.0) as i64;
                 let bonus = col(battle, &name, &level, &["damage per shot increase"], 0.0);
                 let unit = battle.unit_mut(hero);
@@ -1345,7 +1391,7 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                 if unit.extra.spear_base_range.is_none() {
                     unit.extra.spear_base_range = Some(unit.range);
                 }
-                unit.range = 10.0;
+                unit.range = spear_range;
             }
             "Haste Vial" => {
                 let duration = col(battle, &name, &level, &["ability duration"], 10.0);

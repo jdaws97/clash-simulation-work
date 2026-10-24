@@ -14,6 +14,9 @@ use crate::{defense, traps, units};
 
 pub const NO_TRIGGER: &[Name] = &[Name::SpellSkeleton, Name::Skeleton, Name::Bat, Name::Totem];
 
+// spells.py:16: the reference's assumed spell bottle landing delay.
+pub const LAND_DELAY: f64 = 0.5;
+
 // spells.py:24: also used by Headhunter poison (units.py:2376).
 pub const POISON_HERO_MULT: f64 = 0.05;
 

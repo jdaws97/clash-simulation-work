@@ -374,6 +374,10 @@ pub struct UnitExtra {
     // heroes.py:103-1078; pets.py:147-412: absent-key defaults.
     pub boots_next: Option<f64>,
     pub spear_base_range: Option<f64>,
+    pub line_ability_since: Option<f64>,
+    pub line_quake_until: Option<f64>,
+    pub cluster_ability_since: Option<f64>,
+    pub cluster_ability_check_at: f64,
     pub shield_destination: Option<(f64, f64)>,
     pub equipment_invisible_until: f64,
     pub tome_until: f64,
@@ -513,6 +517,10 @@ impl Default for UnitExtra {
             poison_exit: None,
             boots_next: None,
             spear_base_range: None,
+            line_ability_since: None,
+            line_quake_until: None,
+            cluster_ability_since: None,
+            cluster_ability_check_at: -1.0,
             shield_destination: None,
             equipment_invisible_until: 0.0,
             tome_until: 0.0,
@@ -1384,6 +1392,8 @@ pub struct HealerScratch {
 }
 
 pub struct Battle {
+    pub cluster_cache: crate::plans::ClusterCache,
+    pub opening_reachable: Option<Vec<bool>>,
     pub follow_scores_scratch: Vec<(EntityRef, f64)>,
     pub pet_buildings_scratch: Vec<EntityRef>,
     pub pet_defenders_scratch: Vec<EntityRef>,

@@ -13,6 +13,10 @@ use crate::state::*;
 use crate::stats::Level;
 use crate::trace::round_decimal;
 
+#[path = "attacker.rs"]
+mod attacker;
+pub use attacker::{band_hit, ClusterCache, DefenseSnipe, ScoutingContext};
+
 pub const SPELL_NAMES: &[(&str, &str)] = &[
     ("lightning", "Lightning Spell"),
     ("heal", "Healing Spell"),
@@ -273,6 +277,19 @@ fn account_zap(
 
 #[derive(Clone, Debug)]
 pub struct AttackPlan {
+    pub snipe_exposed: bool,
+    pub snipe_mode: String,
+    pub snipe_log: SharedVec<Json>,
+    pub snipe_deployed: SharedVec<String>,
+    pub snipe_assignments: SharedVec<(String, DefenseSnipe)>,
+    pub snipe_claimed: SharedVec<BuildingId>,
+    pub snipe_lightning: Option<DefenseSnipe>,
+    pub snipe_lightning_at: f64,
+    pub snipe_lightning_left: i64,
+    pub busy_until: f64,
+    pub scouting_context: Option<ScoutingContext>,
+    pub fallback: bool,
+    pub cluster_casts: SharedVec<(String, f64, f64)>,
     pub angle: f64,
     pub town_hall: i64,
     pub strength: f64,
@@ -339,6 +356,11 @@ pub struct AttackPlan {
 
 impl AttackPlan {
     pub fn load(p: &Json) -> Self {
+        let snipe_mode = text(p, "snipe_mode", "value");
+        assert!(
+            matches!(snipe_mode, "off" | "value" | "aggressive"),
+            "Unknown snipe mode {snipe_mode}"
+        );
         let pairs = |key: &str| -> Vec<(String, i64)> {
             p.at(key)
                 .arr()
@@ -379,6 +401,44 @@ impl AttackPlan {
             }
         }).collect();
         Self {
+            snipe_exposed: p.get("snipe_exposed").is_none_or(truth),
+            snipe_mode: snipe_mode.to_owned(),
+            snipe_log: p.get("snipe_log").map_or_else(SharedVec::default, |v| {
+                v.arr().to_vec().into()
+            }),
+            snipe_deployed: p.get("_snipe_deployed").map_or_else(SharedVec::default, |v| {
+                v.arr().iter().map(|v| v.str().to_owned()).collect()
+            }),
+            snipe_assignments: p.get("_snipe_assignments").map_or_else(SharedVec::default, |v| {
+                v.obj()
+                    .iter()
+                    .map(|(name, value)| (name.clone(), DefenseSnipe::load(value)))
+                    .collect()
+            }),
+            snipe_claimed: p.get("_snipe_claimed").map_or_else(SharedVec::default, |v| {
+                v.arr().iter().map(|v| BuildingId(v.usize())).collect()
+            }),
+            snipe_lightning: p.get("_snipe_lightning")
+                .filter(|v| !v.is_null())
+                .map(DefenseSnipe::load),
+            snipe_lightning_at: number(p, "_snipe_lightning_at", 0.0),
+            snipe_lightning_left: number(p, "_snipe_lightning_left", 0.0) as i64,
+            busy_until: number(p, "_busy_until", 0.0),
+            scouting_context: None,
+            // plans.py:1117/1296 leave _fallback set (False) after a scan
+            fallback: p.get("_fallback").is_some_and(|v| v.bool()),
+            cluster_casts: p.get("_cluster_casts").map_or_else(SharedVec::default, |v| {
+                v.arr()
+                    .iter()
+                    .map(|v| {
+                        (
+                            v.arr()[0].str().to_owned(),
+                            v.arr()[1].f64(),
+                            v.arr()[2].f64(),
+                        )
+                    })
+                    .collect()
+            }),
             angle: p.at("angle").f64(),
             town_hall: p.at("town_hall").i64(),
             strength: p.at("strength").f64(),
@@ -650,8 +710,8 @@ impl AttackPlan {
     }
 
     // plans.py:596-615: opening drops do not consume random draws or clamp points.
-    pub fn deployments(&self, battle: &mut Battle) -> Vec<Deployment> {
-        let mut out = Vec::new();
+    pub fn deployments(&mut self, battle: &mut Battle) -> Vec<Deployment> {
+        let mut out = self.opening_deployments(battle);
         let mut add = |battle: &Battle, time, name: &str, x, y, group: &str| {
             out.push(Deployment {
                 time,
@@ -666,12 +726,21 @@ impl AttackPlan {
             });
         };
         for (name, lateral) in &self.funnel_heroes {
-            let (x, y) = edge_point(battle, self.angle, *lateral);
+            if self.snipe_deployed.contains(name) {
+                continue;
+            }
+            let (x, y) = if name == "Dragon Duke" && self.has_backpack(battle) {
+                self.backpack_point(battle, self.angle, *lateral)
+            } else {
+                edge_point(battle, self.angle, *lateral)
+            };
             add(battle, 0.0, name, x, y, "funnel");
         }
         if let Some(hero) = &self.charge_hero {
-            let mut point = edge_point(battle, self.angle, self.charge_lat);
-            if self.p("deep_drop") > 0.5 {
+            let mut point = self.charge_point(battle, self.angle, self.charge_lat);
+            if hero == "Dragon Duke" && self.has_backpack(battle) {
+                point = self.backpack_point(battle, self.angle, self.charge_lat);
+            } else if self.p("deep_drop") > 0.5 {
                 point = self.deep_charge_point(battle, point);
             }
             add(battle, self.charge_at, hero, point.0, point.1, "charge");
@@ -792,23 +861,45 @@ impl AttackPlan {
         &self,
         battle: &mut Battle,
         name: &str,
+        x: f64,
+        y: f64,
+        group: &str,
+        jitter: f64,
+        at: f64,
+    ) {
+        self.drop_fixed_at(battle, name, x, y, group, jitter, at, false);
+    }
+
+    pub fn drop_fixed_at(
+        &self,
+        battle: &mut Battle,
+        name: &str,
         mut x: f64,
         mut y: f64,
         group: &str,
         jitter: f64,
         at: f64,
+        fixed_point: bool,
     ) {
         if jitter != 0.0 {
-            x += battle.rng.as_mut().expect("battle rng").uniform(-jitter, jitter);
-            y += battle.rng.as_mut().expect("battle rng").uniform(-jitter, jitter);
+            let jitter_x = battle.rng.as_mut().expect("battle rng").uniform(-jitter, jitter);
+            let jitter_y = battle.rng.as_mut().expect("battle rng").uniform(-jitter, jitter);
+            if !fixed_point {
+                x += jitter_x;
+                y += jitter_y;
+            }
         }
         let world = battle.catalog.world as f64;
+        if !fixed_point {
+            x = (world - 0.6).min(0.6_f64.max(x));
+            y = (world - 0.6).min(0.6_f64.max(y));
+        }
         let level = self.level(battle, name);
         let deployment = Deployment {
             time: at,
             name: name.to_owned(),
-            x: (world - 0.6).min(0.6_f64.max(x)),
-            y: (world - 0.6).min(0.6_f64.max(y)),
+            x,
+            y,
             group: group.to_owned(),
             level,
             town_hall: Some(self.town_hall),
@@ -940,7 +1031,9 @@ impl AttackPlan {
         let (ex, ey) = self.best_entry(battle);
         self.entry = Some((ex, ey));
         if let Some(siege) = self.siege.as_deref().filter(|name| !name.is_empty()) {
-            self.drop(battle, siege, ex, ey, "main", 0.0);
+            if !self.snipe_deployed.iter().any(|name| name == siege) {
+                self.drop(battle, siege, ex, ey, "main", 0.0);
+            }
         } else if !self.cc_names.is_empty() && !self.cc_released {
             crate::units::release_cc_at(battle, ex, ey, "main", false);
         }
@@ -971,6 +1064,9 @@ impl AttackPlan {
             }
         }
         for hero in &self.push_heroes {
+            if self.snipe_deployed.contains(hero) {
+                continue;
+            }
             self.drop(battle, hero, ex, ey, "main", 0.5);
         }
         if self.charge_hero.is_some() && !battle.portal_stash.is_empty() {
@@ -1018,6 +1114,7 @@ impl AttackPlan {
     // plans.py:827-905: phases advance once per tick, before the half-second brain.
     pub fn on_tick(&mut self, battle: &mut Battle) {
         let t = battle.t;
+        let opening = self.opening_actions(battle);
         self.revive_knocked_out(battle, &Self::have, false);
         // Python retains the old list when portal_redeploy replaces the stash.
         self.battle_portal = !battle.portal_stash.is_empty();
@@ -1053,7 +1150,7 @@ impl AttackPlan {
             heroes::portal_redeploy(battle, x, y);
         }
         if self.phase == "funnel" {
-            if !self.zap_done && self.zap_ad != (0, 0) {
+            if !opening && t >= self.busy_until && !self.zap_done && self.zap_ad != (0, 0) {
                 self.zap(battle, &Self::have, false, &[]);
             }
             if t >= self.main_max
@@ -1100,7 +1197,7 @@ impl AttackPlan {
                 }
             }
         }
-        if t >= self.next_brain {
+        if t >= self.next_brain && t >= self.busy_until {
             self.next_brain = t + 0.5;
             self.hero_abilities(battle);
             if self.charge_hero.is_some() && self.last("recall_charge") < 0.0 {
@@ -1182,10 +1279,13 @@ impl AttackPlan {
     }
 
     // plans.py:791-823.
-    pub fn hero_abilities(&self, battle: &mut Battle) {
+    pub fn hero_abilities(&mut self, battle: &mut Battle) {
         let t = battle.t;
         let units: Vec<_> = battle.attackers_pool().map(Unit::reference).collect();
         for reference in units {
+            if t < self.busy_until {
+                break;
+            }
             let u = battle.unit(reference);
             let Some(kit) = &u.kit else {
                 continue;
@@ -1225,21 +1325,25 @@ impl AttackPlan {
                 fire = near.len() >= 5
                     && hurt as i64 >= (near.len() as f64 * self.p("warden_hurt") + 1e-9) as i64
                     || frac < self.p("warden_hp");
-            } else if self.p("arrow_aim") > 0.5
-                && kit.has("Giant Arrow")
-                && self.aim(battle, reference, "arrow").is_some()
+                if !fire && kit.has("Fireball") {
+                    self.cluster_ability(battle, reference, false);
+                    continue;
+                }
+            } else if u.name_id == Name::RoyalChampion
+                && (kit.has("Rocket Spear") || kit.has("Seeking Shield"))
             {
-                fire_aimed(battle, reference);
+                self.cluster_ability(battle, reference, frac < self.p("hero_hp"));
                 continue;
-            } else if self.p("dash_aim") > 0.5
-                && kit.has("Rocket Backpack")
-                && self.aim(battle, reference, "dash").is_some()
-            {
-                unreachable!("dash aim is always false in Python");
+            } else if kit.has("Giant Arrow") {
+                self.line_ability(battle, reference, frac < self.p("hero_hp"), None);
+                continue;
             } else if u.name_id == Name::DragonDuke {
-                fire = engaged
-                    && (frac < self.p("duke_hp")
-                    || u.target.is_some_and(|r| entity_is_defense(battle, r)));
+                if engaged && (frac < self.p("duke_hp")
+                    || u.target.is_some_and(|r| entity_is_defense(battle, r)))
+                {
+                    self.fire_aimed(battle, reference, None);
+                }
+                continue;
             } else if frac < self.p("hero_hp")
                 || engaged
                 && t - u.spawned_at > self.p("hero_time") {
@@ -1249,43 +1353,6 @@ impl AttackPlan {
                 heroes::activate(battle, reference, false);
             }
         }
-    }
-
-    // plans.py:825-840.
-    pub fn aim(&self, battle: &Battle, hero: UnitRef, kind: &str) -> Option<BuildingId> {
-        if kind == "dash" {
-            return None;
-        }
-        let reach = self.p(&format!("{kind}_reach"));
-        let threshold = self.p(&format!("{kind}_threat"));
-        let u = battle.unit(hero);
-        let target = u.target?;
-        if !battle.entity_alive(target) {
-            return None;
-        }
-        let (tx, ty) = battle.entity_position(target);
-        let (dx, dy) = (tx - u.x, ty - u.y);
-        let length = py_hypot(dx, dy);
-        if length <= 0.0 {
-            return None;
-        }
-        let mut best: Option<(f64, f64, BuildingId)> = None;
-        for b in &battle.buildings {
-            let weight = threat(&b.key, 0.0);
-            if b.alive && b.weapon.is_some() && weight >= threshold {
-                let d = b.dist(u.x, u.y);
-                let along = ((b.x - u.x) * dx + (b.y - u.y) * dy) / length;
-                let off = ((b.x - u.x) * dy - (b.y - u.y) * dx).abs() / length;
-                if d <= reach
-                    && along > 0.0
-                    && off <= b.half_hit + 1.0
-                    && best.is_none_or(|(w, neg_d, _)| (weight, -d) > (w, neg_d))
-                {
-                    best = Some((weight, -d, b.id));
-                }
-            }
-        }
-        best.map(|(_, _, id)| id)
     }
 
     // plans.py:911-975: budget falling bottles and unresolved quake impacts.
@@ -1304,7 +1371,7 @@ impl AttackPlan {
         let mut targets: Vec<_> = battle
             .buildings
             .iter()
-            .filter(|b| b.alive && b.key == "ad" && !reserved.contains(&b.id))
+            .filter(|b| b.alive && b.key == "ad" && !reserved.contains(&b.id) && !self.snipe_claimed.contains(&b.id))
             .map(|b| ZapTarget {
                 id: b.id,
                 hp: b.hp,
@@ -1508,66 +1575,6 @@ impl AttackPlan {
         }
     }
 
-    // plans.py:1134-1195: only affordable defenses after accounting for falling bolts.
-    pub fn spare_lightning(
-        &mut self,
-        battle: &mut Battle,
-        have: &impl Fn(&Self, &str) -> bool,
-        lightning_reserved: i64,
-    ) -> bool {
-        if !have(self, "lightning") {
-            return false;
-        }
-        let mut available = count(&self.spells, "lightning") - lightning_reserved;
-        let mut damage = 0.0;
-        for stock in self.stock.iter() {
-            if stock.name != "Lightning Spell" || stock.remaining <= 0 {
-                continue;
-            }
-            let count = available.min(stock.remaining);
-            let level = stock.level.as_ref().expect("resolved Lightning level");
-            damage += count as f64
-                * battle.catalog.stats
-                    .get(&stock.name, level, &["damage", "Damage"], None)
-                    .expect("Lightning damage");
-            available -= count;
-        }
-        let remaining_hp = |b: &Building| {
-            b.hp - battle.fields.iter()
-                .filter(|f| {
-                    f.kind == Tag::Lightning && b.edge_distance(f.x, f.y) <= f.radius
-                })
-                .map(|f| f.value)
-                .sum::<f64>()
-        };
-        if battle.buildings.iter().any(|b| {
-            b.alive && b.key == "ad" && remaining_hp(b) > 1e-9
-        }) {
-            return false;
-        }
-        let target = battle.buildings.iter()
-            .filter(|b| {
-                let hp = remaining_hp(b);
-                b.alive
-                    && b.is_defense
-                    && !matches!(b.key.as_str(), "gs" | "es" | "ds" | "th" | "cc")
-                    && !(b.key == "tesla" && !b.revealed)
-                    && 1e-9 < hp
-                    && hp <= damage
-            })
-            .min_by(|a, b| {
-                let priority = |b: &Building| i32::from(self.ground || b.key != "sweeper");
-                priority(a).cmp(&priority(b))
-                    .then_with(|| remaining_hp(a).total_cmp(&remaining_hp(b)))
-            })
-            .map(|b| (b.x, b.y));
-        let Some((x, y)) = target else {
-            return false;
-        };
-        self.use_spell(battle, "lightning", x, y);
-        true
-    }
-
     // plans.py:1197-1251: None falls back; an empty group holds support for cargo.
     pub fn cargo_support(&mut self, battle: &Battle) -> Option<Vec<UnitRef>> {
         if self.supported_cargo.is_empty() {
@@ -1614,9 +1621,15 @@ impl AttackPlan {
         have: &impl Fn(&Self, &str) -> bool,
         inventory: Option<&mut Vec<(String, i64)>>,
         single_cast: bool,
-        lightning_reserved: i64,
+        _lightning_reserved: i64,
     ) {
-        if self.spare_lightning(battle, have, lightning_reserved) && single_cast {
+        if battle.t < self.busy_until {
+            return;
+        }
+        if self.spare_lightning_cluster(battle) && single_cast {
+            return;
+        }
+        if self.spare_quake(battle) && single_cast {
             return;
         }
         if units.is_empty() {
@@ -2035,7 +2048,9 @@ pub fn totem_radius(battle: &Battle) -> f64 {
 // plans.py:888-897.
 pub fn threats_near(battle: &Battle, x: f64, y: f64, radius: f64) -> Vec<(BuildingId, f64)> {
     battle.buildings.iter().filter_map(|b| {
-        if !b.alive || b.weapon.is_none() || b.disabled(battle.t) {
+        if !b.alive || b.weapon.is_none() || b.disabled(battle.t)
+            || battle.plan.attack().is_some_and(|plan| plan.snipe_claimed.contains(&b.id))
+        {
             return None;
         }
         let d = b.dist(x, y);
@@ -2045,10 +2060,4 @@ pub fn threats_near(battle: &Battle, x: f64, y: f64, radius: f64) -> Vec<(Buildi
 
 pub fn entity_is_defense(battle: &Battle, target: EntityRef) -> bool {
     matches!(target, EntityRef::Building(id) if battle.building(id).is_defense)
-}
-
-// plans.py:843-849.
-pub fn fire_aimed(battle: &mut Battle, hero: UnitRef) {
-    // plans.py:861-865: activation follows the hero's current firing line.
-    heroes::activate(battle, hero, false);
 }

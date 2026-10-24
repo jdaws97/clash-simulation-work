@@ -230,7 +230,7 @@ impl<'a> Node<'a> {
 fn known_type(name: &str) -> bool {
     matches!(name, "Building" | "Wall" | "Unit" | "UnitSpec" | "Weapon" | "Trap"
         | "Field" | "Pending" | "Builder" | "Deployment" | "Stage" | "BuildingType"
-        | "HeroLoadout" | "Kit" | "AttackPlan" | "PlaybookPlan" | "SpellStock" | "Wave")
+        | "HeroLoadout" | "Kit" | "AttackPlan" | "PlaybookPlan" | "SpellStock" | "Wave" | "DefenseSnipe")
 }
 
 fn status_source(key: &str) -> StatusSource {
@@ -577,6 +577,10 @@ impl Resolver {
             match key.as_str() {
                 "boots_next" => extra.boots_next = v.optional_number(),
                 "spear_base_range" => extra.spear_base_range = v.optional_number(),
+                "line_ability_since" => extra.line_ability_since = v.optional_number(),
+                "line_quake_until" => extra.line_quake_until = v.optional_number(),
+                "cluster_ability_since" => extra.cluster_ability_since = v.optional_number(),
+                "cluster_ability_check_at" => extra.cluster_ability_check_at = v.number(),
                 "shield_destination" => extra.shield_destination = v.optional_pair(),
                 "attack_lock_until" => {
                     extra.attack_lock_until = v.number();
@@ -1598,11 +1602,15 @@ pub fn plan(p: Node<'_>, deployments: &[Deployment]) -> Plan {
                 "freeze_first", "pol", "charge_hero", "charge_lat", "charge_at",
                 "charge_recall_hp", "charge_len", "recall_funnel", "split_main",
                 "recalled", "_cast_log", "_next_brain", "_phase", "_entry", "_main_at",
-                "_totem_casts",
+                "_totem_casts", "snipe_exposed", "snipe_mode", "snipe_log",
+                "_snipe_deployed", "_snipe_assignments", "_snipe_claimed",
+                "_snipe_lightning", "_snipe_lightning_at", "_snipe_lightning_left",
+                "_exposed", "_busy_until", "_cluster_casts",
                 "_zap_done", "_cc_released", "_charge_n", "_later", "_distracts",
                 "_lured", "_spells0", "_cc_spells0", "_spell_stock", "observed",
                 "build_id", "cc_levels", "_entry_lat", "_zap_left", "_fallback_quakes",
                 "_cargo_wait_since", "_battle_portal", "_snipe_t", "_snipe_pts",
+                "_fallback",
             ]);
             for key in ["main", "support"] {
                 for wave in p.field(key).array() {
@@ -1777,6 +1785,8 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
     let wall_tiles_standard = resolver.walls.len() == walls.len()
         && walls.iter().all(|wall| wall.x == wall.tx as f64 + 0.5 && wall.y == wall.ty as f64 + 0.5);
     let mut battle = Battle {
+        cluster_cache: crate::plans::ClusterCache::default(),
+        opening_reachable: None,
         follow_scores_scratch: Vec::new(),
         pet_buildings_scratch: Vec::new(),
         pet_defenders_scratch: Vec::new(),
@@ -1973,6 +1983,10 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
         "_next_cc_exit",
         "_field_serial",
         "guardian",
+        "_cluster_version",
+        "_cluster_scores",
+        "_cluster_points",
+        "_opening_reachable",
     ];
     for (key, node) in s.object() {
         if !known_scalars.contains(&key.as_str()) {
@@ -1990,6 +2004,11 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
     }
     if battle.unit_indices.iter().enumerate().any(|(id, location)| location.is_some() && id > battle.uid) {
         s.field("_uid").fail("shared unit counter precedes an exported unit id");
+    }
+    if let Plan::Playbook(plan) = &battle.plan {
+        let mut loaded = (**plan).clone();
+        loaded.sync_scouting(&battle);
+        battle.plan = Plan::Playbook(Box::new(loaded));
     }
     battle
 }
