@@ -439,12 +439,55 @@ impl Grid {
             return;
         }
         let _profile = self.profile_span("topology");
+        // Each change rectangle already reaches one cell past the write, which
+        // covers every move mask whose corner test reads a rewritten flag. Use
+        // the rectangles when the log holds every version since the last pass.
+        if let Some(done) = self.topology_version {
+            let first = self.changes.partition_point(|change| change.version <= done);
+            let complete = self.changes.get(first).map(|change| change.version) == Some(done + 1)
+                && self.changes.last().map(|change| change.version) == Some(self.version);
+            if complete {
+                let rects: Vec<_> = self.changes[first..]
+                    .iter()
+                    .map(|c| (c.i0, c.i1, c.j0, c.j1))
+                    .collect();
+                for &(i0, i1, j0, j1) in &rects {
+                    for i in i0..i1 {
+                        for j in j0..j1 {
+                            let cell = self.index(i, j);
+                            self.cell_flags[cell] = u8::from(self.blocked[cell]) * BLOCKED
+                                | u8::from(self.wall[cell]) * WALL;
+                        }
+                    }
+                }
+                for &(i0, i1, j0, j1) in &rects {
+                    for i in i0..i1 {
+                        for j in j0..j1 {
+                            let cell = self.index(i, j);
+                            self.move_masks[cell] = self.move_mask(cell);
+                        }
+                    }
+                }
+                self.topology_version = Some(self.version);
+                self.profile_build("topology", None, (0, 0, 0, 0), 0);
+                return;
+            }
+        }
         // Public blocked/wall arrays are also copied into newly created Jump
         // grids. Derive these packed arrays lazily, once per grid version.
         for (cell, flags) in self.cell_flags.iter_mut().enumerate() {
             *flags = u8::from(self.blocked[cell]) * BLOCKED | u8::from(self.wall[cell]) * WALL;
         }
-        for (cell, neighbors) in self.neighbors.iter().enumerate() {
+        for cell in 0..self.neighbors.len() {
+            self.move_masks[cell] = self.move_mask(cell);
+        }
+        self.topology_version = Some(self.version);
+        self.profile_build("topology", None, (0, 0, 0, 0), 0);
+    }
+
+    fn move_mask(&self, cell: usize) -> u8 {
+        let neighbors = &self.neighbors[cell];
+        {
             let mut mask = 0;
             for (q, &next) in neighbors.iter().enumerate() {
                 if next == NO_NEIGHBOR || self.cell_flags[next as usize] & BLOCKED != 0 {
@@ -462,10 +505,8 @@ impl Grid {
                 }
                 mask |= 1_u8 << q;
             }
-            self.move_masks[cell] = mask;
+            mask
         }
-        self.topology_version = Some(self.version);
-        self.profile_build("topology", None, (0, 0, 0, 0), 0);
     }
 
     // With wall_extra=inf, only non-wall cells can relax a neighbor. Hence
