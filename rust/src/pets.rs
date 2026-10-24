@@ -495,17 +495,27 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
         }
         return;
     }
-    // pets.py:334-339: a reattached Diggy emerges and stuns its new defense target.
+    // output/research/usage/diggy.md:27; stun includes attackable defenders.
+    // https://supercell.com/en/games/clashofclans/blog/release-notes/get-ready-for-ranked-update/
     let unit = battle.unit(pet);
     if unit.name_id == Name::Diggy && unit.underground {
         battle.unit_mut(pet).underground = false;
-        if let EntityRef::Building(building) = target {
-            if battle.is_defense_target(building) {
-                let level = battle.unit(pet).level.as_ref().expect("Diggy level");
-                let duration = battle.catalog.stats.get("Diggy", level, &["Stun Duration"], None).expect("Diggy stun");
+        let level = battle.unit(pet).level.as_ref().expect("Diggy level");
+        let duration = battle
+            .catalog
+            .stats
+            .get("Diggy", level, &["Stun Duration"], None)
+            .expect("Diggy stun");
+        match target {
+            EntityRef::Unit(victim) => {
+                let victim = battle.unit_mut(victim);
+                victim.stun_until = victim.stun_until.max(t + duration);
+            }
+            EntityRef::Building(building) if battle.is_defense_target(building) => {
                 let building = battle.building_mut(building);
                 building.stun_until = building.stun_until.max(t + duration);
             }
+            _ => {}
         }
     }
     // pets.py:331-336: first ram after moving has a half-second windup.

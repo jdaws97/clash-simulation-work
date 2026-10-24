@@ -12,7 +12,8 @@ one() {
   slug=$(echo "$name" | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9]\+/-/g; s/^-//; s/-$//')
   f="$OUT/$slug.md"
   [ -s "$f" ] && [ "$(wc -c < "$f")" -gt 1500 ] && return 0
-  brief=$(sed "s/{KIND}/$kind/g; s/{NAME}/$name/g" output/research/brief-entity.txt)
+  # bash substitution, not sed: names such as "Queen charge / Queen walk" contain "/"
+  brief=$(cat output/research/brief-entity.txt); brief=${brief//\{KIND\}/$kind}; brief=${brief//\{NAME\}/$name}
   ~/bin/codex-research "$brief" > "$f.tmp" 2>&1
   if [ "$(wc -c < "$f.tmp")" -gt 1500 ]; then mv "$f.tmp" "$f"; echo "done  $kind | $name ($(wc -c < "$f") bytes)"; else echo "FAIL  $kind | $name"; rm -f "$f.tmp"; fi
 }

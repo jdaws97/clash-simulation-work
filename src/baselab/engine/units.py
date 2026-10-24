@@ -2589,22 +2589,38 @@ def _after_unit_hit(battle, u, target, dmg, *, splash=True):
             "spells", ability["PoisonOnHitSpell"], int(ability["PoisonOnHitSpellLevel"])
         )
         duration = int(ability["PoisonOnHitDuration"]) / 1000.0
-        # game data v18.200.9: Poison L7.SpeedBoost=-44, AttackSpeedBoost=-65 -> poison slows.
-        slow = -float(poison["SpeedBoost"]) / 100.0
-        atk = -float(poison["AttackSpeedBoost"]) / 100.0
+        # output/research/usage/headhunter.md:18-23; L4 is absent from the older CSV.
+        # https://cocwiki.com/troops/headhunter
+        slow = (
+            stats.get(
+                u.name, u.level, "Speed Decrease", default=-float(poison["SpeedBoost"])
+            )
+            / 100.0
+        )
+        atk = (
+            stats.get(
+                u.name,
+                u.level,
+                "Attack Rate Decrease",
+                default=-float(poison["AttackSpeedBoost"]),
+            )
+            / 100.0
+        )
+        # ClashKing b8f42a7 carries Poison's max DPS as spell damage.
+        damage = stats.get(
+            "Poison Spell",
+            int(ability["PoisonOnHitSpellLevel"]),
+            "damage",
+            default=float(poison["PoisonDPS"]),
+        )
+        damage = stats.get(u.name, u.level, "Poison Max DPS", default=damage)
         from . import spells
 
-        # game data v18.200.9: Poison L7.PoisonDPS=280, PoisonIncreaseSlowly=TRUE -> use the shared poison ramp and stacking.
+        # game data v18.200.9: PoisonIncreaseSlowly=TRUE -> shared ramp and stacking.
         spells._poison(
             battle,
             target,
-            # ClashKing b8f42a7 carries Poison's max DPS as spell damage.
-            stats.get(
-                "Poison Spell",
-                int(ability["PoisonOnHitSpellLevel"]),
-                "damage",
-                default=float(poison["PoisonDPS"]),
-            ),
+            damage,
             slow,
             atk,
             # game data v18.200.9: Poison.HeroDamageMultiplier=5 -> 0.05x hero damage, as for the Poison spell.
@@ -2681,7 +2697,8 @@ def _beam(battle, u, target):
             (3.0, "Damage per Second / After 3s"),
         ]
     else:
-        # Wiki: Inferno Dragon/Home Village; upper duplicate rows stay unresolved.
+        # game data v18.200.9 characters.csv: Inferno Dragon L12 DPS/DPSLv2/DPSLv3
+        # = 91/182/1820; ClashKing b8f42a7 agrees on base DPS. Registry exports all stages.
         stages = [
             (0.0, "Damage per Second / Initial"),
             (1.7, "Damage per Second / After 1.7s"),

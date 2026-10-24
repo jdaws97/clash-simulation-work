@@ -767,15 +767,10 @@ def _apply(battle, f: Field) -> bool:
             return True
         for u in battle.attackers_near(f.x, f.y, f.radius):
             # Wiki: Totem Spell, spell immunities do not include defensive Poison.
-            if (
-                _affected(u)
-                or u.name == "Totem"
-                # game data v18.200.9: TH15 Poison.AffectsSiegeMachines=TRUE -> all sieges.
-                or (
-                    f.extra.get("origin") == "town_hall"
-                    and u.kind in ("siege", "siege_idle")
-                )
-            ):
+            # output/research/usage/battle-blimp.md: April made sieges immune
+            # to TH14-16 poison, superseding the older game-data exception.
+            # https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/
+            if _affected(u) or u.name == "Totem":
                 _poison(
                     battle,
                     u,
@@ -924,16 +919,20 @@ def _apply(battle, f: Field) -> bool:
         for u in battle.defenders_near(f.x, f.y, f.radius):
             u.invisible_until = max(u.invisible_until, until)
         if f.team == "atk":
+            # output/research/usage/invisibility-spell.md: use building centres.
+            # https://www.reddit.com/r/ClashOfClans/comments/1l4z2tu/guide_to_attacking_invisibility_spell_tower_bases/
             for b in battle.buildings:
-                if b.alive and b.edge_distance(f.x, f.y) <= f.radius:
+                if b.alive and dist(b.x, b.y, f.x, f.y) <= f.radius:
                     b.invisible_until = max(b.invisible_until, until)
         return True
     if k == "def_invis":
         until = _invisibility_until(f, t)
         if until is None:
             return True
+        # output/research/usage/invisibility-spell.md: towers also use centres.
+        # https://www.reddit.com/r/ClashOfClans/comments/1l4z2tu/guide_to_attacking_invisibility_spell_tower_bases/
         for b in battle.buildings:
-            if b.alive and b.edge_distance(f.x, f.y) <= f.radius:
+            if b.alive and dist(b.x, b.y, f.x, f.y) <= f.radius:
                 b.invisible_until = max(b.invisible_until, until)
         for u in battle.defenders_near(f.x, f.y, f.radius):
             u.invisible_until = max(u.invisible_until, until)
@@ -975,7 +974,10 @@ def _apply(battle, f: Field) -> bool:
                 )
         for u in battle.attackers_near(f.x, f.y, f.radius):
             # Wiki: Rocket Backpack, Ice Block has no effect during the dash.
-            if _affected(u) and not u.underground and u.dash is None:
+            # output/research/usage/ice-block-spell.md: October 2025 fixed
+            # underground recipients, superseding the stale wiki exclusion.
+            # https://supercell.com/en/games/clashofclans/blog/release-notes/get-ready-for-ranked-update/
+            if _affected(u) and u.dash is None:
                 until = t + f.extra["time"]
                 u.extra.setdefault("iceblocks", {})[_source(battle, f)] = (
                     f.value,
@@ -1471,6 +1473,9 @@ def _totem(battle, f):
     defense.builder_spell(battle, f)
     battle._uid += 1
     sp = UnitSpec("Totem", prefer="none", walls="fly")
+    # output/research/usage/archer-queen.md and dark-crown.md: each Totem now
+    # counts as one housing, including Monolith Arrow's deployment counter.
+    # https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/
     u = Unit(
         battle._uid,
         "Totem",
@@ -1483,7 +1488,7 @@ def _totem(battle, f):
         interval=1.0,
         range_=0.0,
         speed=0.0,
-        housing=20,
+        housing=1,
         flying=False,
         hits_air=False,
         hits_ground=False,
@@ -1496,6 +1501,7 @@ def _totem(battle, f):
     )
     u.spawned_at = u.active_at = battle.t
     battle.attackers.append(u)
+    battle.monolith_housing += u.housing
     # Wiki: Totem Spell, only defenders in the landing area retarget.
     # game data v18.200.9: Totem.StunTimeMS=200 -> 0.2 s.
     until = battle.t + 0.2

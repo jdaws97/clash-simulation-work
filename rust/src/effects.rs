@@ -115,7 +115,9 @@ pub fn record_death(battle: &mut Battle, victim: UnitRef) {
         return;
     }
     let housing = if unit.name == "Totem" {
-        20
+        // output/research/usage/dark-crown.md: August fixed Totems to one housing.
+        // https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/
+        1
     } else if unit.is_hero {
         25
     } else if unit.kind == Tag::Pet {

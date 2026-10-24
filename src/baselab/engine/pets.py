@@ -330,7 +330,11 @@ def act(battle, pet):
         return
     if pet.name == "Diggy" and pet.underground:
         pet.underground = False
-        if isinstance(target, Building) and battle.is_defense_target(target):
+        # output/research/usage/diggy.md:27; stun includes attackable defenders.
+        # https://supercell.com/en/games/clashofclans/blog/release-notes/get-ready-for-ranked-update/
+        if isinstance(target, Unit) or (
+            isinstance(target, Building) and battle.is_defense_target(target)
+        ):
             target.stun_until = max(
                 target.stun_until, t + stats.get("Diggy", pet.level, "Stun Duration")
             )

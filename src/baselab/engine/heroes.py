@@ -800,7 +800,9 @@ def activate(battle, u: Unit, *, on_ko=False):
             if tgt in cand:
                 cur = tgt
             elif cand:
-                cur = min(cand, key=lambda b: dist(b.x, b.y, u.x, u.y))
+                # output/research/usage/barbarian-king.md:19; initial targeting includes size.
+                # https://supercell.com/en/games/clashofclans/blog/release-notes/june-update-full-patch-notes/
+                cur = min(cand, key=lambda b: _distance(b, u.x, u.y))
             if cur is not None and n > 0:
                 hit.add(cur)
                 # game data v18.200.9: BarbarianKingGearFootball.Speed=1500 -> 15 tiles/s.
@@ -1829,7 +1831,9 @@ def guardians_tick(battle):
         return
     t = battle.t
     th = battle.th
-    if g.extra.get("waiting"):
+    # output/research/usage/freeze-spell.md:20; frozen Guardians cannot activate.
+    # https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/
+    if g.extra.get("waiting") and t >= g.frozen_until:
         th_down = th is not None and not th.alive
         near = any(
             a.name != "Totem" and t >= a.invisible_until and not a.underground

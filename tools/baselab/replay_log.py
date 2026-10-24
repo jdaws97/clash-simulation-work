@@ -136,8 +136,13 @@ def family_strength(build) -> float:
         key = "mass-dragons"
     if key is None:
         return 1.0
-    vals = [v for k, v in STRENGTH.items() if k.startswith(f"meta:{key}-16-")]
-    return sum(vals) / len(vals) if vals else 1.0
+    # The attacker's own Town Hall first (TH17 attackers were scored with TH16
+    # strengths before 2026-10-24), then TH16 as before.
+    for th in (build.get("th"), 16):
+        vals = [v for k, v in STRENGTH.items() if k.startswith(f"meta:{key}-{th}-")]
+        if vals:
+            return sum(vals) / len(vals)
+    return 1.0
 
 
 HISTORY = ROOT / "data" / "live" / "base-history.json"

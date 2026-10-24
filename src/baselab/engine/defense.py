@@ -816,10 +816,8 @@ def reveal_tesla(battle, b):
     if b.revealed or not b.alive:
         return
     b.revealed = True
-    for unit in battle.attackers:
-        unit.target = unit.wall_target = None
-        unit.target_kind = None
-        unit.extra.pop("next_engage", None)
+    # output/research/usage/baby-dragon.md:16; reveal preserves valid targets.
+    # https://clashofclans.fandom.com/wiki/Baby_Dragon
     # Wiki: Hidden Tesla/Home Village, residual spell coverage survives reveal.
     for field in battle.fields:
         if not field.started <= battle.t < field.until:

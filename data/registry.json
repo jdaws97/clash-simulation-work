@@ -8385,7 +8385,11 @@
     "required_townhall": 18,
     "hitpoints": 2700,
     "dps": 91,
-    "wiki": {}
+    "wiki": {
+     "Damage per Second / Initial": "91",
+     "Damage per Second / After 1.7s": "182",
+     "Damage per Second / After 3.2s": "1,820"
+    }
    }
   ],
   "conflicts": [],

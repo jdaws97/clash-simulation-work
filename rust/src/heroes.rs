@@ -1072,7 +1072,12 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                 let current = if target.is_some_and(|target| candidates.contains(&target)) {
                     target
                 } else {
-                    nearest_center(battle, &candidates, u.x, u.y)
+                    // output/research/usage/barbarian-king.md:19; initial targeting includes size.
+                    // https://supercell.com/en/games/clashofclans/blog/release-notes/june-update-full-patch-notes/
+                    candidates.iter().copied().min_by(|left, right| {
+                        distance(battle, *left, u.x, u.y)
+                            .total_cmp(&distance(battle, *right, u.x, u.y))
+                    })
                 };
                 if let Some(victim) = current.filter(|_| count > 0) {
                     hit.push(victim);
@@ -2466,7 +2471,9 @@ pub fn guardians_tick(battle: &mut Battle) {
     let t = battle.t;
     let th_down = battle.th.is_some_and(|th| !battle.building(th).alive);
     let g = battle.unit(guardian);
-    if g.extra.waiting {
+    // output/research/usage/freeze-spell.md:20; frozen Guardians cannot activate.
+    // https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/
+    if g.extra.waiting && t >= g.frozen_until {
         let trigger = g.extra.guardian_trigger.expect("Guardian trigger radius");
         let near = battle
             .attackers_near(g.x, g.y, trigger)

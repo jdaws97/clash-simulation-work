@@ -116,12 +116,8 @@ pub fn reveal_tesla(battle: &mut Battle, owner: BuildingId) {
         return;
     }
     battle.building_mut(owner).revealed = true;
-    for unit in battle.attackers.iter_mut().filter(|unit| unit.in_pool) {
-        unit.target = None;
-        unit.wall_target = None;
-        unit.target_kind = None;
-        unit.extra.next_engage = 0.0;
-    }
+    // output/research/usage/baby-dragon.md:16; reveal preserves valid targets.
+    // https://clashofclans.fandom.com/wiki/Baby_Dragon
     for index in 0..battle.fields.len() {
         let field = &battle.fields[index];
         if !(field.started <= battle.t && battle.t < field.until) {

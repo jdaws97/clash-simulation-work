@@ -3294,8 +3294,31 @@ fn after_unit_hit_effect(
             Some(&poison_level),
         );
         let duration = game_required_int(ability, "PoisonOnHitDuration") as f64 / 1000.0;
-        let slow = -game_float(poison, "SpeedBoost") / 100.0;
-        let attack = -game_float(poison, "AttackSpeedBoost") / 100.0;
+        // output/research/usage/headhunter.md:18-23; L4 is absent from the older CSV.
+        // https://cocwiki.com/troops/headhunter
+        let level = u.level.as_ref().expect("Headhunter level");
+        let slow = battle
+            .catalog
+            .stats
+            .get(
+                &u.name,
+                level,
+                &["Speed Decrease"],
+                Some(-game_float(poison, "SpeedBoost")),
+            )
+            .expect("Headhunter movement slow")
+            / 100.0;
+        let attack = battle
+            .catalog
+            .stats
+            .get(
+                &u.name,
+                level,
+                &["Attack Rate Decrease"],
+                Some(-game_float(poison, "AttackSpeedBoost")),
+            )
+            .expect("Headhunter attack slow")
+            / 100.0;
         let damage = battle
             .catalog
             .stats
@@ -3306,6 +3329,11 @@ fn after_unit_hit_effect(
                 Some(game_float(poison, "PoisonDPS")),
             )
             .expect("poison damage default");
+        let damage = battle
+            .catalog
+            .stats
+            .get(&u.name, level, &["Poison Max DPS"], Some(damage))
+            .expect("Headhunter poison damage");
         let ramp = poison
             .get("PoisonIncreaseSlowly")
             .is_some_and(|value| value.str() == "TRUE");
@@ -3416,6 +3444,8 @@ fn beam(battle: &mut Battle, unit: UnitRef, target: EntityRef) -> f64 {
             (3.0, "Damage per Second / After 3s"),
         ]
     } else {
+        // game data v18.200.9 characters.csv: Inferno Dragon L12 DPS/DPSLv2/DPSLv3
+        // = 91/182/1820; ClashKing b8f42a7 agrees on base DPS. Registry exports all stages.
         [
             (0.0, "Damage per Second / Initial"),
             (1.7, "Damage per Second / After 1.7s"),

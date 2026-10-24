@@ -97,7 +97,9 @@ def record_death(battle, victim):
     # does not say whether the Phoenix revival is such a defeat.
     housing = 25 if victim.is_hero else 20 if victim.kind == "pet" else victim.housing
     if victim.name == "Totem":
-        housing = 20  # wiki: Totem Spell
+        # output/research/usage/dark-crown.md: August fixed Totems to one housing.
+        # https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/
+        housing = 1
     for prince in battle.attackers:
         kit = prince.kit
         if (
