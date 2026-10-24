@@ -27,6 +27,18 @@ fn require(condition: bool, message: &str) -> Result<(), String> {
     }
 }
 
+fn reverse_object_keys(value: &Json) -> Json {
+    match value {
+        Json::Obj(fields) => Json::Obj(
+            fields.iter().rev()
+                .map(|(key, value)| (key.clone(), reverse_object_keys(value)))
+                .collect(),
+        ),
+        Json::Arr(values) => Json::Arr(values.iter().map(reverse_object_keys).collect()),
+        _ => value.clone(),
+    }
+}
+
 struct TinyEvaluator<'a> {
     manifest: &'a TargetManifest,
     threads: usize,
@@ -524,6 +536,7 @@ pub fn run(
     account: &AccountRules,
     compiler: &Compiler<'_>,
     catalog: Arc<Catalog>,
+    catalog_path: &std::path::Path,
     manifest: &TargetManifest,
     templates: &[ArmyGenome],
     iterations: usize,
@@ -531,6 +544,14 @@ pub fn run(
     if iterations < 2000 {
         return Err("proof fuzz count must be at least 2000".to_owned());
     }
+    let fingerprint = report::fingerprint_proof(&compiler.library.root, catalog_path, manifest)?;
+    let original = &manifest.targets[0].layout;
+    let mut reordered = reverse_object_keys(original);
+    crate::armies::put(&mut reordered, "name", string("synthetic duplicate label"));
+    require(
+        score::layout_identity(original) == score::layout_identity(&reordered),
+        "duplicate layout identity depends on object key order",
+    )?;
     let mut rng = Random(20261024);
     let mut current = templates[0].clone();
     let mut accepted = 0;
@@ -693,6 +714,14 @@ pub fn run(
         "program canonical identity and checkpoint roundtrip",
         "program native determinism at 1/4/16 threads",
         "program mutation discovers better native Rage timing",
+        "program admission preserves executable timing and tactics",
+        "generic programs mutate opening controls",
+        "replacement heroes deploy and missing hero deployments are rejected",
+        "learned provenance preserves ready-action priority",
+        "spell-origin validation is independent of trigger and step order",
+        "checkpoint fingerprints include all compiler inputs",
+        "duplicate layouts ignore recursive object key order",
+        "installed Warden walks infer ground mode",
     ];
     Ok(object([
         ("status", string("passed")),
@@ -701,6 +730,8 @@ pub fn run(
         ("rejected_with_reason", number(rejected)),
         ("themed_main_types", number(themed_main_types)),
         ("programs", programs),
+        ("compiler_input_fingerprint", fingerprint),
+        ("canonical_duplicate_layout", Json::Bool(true)),
         ("rejection_reasons", Json::Obj(reasons.into_iter()
             .map(|(reason, count)| (reason, number(count))).collect())),
         ("native_thread_counts", Json::Arr([1, 4, 16].into_iter().map(number).collect())),

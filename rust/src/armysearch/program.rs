@@ -6,6 +6,8 @@
 pub mod mutate;
 #[path = "program_proof.rs"]
 pub mod proof;
+#[path = "fix_proof.rs"]
+mod fixes;
 #[path = "program_validate.rs"]
 mod validate;
 
@@ -239,6 +241,42 @@ fn generic_steps(genome: &ArmyGenome) -> Vec<Json> {
     steps
 }
 
+/// fit_steps (playbook.py:1529-1700) normally supplies leftover hero roles.
+/// Learned programs need the same guarantee after a hero is replaced.
+fn complete_hero_roles(steps: &mut Vec<Json>, genome: &ArmyGenome) {
+    let defaults = generic_steps(genome);
+    let mut ids: BTreeSet<_> = steps.iter()
+        .map(|step| text(step, "id", "").to_owned())
+        .collect();
+    for hero in &genome.heroes {
+        if steps.iter().any(|step| {
+            text(step, "action", "") == "deploy" && text(step, "what", "") == hero.hero
+        }) {
+            continue;
+        }
+        for role in defaults.iter().filter(|step| text(step, "what", "") == hero.hero) {
+            let action = text(role, "action", "");
+            if steps.iter().any(|step| {
+                text(step, "action", "") == action && text(step, "what", "") == hero.hero
+            }) {
+                continue;
+            }
+            let mut role = role.clone();
+            let mut serial = 0;
+            let id = loop {
+                let id = format!("hero-role-{serial}");
+                if ids.insert(id.clone()) {
+                    break id;
+                }
+                serial += 1;
+            };
+            put(&mut role, "id", string(id));
+            put(&mut role, "learned", Json::Bool(true));
+            steps.push(role);
+        }
+    }
+}
+
 /// Inventory fitting uses the compiler's already selected/fitted variant.
 /// Unlike fit_steps (playbook.py:1529-1700), search materializes "all" and
 /// rejects overspending instead of relying on executor clamping.
@@ -347,6 +385,10 @@ pub fn seed(
 ) -> Result<AttackProgram, String> {
     let mut baseline = genome.clone();
     baseline.plan.program = None;
+    // tactics.py:135-164 and redteam.py:360-383 run after installation.
+    // Seed neutral steps so repeated admission never applies a gene twice.
+    baseline.plan.tactics = crate::compile::TACTIC_DEFAULTS;
+    baseline.plan.step_timing.clear();
     let plan = account.compile(compiler, catalog, &baseline, baseline.plan.angle_offset, 0)?;
     let mut steps = if genome.plan.family == "generic" {
         generic_steps(genome)
@@ -354,6 +396,7 @@ pub fn seed(
         array(&plan, "steps").to_vec()
     };
     fit_counts(&mut steps, genome);
+    complete_hero_roles(&mut steps, genome);
     repair_references(&mut steps, genome);
     let mut result = AttackProgram {
         seed_steps: steps.clone(),
@@ -415,6 +458,7 @@ pub fn reconcile(
     let mut next = seed(account, compiler, catalog, genome)?;
     let mut steps = old.steps.clone();
     fit_counts(&mut steps, genome);
+    complete_hero_roles(&mut steps, genome);
     repair_references(&mut steps, genome);
     next.steps = steps;
     next.validate(genome)?;
@@ -432,6 +476,11 @@ pub fn install(plan: &mut Json, genome: &ArmyGenome) -> Result<(), String> {
     program.validate(genome)?;
     put(plan, "$type", string("PlaybookPlan"));
     put(plan, "steps", program.identity_json());
+    // playbook.py:2055-2099: the final learned opening, rather than the
+    // replaced source steps, decides whether Healers require a ground Warden.
+    if warden_walk(&program.steps, genome) {
+        put(plan, "ground", Json::Bool(true));
+    }
     // playbook.py:1977-1981 retains build order and appends the siege last.
     // Inventory order determines the executor's unmentioned-unit rescue drops.
     let mut inventory: Vec<_> = genome.troops.iter().map(|unit| {
@@ -453,6 +502,77 @@ pub fn install(plan: &mut Json, genome: &ArmyGenome) -> Result<(), String> {
     }
     put(plan, "strength", Json::Num(1.0));
     Ok(())
+}
+
+fn follows(trigger: &Json, previous: &str, steps: &[Json], seen: &[String]) -> bool {
+    // playbook.py:2055-2077: all needs one following conjunct; any needs all
+    // branches to follow. Preserve this rule for indirect dependencies too.
+    if let Some(time) = trigger.get("t") {
+        return steps.iter()
+            .find(|step| text(step, "id", "") == previous)
+            .and_then(|step| step.get("when"))
+            .and_then(|when| when.get("t"))
+            .is_some_and(|start| time.f64() >= start.f64());
+    }
+    if let Some(reference) = trigger.get("after") {
+        if reference.str() == previous {
+            return true;
+        }
+        if seen.iter().any(|id| id == reference.str()) {
+            return false;
+        }
+        let Some(step) = steps.iter().find(|step| step.get("id") == Some(reference)) else {
+            return false;
+        };
+        let mut seen = seen.to_vec();
+        seen.push(reference.str().to_owned());
+        return follows(
+            step.get("when").unwrap_or(&Json::Null),
+            previous,
+            steps,
+            &seen,
+        );
+    }
+    if let Some(parts) = trigger.get("all") {
+        return parts.arr().iter().any(|part| follows(part, previous, steps, seen));
+    }
+    if let Some(parts) = trigger.get("any") {
+        return !parts.arr().is_empty()
+            && parts.arr().iter().all(|part| follows(part, previous, steps, seen));
+    }
+    false
+}
+
+fn warden_walk(steps: &[Json], genome: &ArmyGenome) -> bool {
+    if !genome.troops.iter().any(|unit| unit.name == "Healer" && unit.count > 0) {
+        return false;
+    }
+    for healer in steps {
+        if text(healer, "action", "") != "deploy" || text(healer, "what", "") != "Healer" {
+            continue;
+        }
+        if matches!(text(healer, "at", ""), "unit:Grand Warden" | "unit_ahead:Grand Warden") {
+            return true;
+        }
+        for warden in steps {
+            if text(warden, "action", "") == "deploy"
+                && text(warden, "what", "") == "Grand Warden"
+                && text(warden, "group", "main") == "charge"
+                && text(healer, "group", "main") == "charge"
+                && warden.get("at") == healer.get("at")
+                && text(warden, "at", "").starts_with("edge:")
+                && follows(
+                    healer.get("when").unwrap_or(&Json::Null),
+                    text(warden, "id", ""),
+                    steps,
+                    &[],
+                )
+            {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 fn readable(step: &Json) -> String {

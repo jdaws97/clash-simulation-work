@@ -96,11 +96,7 @@ impl TargetManifest {
             if !(16..=18).contains(&town_hall) {
                 return Err(format!("{id}: defender TH must be 16..18"));
             }
-            let mut geometry = layout.clone();
-            if let Json::Obj(items) = &mut geometry {
-                items.retain(|(key, _)| !matches!(key.as_str(), "name" | "notes" | "source" | "provenance"));
-            }
-            let geometry = encode(&geometry);
+            let geometry = layout_identity(&layout);
             if layouts.insert(geometry, split).is_some_and(|old| old != split) {
                 return Err(format!("duplicate layout crosses search/holdout: {id}"));
             }
@@ -173,6 +169,16 @@ impl TargetManifest {
             ("town_hall", Json::Num(target.town_hall as f64)),
         ])).collect()))])
     }
+}
+
+pub(super) fn layout_identity(layout: &Json) -> String {
+    let mut geometry = layout.clone();
+    if let Json::Obj(items) = &mut geometry {
+        items.retain(|(key, _)| !matches!(key.as_str(), "name" | "notes" | "source" | "provenance"));
+    }
+    // evaluate.py:467 groups the same battlefield independently of labels.
+    // Sort object keys recursively; arrays still retain their execution order.
+    encode(&super::program::canonical(&geometry))
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

@@ -151,9 +151,9 @@ fn prior(program: &AttackProgram, genome: &ArmyGenome, what: &str) -> Option<(St
 }
 
 fn mark_changed(step: &mut Json) {
-    // Preserve source quotes as provenance. uncited makes the adaptation clear;
-    // citations can affect aimed targeting, so they remain part of identity.
-    put(step, "uncited", Json::Bool(true));
+    // playbook.py:1007 partitions uncited actions behind cited actions.
+    // Learned provenance must not change that execution priority or quotes.
+    put(step, "learned", Json::Bool(true));
 }
 
 fn remaining(program: &AttackProgram, genome: &ArmyGenome) -> Vec<(String, String, usize)> {

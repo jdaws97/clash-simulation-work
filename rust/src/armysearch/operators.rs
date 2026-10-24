@@ -96,8 +96,8 @@ pub fn seeds(
 }
 
 /// Freeze genes which this fitted plan cannot execute. tactics.py:81-89
-/// explicitly limits playbook tactics; generic tactics stay frozen until the
-/// shared compiler exposes their native implementation.
+/// explicitly limits playbook tactics. A generic army gains those knobs once
+/// its executable plan is an installed PlaybookPlan program.
 pub fn applicability(plan: &Json) -> [bool; 19] {
     let mut mask = [false; 19];
     if text(plan, "$type", "") != "PlaybookPlan" {
@@ -144,15 +144,6 @@ pub fn admit(
     genome: &mut ArmyGenome,
 ) -> Result<(), String> {
     super::program::reconcile(account, compiler, catalog, genome)?;
-    if genome.plan.program.is_some() {
-        // Tactics were materialized into the seed steps. The editable program
-        // owns their execution now; freeze redundant legacy timing genes.
-        genome.plan.tactics = TACTIC_DEFAULTS;
-        genome.plan.step_timing.clear();
-        genome.normalize();
-        account.compile(compiler, catalog, genome, genome.plan.angle_offset, 0)?;
-        return Ok(());
-    }
     account.check(genome)?;
     let mut neutral = genome.clone();
     neutral.plan.tactics = TACTIC_DEFAULTS;
@@ -184,7 +175,7 @@ pub fn admit(
     Ok(())
 }
 
-fn timing_steps(plan: &Json) -> Vec<String> {
+pub(super) fn timing_steps(plan: &Json) -> Vec<String> {
     fn delayed(when: &Json) -> bool {
         when.get("after").is_some() && numeric(when, "delay", 0.0) > 0.0
             || array(when, "all").iter().any(delayed)
@@ -321,7 +312,7 @@ pub fn mutate(
             child.plan.angle_offset = (child.plan.angle_offset + (rng.unit() - 0.5) * 0.8).rem_euclid(tau);
         }
         11 => {
-            if child.plan.family != "generic" {
+            if child.plan.family != "generic" || child.plan.program.is_some() {
                 match rng.index(3) {
                     0 => child.plan.charge_side = if child.plan.charge_side == "left" {
                         "right"

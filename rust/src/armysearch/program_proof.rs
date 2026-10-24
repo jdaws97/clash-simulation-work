@@ -142,11 +142,21 @@ fn timing_fixture(
     early.siege = None;
     early.normalize();
     account.check(&early)?;
-    let steps = vec![
+    let mut steps = vec![
         step("reserve", "deploy", "Healer", 1, "edge:right", "support", time(0.0)),
         step("main", "deploy", "Barbarian", 1, "edge:main", "main", time(30.0)),
         step("rage", "spell", "Rage Spell", 1, "edge:main", "main", time(0.0)),
     ];
+    // Selected heroes must have deployment roles, even in this troop-only
+    // engagement. Their t=180 roles stay beyond the fixture's 90-second limit.
+    steps.extend(super::generic_steps(&early).into_iter().filter_map(|mut role| {
+        if text(&role, "action", "") == "deploy" && crate::plans::is_hero(text(&role, "what", "")) {
+            put(&mut role, "when", time(180.0));
+            Some(role)
+        } else {
+            None
+        }
+    }));
     early.plan.program = Some(AttackProgram {
         steps: steps.clone(),
         seed_steps: steps,
@@ -291,11 +301,15 @@ pub fn run(
     let seed = seeds.first().ok_or("program proof needs seeds")?;
     identity_proof(seed, account, compiler, &catalog)?;
     invalid_proof(seed)?;
+    let fixes = super::fixes::run(account, compiler, Arc::clone(&catalog), templates)?;
     let mut crossover_seed = seed.clone();
-    let crossover_steps = vec![step(
+    let mut crossover_steps = vec![step(
         "crossover-fixture", "deploy", &seed.troops[0].name, 1,
         "edge:main", "main", time(0.0),
     )];
+    crossover_steps.extend(super::generic_steps(seed).into_iter().filter(|role| {
+        text(role, "action", "") == "deploy" && crate::plans::is_hero(text(role, "what", ""))
+    }));
     crossover_seed.plan.program.as_mut().unwrap().steps = crossover_steps;
     let mut crossover_rng = Random(123);
     let mut crossed = false;
@@ -355,6 +369,7 @@ pub fn run(
         ("rejected_with_reason", number(rejected.values().sum())),
         ("rejection_reasons", Json::Obj(rejected.into_iter().map(|(reason, count)| (reason, number(count))).collect())),
         ("canonical_identity", Json::Bool(true)),
+        ("round9_fixes", fixes),
         ("timing_discovery", timing),
     ]))
 }

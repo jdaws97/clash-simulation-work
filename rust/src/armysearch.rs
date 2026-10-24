@@ -238,7 +238,15 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
     let (mut templates, seed_rejections) = operators::seeds(&config.root, &account, &compiler, &catalog)?;
     eprintln!("armysearch: {} legal seeds, {} rejected recipes", templates.len(), seed_rejections.len());
     if proof {
-        let result = proof::run(&account, &compiler, Arc::clone(&catalog), &manifest, &templates, config.fuzz)?;
+        let result = proof::run(
+            &account,
+            &compiler,
+            Arc::clone(&catalog),
+            &config.catalog,
+            &manifest,
+            &templates,
+            config.fuzz,
+        )?;
         std::fs::create_dir_all(&config.out).map_err(|error| error.to_string())?;
         write(&config.out.join("armysearch-proof.json"), &result)?;
         println!("{}", encode(&result));

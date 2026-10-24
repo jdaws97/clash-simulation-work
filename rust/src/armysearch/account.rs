@@ -362,7 +362,7 @@ impl AccountRules {
             charge_side: Some(genome.plan.charge_side.clone()),
             flank_offset: genome.plan.flank_offset,
             overrides: object([("__opening__", object([("snipe_mode", string(&genome.plan.snipe_mode))]))]),
-            tactics: cited.then(|| tactics.to_vec()),
+            tactics: (cited && genome.plan.program.is_none()).then(|| tactics.to_vec()),
         };
         let mut plan = compiler.plan_for_build(&build, angle, seed, &options)?;
         crate::armies::put(&mut plan, "label", string(format!(
@@ -404,15 +404,8 @@ impl AccountRules {
         }
         crate::armies::put(&mut plan, "cc_spell_levels", cc_levels);
         let mut steps = array(&plan, "steps").to_vec();
-        for (id, offset) in &genome.plan.step_timing {
-            let step = steps.iter_mut().find(|step| text(step, "id", "") == id)
-                .ok_or_else(|| format!("timing gene step absent: {id}"))?;
-            if step.get("uncited").is_some_and(Json::bool) || array(step, "cite").is_empty() {
-                return Err(format!("timing gene requires cited step: {id}"));
-            }
-            if !shift_delay(step, *offset) {
-                return Err(format!("timing gene requires dependency delay: {id}"));
-            }
+        if genome.plan.program.is_none() {
+            apply_timing(&mut steps, &genome.plan.step_timing)?;
         }
         if cited {
             // fit_steps intentionally emits uncited leftovers (playbook.py:1313).
@@ -461,7 +454,37 @@ impl AccountRules {
             }
             crate::armies::put(&mut plan, "steps", Json::Arr(steps));
         }
+        if genome.plan.program.is_some() {
+            // meta_armies.py:170-173 derives the composition's default mode.
+            // Discard source-step walk inference before installing new steps.
+            let mut main_space = 0_i64;
+            let mut air_space = 0_i64;
+            for wave in array(&plan, "main") {
+                for unit in array(wave, "units") {
+                    let parts = unit.arr();
+                    let attrs = compiler.stats.attrs(parts[0].str());
+                    let space = parts[1].i64() * numeric(attrs, "housing", 1.0).max(1.0) as i64;
+                    main_space += space;
+                    if crate::plans::flag(attrs, "flying") || crate::plans::flag(attrs, "is_flying") {
+                        air_space += space;
+                    }
+                }
+            }
+            crate::armies::put(
+                &mut plan,
+                "ground",
+                Json::Bool(!(air_space as f64 > 0.5 * main_space as f64)),
+            );
+        }
         super::program::install(&mut plan, genome)?;
+        if genome.plan.program.is_some() {
+            // tactics.py:135-164 and redteam.py:360-383 apply to the final
+            // executable steps, after the learned program replaces its seed.
+            crate::compile::apply_tactics(&mut plan, &tactics)?;
+            let mut steps = array(&plan, "steps").to_vec();
+            apply_timing(&mut steps, &genome.plan.step_timing)?;
+            crate::armies::put(&mut plan, "steps", Json::Arr(steps));
+        }
         compiler.require_legal(&mut plan)?;
         let problems = compiler.account_legal(&build, &plan);
         if !problems.is_empty() {
@@ -497,6 +520,21 @@ fn receiving_level(catalog: &Catalog, plan: &Json, name: &str, mut level: i64) -
         }
     }
     level
+}
+
+fn apply_timing(steps: &mut [Json], timing: &BTreeMap<String, f64>) -> Result<(), String> {
+    for (id, offset) in timing {
+        let step = steps.iter_mut()
+            .find(|step| text(step, "id", "") == id)
+            .ok_or_else(|| format!("timing gene step absent: {id}"))?;
+        if step.get("uncited").is_some_and(Json::bool) || array(step, "cite").is_empty() {
+            return Err(format!("timing gene requires cited step: {id}"));
+        }
+        if !shift_delay(step, *offset) {
+            return Err(format!("timing gene requires dependency delay: {id}"));
+        }
+    }
+    Ok(())
 }
 
 fn shift_delay(step: &mut Json, offset: f64) -> bool {

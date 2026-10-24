@@ -1,7 +1,7 @@
 //! Resumable development state and independent final reports.
 //! uncertainty.py:93: resample complete scouting groups, retaining pairing.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::json::Json;
 
@@ -60,20 +60,10 @@ pub fn input_identity(
     settings: &Json,
     manifest: &TargetManifest,
 ) -> Result<String, String> {
-    let mut paths = vec![catalog.to_owned(), std::env::current_exe().map_err(|error| error.to_string())?];
-    for directory in [root.join("rust/src"), root.join("data")] {
-        collect(&directory, &mut paths, directory.ends_with("src"))?;
-    }
-    paths.sort();
-    paths.dedup();
     let mut signatures = Vec::new();
-    for path in paths {
+    for path in input_files(root, catalog)? {
         let content = std::fs::read(&path).map_err(|error| format!("{}: {error}", path.display()))?;
-        signatures.push(object([
-            ("path", string(path.strip_prefix(root).unwrap_or(&path).to_string_lossy())),
-            ("bytes", number(content.len())),
-            ("hash", string(format!("{:016x}", hash(&content)))),
-        ]));
+        signatures.push(file_signature(root, &path, &content));
     }
     // Include complete layouts: target paths may be outside the repository.
     Ok(encode(&object([
@@ -86,6 +76,108 @@ pub fn input_identity(
             ("value", std::env::var(key).map_or(Json::Null, string)),
         ])).collect())),
     ])))
+}
+
+fn input_files(root: &Path, catalog: &Path) -> Result<Vec<PathBuf>, String> {
+    let mut paths = vec![
+        catalog.to_owned(),
+        std::env::current_exe().map_err(|error| error.to_string())?,
+    ];
+    // meta_armies.py:61-104 and playbook.py:1957-2100 read both library
+    // inputs and nested playbook/table inputs. Include the catalog explicitly
+    // even when --catalog points outside the repository, plus balance inputs.
+    for (directory, recursive) in [
+        (root.join("rust/src"), true),
+        (root.join("data"), false),
+        (root.join("data/playbooks"), true),
+        (root.join("data/wiki/tables"), true),
+    ] {
+        collect(&directory, &mut paths, recursive)?;
+    }
+    paths.sort();
+    paths.dedup();
+    Ok(paths)
+}
+
+fn file_signature(root: &Path, path: &Path, content: &[u8]) -> Json {
+    object([
+        (
+            "path",
+            string(path.strip_prefix(root).unwrap_or(path).to_string_lossy()),
+        ),
+        ("bytes", number(content.len())),
+        ("hash", string(format!("{:016x}", hash(content)))),
+    ])
+}
+
+pub(super) fn fingerprint_proof(
+    root: &Path,
+    catalog: &Path,
+    manifest: &TargetManifest,
+) -> Result<Json, String> {
+    let paths = input_files(root, catalog)?;
+    let mut required = vec![
+        catalog.to_owned(),
+        root.join("data").join(crate::armies::META_FILE),
+        root.join("data/your-levels.json"),
+        root.join("data/wiki/tables/Clan_Castle.json"),
+    ];
+    for name in [
+        "custom-armies.json",
+        "observed-armies.json",
+        "attacker-policy.json",
+        "balance-overrides.json",
+        "playbook-gaps.json",
+    ] {
+        let path = root.join("data").join(name);
+        if path.exists() {
+            required.push(path);
+        }
+    }
+    collect(&root.join("data/playbooks"), &mut required, true)?;
+    let identity = input_identity(root, catalog, &object([]), manifest)?;
+    let baseline = crate::json::parse(&identity).map_err(|error| error.to_string())?;
+    let playbook_directory = root.join("data/playbooks");
+    let mut timing_edits = 0;
+    for path in &required {
+        if !paths.contains(path) {
+            return Err(format!(
+                "armysearch-proof: compiler input missing from fingerprint: {}",
+                path.display(),
+            ));
+        }
+        let index = paths.iter().position(|candidate| candidate == path).unwrap();
+        let mut content = std::fs::read(path).map_err(|error| error.to_string())?;
+        // Exercise a legal virtual timing change for playbooks, and a valid
+        // JSON whitespace edit for other files, without touching shared data.
+        if path.parent() == Some(playbook_directory.as_path()) {
+            let mut book = read(path)?;
+            if let Some(Json::Arr(steps)) = book.get("steps") {
+                let mut steps = steps.clone();
+                if let Some(step) = steps.first_mut() {
+                    let when = super::program::time(17.25);
+                    crate::armies::put(step, "when", when);
+                    crate::armies::put(&mut book, "steps", Json::Arr(steps));
+                    content = encode(&book).into_bytes();
+                    timing_edits += 1;
+                }
+            }
+        } else {
+            content.push(b' ');
+        }
+        let mut changed = baseline.clone();
+        let mut files = changed.at("files").arr().to_vec();
+        files[index] = file_signature(root, path, &content);
+        crate::armies::put(&mut changed, "files", Json::Arr(files));
+        if encode(&changed) == identity {
+            return Err("armysearch-proof: changed compiler input retained checkpoint identity".to_owned());
+        }
+    }
+    Ok(object([
+        ("status", string("passed")),
+        ("compiler_inputs_checked", number(required.len())),
+        ("playbooks_checked", number(timing_edits)),
+    ]))
 }
 
 fn collect(

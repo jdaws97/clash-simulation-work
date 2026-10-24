@@ -322,11 +322,17 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
         }
     }
     let mut stock = deploy_stock(genome);
-    let mut spells = refs.spells.clone();
-    let mut brewed: BTreeMap<String, usize> = genome.spells.iter()
-        .map(|unit| (unit.name.clone(), unit.count)).collect();
-    let mut donated: BTreeMap<String, usize> = genome.cc_spells.iter()
-        .map(|unit| (unit.name.clone(), unit.count)).collect();
+    let mut brewed = BTreeMap::<String, usize>::new();
+    let mut donated = BTreeMap::<String, usize>::new();
+    for unit in &genome.spells {
+        *brewed.entry(unit.name.clone()).or_default() += unit.count;
+    }
+    for unit in &genome.cc_spells {
+        *donated.entry(unit.name.clone()).or_default() += unit.count;
+    }
+    // plans.py:955-976 selects the first matching live stock at cast time.
+    // Totals must be independent of the order of pending step definitions.
+    let mut spell_demand = BTreeMap::<String, [usize; 3]>::new();
     let mut abilities = BTreeSet::new();
     let mut graph = BTreeMap::new();
     let mut releases = 0;
@@ -336,7 +342,7 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
     for (index, step) in program.steps.iter().enumerate() {
         let check = || -> Result<Vec<String>, String> {
             let allowed = ["id", "action", "what", "count", "group", "at", "when", "every", "until",
-                "aim", "spread", "level", "origin", "completion", "uncited", "skip_if_impossible",
+                "aim", "spread", "level", "origin", "completion", "uncited", "learned", "skip_if_impossible",
                 "ability", "equipment", "cite", "aim_cite", "at_cite", "support", "variant", "note", "notes"];
             if step.obj().iter().any(|(key, _)| !allowed.contains(&key.as_str())) {
                 return Err("unknown step field".to_owned());
@@ -352,10 +358,13 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
             if group.is_empty() || group.len() > 64 {
                 return Err("invalid group label".to_owned());
             }
-            for key in ["completion", "uncited", "skip_if_impossible"] {
+            for key in ["completion", "uncited", "learned", "skip_if_impossible"] {
                 if step.get(key).is_some_and(|value| !matches!(value, Json::Bool(_))) {
                     return Err(format!("{key} must be boolean"));
                 }
+            }
+            if step.get("origin").is_some_and(|value| !matches!(value.str(), "brewed" | "donated")) {
+                return Err("unknown spell origin".to_owned());
             }
             for key in ["cite", "aim_cite", "at_cite"] {
                 if let Some(value) = step.get(key) {
@@ -417,36 +426,36 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                     } else {
                         what
                     };
-                    let left = spells.get(spell).copied().unwrap_or(0);
+                    let left = refs.spells.get(spell).copied().unwrap_or(0);
                     // playbook.py:663-675 casts exactly one per execution.
-                    // A repeat conservatively reserves all remaining copies.
+                    // A repeat conservatively reserves its entire stock.
                     let count = amount(step, left, 1)?;
                     if count != 1 {
                         return Err("a cast step consumes one spell; split steps or use every".to_owned());
                     }
-                    let reserve = if repeated { left } else { 1 };
-                    let origin = text(step, "origin", "");
-                    if !matches!(origin, "" | "brewed" | "donated") {
-                        return Err("unknown spell origin".to_owned());
-                    }
-                    let home = brewed.entry(spell.to_owned()).or_default();
-                    let cc = donated.entry(spell.to_owned()).or_default();
+                    let origin = step.get("origin").map(Json::str);
+                    let home = brewed.get(spell).copied().unwrap_or(0);
+                    let cc = donated.get(spell).copied().unwrap_or(0);
                     let available = match origin {
-                        "brewed" => *home,
-                        "donated" => *cc,
-                        _ => *home + *cc,
+                        Some("brewed") => home,
+                        Some("donated") => cc,
+                        _ => home + cc,
                     };
-                    let reserve = if repeated { available } else { reserve };
-                    if reserve == 0 || reserve > available {
+                    if available == 0 {
                         return Err("spell origin inventory exceeded".to_owned());
                     }
-                    let from_home = if origin == "donated" { 0 } else { reserve.min(*home) };
-                    if origin == "brewed" && from_home < reserve {
-                        return Err("brewed inventory exceeded".to_owned());
+                    // playbook.py:964-1007 only checks total remaining stock.
+                    // A restricted repeat cannot stop at its origin boundary.
+                    if repeated && origin.is_some() && available != left {
+                        return Err("origin-restricted repeat requires a single-origin stock".to_owned());
                     }
-                    *home -= from_home;
-                    *cc -= reserve - from_home;
-                    spells.insert(spell.to_owned(), left - reserve);
+                    let compartment = match origin {
+                        Some("brewed") => 0,
+                        Some("donated") => 1,
+                        _ => 2,
+                    };
+                    spell_demand.entry(spell.to_owned()).or_default()[compartment]
+                        += if repeated { available } else { 1 };
                 }
                 "ability" => {
                     equipment(step, genome)?;
@@ -477,6 +486,29 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
             Ok(())
         };
         spend().map_err(|reason| format!("step {index}: {reason}"))?;
+    }
+    for (spell, [home_demand, cc_demand, unrestricted]) in spell_demand {
+        let home = brewed.get(&spell).copied().unwrap_or(0);
+        let cc = donated.get(&spell).copied().unwrap_or(0);
+        if home_demand > home
+            || cc_demand > cc
+            || home_demand + cc_demand + unrestricted > home + cc
+        {
+            return Err(format!("spell origin inventory exceeded: {spell}"));
+        }
+        // playbook.py:1155-1241 reserves spell kinds, not origins. Unrestricted
+        // casts (including fallback after a skipped step) consume brewed first.
+        // A later brewed-only cast is unsafe while any donated stock exists.
+        // Donated-only finite casts are safe: the kind reservation and brewed
+        // first selection leave their required donated copies until they fire.
+        if home_demand > 0 && cc > 0 {
+            return Err(format!("brewed-only cast can be starved by unrestricted casts: {spell}"));
+        }
+    }
+    for hero in &genome.heroes {
+        if stock.get(&hero.hero).copied().unwrap_or(0) != 0 {
+            return Err(format!("selected hero has no deployment: {}", hero.hero));
+        }
     }
     let mut done = BTreeSet::new();
     for id in graph.keys() {
