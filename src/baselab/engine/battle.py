@@ -1353,17 +1353,23 @@ class Battle:
     def _separate(self):
         # Wiki: Dragon, spread troops to reduce splash exposure; bucket edges
         # do not limit separation. Entity IDs fix pair order across translations.
+        # output/dragon-spacing/measure.md: in a real 17-Dragon replay the
+        # closest pairs fly 0.66-0.72 tiles apart (radius <= 0.33-0.36), not
+        # the 1.3 tiles the housing-scaled radius forced; flyers use the base.
+        def radius(u):
+            return 0.35 if u.flying else 0.35 + 0.015 * min(30, u.housing)
+
         for a in sorted(self.attackers, key=lambda u: u.id):
             if not a.alive or a.speed <= 0:
                 continue
-            ra = 0.35 + 0.015 * min(30, a.housing)
+            ra = radius(a)
             neighbors = sorted(
                 self.attackers_near(a.x, a.y, ra + 0.8), key=lambda u: u.id
             )
             for b in neighbors:
                 if b.id <= a.id or b.flying != a.flying or b.speed <= 0:
                     continue
-                rb = 0.35 + 0.015 * min(30, b.housing)
+                rb = radius(b)
                 dx = b.x - a.x
                 dy = b.y - a.y
                 d2 = dx * dx + dy * dy

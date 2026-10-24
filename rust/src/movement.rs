@@ -17,7 +17,10 @@ impl Battle {
             if !ua.alive || ua.speed <= 0.0 {
                 continue;
             }
-            let ra = 0.35 + 0.015 * 30.min(ua.housing) as f64;
+            // battle.py:_separate radius(): flyers use the measured base radius
+            // (output/dragon-spacing/measure.md); ground keeps the housing term.
+            let radius = |u: &Unit| if u.flying { 0.35 } else { 0.35 + 0.015 * 30.min(u.housing) as f64 };
+            let ra = radius(ua);
             let mut neighbors = self.attackers_near(ua.x, ua.y, ra + 0.8);
             neighbors.sort_by_key(|unit| unit.id.0);
             for b in neighbors {
@@ -26,7 +29,7 @@ impl Battle {
                 if b.id.0 <= a.id.0 || ub.flying != ua.flying || ub.speed <= 0.0 {
                     continue;
                 }
-                let rb = 0.35 + 0.015 * 30.min(ub.housing) as f64;
+                let rb = radius(ub);
                 let (mut dx, mut dy) = (ub.x - ua.x, ub.y - ua.y);
                 let d2 = dx * dx + dy * dy;
                 let limit = ra + rb;
