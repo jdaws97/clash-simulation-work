@@ -770,6 +770,8 @@ impl Resolver {
                     );
                 }
                 "bouncing_frostmite" => extra.bouncing_frostmite = v.boolean(),
+                // heroes.py:1814: Guardian rooftop activation radius.
+                "trigger" => extra.guardian_trigger = Some(v.number()),
                 "waiting" => extra.waiting = v.boolean(),
                 "poison_exit" => {
                     let parts = v.tuple(2);

@@ -1,4 +1,4 @@
-//! Ports committed heroes.py:29-1776. setup.rs constructs defending heroes.
+//! Ports heroes.py, including TH18 Guardians. setup.rs constructs defenders.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -7,7 +7,7 @@ use crate::battle::SpawnOptions;
 use crate::catalog::{game_float, game_int, game_required_int, UnitSpec};
 use crate::combat::{SplashBuildingsOptions, SplashUnitsOptions};
 use crate::geom::{dist, py_hypot};
-use crate::labels::{Name, Specials, Tag};
+use crate::labels::{Name, Special, Specials, Tag};
 use crate::state::*;
 use crate::stats::{self, Level};
 use crate::trace::round_decimal;
@@ -2458,11 +2458,347 @@ pub fn apply_auras(battle: &mut Battle) {
     battle.aura_want_scratch = want;
 }
 
-// heroes.py:1185-1200: Town Hall 18 guardians are outside stage 3's scenarios.
+// heroes.py:1826-1852: rooftop activation precedes Smasher's one-time enrage.
 pub fn guardians_tick(battle: &mut Battle) {
-    if battle.guardian.is_some_and(|g| battle.unit(g).alive) {
-        todo!("stage 3+: heroes.py:1189 Guardian activation and enrage");
+    let Some(guardian) = battle.guardian.filter(|g| battle.unit(*g).alive) else {
+        return;
+    };
+    let t = battle.t;
+    let th_down = battle.th.is_some_and(|th| !battle.building(th).alive);
+    let g = battle.unit(guardian);
+    if g.extra.waiting {
+        let trigger = g.extra.guardian_trigger.expect("Guardian trigger radius");
+        let near = battle
+            .attackers_near(g.x, g.y, trigger)
+            .into_iter()
+            .any(|attacker| {
+                let a = battle.unit(attacker);
+                a.name_id != Name::Totem && t >= a.invisible_until && !a.underground
+            });
+        if near || th_down {
+            let g = battle.unit_mut(guardian);
+            g.extra.waiting = false;
+            g.active_at = t + 0.5;
+        }
     }
+    let g = battle.unit(guardian);
+    if g.spec.has_special(Special::Smasher) && th_down && !g.extra.enraged {
+        let g = battle.unit_mut(guardian);
+        g.extra.enraged = true;
+        g.dmg *= 1.6;
+        g.speed *= 1.6;
+    }
+}
+
+// units.py:1024-1028: called at the Smasher branch of units::on_death.
+// Keep this at that call site so nested deaths retain Python's field order.
+// Integration: replace units.rs's Smasher TODO with heroes::guardian_death(battle, unit).
+pub fn guardian_death(battle: &mut Battle, guardian: UnitRef) {
+    let g = battle.unit(guardian);
+    if g.team != Team::Def || !g.spec.has_special(Special::Smasher) {
+        return;
+    }
+    let mut field = Field::new("def_rage", g.x, g.y, 5.0, battle.t + 18.0);
+    field.team = Team::Def;
+    field.value = 1.6;
+    field.started = battle.t;
+    battle.fields.push(field);
+}
+
+// units.py:2553-2578: called inside after_unit_hit's secondary source scope.
+// Each pass queries the buckets anew: collateral deaths and prior nudges can
+// change membership, and the primary victim's position stays live throughout.
+// Integration: replace units.rs's Logger TODO with
+// heroes::guardian_after_hit(battle, unit, target, damage).
+pub fn guardian_after_hit(
+    battle: &mut Battle,
+    guardian: UnitRef,
+    target: UnitRef,
+    damage: f64,
+) {
+    let g = battle.unit(guardian);
+    if !g.spec.has_special(Special::Logger) {
+        return;
+    }
+    let travel = battle
+        .catalog
+        .stats
+        .get(
+            &g.name,
+            g.level.as_ref().expect("Logger level"),
+            &["Post-Hit Tile Range"],
+            None,
+        )
+        .expect("Logger post-hit range");
+    let raw = battle.catalog.stats.attrs(&g.name).at("raw");
+    let push = stats::num(raw.at("Pushback Range"), None).expect("Logger pushback range");
+    let victim = battle.unit(target);
+    let (dx, dy) = (victim.x - g.x, victim.y - g.y);
+    let distance = py_hypot(dx, dy);
+    let distance = if distance == 0.0 { 1.0 } else { distance };
+    let (dx, dy) = (dx / distance, dy / distance);
+    let radius = travel + g.spec.splash;
+    for other in battle.attackers_near(victim.x, victim.y, radius) {
+        let v = battle.unit(other);
+        if other == target || !v.alive || v.underground {
+            continue;
+        }
+        let victim = battle.unit(target);
+        let (px, py) = (v.x - victim.x, v.y - victim.y);
+        let along = px * dx + py * dy;
+        if 0.0 < along && along <= travel && (px * dy - py * dx).abs() <= 0.8 {
+            battle.hit_unit(
+                other,
+                damage,
+                None,
+                "normal",
+                Some(EntityRef::Unit(guardian)),
+            );
+        }
+    }
+    let victim = battle.unit(target);
+    for other in battle.attackers_near(victim.x, victim.y, radius) {
+        let v = battle.unit(other);
+        let victim = battle.unit(target);
+        let (px, py) = (v.x - victim.x, v.y - victim.y);
+        if px * dx + py * dy >= -1.5
+            && (px * dy - py * dx).abs() <= 1.5
+            && v.name_id != Name::Totem
+            && !matches!(v.kind, Tag::Siege | Tag::SiegeIdle)
+        {
+            battle.nudge(other, dx * push, dy * push);
+            let v = battle.unit_mut(other);
+            v.target = None;
+            v.wall_target = None;
+            units::reset_beam(v);
+        }
+    }
+}
+
+// Declared synthetic CLI fixtures for heroes.py:1806-1852 and
+// units.py:839-864,1024-1028,2553-2578. No real-game calibration is implied.
+// main.rs wires guardian-check to this entry point; exercise the real units
+// callbacks so missing Smasher/Logger integration fails instead of passing.
+pub fn guardian_check(catalog: std::sync::Arc<crate::catalog::Catalog>) -> Result<(), String> {
+    use crate::json;
+    use std::sync::Arc;
+
+    let plan = json::parse(
+        r#"{
+        "$type": "Stage", "drops": [], "ticks": [], "town_hall": 18,
+        "strength": 1.0, "loadouts": {}, "revives_left": 0
+    }"#,
+    )
+    .map_err(|error| error.to_string())?;
+    let fixture = |name: &str, level: i64, mode: &str, upgrading: &str| {
+        let layout = json::parse(&format!(
+            r#"{{
+            "buildings": [{{"key": "th", "x": 20, "y": 20}}],
+            "walls": [], "traps": [], "heroes": [], "cc_troops": [],
+            "guardian": "{name}", "levels": {{"guardian": {level}}}
+        }}"#
+        ))
+        .expect("synthetic Guardian layout");
+        let options = json::parse(&format!(
+            r#"{{
+            "town_hall": 18, "battle_mode": "{mode}",
+            "upgrading": [{upgrading}], "modifier": "legend1"
+        }}"#
+        ))
+        .expect("synthetic Guardian options");
+        crate::setup::build(&layout, &plan, &options, Arc::clone(&catalog))
+    };
+    let mut cases = 0;
+    for name in ["Longshot", "Smasher", "Logger"] {
+        for level in [0, 1, 2, 3, 4, 5] {
+            let mut battle = fixture(name, level, "ranked", "");
+            let guardian = battle.guardian.expect("TH18 Guardian");
+            let th = battle.th.expect("fixture Town Hall");
+            let expected_level = if level == 0 {
+                catalog.stats.max_level(name, 18).expect("Guardian maximum")
+            } else {
+                level
+            };
+            let numbers = catalog.numbers(name, &Level::Int(expected_level));
+            let g = battle.unit(guardian);
+            assert_eq!(g.level, Some(Level::Int(expected_level)));
+            assert_eq!(g.kind, Tag::Guardian);
+            assert!(!g.is_hero);
+            assert_eq!(
+                g.home,
+                Some((battle.building(th).x, battle.building(th).y)),
+            );
+            assert_eq!(g.y, battle.building(th).y + 1.0);
+            assert_eq!(g.hp.to_bits(), (numbers.hp * 1.2).to_bits());
+            assert_eq!(g.dmg.to_bits(), (numbers.dmg * 1.2).to_bits());
+            assert!(battle.building(th).weapon.is_none());
+            assert!(!battle.is_defense_target(th));
+            assert_eq!(
+                spells::poison_factors(g, 100.0, 0.5, 0.6),
+                (0.0, 0.0, 0.0),
+            );
+            let (x, y) = (g.x, g.y);
+            let (trigger, leash) = match name {
+                "Longshot" => (19.0, 17.0),
+                "Smasher" => (14.0, 12.0),
+                "Logger" => (15.0, 14.0),
+                _ => unreachable!(),
+            };
+            assert_eq!(g.extra.guardian_trigger, Some(trigger));
+            assert_eq!(g.leash, leash);
+            battle.t = 2.0;
+            guardians_tick(&mut battle);
+            assert!(battle.unit(guardian).extra.waiting);
+            let intruder = battle.spawn(
+                "Archer",
+                Team::Atk,
+                x + trigger + 0.25,
+                y,
+                SpawnOptions::default(),
+            );
+            battle.refresh_buckets();
+            guardians_tick(&mut battle);
+            assert!(battle.unit(guardian).extra.waiting);
+            battle.unit_mut(intruder).x = x + trigger;
+            battle.refresh_buckets();
+            battle.unit_mut(intruder).invisible_until = 3.0;
+            guardians_tick(&mut battle);
+            assert!(battle.unit(guardian).extra.waiting);
+            battle.unit_mut(intruder).invisible_until = 2.0;
+            battle.unit_mut(intruder).underground = true;
+            guardians_tick(&mut battle);
+            assert!(battle.unit(guardian).extra.waiting);
+            battle.unit_mut(intruder).underground = false;
+            // A Totem cannot wake the Guardian, even on the trigger boundary.
+            battle.unit_mut(intruder).name_id = Name::Totem;
+            guardians_tick(&mut battle);
+            assert!(battle.unit(guardian).extra.waiting);
+            battle.unit_mut(intruder).name_id = Name::from_str("Archer");
+            guardians_tick(&mut battle);
+            let g = battle.unit(guardian);
+            assert!(!g.extra.waiting);
+            assert_eq!(g.active_at, 2.5);
+            assert!(!g.targetable(&battle));
+            assert_eq!(
+                spells::poison_factors(g, 100.0, 0.5, 0.6),
+                (30.0, 0.15, 0.18),
+            );
+            guardians_tick(&mut battle);
+            assert_eq!(battle.unit(guardian).active_at, 2.5);
+            battle.t = 2.5;
+            assert!(battle.unit(guardian).targetable(&battle));
+            cases += 1;
+
+            // Town Hall destruction wakes a waiting Guardian with no attacker.
+            let mut battle = fixture(name, level, "ranked", "");
+            let guardian = battle.guardian.expect("TH18 Guardian");
+            let th = battle.th.expect("fixture Town Hall");
+            let (damage, speed) = (
+                battle.unit(guardian).dmg,
+                battle.unit(guardian).speed,
+            );
+            battle.t = 4.0;
+            battle.hit_building(EntityRef::Building(th), 1e9, None, "normal");
+            guardians_tick(&mut battle);
+            let g = battle.unit(guardian);
+            assert!(!g.extra.waiting);
+            assert_eq!(g.active_at, 4.5);
+            let multiplier = if name == "Smasher" { 1.6 } else { 1.0 };
+            assert_eq!(g.dmg.to_bits(), (damage * multiplier).to_bits());
+            assert_eq!(g.speed.to_bits(), (speed * multiplier).to_bits());
+            assert_eq!(g.extra.enraged, name == "Smasher");
+            let (damage, speed) = (g.dmg, g.speed);
+            guardians_tick(&mut battle);
+            assert_eq!(battle.unit(guardian).dmg.to_bits(), damage.to_bits());
+            assert_eq!(battle.unit(guardian).speed.to_bits(), speed.to_bits());
+            battle.kill(guardian);
+            if name == "Smasher" {
+                let field = battle.fields.last().expect("Smasher death Rage callback");
+                assert_eq!(field.kind, Tag::DefRage);
+                assert_eq!(field.team, Team::Def);
+                assert_eq!(field.radius, 5.0);
+                assert_eq!(field.value, 1.6);
+                assert_eq!(field.started, 4.0);
+                assert_eq!(field.until, 22.0);
+            } else if name == "Longshot" {
+                let pending = battle.pending.last().expect("Longshot death bomb");
+                assert_eq!(pending.at.to_bits(), (4.0_f64 + 0.2).to_bits());
+                assert_eq!(pending.radius, 3.5);
+                assert!(pending.hits_air && pending.hits_ground);
+                assert_eq!(pending.team, Team::Atk);
+                assert_eq!(pending.actor, Some(EntityRef::Unit(guardian)));
+            }
+            guardians_tick(&mut battle);
+            cases += 1;
+        }
+        for upgrading in [r#""guardian""#, r#""th""#] {
+            assert!(fixture(name, 1, "multiplayer", upgrading).guardian.is_none());
+            assert!(fixture(name, 1, "ranked", upgrading).guardian.is_some());
+            cases += 2;
+        }
+    }
+    for level in [1, 5] {
+        let mut battle = fixture("Logger", level, "ranked", "");
+        let guardian = battle.guardian.expect("Logger fixture");
+        let g = battle.unit_mut(guardian);
+        g.x = 10.0;
+        g.y = 10.0;
+        let target = battle.spawn(
+            "Giant", Team::Atk, 21.5, 10.0, SpawnOptions::default(),
+        );
+        let tail = battle.spawn(
+            "Giant", Team::Atk, 27.0, 10.0, SpawnOptions::default(),
+        );
+        let buried = battle.spawn(
+            "Giant", Team::Atk, 23.5, 10.5, SpawnOptions::default(),
+        );
+        battle.unit_mut(buried).underground = true;
+        let siege = battle.spawn(
+            "Giant",
+            Team::Atk,
+            23.5,
+            10.0,
+            SpawnOptions {
+                kind: Tag::Siege,
+                ..Default::default()
+            },
+        );
+        let behind = battle.spawn(
+            "Giant", Team::Atk, 20.0, 10.0, SpawnOptions::default(),
+        );
+        let tail_hp = battle.unit(tail).hp;
+        let buried_hp = battle.unit(buried).hp;
+        let siege_hp = battle.unit(siege).hp;
+        for other in [target, buried] {
+            let v = battle.unit_mut(other);
+            v.target = Some(EntityRef::Unit(guardian));
+            v.extra.beam_target = Some(EntityRef::Unit(guardian));
+            v.extra.beam_time = Some(2.0);
+            v.extra.beam_tick = Some(0.0);
+        }
+        battle.refresh_buckets();
+        units::after_unit_hit(&mut battle, guardian, target, 10.0, true);
+        let tail_damage = if level == 5 { 10.0 } else { 0.0 };
+        assert_eq!(battle.unit(tail).hp, tail_hp - tail_damage);
+        assert_eq!(battle.unit(buried).hp, buried_hp);
+        assert_eq!(battle.unit(siege).hp, siege_hp - 10.0);
+        assert_eq!(battle.unit(siege).x, 23.5);
+        assert_eq!(battle.unit(target).x, 23.0);
+        assert_eq!(battle.unit(tail).x, 28.5);
+        assert_eq!(battle.unit(buried).x, 25.0);
+        for other in [target, buried] {
+            let v = battle.unit(other);
+            assert!(v.target.is_none() && v.wall_target.is_none());
+            assert!(v.extra.beam_target.is_none());
+            assert!(v.extra.beam_time.is_none() && v.extra.beam_tick.is_none());
+        }
+        // This bucket visits the primary first. Its push moves the origin,
+        // leaving the trailing unit outside the second pass's -1.5 bound.
+        assert_eq!(battle.unit(behind).x, 20.0);
+        cases += 1;
+    }
+    println!("guardian-check: {cases} declared synthetic fixtures passed");
+    Ok(())
 }
 
 // heroes.py:1348-1350: defenders have no abilities or equipment in Python.

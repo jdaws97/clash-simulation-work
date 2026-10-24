@@ -10,11 +10,13 @@ use crate::scoring::{self, Outcome, Scenario};
 
 use super::account::AccountRules;
 use super::eval::{Evaluator, NativeEvaluator};
-use super::genome::ArmyGenome;
+use super::genome::{ArmyGenome, PlanGenes, UnitCount};
+use super::novelty;
+use super::themed;
 use super::operators;
 use super::report;
 use super::score::{self, CandidateEstimate, Split, Stage, TargetManifest};
-use super::search::{self, Objective, SearchState};
+use super::search::{self, Families, Objective, ProposalSettings, SearchState};
 use super::util::{encode, number, object, string, Random};
 
 fn require(condition: bool, message: &str) -> Result<(), String> {
@@ -76,7 +78,11 @@ impl Evaluator for TinyEvaluator<'_> {
     }
 }
 
-fn tiny_proofs(manifest: &TargetManifest, seed: &ArmyGenome) -> Result<(), String> {
+fn tiny_proofs(
+    manifest: &TargetManifest,
+    seed: &ArmyGenome,
+    account: &AccountRules,
+) -> Result<(), String> {
     let sides: Vec<_> = (0..8).map(|side| Scenario {
         army: "scout-proof".to_owned(),
         town_hall: 16,
@@ -119,14 +125,38 @@ fn tiny_proofs(manifest: &TargetManifest, seed: &ArmyGenome) -> Result<(), Strin
             calls: Vec::new()
         };
         let mut state = SearchState::new(123);
-        search::assess_wave(&mut state, candidates[..8]
-            .to_vec(), &mut evaluator, manifest, 4, 8, Objective::Ranked);
+        search::assess_wave(
+            &mut state,
+            candidates[..8].to_vec(),
+            &mut evaluator,
+            manifest,
+            4,
+            8,
+            Objective::Ranked,
+            account,
+        );
         // A persisted checkpoint must lead to the same second-wave archive.
-        let mut restored = report::roundtrip_state(&state, Objective::Ranked)?;
-        search::assess_wave(&mut state, candidates[8..]
-            .to_vec(), &mut evaluator, manifest, 4, 8, Objective::Ranked);
-        search::assess_wave(&mut restored, candidates[8..]
-            .to_vec(), &mut evaluator, manifest, 4, 8, Objective::Ranked);
+        let mut restored = report::roundtrip_state(&state, Objective::Ranked, account)?;
+        search::assess_wave(
+            &mut state,
+            candidates[8..].to_vec(),
+            &mut evaluator,
+            manifest,
+            4,
+            8,
+            Objective::Ranked,
+            account,
+        );
+        search::assess_wave(
+            &mut restored,
+            candidates[8..].to_vec(),
+            &mut evaluator,
+            manifest,
+            4,
+            8,
+            Objective::Ranked,
+            account,
+        );
         require(encode(&state.to_json()) == encode(&restored.to_json()), "resume changed archive")?;
         let best = state.elites(Objective::Ranked).remove(0);
         require(best.genome.identity() == candidates[7]
@@ -152,10 +182,26 @@ fn tiny_proofs(manifest: &TargetManifest, seed: &ArmyGenome) -> Result<(), Strin
             threads,
             calls: Vec::new()
         };
-        search::assess_wave(&mut isolated, candidates[..8]
-            .to_vec(), &mut changed_eval, &changed, 4, 8, Objective::Ranked);
-        search::assess_wave(&mut isolated, candidates[8..]
-            .to_vec(), &mut changed_eval, &changed, 4, 8, Objective::Ranked);
+        search::assess_wave(
+            &mut isolated,
+            candidates[..8].to_vec(),
+            &mut changed_eval,
+            &changed,
+            4,
+            8,
+            Objective::Ranked,
+            account,
+        );
+        search::assess_wave(
+            &mut isolated,
+            candidates[8..].to_vec(),
+            &mut changed_eval,
+            &changed,
+            4,
+            8,
+            Objective::Ranked,
+            account,
+        );
         require(encode(&report::archive_json(&state)) == encode(&report::archive_json(&isolated)), "holdout contents affected archive")?;
         let keys = score::allocate(manifest, Stage::Quick, 9, 123)?;
         require(keys.len() <= 9 && keys.iter().all(|key| manifest.targets[key.target].split == Split::Search), "budget or split allocation failure")?;
@@ -166,6 +212,312 @@ fn tiny_proofs(manifest: &TargetManifest, seed: &ArmyGenome) -> Result<(), Strin
         require(development.is_disjoint(&holdout), "holdout reused confirmation seeds")?;
     }
     Ok(())
+}
+
+/// Declared synthetic compositions exercise descriptors and distances only;
+/// roster-wide themes below also pass the production compiler admission gate.
+fn descriptor_and_novelty_proofs(
+    account: &AccountRules,
+    manifest: &TargetManifest,
+    seed: &ArmyGenome,
+) -> Result<(), String> {
+    let small = account
+        .roster
+        .troops
+        .iter()
+        .min_by_key(|unit| unit.housing)
+        .ok_or("proof needs troops")?;
+    let large = account
+        .roster
+        .troops
+        .iter()
+        .max_by_key(|unit| unit.housing)
+        .ok_or("proof needs troops")?;
+    require(
+        small.housing < large.housing,
+        "descriptor fixture needs distinct housing sizes",
+    )?;
+    let mut first = seed.clone();
+    first.plan = PlanGenes::default();
+    first.troops = vec![UnitCount {
+        name: small.name.clone(),
+        count: 1,
+    }];
+    let mut second = first.clone();
+    second.troops = vec![UnitCount {
+        name: large.name.clone(),
+        count: 1,
+    }];
+    require(
+        first.cell(account) != second.cell(account),
+        "generic main troops share a cell",
+    )?;
+    let mut tied = first.clone();
+    tied.troops = vec![
+        UnitCount {
+            name: small.name.clone(),
+            count: large.housing,
+        },
+        UnitCount {
+            name: large.name.clone(),
+            count: small.housing,
+        },
+    ];
+    let expected = small.name.as_str().min(large.name.as_str());
+    require(
+        tied.main_troop(account) == Some(expected),
+        "main troop tie is not alphabetical",
+    )?;
+    tied.troops.reverse();
+    require(
+        tied.main_troop(account) == Some(expected),
+        "main troop tie depends on order",
+    )?;
+    tied.heroes.reverse();
+    let cell = tied.cell(account);
+    tied.heroes.reverse();
+    require(tied.cell(account) == cell, "cell depends on hero order")?;
+    tied.troops = vec![
+        UnitCount {
+            name: small.name.clone(),
+            count: large.housing - 1,
+        },
+        UnitCount {
+            name: large.name.clone(),
+            count: small.housing,
+        },
+    ];
+    require(
+        tied.main_troop(account) == Some(large.name.as_str()),
+        "main troop uses count instead of housing",
+    )?;
+    first.plan.family = "synthetic-descriptor-playbook".to_owned();
+    second.plan.family = first.plan.family.clone();
+    require(
+        first.cell(account) == second.cell(account),
+        "playbook cell changed with main troop",
+    )?;
+    first.plan = PlanGenes::default();
+    second.plan = PlanGenes::default();
+    let mut evaluator = TinyEvaluator {
+        manifest,
+        threads: 1,
+        calls: Vec::new(),
+    };
+    let mut state = SearchState::new(123);
+    search::assess_wave(
+        &mut state,
+        vec![first.clone(), second.clone()],
+        &mut evaluator,
+        manifest,
+        4,
+        8,
+        Objective::Ranked,
+        account,
+    );
+    require(
+        state.archive.len() == 2,
+        "generic niche elites did not both survive",
+    )?;
+    report::roundtrip_state(&state, Objective::Ranked, account)?;
+
+    require(
+        novelty::distance(&first, &first, account) == 0,
+        "identical composition distance is nonzero",
+    )?;
+    require(
+        novelty::distance(&first, &second, account) == small.housing + large.housing,
+        "composition distance is not housing weighted",
+    )?;
+    require(
+        novelty::distance(&first, &second, account) == novelty::distance(&second, &first, account),
+        "composition distance is asymmetric",
+    )?;
+    let mut moved = first.clone();
+    moved.troops.clear();
+    moved.cc_troops.push(UnitCount {
+        name: small.name.clone(),
+        count: 1,
+    });
+    require(
+        novelty::distance(&first, &moved, account) == 2 * small.housing,
+        "CC and camp changes canceled out",
+    )?;
+    let spell = &account.roster.spells[0];
+    moved = first.clone();
+    moved.spells.push(UnitCount {
+        name: spell.name.clone(),
+        count: 1,
+    });
+    moved.cc_spells.push(UnitCount {
+        name: spell.name.clone(),
+        count: 1,
+    });
+    require(
+        novelty::distance(&first, &moved, account) == 2 * spell.housing,
+        "brewed/CC spell changes are absent from distance",
+    )?;
+    require(
+        novelty::label(0) == "real"
+            && novelty::label(153) == "variation"
+            && novelty::label(154) == "new composition",
+        "novelty thresholds changed",
+    )?;
+    let mut same = first.clone();
+    same.plan.angle_offset = 0.75;
+    let report = novelty::report(&same, &[second.clone(), first.clone()], account);
+    require(
+        report.at("label").str() == "real"
+            && report.at("nearest_seed").at("housing_l1").usize() == 0
+            && report.at("plan_validation").str() == novelty::GENERIC_VALIDATION
+            && !report.at("cited_playbook").bool(),
+        "novelty or generic validation report is incorrect",
+    )?;
+    let reversed = novelty::report(&same, &[first.clone(), second.clone()], account);
+    require(
+        encode(&report) == encode(&reversed),
+        "nearest seed depends on input order",
+    )?;
+    let tie = novelty::report(&same, &[first.clone(), same.clone()], account);
+    let reversed_tie = novelty::report(&same, &[same.clone(), first.clone()], account);
+    require(
+        encode(&tie) == encode(&reversed_tie),
+        "nearest seed distance tie depends on input order",
+    )?;
+    same.plan.family = "synthetic-descriptor-playbook".to_owned();
+    require(
+        novelty::report(&same, &[first], account).at("cited_playbook").bool(),
+        "cited playbook report is missing",
+    )?;
+    Ok(())
+}
+
+fn proposal_proofs(
+    account: &AccountRules,
+    compiler: &Compiler<'_>,
+    catalog: &Catalog,
+    templates: &[ArmyGenome],
+) -> Result<(), String> {
+    let settings = ProposalSettings::default();
+    settings.validate()?;
+    require(
+        settings.immigrant_counts(20) == (5, 1) && settings.immigrant_counts(32) == (8, 2),
+        "default immigrant batch allocation changed",
+    )?;
+    for (themed_fraction, random_fraction) in [
+        (f64::NAN, 0.0),
+        (0.0, f64::INFINITY),
+        (-0.1, 0.0),
+        (0.8, 0.3),
+    ] {
+        let invalid = ProposalSettings {
+            themed_fraction,
+            random_fraction,
+            ..settings
+        };
+        require(
+            invalid.validate().is_err(),
+            "invalid immigrant fractions admitted",
+        )?;
+    }
+    require(
+        Families::parse("unexpected").is_err(),
+        "invalid family filter admitted",
+    )?;
+    for families in [Families::All, Families::Playbook, Families::Generic] {
+        let settings = ProposalSettings {
+            families,
+            ..settings
+        };
+        if families == Families::Playbook {
+            require(
+                settings.immigrant_counts(20) == (0, 0),
+                "playbook mode allocated generic immigrants",
+            )?;
+        }
+        let mut state = SearchState::new(20261024);
+        let wave = search::proposals(&mut state, 20, templates, account, compiler, catalog, settings);
+        require(
+            wave.len() == 20 && wave.iter().all(|genome| families.allows(genome)),
+            "family filtering or full batch generation failed",
+        )?;
+        let mut restored = report::roundtrip_state(&state, Objective::Ranked, account)?;
+        let next = search::proposals(&mut state, 20, templates, account, compiler, catalog, settings);
+        let replayed = search::proposals(
+            &mut restored,
+            20,
+            templates,
+            account,
+            compiler,
+            catalog,
+            settings,
+        );
+        require(
+            next == replayed && encode(&state.to_json()) == encode(&restored.to_json()),
+            "proposal resume changed RNG, seed cursor, rejected or seen state",
+        )?;
+    }
+    for (themed_fraction, random_fraction) in [(1.0, 0.0), (0.0, 1.0)] {
+        let settings = ProposalSettings {
+            themed_fraction,
+            random_fraction,
+            ..settings
+        };
+        let wave = search::proposals(
+            &mut SearchState::new(89),
+            8,
+            &[],
+            account,
+            compiler,
+            catalog,
+            settings,
+        );
+        require(
+            wave.len() == 8 && wave.iter().all(|genome| genome.plan.family == "generic"),
+            "immigrants depend on seed recipes",
+        )?;
+    }
+    Ok(())
+}
+
+fn themed_proofs(
+    account: &AccountRules,
+    compiler: &Compiler<'_>,
+    catalog: &Catalog,
+) -> Result<usize, String> {
+    let mut rng = Random(20261024);
+    for main in &account.roster.troops {
+        for _ in 0..4 {
+            let mut replay_rng = rng.clone();
+            let mut genome = themed::for_main(account, catalog, main, &mut rng)?;
+            let replay = themed::for_main(account, catalog, main, &mut replay_rng)?;
+            require(
+                genome == replay && rng.0 == replay_rng.0,
+                "themed immigrant is not deterministic",
+            )?;
+            operators::admit(account, compiler, catalog, &mut genome)?;
+            account.check(&genome)?;
+            require(
+                genome.main_troop(account) == Some(main.name.as_str()),
+                "theme lost its main troop",
+            )?;
+            let space = genome
+                .troops
+                .iter()
+                .find(|unit| unit.name == main.name)
+                .map_or(0, |unit| unit.count * main.housing);
+            require(
+                (144..=256).contains(&space),
+                "theme main is outside 45-80% housing",
+            )?;
+            let plan = account.compile(compiler, catalog, &genome, 0.0, 0)?;
+            require(
+                !plan.at("observed").bool() && plan.at("strength").f64() == 1.0,
+                "themed immigrant inherited replay or strength exemptions",
+            )?;
+        }
+    }
+    Ok(account.roster.troops.len())
 }
 
 pub fn run(
@@ -185,7 +537,12 @@ pub fn run(
     let mut rejected = 0;
     let mut reasons = std::collections::BTreeMap::<String, usize>::new();
     for index in 0..iterations {
-        let candidate = if index % 17 == 0 {
+        let candidate = if index % 13 == 0 {
+            themed::immigrant(account, &catalog, &mut rng).and_then(|mut genome| {
+                operators::admit(account, compiler, &catalog, &mut genome)?;
+                Ok(genome)
+            })
+        } else if index % 17 == 0 {
             operators::immigrant(account, &mut rng).and_then(|mut genome| {
                 operators::admit(account, compiler, &catalog, &mut genome)?;
                 Ok(genome)
@@ -256,14 +613,35 @@ pub fn run(
     let small = TargetManifest {
         targets: vec![search_base, holdout_base]
     };
-    tiny_proofs(&small, &templates[0])?;
-    let candidates: Vec<ArmyGenome> = templates.iter().take(2).cloned().collect();
+    tiny_proofs(&small, &templates[0], account)?;
+    descriptor_and_novelty_proofs(account, &small, &templates[0])?;
+    proposal_proofs(account, compiler, &catalog, templates)?;
+    let themed_main_types = themed_proofs(account, compiler, &catalog)?;
+    let mut candidates: Vec<ArmyGenome> = templates.iter().take(2).cloned().collect();
+    let main = account
+        .roster
+        .troops
+        .iter()
+        .find(|unit| unit.name == "Hog Rider")
+        .unwrap_or(&account.roster.troops[0]);
+    let mut themed_native = themed::for_main(account, &catalog, main, &mut Random(123))?;
+    operators::admit(account, compiler, &catalog, &mut themed_native)?;
+    candidates.push(themed_native);
     let mut expected = None;
     for threads in [1, 4, 16] {
         eprintln!("armysearch-proof native determinism threads={threads}");
         let mut evaluator = NativeEvaluator::new(account, compiler, Arc::clone(&catalog), &small, 999, threads, None)?;
         let mut state = SearchState::new(999);
-        search::assess_wave(&mut state, candidates.clone(), &mut evaluator, &small, 4, 8, Objective::Ranked);
+        search::assess_wave(
+            &mut state,
+            candidates.clone(),
+            &mut evaluator,
+            &small,
+            4,
+            8,
+            Objective::Ranked,
+            account,
+        );
         require(!state.archive.is_empty(), "native battle proof produced no archive")?;
         require(state.rejected.is_empty(), "native battle proof rejected a fixture")?;
         for elite in state.archive.values().flatten() {
@@ -277,15 +655,32 @@ pub fn run(
         }
         expected = Some(archive);
     }
+    let gates = [
+        "legality",
+        "canonical identity",
+        "native thread determinism",
+        "tiny known optimum",
+        "checkpoint roundtrip/resume",
+        "cache equivalence",
+        "budget ceiling",
+        "holdout isolation and fresh seeds",
+        "main troop housing/tie descriptors",
+        "generic niche survival",
+        "novelty distance/labels",
+        "immigrant quotas and family filtering",
+        "proposal resume determinism",
+        "roster-wide themed admission",
+    ];
     Ok(object([
         ("status", string("passed")),
         ("legality_iterations", number(iterations)),
         ("accepted", number(accepted)),
         ("rejected_with_reason", number(rejected)),
+        ("themed_main_types", number(themed_main_types)),
         ("rejection_reasons", Json::Obj(reasons.into_iter()
             .map(|(reason, count)| (reason, number(count))).collect())),
         ("native_thread_counts", Json::Arr([1, 4, 16].into_iter().map(number).collect())),
-        ("gates", Json::Arr(["legality", "canonical identity", "native thread determinism", "tiny known optimum", "checkpoint roundtrip/resume", "cache equivalence", "budget ceiling", "holdout isolation and fresh seeds"].into_iter().map(string).collect())),
+        ("gates", Json::Arr(gates.into_iter().map(string).collect())),
         ("scope", string("native proof gates only; Python plan/battle parity and catalog parity remain external reviewer gates")),
     ]))
 }

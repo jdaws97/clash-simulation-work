@@ -1,4 +1,4 @@
-//! MAP-Elites over family x hero set, fixed waves, common seeds and paired racing.
+//! MAP-Elites over family/main troop x hero set, fixed waves and paired racing.
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
@@ -12,9 +12,88 @@ use super::eval::Evaluator;
 use super::genome::ArmyGenome;
 use super::operators;
 use super::score::{paired_interval, CandidateEstimate, Stage, TargetManifest};
+use super::themed;
 use super::util::{array, number, object, string, text, Random};
 
 pub const CELL_CAPACITY: usize = 3;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Families {
+    All,
+    Playbook,
+    Generic,
+}
+
+impl Families {
+    pub fn parse(value: &str) -> Result<Self, String> {
+        match value {
+            "all" => Ok(Self::All),
+            "playbook" => Ok(Self::Playbook),
+            "generic" => Ok(Self::Generic),
+            _ => Err("families must be all, playbook, or generic".to_owned()),
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::All => "all",
+            Self::Playbook => "playbook",
+            Self::Generic => "generic",
+        }
+    }
+
+    pub fn allows(self, genome: &ArmyGenome) -> bool {
+        match self {
+            Self::All => true,
+            Self::Playbook => genome.plan.family != "generic",
+            Self::Generic => genome.plan.family == "generic",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct ProposalSettings {
+    pub themed_fraction: f64,
+    pub random_fraction: f64,
+    pub families: Families,
+}
+
+impl Default for ProposalSettings {
+    fn default() -> Self {
+        Self {
+            themed_fraction: 0.25,
+            random_fraction: 0.05,
+            families: Families::All,
+        }
+    }
+}
+
+impl ProposalSettings {
+    pub fn validate(self) -> Result<(), String> {
+        if !self.themed_fraction.is_finite()
+            || !self.random_fraction.is_finite()
+            || !(0.0..=1.0).contains(&self.themed_fraction)
+            || !(0.0..=1.0).contains(&self.random_fraction)
+            || self.themed_fraction + self.random_fraction > 1.0
+        {
+            return Err(
+                "immigrant fractions must be finite, in [0,1], and sum to at most 1".to_owned(),
+            );
+        }
+        Ok(())
+    }
+
+    /// Nearest whole slots per batch, with themed slots allocated first.
+    /// Playbook-only searches devote all slots to compatible seeds/offspring.
+    pub fn immigrant_counts(self, count: usize) -> (usize, usize) {
+        if self.families == Families::Playbook {
+            return (0, 0);
+        }
+        let themed = ((count as f64 * self.themed_fraction).round() as usize).min(count);
+        let random = ((count as f64 * self.random_fraction).round() as usize).min(count - themed);
+        (themed, random)
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Objective {
@@ -103,8 +182,8 @@ impl SearchState {
         result
     }
 
-    pub fn insert(&mut self, elite: Elite, objective: Objective) {
-        let cell = self.archive.entry(elite.genome.cell()).or_default();
+    pub fn insert(&mut self, elite: Elite, objective: Objective, account: &AccountRules) {
+        let cell = self.archive.entry(elite.genome.cell(account)).or_default();
         let identity = elite.genome.identity();
         cell.retain(|old| old.genome.identity() != identity);
         cell.push(elite);
@@ -128,7 +207,11 @@ impl SearchState {
         ])
     }
 
-    pub fn from_json(value: &Json, objective: Objective) -> Result<Self, String> {
+    pub fn from_json(
+        value: &Json,
+        objective: Objective,
+        account: &AccountRules,
+    ) -> Result<Self, String> {
         let rng = text(value, "rng", "").parse::<u64>().map_err(|_| "bad checkpoint RNG state")?;
         let mut result = Self::new(rng);
         result.completed_batches = value.at("completed_batches").usize();
@@ -142,7 +225,7 @@ impl SearchState {
         result.rejected = value.at("rejected").obj().iter().map(|(key, value)| (key.clone(), value
             .usize())).collect();
         for elite in array(value, "archive") {
-            result.insert(Elite::from_json(elite)?, objective);
+            result.insert(Elite::from_json(elite)?, objective, account);
         }
         Ok(result)
     }
@@ -177,44 +260,76 @@ pub fn proposals(
     account: &AccountRules,
     compiler: &Compiler<'_>,
     catalog: &Catalog,
+    settings: ProposalSettings,
 ) -> Vec<ArmyGenome> {
     // Archive is frozen for the entire wave, independent of worker completion.
-    let parents: Vec<ArmyGenome> = state.archive.values().flatten().map(|elite| elite.genome
-        .clone()).collect();
+    let parents: Vec<ArmyGenome> = state
+        .archive
+        .values()
+        .flatten()
+        .filter(|elite| settings.families.allows(&elite.genome))
+        .map(|elite| elite.genome.clone())
+        .collect();
+    let templates: Vec<ArmyGenome> = templates
+        .iter()
+        .filter(|genome| settings.families.allows(genome))
+        .cloned()
+        .collect();
+    let (themed_count, random_count) = settings.immigrant_counts(count);
     let mut result = Vec::new();
     let mut attempts = 0;
     while result.len() < count && attempts < count.saturating_mul(100).max(100) {
         attempts += 1;
-        let candidate = if state.seed_cursor < templates.len() {
+        let candidate = if result.len() < themed_count + random_count {
+            let immigrant = if result.len() < themed_count {
+                themed::immigrant(account, catalog, &mut state.rng)
+            } else {
+                operators::immigrant(account, &mut state.rng)
+            };
+            immigrant.and_then(|mut genome| {
+                operators::admit(account, compiler, catalog, &mut genome)?;
+                Ok(genome)
+            })
+        } else if state.seed_cursor < templates.len() {
             let candidate = templates[state.seed_cursor].clone();
             state.seed_cursor += 1;
             Ok(candidate)
-        } else if state.rng.index(10) == 0 {
-            let mut immigrant = operators::immigrant(account, &mut state.rng);
-            if let Ok(child) = &mut immigrant {
-                if let Err(reason) = operators::admit(account, compiler, catalog, child) {
-                    immigrant = Err(reason);
-                }
-            }
-            immigrant
         } else {
             let pool = if parents.is_empty() {
-                templates
+                &templates
             } else {
                 &parents
             };
+            if pool.is_empty() {
+                state.rejection(
+                    "no seeds or parents for selected families and immigrant mix".to_owned(),
+                );
+                break;
+            }
             let parent = &pool[state.rng.index(pool.len())];
             if state.rng.index(5) == 0 {
                 let compatible: Vec<&ArmyGenome> = pool.iter().filter(|other| other.plan.family == parent.plan.family).collect();
                 let other = compatible[state.rng.index(compatible.len())];
                 operators::crossover(parent, other, account, compiler, catalog, &mut state.rng)
             } else {
-                operators::mutate(parent, templates, account, compiler, catalog, &mut state.rng)
+                let mutation_templates = if templates.is_empty() {
+                    pool
+                } else {
+                    &templates
+                };
+                operators::mutate(
+                    parent,
+                    mutation_templates,
+                    account,
+                    compiler,
+                    catalog,
+                    &mut state.rng,
+                )
             }
         };
         match candidate {
             Ok(candidate) => {
-                if state.seen.insert(candidate.identity()) {
+                if settings.families.allows(&candidate) && state.seen.insert(candidate.identity()) {
                     result.push(candidate);
                 }
             }
@@ -234,7 +349,8 @@ pub fn assess_wave(
     manifest: &TargetManifest,
     quick_budget: usize,
     confirm_budget: usize,
-    objective: Objective
+    objective: Objective,
+    account: &AccountRules,
 ) {
     let mut quick = Vec::new();
     for candidate in candidates {
@@ -252,7 +368,7 @@ pub fn assess_wave(
     let mut promotions = Vec::new();
     let mut promoted_per_cell = BTreeMap::<String, usize>::new();
     for (candidate, estimate) in quick {
-        let cell = candidate.cell();
+        let cell = candidate.cell(account);
         let count = promoted_per_cell.entry(cell.clone()).or_default();
         if *count >= CELL_CAPACITY {
             state.raced_out += 1;
@@ -289,7 +405,7 @@ pub fn assess_wave(
         }
     }
     for elite in confirmed {
-        state.insert(elite, objective);
+        state.insert(elite, objective, account);
     }
     state.completed_batches += 1;
 }

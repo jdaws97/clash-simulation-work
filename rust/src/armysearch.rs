@@ -14,11 +14,13 @@
 pub mod account;
 pub mod eval;
 pub mod genome;
+pub mod novelty;
 pub mod operators;
 pub mod proof;
 pub mod report;
 pub mod score;
 pub mod search;
+pub mod themed;
 mod util;
 
 pub use self::util::Random as SearchRandom;
@@ -33,10 +35,24 @@ use crate::json::Json;
 use self::account::AccountRules;
 use self::eval::NativeEvaluator;
 use self::score::{Stage, TargetManifest};
-use self::search::{Objective, SearchState};
+use self::search::{Families, Objective, ProposalSettings, SearchState};
 use self::util::{encode, hash, number, object, string, write};
 
-const USAGE: &str = "usage: baselab-engine armysearch [--manifest M.json] --out DIR --batches N --batch K --seed S --threads T [--quick-budget Q --confirm-budget C --top N --resume checkpoint.json --objective ranked|stars|destruction --holdout-budget H --root REPO --catalog C.json]\n       baselab-engine armysearch-proof [--manifest M.json --fuzz 4096 --out DIR --root REPO --catalog C.json]\nBudgets are per-candidate battle ceilings. Minimum coverage is two sides per base. Holdout defaults to 8 sides x 16 fresh seed groups per base.";
+const USAGE: &str = concat!(
+    "usage: baselab-engine armysearch [--manifest M.json] --out DIR ",
+    "--batches N --batch K --seed S --threads T [--quick-budget Q ",
+    "--confirm-budget C --top N --resume checkpoint.json ",
+    "--objective ranked|stars|destruction --holdout-budget H ",
+    "--themed-fraction 0.25 --random-fraction 0.05 ",
+    "--families all|playbook|generic --root REPO --catalog C.json]\n",
+    "       baselab-engine armysearch-proof [--manifest M.json --fuzz 4096 ",
+    "--out DIR --root REPO --catalog C.json]\n",
+    "Budgets are per-candidate battle ceilings. Minimum coverage is two sides per base. ",
+    "Holdout defaults to 8 sides x 16 fresh seed groups per base. ",
+    "Immigrant fractions are in [0,1], sum to at most 1, and reserve nearest-whole ",
+    "slots in every batch before seeds/offspring. Families default to all. ",
+    "Playbook-only mode uses compatible seeds/offspring for every slot.",
+);
 
 #[derive(Clone, Debug)]
 pub struct Config {
@@ -55,6 +71,7 @@ pub struct Config {
     pub objective: Objective,
     pub resume: Option<PathBuf>,
     pub fuzz: usize,
+    pub proposals: ProposalSettings,
 }
 
 fn find_root() -> Result<PathBuf, String> {
@@ -104,6 +121,9 @@ impl Config {
                     | "--objective"
                     | "--holdout-budget"
                     | "--fuzz"
+                    | "--themed-fraction"
+                    | "--random-fraction"
+                    | "--families"
             ) {
                 return Err(format!("unknown option {key}\n{USAGE}"));
             }
@@ -119,6 +139,26 @@ impl Config {
             .parse::<u64>().map_err(|_| "invalid --seed"))?;
         let objective = Objective::parse(argument("--objective").and_then(|value| value.to_str())
             .unwrap_or("ranked"))?;
+        let fraction = |name: &str, default: f64| -> Result<f64, String> {
+            argument(name).map_or(Ok(default), |value| {
+                value
+                    .to_str()
+                    .ok_or("non-UTF8 fraction")?
+                    .parse::<f64>()
+                    .map_err(|_| format!("invalid {name}"))
+            })
+        };
+        let proposals = ProposalSettings {
+            themed_fraction: fraction("--themed-fraction", 0.25)?,
+            random_fraction: fraction("--random-fraction", 0.05)?,
+            families: Families::parse(
+                argument("--families")
+                    .map(|value| value.to_str().ok_or("non-UTF8 families"))
+                    .transpose()?
+                    .unwrap_or("all"),
+            )?,
+        };
+        proposals.validate()?;
         let config = Self {
             catalog: argument("--catalog").cloned().unwrap_or_else(|| root.join("rust/data/catalog.json")),
             manifest: argument("--manifest").cloned(),
@@ -134,6 +174,7 @@ impl Config {
             objective,
             resume: argument("--resume").cloned(),
             fuzz: parse("--fuzz", 4096)?,
+            proposals,
             root,
         };
         if config.batches == 0 || config.batch == 0 || config.threads == 0 || config.top == 0 {
@@ -149,6 +190,9 @@ impl Config {
             ("quick_budget", number(self.quick_budget)),
             ("confirm_budget", number(self.confirm_budget)),
             ("objective", string(self.objective.name())),
+            ("themed_fraction", Json::Num(self.proposals.themed_fraction)),
+            ("random_fraction", Json::Num(self.proposals.random_fraction)),
+            ("families", string(self.proposals.families.name())),
             ("strength", Json::Num(1.0)),
         ])
     }
@@ -197,6 +241,14 @@ pub fn run(
     if templates.is_empty() {
         return Err("armysearch requires at least one admitted seed".to_owned());
     }
+    config.proposals.validate()?;
+    if config.proposals.families == Families::Playbook
+        && !templates
+            .iter()
+            .any(|genome| config.proposals.families.allows(genome))
+    {
+        return Err("no admitted playbook seeds for --families playbook".to_owned());
+    }
     score::allocate(manifest, Stage::Quick, config.quick_budget, config.seed)?;
     score::allocate(manifest, Stage::Confirm, config.confirm_budget, config.seed)?;
     let holdout_count = manifest.targets.iter().filter(|target| target.split == score::Split::Holdout).count();
@@ -209,15 +261,24 @@ pub fn run(
         return Err(format!("output already contains a checkpoint; use --resume {}", checkpoint.display()));
     }
     let mut state = if let Some(path) = &config.resume {
-        report::resume(path, &identity, config.objective)?
+        report::resume(path, &identity, config.objective, account)?
     } else {
         SearchState::new(config.seed)
     };
     report::validate_resumed(&state, |genome| account.compile(compiler, &catalog, genome, genome.plan.angle_offset, 0).map(|_| ()))?;
+    if state
+        .archive
+        .values()
+        .flatten()
+        .any(|elite| !config.proposals.families.allows(&elite.genome))
+    {
+        return Err("checkpoint contains an army excluded by --families".to_owned());
+    }
     if config.batches < state.completed_batches {
         return Err("requested batches precede checkpoint progress".to_owned());
     }
     std::fs::create_dir_all(&config.out).map_err(|error| error.to_string())?;
+    let (themed_slots, random_slots) = config.proposals.immigrant_counts(config.batch);
     write(&config.out.join("run-manifest.json"), &object([
         ("settings", config.identity_settings()),
         ("targets", manifest.to_json().at("targets").clone()),
@@ -225,6 +286,10 @@ pub fn run(
         ("account_assumptions", Json::Arr(account.assumptions.iter().map(string).collect())),
         ("seed_rejections", Json::Arr(seed_rejections.iter().map(string).collect())),
         ("holdout_budget", number(holdout_budget)),
+        ("immigrant_slots_per_batch", object([
+            ("themed", number(themed_slots)),
+            ("random", number(random_slots)),
+        ])),
         ("known_limits", string("frozen exported catalog; visible-layout assumptions; seed/base uncertainty cannot establish real-game calibration; Python parity gates external")),
     ]))?;
     let raw_path = config.out.join("battles.jsonl");
@@ -238,11 +303,28 @@ pub fn run(
     drop(raw);
     let mut evaluator = NativeEvaluator::new(account, compiler, Arc::clone(&catalog), manifest, config.seed, config.threads, Some(&raw_path))?;
     while state.completed_batches < config.batches {
-        let candidates = search::proposals(&mut state, config.batch, templates, account, compiler, &catalog);
+        let candidates = search::proposals(
+            &mut state,
+            config.batch,
+            templates,
+            account,
+            compiler,
+            &catalog,
+            config.proposals,
+        );
         if candidates.is_empty() {
             return Err("proposal space exhausted or all mutations rejected; inspect checkpoint rejection reasons".to_owned());
         }
-        search::assess_wave(&mut state, candidates, &mut evaluator, manifest, config.quick_budget, config.confirm_budget, config.objective);
+        search::assess_wave(
+            &mut state,
+            candidates,
+            &mut evaluator,
+            manifest,
+            config.quick_budget,
+            config.confirm_budget,
+            config.objective,
+            account,
+        );
         state.raw_bytes = evaluator.raw_len()?;
         report::checkpoint(&checkpoint, &identity, &state)?;
         write(&config.out.join("archive.json"), &report::archive_json(&state))?;
@@ -271,12 +353,23 @@ pub fn run(
         }
         let filename = format!("army-{:03}-{:016x}.json", position + 1, hash(elite.genome.identity()
             .as_bytes()));
-        report::army_report(&config.out
-            .join(&filename), position + 1, elite, &holdout, manifest, plan, housing, replay, config.seed)?;
+        report::army_report(
+            &config.out.join(&filename),
+            position + 1,
+            elite,
+            &holdout,
+            manifest,
+            plan,
+            housing,
+            replay,
+            config.seed,
+            account,
+            novelty::report(&elite.genome, templates, account),
+        )?;
         index.push(object([
             ("rank_before_holdout", number(position + 1)),
             ("report", string(filename)),
-            ("archive_cell", string(elite.genome.cell())),
+            ("archive_cell", string(elite.genome.cell(account))),
             ("confirmation", elite.confirm.metrics.to_json()),
             ("holdout", holdout.metrics.to_json()),
         ]));

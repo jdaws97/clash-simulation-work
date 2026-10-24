@@ -34,7 +34,7 @@ fn catalog_path() -> Result<PathBuf, String> {
 
 fn run() -> Result<(), String> {
     let mut args = env::args_os().skip(1);
-    let usage = "usage: baselab-engine trace <battle.json> <trace.txt> | run <battle.json>... | stats-check <cases.json> | setup-check <battle.json> <job.json> | trace-job <jobs.json> <k> <trace.txt> | jobs <jobs.json> <results.jsonl> [--threads N] | bench-runner <jobs.json> [--threads N]";
+    let usage = "usage: baselab-engine trace <battle.json> <trace.txt> | run <battle.json>... | stats-check <cases.json> | setup-check <battle.json> <job.json> | trace-job <jobs.json> <k> <trace.txt> | jobs <jobs.json> <results.jsonl> [--threads N] | bench-runner <jobs.json> [--threads N] | guardian-check";
     let command = args.next().ok_or(usage)?;
     let paths: Vec<PathBuf> = args.map(PathBuf::from).collect();
     let command = command.to_str().ok_or(usage)?;
@@ -52,6 +52,10 @@ fn run() -> Result<(), String> {
         let mut compile_args = vec![PathBuf::from(command)];
         compile_args.extend(paths);
         return baselab_engine::compile_cli::main(&compile_args);
+    }
+    if command == "guardian-check" && paths.is_empty() {
+        let catalog = Arc::new(Catalog::load(&catalog_path()?)?);
+        return baselab_engine::heroes::guardian_check(catalog);
     }
     if command == "stats-check" && paths.len() == 1 {
         return stats_check(&paths[0]);

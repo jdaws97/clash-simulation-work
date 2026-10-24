@@ -5,12 +5,13 @@ use std::path::Path;
 
 use crate::json::Json;
 
+use super::account::AccountRules;
 use super::genome::ArmyGenome;
 use super::score::{CandidateEstimate, TargetManifest};
 use super::search::{Elite, Objective, SearchState};
 use super::util::{encode, hash, number, object, read, string, text, write, Random};
 
-pub const CHECKPOINT_VERSION: usize = 1;
+pub const CHECKPOINT_VERSION: usize = 2;
 
 /// Write an adjacent temporary file and retain the previous complete snapshot.
 /// On Windows rename cannot replace an existing file, so resume accepts .bak.
@@ -34,7 +35,12 @@ pub fn checkpoint(path: &Path, identity: &str, state: &SearchState) -> Result<()
     std::fs::rename(&pending, path).map_err(|error| error.to_string())
 }
 
-pub fn resume(path: &Path, identity: &str, objective: Objective) -> Result<SearchState, String> {
+pub fn resume(
+    path: &Path,
+    identity: &str,
+    objective: Objective,
+    account: &AccountRules,
+) -> Result<SearchState, String> {
     let backup = path.with_extension("json.bak");
     let path = if path.exists() {
         path
@@ -43,9 +49,9 @@ pub fn resume(path: &Path, identity: &str, objective: Objective) -> Result<Searc
     };
     let value = read(path)?;
     if value.at("version").usize() != CHECKPOINT_VERSION || text(&value, "input_identity", "") != identity {
-        return Err("checkpoint version or inputs differ (account, catalog, targets, compiler, seed, batch, budgets, objective)".to_owned());
+        return Err("checkpoint version or inputs differ (account, catalog, targets, compiler, seed, batch, budgets, objective, immigrant fractions, families)".to_owned());
     }
-    SearchState::from_json(value.at("development"), objective)
+    SearchState::from_json(value.at("development"), objective, account)
 }
 
 pub fn input_identity(
@@ -256,10 +262,13 @@ pub fn army_report(
     housing: Json,
     replay: Json,
     seed: u64,
+    account: &AccountRules,
+    novelty: Json,
 ) -> Result<(), String> {
     write(path, &object([
         ("rank_before_holdout", number(rank)),
-        ("archive_cell", string(elite.genome.cell())),
+        ("archive_cell", string(elite.genome.cell(account))),
+        ("novelty", novelty),
         ("genome", elite.genome.to_json()),
         ("identity", string(elite.genome.identity())),
         ("strength", Json::Num(1.0)),
@@ -298,9 +307,13 @@ pub fn archive_json(state: &SearchState) -> Json {
     ])
 }
 
-pub fn roundtrip_state(state: &SearchState, objective: Objective) -> Result<SearchState, String> {
+pub fn roundtrip_state(
+    state: &SearchState,
+    objective: Objective,
+    account: &AccountRules,
+) -> Result<SearchState, String> {
     let value = crate::json::parse(&encode(&state.to_json())).map_err(|error| error.to_string())?;
-    let restored = SearchState::from_json(&value, objective)?;
+    let restored = SearchState::from_json(&value, objective, account)?;
     if encode(&state.to_json()) != encode(&restored.to_json()) {
         return Err("checkpoint roundtrip changed search state".to_owned());
     }

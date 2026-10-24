@@ -6,6 +6,7 @@ use crate::armies;
 use crate::compile::TACTIC_DEFAULTS;
 use crate::json::Json;
 
+use super::account::AccountRules;
 use super::util::{array, encode, number, numeric, object, string, text};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -150,10 +151,36 @@ impl ArmyGenome {
         encode(&canonical.to_json())
     }
 
-    pub fn cell(&self) -> String {
+    /// meta_armies.py:150-158 selects bulk by housing. Search additionally
+    /// breaks equal shares by name, independent of inventory iteration order.
+    pub fn main_troop(&self, account: &AccountRules) -> Option<&str> {
+        let mut shares = BTreeMap::<&str, usize>::new();
+        for unit in &self.troops {
+            if let Some(eligible) = account
+                .roster
+                .troops
+                .iter()
+                .find(|item| item.name == unit.name)
+            {
+                *shares.entry(&unit.name).or_default() += unit.count * eligible.housing;
+            }
+        }
+        shares
+            .into_iter()
+            .filter(|(_, housing)| *housing > 0)
+            .max_by(|(a, ah), (b, bh)| ah.cmp(bh).then_with(|| b.cmp(a)))
+            .map(|(name, _)| name)
+    }
+
+    pub fn cell(&self, account: &AccountRules) -> String {
         let mut heroes: Vec<&str> = self.heroes.iter().map(|hero| hero.hero.as_str()).collect();
         heroes.sort_unstable();
-        format!("{}|{}", self.plan.family, heroes.join("+"))
+        let family = if self.plan.family == "generic" {
+            format!("generic:{}", self.main_troop(account).unwrap_or("empty"))
+        } else {
+            self.plan.family.clone()
+        };
+        format!("{}|{}", family, heroes.join("+"))
     }
 
     pub fn to_build(&self) -> Json {

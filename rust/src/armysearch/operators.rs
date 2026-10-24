@@ -207,7 +207,7 @@ fn exchange(values: &mut Vec<UnitCount>, roster: &[EligibleUnit], rng: &mut Rand
     });
 }
 
-pub fn immigrant(account: &AccountRules, rng: &mut Random) -> Result<ArmyGenome, String> {
+pub(super) fn empty_immigrant(account: &AccountRules, rng: &mut Random) -> ArmyGenome {
     let mut heroes = account.roster.heroes.clone();
     let mut pets = account.roster.pets.clone();
     for index in (1..heroes.len()).rev() {
@@ -228,7 +228,7 @@ pub fn immigrant(account: &AccountRules, rng: &mut Random) -> Result<ArmyGenome,
             pet: pets[index].clone()
         }
     }).collect();
-    let mut genome = ArmyGenome {
+    ArmyGenome {
         troops: Vec::new(),
         spells: Vec::new(),
         cc_troops: Vec::new(),
@@ -240,7 +240,11 @@ pub fn immigrant(account: &AccountRules, rng: &mut Random) -> Result<ArmyGenome,
             angle_offset: rng.unit() * (2.0 * std::f64::consts::PI),
             ..PlanGenes::default()
         },
-    };
+    }
+}
+
+pub fn immigrant(account: &AccountRules, rng: &mut Random) -> Result<ArmyGenome, String> {
+    let mut genome = empty_immigrant(account, rng);
     for _ in 0..8 {
         exchange(&mut genome.troops, &account.roster.troops, rng, true);
     }

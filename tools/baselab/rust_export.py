@@ -22,6 +22,8 @@ data comes from a catalog regenerated after every game patch.
       stage 7: --n 184 covers 23 hero loadouts, two bases and four sides
       stage 8: --n 1584 covers 34 scripted meta builds (99 build/charge pairs),
                four STAGE4_BASES and four sides, including observed Witch/PEKKA
+      stage 9: --n 120 covers three TH18 Guardians, five TH16 meta builds,
+               two synthetic TH18 layouts and four sides; levels 1-5/default
 
 Trace format, one record per line: `T <t>` before each step, then after it
 `U <team> <id> <name> <x> <y> <hp>` for every living unit (attackers then
@@ -463,6 +465,28 @@ STAGE7_SIDES = 4
 STAGE7_N = len(STAGE7_LOADOUTS) * len(STAGE1_BASES) * STAGE7_SIDES  # 184
 STAGE8_SIDES = 4
 
+# Stage 9: declared synthetic TH18 Guardian variants. The second source is
+# deliberately raised to TH18 at maximum defense levels; its geometry is kept.
+# These scenarios exercise the oracle, not real-game calibration.
+STAGE9_BASES = [
+    "output/bases/target18-winner.json",
+    "data/reference-bases/real-l6x.json",
+]
+STAGE9_GUARDIANS = ("Longshot", "Smasher", "Logger")
+STAGE9_ARMIES = (
+    "meta:mass-thrower-16-1",
+    "meta:mass-thrower-16-2",
+    "meta:mass-dragons-16-1",
+    "meta:root-rider-16-1",
+    "meta:root-rider-16-2",
+)
+STAGE9_LEVELS = (None, 1, 2, 3, 4, 5)
+STAGE9_MODIFIERS = (None, "legend3", "legend2", "legend1")
+STAGE9_SIDES = 4
+STAGE9_N = (
+    len(STAGE9_GUARDIANS) * len(STAGE9_ARMIES) * len(STAGE9_BASES) * STAGE9_SIDES
+)  # 120
+
 
 @contextmanager
 def scripted_plans():
@@ -692,6 +716,43 @@ def scenario_inputs(stage, k):
         assert type(plan) is AttackPlan, f"stage 8 requires AttackPlan: {army}"
         plan.strength = STRENGTH.get(army, 1.0) * skill(seed)
         return lay, plan, {"seed": seed, "town_hall": 16}
+    if stage == 9:
+        from baselab.engine.plans import AttackPlan
+        from baselab.layout import Layout
+        from baselab.meta_armies import make_plan
+
+        guardian_index = k % len(STAGE9_GUARDIANS)
+        army_index = k // len(STAGE9_GUARDIANS) % len(STAGE9_ARMIES)
+        group = k // (len(STAGE9_GUARDIANS) * len(STAGE9_ARMIES))
+        base_index = group % len(STAGE9_BASES)
+        side = group // len(STAGE9_BASES) % STAGE9_SIDES
+        angle, seed = 2 * math.pi * side / STAGE9_SIDES + 0.1, 900 + k
+        lay = Layout.load(ROOT / STAGE9_BASES[base_index])
+        lay.name = f"synthetic-th18-guardian-{base_index}-{guardian_index}"
+        lay.notes = "Declared synthetic TH18 Guardian parity variant."
+        lay.town_hall = 18
+        lay.guardian = STAGE9_GUARDIANS[guardian_index]
+        # Keep source geometry, not account-specific TH16 defense levels.
+        lay.levels = {}
+        lay.hero_levels = {}
+        lay.wall_level = None
+        lay.wall_levels = {}
+        level = STAGE9_LEVELS[(army_index + group) % len(STAGE9_LEVELS)]
+        if level is not None:
+            lay.levels["guardian"] = level
+        with scripted_plans():
+            plan = make_plan(STAGE9_ARMIES[army_index], angle, 16, seed)
+        assert type(plan) is AttackPlan, "stage 9 requires scripted AttackPlan"
+        plan.strength = 1.0
+        return (
+            lay,
+            plan,
+            {
+                "seed": seed,
+                "town_hall": 18,
+                "modifier": STAGE9_MODIFIERS[side],
+            },
+        )
     raise ValueError(f"no stage {stage}")
 
 

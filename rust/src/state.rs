@@ -374,6 +374,8 @@ pub struct UnitExtra {
     pub next_mite_damage: f64,
     pub meteor_components: Option<Vec<(String, Level)>>,
     pub bouncing_frostmite: bool,
+    // heroes.py:1814: absent for ordinary units; required while a Guardian waits.
+    pub guardian_trigger: Option<f64>,
     pub waiting: bool,
     pub clone_casts: Vec<(String, i64)>,
     pub poison_exit: Option<(u64, Vec<u64>, (f64, f64))>,
@@ -520,6 +522,7 @@ impl Default for UnitExtra {
             next_mite_damage: 400.0,
             meteor_components: None,
             bouncing_frostmite: false,
+            guardian_trigger: None,
             waiting: false,
             clone_casts: Vec::new(),
             poison_exit: None,

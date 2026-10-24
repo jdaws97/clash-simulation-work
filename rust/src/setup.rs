@@ -616,6 +616,7 @@ fn spawn_defending_hero(battle: &mut Battle, name: &str, banner: BuildingId) {
     }
 }
 
+// heroes.py:1806-1823: catalog levels/radii, rooftop wait and league scaling.
 fn spawn_guardian(battle: &mut Battle, name: &str, th: BuildingId) {
     let level = nonzero(selected(&battle.defense_levels, "guardian"))
         .or_else(|| battle.catalog.stats.max_level(name, 18).filter(|v| *v != 0).map(Level::Int))
@@ -628,7 +629,7 @@ fn spawn_guardian(battle: &mut Battle, name: &str, th: BuildingId) {
         y + 1.0,
         SpawnOptions {
             level: Some(level),
-            kind: Tag::from("guardian"),
+            kind: Tag::Guardian,
             ..SpawnOptions::default()
         },
     );
@@ -641,7 +642,7 @@ fn spawn_guardian(battle: &mut Battle, name: &str, th: BuildingId) {
     let guardian = battle.unit_mut(unit);
     guardian.home = Some((x, y));
     guardian.leash = leash;
-    guardian.extra.unknown.push(("trigger".to_owned(), Value::Number(trigger)));
+    guardian.extra.guardian_trigger = Some(trigger);
     guardian.extra.waiting = true;
     guardian.active_at = 1e9;
     if multiplier != 1.0 {
@@ -760,6 +761,7 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
     let mode = building.mode.as_deref();
     if key == "th" {
         if battle.town_hall >= 18 {
+            // defense.py:431-433: Guardians replace the Town Hall weapon.
             return;
         }
         if battle.town_hall >= 17 {

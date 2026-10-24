@@ -1565,7 +1565,7 @@ fn on_death_effect(battle: &mut Battle, unit: UnitRef) {
         }
     }
     if sp.has_special(Special::Smasher) && unit.team == Team::Def {
-        todo!("later defending content: units.py:897 defending Smasher death Rage");
+        crate::heroes::guardian_death(battle, unit);
     }
     if sp.has_special(Special::DeathRage) {
         let u = battle.unit(unit);
@@ -3274,7 +3274,7 @@ fn after_unit_hit_effect(
     if sp.has_special(Special::Logger) {
         // specs.py:257-261: Logger is a TH18 defending Guardian, not an
         // attacking troop or a legal Clan Castle donation.
-        todo!("later defending content: units.py:2313 Logger collateral and pushback");
+        crate::heroes::guardian_after_hit(battle, unit, target, damage);
     }
     let victim = battle.unit(target);
     if sp.has_special(Special::HhPoison) && !(victim.kind == Tag::Guardian && victim.extra.waiting) {
