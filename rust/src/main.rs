@@ -38,6 +38,16 @@ fn run() -> Result<(), String> {
     let command = args.next().ok_or(usage)?;
     let paths: Vec<PathBuf> = args.map(PathBuf::from).collect();
     let command = command.to_str().ok_or(usage)?;
+    if matches!(command, "score" | "score-check") {
+        let mut score_args = vec![PathBuf::from(command)];
+        score_args.extend(paths);
+        return baselab_engine::score_cli::main(&score_args);
+    }
+    if matches!(command, "compile" | "compile-check") {
+        let mut compile_args = vec![PathBuf::from(command)];
+        compile_args.extend(paths);
+        return baselab_engine::compile_cli::main(&compile_args);
+    }
     if command == "stats-check" && paths.len() == 1 {
         return stats_check(&paths[0]);
     }

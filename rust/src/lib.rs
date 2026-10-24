@@ -1,9 +1,12 @@
 //! Battle engine and reusable prepared-job runner (std only).
 
 pub mod ai;
+pub mod armies;
 pub mod battle;
 pub mod catalog;
 pub mod combat;
+pub mod compile;
+pub mod compile_cli;
 pub mod defense;
 pub mod effects;
 pub mod fast_hash;
@@ -21,6 +24,9 @@ pub mod plans;
 pub mod playbook;
 pub mod pyrandom;
 pub mod runner;
+pub mod scoring;
+#[path = "scoring_cli.rs"]
+pub mod score_cli;
 pub mod setup;
 pub mod shared;
 pub mod source;
