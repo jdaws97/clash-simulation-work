@@ -38,6 +38,11 @@ fn run() -> Result<(), String> {
     let command = args.next().ok_or(usage)?;
     let paths: Vec<PathBuf> = args.map(PathBuf::from).collect();
     let command = command.to_str().ok_or(usage)?;
+    if matches!(command, "armysearch" | "armysearch-proof") {
+        let mut search_args = vec![PathBuf::from(command)];
+        search_args.extend(paths);
+        return baselab_engine::armysearch::main(&search_args);
+    }
     if matches!(command, "score" | "score-check") {
         let mut score_args = vec![PathBuf::from(command)];
         score_args.extend(paths);

@@ -2,6 +2,7 @@
 
 pub mod ai;
 pub mod armies;
+pub mod armysearch;
 pub mod battle;
 pub mod catalog;
 pub mod combat;
