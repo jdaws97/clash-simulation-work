@@ -122,6 +122,7 @@ def make_plan(replay: dict, key_index: dict, *, levels: str = "engine", jitter: 
                         siege=siege, siege_donated=siege is not None, ground=False,
                         loadouts=_loadouts(build, build["heroes"]))
     plan.observed = True  # a real army from the battle log: legal by definition
+    plan.real_battle = True  # plans.py require_legal: warn, do not fail
     if jitter > 0:
         rng = random.Random(seed)
         replay = dict(replay)

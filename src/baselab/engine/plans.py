@@ -933,13 +933,14 @@ class AttackPlan:
         # battle log ("log-N") were really played, so a legality miss there is
         # a gap in our unlock data (e.g. a TH15 attacker's Spirit Fox and
         # Totem Spell), not an illegal army: warn and keep the logged army.
-        battle_log = getattr(self, "observed", False) and str(
-            getattr(self, "build_id", "")
-        ).startswith("log-")
+        battle_log = getattr(self, "observed", False) and (
+            str(getattr(self, "build_id", "")).startswith("log-")
+            or getattr(self, "real_battle", False)  # replay_observed.py
+        )
         for problem in self.legal():
             if battle_log or self._logged_exception(problem):
                 warnings.warn(
-                    f"Logged army {self.build_id}: {problem}; using documented replay handling",
+                    f"Logged army {getattr(self, 'build_id', '(replay)')}: {problem}; using documented replay handling",
                     RuntimeWarning,
                     stacklevel=2,
                 )
