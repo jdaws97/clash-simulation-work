@@ -256,7 +256,8 @@ impl Battle {
             }
         }
         if target.is_some() && target != self.unit(reference).target {
-            units::new_target_windup(self, reference);
+            // battle.py:1598-1599: selection timing also inspects target distance.
+            units::new_target_windup(self, reference, target.expect("new attack target"));
         }
         self.unit_mut(reference).target = target;
         units::update_burrow(self, reference, target);
@@ -667,7 +668,12 @@ impl Battle {
             };
         }
         if target.is_some() && target.map(EntityRef::Unit) != self.unit(reference).target {
-            units::new_target_windup(self, reference);
+            // battle.py:2071-2072: defenders use the same target-aware windup.
+            units::new_target_windup(
+                self,
+                reference,
+                EntityRef::Unit(target.expect("new defense target")),
+            );
         }
         self.unit_mut(reference).target = target.map(EntityRef::Unit);
         let Some(target) = target else {

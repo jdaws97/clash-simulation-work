@@ -1,0 +1,1333 @@
+{
+ "family": "fireball-warden",
+ "name": "TH16 Fireball Warden charge into Log Launcher hero dive",
+ "sources": [
+  "pTmX2vmv4sc",
+  "o6YZ54fqojc",
+  "12Z_sTAEOHw",
+  "T7jZVhq_JU0",
+  "7rzBODLfnug"
+ ],
+ "army": {
+  "troops": {
+   "Rocket Balloon": 8,
+   "Super Minion": 5,
+   "Healer": 5,
+   "Wizard": 3,
+   "Headhunter": 3,
+   "Wall Breaker": 5,
+   "Archer": 3,
+   "Minion": 3,
+   "Balloon": 2,
+   "Furnace": 2,
+   "Druid": 1,
+   "Ice Golem": 1
+  },
+  "spells": {
+   "Earthquake Spell": 5,
+   "Invisibility Spell": 3,
+   "Recall Spell": 1,
+   "Totem Spell": 1
+  },
+  "cc": {
+   "Log Launcher": 1,
+   "Ice Golem": 1,
+   "Super Yeti": 1,
+   "Ice Block Spell": 1,
+   "Totem Spell": 1
+  },
+  "heroes": [
+   "Barbarian King",
+   "Archer Queen",
+   "Grand Warden",
+   "Dragon Duke"
+  ],
+  "loadouts": {
+   "Barbarian King": [
+    "Spiky Ball",
+    "Stick Horse",
+    "Phoenix"
+   ],
+   "Archer Queen": [
+    "Giant Arrow",
+    "Action Figure",
+    "Unicorn"
+   ],
+   "Grand Warden": [
+    "Rage Gem",
+    "Fireball",
+    "Electro Owl"
+   ],
+   "Dragon Duke": [
+    "Rocket Backpack",
+    "Fire Heart",
+    "Diggy"
+   ]
+  }
+ },
+ "base_reading": [
+  {
+   "rule": "Choose Fireball value that creates the route for the later hero dive.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 547,
+     "quote": "pathing because later on I actually want to have my heroes diving in"
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 132.8,
+     "quote": "want to aim for defenses like the Eagle Artillery, Spell Towers, or even the CC."
+    }
+   ]
+  },
+  {
+   "rule": "Clear interfering outside defenses before firing; Rocket Balloons can remove side damage and shape the Warden's path.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 89.1,
+     "quote": "down. He even uses a rocket balloon to"
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 153.1,
+     "quote": "rocket balloons to do so by sniping down"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 257.7,
+     "quote": "Whenever a defense starts dealing side damage, the super balloons can remove it"
+    }
+   ]
+  },
+  {
+   "rule": "Check which defense is closest to the Warden before activating Fireball; the aura can serve as a distance reference.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 144.2,
+     "quote": "Fireball only targets the closest defense,"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 299.1,
+     "quote": "You can use the warden's aura as a reference."
+    }
+   ]
+  },
+  {
+   "rule": "Prefer a quick, inexpensive Fireball with useful value when reaching farther would cost too many Invisibility Spells.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 95.8,
+     "quote": "just actually just fireball this. It's"
+    },
+    {
+     "video": "o6YZ54fqojc",
+     "t": 102.9,
+     "quote": "told me is I should go for quick and cheap fireballs, not something crazy."
+    },
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 615.1,
+     "quote": "after this builder hut here because by"
+    }
+   ]
+  },
+  {
+   "rule": "Plan the Log Launcher's path toward the Town Hall so the heroes can enter the core.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 824.4,
+     "quote": "launcher, you need to have the pathing."
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 210,
+     "quote": "break open the walls towards the town hall"
+    }
+   ]
+  },
+  {
+   "rule": "Choose Warden positions that give defensive value without stacked incoming damage or excessive spell investment, including after Recall.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 329.7,
+     "quote": "recall him somewhere where he's going to"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 180.4,
+     "quote": "Ideally, you want him to clear as many defenses as possible while"
+    }
+   ]
+  },
+  {
+   "rule": "Avoid sending the King and Queen through unnecessary Monolith pressure.",
+   "support": 2,
+   "cite": [
+    {
+     "video": "o6YZ54fqojc",
+     "t": 115.8,
+     "quote": "quite important, is that the monolith is something you try to avoid with your hero."
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 429.3,
+     "quote": "sends them from the candle side and saves this section for the duke"
+    }
+   ]
+  },
+  {
+   "rule": "Do not make the Warden invisible if that would redirect the attacker onto his Healers.",
+   "support": 1,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1156.4,
+     "quote": "Actually, I cannot turn the warden invisible right now because if I do so,"
+    }
+   ]
+  },
+  {
+   "rule": "Start the other sections promptly and keep watching the Warden while managing the hero dive.",
+   "support": 3,
+   "cite": [
+    {
+     "video": "o6YZ54fqojc",
+     "t": 544.9,
+     "quote": "Instead, I should have started my heroes like hours ago."
+    },
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 719.5,
+     "quote": "just all ruined by 1 second looking away"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 482.2,
+     "quote": "manage all of them quickly enough to avoid a time fail."
+    }
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "warden",
+   "action": "deploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "t": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 65,
+     "quote": "I would just place the warden for now"
+    },
+    {
+     "video": "o6YZ54fqojc",
+     "t": 588.1,
+     "quote": "get that warden onto the archer tower."
+    },
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 737.4,
+     "quote": "the warden walk from the right hand"
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 320.1,
+     "quote": "So we are using him on this 12 o'clock"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 243.8,
+     "quote": "Now, Synthy starts the warden walk from the left side."
+    }
+   ]
+  },
+  {
+   "id": "furnaces",
+   "action": "deploy",
+   "what": "Furnace",
+   "count": 2,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "o6YZ54fqojc",
+     "t": 159.1,
+     "quote": "I will even invest two furnaces because time is always an issue"
+    },
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 225.8,
+     "quote": "walk here. We have two furnaces with it."
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 138,
+     "quote": "We also want to use two furnaces with"
+    }
+   ]
+  },
+  {
+   "id": "archer_probe",
+   "action": "deploy",
+   "what": "Archer",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "after": "warden",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 70,
+     "quote": "I think let's use an archer."
+    },
+    {
+     "video": "o6YZ54fqojc",
+     "t": 137.9,
+     "quote": "Have one archer to double check if there are any Tesla."
+    }
+   ]
+  },
+  {
+   "id": "rocket_snipe",
+   "action": "deploy",
+   "what": "Rocket Balloon",
+   "count": 1,
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "after": "archer_probe",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 89.1,
+     "quote": "down. He even uses a rocket balloon to"
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 153.1,
+     "quote": "rocket balloons to do so by sniping down"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 265.8,
+     "quote": "Here he uses one to take down the archer tower on the left,"
+    }
+   ]
+  },
+  {
+   "id": "ice_block",
+   "action": "spell",
+   "what": "Ice Block Spell",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "charge",
+   "when": {
+    "after": "rocket_snipe",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 95,
+     "quote": "Then we're going to use the ice block"
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 172.2,
+     "quote": "want to use an ice block spell on the"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 288.1,
+     "quote": "an ice block spell to keep the warden exactly where he needs him."
+    }
+   ]
+  },
+  {
+   "id": "fireball",
+   "action": "ability",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "charge",
+   "when": {
+    "after": "ice_block",
+    "delay": 0
+   },
+   "support": 5,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 95.8,
+     "quote": "just actually just fireball this. It's"
+    },
+    {
+     "video": "o6YZ54fqojc",
+     "t": 146,
+     "quote": "fireball"
+    },
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 104.4,
+     "quote": "fireball into the center of the base."
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 124.7,
+     "quote": "use the Grand Warden's Fireball"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 292.4,
+     "quote": "target the builder hut in the core with the fireball."
+    }
+   ]
+  },
+  {
+   "id": "quake_first",
+   "action": "spell",
+   "what": "Earthquake Spell",
+   "count": 1,
+   "at": "building:mono",
+   "group": "charge",
+   "when": {
+    "after": "fireball",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 303,
+     "quote": "Uh plus the two earthquake spells. So,"
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 180.5,
+     "quote": "use two earthquake spells to"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 309.6,
+     "quote": "He quickly uses the earthquakes because multiple builder huts are protecting the clan castle"
+    }
+   ]
+  },
+  {
+   "id": "quake_second",
+   "action": "spell",
+   "what": "Earthquake Spell",
+   "count": 1,
+   "at": "building:mono",
+   "group": "charge",
+   "when": {
+    "after": "quake_first",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 303,
+     "quote": "Uh plus the two earthquake spells. So,"
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 180.5,
+     "quote": "use two earthquake spells to"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 309.6,
+     "quote": "He quickly uses the earthquakes because multiple builder huts are protecting the clan castle"
+    }
+   ]
+  },
+  {
+   "id": "healers",
+   "action": "deploy",
+   "what": "Healer",
+   "count": "all",
+   "at": "edge:charge",
+   "group": "charge",
+   "when": {
+    "after": "fireball",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "o6YZ54fqojc",
+     "t": 147.3,
+     "quote": "healers"
+    }
+   ]
+  },
+  {
+   "id": "warden_totem",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "threat:charge",
+   "group": "charge",
+   "when": {
+    "all": [
+     {
+      "after": "healers",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Grand Warden"
+     }
+    ]
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 220.7,
+     "quote": "keep him alive at all costs using our freeze and totem spells."
+    }
+   ]
+  },
+  {
+   "id": "warden_invisibility",
+   "action": "spell",
+   "what": "Invisibility Spell",
+   "count": 1,
+   "at": "unit_ahead:Grand Warden",
+   "group": "charge",
+   "when": {
+    "after": "ice_block",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1356.2,
+     "quote": "I would just invis to be honest."
+    },
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 100.7,
+     "quote": "line up your invis"
+    }
+   ],
+   "note": "Reordered 2026-10-24: 12Z_sTAEOHw casts Invisibility on the Warden while the Ice Block holds him, before the Fireball (the consolidation had it after the Healers, so the Warden walked unprotected)."
+  },
+  {
+   "id": "recall",
+   "action": "recall",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "unit:Grand Warden",
+   "group": "charge",
+   "when": {
+    "after": "healers",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1024.4,
+     "quote": "side because we're going to recall him later to the right side,"
+    },
+    {
+     "video": "o6YZ54fqojc",
+     "t": 189.9,
+     "quote": "recall. To the top side we go."
+    },
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 106.6,
+     "quote": "And any second now he's going to recall"
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 227.5,
+     "quote": "be used to recall him out and put him"
+    }
+   ]
+  },
+  {
+   "id": "warden_redeploy",
+   "action": "redeploy",
+   "what": "Grand Warden",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "charge",
+   "when": {
+    "after": "recall",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1024.4,
+     "quote": "side because we're going to recall him later to the right side,"
+    },
+    {
+     "video": "o6YZ54fqojc",
+     "t": 189.9,
+     "quote": "recall. To the top side we go."
+    },
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 143.5,
+     "quote": "If we zoom out, we recalled our warden"
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 229.5,
+     "quote": "into a safer area."
+    }
+   ]
+  },
+  {
+   "id": "ice_golem",
+   "action": "deploy",
+   "what": "Ice Golem",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "quake_second",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "o6YZ54fqojc",
+     "t": 198.6,
+     "quote": "Let's use an ice golem just like that"
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 192.3,
+     "quote": "we want to send in an ice golem in front"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 342.4,
+     "quote": "starts with an ice golem followed by the"
+    }
+   ]
+  },
+  {
+   "id": "king",
+   "action": "deploy",
+   "what": "Barbarian King",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "ice_golem",
+    "delay": 0
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 415.9,
+     "quote": "I was just sent the king."
+    },
+    {
+     "video": "o6YZ54fqojc",
+     "t": 217.4,
+     "quote": "the king now in there as well."
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 194.5,
+     "quote": "followed by our king and"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 344.7,
+     "quote": "king and queen."
+    }
+   ]
+  },
+  {
+   "id": "queen",
+   "action": "deploy",
+   "what": "Archer Queen",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "king",
+    "delay": 0
+   },
+   "support": 3,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 140.2,
+     "quote": "funnel. Then the queen and king are"
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 197,
+     "quote": "queen along with the log launcher"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 344.7,
+     "quote": "king and queen."
+    }
+   ]
+  },
+  {
+   "id": "log_launcher",
+   "action": "deploy",
+   "what": "Log Launcher",
+   "count": 1,
+   "at": "edge:main",
+   "group": "main",
+   "when": {
+    "after": "queen",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1657.8,
+     "quote": "launcher from the far side, I guess."
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 197,
+     "quote": "along with the log launcher to"
+    }
+   ]
+  },
+  {
+   "id": "king_spiky_ball",
+   "action": "ability",
+   "what": "Barbarian King",
+   "count": 1,
+   "at": "unit:Barbarian King",
+   "group": "main",
+   "when": {
+    "inside": "Barbarian King"
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1102.3,
+     "quote": "looking good. I would say king ability now."
+    },
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 234.2,
+     "quote": "the Barbarian King's ability to open up"
+    }
+   ]
+  },
+  {
+   "id": "duke",
+   "action": "deploy",
+   "what": "Dragon Duke",
+   "count": 1,
+   "at": "edge:funnel",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "after": "log_launcher",
+      "delay": 0
+     },
+     {
+      "group_inside": "main"
+     }
+    ]
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 259,
+     "quote": "Dragon Duke."
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 436.8,
+     "quote": "The duke comes in from the right"
+    }
+   ]
+  },
+  {
+   "id": "duke_rockets",
+   "action": "deploy",
+   "what": "Rocket Balloon",
+   "count": "all",
+   "at": "edge:funnel",
+   "group": "duke",
+   "when": {
+    "after": "duke",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 259,
+     "quote": "remaining rocket balloons and the Dragon"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 438.3,
+     "quote": "supported by the remaining super balloons and super minions"
+    }
+   ]
+  },
+  {
+   "id": "duke_super_minions",
+   "action": "deploy",
+   "what": "Super Minion",
+   "count": "all",
+   "at": "edge:funnel",
+   "group": "duke",
+   "when": {
+    "after": "duke_rockets",
+    "delay": 0
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "7rzBODLfnug",
+     "t": 438.3,
+     "quote": "supported by the remaining super balloons and super minions"
+    }
+   ]
+  },
+  {
+   "id": "duke_totem",
+   "action": "spell",
+   "what": "Totem Spell",
+   "count": 1,
+   "at": "building:mono",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "after": "duke",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Dragon Duke"
+     }
+    ]
+   },
+   "support": 1,
+   "cite": [
+    {
+     "video": "7rzBODLfnug",
+     "t": 448.3,
+     "quote": "He then uses the totem spell along with"
+    }
+   ]
+  },
+  {
+   "id": "duke_invisibility",
+   "action": "spell",
+   "what": "Invisibility Spell",
+   "count": 1,
+   "at": "unit_ahead:Dragon Duke",
+   "group": "duke",
+   "when": {
+    "all": [
+     {
+      "after": "duke",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Dragon Duke"
+     }
+    ]
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1200.5,
+     "quote": "invis the dragon juke,"
+    },
+    {
+     "video": "7rzBODLfnug",
+     "t": 453.9,
+     "quote": "With two invisibility spells still available, he can protect the duke"
+    }
+   ]
+  }
+ ],
+ "variants": [
+  {
+   "name": "Three-Invisibility Fireball redirect",
+   "replaces": [
+    "fireball",
+    "warden_invisibility",
+    "duke_invisibility"
+   ],
+   "steps": [
+    {
+     "id": "redirect_first",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "after": "ice_block",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "T7jZVhq_JU0",
+       "t": 176.5,
+       "quote": "three to four invisibility spells to"
+      },
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 408.2,
+       "quote": "the rage tower, sorry. And look at the"
+      }
+     ]
+    },
+    {
+     "id": "redirect_second",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "after": "redirect_first",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "T7jZVhq_JU0",
+       "t": 176.5,
+       "quote": "three to four invisibility spells to"
+      },
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 408.2,
+       "quote": "the rage tower, sorry. And look at the"
+      }
+     ]
+    },
+    {
+     "id": "redirect_third",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "after": "redirect_second",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "T7jZVhq_JU0",
+       "t": 176.5,
+       "quote": "three to four invisibility spells to"
+      },
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 408.2,
+       "quote": "the rage tower, sorry. And look at the"
+      }
+     ]
+    },
+    {
+     "id": "fireball",
+     "action": "ability",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "charge",
+     "when": {
+      "after": "redirect_third",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "T7jZVhq_JU0",
+       "t": 124.7,
+       "quote": "use the Grand Warden's Fireball"
+      },
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 104.4,
+       "quote": "fireball into the center of the base."
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "T7jZVhq_JU0",
+     "t": 176.5,
+     "quote": "three to four invisibility spells to"
+    },
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 408.2,
+     "quote": "the rage tower, sorry. And look at the"
+    }
+   ]
+  },
+  {
+   "name": "Quick Fireball before Healers and Furnaces",
+   "replaces": [
+    "ice_block",
+    "fireball",
+    "furnaces"
+   ],
+   "steps": [
+    {
+     "id": "fireball",
+     "action": "ability",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "charge",
+     "when": {
+      "after": "rocket_snipe",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 95.8,
+       "quote": "just actually just fireball this. It's"
+      },
+      {
+       "video": "o6YZ54fqojc",
+       "t": 146,
+       "quote": "fireball"
+      }
+     ]
+    },
+    {
+     "id": "furnaces",
+     "action": "deploy",
+     "what": "Furnace",
+     "count": 2,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "healers",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "o6YZ54fqojc",
+       "t": 159.1,
+       "quote": "I will even invest two furnaces because time is always an issue"
+      }
+     ]
+    }
+   ],
+   "support": 2,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 95.8,
+     "quote": "just actually just fireball this. It's"
+    },
+    {
+     "video": "o6YZ54fqojc",
+     "t": 102.9,
+     "quote": "told me is I should go for quick and cheap fireballs, not something crazy."
+    }
+   ]
+  },
+  {
+   "name": "Wall Breaker entry with Headhunters and Druid",
+   "replaces": [
+    "king"
+   ],
+   "steps": [
+    {
+     "id": "wall_breakers",
+     "action": "deploy",
+     "what": "Wall Breaker",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "ice_golem",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "o6YZ54fqojc",
+       "t": 207.4,
+       "quote": "We have the wall breaks going in there."
+      }
+     ]
+    },
+    {
+     "id": "king",
+     "action": "deploy",
+     "what": "Barbarian King",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "wall_breakers",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "o6YZ54fqojc",
+       "t": 217.4,
+       "quote": "the king now in there as well."
+      }
+     ]
+    },
+    {
+     "id": "headhunters",
+     "action": "deploy",
+     "what": "Headhunter",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "all": [
+       {
+        "after": "queen",
+        "delay": 0
+       },
+       {
+        "defenders_near": "main"
+       }
+      ]
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "o6YZ54fqojc",
+       "t": 425.6,
+       "quote": "Queen. Add hunters, everything in there."
+      }
+     ]
+    },
+    {
+     "id": "druid",
+     "action": "deploy",
+     "what": "Druid",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "o6YZ54fqojc",
+       "t": 438,
+       "quote": "I think we popped that queen ability and the druid just to make sure"
+      },
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1211.8,
+       "quote": "the druid a bit earlier for the giant as well,"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "o6YZ54fqojc",
+     "t": 207.4,
+     "quote": "We have the wall breaks going in there."
+    },
+    {
+     "video": "o6YZ54fqojc",
+     "t": 425.6,
+     "quote": "Queen. Add hunters, everything in there."
+    },
+    {
+     "video": "o6YZ54fqojc",
+     "t": 438,
+     "quote": "I think we popped that queen ability and the druid just to make sure"
+    }
+   ]
+  },
+  {
+   "name": "Early Spiky Ball to establish the hero funnel",
+   "replaces": [
+    "king_spiky_ball",
+    "queen"
+   ],
+   "steps": [
+    {
+     "id": "king_spiky_ball",
+     "action": "ability",
+     "what": "Barbarian King",
+     "count": 1,
+     "at": "unit:Barbarian King",
+     "group": "main",
+     "when": {
+      "after": "king",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 138.4,
+       "quote": "look, spiky ball sets a beautiful"
+      }
+     ]
+    },
+    {
+     "id": "queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "king_spiky_ball",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 140.2,
+       "quote": "funnel. Then the queen and king are"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 138.4,
+     "quote": "look, spiky ball sets a beautiful"
+    }
+   ]
+  },
+  {
+   "name": "Giant Arrow through the opened core",
+   "replaces": [],
+   "steps": [
+    {
+     "id": "queen_giant_arrow",
+     "action": "ability",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "main",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1055.8,
+       "quote": "get the core out with the arrow"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1055.8,
+     "quote": "get the core out with the arrow"
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "The army and all equipment-and-pet loadouts are exactly the user's logged TH16 army, overriding the guide's usual most-common-source composition rule. This is the new fireball-warden family; four supplied extractions use super-minion-air and T7jZVhq_JU0 uses other.",
+  "Only the five supplied relevant extractions and matching transcripts were used. Quotes and verified_t values were checked against those transcripts. Citation timestamps are video offsets, not battle times; t: 0 represents the narrated start.",
+  "Support counts distinct videos describing an action or rule, not separate attacks within a video. Support for an action does not imply identical placement, quantity or timing in every supporting example; those differences are identified here and in variants.",
+  "pTmX2vmv4sc carries eight Rocket Balloons, six Super Minions, three Furnaces and two Druids. o6YZ54fqojc carries nine Rocket Balloons, five Super Minions, three Furnaces and one Druid. 12Z_sTAEOHw carries eleven Rocket Balloons, two Furnaces and Clan Castle Super Minions, with Royal Champion replacing Dragon Duke. 7rzBODLfnug carries twelve Rocket Balloons, five Super Minions and two Druids. T7jZVhq_JU0 does not state a complete composition. Their spell totals, reinforcements, equipment and pets also differ.",
+  "Unavailable Flame Flinger sections and payload releases, Royal Champion steps, Baby Dragon funnels, Super Wall Breakers, Yeti, Goblin, Valkyrie, extra Furnaces or Druids, Freeze, Poison, Rage and Revive actions are omitted. The compatible Log Launcher entry is retained. The logged Clan Castle Ice Golem and Super Yeti remain its payload, not additional free deployments.",
+  "Earthquake Boots wall opening, Magic Mirror clones, Stun Blaster stuns and Angry Jelly defense targeting are omitted. The King ability retains the sourced Spiky Ball damage component with Stick Horse equipped. Duke deployment and troop support remain usable with Rocket Backpack, Fire Heart and Diggy, without assuming the videos' pet targeting or stuns.",
+  "No fixed attack-relative delays or repeat cadence are supplied. Every after trigger therefore uses delay: 0. Waits for outside defenses to fall, the correct Fireball position, completed funneling and useful pre-Recall clearing have no exact vocabulary trigger; preceding preparation steps approximate them. No destruction percentage or numerical health threshold is invented.",
+  "edge:charge, edge:main and edge:funnel represent scouted roles, not fixed clock positions. edge:funnel approximates the safer recalled-Warden area and separate Duke flank. Rocket Balloon placement uses the charge edge nearest the narrated outside defense. group_inside: main approximates the later Duke section after the hero dive progresses.",
+  "The two Earthquake casts are separate steps. building:mono is the concrete surviving-core-defense anchor from 12Z_sTAEOHw, so this default targets a Monolith-containing Fireball cluster. Other examples target different clusters, including the Clan Castle area. The sources support two follow-up casts, not an invented schedule spending all five logged Earthquakes; three remain unassigned.",
+  "o6YZ54fqojc explicitly deploys Healers immediately after Fireball but does not state their deployment count; all uses the logged five. The other extractions do not establish initial Healer timing. The early two-Furnace timing follows T7jZVhq_JU0 and examples in 12Z_sTAEOHw. o6YZ54fqojc deploys them after Fireball, represented in the quick-Fireball variant; its later third Furnace is omitted.",
+  "Recall follows the opening Fireball and Healer deployment with no invented clearing delay. Some examples instead recall only when the Warden or Healers are threatened. Redeploy returns the captured group together; the sources do not establish that every Healer or pet is always recalled.",
+  "all means remaining logged troops, not a claim that the source states that deployment count. The early Rocket Balloon count of one follows explicit examples in 12Z_sTAEOHw and 7rzBODLfnug; T7jZVhq_JU0 describes an unspecified few. Remaining Rocket Balloons and Super Minions support the Duke. Additional early groups and a separate Super Minion funnel lack a reliable shared allocation.",
+  "Protection policies have no precise cadence. Individual spell steps represent one cast opportunity: one Totem for Warden protection and one for a surviving Monolith engagement with the Duke, within the two carried Totems. threat:charge approximates the unspecified Warden Totem placement; heavy_fire approximates the narrated danger. The Duke Totem has no surviving target if the Monolith was already destroyed.",
+  "Warden Invisibility uses defenders_near as the closest trigger for the specifically narrated defending King attack. This broader proxy cannot enforce the cited warning about redirecting damage onto Healers. Duke Invisibility uses heavy_fire for the dangerous entry. Neither protection policy is converted into an invented repeating interval.",
+  "The three-Invisibility variant uses the lower end of T7jZVhq_JU0's three-to-four recommendation and the three-cast Rage Tower example in 12Z_sTAEOHw. It spends all three logged Invisibility Spells and removes both defensive Invisibility steps. Exact redirection placements are unspoken; threat:charge approximates intervening defenses and cannot guarantee the intended target. The four-cast setup exceeds this army's inventory.",
+  "The Wall Breaker variant uses ordinary Wall Breakers from o6YZ54fqojc, not substituted Super Wall Breakers. Druid timing is approximated after Queen entry: o6YZ54fqojc pairs it with a Queen ability using a different loadout, while pTmX2vmv4sc recommends earlier support for the Action Figure giant. No Magic Mirror activation is copied.",
+  "The Giant Arrow variant retains pTmX2vmv4sc's opened-core shot with the logged equipment. Its cleared-approach prerequisite and exact firing line are not expressible in the listed vocabulary, so after Queen deployment with delay: 0 is an approximation. No shared Rocket Backpack activation timing is inferred from Stun Blaster or Revenge Deck actions.",
+  "Wizard, Balloon, remaining cleanup Archer and Minion deployments have no additional precise shared placement-and-timing policy encoded here. Wall Breaker, Headhunter and Druid deployments are provided as a variant. Unallocated troops and spells remain in the logged army. No manual Log Launcher release time is stated.",
+  "12Z_sTAEOHw and T7jZVhq_JU0 explicitly concern TH16; the other extractions do not state a numerical Town Hall level. 12Z_sTAEOHw describes TH16 attacks against TH18 bases under Legends modifiers and includes failed plans. These are source-described tactics, not real-game calibration results for the logged army.",
+  "2026-10-24 fix: warden_invisibility now follows ice_block (12Z_sTAEOHw ~100 s), not the Healers."
+ ],
+ "check": {
+  "steps_kept": 23,
+  "steps_dropped": 0,
+  "reasons": {},
+  "dangling_after": []
+ }
+}

@@ -311,6 +311,7 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         } else {
             kit.levels.push((equipment.clone(), level.clone()));
         }
+        // stats.py:21-28,76-81: equipment boosts use the balance-adjusted catalog registry.
         let hp = col(battle, equipment, &level, &["hitpoint increase", "hp increase"], 0.0);
         let dps = col(battle, equipment, &level, &["damage per second increase", "dps increase"], 0.0);
         let attack_speed = col(battle, equipment, &level,
@@ -322,6 +323,7 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         passive_dps += dps;
         passive_speed += attack_speed / 100.0;
         if equipment == "Fire Heart" {
+            // stats.py:82-84: resolved abilities also include balance replacements.
             let ability = battle.catalog.equipment_ability(equipment, &level);
             kit.regen += game_float(ability, "Regeneration") * 1000.0
                 / game_float(ability, "RegenerationTimeBetweenHitsMS");

@@ -394,6 +394,10 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
         let actual = weapon_mut(battle, owner);
         actual.target = target;
         actual.lock_time = 0.0;
+        if kind == Tag::Scatter {
+            // defense.py:1020-1022: every newly acquired target starts the delay.
+            actual.cooldown = actual.cooldown.max(actual.extra.new_target_delay);
+        }
     }
     let target = target.expect("single-target defense target");
     if kind == Tag::InfernoSingle {
@@ -476,7 +480,7 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
     let damage = w.damage * damage_rage;
     match kind {
         Tag::Single => match battle.building(owner).key.as_str() {
-            "cannon" | "at" | "ad" | "bh" | "mgt" => {
+            "cannon" | "at" | "ad" | "xbow" | "bh" | "mgt" => {
                 let building = battle.building(owner);
                 let alternate = building.key == "at"
                     && !matches!(building.mode.as_deref(), None | Some("normal"));
@@ -485,7 +489,8 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
                 let speed = match building.key.as_str() {
                     "cannon" => 12.0,
                     "at" => 18.0,
-                    "bh" => game_required_int(data, "Speed") as f64 / 100.0,
+                    // defense.py:1090-1095: X-Bow arrows use the catalog projectile speed.
+                    "xbow" | "bh" => game_required_int(data, "Speed") as f64 / 100.0,
                     _ => 8.0,
                 };
                 projectile(battle, owner, target, damage, speed, offset);
@@ -578,7 +583,28 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
             }
         }
         Tag::Mortar => mortar_shell(battle, owner, target, damage),
-        Tag::Scatter => scatter(battle, owner, target, damage, damage_rage),
+        Tag::Scatter => {
+            // defense.py:1175-1196: track the primary and resolve the cone at impact.
+            let data = projectile_data(battle, owner, false);
+            let speed = game_required_int(data, "Speed") as f64 / 100.0;
+            let offset = game_required_int(data, "StartOffset") as f64 / 100.0;
+            let unit = battle.unit(target);
+            let flight = 0.0_f64.max(dist(bx, by, unit.x, unit.y) - offset) / speed;
+            let mut pending = Pending::new(
+                t + flight,
+                unit.x,
+                unit.y,
+                0.0,
+                damage,
+                unit.flying,
+                !unit.flying,
+                "scatter",
+            );
+            pending.extra.scatter = Some(owner);
+            pending.extra.rage = damage_rage;
+            pending.target = Some(EntityRef::Unit(target));
+            battle.add_pending(pending);
+        }
         Tag::Hunter => hunter_hit(battle, owner, target, damage_rage),
         _ => {}
     }
@@ -957,13 +983,17 @@ pub fn eagle(battle: &mut Battle, owner: BuildingId) {
     let target = target.expect("Eagle shell target");
     let w = weapon(battle, owner).clone();
     let (bx, by) = battle.entity_position(EntityRef::Building(owner));
+    // defense.py:1435-1442: catalog flight time; damage delay remains explicitly unused.
+    let data = projectile_data(battle, owner, false);
+    let flight = game_required_int(data, "FixedTravelTime") as f64 / 1000.0;
+    let damage_delay = 0.0;
     for (radius, damage, shock) in [
         (w.extra.splash, w.damage, false),
         (w.extra.shock_radius, w.extra.shock, true),
     ] {
         let (x, y) = battle.entity_position(EntityRef::Unit(target));
         let mut pending = Pending::new(
-            battle.t + 5.0,
+            battle.t + flight,
             x,
             y,
             radius,
@@ -972,6 +1002,7 @@ pub fn eagle(battle: &mut Battle, owner: BuildingId) {
             true,
             "eagle",
         );
+        pending.extra.damage_delay = damage_delay;
         pending.extra.track = Some(EntityRef::Unit(target));
         pending.extra.origin = Some((bx, by));
         pending.extra.min_range = w.min_range;

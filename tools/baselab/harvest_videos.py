@@ -37,7 +37,14 @@ QUERIES = {
     "super-bowler": ["super bowler smash attack th17", "super bowler attack strategy th16"],
     "yeti": ["super yeti attack th17", "yeti smash attack strategy th16"],
     "lavaloon": ["lavaloon attack th16", "lalo attack strategy th17"],
-    "meteor-golem": ["meteor golem attack strategy"],
+    "meteor-golem": ["meteor golem attack strategy", "th16 meteor golem attack", "meteor golem warden walk",
+                     "th16 warden walk attack", "meteor golem eternal tome warden attack th16"],
+    # User (TH16 ranked, 2026-10-24): the Grand Warden Fireball walk.
+    "warden-walk": ["th16 fireball warden walk", "fireball warden walk attack", "grand warden fireball attack th16",
+                    "warden walk fireball rage gem", "th16 warden walk attack strategy", "fireball walk clash of clans"],
+    # User (TH16 ranked, 2026-10-24): new TH16 armies to simulate.
+    "th16-new": ["th16 best attack strategy", "th16 legend league attack", "th16 ranked attack strategy",
+                 "best th16 army after update", "th16 attack strategy 2026"],
     "druid-ruin-witch": ["ruin witch attack strategy", "druid attack strategy th16"],
     "super-minion-air": ["super minion rocket balloon attack", "rocket balloon attack strategy th16"],
 }

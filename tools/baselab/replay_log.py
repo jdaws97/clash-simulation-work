@@ -304,6 +304,12 @@ def main():
             base=base,
             real_time=b.get("battleTime"),
             sim_time_3star=sim_t3,
+            # User (TH16 ranked, 2026-10-24): failed attacks should run as long
+            # as real ones, often to the 180 s timer.
+            sim_time_median=float(np.median([r[2] for r in picked])),
+            sim_timeout=float(np.mean([r[2] >= 179.5 for r in picked])),
+            sim_times=[round(r[2], 1) for r in picked],
+            sim_stars=[r[0] for r in picked],
             battleTimestamp=battle_time,
             snapshot_id=entry["id"] if entry else None,
             current_levels_fallback=entry is None,

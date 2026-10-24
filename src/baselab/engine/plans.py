@@ -904,6 +904,7 @@ class AttackPlan:
                 if name == "Healer"
             )
         weights = {}
+        others = [b for b in battle.buildings if b.key != "wall"]
         for building in battle.buildings:
             weight = float(THREAT.get(building.key, 1))
             if air_army:
@@ -924,6 +925,20 @@ class AttackPlan:
                     weight *= 1.6
                 elif building.key == "inferno" and building.mode == "single":
                     weight *= 1.5
+            # User (TH16 ranked, 2026-10-24): an exposed Eagle is prime value for
+            # a Spear, Backpack or Earthquake. A defense that reaches more of the
+            # village fights more of the attack: scale by the share it covers.
+            weapon = building.weapon
+            if weapon is not None and others:
+                covered = sum(
+                    1
+                    for other in others
+                    if other is not building
+                    and weapon.min_range
+                    <= math.hypot(other.x - building.x, other.y - building.y)
+                    <= weapon.range + building.half_hit
+                )
+                weight *= 1.0 + covered / len(others)
             weights[building.id] = weight
         return weights
 

@@ -950,6 +950,8 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
             );
             w.extra.splash_max = 420.0;
             w.extra.splash_min = 150.0;
+            // defense.py:620-633: acquisition overlaps cooldown; repeat cadence is unchanged.
+            w.extra.new_target_delay = 2.2;
             let range = |key: &str| {
                 catalog.stats.text(&name, &level, &[key], None).and_then(|v| {
                     if let Json::Str(v) = v {

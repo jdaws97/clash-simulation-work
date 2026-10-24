@@ -106,14 +106,26 @@ class PlaybookPlan(AttackPlan):
         # Wiki: Rocket Spear/Flame Flinger, spare snipers can open before the push.
         out = self.opening_deployments(battle)
         self._deployed = set(self._snipe_deployed)
+        # A hero that opened on an exposed defense has made its cited entry:
+        # steps chained "after" that entry go on from the opening's time.
+        opened = {d.name: d.time for d in out if d.name in self._snipe_deployed}
+        for step in self.steps:
+            if step["action"] == "deploy" and step.get("what") in opened:
+                self._done.setdefault(step["id"], opened[step["what"]])
+                self.log_steps.append((round(opened[step["what"]], 1), step["id"] + " (opened on a snipe)"))
         for deployment in out:
             if deployment.name not in heroes.HEROES:
                 self.inventory[deployment.name] -= 1
         return out
 
     def _snipe_available(self, name):
-        # Cited deployment, ability, recall and support steps retain their resources.
-        # Only completion/uncited troops can be reassigned to an opening snipe.
+        # User (TH16 ranked, 2026-10-24): players fit a cited plan to the base,
+        # e.g. Spear or Backpack an exposed Eagle. Steps that only place and
+        # time a hero leave that choice open (its role cost is priced in
+        # _snipe_cost). A cited ability, or steps that follow the hero (its
+        # Healers, Invisibility, Ice Block), keep it in its walk or charge:
+        # data/playbooks/fireball-warden.json otherwise threw the Warden's
+        # Fireball from outside before his cited walk.
         if name in getattr(self, "_snipe_deployed", set()):
             return False
         for step in self.steps:
@@ -129,10 +141,10 @@ class PlaybookPlan(AttackPlan):
                 and step.get("what") in (None, name)
             ):
                 return False
+            if step["action"] == "ability" and step.get("what") == name:
+                return False
             anchors = (step.get("at", ""), step.get("aim", ""))
-            if step.get("what") == name or any(
-                str(anchor).endswith(":" + name) for anchor in anchors
-            ):
+            if any(str(anchor).endswith(":" + name) for anchor in anchors):
                 return False
         if name == "Flame Flinger":
             return self.siege == name and self.inventory.get(name, 0) > 0

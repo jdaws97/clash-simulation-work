@@ -1,13 +1,14 @@
 """Read entity statistics from the unified registry (data/registry.json).
 
-ClashKing supplies current combat numbers; the wiki supplies missing values
-and rules. The older v18.200.9 CSV tables supply missing mechanics fields.
+Documented balance overrides take precedence over ClashKing combat numbers.
+The wiki and older v18.200.9 CSV tables supply missing values and mechanics.
 """
 
 from __future__ import annotations
 
 import json
 import re
+from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
 
@@ -15,7 +16,74 @@ from .. import gamedata
 
 ROOT = Path(__file__).resolve().parents[3]
 REGISTRY = ROOT / "data" / "registry.json"
+BALANCE_OVERRIDES = ROOT / "data" / "balance-overrides.json"
 _NUM = re.compile(r"-?\d[\d,]*\.?\d*")
+_BALANCE_WIKI_FIELDS = {
+    "hitpoints": "Hitpoints",
+    "dps": "Damage per Second",
+    "damage_per_attack": "Damage per Attack",
+    "bonus_hitpoints": "Hero Boosts / Hitpoint Increase",
+    "bonus_dps": "Hero Boosts / Damage per Second Increase",
+    "regeneration": "Hero Boosts / Self Healing Per Second",
+    "slow_percent": "Ability Attributes / Slow Down",
+}
+
+
+@lru_cache(maxsize=1)
+def balance_overrides() -> list[dict]:
+    """Explicit replacement totals and sources; never infer missing levels."""
+    data = json.loads(BALANCE_OVERRIDES.read_text(encoding="utf-8"))
+    if data["schema_version"] != 1:
+        raise ValueError("Unsupported balance override schema")
+    return data["overrides"]
+
+
+def _apply_balance_overrides(records: dict, *, clashking=False):
+    # output/research/balance-2026-10.md: totals override both source views.
+    for change in balance_overrides():
+        name = change["entity"]
+        rec = records.get(name)
+        if rec is None and clashking:
+            continue
+        if rec is None:
+            raise KeyError(f"Balance override has no entity: {name}")
+        field = change["field"]
+        value = change["new_value"]
+        level = change["level"]
+        if level == "all":
+            if clashking:
+                key = {"housing": "housing_space", "movement_speed": "movement_speed"}[
+                    field
+                ]
+                rec[key] = value * 100.0 / 8.0 if field == "movement_speed" else value
+            else:
+                attrs = rec["attrs"]
+                if field == "housing":
+                    attrs["housing"] = value
+                    attrs.setdefault("raw", {})["Housing Space"] = value
+                elif field == "movement_speed":
+                    attrs["speed_display"] = value
+                    attrs["speed"] = value / 8.0
+                    attrs.setdefault("raw", {})["Movement Speed"] = value
+                else:
+                    raise ValueError(f"Unsupported entity-wide balance field: {field}")
+            continue
+        entry = next((r for r in rec["levels"] if r["level"] == level), None)
+        if entry is None and clashking:
+            continue
+        if entry is None:
+            raise KeyError(f"Balance override has no level: {name} {level}")
+        if not clashking:
+            entry.setdefault("wiki", {})[_BALANCE_WIKI_FIELDS[field]] = value
+        if field in ("hitpoints", "dps"):
+            entry[field] = value
+        elif field == "bonus_dps":
+            entry["dps"] = value
+        elif clashking and field == "regeneration":
+            # Fire Heart: ability 1 is HP per 1000 ms regeneration pulse.
+            entry["abilities"][1]["Regeneration"] = value
+        elif clashking and field == "slow_percent":
+            entry["abilities"][0]["FrostOnHitPercent"] = value
 
 
 def num(value, default=None):
@@ -124,6 +192,7 @@ def registry() -> dict:
                         "wiki_only": True,
                     }
                 )
+    _apply_balance_overrides(data)
     return data
 
 
@@ -157,7 +226,8 @@ def _clashking_entries() -> dict:
             name = entry["name"]
             previous = entries.get(name)
             if previous is None or not entry.get("is_seasonal"):
-                entries[name] = entry
+                entries[name] = deepcopy(entry)
+    _apply_balance_overrides(entries, clashking=True)
     return entries
 
 

@@ -619,16 +619,9 @@ def attach_weapon(battle, b: Building):
             },
         )
     elif key == "scatter":
-        # Unresolved, first shot kept instant; these fields are not modelled:
         # game data v18.200.9: Scattershot.NewTargetAttackDelay=2200 -> 2.2 s on a new target.
         # game data v18.200.9: Scattershot.CoolDownOverride=1500 -> meaning unstated.
-        # Neither table nor wiki says whether the 2.2 s applies to the first
-        # target only or to every new one, or how it combines with AttackSpeed
-        # 3228 and the cooldown. CoolDownOverride is also set, unmodelled, on
-        # Air Sweeper (4800), Eagle Artillery (6992), Monolith (750) and Super
-        # Wizard Tower (700); so are Inferno Tower AlternatePickNewTargetDelay=50
-        # and Air Sweeper PrepareSpeed=600. Wiki: Scattershot, "the actual
-        # attack speed is just 3.2 seconds".
+        # Keep CoolDownOverride unused; acquisition does not alter repeat cadence.
         # ClashKing b8f42a7: attack_speed=3228 -> 3.228 s takes precedence.
         b.weapon = W(
             b,
@@ -637,7 +630,7 @@ def attach_weapon(battle, b: Building):
             min_range=3.0,
             interval=stats.clashking_level(name, lvl)["attack_speed"] / 1000.0,
             damage=stats.get(name, lvl, "Damage per Shot*", default=576.0),
-            extra={"splash_max": 420.0, "splash_min": 150.0},
+            extra={"splash_max": 420.0, "splash_min": 150.0, "new_target_delay": 2.2},
         )
         hi = stats.text(name, lvl, "Damage per Shot*")
         if hi and "-" in str(hi):
@@ -1024,6 +1017,9 @@ def _act_once(battle, w: Weapon):
         tgt = min(pool, key=lambda a: dist(a.x, a.y, b.x, b.y))
         w.target = tgt
         w.lock_time = 0.0
+        if k == "scatter":
+            # buildings.csv: Scattershot.NewTargetAttackDelay=2200, overlaps cooldown.
+            w.cooldown = max(w.cooldown, w.extra["new_target_delay"])
     if k == "inferno_single":
         if w.cooldown > 0:
             return
@@ -1091,6 +1087,12 @@ def _act_once(battle, w: Weapon):
             # game data v18.200.9: Firework9.StartOffset=20 -> 0.2 tiles.
             offset = int(_projectile_data(b)["StartOffset"]) / 100.0
             _projectile(battle, w, tgt, dmg, 8.0, offset=offset)
+        elif b.key == "xbow":
+            # projectiles.csv: Rapidfire arrow.Speed=2300, StartOffset=0.
+            projectile = _projectile_data(b)
+            speed = int(projectile["Speed"]) / 100.0
+            offset = int(projectile["StartOffset"]) / 100.0
+            _projectile(battle, w, tgt, dmg, speed, offset=offset)
         elif b.key == "bh":
             # game data v18.200.9: Nail Ammo 2.Speed=1800, StartOffset=100 -> 18 tiles/s from 1 tile.
             projectile = _projectile_data(b)
@@ -1170,7 +1172,25 @@ def _act_once(battle, w: Weapon):
     elif k == "mortar":
         _mortar_shell(battle, w, tgt, dmg)
     elif k == "scatter":
-        _scatter(battle, w, tgt, dmg, rage)
+        # projectiles.csv: Ice Breaker Ammo1.Speed=1200, DontTrackTarget=FALSE.
+        projectile = _projectile_data(b)
+        speed = int(projectile["Speed"]) / 100.0
+        offset = int(projectile["StartOffset"]) / 100.0
+        flight = max(0.0, dist(b.x, b.y, tgt.x, tgt.y) - offset) / speed
+        battle.add_pending(
+            Pending(
+                t + flight,
+                tgt.x,
+                tgt.y,
+                0.0,
+                dmg,
+                tgt.flying,
+                not tgt.flying,
+                "scatter",
+                extra={"scatter": w, "rage": rage},
+                target=tgt,
+            )
+        )
     elif k == "hunter":
         _hunter_hit(battle, w, tgt, rage)
 
@@ -1412,6 +1432,13 @@ def _eagle(battle, w: Weapon):
         w.target = target = _eagle_pick(battle, w, pool)
     # Launch only the current shell; disabling the tower pauses later launches.
     # game data v18.200.9: Artillery Ammo7.FixedTravelTime=5000 -> 5 s.
+    projectile = _projectile_data(b)
+    flight = int(projectile["FixedTravelTime"]) / 1000.0
+    # projectiles.csv: Artillery Ammo7.DamageDelay=580 is left unused: the
+    # shell tracks its target (DontTrackTarget=FALSE), and freezing the impact
+    # point for 0.58 s let a 2 tiles/s Dragon escape the 0.75-tile main hit
+    # (575 -> 50 damage; output/hunt/eagle-audit.out finding 1).
+    damage_delay = 0.0
     # Wiki: Eagle Artillery, Damage per Hit and Shockwave Damage are separate.
     for radius, damage, shock in (
         (w.extra["splash"], w.damage, False),
@@ -1419,7 +1446,7 @@ def _eagle(battle, w: Weapon):
     ):
         battle.add_pending(
             Pending(
-                battle.t + 5.0,
+                battle.t + flight,
                 target.x,
                 target.y,
                 radius,
@@ -1428,6 +1455,7 @@ def _eagle(battle, w: Weapon):
                 True,
                 "eagle",
                 extra={
+                    "damage_delay": damage_delay,
                     "track": target,
                     "origin": (b.x, b.y),
                     "min_range": w.min_range,

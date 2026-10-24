@@ -279,7 +279,7 @@ impl PlaybookPlan {
         self.done.iter().any(|(key, _)| key == id)
     }
 
-    // playbook.py:106-162: cited steps retain their tools, anchors and spells.
+    // playbook.py:121-143 (port2.diff): only aimed abilities and siege releases reserve tools.
     pub(crate) fn sync_scouting(&mut self, battle: &Battle) {
         let mut context = plans::ScoutingContext {
             inventory: self.inventory.iter().cloned().collect(),
@@ -340,9 +340,14 @@ impl PlaybookPlan {
             ] {
                 let reserves = name == "Flame Flinger" && step.action == Action::ReleaseSiege
                     && step.what.as_deref().is_none_or(|what| what == name);
-                let anchored = [text(&step.source, "at", ""), text(&step.source, "aim", "")]
-                    .iter().any(|anchor| anchor.ends_with(&format!(":{name}")));
-                if reserves || step.what.as_deref() == Some(name) || anchored {
+                // playbook.py:_snipe_available: a cited ability, or a step
+                // anchored on the hero (its Healers, Invisibility), keeps it.
+                let ability = step.action == Action::Ability
+                    && step.what.as_deref() == Some(name);
+                let suffix = format!(":{name}");
+                let anchored = step.at.ends_with(&suffix)
+                    || step.aim.as_deref().is_some_and(|aim| aim.ends_with(&suffix));
+                if reserves || ability || anchored {
                     if !context.unavailable.iter().any(|tool| tool == name) {
                         context.unavailable.push(name.to_owned());
                     }
@@ -363,6 +368,28 @@ impl PlaybookPlan {
             self.step_kinds();
         }
         self.deployed = self.attack.snipe_deployed.clone();
+        // playbook.py:109-116: dict replacement keeps the last opening time per name.
+        let mut opened = Vec::new();
+        for deployment in &out {
+            if self.attack.snipe_deployed.contains(&deployment.name) {
+                set(&mut opened, deployment.name.clone(), deployment.time);
+            }
+        }
+        for step in self.steps.iter() {
+            if step.action != Action::Deploy {
+                continue;
+            }
+            if let Some((_, time)) = opened
+                .iter()
+                .find(|(name, _)| step.what.as_ref() == Some(name))
+            {
+                entry_time(&mut self.done, &step.id, *time);
+                self.log_steps.push((
+                    round_decimal(*time, 1),
+                    format!("{} (opened on a snipe)", step.id),
+                ));
+            }
+        }
         for deployment in &out {
             if !plans::is_hero(&deployment.name) {
                 let remaining = count(&self.inventory, &deployment.name) - 1;

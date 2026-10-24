@@ -24,6 +24,7 @@ PATTERNS = {
         "data/clashking-static-data.json",
         "data/clashking-static-source.json",
     ),
+    "balance_overrides": ("data/balance-overrides.json",),
     "registry": ("data/registry.json",),
     "wiki": ("data/wiki/text/*.txt", "data/wiki/tables/*.json"),
     "wiki_pages": ("data/wiki/pages/*.json",),
@@ -55,6 +56,7 @@ PATTERNS = {
 }
 REQUIRED = (
     "data/clashking-static-data.json",
+    "data/balance-overrides.json",
     "data/registry.json",
     "rust/data/catalog.json",
     "src/baselab/pathing.py",
@@ -127,6 +129,13 @@ def snapshot(root: Path, previous: dict | None = None, record_derived=()) -> dic
                         for key in ("source", "sources")
                         if key in metadata
                     }
+                elif group == "balance_overrides":
+                    metadata = read_json(path)
+                    entry["source_version"] = metadata["effective_date"]
+                    sources[name] = {
+                        key: metadata[key]
+                        for key in ("description", "research", "effective_date")
+                    }
                 members[name] = entry
                 files[name] = entry
         groups[group] = {"sha256": digest(members), "files": sorted(members)}
@@ -174,7 +183,7 @@ def snapshot(root: Path, previous: dict | None = None, record_derived=()) -> dic
         ),
     )
     catalog_input = inputs(
-        ("registry", "engine_code", "gamecsv", "runtime_data"),
+        ("registry", "balance_overrides", "engine_code", "gamecsv", "runtime_data"),
         (
             "src/baselab/mechanics.py",
             "src/baselab/gamedata.py",
@@ -185,6 +194,7 @@ def snapshot(root: Path, previous: dict | None = None, record_derived=()) -> dic
         (
             "gamecsv",
             "clashking",
+            "balance_overrides",
             "registry",
             "wiki",
             "engine_code",
@@ -372,8 +382,20 @@ def check(root: Path, saved: dict, current: dict) -> tuple[list[str], bool]:
             reasons.append(
                 f"wiki revisions differ for {len(registry_mismatches)} entities"
             )
-        if name == "rust/data/catalog.json" and catalog.get("registry") != registry:
-            reasons.append("embedded registry differs from data/registry.json")
+        if name == "rust/data/catalog.json":
+            source_hashes = catalog.get("resolved", {}).get("source_hashes")
+            if source_hashes is not None:
+                # rust_export.py embeds the registry after applying overrides.
+                expected = {
+                    "registry": files.get("data/registry.json", {}).get("sha256"),
+                    "balance_overrides": files.get(
+                        "data/balance-overrides.json", {}
+                    ).get("sha256"),
+                }
+                if source_hashes != expected:
+                    reasons.append("embedded registry/balance source hashes differ")
+            elif catalog.get("registry") != registry:
+                reasons.append("embedded registry differs from data/registry.json")
         if name == "data/registry.json" and wiki_mismatches:
             reasons.append("parsed wiki text/tables lag mirrored revisions")
         if name != "data/registry.json" and registry_stale:

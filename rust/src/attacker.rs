@@ -916,6 +916,12 @@ impl AttackPlan {
                 .flat_map(|wave| wave.units.iter()).filter(|(name, _)| name == "Healer")
                 .map(|(_, count)| *count).sum::<i64>()
         }, |context| count(&context.inventory, "Healer"));
+        // plans.py:907,928-941: count coverage in building-list order, including dead buildings.
+        let others: Vec<_> = battle
+            .buildings
+            .iter()
+            .filter(|b| b.key != "wall")
+            .collect();
         battle.buildings.iter().map(|b| {
             let mut weight = threat(&b.key, 1.0);
             if air_army {
@@ -938,6 +944,21 @@ impl AttackPlan {
                     weight *= 1.6;
                 } else if b.key == "inferno" && b.mode.as_deref() == Some("single") {
                     weight *= 1.5;
+                }
+            }
+            if let Some(weapon) = &b.weapon {
+                if !others.is_empty() {
+                    let covered = others
+                        .iter()
+                        .filter(|other| {
+                            if other.id == b.id {
+                                return false;
+                            }
+                            let distance = py_hypot(other.x - b.x, other.y - b.y);
+                            weapon.min_range <= distance && distance <= weapon.range + b.half_hit
+                        })
+                        .count();
+                    weight *= 1.0 + covered as f64 / others.len() as f64;
                 }
             }
             (b.id, weight)

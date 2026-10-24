@@ -146,6 +146,8 @@ pub struct WeaponExtra {
     pub shock_radius: f64,
     pub splash_max: f64,
     pub splash_min: f64,
+    // defense.py:633: Scattershot's acquisition delay overlaps its cooldown.
+    pub new_target_delay: f64,
     pub pct: f64,
     pub push: f64,
     pub repair: f64,
@@ -204,6 +206,7 @@ impl Default for WeaponExtra {
             shock_radius: 0.0,
             splash_max: 0.0,
             splash_min: 0.0,
+            new_target_delay: 0.0,
             pct: 0.0,
             push: 0.0,
             repair: 0.0,
@@ -296,6 +299,9 @@ pub struct UnitExtra {
     pub expire_at: f64,
     pub expires_at: f64,
     pub attack_ready_at: f64,
+    // units.py:1579-1583,1657-1690: pending delays are consumed at the attack gate.
+    pub arrival_windup: f64,
+    pub pushback_windup: f64,
     pub attack_lock_until: f64,
     pub next_blocker_check: f64,
     pub suspended: bool,
@@ -318,7 +324,7 @@ pub struct UnitExtra {
     pub last_damage_source: Option<EntityRef>,
     pub pushed_at: Option<f64>,
     pub pushed_until: f64,
-    pub target_killed_cooldown: bool,
+    pub target_killed_cooldown: f64,
     pub patrol_state: Option<String>,
     pub spin_position: Option<SpinPosition>,
     pub attack_target: Option<EntityRef>,
@@ -441,6 +447,8 @@ impl Default for UnitExtra {
             expire_at: f64::INFINITY,
             expires_at: f64::INFINITY,
             attack_ready_at: 0.0,
+            arrival_windup: 0.0,
+            pushback_windup: 0.0,
             attack_lock_until: 0.0,
             next_blocker_check: 0.0,
             suspended: false,
@@ -463,7 +471,7 @@ impl Default for UnitExtra {
             last_damage_source: None,
             pushed_at: None,
             pushed_until: 0.0,
-            target_killed_cooldown: false,
+            target_killed_cooldown: 0.0,
             patrol_state: None,
             spin_position: None,
             attack_target: None,
@@ -691,6 +699,10 @@ impl Default for FieldExtra {
 #[derive(Clone, Debug)]
 pub struct PendingExtra {
     pub direct: bool,
+    // battle.py:1212-1220,1251-1266: live Scattershot weapon and optional post-flight delay.
+    pub scatter: Option<BuildingId>,
+    pub rage: f64,
+    pub damage_delay: f64,
     pub origin: Option<(f64, f64)>,
     pub min_range: f64,
     pub max_range: f64,
@@ -736,6 +748,9 @@ impl Default for PendingExtra {
     fn default() -> Self {
         Self {
             direct: false,
+            scatter: None,
+            rage: 0.0,
+            damage_delay: 0.0,
             origin: None,
             min_range: 0.0,
             max_range: 0.0,

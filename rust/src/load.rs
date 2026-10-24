@@ -520,6 +520,8 @@ impl Resolver {
                 "shock_radius" => extra.shock_radius = v.number(),
                 "splash_max" => extra.splash_max = v.number(),
                 "splash_min" => extra.splash_min = v.number(),
+                // defense.py:633: exported Scattershot acquisition delay.
+                "new_target_delay" => extra.new_target_delay = v.number(),
                 "pct" => extra.pct = v.number(),
                 "push" => extra.push = v.number(),
                 "repair" => extra.repair = v.number(),
@@ -670,6 +672,9 @@ impl Resolver {
                 "expire_at" => extra.expire_at = v.number(),
                 "expires_at" => extra.expires_at = v.number(),
                 "attack_ready_at" => extra.attack_ready_at = v.number(),
+                // units.py:1579-1580,1704: preserve pending windups across state exports.
+                "arrival_windup" => extra.arrival_windup = v.number(),
+                "pushback_windup" => extra.pushback_windup = v.number(),
                 "next_blocker_check" => extra.next_blocker_check = v.number(),
                 "suspended" => extra.suspended = v.boolean(),
                 "leaping" => extra.leaping = v.boolean(),
@@ -691,7 +696,7 @@ impl Resolver {
                 "last_damage_source" => extra.last_damage_source = self.optional_ref(v),
                 "pushed_at" => extra.pushed_at = v.optional_number(),
                 "pushed_until" => extra.pushed_until = v.number(),
-                "target_killed_cooldown" => extra.target_killed_cooldown = v.boolean(),
+                "target_killed_cooldown" => extra.target_killed_cooldown = v.number(),
                 "patrol_state" => extra.patrol_state = v.optional_string(),
                 "spin_position" => extra.spin_position = self.spin_position(v),
                 "attack_target" => extra.attack_target = self.optional_ref(v),
@@ -961,6 +966,13 @@ impl Resolver {
         for (key, v) in n.object() {
             match key.as_str() {
                 "direct" => extra.direct = v.boolean(),
+                // defense.py:1193,1458: scatter stores a live weapon, identified by owner.
+                "scatter" => {
+                    v.require_type("Weapon");
+                    extra.scatter = Some(self.building_ref(v.field("owner")));
+                }
+                "rage" => extra.rage = v.number(),
+                "damage_delay" => extra.damage_delay = v.number(),
                 "origin" => extra.origin = v.optional_pair(),
                 "min_range" => extra.min_range = v.number(),
                 "max_range" => extra.max_range = v.number(),
@@ -1161,7 +1173,7 @@ impl Resolver {
             "inferno_artillery" => &["range", "targets", "interval", "damage", "pool_dps",
                 "pool_time", "pool_radius", "pool_gap", "pool_hits"],
             "eagle" => &["activation", "shells", "gap", "shock", "splash", "shock_radius"],
-            "scatter" => &["splash_max", "splash_min"],
+            "scatter" => &["splash_max", "splash_min", "new_target_delay"],
             "monolith" => &["pct"],
             "sweeper" => &["push"],
             "burst" => &["shots", "gap"],

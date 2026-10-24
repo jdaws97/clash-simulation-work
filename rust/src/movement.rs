@@ -44,14 +44,19 @@ impl Battle {
                     (limit - d) * 0.25
                 };
                 let (ux, uy) = (dx / d * push, dy / d * push);
-                self.nudge(a, -ux, -uy);
-                self.nudge(b, ux, uy);
+                // battle.py:1381-1382: separation does not restart attack charges.
+                self.nudge_with_pushback(a, -ux, -uy, false);
+                self.nudge_with_pushback(b, ux, uy, false);
             }
         }
     }
 
-    // battle.py:1119-1130.
+    // battle.py:1384-1400: forced movement defaults to a fresh charge out of range.
     pub fn nudge(&mut self, reference: UnitRef, dx: f64, dy: f64) {
+        self.nudge_with_pushback(reference, dx, dy, true);
+    }
+
+    fn nudge_with_pushback(&mut self, reference: UnitRef, dx: f64, dy: f64, pushback: bool) {
         let u = self.unit(reference);
         if self.t < u.extra.tornado_wall_until {
             return;
@@ -68,10 +73,15 @@ impl Battle {
         }
         let high = self.catalog.world as f64 - 0.1;
         let u = self.unit_mut(reference);
+        let old_position = (u.x, u.y);
         let previous = ((u.x / BUCKET) as i32, (u.y / BUCKET) as i32);
         u.x = high.min(0.1_f64.max(nx));
         u.y = high.min(0.1_f64.max(ny));
         self.update_bucket(reference, previous);
+        let u = self.unit(reference);
+        if pushback && (u.x, u.y) != old_position {
+            units::pushback_windup(self, reference);
+        }
     }
 
     // battle.py:1509-1529: path cost, then edge distance, then list order.

@@ -1576,6 +1576,10 @@ def valkyrie_position(battle, u, target):
 
 
 def attack_ready(battle, u, target):
+    arrival_delay = u.extra.pop("arrival_windup", 0.0)
+    pushback_delay = u.extra.pop("pushback_windup", 0.0)
+    if arrival_delay > 0 or pushback_delay > 0:
+        u.cooldown = max(u.cooldown, arrival_delay, pushback_delay)
     if u.name not in ("Frostmite", "Firemite"):
         return True
     if u.extra.get("attack_target") is not target:
@@ -1642,24 +1646,53 @@ def _new_target_delays():
     return _NTAD
 
 
-def new_target_windup(u):
-    """A unit that picks a new target waits before its first hit on it: the
-    game data's NewTargetAttackDelay where the unit has one, else one attack
-    interval. The wait counts down while the unit moves, so a troop that
-    walked a long way still hits on arrival. Evidence: real defense replay
-    2026-10-21 (docs/VIDEO_MEASUREMENTS.md): a Dragon's first breath comes
-    1.67 s after it is dropped and 0.6-0.9 s after it reaches range (its
-    interval is 1.25 s); the engine used to hit on the same tick. The game
-    data sets NewTargetAttackDelay only below the attack interval (Balloon
-    2.25 vs 3.0 s, Valkyrie 0.6 vs 1.8 s), i.e. as a shortening of a default
-    wait. BASELAB_WINDUP=0 turns this off."""
+def new_target_windup(u, target):
+    """Keep selection timing, with a first-hit minimum on entering range.
+
+    Explicit NewTargetAttackDelay is retained after arrival. Without one,
+    use the measured Dragon/melee minimum, else the existing interval
+    fallback. Targets selected in range retain their selection-only wait.
+    characters.csv/heroes.csv have no HitFrame or DeployTime timing column.
+    """
+    u.extra.pop("arrival_windup", None)
     # game data v18.200.9: TargetKilledCooldownTimer replaces the next target's windup.
-    if u.extra.pop("target_killed_cooldown", False):
-        return
+    killed_delay = u.extra.pop("target_killed_cooldown", 0.0)
     if not WINDUP or not u.interval:
         return
-    delay = _new_target_delays().get(u.name, u.interval)
-    u.cooldown = max(u.cooldown, delay)
+    delay = killed_delay or _new_target_delays().get(u.name, u.interval)
+    if not killed_delay:
+        u.cooldown = max(u.cooldown, delay)
+    if target_distance(u, target) <= effective_range(u):
+        return
+    if not killed_delay and u.name not in _new_target_delays():
+        if u.name == "Dragon":
+            # docs/BUG_LEDGER.md: replay first breath 0.6-0.9 s after range entry.
+            delay = 0.75
+        elif effective_range(u) < 1.0:
+            # docs/VIDEO_MEASUREMENTS.md:33: melee arrival -> damage ~0.33 s (n=1).
+            delay = min(delay, 0.33)
+    u.extra["arrival_windup"] = delay
+
+
+def pushback_windup(u):
+    target = (
+        u.wall_target if u.wall_target is not None and u.wall_target.alive else u.target
+    )
+    if (
+        not WINDUP
+        or not u.interval
+        or target is None
+        or not target.alive
+        or target_distance(u, target) <= effective_range(u)
+    ):
+        return
+    # data/wiki/text/Electro_Dragon.txt:26: max Sweeper can stall every charge.
+    # That evidence is for the Electro Dragon's 3.5 s charge only: applied to
+    # every unit it halved Dragon hits under a Sweeper and pushed the Maroon
+    # replay's Town Hall star from 47 s (real) to 89 s (fidelity_board B).
+    if u.name != "Electro Dragon":
+        return
+    u.extra["pushback_windup"] = _new_target_delays().get(u.name, u.interval)
 
 
 def target_killed_cooldown(battle, u, target):
@@ -1673,7 +1706,7 @@ def target_killed_cooldown(battle, u, target):
     delay = int(row.get("TargetKilledCooldownTimer", 0)) / 1000.0
     if delay > 0:
         u.cooldown = delay
-        u.extra["target_killed_cooldown"] = True
+        u.extra["target_killed_cooldown"] = delay
 
 
 def attack_interval(u, battle=None):

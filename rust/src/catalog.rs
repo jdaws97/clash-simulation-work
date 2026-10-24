@@ -407,6 +407,7 @@ impl Catalog {
         &Json::Null
     }
 
+    // stats.py:192,230-231: rust_export.py exports balance-adjusted unit totals.
     pub fn numbers(&self, name: &str, level: &Level) -> &UnitNumbers {
         if let Level::Int(level) = level {
             if let Some(numbers) = self.integer_unit_numbers.get(name).and_then(|levels| levels.get(level)) {

@@ -10,6 +10,10 @@
       "sha256": "faa7625284ed5c65d61933c6d634696362445c9390e59ccd1ab3c075edbafcc7",
       "source_version": null
     },
+    "data/balance-overrides.json": {
+      "sha256": "a817239ccfa37fa898f332dffe2e54b7a89ebef28a41afbfb93234c9486fafd7",
+      "source_version": "2026-10-20"
+    },
     "data/baselab-calibration-v1.json": {
       "sha256": "dc26bcdbdc5ed23e35c3658ab17e86915efb526cb270a66781cbb6c27320aecd",
       "source_version": null
@@ -80,6 +84,14 @@
     },
     "data/meta-armies-2026-10-15.json": {
       "sha256": "e193ad1c788177c98bb6ef7cde41c4ea1718d114a50cafbb468e004e1377d4fb",
+      "source_version": null
+    },
+    "data/meta-calibration-defenses.json": {
+      "sha256": "b61b882727368b4a9e68e0b8bd72de64b19bb6eb865a246c5ba54b9517daa897",
+      "source_version": null
+    },
+    "data/meta-calibration-defenses.report.json": {
+      "sha256": "4db13acd313cf61c23ea8ec4f7718ad7c2463f366c90d54e2de1efe724a58990",
       "source_version": null
     },
     "data/meta-calibration-playbooks.json": {
@@ -170,6 +182,10 @@
       "sha256": "4643dbb0cfde255c8c15dd6a461e56ed82cff442d553c5cf81ffcfdaf23f4b67",
       "source_version": null
     },
+    "data/reference-bases/qd-proof-0022.json": {
+      "sha256": "6b6ea6e813950a9ae7f6e254fa18e9d8f76b38d0ae999276fa78f4d15b62a23e",
+      "source_version": null
+    },
     "data/reference-bases/real-l1x.json": {
       "sha256": "db9e26af255bd3e015f475f0983d580e422bc9b346455a162793f6fa27efdfad",
       "source_version": null
@@ -195,7 +211,7 @@
       "source_version": null
     },
     "data/reference-bases/your-base.json": {
-      "sha256": "4b0a018d63d7cccb7fc584d7806cd8dec079a6f87931de91fb4e7518ec4cbb61",
+      "sha256": "4b9b96dc7261378f5fc65380f6c81d6564e5a4098ac3499ed55971d4d867dea5",
       "source_version": null
     },
     "data/registry.json": {
@@ -6443,27 +6459,31 @@
       "source_version": null
     },
     "rust/data/catalog.json": {
-      "sha256": "9c0a5fe906c32c1593270a75197b4ca9cd67867a83e7a83fbb1e36889919b405",
+      "sha256": "0af1088e6696b73d36cb75dd2285da5559437072aa4a24bd6d35a39757bbed2f",
       "source_version": null
     },
     "rust/src/ai.rs": {
-      "sha256": "b6d2752e798d9eebae3240c068c4495aadef31201b3f94ddd15aa1c5ca1dcae4",
+      "sha256": "7c60fabcb889db2a8c34f0fe5027140e3890300969034e598994489dab4e2273",
+      "source_version": null
+    },
+    "rust/src/attacker.rs": {
+      "sha256": "b148fb50bf6678d31386950205a8675ff8130e00f08d952d1bb4bfbd66eef6db",
       "source_version": null
     },
     "rust/src/battle.rs": {
-      "sha256": "b23adee10c5c401b1ad6e9843a59d1dfb02e046a114f24dbf6e898bace191116",
+      "sha256": "e174c53407e8f2a4211661def8993778a7888069bea678f5552444018c5e2eec",
       "source_version": null
     },
     "rust/src/catalog.rs": {
-      "sha256": "b6d94b92f21ad699cc0fd716bcf8f54471a3b5d8b23a9ed667aeb32bfb5486ed",
+      "sha256": "972a2164a220bd19df6ea3afcacbee4fe7846ccaebf66b25cf980e7148319aba",
       "source_version": null
     },
     "rust/src/combat.rs": {
-      "sha256": "df67b0a30ac641b300bb4a93bbb196f51a2610c3c62d0df291a11c46593031f6",
+      "sha256": "5df8b314e2e43d3bef169ea76895806c83bfcdeb1cc5b6d3998d257b4e9366fb",
       "source_version": null
     },
     "rust/src/defense.rs": {
-      "sha256": "d08671894e82d27dbd08c68572fd05ea087d0c1138948c388f4cdfbcb1967c42",
+      "sha256": "eaa8a217e9c4b863d78fdc803ac614503ef59a64feee9ff77ce3ab0d11147516",
       "source_version": null
     },
     "rust/src/effects.rs": {
@@ -6474,20 +6494,24 @@
       "sha256": "d6f1517af16f9de97a2e1d464e56f7dc11d57ebc6fcb968c85f0bbe300d986d6",
       "source_version": null
     },
+    "rust/src/field_profile.rs": {
+      "sha256": "9a2360988aa71c71f5ced8b2812650b6ff480e901605d336dacd027851f6b6aa",
+      "source_version": null
+    },
     "rust/src/geom.rs": {
       "sha256": "48a4629c055cb3b40a330ac31bcd04c33ff3d4bbead05af9f5aa9582798bbf48",
       "source_version": null
     },
     "rust/src/grid.rs": {
-      "sha256": "e1153bbbf9fba7d2e8137d5be45ae0492320fc4c56e9f55ac3fdba793427d19d",
+      "sha256": "9f74799bc910dcf48229daeb496b99b1d283dac9f06f5e27d0a757d8ccdf5821",
       "source_version": null
     },
     "rust/src/heroes.rs": {
-      "sha256": "cdcc59698fdd62c41eb1d262ff11667fc439607b483aeca2d2b450d74cfccf89",
+      "sha256": "ba007b47d78efb5e8b06fd22e0580a95e64a0d252b3aa0ddc182b2082051e07f",
       "source_version": null
     },
     "rust/src/jobs.rs": {
-      "sha256": "b5d61c6d86fcb7ce956e9582c1b09b1a41e7f08e3d0ae05863c255d7bf769ac0",
+      "sha256": "c3fa6364cc43630d07ea6b9e39cf203be00ae52b938cb5921ee495eff66eac93",
       "source_version": null
     },
     "rust/src/json.rs": {
@@ -6499,27 +6523,27 @@
       "source_version": null
     },
     "rust/src/load.rs": {
-      "sha256": "a3e6dcc5884088acac7e00ee5a112f365f2b3f41fe533b8b9ad660dc19d1e63d",
+      "sha256": "fe86f423ecd292c612e61fcc65bc6f52fb8f17451fc0bc4229a44aed90bf5f5b",
       "source_version": null
     },
     "rust/src/main.rs": {
-      "sha256": "cc5fe567675369dba87edeb662196dcb569d64a75d0244f6fb79ccc535b64acf",
+      "sha256": "68a11cde623aa1ed04f882a3dde96002c0479bfab0cdeb973a670888c8d80165",
       "source_version": null
     },
     "rust/src/movement.rs": {
-      "sha256": "5f3caec6322aaffd73f05a03324e1cc437e261dca31dce530122445e0483afd0",
+      "sha256": "a96649d557ca23539fd8dbaefae3847b56bf6e69f3d47fe718d59b484e7622b2",
       "source_version": null
     },
     "rust/src/pets.rs": {
-      "sha256": "2437e3c387141e8e94405d7d64bcffd900ee49b4db804e55fef3a645c405733a",
+      "sha256": "50adac8cc9d177b82c176f918fa86cc7b62d40cff64be0a6b22fef220d0496e3",
       "source_version": null
     },
     "rust/src/plans.rs": {
-      "sha256": "eb6a38a2ba97e83dc51a4d2f288df361ca2b13182495dbb84b0eaf30436ea287",
+      "sha256": "b1f23551d54ccc68cfd3909c4df923ad456965e7f1263d0e87302227760a9043",
       "source_version": null
     },
     "rust/src/playbook.rs": {
-      "sha256": "50820e247876db8abb8dced4914dc727b880ddedaf652001247f820258c84c2b",
+      "sha256": "9b38c74c284711911743335538441689095ef9861cf4c8aeb650a96f68270769",
       "source_version": null
     },
     "rust/src/pyrandom.rs": {
@@ -6527,7 +6551,7 @@
       "source_version": null
     },
     "rust/src/setup.rs": {
-      "sha256": "4ede9f38c57b9e91a538d14338c7e7095c819d8505723bcb0e158d06c11d9de2",
+      "sha256": "d9f7ad21edb51aa2c51a83e01ca94fb34605db4e57d4047046035305187a99ca",
       "source_version": null
     },
     "rust/src/shared.rs": {
@@ -6539,11 +6563,11 @@
       "source_version": null
     },
     "rust/src/spells.rs": {
-      "sha256": "e6472eb02cf11f290ff4e1ca6dfd132ed8030d30cae6fdda8822d26f783b369b",
+      "sha256": "3b04cecc45902bc7da1426f45381ab3deb71ef5b6ab70be2dedd41fb10e69622",
       "source_version": null
     },
     "rust/src/state.rs": {
-      "sha256": "3c5cdae73482e20da804e969c63ce4b0ba41ecdcbaa4286b6cd447ea9d094b30",
+      "sha256": "96c3dfcac9f2da44f1f8d3ed6d2082c58326968b24348f4657f53504d9f398cb",
       "source_version": null
     },
     "rust/src/stats.rs": {
@@ -6555,11 +6579,11 @@
       "source_version": null
     },
     "rust/src/traps.rs": {
-      "sha256": "bd1a5699499652801d6afee08a531858e82ddcc14d6178447ee1a6b71a804951",
+      "sha256": "27ad503646ec32f061dfd0439b7374d2742314b813d20b2b640df81de4fc8b0f",
       "source_version": null
     },
     "rust/src/units.rs": {
-      "sha256": "7c6c77a369439a8294b86001139af5a9a9a0f8a000d2d24bb0f1f9d976c4f780",
+      "sha256": "d6c8a4cc6fa49e77fac4be6cea81db16a709085506edfdd63e250803cde843e4",
       "source_version": null
     },
     "src/baselab/__init__.py": {
@@ -6579,11 +6603,11 @@
       "source_version": null
     },
     "src/baselab/engine/battle.py": {
-      "sha256": "7494485a20a7c06c11ef3758eca4d849381fb8c3f08351716cf35e9bad33833a",
+      "sha256": "ecef30848ec7b09bb4952e28851a57c356bf7526c46d626ddb8b4d4c32db7e40",
       "source_version": null
     },
     "src/baselab/engine/defense.py": {
-      "sha256": "9cbb26840a4b4d7c6c3a8683819db5b66902380bc6c9b45a9eaef2374f2eae78",
+      "sha256": "b3e2928c01948c1286d989a3be8c1d3bae48d7ba76afc1bec90cf3ecfecdb607",
       "source_version": null
     },
     "src/baselab/engine/effects.py": {
@@ -6595,19 +6619,19 @@
       "source_version": null
     },
     "src/baselab/engine/heroes.py": {
-      "sha256": "e34278a3d023789d9a385cb13a69d8a1e5b43663643a600638b3d3de9ff05bf3",
+      "sha256": "532391883065cb20ecb1ccb8b5a16a9f3a9a68d845593c4211541a1faa619815",
       "source_version": null
     },
     "src/baselab/engine/pets.py": {
-      "sha256": "b9ac3c4b71dadfdde2475d5e75bf93353a2f9e0608669ead50e0de3bb1a0c4c0",
+      "sha256": "e6bbf2f9f042eceac41214ecd5da1e0f5302079fae0dbf67e66f5cf9b6e783ac",
       "source_version": null
     },
     "src/baselab/engine/plans.py": {
-      "sha256": "3dc7c0709506f6060af587f3baa6eb6cdcbca3d16df8478db91908cab8dfd543",
+      "sha256": "1a99f6c916bc1ee11d40c62941ad3d534e34fcb11e942c206afe1727de0b9059",
       "source_version": null
     },
     "src/baselab/engine/playbook.py": {
-      "sha256": "76e40f225753ec3b0ef12618b1f6d23b93375048618f3db2e1cc053465a31a62",
+      "sha256": "b671080f080b211ebc237fa89f1439b1fb3abc28fe0c0c5b94a9bc7057c7b48a",
       "source_version": null
     },
     "src/baselab/engine/result.py": {
@@ -6615,27 +6639,27 @@
       "source_version": null
     },
     "src/baselab/engine/specs.py": {
-      "sha256": "d9d821275f9950ba1aad2227bac74df4291d0ace1e0c1f2f583d208142f186bf",
+      "sha256": "c4c22db9f10e754b7f1af1c9c0d09c9b9d0867ff108504e62b9d18f8e65882de",
       "source_version": null
     },
     "src/baselab/engine/spells.py": {
-      "sha256": "b6d7fdc5b643bc3b05f1ebeee1aeaccfdd33d8bc38778c6604ce4d3fb423dedd",
+      "sha256": "535659ecd0df3104c759eb81484d81015ba6d009dc613c1b22ef13e0bb3902c4",
       "source_version": null
     },
     "src/baselab/engine/stats.py": {
-      "sha256": "8e2f8478fbe2fd39abc1b4406171624f15e5c7e5dde5afd90d0ba0149eef157d",
+      "sha256": "fbead3d1acb14f019f2c6c3a8688daad62c46c4128419a0f82e4460c2a5aac49",
       "source_version": null
     },
     "src/baselab/engine/traps.py": {
-      "sha256": "b13c203eabe9b33bfae31bb915fbbfd0ffae0f07bbd33c35a75304bd63feb642",
+      "sha256": "b1252d3accef7fe1b18f53ef243d7daff1e8fae1f741ace26e6df011c6507890",
       "source_version": null
     },
     "src/baselab/engine/units.py": {
-      "sha256": "e12ddf49adaf6c2722c935e689cb4eb4136171a10ebfb2b475d55dbeaba34207",
+      "sha256": "cda359601dc77a6c03fdc87f2baa4720c670e17300b9c3700446c6acc826310b",
       "source_version": null
     },
     "src/baselab/evaluate.py": {
-      "sha256": "416bd0d055352e01873edcb902a693090ab6d46616507e85ab52e3f6836db2df",
+      "sha256": "51ea3880a495323e3e93ffb862a1c91639a63003f828ade8a8c550dd404cb7d8",
       "source_version": null
     },
     "src/baselab/evolve.py": {
@@ -6667,7 +6691,7 @@
       "source_version": null
     },
     "src/baselab/meta_armies.py": {
-      "sha256": "8fca461d3b26e15d3ca7620e6589475e71dc6ac2952312b486d35c1a7c2aa5a3",
+      "sha256": "1f176c8c4f9ffcdd1d72f3c5d5eecf46079257ccacd3dedf2975c4a8c5226429",
       "source_version": null
     },
     "src/baselab/optimize.py": {
@@ -6683,7 +6707,7 @@
       "source_version": null
     },
     "src/baselab/redteam.py": {
-      "sha256": "d8a6284318d69a7e085b0603b760e6e7d52c4630c6fc0fc6fbeb37579436ef1c",
+      "sha256": "f6e15baef60a907ce8ee4e5a61c754d09107a2dfcbbc314c92413fffdc9ba1a8",
       "source_version": null
     },
     "src/baselab/registry.py": {
@@ -6695,7 +6719,7 @@
       "source_version": null
     },
     "src/baselab/rust_bridge.py": {
-      "sha256": "adeac000b3b3f7eac1daf047b3278844be6c734e015b0a4e6fb9bb6e1d7ffc1f",
+      "sha256": "679c927801e69c50c6dee5fba00febf31cdfcdb2474e4682e3ef73d9c206c2e9",
       "source_version": null
     },
     "src/baselab/surrogate.py": {
@@ -6719,11 +6743,11 @@
       "source_version": null
     },
     "tools/baselab/calibrate_meta.py": {
-      "sha256": "75f076ef2ce1acef9ce0290f0965d9b3bf66d4a859f7bb992caab837dea642a7",
+      "sha256": "dd0801c5ceae49fded02e3d165959f22d846b5d1983c8755988a4d945618935a",
       "source_version": null
     },
     "tools/baselab/rust_export.py": {
-      "sha256": "5e8d900acbf42e19b6151ddb61c8c20e7114421174a917399001f737afef292e",
+      "sha256": "ecc75e4d08088bf8a380a3144e51c4a7f30e62f6a089b7264f790c457caef7ac",
       "source_version": null
     },
     "tools/baselab/wiki_tables.py": {
@@ -6752,6 +6776,12 @@
       "files": [
         "data/clashking-static-data.json",
         "data/clashking-static-source.json"
+      ]
+    },
+    "balance_overrides": {
+      "sha256": "4f07f7a66fc205e0c767a067fdcf19f001024c5bf716b7702fc523103e5fc6d0",
+      "files": [
+        "data/balance-overrides.json"
       ]
     },
     "registry": {
@@ -8353,10 +8383,12 @@
       ]
     },
     "calibration": {
-      "sha256": "9afdf174465a6f376814e67f146f7427b7f1b11ae25f88eb523e15e13b492105",
+      "sha256": "3967df338f130fc1b9ba41023129fd73a8efd998d68fdb17eb1c6d9c0373e511",
       "files": [
         "data/baselab-calibration-v1.json",
         "data/baselab-calibration.json",
+        "data/meta-calibration-defenses.json",
+        "data/meta-calibration-defenses.report.json",
         "data/meta-calibration-playbooks.json",
         "data/meta-calibration-pre-deepdrop.json",
         "data/meta-calibration-pre-healfix.json",
@@ -8370,12 +8402,13 @@
       ]
     },
     "runtime_data": {
-      "sha256": "bab249fdc9db4a1916b118b6e0c921c804bc2289122e90c5a80bb1ed1c986ceb",
+      "sha256": "47fb76af7cb6a8d43d733f4deba6387169a6e983a8912da409da5223e4e8863d",
       "files": [
         "data/attacker-policy-pre-deepdrop.json",
         "data/attacker-policy.json",
         "data/live/battles.jsonl",
         "data/mode-rules.json",
+        "data/reference-bases/qd-proof-0022.json",
         "data/reference-bases/real-l1x.json",
         "data/reference-bases/real-l3x.json",
         "data/reference-bases/real-l4x.json",
@@ -8388,21 +8421,23 @@
       ]
     },
     "rust_catalog": {
-      "sha256": "2df751b64b4e0ee32478986331286a8568a450df90b2ec2ef0e6b7c8ecf0b9d5",
+      "sha256": "0c03338271a4daad8501ec6c441ded0df87039ffe837ce24ca6a835764f40229",
       "files": [
         "rust/data/catalog.json"
       ]
     },
     "engine_code": {
-      "sha256": "f1da28de3624c40234d9081001d9cc2b9354282423788a00d463f49745e46f65",
+      "sha256": "92c53a27341a1c67bc87b67840efd2d190559354e09c9eda59402cf4e8a24a54",
       "files": [
         "rust/src/ai.rs",
+        "rust/src/attacker.rs",
         "rust/src/battle.rs",
         "rust/src/catalog.rs",
         "rust/src/combat.rs",
         "rust/src/defense.rs",
         "rust/src/effects.rs",
         "rust/src/fast_hash.rs",
+        "rust/src/field_profile.rs",
         "rust/src/geom.rs",
         "rust/src/grid.rs",
         "rust/src/heroes.rs",
@@ -8443,7 +8478,7 @@
       ]
     },
     "scoring_code": {
-      "sha256": "925f55cd51c6cd67728be199afdac0d3bc1f265c72282ced6fbde6cec92ffe64",
+      "sha256": "62fc4c47287774d64426b49af8102f37703f000265df7e56d6f0355b29d7e432",
       "files": [
         "src/baselab/__init__.py",
         "src/baselab/archetypes.py",
@@ -8471,7 +8506,7 @@
       ]
     },
     "builder_code": {
-      "sha256": "d3e1db316fcc87f6da80b94a2f696fd03497a969a8edf9f30a87256a886422fe",
+      "sha256": "1123d3397da582a891f9af928a8623078ab647ef54f2ce3bf5180bf7cb7f081d",
       "files": [
         "tools/baselab/calibrate.py",
         "tools/baselab/calibrate_meta.py",
@@ -8481,6 +8516,11 @@
     }
   },
   "sources": {
+    "data/balance-overrides.json": {
+      "description": "October 2026 balance overrides above ClashKing b8f42a7 and v18.200.9 CSV fallbacks.",
+      "research": "output/research/balance-2026-10.md",
+      "effective_date": "2026-10-20"
+    },
     "data/playbooks/dragon.json": {
       "sources": [
         "2jY5eM7an2o",
@@ -8671,10 +8711,10 @@
       "v18.200.9"
     ]
   },
-  "code_hash": "f1da28de3624c40234d9081001d9cc2b9354282423788a00d463f49745e46f65",
+  "code_hash": "92c53a27341a1c67bc87b67840efd2d190559354e09c9eda59402cf4e8a24a54",
   "registry_input_hash": "676f46f084e644306cd62ca5441dc81c4b66f7260fcc724cbf153d3dede25b48",
-  "rust_catalog_input_hash": "88478e81bd5f1863fd9d410d74e6e4f57467bdfcc7c3b174efe81fe5e537ca17",
-  "calibration_input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
+  "rust_catalog_input_hash": "6e273a8516f0161dd6bd8efc11e672eacac5de830a2a2bcdd6dd8aa186cc347b",
+  "calibration_input_hash": "2a76fbf81d519cf7925bfe4b1bd8760787b3e5ade9cbaf56a2c68c9546a04c54",
   "derivations": {
     "data/baselab-calibration-v1.json": {
       "sha256": "dc26bcdbdc5ed23e35c3658ab17e86915efb526cb270a66781cbb6c27320aecd",
@@ -8684,6 +8724,16 @@
     "data/baselab-calibration.json": {
       "sha256": "e42a4fbd29d5d39ffd9abb5b07a977460c0f04a5aa76f6dbb5adf77702dfe92f",
       "input_hash": "9fabf54e548c251074537b2831bc94015c041639ba6fa82e42edf54dbbc2af51",
+      "binding": "unverified-snapshot"
+    },
+    "data/meta-calibration-defenses.json": {
+      "sha256": "b61b882727368b4a9e68e0b8bd72de64b19bb6eb865a246c5ba54b9517daa897",
+      "input_hash": "5b554764d69fd6d9e0f3a6082d4d05d605d2df0db14ddb977b80a8d2c6ef2aac",
+      "binding": "unverified-snapshot"
+    },
+    "data/meta-calibration-defenses.report.json": {
+      "sha256": "4db13acd313cf61c23ea8ec4f7718ad7c2463f366c90d54e2de1efe724a58990",
+      "input_hash": "5b554764d69fd6d9e0f3a6082d4d05d605d2df0db14ddb977b80a8d2c6ef2aac",
       "binding": "unverified-snapshot"
     },
     "data/meta-calibration-playbooks.json": {
@@ -8747,5 +8797,5 @@
       "binding": "unverified-snapshot"
     }
   },
-  "manifest_hash": "65d46272ae39ac815b4c753d59cf503dd0f235eaa1db68b11b6200d68039a389"
+  "manifest_hash": "a1b368a71a472eaa1faa3bccf29a8da23a7c20b12143b18eabc248ff7865ecbe"
 }

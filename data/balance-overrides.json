@@ -1,0 +1,1470 @@
+{
+  "schema_version": 1,
+  "effective_date": "2026-10-20",
+  "description": "October 2026 balance overrides above ClashKing b8f42a7 and v18.200.9 CSV fallbacks.",
+  "research": "output/research/balance-2026-10.md",
+  "notes": [
+    "Only explicit replacement totals in the research are applied; community tables are not in-game calibration.",
+    "The effective date is community-dated; the official announcement does not specify a deployment date.",
+    "Level all changes the entity-wide housing or displayed movement speed (all four Ruin Knight levels).",
+    "Movement speed uses display units: divide by 8 for tiles per second; slow_percent is percentage points.",
+    "Regeneration is HP per second; the existing 1000 ms Fire Heart pulse interval is unchanged.",
+    "Portal Pendant old_value 0 means no prior bonus HP; its existing generic equipment HP bonus handles the addition.",
+    "Meteor Golem is the permanent troop, not the namesake seasonal event version.",
+    "Fire Heart bonus-DPS removal is official; old tier values are from https://www.clashrecord.com/equipment/fire-heart.",
+    "The separate Portal Pendant October 20-25 event level boost is excluded."
+  ],
+  "overrides": [
+    {
+      "entity": "Hog Rider",
+      "level": 8,
+      "field": "hitpoints",
+      "old_value": 810,
+      "new_value": 870,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Hog Rider",
+      "level": 9,
+      "field": "hitpoints",
+      "old_value": 890,
+      "new_value": 960,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Hog Rider",
+      "level": 10,
+      "field": "hitpoints",
+      "old_value": 970,
+      "new_value": 1050,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Hog Rider",
+      "level": 11,
+      "field": "hitpoints",
+      "old_value": 1080,
+      "new_value": 1150,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Hog Rider",
+      "level": 12,
+      "field": "hitpoints",
+      "old_value": 1230,
+      "new_value": 1350,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Hog Rider",
+      "level": 13,
+      "field": "hitpoints",
+      "old_value": 1380,
+      "new_value": 1500,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Hog Rider",
+      "level": 14,
+      "field": "hitpoints",
+      "old_value": 1500,
+      "new_value": 1600,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Hog Rider",
+      "level": 15,
+      "field": "hitpoints",
+      "old_value": 1750,
+      "new_value": 1950,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Miner",
+      "level": 11,
+      "field": "hitpoints",
+      "old_value": 1750,
+      "new_value": 1850,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/miner",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Miner",
+      "level": 12,
+      "field": "hitpoints",
+      "old_value": 2050,
+      "new_value": 2150,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/miner",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "P.E.K.K.A",
+      "level": 8,
+      "field": "dps",
+      "old_value": 610,
+      "new_value": 660,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/pekka",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "P.E.K.K.A",
+      "level": 9,
+      "field": "dps",
+      "old_value": 680,
+      "new_value": 735,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/pekka",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "P.E.K.K.A",
+      "level": 10,
+      "field": "dps",
+      "old_value": 750,
+      "new_value": 810,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/pekka",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "P.E.K.K.A",
+      "level": 11,
+      "field": "dps",
+      "old_value": 810,
+      "new_value": 875,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/pekka",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "P.E.K.K.A",
+      "level": 12,
+      "field": "dps",
+      "old_value": 870,
+      "new_value": 940,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/pekka",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "P.E.K.K.A",
+      "level": 13,
+      "field": "dps",
+      "old_value": 940,
+      "new_value": 1015,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/pekka",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "P.E.K.K.A",
+      "level": 8,
+      "field": "damage_per_attack",
+      "old_value": 1098,
+      "new_value": 1188,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/pekka",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "P.E.K.K.A",
+      "level": 9,
+      "field": "damage_per_attack",
+      "old_value": 1224,
+      "new_value": 1323,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/pekka",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "P.E.K.K.A",
+      "level": 10,
+      "field": "damage_per_attack",
+      "old_value": 1350,
+      "new_value": 1458,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/pekka",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "P.E.K.K.A",
+      "level": 11,
+      "field": "damage_per_attack",
+      "old_value": 1458,
+      "new_value": 1575,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/pekka",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "P.E.K.K.A",
+      "level": 12,
+      "field": "damage_per_attack",
+      "old_value": 1566,
+      "new_value": 1692,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/pekka",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "P.E.K.K.A",
+      "level": 13,
+      "field": "damage_per_attack",
+      "old_value": 1692,
+      "new_value": 1827,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/pekka",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Meteor Golem",
+      "level": 1,
+      "field": "hitpoints",
+      "old_value": 14500,
+      "new_value": 15300,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/meteor-golem",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Meteor Golem",
+      "level": 2,
+      "field": "hitpoints",
+      "old_value": 16000,
+      "new_value": 16900,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/meteor-golem",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Meteor Golem",
+      "level": 3,
+      "field": "hitpoints",
+      "old_value": 17500,
+      "new_value": 18500,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/meteor-golem",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Ruin Knight",
+      "level": "all",
+      "field": "housing",
+      "old_value": 20,
+      "new_value": 18,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Ruin Knight",
+      "level": "all",
+      "field": "movement_speed",
+      "old_value": 16,
+      "new_value": 14,
+      "source_tag": "[community]",
+      "url": "https://cocbasedrop.com/blog/ruin-knights-nerf-spring-traps-where-to-place-2026",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Ruin Knight",
+      "level": 4,
+      "field": "hitpoints",
+      "old_value": 4000,
+      "new_value": 3800,
+      "source_tag": "[community]",
+      "url": "https://cocbasedrop.com/blog/ruin-knights-nerf-spring-traps-where-to-place-2026",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Ruin Knight",
+      "level": 4,
+      "field": "dps",
+      "old_value": 345,
+      "new_value": 330,
+      "source_tag": "[community]",
+      "url": "https://cocbasedrop.com/blog/ruin-knights-nerf-spring-traps-where-to-place-2026",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Super Hog Rider",
+      "level": 10,
+      "field": "hitpoints",
+      "old_value": 1500,
+      "new_value": 1600,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/super-hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Super Hog Rider",
+      "level": 11,
+      "field": "hitpoints",
+      "old_value": 1600,
+      "new_value": 1700,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/super-hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Super Hog Rider",
+      "level": 12,
+      "field": "hitpoints",
+      "old_value": 1750,
+      "new_value": 1900,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/super-hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Super Hog Rider",
+      "level": 13,
+      "field": "hitpoints",
+      "old_value": 1900,
+      "new_value": 2050,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/super-hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Super Hog Rider",
+      "level": 14,
+      "field": "hitpoints",
+      "old_value": 2100,
+      "new_value": 2250,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/super-hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Super Hog Rider",
+      "level": 15,
+      "field": "hitpoints",
+      "old_value": 2350,
+      "new_value": 2500,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/super-hog-rider",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Super Miner",
+      "level": 11,
+      "field": "hitpoints",
+      "old_value": 4400,
+      "new_value": 4650,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/super-miner",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Super Miner",
+      "level": 12,
+      "field": "hitpoints",
+      "old_value": 5000,
+      "new_value": 5150,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/troops/super-miner",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 1,
+      "field": "bonus_hitpoints",
+      "old_value": 900,
+      "new_value": 830,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 2,
+      "field": "bonus_hitpoints",
+      "old_value": 1200,
+      "new_value": 1100,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 3,
+      "field": "bonus_hitpoints",
+      "old_value": 1450,
+      "new_value": 1350,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 4,
+      "field": "bonus_hitpoints",
+      "old_value": 1750,
+      "new_value": 1600,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 5,
+      "field": "bonus_hitpoints",
+      "old_value": 2000,
+      "new_value": 1850,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 6,
+      "field": "bonus_hitpoints",
+      "old_value": 2300,
+      "new_value": 2100,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 7,
+      "field": "bonus_hitpoints",
+      "old_value": 2600,
+      "new_value": 2400,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 8,
+      "field": "bonus_hitpoints",
+      "old_value": 2850,
+      "new_value": 2600,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 9,
+      "field": "bonus_hitpoints",
+      "old_value": 3150,
+      "new_value": 2900,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 10,
+      "field": "bonus_hitpoints",
+      "old_value": 3400,
+      "new_value": 3150,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 11,
+      "field": "bonus_hitpoints",
+      "old_value": 3700,
+      "new_value": 3400,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 12,
+      "field": "bonus_hitpoints",
+      "old_value": 4000,
+      "new_value": 3700,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 13,
+      "field": "bonus_hitpoints",
+      "old_value": 4250,
+      "new_value": 3900,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 14,
+      "field": "bonus_hitpoints",
+      "old_value": 4550,
+      "new_value": 4200,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 15,
+      "field": "bonus_hitpoints",
+      "old_value": 4800,
+      "new_value": 4400,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 16,
+      "field": "bonus_hitpoints",
+      "old_value": 5100,
+      "new_value": 4700,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 17,
+      "field": "bonus_hitpoints",
+      "old_value": 5450,
+      "new_value": 5000,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 18,
+      "field": "bonus_hitpoints",
+      "old_value": 5600,
+      "new_value": 5150,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 1,
+      "field": "bonus_dps",
+      "old_value": 10,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 2,
+      "field": "bonus_dps",
+      "old_value": 10,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 3,
+      "field": "bonus_dps",
+      "old_value": 12,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 4,
+      "field": "bonus_dps",
+      "old_value": 12,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 5,
+      "field": "bonus_dps",
+      "old_value": 12,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 6,
+      "field": "bonus_dps",
+      "old_value": 14,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 7,
+      "field": "bonus_dps",
+      "old_value": 14,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 8,
+      "field": "bonus_dps",
+      "old_value": 14,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 9,
+      "field": "bonus_dps",
+      "old_value": 16,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 10,
+      "field": "bonus_dps",
+      "old_value": 16,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 11,
+      "field": "bonus_dps",
+      "old_value": 16,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 12,
+      "field": "bonus_dps",
+      "old_value": 18,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 13,
+      "field": "bonus_dps",
+      "old_value": 18,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 14,
+      "field": "bonus_dps",
+      "old_value": 18,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 15,
+      "field": "bonus_dps",
+      "old_value": 20,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 16,
+      "field": "bonus_dps",
+      "old_value": 20,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 17,
+      "field": "bonus_dps",
+      "old_value": 20,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 18,
+      "field": "bonus_dps",
+      "old_value": 23,
+      "new_value": 0,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 12,
+      "field": "regeneration",
+      "old_value": 130,
+      "new_value": 120,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 13,
+      "field": "regeneration",
+      "old_value": 130,
+      "new_value": 120,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 14,
+      "field": "regeneration",
+      "old_value": 130,
+      "new_value": 120,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 15,
+      "field": "regeneration",
+      "old_value": 140,
+      "new_value": 130,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 16,
+      "field": "regeneration",
+      "old_value": 140,
+      "new_value": 130,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 17,
+      "field": "regeneration",
+      "old_value": 140,
+      "new_value": 130,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/fire-heart",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Fire Heart",
+      "level": 18,
+      "field": "regeneration",
+      "old_value": 150,
+      "new_value": 140,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 1,
+      "field": "slow_percent",
+      "old_value": 25,
+      "new_value": 30,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 2,
+      "field": "slow_percent",
+      "old_value": 25,
+      "new_value": 30,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 3,
+      "field": "slow_percent",
+      "old_value": 30,
+      "new_value": 35,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 4,
+      "field": "slow_percent",
+      "old_value": 30,
+      "new_value": 35,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 5,
+      "field": "slow_percent",
+      "old_value": 30,
+      "new_value": 35,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 6,
+      "field": "slow_percent",
+      "old_value": 35,
+      "new_value": 40,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 7,
+      "field": "slow_percent",
+      "old_value": 35,
+      "new_value": 40,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 8,
+      "field": "slow_percent",
+      "old_value": 35,
+      "new_value": 40,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 9,
+      "field": "slow_percent",
+      "old_value": 37,
+      "new_value": 42,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 10,
+      "field": "slow_percent",
+      "old_value": 37,
+      "new_value": 42,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 11,
+      "field": "slow_percent",
+      "old_value": 37,
+      "new_value": 42,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 12,
+      "field": "slow_percent",
+      "old_value": 40,
+      "new_value": 45,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 13,
+      "field": "slow_percent",
+      "old_value": 40,
+      "new_value": 45,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 14,
+      "field": "slow_percent",
+      "old_value": 40,
+      "new_value": 45,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 15,
+      "field": "slow_percent",
+      "old_value": 45,
+      "new_value": 50,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 16,
+      "field": "slow_percent",
+      "old_value": 45,
+      "new_value": 50,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 17,
+      "field": "slow_percent",
+      "old_value": 45,
+      "new_value": 50,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 18,
+      "field": "slow_percent",
+      "old_value": 50,
+      "new_value": 55,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 19,
+      "field": "slow_percent",
+      "old_value": 50,
+      "new_value": 55,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 20,
+      "field": "slow_percent",
+      "old_value": 50,
+      "new_value": 55,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 21,
+      "field": "slow_percent",
+      "old_value": 55,
+      "new_value": 60,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 22,
+      "field": "slow_percent",
+      "old_value": 55,
+      "new_value": 60,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 23,
+      "field": "slow_percent",
+      "old_value": 55,
+      "new_value": 60,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 24,
+      "field": "slow_percent",
+      "old_value": 60,
+      "new_value": 65,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 25,
+      "field": "slow_percent",
+      "old_value": 60,
+      "new_value": 65,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 26,
+      "field": "slow_percent",
+      "old_value": 60,
+      "new_value": 65,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 27,
+      "field": "slow_percent",
+      "old_value": 65,
+      "new_value": 70,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 21,
+      "field": "bonus_dps",
+      "old_value": 144,
+      "new_value": 145,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 22,
+      "field": "bonus_dps",
+      "old_value": 148,
+      "new_value": 150,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 23,
+      "field": "bonus_dps",
+      "old_value": 152,
+      "new_value": 155,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 24,
+      "field": "bonus_dps",
+      "old_value": 156,
+      "new_value": 160,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 25,
+      "field": "bonus_dps",
+      "old_value": 160,
+      "new_value": 165,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 26,
+      "field": "bonus_dps",
+      "old_value": 164,
+      "new_value": 170,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/frozen-arrow",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Frozen Arrow",
+      "level": 27,
+      "field": "bonus_dps",
+      "old_value": 168,
+      "new_value": 175,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 1,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 550,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 2,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 575,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 3,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 600,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 4,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 625,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 5,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 650,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 6,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 675,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 7,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 700,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 8,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 725,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 9,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 750,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 10,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 775,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 11,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 800,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 12,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 825,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 13,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 850,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 14,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 875,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 15,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 900,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 16,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 925,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 17,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 950,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 18,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 975,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 19,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 1000,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 20,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 1025,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 21,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 1050,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 22,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 1075,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 23,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 1100,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 24,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 1125,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 25,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 1150,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 26,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 1175,
+      "source_tag": "[community]",
+      "url": "https://cocwiki.com/equipment/portal-pendant",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Portal Pendant",
+      "level": 27,
+      "field": "bonus_hitpoints",
+      "old_value": 0,
+      "new_value": 1200,
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    }
+  ],
+  "not_applied": [
+    {
+      "entity": "Meteormite",
+      "levels": [
+        1,
+        2,
+        3
+      ],
+      "field": "hitpoints",
+      "reason": "Increased, but exact new per-level HP totals were not found; do not infer them from Meteor Golem HP.",
+      "source_tag": "[official]",
+      "url": "https://supercell.com/en/games/clashofclans/blog/news/balance-changes-incoming-october-2026/",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Ruin Knight",
+      "levels": [
+        1,
+        2,
+        3
+      ],
+      "field": "hitpoints",
+      "reason": "A reduction of 200 HP is reported, but replacement totals for levels 1-3 are not individually tabulated.",
+      "source_tag": "[community]",
+      "url": "https://cocbasedrop.com/blog/ruin-knights-nerf-spring-traps-where-to-place-2026",
+      "effective_date": "2026-10-20"
+    },
+    {
+      "entity": "Ruin Knight",
+      "levels": [
+        1,
+        2,
+        3
+      ],
+      "field": "dps",
+      "reason": "A reduction of 15 DPS is reported, but replacement totals for levels 1-3 are not individually tabulated.",
+      "source_tag": "[community]",
+      "url": "https://cocbasedrop.com/blog/ruin-knights-nerf-spring-traps-where-to-place-2026",
+      "effective_date": "2026-10-20"
+    }
+  ]
+}

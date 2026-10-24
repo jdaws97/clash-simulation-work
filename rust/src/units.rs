@@ -2093,8 +2093,14 @@ pub fn valkyrie_position(
     position
 }
 
-// units.py:1239-1247.
+// units.py:1578-1590: arrival and pushback delays share the attack gate.
 pub fn attack_ready(battle: &mut Battle, unit: UnitRef, target: EntityRef) -> bool {
+    let u = battle.unit_mut(unit);
+    let arrival_delay = std::mem::take(&mut u.extra.arrival_windup);
+    let pushback_delay = std::mem::take(&mut u.extra.pushback_windup);
+    if arrival_delay > 0.0 || pushback_delay > 0.0 {
+        u.cooldown = u.cooldown.max(arrival_delay).max(pushback_delay);
+    }
     if !matches!(battle.unit(unit).name_id, Name::Frostmite | Name::Firemite) {
         return true;
     }
@@ -2133,25 +2139,71 @@ pub fn new_target_delays(battle: &Battle) -> &HashMap<String, f64> {
     &battle.catalog.new_target_delays
 }
 
-// units.py:1294-1308: the exported WINDUP switch replaces the environment read.
-pub fn new_target_windup(battle: &mut Battle, unit: UnitRef) {
-    // units.py:1525-1527: consume the kill override before the WINDUP switch.
-    if std::mem::take(&mut battle.unit_mut(unit).extra.target_killed_cooldown) {
-        return;
-    }
+// units.py:1649-1675: selection wait and the first-hit minimum on arrival.
+pub fn new_target_windup(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
+    let u = battle.unit_mut(unit);
+    u.extra.arrival_windup = 0.0;
+    let killed_delay = std::mem::take(&mut u.extra.target_killed_cooldown);
     let u = battle.unit(unit);
     if !battle.windup || u.interval == 0.0 {
+        return;
+    }
+    let explicit_delay = new_target_delays(battle).get(&u.name).copied();
+    let mut delay = if killed_delay != 0.0 {
+        killed_delay
+    } else {
+        explicit_delay.unwrap_or(u.interval)
+    };
+    if killed_delay == 0.0 {
+        let cooldown = u.cooldown.max(delay);
+        battle.unit_mut(unit).cooldown = cooldown;
+    }
+    let u = battle.unit(unit);
+    let range = effective_range(battle, u);
+    if target_distance(battle, EntityRef::Unit(unit), target) <= range {
+        return;
+    }
+    if killed_delay == 0.0 && explicit_delay.is_none() {
+        if u.name_id == Name::Dragon {
+            delay = 0.75;
+        } else if range < 1.0 {
+            delay = delay.min(0.33);
+        }
+    }
+    battle.unit_mut(unit).extra.arrival_windup = delay;
+}
+
+// units.py:1678-1690: a live wall target takes priority when restarting a charge.
+pub fn pushback_windup(battle: &mut Battle, unit: UnitRef) {
+    let u = battle.unit(unit);
+    let target = u
+        .wall_target
+        .filter(|wall| battle.entity_alive(EntityRef::Wall(*wall)))
+        .map(EntityRef::Wall)
+        .or(u.target);
+    if !battle.windup || u.interval == 0.0 {
+        return;
+    }
+    let Some(target) = target else {
+        return;
+    };
+    if !battle.entity_alive(target)
+        || target_distance(battle, EntityRef::Unit(unit), target) <= effective_range(battle, u)
+    {
+        return;
+    }
+    // units.py:pushback_windup: only the Electro Dragon's charge is evidenced.
+    if u.name != "Electro Dragon" {
         return;
     }
     let delay = new_target_delays(battle)
         .get(&u.name)
         .copied()
         .unwrap_or(u.interval);
-    let cooldown = u.cooldown.max(delay);
-    battle.unit_mut(unit).cooldown = cooldown;
+    battle.unit_mut(unit).extra.pushback_windup = delay;
 }
 
-// units.py:1535-1550: a kill replaces normal cadence and the next windup.
+// units.py:1693-1704: retain the numeric kill delay for the next arrival.
 pub fn target_killed_cooldown(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     if battle.entity_alive(target) {
         return;
@@ -2171,7 +2223,7 @@ pub fn target_killed_cooldown(battle: &mut Battle, unit: UnitRef, target: Entity
     if delay > 0.0 {
         let u = battle.unit_mut(unit);
         u.cooldown = delay;
-        u.extra.target_killed_cooldown = true;
+        u.extra.target_killed_cooldown = delay;
     }
 }
 

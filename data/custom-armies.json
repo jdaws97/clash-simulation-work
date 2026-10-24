@@ -1314,6 +1314,71 @@
    "idea": "The user's own Ruin Witch army, decoded from their battle log (20261012).",
    "family": null,
    "own_levels": true
+  },
+  {
+   "archetype": "user-fireball-warden",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "troops": {
+    "Healer": 5,
+    "Rocket Balloon": 8,
+    "Ice Golem": 1,
+    "Super Minion": 5,
+    "Balloon": 2,
+    "Druid": 1,
+    "Furnace": 2,
+    "Minion": 3,
+    "Wizard": 3,
+    "Headhunter": 3,
+    "Wall Breaker": 5,
+    "Archer": 3
+   },
+   "spells": {
+    "Invisibility Spell": 3,
+    "Earthquake Spell": 5,
+    "Recall Spell": 1,
+    "Totem Spell": 1
+   },
+   "cc": {
+    "Log Launcher": 1,
+    "Ice Golem": 1,
+    "Super Yeti": 1,
+    "Ice Block Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Barbarian King",
+    "Archer Queen",
+    "Grand Warden",
+    "Dragon Duke"
+   ],
+   "loadouts": {
+    "Barbarian King": [
+     "Spiky Ball",
+     "Stick Horse",
+     "Phoenix"
+    ],
+    "Archer Queen": [
+     "Giant Arrow",
+     "Action Figure",
+     "Unicorn"
+    ],
+    "Grand Warden": [
+     "Rage Gem",
+     "Fireball",
+     "Electro Owl"
+    ],
+    "Dragon Duke": [
+     "Rocket Backpack",
+     "Fire Heart",
+     "Diggy"
+    ]
+   },
+   "idea": "The user's own Fireball Warden army (Super Minion/Rocket Balloon, Warden Fireball + Rage Gem), decoded from their battle log (20261012), played with data/playbooks/fireball-warden.json (user, 2026-10-24).",
+   "family": null,
+   "own_levels": true
   }
  ]
 }

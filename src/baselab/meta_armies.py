@@ -254,7 +254,10 @@ def _loadouts(build, heroes):
 
     out = {h: DEFAULT_LOADOUTS[h] for h in heroes if h in DEFAULT_LOADOUTS}
     for h, spec in (build.get("loadouts") or {}).items():
-        out[h] = HeroLoadout(h, tuple(spec[:2]), spec[2] if len(spec) > 2 else None)
+        # replay_log.to_build pads a hero shown with fewer items with None.
+        out[h] = HeroLoadout(
+            h, tuple(e for e in spec[:2] if e), spec[2] if len(spec) > 2 else None
+        )
     return out
 
 
@@ -270,6 +273,8 @@ PLAYBOOK_FAMILY = {
     "mass-super-yeti": "yeti",
     "mass-meteor-golem": "meteor-golem",
     "user-air": "super-minion-air",
+    # User (TH16 ranked, 2026-10-24): the same army as a Fireball Warden walk.
+    "user-fireball-warden": "fireball-warden",
     "user-druid-ruin": "druid-ruin-witch",
     "mass-dragon-rider": "dragon-rider",
     "mass-super-dragon": "super-dragon",

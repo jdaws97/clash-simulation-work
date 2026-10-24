@@ -66,6 +66,8 @@ def dump(obj, depth=0):
 
 # ------------------------------------------------------------------ catalog
 def catalog():
+    from data_manifest import file_hash
+
     from baselab import mechanics
     from baselab.engine import (
         battle,
@@ -193,6 +195,11 @@ def catalog():
         "game_ranges": specs._game_ranges(),
         "pet_spawn_ranges": pet_spawn_ranges,
         "resolved": {
+            # The embedded registry includes runtime balance overrides.
+            "source_hashes": {
+                "registry": file_hash(stats.REGISTRY),
+                "balance_overrides": file_hash(stats.BALANCE_OVERRIDES),
+            },
             "equipment_abilities": equipment_abilities,
             "revenge_ranges": {
                 str(entry["level"]): float(

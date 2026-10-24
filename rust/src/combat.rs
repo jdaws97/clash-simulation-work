@@ -459,6 +459,14 @@ impl Battle {
             heroes::projectile_impact(self, p);
             return;
         }
+        // battle.py:1212-1220: released Scattershot shells retain their live weapon.
+        if let Some(owner) = p.extra.scatter {
+            let Some(EntityRef::Unit(target)) = p.target else {
+                panic!("Scattershot unit target");
+            };
+            defense::scatter(self, owner, target, p.damage, p.extra.rage);
+            return;
+        }
         if p.extra.direct {
             let target = p.target.expect("direct pending target");
             match target {
@@ -499,6 +507,18 @@ impl Battle {
             let landing = p.extra.max_range.min(p.extra.min_range.max(distance));
             x = ox + dx * landing / distance;
             y = oy + dy * landing / distance;
+        }
+        // battle.py:1251-1266: requeue from the scheduled arrival, clearing tracking.
+        if p.extra.damage_delay != 0.0 {
+            let mut delayed = p;
+            delayed.at += delayed.extra.damage_delay;
+            delayed.x = x;
+            delayed.y = y;
+            delayed.target = None;
+            delayed.extra.damage_delay = 0.0;
+            delayed.extra.track = None;
+            self.add_pending(delayed);
+            return;
         }
         self.splash_units(x, y, p.radius, p.damage, p.hits_air, p.hits_ground, SplashUnitsOptions {
             team: p.team, falloff: p.falloff, src: Some(&p.src),

@@ -148,7 +148,12 @@ class Battle:
         self.rng = random.Random(seed)
         self.modifier = modifier
         d, h, g, a = MODIFIERS[modifier]
-        self.def_mult, self.def_hero_mult, self.guardian_mult, self.atk_hero_mult = 1.0 + d, 1.0 + h, 1.0 + g, 1.0 - a
+        self.def_mult, self.def_hero_mult, self.guardian_mult, self.atk_hero_mult = (
+            1.0 + d,
+            1.0 + h,
+            1.0 + g,
+            1.0 - a,
+        )
         self.portal_stash: list = []
         self.first_destroy_t = None
         self.first_deploy_t = None
@@ -246,22 +251,43 @@ class Battle:
             bt = BUILDING_TYPES[p.key]
             x, y = p.x + MARGIN, p.y + MARGIN
             if p.key == "banner":
-                b = Building(i, p.key, bt.name, "other", x, y, bt.size, 1.0, 1.0, counted=False)
+                b = Building(
+                    i, p.key, bt.name, "other", x, y, bt.size, 1.0, 1.0, counted=False
+                )
                 b.alive = False
                 self.buildings.append(b)
                 continue
             if p.key == "th":
                 level = th
                 hp = stats.get("Town Hall", level, "hitpoints", default=10000.0)
-            elif p.key == "crafting" or (not bt.counted and bt.name not in stats.registry()):
-                level, hp = 1, 1000.0  # Crafting Station: set by defense._attach_crafted
+            elif p.key == "crafting" or (
+                not bt.counted and bt.name not in stats.registry()
+            ):
+                level, hp = (
+                    1,
+                    1000.0,
+                )  # Crafting Station: set by defense._attach_crafted
             else:
                 level = self.level_of(p.key, bt.name)
                 hp = stats.get(bt.name, level, "hitpoints", "Hitpoints", default=1000.0)
             a = stats.attrs(bt.name) if bt.name in stats.registry() else {}
             hitbox = a.get("hitbox") or max(1, bt.size - 1)
             is_def = bt.kind == "defense"
-            b = Building(i, p.key, bt.name, bt.kind, x, y, bt.size, hitbox, hp, counted=bt.counted, is_defense=is_def, mode=p.mode, level=level)
+            b = Building(
+                i,
+                p.key,
+                bt.name,
+                bt.kind,
+                x,
+                y,
+                bt.size,
+                hitbox,
+                hp,
+                counted=bt.counted,
+                is_defense=is_def,
+                mode=p.mode,
+                level=level,
+            )
             if bt.weapon_key or p.key in ("th", "bh"):
                 defense.attach_weapon(self, b)
             b.extra["unavailable"] = (
@@ -367,7 +393,9 @@ class Battle:
         self._banner_tiles = set()
         for p in layout.buildings:
             if p.key == "banner":
-                self._banner_tiles.update((tx + MARGIN, ty + MARGIN) for tx, ty in p.tiles())
+                self._banner_tiles.update(
+                    (tx + MARGIN, ty + MARGIN) for tx, ty in p.tiles()
+                )
         self._nd_version = None
         return self._live_no_deploy()
 
@@ -405,7 +433,12 @@ class Battle:
         if getattr(self, "_dt_version", None) == self.grid.version:
             return self._dt_cache
         blocked = self._live_no_deploy()
-        self._dt_cache = [(x + 0.5, y + 0.5) for x in range(WORLD) for y in range(WORLD) if (x, y) not in blocked]
+        self._dt_cache = [
+            (x + 0.5, y + 0.5)
+            for x in range(WORLD)
+            for y in range(WORLD)
+            if (x, y) not in blocked
+        ]
         self._dt_version = self.grid.version
         return self._dt_cache
 
@@ -416,19 +449,43 @@ class Battle:
         blocked = self._live_no_deploy()
         walls = {k for k, w in self.walls.items() if w.alive}
         seen = set()
-        q = [(i, j) for i in range(WORLD) for j in (0, WORLD - 1)] + [(j, i) for i in range(WORLD) for j in (0, WORLD - 1)]
+        q = [(i, j) for i in range(WORLD) for j in (0, WORLD - 1)] + [
+            (j, i) for i in range(WORLD) for j in (0, WORLD - 1)
+        ]
         seen.update(q)
         while q:
             x, y = q.pop()
             for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
                 n = (x + dx, y + dy)
-                if 0 <= n[0] < WORLD and 0 <= n[1] < WORLD and n not in walls and n not in seen:
+                if (
+                    0 <= n[0] < WORLD
+                    and 0 <= n[1] < WORLD
+                    and n not in walls
+                    and n not in seen
+                ):
                     seen.add(n)
                     q.append(n)
-        return [(x + 0.5, y + 0.5) for x in range(WORLD) for y in range(WORLD) if (x, y) not in seen and (x, y) not in blocked and (x, y) not in walls]
+        return [
+            (x + 0.5, y + 0.5)
+            for x in range(WORLD)
+            for y in range(WORLD)
+            if (x, y) not in seen and (x, y) not in blocked and (x, y) not in walls
+        ]
 
     # ================================================================ units
-    def spawn(self, name, team, x, y, *, level=None, kind="troop", group="main", owner=None, town_hall=None) -> Unit:
+    def spawn(
+        self,
+        name,
+        team,
+        x,
+        y,
+        *,
+        level=None,
+        kind="troop",
+        group="main",
+        owner=None,
+        town_hall=None,
+    ) -> Unit:
         th = town_hall or self.town_hall
         if level is None:
             level = stats.max_level(name, th) or 1
@@ -436,10 +493,23 @@ class Battle:
         sp = heroes.summon_spec(name, spec(name))
         self._uid += 1
         u = Unit(
-            self._uid, name, kind, team, x, y,
-            hp=nums["hp"], dmg=nums["dmg"], interval=nums["interval"], range_=nums["range"], speed=nums["speed"],
-            housing=nums["housing"], flying=nums["flying"] if sp.walls != "fly" else True,
-            hits_air=nums["hits_air"], hits_ground=nums["hits_ground"], spec=sp, level=level,
+            self._uid,
+            name,
+            kind,
+            team,
+            x,
+            y,
+            hp=nums["hp"],
+            dmg=nums["dmg"],
+            interval=nums["interval"],
+            range_=nums["range"],
+            speed=nums["speed"],
+            housing=nums["housing"],
+            flying=nums["flying"] if sp.walls != "fly" else True,
+            hits_air=nums["hits_air"],
+            hits_ground=nums["hits_ground"],
+            spec=sp,
+            level=level,
         )
         u.group = group
         u.owner = owner
@@ -462,13 +532,28 @@ class Battle:
         if not self.can_deploy(d.x, d.y):
             # the game will not place a troop on a no-drop tile: the drop lands
             # on the nearest legal tile instead (plans add a little scatter)
-            x, y = min(self.deploy_tiles(), key=lambda p: (p[0] - d.x) ** 2 + (p[1] - d.y) ** 2)
+            x, y = min(
+                self.deploy_tiles(), key=lambda p: (p[0] - d.x) ** 2 + (p[1] - d.y) ** 2
+            )
             d = replace(d, x=x, y=y)
         self.start_battle()
         if self.first_deploy_t is None:
             self.first_deploy_t = self.t
-        kind = "hero" if d.name in heroes.HEROES else ("siege" if stats.record(d.name)["kind"] == "siege" else "troop")
-        u = self.spawn(d.name, "atk", d.x, d.y, level=d.level, kind=kind, group=d.group, town_hall=d.town_hall)
+        kind = (
+            "hero"
+            if d.name in heroes.HEROES
+            else ("siege" if stats.record(d.name)["kind"] == "siege" else "troop")
+        )
+        u = self.spawn(
+            d.name,
+            "atk",
+            d.x,
+            d.y,
+            level=d.level,
+            kind=kind,
+            group=d.group,
+            town_hall=d.town_hall,
+        )
         k = getattr(self.plan, "strength", 1.0)
         if u.name == "Grand Warden":
             mode = getattr(d, "mode", None)
@@ -477,7 +562,10 @@ class Battle:
             if mode not in ("air", "ground"):
                 raise ValueError("Grand Warden mode must be air or ground")
             u.flying = mode == "air"
-            if u.flying and os.environ.get("BASELAB_FLYER_RANGE", "gamedata") == "gamedata":
+            if (
+                u.flying
+                and os.environ.get("BASELAB_FLYER_RANGE", "gamedata") == "gamedata"
+            ):
                 # game data v18.200.9: Grand Warden.AltAttackRange=650 -> 6.5 tiles in air mode.
                 from .specs import _game_ranges
 
@@ -495,7 +583,9 @@ class Battle:
             if u.pet is not None and u.pet.extra.get("egg"):
                 # game data v18.200.9: Phoenix Egg.IsFlying=FALSE -> grounded until hatching.
                 u.pet.flying = False
-            if self.atk_hero_mult != 1.0:  # league penalty incl. equipment boosts (wiki)
+            if (
+                self.atk_hero_mult != 1.0
+            ):  # league penalty incl. equipment boosts (wiki)
                 m = self.atk_hero_mult
                 u.hp *= m
                 u.max_hp *= m
@@ -528,7 +618,9 @@ class Battle:
             else:
                 self.monolith_housing += u.housing
         if self.record:
-            self.log.append((round(self.t, 1), "deploy", d.name, round(d.x, 1), round(d.y, 1)))
+            self.log.append(
+                (round(self.t, 1), "deploy", d.name, round(d.x, 1), round(d.y, 1))
+            )
         return u
 
     # ============================================================== queries
@@ -591,7 +683,11 @@ class Battle:
 
     def defenders_near(self, x, y, r):
         r2 = r * r
-        return [u for u in self.defenders if u.alive and (u.x - x) ** 2 + (u.y - y) ** 2 <= r2]
+        return [
+            u
+            for u in self.defenders
+            if u.alive and (u.x - x) ** 2 + (u.y - y) ** 2 <= r2
+        ]
 
     def can_hit(self, attacker: Unit, victim: Unit) -> bool:
         if not victim.alive or victim.underground or victim.extra.get("leaping"):
@@ -601,7 +697,9 @@ class Battle:
         return attacker.hits_air if victim.flying else attacker.hits_ground
 
     # =============================================================== damage
-    def hit_unit(self, u: Unit, amount: float, *, src=None, kind="normal", attacker=None):
+    def hit_unit(
+        self, u: Unit, amount: float, *, src=None, kind="normal", attacker=None
+    ):
         if not u.alive or amount <= 0:
             return 0.0
         t = self.t
@@ -651,7 +749,9 @@ class Battle:
             amount = min(armor, amount)
         if u.team == "atk":
             s = src or self._src
-            self.damage_by_source[s] = self.damage_by_source.get(s, 0.0) + min(amount, u.hp)
+            self.damage_by_source[s] = self.damage_by_source.get(s, 0.0) + min(
+                amount, u.hp
+            )
         if armor <= 0:
             remaining_bonus = u.extra.get("aura_hp", 0.0)
             u.extra["aura_hp"] = max(0.0, remaining_bonus - amount)
@@ -690,7 +790,9 @@ class Battle:
         if u.hp <= 0:
             if u.team == "atk":
                 s = src or self._src
-                self.kills_by_source[s] = self.kills_by_source.get(s, 0) + max(1, u.housing)
+                self.kills_by_source[s] = self.kills_by_source.get(s, 0) + max(
+                    1, u.housing
+                )
             self.kill(u)
         return amount
 
@@ -770,9 +872,22 @@ class Battle:
                 if o.key == "tesla":
                     defense.reveal_tesla(self, o)
         if self.record:
-            self.log.append((round(self.t, 1), "destroyed", b.key, round(self.destruction(), 1)))
+            self.log.append(
+                (round(self.t, 1), "destroyed", b.key, round(self.destruction(), 1))
+            )
 
-    def splash_buildings(self, x, y, radius, damage, *, walls=True, exclude=None, kind="normal", wall_mult=1.0):
+    def splash_buildings(
+        self,
+        x,
+        y,
+        radius,
+        damage,
+        *,
+        walls=True,
+        exclude=None,
+        kind="normal",
+        wall_mult=1.0,
+    ):
         for b in self.buildings:
             if b.alive and b is not exclude and b.edge_distance(x, y) <= radius:
                 self.hit_building(b, damage, kind=kind)
@@ -784,8 +899,26 @@ class Battle:
                     if w is not None and w.alive and w.edge_distance(x, y) <= radius:
                         self.hit_building(w, damage * wall_mult, kind=kind)
 
-    def splash_units(self, x, y, radius, damage, hits_air, hits_ground, *, team="atk", falloff=False, src=None, kind="normal", exclude=None):
-        pool = self.attackers_near(x, y, radius) if team == "atk" else self.defenders_near(x, y, radius)
+    def splash_units(
+        self,
+        x,
+        y,
+        radius,
+        damage,
+        hits_air,
+        hits_ground,
+        *,
+        team="atk",
+        falloff=False,
+        src=None,
+        kind="normal",
+        exclude=None,
+    ):
+        pool = (
+            self.attackers_near(x, y, radius)
+            if team == "atk"
+            else self.defenders_near(x, y, radius)
+        )
         for u in pool:
             if u is exclude or u.underground:
                 continue
@@ -793,7 +926,9 @@ class Battle:
                 if u.flying and not hits_air or not u.flying and not hits_ground:
                     continue
             d = dist(u.x, u.y, x, y)
-            amt = damage * (1.0 - 0.5 * d / radius) if falloff and radius > 0 else damage
+            amt = (
+                damage * (1.0 - 0.5 * d / radius) if falloff and radius > 0 else damage
+            )
             self.hit_unit(u, amt, src=src, kind=kind)
 
     def add_pending(self, p: Pending):
@@ -926,7 +1061,10 @@ class Battle:
                 self.start_battle()
             return
         t = self.t
-        while self._next_deploy < len(self.deployments) and self.deployments[self._next_deploy].time <= t:
+        while (
+            self._next_deploy < len(self.deployments)
+            and self.deployments[self._next_deploy].time <= t
+        ):
             self.deploy(self.deployments[self._next_deploy])
             self._next_deploy += 1
         self._buckets()
@@ -987,7 +1125,17 @@ class Battle:
     def _snapshot(self):
         return {
             "t": round(self.t, 1),
-            "u": [(u.name, round(u.x, 2), round(u.y, 2), round(u.hp / max(1.0, u.max_hp), 2), u.team) for u in self.attackers + self.defenders if u.alive],
+            "u": [
+                (
+                    u.name,
+                    round(u.x, 2),
+                    round(u.y, 2),
+                    round(u.hp / max(1.0, u.max_hp), 2),
+                    u.team,
+                )
+                for u in self.attackers + self.defenders
+                if u.alive
+            ],
             "dead": [b.id for b in self.buildings if not b.alive and b.key != "banner"],
             "walls": [k for k, w in self.walls.items() if not w.alive],
         }
@@ -1061,6 +1209,15 @@ class Battle:
                 if "hero_impact" in pending.extra:
                     heroes.projectile_impact(self, pending)
                     continue
+                if "scatter" in pending.extra:
+                    defense._scatter(
+                        self,
+                        pending.extra["scatter"],
+                        pending.target,
+                        pending.damage,
+                        pending.extra["rage"],
+                    )
+                    continue
                 if pending.extra.get("direct"):
                     target = pending.target
                     if isinstance(target, Unit):
@@ -1091,6 +1248,22 @@ class Battle:
                         max(pending.extra["min_range"], distance),
                     )
                     x, y = ox + dx * landing / distance, oy + dy * landing / distance
+                if pending.extra.get("damage_delay"):
+                    # projectiles.csv: Artillery Ammo7.DamageDelay=580, after flight.
+                    delayed = replace(
+                        pending,
+                        at=pending.at + pending.extra["damage_delay"],
+                        x=x,
+                        y=y,
+                        target=None,
+                        extra={
+                            key: value
+                            for key, value in pending.extra.items()
+                            if key not in ("damage_delay", "track")
+                        },
+                    )
+                    self.add_pending(delayed)
+                    continue
                 self.splash_units(
                     x,
                     y,
@@ -1205,10 +1378,10 @@ class Battle:
                 else:
                     push = (lim - d) * 0.25
                 ux, uy = dx / d * push, dy / d * push
-                self._nudge(a, -ux, -uy)
-                self._nudge(b, ux, uy)
+                self._nudge(a, -ux, -uy, pushback=False)
+                self._nudge(b, ux, uy, pushback=False)
 
-    def _nudge(self, u, dx, dy):
+    def _nudge(self, u, dx, dy, *, pushback=True):
         if self.t < u.extra.get("tornado_wall_until", 0.0):
             return
         nx, ny = u.x + dx, u.y + dy
@@ -1218,10 +1391,13 @@ class Battle:
                 self.navigation_grid(u).wall[i, j] and self.wall_mode(u) == "normal"
             ):
                 return
+        old_position = (u.x, u.y)
         previous = (int(u.x / BUCKET), int(u.y / BUCKET))
         u.x = min(WORLD - 0.1, max(0.1, nx))
         u.y = min(WORLD - 0.1, max(0.1, ny))
         self._update_bucket(u, previous)
+        if pushback and (u.x, u.y) != old_position:
+            units.pushback_windup(u)
 
     # ================================================================ castle
     def _castle(self):
@@ -1420,7 +1596,7 @@ class Battle:
             ) < units.target_distance(u, target):
                 target, u.target_kind = foe, "unit"
         if target is not None and target is not u.target:
-            units.new_target_windup(u)
+            units.new_target_windup(u, target)
         u.target = target
         units.update_burrow(self, u, target)
         if target is None:
@@ -1501,12 +1677,20 @@ class Battle:
             return units.rubble_target(self, u)
         pool = None
         if pref == "air_defense":
-            pool = [b for b in self.buildings if b.key == "ad" and self.building_targetable(b)]
+            pool = [
+                b
+                for b in self.buildings
+                if b.key == "ad" and self.building_targetable(b)
+            ]
             if not pool:
                 pref = "defense"
                 pool = None
         if pref == "defense" and pool is None:
-            pool = [b for b in self.buildings if self.is_defense_target(b) and self.building_targetable(b)]
+            pool = [
+                b
+                for b in self.buildings
+                if self.is_defense_target(b) and self.building_targetable(b)
+            ]
         if pref == "resource" and pool is None:
             pool = [
                 b
@@ -1712,7 +1896,12 @@ class Battle:
                 u.underground = False
             if self.t < u.extra.get("attack_lock_until", 0.0):
                 return  # casting an ability that disables attacks (Seeking Shield)
-            if u.cooldown <= 0 and self.t >= u.held_until or u.cooldown <= 0 and u.range >= 1.0:
+            if (
+                u.cooldown <= 0
+                and self.t >= u.held_until
+                or u.cooldown <= 0
+                and u.range >= 1.0
+            ):
                 units.strike(self, u, target)
                 slow = effects.slow_mult(u, self.t)
                 interval = units.attack_interval(u, self)
@@ -1842,7 +2031,11 @@ class Battle:
         if u.spec.attack == "none" and u.name != "Ruin Witch":
             return
         u.cooldown = max(u.cooldown - DT, -DT)
-        target = u.target if (u.target is not None and u.target.alive and u.target.targetable(t)) else None
+        target = (
+            u.target
+            if (u.target is not None and u.target.alive and u.target.targetable(t))
+            else None
+        )
         if u.spec.prefer == "heroes" and target is not None and not target.is_hero:
             target = None
         if u.name == "Barbarian King" and target is not None:
@@ -1876,7 +2069,7 @@ class Battle:
                     bd, best = d, a
             target = best
         if target is not None and target is not u.target:
-            units.new_target_windup(u)
+            units.new_target_windup(u, target)
         u.target = target
         if target is None:
             units.interrupt_attack(u)
