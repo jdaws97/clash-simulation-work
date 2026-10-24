@@ -10,6 +10,7 @@ army's cited playbook* (data/playbooks/<family>.json) and nothing else:
 
   angle         entry side, 16 sides then +-11.25 degrees around the best
   charge side   which flank opens the charge (left / right)
+  snipe_mode    exposed-defense opening (off / value / aggressive)
   flank_offset  how far the flanks sit from the main entry (0.6 / 0.9 / 1.2 rad)
   step anchors  a step that targets a building (`building:<key>`, `th`,
                 `threat:main`) may target any building that some playbook
@@ -24,7 +25,8 @@ army's cited playbook* (data/playbooks/<family>.json) and nothing else:
                 are cited)
 
 No new actions or troop uses are introduced. Search (Budget):
-  1. coarse     16 sides x 2 flanks on 5 seeds (common random numbers)
+  1. coarse     16 sides x 2 flanks, plus distinct carried-tool openings;
+                up to 5 common seeds, scaled to leave a refinement budget
   2. halving    best 8 get 10 seeds, best 3 get 20 seeds
   3. refine     one coordinate-descent pass from the best: every single
                 change above, screened on the first 5 seeds; a change that
@@ -107,6 +109,9 @@ class Attack:
     side: str = "left"
     flank_offset: float = 0.9
     overrides: tuple = ()  # ((step id, field, value), ...) sorted
+    # Wiki: Eagle Artillery, early removal protects the main army.
+    # Reviewed policy: each army can also retain its normal opening.
+    snipe_mode: str = "value"
 
     def with_override(self, sid, fld, value):
         o = {(a, b): c for a, b, c in self.overrides}
@@ -131,6 +136,7 @@ class Attack:
             "angle_deg": round(math.degrees(self.angle) % 360, 1),
             "charge_side": self.side,
             "flank_offset": self.flank_offset,
+            "snipe_mode": self.snipe_mode,
         }
         if self.overrides:
             d["steps"] = {f"{s}.{f}": v for s, f, v in self.overrides}
@@ -193,6 +199,9 @@ def make_attack_plan(army: str, attack: Attack, seed: int):
     _fam, pb = playbook_for(army)
     if pb is None:
         raise ValueError(f"{army}: no cited playbook")
+    # Wiki: Eagle Artillery, an exposed-defense opening is a scouting choice.
+    overrides = attack.override_dict()
+    overrides.setdefault("__opening__", {})["snipe_mode"] = attack.snipe_mode
     plan = from_playbook(
         pb,
         angle=attack.angle,
@@ -201,7 +210,7 @@ def make_attack_plan(army: str, attack: Attack, seed: int):
         build=build,
         flank_offset=attack.flank_offset,
         charge_side=attack.side,
-        overrides=attack.override_dict(),
+        overrides=overrides,
     )
     # meta_armies.py:152-217,308: retain runtime metadata beyond the field copy.
     reference = compose(build, angle=attack.angle, seed=seed)
@@ -456,8 +465,51 @@ def redteam(
 
     # 1-2. coarse sides and flanks, then successive halving on seeds
     # review5 #2: caller-supplied sides and seeds also control the attack search.
-    cands = [Attack(angle, side) for angle in angles for side in ("left", "right")]
-    seeds = search_seeds[: b.coarse_seeds]
+    # Wiki: Eagle Artillery, scout whether early removal helps the main army.
+    # Wiki: Hero Equipment, opening modes matter only when a carried tool is spent.
+    # Compare selected lists on a setup-only scout; do not simulate duplicate openings.
+    from .engine.battle import Battle
+    from .engine.plans import AttackPlan
+
+    cands = []
+    scout = None
+    for angle in angles:
+        for side in ("left", "right"):
+            attack = Attack(angle, side)
+            plan = make_attack_plan(army, attack, search_seeds[0])
+            plan.strength = ev.strength * skill(search_seeds[0])
+            if not plan.snipe_exposed or not plan._snipe_tools():
+                cands.append(attack)
+                continue
+            if scout is None:
+                scout = Battle(
+                    layout,
+                    AttackPlan(snipe_mode="off"),
+                    town_hall=layout.town_hall,
+                    modifier=modifier,
+                )
+            exposed = plan.exposed_defenses(scout)
+            value = plan.selected_snipes(scout, exposed)
+            plan.snipe_mode = "aggressive"
+            aggressive = plan.selected_snipes(scout, exposed)
+            if not value and not aggressive:
+                cands.append(attack)
+                continue
+            cands.append(replace(attack, snipe_mode="off"))
+            if value:
+                cands.append(attack)
+            if aggressive and aggressive != value:
+                cands.append(replace(attack, snipe_mode="aggressive"))
+    # Policy: coarse uses at most half the search cap, preserving halving/refinement.
+    # Keep common seed order and first ties deterministic when extra modes are useful.
+    halving_cost = sum(keep * n for keep, n in b.halving)
+    coarse_limit = min(b.max_battles // 2, b.max_battles - halving_cost - required)
+    if coarse_limit < 1:
+        raise ValueError("red-team battle budget cannot cover halving and refinement")
+    if len(cands) > coarse_limit:
+        cands = [cands[i * len(cands) // coarse_limit] for i in range(coarse_limit)]
+    coarse_seeds = min(b.coarse_seeds, max(1, coarse_limit // len(cands)))
+    seeds = search_seeds[:coarse_seeds]
     ev.run(cands, seeds)
     sides = {}  # entry angle (deg) -> best-flank mode score on the coarse seeds
     for a in cands:

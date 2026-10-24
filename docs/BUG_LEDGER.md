@@ -18,6 +18,81 @@ those changes. The wiki mirror is the tie-breaker for rules.
 
 ## Fixed
 
+- 2026-10-23 Exposed-defense openings (Python reference): the red-team-gated
+  overnight winners `output/overnight/qd-main/qd-1212.json` and `qd-0212.json`
+  leave Eagles at layout tiles (39,14) and (24,2), with an outside Air Defense.
+  The account owner (TH16 ranked) identifies early snipes as the missing cost
+  of these placements. Attack plans now scout visible high-value defenses
+  from legal deployment tiles, requiring a clear line past standing walls
+  and the carried tool's real range/automatic aim. Spare Queen walks/Giant
+  Arrow, Rocket Spear, Flame Flinger, centre-facing Rocket Backpack, Fireball
+  and lethal stacks of Lightning can open on those targets, using the shared
+  cluster and line scorers. Cited playbook deployments, abilities, support
+  anchors and spell copies remain reserved; pending Lightning damage counts
+  toward the lethal stack. Sources: Eagle Artillery, Archer Queen, Giant
+  Arrow, Rocket Spear, Flame Flinger, Fireball and Rocket Backpack wiki pages;
+  v18.200.9 RocketSpears.AttackRange=1005 (10.05 tiles, also used at activation),
+  Flame Flinger.AttackRange=1005/DamageRadius=100,
+  ArcherQueenPierceProjectile.PenetratingExtraRange=40000/PenetratingRadius=100,
+  DragonDukeDeadlyDashMapCenter.MovementOverrideTarget=MapCenter,
+  MovementOverrideDistance=71/ActAsPenetratingRadius=150. Scouting adds no RNG
+  calls; actual hits retain the existing projectile, field and attack clocks.
+  `snipe_exposed` and the red-team override
+  `__opening__.snipe_exposed` select the policy. Red-team candidate enumeration
+  in `src/baselab/redteam.py` and the Rust mirror still need corresponding
+  changes outside this task's ownership. Keep both opening modes in that
+  search: committing a sniper can worsen the complete attack. Read-only
+  synthetic probes and Python battle comparisons on the three requested
+  layouts are policy regression checks, not real-game calibration;
+  `verify.py` is absent.
+
+- 2026-10-23 Piercing openings (Python reference): the account owner (TH16
+  ranked) observes Giant Arrow and Rocket Backpack paired with Earthquakes
+  removing lines/bands of clumped defenses. Giant Arrow now scores only the
+  Queen's current target line with the shared visible-defense cluster scorer,
+  including its Air Defense bonus; uncited timing holds at most 10 s, within
+  the playbook's own aim window. Cited building/AD anchors retain control.
+  Unanchored Backpack openings/charges scan legal edge drops in stable
+  one-degree order for defense value along the centre-facing dash. Sources:
+  v18.200.9 ArcherQueenPierceProjectile.ProjectileOnActivationCopyTarget=TRUE,
+  PenetratingExtraRange=40000, PenetratingRadius=100;
+  DragonDukeDeadlyDashMapCenter.MovementOverrideTarget=MapCenter,
+  MovementOverrideDistance=71, ActAsPenetratingRadius=150, Speed=1500;
+  Giant Arrow wiki (double damage to Air Defenses; current-target direction).
+  One spare quake is retained for a point on the selected band, respecting
+  playbook casts and wall reservations; it is a separate paced action, with
+  the five hits allowed to land before activation when the aim window permits
+  (Earthquake.NumberOfHits=5, TimeBetweenHitsMS=400; Earthquake Spell wiki).
+  Existing equipment damage tables and deployment jitter draw order remain
+  intact. Read-only, declared synthetic snapshots on the owner layout and
+  best overnight archive layout check paths, quake points and destroyed
+  defenses; these are not real-game calibration. Rust needs the same policy
+  and geometry changes before parity.
+
+- 2026-10-23 Cluster punishment (Python reference): the account owner (TH16
+  ranked) observes Lightning/Earthquake/Fireball combos and Royal Champion
+  charges removing several clumped defenses; the attacker's fixed anchors
+  gave the base search too little pressure to spread defenses. Shared scouting
+  now scores visible defense centers and nearby pair midpoints by THREAT times
+  the fraction of remaining HP removed. Spare Lightning and unreserved quakes
+  use this score, including paced 2-3 Lightning + 1 Earthquake combos only when
+  at least two defenses can fall. Planned spell steps and wall quakes stay
+  reserved. Sources: Lightning Spell/Home Village and Earthquake Spell wiki;
+  v18.200.9 Lightning L11.Damage=640, Earthquake.BuildingDamagePermil=58 with
+  NumberOfHits=5 (29% first cast; later casts 1/3, 1/5). Fireball and Champion
+  equipment time automatic nearest-defense targeting for nearby cluster value
+  when no live explicit anchor remains; charges scout legal edges toward
+  reachable clusters, keeping their composition. Sources: Fireball (L27 data:
+  Damage=4100, DamageRadius=600), Rocket Spear (10-tile range), Seeking Shield
+  (four hits), Royal Champion wiki. Electro Dragon building hops now measure
+  both footprint edges with a one-tile maximum gap (Electro Dragon wiki),
+  closing the deferred center-distance item below. Read-only setup probes on
+  the owner layout and best overnight archive entry show changed targets;
+  declared synthetic probes cover combo thresholds, diminishing damage,
+  reservations, hidden defenses and symmetric mixed-size chain gaps. No new
+  random calls, long simulations or real-game calibration claims. Rust parity
+  requires the corresponding port update.
+
 - 2026-10-23 Totem placement stacked casts on the push midpoint. User evidence
   (account owner, TH16 ranked): attackers spread Totems; "dropping 3 on a spot
   never happens". Generic casts now rank uncovered defense clusters by THREAT;

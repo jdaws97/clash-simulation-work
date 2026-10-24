@@ -15,12 +15,14 @@ from __future__ import annotations
 
 import json
 import math
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from functools import lru_cache
+from heapq import nlargest
 
 from ..loadouts import HeroLoadout as L
 from ..mechanics import WORLD
 from . import heroes, spells, stats
+from .entities import Building
 
 CENTER = WORLD / 2.0
 
@@ -157,6 +159,22 @@ class Deployment:
     mode: str | None = None
 
 
+@dataclass
+class DefenseSnipe:
+    target: Building
+    tool: str
+    kind: str
+    x: float
+    y: float
+    value: float
+    # Wiki: Rocket Spear, finite opening resources compete with later use.
+    seconds: float = 0.0
+    cost: float = 0.0
+    damage: dict = field(default_factory=dict)
+    casts: int = 0
+    confidence: float = 1.0
+
+
 def edge_point(battle, angle: float, lateral: float = 0.0):
     """Closest legal deploy point walking in from `angle`, shifted sideways."""
     dx, dy = math.cos(angle), math.sin(angle)
@@ -179,6 +197,131 @@ def edge_point(battle, angle: float, lateral: float = 0.0):
 
 def _cheb(x, y):
     return max(abs(x - CENTER), abs(y - CENTER))
+
+
+def defense_cluster(
+    battle,
+    effects,
+    *,
+    hp=None,
+    eq_hits=None,
+    points=None,
+    min_kills=0,
+    band=None,
+    center=None,
+    reach=None,
+):
+    """Return (x, y, value, kills) for the best visible defense cluster.
+
+    Effects are (kind, radius, damage), with fractional maximum HP for quakes.
+    Stable building order breaks ties; scouting never inspects hidden Teslas.
+    """
+    # Wiki: Rocket Spear, do not spend another spell on a claimed lethal volley.
+    claimed = getattr(battle.plan, "_snipe_claimed", ())
+    defenses = [
+        b
+        for b in battle.buildings
+        if b.is_defense
+        and battle.building_targetable(b)
+        and b.id not in claimed
+        and (hp is None or hp.get(b.id, b.hp) > 1e-9)
+    ]
+    if not defenses or not effects:
+        return None
+    # Wiki: Fireball, its splash is centered on the nearest visible defense.
+    # Policy: reuse scores within a tick/HP version; keep at most 24 nearby centers.
+    version = (battle.t, tuple((b.id, b.hp, b.eq_hits) for b in defenses))
+    if getattr(battle, "_cluster_version", None) != version:
+        battle._cluster_version = version
+        battle._cluster_scores = {}
+        battle._cluster_points = {}
+    if points is None:
+        if center is None:
+            army = [u for u in battle.attackers if u.alive and u.group == "main"]
+            if army:
+                center = AttackPlan.centroid(army)
+                reach = 18.0
+        point_key = (center, reach)
+        if point_key not in battle._cluster_points:
+            nearby = [
+                b
+                for b in defenses
+                if center is None or reach is None or b.edge_distance(*center) <= reach
+            ]
+            battle._cluster_points[point_key] = tuple(
+                (b.x, b.y)
+                for b in nlargest(24, nearby, key=lambda b: THREAT.get(b.key, 1))
+            )
+        points = battle._cluster_points[point_key]
+    score_key = (
+        tuple(effects),
+        tuple(points),
+        min_kills,
+        band,
+        None if hp is None else tuple(hp.get(b.id, b.hp) for b in defenses),
+        (
+            None
+            if eq_hits is None
+            else tuple(eq_hits.get(b.id, b.eq_hits) for b in defenses)
+        ),
+    )
+    if score_key in battle._cluster_scores:
+        return battle._cluster_scores[score_key]
+    best = None
+    for x, y in points:
+        score = 0.0
+        kills = 0
+        for b in defenses:
+            remaining = b.hp if hp is None else hp.get(b.id, b.hp)
+            damage = 0.0
+            quakes = b.eq_hits if eq_hits is None else eq_hits.get(b.id, b.eq_hits)
+            for kind, radius, value in effects:
+                if kind in ("arrow", "dash"):
+                    if not _band_hit(b, band, kind, radius):
+                        continue
+                    # Wiki: Giant Arrow, double damage to Air Defenses.
+                    damage += value * (2 if kind == "arrow" and b.key == "ad" else 1)
+                    continue
+                elif b.edge_distance(x, y) > radius:
+                    continue
+                # Wiki: Lightning Spell/Home Village, TH/CC/storages are immune.
+                if kind == "lightning" and b.key in spells.STORAGES | {"th", "cc"}:
+                    continue
+                if kind == "quake":
+                    # Wiki: Earthquake Spell, building damage diminishes 1, 1/3, 1/5.
+                    damage += b.max_hp * value / (2 * quakes + 1)
+                    quakes += 1
+                else:
+                    damage += value
+            # User (TH16 ranked, 2026-10-23): punish several valuable defenses at once.
+            score += THREAT.get(b.key, 1) * min(1.0, damage / remaining)
+            if damage >= remaining - 1e-9:
+                kills += 1
+        if score > 0 and kills >= min_kills and (best is None or score > best[2]):
+            best = (x, y, score, kills)
+    battle._cluster_scores[score_key] = best
+    return best
+
+
+def _band_hit(building, band, kind, radius):
+    x, y, dx, dy, length = band
+    along = (building.x - x) * dx + (building.y - y) * dy
+    if kind == "arrow":
+        # Wiki: Giant Arrow, pierces forward along the Queen's current target.
+        off = abs((building.x - x) * dy - (building.y - y) * dx)
+        return 0 < along < length and off <= building.half_hit + radius
+    # game data v18.200.9: DragonDukeDeadlyDashMapCenter.ActAsPenetratingRadius=150.
+    along = min(length, max(0.0, along))
+    if building.edge_distance(x + dx * along, y + dy * along) <= radius:
+        return True
+    # Test corner projections too: the dash sweeps the whole square hitbox.
+    for offset_x in (-building.half_hit, building.half_hit):
+        for offset_y in (-building.half_hit, building.half_hit):
+            along = (building.x + offset_x - x) * dx + (building.y + offset_y - y) * dy
+            along = min(length, max(0.0, along))
+            if building.edge_distance(x + dx * along, y + dy * along) <= radius:
+                return True
+    return False
 
 
 @dataclass
@@ -246,12 +389,35 @@ class AttackPlan:
     _main_at: float = 0.0
     _zap_done: bool = False
     _cc_released: bool = False
+    # Wiki: Eagle Artillery, eliminate exposed key defenses before the main army.
+    snipe_exposed: InitVar[bool] = True
+    # Wiki: Rocket Spear, weigh early removal against the ability's later use.
+    # Policy: value requires a +2 margin; aggressive accepts down to -0.5.
+    snipe_mode: InitVar[str] = "value"
+    snipe_log: InitVar[tuple] = ()
+
+    def __setattr__(self, name, value):
+        # Wiki: Eagle Artillery, early removal protects the main army.
+        # Keep defaults implicit for the current Rust plan-field whitelist.
+        if (
+            (name == "snipe_exposed" and value is True)
+            or (name == "snipe_mode" and value == "value")
+            or (name == "snipe_log" and not value)
+        ):
+            self.__dict__.pop(name, None)
+        else:
+            super().__setattr__(name, value)
 
     def P(self, name):
         v = self.pol.get(name)
         return POLICY[name][0] if v is None else v
 
-    def __post_init__(self):
+    def __post_init__(self, snipe_exposed=True, snipe_mode="value", snipe_log=()):
+        self.snipe_exposed = snipe_exposed
+        self.snipe_mode = snipe_mode
+        self.snipe_log = list(snipe_log)
+        if self.snipe_mode not in ("off", "value", "aggressive"):
+            raise ValueError(f"Unknown snipe mode {self.snipe_mode}")
         self.spells = dict(self.spells)
         self.cleanup = [list(c) for c in self.cleanup]
         self._charge_n = 0
@@ -570,7 +736,7 @@ class AttackPlan:
 
     def setup_charge(self, hero, healers, lateral=0.0, at=0.0):
         """A hero charge (Queen Charge, Royal Champion charge): the hero opens
-        along the side at `lateral` with up to `healers` of the army's own
+        toward a scouted cluster with up to `healers` of the army's own
         Healers (taken from the support waves), before the main push. Spells
         are spent on the charge while it is the only thing on the map."""
         heroes_in = [n for n, _ in self.funnel_heroes] + list(self.push_heroes)
@@ -597,15 +763,86 @@ class AttackPlan:
         self.charge_hero, self._charge_n, self.charge_lat, self.charge_at = hero, taken, lateral, at
         return True
 
+    def charge_point(self, battle, angle, lateral=0.0):
+        # User (TH16 ranked, 2026-10-23): hero charges take out defense clusters.
+        # Policy: scout a 6-tile cluster, at most 12 tiles from a legal edge drop.
+        effects = [("damage", 6.0, math.inf)]
+        candidates = []
+        # Wiki: Archer Queen, a charge clears the selected entry flank.
+        # Policy: keep clusters within 45 degrees of the chosen lateral entry.
+        origin = edge_point(battle, angle, lateral)
+        direction = math.atan2(origin[1] - CENTER, origin[0] - CENTER)
+        for b in battle.buildings:
+            if not b.is_defense or not battle.building_targetable(b):
+                continue
+            bearing = math.atan2(b.y - CENTER, b.x - CENTER)
+            if math.cos(bearing - direction) < math.cos(math.pi / 4):
+                continue
+            x, y = edge_point(battle, bearing, lateral)
+            if b.edge_distance(x, y) <= 12.0:
+                candidates.append((b.x, b.y))
+        cluster = defense_cluster(battle, effects, points=candidates)
+        if cluster is None:
+            return edge_point(battle, angle, lateral)
+        return edge_point(
+            battle, math.atan2(cluster[1] - CENTER, cluster[0] - CENTER), lateral
+        )
+
+    def _has_backpack(self):
+        # Wiki: Hero Equipment, the equipped and owned item enables its ability.
+        loadout = (
+            self.loadouts.get("Dragon Duke") or heroes.DEFAULT_LOADOUTS["Dragon Duke"]
+        )
+        return "Rocket Backpack" in loadout.equipment and (
+            not self.account_equipment or "Rocket Backpack" in self.equipment_levels
+        )
+
+    def backpack_point(self, battle, angle, lateral=0.0):
+        # User (TH16 ranked, 2026-10-23): Backpack openings punish defense bands.
+        # Policy: stable one-degree scan of legal edge drops, starting at the plan's side.
+        level = self.equipment_levels.get("Rocket Backpack") or stats.max_level(
+            "Rocket Backpack", self.town_hall
+        )
+        damage = float(
+            heroes._ability_data(
+                "Rocket Backpack", level, "DragonDukeDeadlyDashMapCenter"
+            )["ActAsPenetratingDamage"]
+        )
+        best = None
+        point = edge_point(battle, angle, lateral)
+        for index in range(360):
+            x, y = (
+                point if index == 0 else edge_point(battle, angle + math.radians(index))
+            )
+            if not battle.can_deploy(x, y):
+                continue
+            dx, dy, length, radius = heroes.dash_geometry(x, y, (1.0, 0.0))
+            candidate = defense_cluster(
+                battle,
+                [("dash", radius, damage)],
+                points=[(x, y)],
+                band=(x, y, dx, dy, length),
+            )
+            if candidate is not None and (best is None or candidate[2] > best[2]):
+                best = candidate
+        return best[:2] if best is not None else point
+
     def deployments(self, battle):
-        out = []
+        out = self.opening_deployments(battle)
         th = self.town_hall
         for name, lateral in self.funnel_heroes:
+            if name in self._snipe_deployed:
+                continue
             x, y = edge_point(battle, self.angle, lateral)
+            if name == "Dragon Duke" and self._has_backpack():
+                x, y = self.backpack_point(battle, self.angle, lateral)
             out.append(Deployment(0.0, name, x, y, group="funnel", level=self._level(name), town_hall=th))
         if self.charge_hero:
-            x, y = edge_point(battle, self.angle, self.charge_lat)
-            if self.P("deep_drop") > 0.5:
+            # User (TH16 ranked, 2026-10-23): scout the charge flank for clusters.
+            x, y = self.charge_point(battle, self.angle, self.charge_lat)
+            if self.charge_hero == "Dragon Duke" and self._has_backpack():
+                x, y = self.backpack_point(battle, self.angle, self.charge_lat)
+            elif self.P("deep_drop") > 0.5:
                 x, y = self._deep_charge_point(battle, (x, y))
             out.append(Deployment(self.charge_at, self.charge_hero, x, y, group="charge", level=self._level(self.charge_hero), town_hall=th))
             for k in range(self._charge_n):
@@ -617,6 +854,661 @@ class AttackPlan:
                 out.append(Deployment(t, name, x, y, group="funnel", level=self._level(name), town_hall=th))
                 t += 0.15
         return out
+
+    def _snipe_available(self, name):
+        # Wiki: Hero Equipment, a tool must be carried by an undeployed hero.
+        if name in getattr(self, "_snipe_deployed", set()):
+            return False
+        if name == "Flame Flinger":
+            return self.siege == name
+        return name != self.charge_hero and (
+            name in self.push_heroes
+            or any(hero == name for hero, _ in self.funnel_heroes)
+        )
+
+    def _snipe_air_army(self):
+        # Wiki: Air Defense, prioritize it for armies whose fighting troops fly.
+        if hasattr(self, "inventory"):
+            troops = list(self.inventory.items())
+        else:
+            troops = [item for wave in self.main + self.support for item in wave.units]
+            troops += [(name, count) for name, count, _ in self.flank]
+            troops += list(self.cleanup)
+        air = ground = 0
+        for name, count in troops:
+            if name == "Healer" or stats.record(name)["kind"] == "siege":
+                continue
+            attrs = stats.attrs(name)
+            housing = count * attrs.get("housing", 0)
+            if attrs.get("is_flying"):
+                air += housing
+            else:
+                ground += housing
+        return air > ground
+
+    def _snipe_weights(self, battle):
+        # Wiki: Air Defense/Home Village, threatens air armies and ground Healers.
+        # Wiki: Air Sweeper, affects only flying troops.
+        # Wiki: Monolith, particularly dangerous to heroes and high-HP troops.
+        # Policy multipliers on THREAT: air AD 2.5, Sweeper 3, Eagle/Scatter 1.25;
+        # ground AD 0 (0.5 with Healers), Sweeper 0; air ground-only weapons 0.2.
+        # Hero-heavy (4+ Healers or a charge): Monolith 1.6, single Inferno 1.5.
+        air_army = self._snipe_air_army()
+        if hasattr(self, "inventory"):
+            healers = self.inventory.get("Healer", 0)
+        else:
+            healers = self._charge_n + sum(
+                count
+                for wave in self.main + self.support
+                for name, count in wave.units
+                if name == "Healer"
+            )
+        weights = {}
+        for building in battle.buildings:
+            weight = float(THREAT.get(building.key, 1))
+            if air_army:
+                weight *= {
+                    "ad": 2.5,
+                    "sweeper": 3.0,
+                    "eagle": 1.25,
+                    "scatter": 1.25,
+                }.get(building.key, 1.0)
+                if building.weapon is not None and building.weapon.targets == "ground":
+                    weight *= 0.2
+            elif building.key == "ad":
+                weight *= 0.5 if healers else 0.0
+            elif building.key == "sweeper":
+                weight = 0.0
+            if healers >= 4 or self.charge_hero:
+                if building.key == "mono":
+                    weight *= 1.6
+                elif building.key == "inferno" and building.mode == "single":
+                    weight *= 1.5
+            weights[building.id] = weight
+        return weights
+
+    def _snipe_role(self, name):
+        return "main" if name in self.push_heroes or name == self.siege else "funnel"
+
+    def _snipe_cost(self, name, kind):
+        # Wiki: Rocket Spear, early activation spends finite shots and paired gear.
+        # Policy opportunity costs in THREAT units: ordinary walk 3, Arrow 4,
+        # Spear 5, Backpack 7, Fireball 7, Flinger 4; main role +2, funnel +0.5.
+        # These retain core damage, a funnel, siege cargo and paired protection.
+        cost = {
+            "queen": 3.0,
+            "arrow": 4.0,
+            "spear": 5.0,
+            "dash": 7.0,
+            "fireball": 7.0,
+            "flinger": 4.0,
+        }[kind]
+        cost += 2.0 if self._snipe_role(name) == "main" else 0.5
+        if kind not in ("queen", "flinger"):
+            loadout = self.loadouts.get(name) or heroes.DEFAULT_LOADOUTS[name]
+            # Wiki: Hero Equipment, activating a hero also uses its other ability.
+            # Policy: price lost protection/healing, not passive equipment boosts.
+            paired = {
+                "Eternal Tome": 6.0,
+                "Healing Tome": 3.0,
+                "Invisibility Vial": 2.0,
+                "Healer Puppet": 2.0,
+                "Royal Gem": 1.5,
+                "Haste Vial": 2.0,
+                "Seeking Shield": 2.0,
+                "Action Figure": 2.0,
+                "Revenge Deck": 2.0,
+            }
+            cost += sum(
+                paired.get(item, 0.0)
+                for item in loadout.equipment
+                if not self.account_equipment or item in self.equipment_levels
+            )
+        return cost
+
+    def _snipe_timing(self, battle, name, kind, target, x, y, damage):
+        from .playbook import action_time
+        from .specs import unit_numbers
+
+        # Policy: finish an opening within 12 s; charge 0.25 THREAT per second.
+        # game data v18.200.9: QueenPierceProjectile.Speed=3500 -> 35 tiles/s.
+        # game data v18.200.9: RocketSpearProjectile.Speed=1200 -> 12 tiles/s.
+        # game data v18.200.9: vfx_chr_gw_Fireball_lvl1.FixedTravelTime=1500 -> 1.5 s.
+        distance = math.hypot(target.x - x, target.y - y)
+        seconds = action_time("deploy") + action_time("ability")
+        level = self._level(name) or stats.max_level(name, self.town_hall)
+        numbers = unit_numbers(name, level)
+        if kind == "arrow":
+            seconds += distance / 35.0
+        elif kind == "dash":
+            # game data v18.200.9: DragonDukeDeadlyDashMapCenter.Speed=1500 -> 15 tiles/s.
+            seconds += distance / 15.0
+        elif kind == "fireball":
+            seconds += 1.5
+        elif kind == "spear":
+            equipment = self.equipment_levels.get("Rocket Spear") or stats.max_level(
+                "Rocket Spear", self.town_hall
+            )
+            bonus = heroes._col("Rocket Spear", equipment, "damage per shot increase")
+            shot = (numbers["dmg"] + bonus) * self.strength * battle.atk_hero_mult
+            shots = max(1, math.ceil(target.hp / max(1.0, shot)))
+            seconds += (shots - 1) * numbers["interval"] + distance / 12.0
+        else:
+            # Wiki: Flame Flinger/Archer Queen, sustained damage needs combat time.
+            # Replace the helper's infinite rank estimate with a finite HP budget.
+            dps = max(1.0, numbers["dps"] * self.strength * battle.atk_hero_mult)
+            seconds = action_time("deploy") + target.hp / dps
+            seconds += distance / (5.0 if kind == "flinger" else 12.0)
+            damage = target.hp  # Candidates taking over 12 s are rejected below.
+        flying = numbers["flying"] or (name == "Grand Warden" and not self.ground)
+        incoming = 0.0
+        for defense in battle.buildings:
+            weapon = defense.weapon
+            if not battle.building_targetable(defense) or weapon is None:
+                continue
+            if weapon.targets == ("ground" if flying else "air"):
+                continue
+            # Wiki: Eagle Artillery, it cannot retaliate before deployment activation.
+            if (
+                weapon.kind == "eagle"
+                and battle.deployed_housing < weapon.extra["activation"]
+            ):
+                continue
+            separation = math.hypot(defense.x - x, defense.y - y)
+            if weapon.min_range <= separation <= weapon.range:
+                incoming += weapon.damage / max(0.1, weapon.interval)
+        # Wiki: Rocket Spear, X-Bows can retaliate; high damage can waste the volley.
+        # Policy: HP loss lowers kill confidence and costs up to 4 THREAT units.
+        loss = min(1.0, incoming * seconds / max(1.0, numbers["hp"]))
+        return damage, seconds, loss
+
+    def _snipe_tools(self):
+        # Wiki: Hero Equipment, only carried, unreserved tools can open a snipe.
+        tools = []
+        # Policy: stable tool order breaks equal-value ties; no scouting RNG.
+        for name in (
+            "Archer Queen",
+            "Royal Champion",
+            "Flame Flinger",
+            "Dragon Duke",
+            "Grand Warden",
+        ):
+            if self._snipe_available(name):
+                tool = heroes.sniping_tool(self, name)
+                if tool is not None:
+                    tools.append((name, tool))
+        lightning = self._snipe_lightning_count()
+        if lightning:
+            effects = self._cluster_effects("lightning", lightning)
+            tools.append(
+                (
+                    "Lightning Spell",
+                    ("lightning", math.inf, effects[0][1], sum(e[2] for e in effects)),
+                )
+            )
+        return tools
+
+    def _opening_reachable(self, battle, tiles):
+        # Wiki: Walls, an exposed attack position has a wall-free ground approach.
+        # Use the grid's eight neighbors and corner rule, once from legal deploy tiles.
+        from ..pathing import RES, _NEIGHBORS
+
+        if hasattr(battle, "_opening_reachable"):
+            return battle._opening_reachable
+        grid = battle.grid
+        n = grid.n
+        blocked = grid.blocked.copy()
+        # Wiki: Hidden Tesla, its unrevealed position cannot guide opening scouting.
+        for building in battle.buildings:
+            if building.key == "tesla" and not building.revealed:
+                i0 = int(round((building.x - building.half_hit) * RES))
+                i1 = int(round((building.x + building.half_hit) * RES))
+                j0 = int(round((building.y - building.half_hit) * RES))
+                j1 = int(round((building.y + building.half_hit) * RES))
+                blocked[i0:i1, j0:j1] = False
+        walkable = (~(blocked | grid.wall)).tolist()
+        reached = [[False] * n for _ in range(n)]
+        queue = []
+        for x, y in tiles:
+            i, j = grid.cell(x, y)
+            if walkable[i][j] and not reached[i][j]:
+                reached[i][j] = True
+                queue.append((i, j))
+        neighbors = _NEIGHBORS.tolist()
+        for i, j in queue:
+            for di, dj in neighbors:
+                ni, nj = i + di, j + dj
+                if not (0 <= ni < n and 0 <= nj < n):
+                    continue
+                if reached[ni][nj] or not walkable[ni][nj]:
+                    continue
+                if di and dj and (not walkable[i][nj] or not walkable[ni][j]):
+                    continue
+                reached[ni][nj] = True
+                queue.append((ni, nj))
+        battle._opening_reachable = reached
+        return reached
+
+    def exposed_defenses(self, battle):
+        """Scout visible targets from legal tiles, without deploying or drawing RNG."""
+        from ..pathing import RES
+        from .playbook import action_time
+        from .specs import unit_numbers
+
+        if not self.snipe_exposed or self.snipe_mode == "off":
+            return []
+        tools = self._snipe_tools()
+        if not tools:
+            return []
+        # Wiki: Rocket Spear, suitable targets depend on value and retaliation.
+        # Policy: cap scouting at 24 valuable defenses and eight drops per tool/target.
+        visible = [b for b in battle.buildings if battle.building_targetable(b)]
+        defenses = [b for b in visible if battle.is_defense_target(b)]
+        weights = self._snipe_weights(battle)
+        targets = nlargest(24, defenses, key=lambda b: weights[b.id])
+        main_point = edge_point(battle, self.angle)
+        tiles = battle.deploy_tiles()
+        reached = self._opening_reachable(battle, tiles)
+        ranked_tiles = {}
+        lightning_effects = self._cluster_effects(
+            "lightning", self._snipe_lightning_count()
+        )
+        # Wiki: Earthquake Spell, price a spare paired cast without spending a breach.
+        fallback = getattr(self, "_fallback", False)
+        self._fallback = True
+        try:
+            paired_quake = self._spare_quakes(battle) > 0
+        finally:
+            self._fallback = fallback
+        out = []
+        for name, (kind, reach, radius, damage) in tools:
+            # Wiki: Giant Arrow/Fireball, the caster's ordinary range controls approach.
+            if kind == "lightning":
+                approach = 0.5
+                base_cost = 0.0
+            else:
+                level = self._level(name) or stats.max_level(name, self.town_hall)
+                approach = min(reach, unit_numbers(name, level)["range"])
+                if kind == "spear":
+                    approach = reach
+                base_cost = self._snipe_cost(name, kind)
+            for target in targets:
+                # Even a certain kill cannot repay a tool whose cost exceeds its value.
+                if weights[target.id] < base_cost - 0.5:
+                    continue
+                if kind == "lightning" and target.key in spells.STORAGES | {"th", "cc"}:
+                    continue
+                extent = target.half_hit + approach
+                n = battle.grid.n
+                accessible = any(
+                    reached[i][j]
+                    and target.edge_distance((i + 0.5) / RES, (j + 0.5) / RES)
+                    <= approach
+                    for i in range(
+                        max(0, int((target.x - extent) * RES)),
+                        min(n, int((target.x + extent) * RES) + 1),
+                    )
+                    for j in range(
+                        max(0, int((target.y - extent) * RES)),
+                        min(n, int((target.y + extent) * RES) + 1),
+                    )
+                )
+                if not accessible:
+                    continue
+                if target.id not in ranked_tiles:
+                    ranked_tiles[target.id] = sorted(
+                        ((target.edge_distance(x, y), x, y) for x, y in tiles),
+                        key=lambda item: item[0],
+                    )
+                legal = [item for item in ranked_tiles[target.id] if item[0] <= reach]
+                drops = legal[:4] + legal[-4:]
+                best = None
+                for distance, x, y in dict.fromkeys(drops):
+                    band = None
+                    center = (target.x, target.y)
+                    effect_kind = "damage"
+                    if kind in ("queen", "arrow"):
+                        nearest = min(visible, key=lambda b: b.edge_distance(x, y))
+                        if kind == "queen" and nearest is not target:
+                            continue
+                        if kind == "arrow":
+                            dx, dy = nearest.x - x, nearest.y - y
+                            length = math.hypot(dx, dy)
+                            data = heroes.game_data(
+                                "special_abilities", "ArcherQueenPierceProjectile"
+                            )
+                            band = (
+                                x,
+                                y,
+                                dx / length,
+                                dy / length,
+                                length + float(data["PenetratingExtraRange"]) / 100.0,
+                            )
+                            effect_kind = "arrow"
+                    elif kind == "dash":
+                        dx, dy, length, radius = heroes.dash_geometry(x, y, (1.0, 0.0))
+                        band = (x, y, dx, dy, length)
+                        effect_kind = "dash"
+                    elif kind in ("spear", "flinger", "fireball"):
+                        nearest = min(defenses, key=lambda b: b.edge_distance(x, y))
+                        if kind != "fireball" and nearest is not target:
+                            continue
+                        center = (nearest.x, nearest.y)
+                        if (
+                            kind == "fireball"
+                            and target.edge_distance(*center) > radius
+                        ):
+                            continue
+                    if band is not None:
+                        if not _band_hit(target, band, effect_kind, radius):
+                            continue
+                        center = (x, y)
+                    # Wiki: Giant Arrow/Fireball, track collateral within the
+                    # existing line or splash geometry, using remaining HP.
+                    casts = 0
+                    if kind == "lightning":
+                        effects = lightning_effects
+                        dealt = 0.0
+                        for effect in effects:
+                            dealt += effect[2]
+                            casts += 1
+                            if dealt >= target.hp:
+                                break
+                        # Wiki: Lightning Spell, a short stack cannot destroy the target.
+                        if dealt < target.hp:
+                            continue
+                        seconds = casts * action_time("spell") + spells.LAND_DELAY
+                        loss = 0.0
+                        # Policy: each spare zap can finish a later defense.
+                        cost = 1.5 * casts
+                    else:
+                        dealt, seconds, loss = self._snipe_timing(
+                            battle, name, kind, target, x, y, damage
+                        )
+                        cost = base_cost
+                        if paired_quake and kind in ("arrow", "dash"):
+                            # game data v18.200.9: Earthquake.NumberOfHits=5,
+                            # TimeBetweenHitsMS=400 -> wait for the paired cast's pulses.
+                            seconds += max(
+                                action_time("spell"), spells.LAND_DELAY + 4 * 0.4
+                            )
+                            cost += 1.5  # Policy: one spare spell's later damage value.
+                        # Policy: moving off the planned flank loses funnel/support value.
+                        cost += (
+                            2.0
+                            * math.hypot(x - main_point[0], y - main_point[1])
+                            / WORLD
+                        )
+                    if seconds > 12.0:
+                        continue
+                    cost += 0.25 * seconds + 4.0 * loss
+                    hits = {}
+                    value = -cost
+                    for defense in defenses:
+                        if band is not None:
+                            hit = _band_hit(defense, band, effect_kind, radius)
+                        else:
+                            hit = defense.edge_distance(*center) <= radius
+                        if kind in ("queen", "spear"):
+                            hit = defense is target
+                        if not hit:
+                            continue
+                        if kind == "lightning" and defense.key in spells.STORAGES | {
+                            "th",
+                            "cc",
+                        }:
+                            continue
+                        hit_damage = dealt
+                        # Wiki: Giant Arrow, double damage against Air Defenses.
+                        if kind == "arrow" and defense.key == "ad":
+                            hit_damage *= 2
+                        # Deterministic confidence proxy, not sampled/calibrated odds.
+                        probability = min(1.0, hit_damage / defense.hp) * (1.0 - loss)
+                        hits[defense.id] = hit_damage
+                        # Policy: earn opening value from the exposed target.
+                        # Interior collateral remains tracked to avoid duplicate spending.
+                        if defense is target:
+                            value += weights[defense.id] * probability
+                    # Stable tile order breaks ties; ranged troops prefer standoff.
+                    rank = (value, distance)
+                    if best is None or rank > best[0]:
+                        best = (rank, x, y, seconds, cost, hits, casts, 1.0 - loss)
+                if best is not None:
+                    out.append(
+                        DefenseSnipe(
+                            target,
+                            name,
+                            kind,
+                            best[1],
+                            best[2],
+                            best[0][0],
+                            best[3],
+                            best[4],
+                            best[5],
+                            best[6],
+                            best[7],
+                        )
+                    )
+        return out
+
+    def _snipe_lightning_count(self):
+        # Playbooks override _have to protect planned and repeating spell casts.
+        fallback = getattr(self, "_fallback", False)
+        self._fallback = True
+        try:
+            return self._unreserved_spells("lightning")
+        finally:
+            self._fallback = fallback
+
+    def opening_deployments(self, battle):
+        from .playbook import action_time
+
+        self._snipe_deployed = set()
+        self._snipe_assignments = {}
+        self._snipe_claimed = set()
+        self._snipe_lightning = None
+        self._snipe_lightning_at = 0.0
+        self._snipe_lightning_left = 0
+        self._exposed = self.exposed_defenses(battle) if self.snipe_exposed else []
+        if not self._exposed:
+            return []
+        out = []
+        at = 0.0
+        remaining = {building.id: building.hp for building in battle.buildings}
+        for chosen in self.selected_snipes(battle, self._exposed):
+            if chosen.kind == "lightning":
+                # Reserve this stack's target alongside hero assignments.
+                self._snipe_lightning = chosen
+                self._snipe_lightning_at = at
+                self._snipe_lightning_left = chosen.casts
+            else:
+                name = chosen.tool
+                self._snipe_assignments[name] = chosen
+                self._snipe_deployed.add(name)
+                out.append(
+                    Deployment(
+                        at,
+                        name,
+                        chosen.x,
+                        chosen.y,
+                        group="snipe",
+                        level=self._level(name),
+                        town_hall=self.town_hall,
+                    )
+                )
+                self._log_snipe(
+                    (
+                        round(at, 1),
+                        "deploy:" + chosen.kind,
+                        chosen.target.id,
+                        chosen.x,
+                        chosen.y,
+                    )
+                )
+            for bid, damage in chosen.damage.items():
+                remaining[bid] -= damage
+                if remaining[bid] <= 0 and chosen.kind != "lightning":
+                    self._snipe_claimed.add(bid)
+            at += (
+                action_time("spell") * chosen.casts
+                if chosen.kind == "lightning"
+                else action_time("deploy")
+            )
+        if out:
+            self._busy_until = at
+        return out
+
+    def selected_snipes(self, battle, exposed):
+        """Select an opening without deploying, casting, or drawing RNG."""
+        from .playbook import action_time
+
+        # Wiki: Hero Equipment, retaining every tool is the off-mode opening.
+        if not self.snipe_exposed or self.snipe_mode == "off":
+            return []
+        selected = []
+        at = 0.0
+        # Wiki: Rocket Spear, spend tools only when early removal merits the cost.
+        # Policy: best marginal value first; all landing estimates stay within 12 s.
+        threshold = 2.0 if self.snipe_mode == "value" else -0.5
+        remaining = {building.id: building.hp for building in battle.buildings}
+        weights = self._snipe_weights(battle)
+        used = set()
+        while True:
+            candidates = []
+            for candidate in exposed:
+                if candidate.tool in used or remaining[candidate.target.id] <= 0:
+                    continue
+                if at + candidate.seconds > 12.0:
+                    continue
+                # Revalue damage against HP remaining after earlier assignments.
+                probability = (
+                    min(
+                        1.0,
+                        candidate.damage[candidate.target.id]
+                        / remaining[candidate.target.id],
+                    )
+                    * candidate.confidence
+                )
+                value = (
+                    weights[candidate.target.id] * probability
+                    - candidate.cost
+                    - 0.25 * at
+                )
+                if value >= threshold:
+                    candidates.append((value, candidate))
+            if not candidates:
+                break
+            _, chosen = max(candidates, key=lambda item: item[0])
+            used.add(chosen.tool)
+            selected.append(chosen)
+            for bid, damage in chosen.damage.items():
+                remaining[bid] -= damage
+            at += (
+                action_time("spell") * chosen.casts
+                if chosen.kind == "lightning"
+                else action_time("deploy")
+            )
+        return selected
+
+    def _log_snipe(self, entry):
+        # Wiki: Rocket Spear, activation spends a finite volley.
+        self.snipe_log = [*self.snipe_log, entry]
+
+    def opening_actions(self, battle):
+        """Spend one spare opening action using the normal spell/ability machinery."""
+        from .playbook import action_time
+
+        if not self.snipe_exposed or self.snipe_mode == "off" or battle.t > 12.0:
+            return False
+        # Video: docs/VIDEO_MEASUREMENTS.md:31, spells share the player's action clock.
+        if battle.t < getattr(self, "_busy_until", 0.0):
+            return False
+        # Wiki: Lightning Spell, pace the selected stack in its reserved action slots.
+        # Deployments and casts keep the value ordering, before hero activation.
+        chosen = self._snipe_lightning
+        if (
+            chosen is not None
+            and self._snipe_lightning_left > 0
+            and battle.t >= self._snipe_lightning_at
+            and battle.building_targetable(chosen.target)
+            # Wiki: Rocket Spear, retain spells while a lethal opening is claimed.
+            and chosen.target.id not in self._snipe_claimed
+        ):
+            available = min(self._snipe_lightning_count(), self._snipe_lightning_left)
+            hp, _ = self._cluster_state(battle)
+            remaining = hp.get(chosen.target.id, 0.0)
+            effects = self._cluster_effects("lightning", available) if available else []
+            if (
+                remaining > 0
+                and sum(effect[2] for effect in effects) >= remaining
+                and battle.t + spells.LAND_DELAY <= 12.0
+            ):
+                self._use(battle, "lightning", chosen.target.x, chosen.target.y)
+                self._snipe_lightning_left -= 1
+                self._snipe_lightning_at = battle.t + action_time("spell")
+                self._busy_until = max(
+                    getattr(self, "_busy_until", 0.0), self._snipe_lightning_at
+                )
+                self._log_snipe(
+                    (
+                        round(battle.t, 1),
+                        "lightning",
+                        chosen.target.id,
+                        chosen.target.x,
+                        chosen.target.y,
+                    )
+                )
+                return True
+        if battle.t < getattr(self, "_busy_until", 0.0):
+            return False
+        for unit in battle.attackers:
+            chosen = self._snipe_assignments.get(unit.name)
+            if (
+                chosen is None
+                or not unit.alive
+                or unit.kind == "hero_clone"
+                or unit.ability_used
+                or unit.kit is None
+            ):
+                continue
+            target = chosen.target
+            # Policy: do not begin an ability whose estimated landing exceeds the opening.
+            if battle.t + chosen.seconds > 12.0:
+                continue
+            if not battle.building_targetable(target) or chosen.kind == "queen":
+                continue
+            if chosen.kind in ("arrow", "dash"):
+                band, effect = self._ability_band(battle, unit)
+                if band is None or not _band_hit(target, band, effect[0], effect[1]):
+                    continue
+                # Wiki: Earthquake Spell, retain the existing paired line-ability cast.
+                if not self._fire_aimed(battle, unit):
+                    return True
+            else:
+                nearest = min(
+                    heroes._targets(battle, defenses=True),
+                    key=lambda b: b.edge_distance(unit.x, unit.y),
+                    default=None,
+                )
+                if nearest is None:
+                    continue
+                if chosen.kind == "spear":
+                    if (
+                        nearest is not target
+                        or target.edge_distance(unit.x, unit.y) > heroes.SPEAR_RANGE
+                    ):
+                        continue
+                elif target.edge_distance(nearest.x, nearest.y) > heroes._col(
+                    "Fireball", unit.kit.lv("Fireball"), "damage radius"
+                ):
+                    continue
+                heroes.activate(battle, unit)
+            self._log_snipe(
+                (round(battle.t, 1), chosen.kind, target.id, unit.x, unit.y)
+            )
+            self._busy_until = battle.t + action_time("ability")
+            return True
+        return False
 
     def has_offensive_pending(self, battle):
         if (
@@ -668,12 +1560,30 @@ class AttackPlan:
     def has_pending(self) -> bool:
         return self._phase != "done" or bool(getattr(self, "_battle_portal", None))
 
-    def _drop(self, battle, name, x, y, group, jitter=0.0, *, source="army", at=None):
+    def _drop(
+        self,
+        battle,
+        name,
+        x,
+        y,
+        group,
+        jitter=0.0,
+        *,
+        source="army",
+        at=None,
+        fixed_point=False,
+    ):
         if jitter:
-            x += battle.rng.uniform(-jitter, jitter)
-            y += battle.rng.uniform(-jitter, jitter)
-        x = min(WORLD - 0.6, max(0.6, x))
-        y = min(WORLD - 0.6, max(0.6, y))
+            jitter_x = battle.rng.uniform(-jitter, jitter)
+            jitter_y = battle.rng.uniform(-jitter, jitter)
+            if not fixed_point:
+                x += jitter_x
+                y += jitter_y
+        # User (TH16 ranked, 2026-10-23): retain the scouted legal Backpack line.
+        # Existing jitter draws remain x then y; the selected point needs no scatter.
+        if not fixed_point:
+            x = min(WORLD - 0.6, max(0.6, x))
+            y = min(WORLD - 0.6, max(0.6, y))
         deployment = Deployment(
             battle.t if at is None else at,
             name,
@@ -775,7 +1685,9 @@ class AttackPlan:
         self._entry = self._best_entry(battle)
         ex, ey = self._entry
         if self.siege:
-            self._drop(battle, self.siege, ex, ey, "main")
+            # Wiki: Flame Flinger, an opening siege retains its cargo until it opens.
+            if self.siege not in self._snipe_deployed:
+                self._drop(battle, self.siege, ex, ey, "main")
         elif self.cc_troops and not self._cc_released:
             from . import units
 
@@ -803,6 +1715,8 @@ class AttackPlan:
                     self._drop(battle, name, px, py, "main", jitter=wave.spread, at=at)
                     k += 1
         for name in self.push_heroes:
+            if name in self._snipe_deployed:
+                continue
             self._drop(battle, name, ex, ey, "main", jitter=0.5)
         if self.charge_hero and battle.portal_stash:
             heroes.portal_redeploy(battle, ex, ey)  # the recalled charge joins the push
@@ -830,6 +1744,7 @@ class AttackPlan:
 
     def on_tick(self, battle):
         t = battle.t
+        opening = self.opening_actions(battle)
         self.revive_knocked_out(battle)
         self._battle_portal = battle.portal_stash
         if self._later:
@@ -846,7 +1761,12 @@ class AttackPlan:
             x, y = self.portal_point(battle)
             heroes.portal_redeploy(battle, x, y)
         if self._phase == "funnel":
-            if not self._zap_done and self.zap_ad != (0, 0):
+            if (
+                not opening
+                and t >= getattr(self, "_busy_until", 0.0)
+                and not self._zap_done
+                and self.zap_ad != (0, 0)
+            ):
                 self._zap(battle)
             if t >= self.main_max or (t >= self.main_min and self._funnel_progress(battle) >= self.P("commit_progress")):
                 self._launch_main(battle)
@@ -894,7 +1814,7 @@ class AttackPlan:
                 x, y = self._snipe_point_xy(battle, cc.x, cc.y)
                 self._drop(battle, name, x, y, "cleanup", jitter=0.2)
                 self._cast_log.append((round(t, 1), "lure"))
-        if t >= self._next_brain:
+        if t >= self._next_brain and t >= getattr(self, "_busy_until", 0.0):
             self._next_brain = t + 0.5
             self.hero_abilities(battle)
             if self.charge_hero and self._last("recall_charge") < 0:
@@ -913,6 +1833,9 @@ class AttackPlan:
         """Players fire abilities to save a hero or at a key moment."""
         t = battle.t
         for u in battle.attackers:
+            # Video: docs/VIDEO_MEASUREMENTS.md:31, pairing spends one paced action.
+            if t < getattr(self, "_busy_until", 0.0):
+                break
             if not u.alive or not u.is_hero or u.kit is None or u.ability_used:
                 continue
             frac = u.hp / max(1.0, u.max_hp)
@@ -933,47 +1856,221 @@ class AttackPlan:
                 hurt = sum(1 for a in near if a.hp < 0.55 * a.max_hp)
                 if len(near) >= 5 and hurt >= int(len(near) * self.P("warden_hurt") + 1e-9) or frac < self.P("warden_hp"):
                     heroes.activate(battle, u)
-            elif self.P("arrow_aim") > 0.5 and u.kit.has("Giant Arrow") and self._aim(battle, u, "arrow"):
-                self._fire_aimed(battle, u)
-            elif self.P("dash_aim") > 0.5 and u.kit.has("Rocket Backpack") and self._aim(battle, u, "dash"):
-                self._fire_aimed(battle, u)
+                elif u.kit.has("Fireball"):
+                    # Wiki: Fireball, time the nearest-defense blast for cluster value.
+                    self._cluster_ability(battle, u)
+            elif u.name == "Royal Champion" and (
+                u.kit.has("Rocket Spear") or u.kit.has("Seeking Shield")
+            ):
+                # Wiki: Rocket Spear/Seeking Shield, snipe several defenses early.
+                self._cluster_ability(battle, u, force=frac < self.P("hero_hp"))
+            elif u.kit.has("Giant Arrow"):
+                # Wiki: Giant Arrow, time the actual firing line through defenses.
+                self._line_ability(battle, u, force=frac < self.P("hero_hp"))
             elif u.name == "Dragon Duke":
                 if engaged and (frac < self.P("duke_hp") or getattr(u.target, "is_defense", False)):
-                    heroes.activate(battle, u)
+                    self._fire_aimed(battle, u)
             elif frac < self.P("hero_hp") or (engaged and t - u.spawned_at > self.P("hero_time")):
                 heroes.activate(battle, u)
 
     def _aim(self, battle, u, kind):
-        """Wait for the current firing line to cross a heavy nearby defense."""
-        if kind == "dash":
-            return False  # Rocket Backpack follows the village centre (wiki).
-        # Wiki: Giant Arrow, direction follows the Queen's current target.
-        target = u.target
-        if target is None or not target.alive:
+        """Score only the ability's real, automatically chosen direction."""
+        band, effect = self._ability_band(battle, u)
+        if band is None:
             return False
-        dx, dy = target.x - u.x, target.y - u.y
-        length = math.hypot(dx, dy)
-        if length <= 0:
-            return False
-        reach, thr = self.P(kind + "_reach"), self.P(kind + "_threat")
-        best = None
-        for b in battle.buildings:
-            if b.alive and b.weapon is not None and THREAT.get(b.key, 0) >= thr:
-                d = math.hypot(b.x - u.x, b.y - u.y)
-                along = ((b.x - u.x) * dx + (b.y - u.y) * dy) / length
-                off = abs((b.x - u.x) * dy - (b.y - u.y) * dx) / length
-                if d <= reach and along > 0 and off <= b.half_hit + 1.0:
-                    if best is None or (THREAT.get(b.key, 0), -d) > best[0]:
-                        best = ((THREAT.get(b.key, 0), -d), b)
-        if best is None:
-            return False
-        return True
+        current = defense_cluster(battle, [effect], points=[band[:2]], band=band)
+        # User (TH16 ranked, 2026-10-23): several defenses make a useful shot.
+        return current is not None and current[2] >= self.P(kind + "_threat")
 
-    @staticmethod
-    def _fire_aimed(battle, u):
+    def _ability_band(self, battle, u):
+        # Wiki: Giant Arrow/Rocket Backpack, score the same damage as activation.
+        if u.kit.has("Giant Arrow"):
+            target = u.target
+            if target is None or not target.alive:
+                return None, None
+            if target in battle.buildings and not battle.building_targetable(target):
+                return None, None
+            if target in battle.defenders and not target.targetable(battle.t):
+                return None, None
+            dx, dy, length, radius = heroes.arrow_geometry(u, target)
+            damage = float(
+                heroes._ability_data(
+                    "Giant Arrow",
+                    u.kit.lv("Giant Arrow"),
+                    "ArcherQueenPierceProjectile",
+                )["Damage"]
+            )
+            kind = "arrow"
+        elif u.kit.has("Rocket Backpack"):
+            dx, dy, length, radius = heroes.dash_geometry(u.x, u.y, u.extra["facing"])
+            damage = float(
+                heroes._ability_data(
+                    "Rocket Backpack",
+                    u.kit.lv("Rocket Backpack"),
+                    "DragonDukeDeadlyDashMapCenter",
+                )["ActAsPenetratingDamage"]
+            )
+            kind = "dash"
+        else:
+            return None, None
+        return (u.x, u.y, dx, dy, length), (kind, radius, damage)
+
+    def _line_ability(self, battle, u, *, force=False, deadline=None):
+        # Policy: at most 10 s from first ready; a playbook's own window is tighter.
+        since = u.extra.setdefault("line_ability_since", battle.t)
+        limit = since + 10.0 if deadline is None else min(since + 10.0, deadline)
+        ready = u.kit.has("Rocket Backpack") or self._aim(battle, u, "arrow")
+        if force or ready or battle.t >= limit:
+            return self._fire_aimed(battle, u, deadline=limit)
+        return False
+
+    def _fire_aimed(self, battle, u, *, deadline=None):
         """Activate once the hero's current firing line is useful."""
         # Wiki: Giant Arrow, the player times activation, not its direction.
+        if self._pair_line_quake(battle, u, deadline=deadline):
+            return False
         heroes.activate(battle, u)
+        return True
+
+    def _pair_line_quake(self, battle, u, *, deadline=None):
+        # Wiki: Earthquake Spell, weaken buildings before the piercing ability hits.
+        until = u.extra.get("line_quake_until")
+        if until is not None:
+            return battle.t < until and (deadline is None or battle.t < deadline)
+        # Match the existing playbook spell action; generic casts use the same pace.
+        from .playbook import action_time
+
+        pace = action_time("spell")
+        # game data v18.200.9: Earthquake.NumberOfHits=5, TimeBetweenHitsMS=400.
+        wait = max(pace, spells.LAND_DELAY + 4 * 0.4)
+        if deadline is not None and battle.t + wait > deadline:
+            return False
+        fallback = getattr(self, "_fallback", False)
+        self._fallback = True
+        try:
+            spare = self._spare_quakes(battle)
+        finally:
+            self._fallback = fallback
+        if not spare:
+            return False
+        band, effect = self._ability_band(battle, u)
+        if band is None:
+            return False
+        x, y, dx, dy, length = band
+        # Wiki: Earthquake Spell, pair damage along the actual ability band.
+        # Policy: at most 12 projected defenses plus 12 midpoint candidates.
+        targets = nlargest(
+            12,
+            (
+                b
+                for b in battle.buildings
+                if (
+                    b.is_defense
+                    and battle.building_targetable(b)
+                    and _band_hit(b, band, effect[0], effect[1])
+                )
+            ),
+            key=lambda b: THREAT.get(b.key, 1),
+        )
+        points = []
+        for b in targets:
+            along = min(length, max(0.0, (b.x - x) * dx + (b.y - y) * dy))
+            points.append((x + dx * along, y + dy * along))
+        # User observation: quake a point on the selected line/band, including clumps.
+        centers = list(points)
+        for index, first in enumerate(centers):
+            for second in centers[index + 1 :]:
+                if len(points) >= 24:
+                    break
+                points.append(((first[0] + second[0]) / 2, (first[1] + second[1]) / 2))
+        hp, eq_hits = self._cluster_state(battle)
+        cluster = defense_cluster(
+            battle,
+            self._cluster_effects("eq", 1) + [effect],
+            hp=hp,
+            eq_hits=eq_hits,
+            points=points,
+            band=band,
+        )
+        if cluster is None:
+            return False
+        self._use(battle, "eq", cluster[0], cluster[1])
+        u.extra["line_quake_until"] = battle.t + wait
+        # Video: docs/VIDEO_MEASUREMENTS.md:31, a spell is a separate player action.
+        self._busy_until = max(getattr(self, "_busy_until", 0.0), battle.t + pace)
+        return True
+
+    def _cluster_ability(self, battle, u, *, force=False):
+        """Time automatically aimed equipment for a valuable nearby cluster."""
+        # Wiki: Fireball/Rocket Spear, wait for automatic aim, within a bounded hold.
+        since = u.extra.setdefault("cluster_ability_since", battle.t)
+        if force or battle.t - since >= 10.0:
+            heroes.activate(battle, u)
+            return True
+        # Policy: retry held aim at most twice a second, not on every engine tick.
+        if battle.t < u.extra.get("cluster_ability_check_at", -1.0):
+            return False
+        u.extra["cluster_ability_check_at"] = battle.t + 0.5
+        if u.kit.has("Fireball"):
+            # game data v18.200.9: GrandWardenFireball L27.Damage=4100,
+            # DamageRadius=600 -> the equipped Fireball's damage and tile radius.
+            level = u.kit.lv("Fireball")
+            radius = heroes._col("Fireball", level, "damage radius")
+            damage = heroes._col("Fireball", level, "projectile damage")
+            # Policy: compare nearby clusters the Warden can approach while fighting.
+            reach = u.range + radius
+        elif u.name == "Royal Champion":
+            damage = 0.0
+            if u.kit.has("Rocket Spear"):
+                # Wiki: Rocket Spear, 10-tile range; each shot adds equipment damage.
+                damage += (
+                    u.dmg
+                    + heroes._col(
+                        "Rocket Spear",
+                        u.kit.lv("Rocket Spear"),
+                        "damage per shot increase",
+                    )
+                    * battle.atk_hero_mult
+                )
+            if u.kit.has("Seeking Shield"):
+                # Wiki: Seeking Shield, four defense-prioritized hits, unlimited travel.
+                damage += (
+                    heroes._col(
+                        "Seeking Shield",
+                        u.kit.lv("Seeking Shield"),
+                        "projectile damage",
+                    )
+                    * battle.atk_hero_mult
+                )
+            # Policy: value successive targets in the next 6-tile neighborhood.
+            radius = 6.0
+            reach = (
+                heroes.SPEAR_RANGE if u.kit.has("Rocket Spear") else u.range + radius
+            )
+        else:
+            return False
+        defenses = heroes._targets(battle, defenses=True)
+        if not defenses:
+            # Wiki: Fireball/Seeking Shield, fall back to other buildings for cleanup.
+            heroes.activate(battle, u)
+            return True
+        nearest = min(defenses, key=lambda b: heroes._distance(b, u.x, u.y))
+        effects = [("damage", radius, damage)]
+        best = defense_cluster(battle, effects, center=(u.x, u.y), reach=reach)
+        current = defense_cluster(battle, effects, points=[(nearest.x, nearest.y)])
+        # Wiki: Fireball/Rocket Spear, the nearest defense controls actual aim.
+        # Seeking Shield's nearest-first bounces also remain automatic.
+        ready = (
+            best is not None
+            and current is not None
+            and current[2] >= best[2]
+            and nearest.edge_distance(u.x, u.y) <= reach
+        )
+        # Policy: retain the playbook's 10 s aim wait; low HP still forces activation.
+        if force or ready or battle.t - since >= 10.0:
+            heroes.activate(battle, u)
+            return True
+        return False
 
     # -------------------------------------------------------------- spells
     def _zap(self, battle, *, single_cast=False, reserved=()):
@@ -982,12 +2079,17 @@ class AttackPlan:
         if not hasattr(self, "_zap_left"):
             self._zap_left = list(self.zap_ad)
         ex, ey = edge_point(battle, self.angle, 0.0)
+        # Wiki: Rocket Spear, a claimed lethal hit already pays for this defense.
+        claimed = getattr(self, "_snipe_claimed", ())
         ads = sorted(
             # Wiki: Giant Arrow, preserve the playbook's later Air Defense targets.
             (
                 b
                 for b in battle.buildings
-                if b.alive and b.key == "ad" and b.id not in reserved
+                if b.alive
+                and b.key == "ad"
+                and b.id not in reserved
+                and b.id not in claimed
             ),
             key=lambda b: math.hypot(b.x - ex, b.y - ey),
         )
@@ -1093,8 +2195,10 @@ class AttackPlan:
     def threats_near(battle, x, y, r):
         out = []
         t = battle.t
+        # Wiki: Rocket Spear, direct spell support skips defenses already claimed lethal.
+        claimed = getattr(battle.plan, "_snipe_claimed", ())
         for b in battle.buildings:
-            if not b.alive or b.weapon is None or b.disabled(t):
+            if not b.alive or b.weapon is None or b.disabled(t) or b.id in claimed:
                 continue
             d = math.hypot(b.x - x, b.y - y)
             if d <= r:
@@ -1174,61 +2278,202 @@ class AttackPlan:
                 self._use(battle, "eq", w.x, w.y)
             self._cast_log.append((round(battle.t, 1), "breach"))
 
-    def _spare_lightning(self, battle):
-        # Wiki: Electro Dragon, Lightning removes Air Sweepers; Lightning Spell/
-        # Home Village, it also destroys other defenses when enough casts remain.
-        if not self._have("lightning"):
-            return False
-        available = self.spells.get("lightning", 0)
+    def _unreserved_spells(self, kind):
+        # Policy: retain the playbook's planned casts before spending spare spells.
+        if not self._have(kind):
+            return 0
+        available = self.spells.get(kind, 0)
         if getattr(self, "_fallback", False):
             available -= sum(
                 1
                 for st in getattr(self, "steps", [])
                 if st["action"] == "spell"
-                and st.get("what") == "Lightning Spell"
+                and st.get("what") == SPELL_NAMES[kind]
                 and st["id"] not in self._done
                 and st["id"] not in self._cancelled
             )
-        damage = 0.0
+        return max(0, available)
+
+    def _cluster_effects(self, kind, count):
+        effects = []
         for stock in self._spell_stock:
-            if stock.name != "Lightning Spell" or stock.remaining <= 0:
+            if stock.name != SPELL_NAMES[kind] or stock.remaining <= 0:
                 continue
-            count = min(available, stock.remaining)
-            damage += count * stats.get(
-                stock.name, self._spell_level(stock), "damage", "Damage"
-            )
-            available -= count
-        hp = {
-            b.id: b.hp
-            - sum(
-                f.value
-                for f in battle.fields
-                if f.kind == "lightning" and b.edge_distance(f.x, f.y) <= f.radius
-            )
-            for b in battle.buildings
-            if b.alive
-        }
+            level = self._spell_level(stock)
+            radius = spells._radius(stock.name, level, 0.0)
+            # game data v18.200.9: Lightning L11.Damage=640 -> damage per cast.
+            value = stats.get(stock.name, level, "damage", "Damage")
+            if kind == "eq":
+                # game data v18.200.9: Earthquake.BuildingDamagePermil=58,
+                # NumberOfHits=5 -> 29% of maximum building HP per first cast.
+                value = stats.get(stock.name, level, "Building Damage %") / 100.0
+            take = min(count, stock.remaining)
+            effects.extend([("quake" if kind == "eq" else kind, radius, value)] * take)
+            count -= take
+            if count == 0:
+                break
+        return effects
+
+    def _cluster_state(self, battle):
+        # Wiki: Lightning/Earthquake Spell, count damage still falling or pulsing.
+        hp = {b.id: b.hp for b in battle.buildings if b.alive}
+        eq_hits = {b.id: b.eq_hits for b in battle.buildings if b.alive}
+        casts = {}
+
+        def account(field, hits):
+            for b in battle.buildings:
+                if not b.alive or b.edge_distance(field.x, field.y) > field.radius:
+                    continue
+                if field.kind == "lightning":
+                    if b.key not in spells.STORAGES | {"th", "cc"}:
+                        hp[b.id] -= field.value
+                elif b.counted and b.key not in spells.STORAGES:
+                    key = (id(field), b.id)
+                    if key not in casts:
+                        n = field.extra.get("hits", {}).get(("building", b.id))
+                        if n is None:
+                            eq_hits[b.id] += 1
+                            n = eq_hits[b.id]
+                        casts[key] = n
+                    hp[b.id] -= b.max_hp * field.value * hits / (2 * casts[key] - 1)
+
+        for pending in battle.pending:
+            field = pending.extra.get("quake")
+            if field is not None and field.kind == "quake":
+                account(field, 1)
+        for field in battle.fields:
+            if field.kind in ("lightning", "quake"):
+                account(field, 5 if field.kind == "quake" else 1)
+        # Wiki: Rocket Spear, reserve defenses with lethal opening damage in flight.
+        for bid in getattr(self, "_snipe_claimed", ()):
+            if bid in hp:
+                hp[bid] = 0.0
+        return hp, eq_hits
+
+    def _spare_quakes(self, battle):
+        available = self._unreserved_spells("eq")
+        # Wiki: Earthquake Spell, four casts open walls; keep that breach intact.
+        reserved = len(getattr(self, "_fallback_quakes", []))
+        if (
+            self.ground
+            and not self._have("jump")
+            and any(w.alive for w in battle.walls.values())
+        ):
+            if self.spells.get("eq", 0) >= 4:
+                reserved = max(reserved, 4)
+        if self.P("eq_core_dist") > 2 and self._last("eq_core") < 0:
+            reserved = max(reserved, int(round(self.P("eq_core_n"))))
+        return max(0, available - reserved)
+
+    def _hold_line_quake(self, battle):
+        # User (TH16 ranked, 2026-10-23): save one spare quake for Arrow/Backpack.
+        for name, equipment in (
+            ("Archer Queen", "Giant Arrow"),
+            ("Dragon Duke", "Rocket Backpack"),
+        ):
+            deployed = [
+                u for u in battle.attackers if u.name == name and u.kind != "hero_clone"
+            ]
+            if deployed:
+                if any(
+                    u.alive
+                    and not u.ability_used
+                    and u.kit is not None
+                    and u.kit.has(equipment)
+                    and "line_quake_until" not in u.extra
+                    for u in deployed
+                ):
+                    return True
+                continue
+            loadout = self.loadouts.get(name) or heroes.DEFAULT_LOADOUTS[name]
+            if equipment not in loadout.equipment or (
+                self.account_equipment and equipment not in self.equipment_levels
+            ):
+                continue
+            if hasattr(self, "steps"):
+                pending = any(
+                    s["action"] == "deploy"
+                    and s.get("what") == name
+                    and s["id"] not in self._done
+                    and s["id"] not in self._cancelled
+                    for s in self.steps
+                )
+            else:
+                pending = (
+                    name in self.push_heroes
+                    or any(hero == name for hero, _ in self.funnel_heroes)
+                    or name == self.charge_hero
+                )
+            if pending:
+                return True
+        return False
+
+    def _spare_lightning(self, battle):
+        # User (TH16 ranked, 2026-10-23): combine damage spells on clumped defenses.
+        queued = getattr(self, "_cluster_casts", [])
+        if queued:
+            kind, x, y = queued.pop(0)
+            # Wiki: Rocket Spear, a later lethal claim can make a queued zap redundant.
+            effects = self._cluster_effects(kind, 1) if self._have(kind) else []
+            if (
+                effects
+                and defense_cluster(battle, effects, points=[(x, y)]) is not None
+            ):
+                self._use(battle, kind, x, y)
+                return True
+            queued.clear()
+        available = self._unreserved_spells("lightning")
+        if not available:
+            return False
+        hp, eq_hits = self._cluster_state(battle)
         if any(b.alive and b.key == "ad" and hp[b.id] > 1e-9 for b in battle.buildings):
             return False
-        targets = [
-            b
-            for b in battle.buildings
-            if b.alive
-            and b.is_defense
-            and b.key not in spells.STORAGES | {"th", "cc"}
-            and not (b.key == "tesla" and not b.revealed)
-            and 1e-9 < hp[b.id] <= damage
-        ]
-        if not targets:
+        effects = self._cluster_effects("lightning", available)
+        combo = None
+        if available >= 2 and self._spare_quakes(battle) > int(
+            self._hold_line_quake(battle)
+        ):
+            quake = self._cluster_effects("eq", 1)
+            for count in (2, 3):
+                if count > available:
+                    break
+                # Wiki: Lightning Spell/Home Village, ZapQuake removes grouped defenses.
+                candidate = defense_cluster(
+                    battle,
+                    quake + effects[:count],
+                    hp=hp,
+                    eq_hits=eq_hits,
+                    min_kills=2,
+                )
+                if candidate is not None and (
+                    combo is None or candidate[2] > combo[0][2]
+                ):
+                    combo = (candidate, count)
+        if combo is not None:
+            cluster, count = combo
+            x, y = cluster[:2]
+            # Quake first, then Lightning; one cast per existing player action.
+            self._cluster_casts = [("lightning", x, y)] * count
+            self._use(battle, "eq", x, y)
+            return True
+        cluster = defense_cluster(battle, effects, hp=hp, eq_hits=eq_hits)
+        if cluster is None:
             return False
-        target = min(
-            targets,
-            key=lambda b: (
-                0 if not self.ground and b.key == "sweeper" else 1,
-                hp[b.id],
-            ),
+        self._use(battle, "lightning", cluster[0], cluster[1])
+        return True
+
+    def _spare_quake(self, battle):
+        # Wiki: Earthquake Spell, weaken several buildings before hero abilities.
+        available = self._spare_quakes(battle)
+        if available <= int(self._hold_line_quake(battle)):
+            return False
+        hp, eq_hits = self._cluster_state(battle)
+        cluster = defense_cluster(
+            battle, self._cluster_effects("eq", available), hp=hp, eq_hits=eq_hits
         )
-        self._use(battle, "lightning", target.x, target.y)
+        if cluster is None:
+            return False
+        self._use(battle, "eq", cluster[0], cluster[1])
         return True
 
     def _cargo_support(self, battle):
@@ -1289,8 +2534,14 @@ class AttackPlan:
         return [] if battle.t - self._cargo_wait_since < 30.0 else None
 
     def generic_spells(self, battle, units, *, single_cast=False):
+        # Video: docs/VIDEO_MEASUREMENTS.md:31, finish the paired cast action first.
+        if battle.t < getattr(self, "_busy_until", 0.0):
+            return
         # Wiki: Lightning Spell/Home Village, surplus casts remove other defenses.
         if self._spare_lightning(battle) and single_cast:
+            return
+        # Wiki: Earthquake Spell, unreserved casts can cripple defense clusters.
+        if self._spare_quake(battle) and single_cast:
             return
         if not units:
             return

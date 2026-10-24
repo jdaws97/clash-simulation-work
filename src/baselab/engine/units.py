@@ -1867,7 +1867,21 @@ def _chain_hit(battle, u, target, damage, hit, primary, remaining, base_damage, 
         if victim in hit:
             continue
         distance = target_distance(origin, victim)
-        if distance <= sp.chain_range:
+        reach = sp.chain_range
+        if (
+            u.name == "Electro Dragon"
+            and isinstance(origin, Building)
+            and isinstance(victim, Building)
+        ):
+            # Wiki: Electro Dragon, buildings chain across gaps of at most one tile.
+            # Measure both footprint edges, symmetrically, rather than one centre.
+            half_size = (origin.size + victim.size) / 2.0
+            distance = math.hypot(
+                max(0.0, abs(origin.x - victim.x) - half_size),
+                max(0.0, abs(origin.y - victim.y) - half_size),
+            )
+            reach = 1.0
+        if distance <= reach:
             candidates.append((distance, -victim.max_hp, victim))
     if not candidates:
         return

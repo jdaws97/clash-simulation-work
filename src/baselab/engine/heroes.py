@@ -571,7 +571,82 @@ def on_damaged(battle, u: Unit, amount: float, source, effect="attack"):
             _damage(battle, source, dmg)
 
 
-SPEAR_RANGE = 10.0  # Rocket Spear throw range in tiles (wiki: Rocket Spear statistics)
+# game data v18.200.9: RocketSpears.AttackRange=1005 -> 10.05 tiles.
+SPEAR_RANGE = (
+    float(game_data("special_abilities", "RocketSpears")["AttackRange"]) / 100.0
+)
+
+
+def sniping_tool(plan, name):
+    """Return (kind, reach, radius, damage) for a carried opening tool.
+
+    Infinite estimates rank sustained attackers; actual hits use normal timing.
+    """
+    level = plan._level(name) or stats.max_level(name, plan.town_hall)
+    if name == "Flame Flinger":
+        # game data v18.200.9: Flame Flinger.AttackRange=1005, DamageRadius=100.
+        from .specs import unit_numbers
+
+        data = game_data("characters", name, level)
+        return (
+            "flinger",
+            unit_numbers(name, level)["range"],
+            float(data["DamageRadius"]) / 100.0,
+            math.inf,
+        )
+    loadout = plan.loadouts.get(name) or DEFAULT_LOADOUTS[name]
+    equipment = [
+        item
+        for item in loadout.equipment
+        if not plan.account_equipment or item in plan.equipment_levels
+    ]
+    item = {
+        "Archer Queen": "Giant Arrow",
+        "Royal Champion": "Rocket Spear",
+        "Dragon Duke": "Rocket Backpack",
+        "Grand Warden": "Fireball",
+    }[name]
+    if item not in equipment:
+        if name != "Archer Queen":
+            return None
+        from .specs import unit_numbers
+
+        # Wiki: Archer Queen, a walk uses her ordinary ranged attacks.
+        return "queen", unit_numbers(name, level)["range"], 0.0, math.inf
+    level = plan.equipment_levels.get(item) or stats.max_level(item, plan.town_hall)
+    if item == "Giant Arrow":
+        data = _ability_data(item, level, "ArcherQueenPierceProjectile")
+        # game data v18.200.9: ArcherQueenPierceProjectile.PenetratingExtraRange=40000,
+        # PenetratingRadius=100 -> the full forward line, aimed by the current target.
+        return (
+            "arrow",
+            math.inf,
+            float(data["PenetratingRadius"]) / 100.0,
+            float(data["Damage"]),
+        )
+    if item == "Rocket Spear":
+        # Wiki: Rocket Spear, a finite volley at the nearest defense.
+        # Count the fixed bonus alone as a conservative volley value.
+        damage = _col(item, level, "damage per shot increase") * _col(
+            item, level, "number of attacks"
+        )
+        return "spear", SPEAR_RANGE, 0.0, damage * plan.strength
+    if item == "Rocket Backpack":
+        data = _ability_data(item, level, "DragonDukeDeadlyDashMapCenter")
+        # game data v18.200.9: DragonDukeDeadlyDashMapCenter.MovementOverrideDistance=71.
+        return (
+            "dash",
+            float(data["MovementOverrideDistance"]),
+            float(data["ActAsPenetratingRadius"]) / 100.0,
+            float(data["ActAsPenetratingDamage"]),
+        )
+    # Wiki: Fireball, unlimited travel to the nearest defense; splash at impact.
+    return (
+        "fireball",
+        math.inf,
+        _col(item, level, "damage radius"),
+        _col(item, level, "projectile damage"),
+    )
 
 
 def damage_taken_mult(battle, u: Unit) -> float:
@@ -1424,6 +1499,43 @@ def _puppet(battle, u, e, lv, *, first=0, at=None):
                 actor=u,
             )
         )
+
+
+def arrow_geometry(u, target):
+    # game data v18.200.9: ArcherQueenPierceProjectile.ProjectileOnActivationCopyTarget=TRUE.
+    dx, dy = (
+        (target.x - u.x, target.y - u.y) if target is not None else u.extra["facing"]
+    )
+    distance = math.hypot(dx, dy) or 1.0
+    data = game_data("special_abilities", "ArcherQueenPierceProjectile", 1)
+    return (
+        dx / distance,
+        dy / distance,
+        distance + float(data["PenetratingExtraRange"]) / 100.0,
+        float(data["PenetratingRadius"]) / 100.0,
+    )
+
+
+def dash_geometry(x, y, facing):
+    from ..mechanics import WORLD
+
+    # game data v18.200.9: DragonDukeDeadlyDashMapCenter.MovementOverrideTarget=MapCenter,
+    # MovementOverrideDistance=71, ActAsPenetratingRadius=150 -> centre-facing band.
+    data = game_data("special_abilities", "DragonDukeDeadlyDashMapCenter", 1)
+    dx, dy = WORLD / 2.0 - x, WORLD / 2.0 - y
+    distance = math.hypot(dx, dy)
+    if distance == 0.0:
+        dx, dy = facing
+        distance = math.hypot(dx, dy) or 1.0
+    dx, dy = dx / distance, dy / distance
+    limits = [float(data["MovementOverrideDistance"])]
+    for position, direction in ((x, dx), (y, dy)):
+        if direction > 0:
+            limits.append((WORLD - 0.5 - position) / direction)
+        elif direction < 0:
+            limits.append((0.5 - position) / direction)
+    travel = max(0.0, min(limits))
+    return dx, dy, travel, float(data["ActAsPenetratingRadius"]) / 100.0
 
 
 def start_dash(battle, u, damage):

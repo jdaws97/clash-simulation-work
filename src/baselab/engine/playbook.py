@@ -44,7 +44,7 @@ from dataclasses import dataclass, field
 
 from ..mechanics import WORLD
 from . import heroes, spells, stats
-from .plans import SPELL_NAMES, THREAT, AttackPlan, edge_point
+from .plans import SPELL_NAMES, THREAT, AttackPlan, _band_hit, edge_point
 
 SPELL_KEYS = {v: k for k, v in SPELL_NAMES.items()}
 
@@ -103,7 +103,63 @@ class PlaybookPlan(AttackPlan):
 
     # the battle asks for initial deployments; everything here is dynamic
     def deployments(self, battle):
-        return []
+        # Wiki: Rocket Spear/Flame Flinger, spare snipers can open before the push.
+        out = self.opening_deployments(battle)
+        self._deployed = set(self._snipe_deployed)
+        for deployment in out:
+            if deployment.name not in heroes.HEROES:
+                self.inventory[deployment.name] -= 1
+        return out
+
+    def _snipe_available(self, name):
+        # Cited deployment, ability, recall and support steps retain their resources.
+        # Only completion/uncited troops can be reassigned to an opening snipe.
+        if name in getattr(self, "_snipe_deployed", set()):
+            return False
+        for step in self.steps:
+            if step["id"] in self._cancelled or (
+                step["id"] in self._done and not step.get("every")
+            ):
+                continue
+            if step.get("completion") or step.get("uncited"):
+                continue
+            if (
+                name == "Flame Flinger"
+                and step["action"] == "release_siege"
+                and step.get("what") in (None, name)
+            ):
+                return False
+            anchors = (step.get("at", ""), step.get("aim", ""))
+            if step.get("what") == name or any(
+                str(anchor).endswith(":" + name) for anchor in anchors
+            ):
+                return False
+        if name == "Flame Flinger":
+            return self.siege == name and self.inventory.get(name, 0) > 0
+        return name in self.push_heroes or any(
+            hero == name for hero, _ in self.funnel_heroes
+        )
+
+    def _snipe_role(self, name):
+        # Wiki: Hero Equipment, preserve the value of a hero's planned support role.
+        # Completion steps also assign the spare hero to a main push or funnel.
+        for step in self.steps:
+            if step["action"] == "deploy" and step.get("what") == name:
+                return step.get("group", "main")
+        return super()._snipe_role(name)
+
+    def _snipe_lightning_count(self):
+        # Wiki: Giant Arrow, retain the cited Air Defense targets and their area.
+        # The existing _zap reservation helper can still spend safe copies elsewhere.
+        if any(
+            self._ad_target_count(step)
+            and step["id"] not in self._done
+            and step["id"] not in self._cancelled
+            and not self._missing_equipment(step)
+            for step in self.steps
+        ):
+            return 0
+        return super()._snipe_lightning_count()
 
     def setup_charge(self, hero, healers, lateral=0.0, at=0.0):
         """Not applied: a playbook plays only its own cited charges (its
@@ -172,6 +228,18 @@ class PlaybookPlan(AttackPlan):
         return self.angle + off.get(which, 0.0)
 
     def _edge(self, battle, which):
+        # Wiki: Archer Queen, cluster placement belongs to an actual hero charge.
+        charge = which == "charge" and any(
+            step["action"] == "deploy"
+            and step.get("what") in heroes.HEROES
+            and step.get("group", "main") == "charge"
+            for step in self.steps
+        )
+        if charge:
+            # User (TH16 ranked, 2026-10-23): charge toward reachable defense clusters.
+            if not hasattr(self, "_charge_edge"):
+                self._charge_edge = self.charge_point(battle, self._edge_angle(which))
+            return self._charge_edge
         return edge_point(battle, self._edge_angle(which), 0.0)
 
     def _unit(self, battle, name):
@@ -184,7 +252,9 @@ class PlaybookPlan(AttackPlan):
     def _group(self, battle, g):
         return [u for u in battle.attackers if u.alive and u.group == g and u.name != "Totem" and u.kind != "pet"]
 
-    def anchor(self, battle, at):
+    def anchor(self, battle, at, *, unclaimed=False):
+        # Wiki: Rocket Spear, spell targets exclude a defense with lethal damage claimed.
+        claimed = getattr(self, "_snipe_claimed", ()) if unclaimed else ()
         kind, _, arg = at.partition(":")
         if kind == "edge":
             return self._edge(battle, arg)
@@ -221,6 +291,7 @@ class PlaybookPlan(AttackPlan):
                 (THREAT.get(b.key, 1), b)
                 for b, d in self.threats_near(battle, cx, cy, 12)
                 if battle.building_targetable(b)
+                and b.id not in claimed
                 and b.weapon is not None
                 and (b.weapon.target is not None or getattr(b.weapon, "multi", None))
             ]
@@ -240,7 +311,11 @@ class PlaybookPlan(AttackPlan):
         if kind == "building":
             g = self._group(battle, "main") or [u for u in battle.attackers if u.alive]
             cx, cy = self.centroid(g) if g else (battle.th.x, battle.th.y) if battle.th is not None else (WORLD / 2, WORLD / 2)
-            pool = [b for b in battle.buildings if b.alive and b.key == arg]
+            pool = [
+                b
+                for b in battle.buildings
+                if b.alive and b.key == arg and b.id not in claimed
+            ]
             if not pool:
                 return None
             b = min(pool, key=lambda b: math.hypot(b.x - cx, b.y - cy))
@@ -451,7 +526,26 @@ class PlaybookPlan(AttackPlan):
         if what in heroes.HEROES:
             if what in self._deployed:
                 return False
-            self._drop(battle, what, pos[0], pos[1], s.get("group", "main"), jitter=0.3)
+            backpack = (
+                what == "Dragon Duke"
+                and self._has_backpack()
+                and s.get("at", "edge:charge") in ("edge:charge", "edge:funnel")
+                and not s.get("at_cite")
+            )
+            if backpack:
+                # User (TH16 ranked, 2026-10-23): scout Backpack's centre-facing band.
+                # A concrete building/unit/point anchor retains the cited deployment.
+                side = s.get("at", "edge:charge").split(":", 1)[1]
+                pos = self.backpack_point(battle, self._edge_angle(side))
+            self._drop(
+                battle,
+                what,
+                pos[0],
+                pos[1],
+                s.get("group", "main"),
+                jitter=0.3,
+                fixed_point=backpack,
+            )
             self._deployed.add(what)
             return True
         left = self.inventory.get(what, 0)
@@ -617,26 +711,51 @@ class PlaybookPlan(AttackPlan):
             or self._missing_equipment(s, u)
         ):
             return False
-        # Wiki: Giant Arrow, the cited Air Defense shot needs a surviving target.
-        if self._ad_target_count(s) and not any(
-            b.alive and b.key == "ad" for b in battle.buildings
+        # Policy: the line hold and any paired cast share this step's AIM_WAIT window.
+        since = self._aim_since.setdefault(s["id"], battle.t)
+        deadline = since + AIM_WAIT
+        # Wiki: Fireball/Rocket Spear, automatic aim cannot extend the policy hold.
+        if battle.t >= deadline:
+            return self._fire_aimed(battle, u, deadline=deadline)
+        # Wiki: Giant Arrow needs its cited target; Fireball can hit another cluster.
+        if (
+            self._ad_target_count(s)
+            and not u.kit.has("Fireball")
+            and not any(b.alive and b.key == "ad" for b in battle.buildings)
         ):
             return False
         if str(s.get("aim", "")).startswith("building:"):
-            if self._aim_building(battle, u, s["aim"].split(":", 1)[1]):
+            if self._aim_building(
+                battle, u, s["aim"].split(":", 1)[1], deadline=deadline
+            ):
                 return True
             # not lined up yet: keep trying; after AIM_WAIT s fire it normally
             # rather than hold the ability all battle (an assumption)
-            since = self._aim_since.setdefault(s["id"], battle.t)
             if battle.t - since >= AIM_WAIT:
-                heroes.activate(battle, u)
-                return True
+                return self._fire_aimed(battle, u, deadline=deadline)
             return False
+        if s.get("aim") == "arrow" and self._ad_target_count(s):
+            # Wiki: Giant Arrow, keep the cited Air Defense line and target count.
+            if self._aim_building(
+                battle, u, "ad", deadline=deadline, count=self._ad_target_count(s)
+            ):
+                return True
+            if battle.t >= deadline:
+                return self._fire_aimed(battle, u, deadline=deadline)
+            return False
+        if u.kit.has("Giant Arrow") or u.kit.has("Rocket Backpack"):
+            # Wiki: Giant Arrow/Rocket Backpack, timing does not redirect the ability.
+            return self._line_ability(battle, u, deadline=deadline)
         if s.get("aim"):
             if self._aim(battle, u, s["aim"]):
-                self._fire_aimed(battle, u)
-                return True
+                return self._fire_aimed(battle, u, deadline=deadline)
             return False
+        if u.kit.has("Fireball") or (
+            u.name == "Royal Champion"
+            and (u.kit.has("Rocket Spear") or u.kit.has("Seeking Shield"))
+        ):
+            # Wiki: Fireball/Rocket Spear/Seeking Shield, time automatic aim for value.
+            return self._cluster_ability(battle, u)
         heroes.activate(battle, u)
         return True
 
@@ -646,7 +765,7 @@ class PlaybookPlan(AttackPlan):
             self._aim_t = {}
         return self._aim_t
 
-    def _aim_building(self, battle, u, key):
+    def _aim_building(self, battle, u, key, *, deadline=None, count=1):
         """An ability aimed at a building (e.g. "arrow through the CC"). Giant
         Arrow: wait until the Queen's current firing line crosses the building.
         Fireball: it always flies at the closest defense (wiki: Fireball), so
@@ -656,28 +775,35 @@ class PlaybookPlan(AttackPlan):
         tgt = min((b for b in battle.buildings if b.alive and b.key == key),
                   key=lambda b: math.hypot(b.x - u.x, b.y - u.y), default=None)
         if tgt is None:
+            if u.kit.has("Fireball") or (
+                u.name == "Royal Champion"
+                and (u.kit.has("Rocket Spear") or u.kit.has("Seeking Shield"))
+            ):
+                # User (TH16 ranked, 2026-10-23): scout a cluster if the anchor is gone.
+                return self._cluster_ability(battle, u)
             # Wiki: Giant Arrow, do not replace the cited Air Defense shot.
             if key == "ad":
                 return False
+            if u.kit.has("Giant Arrow"):
+                # User (TH16 ranked, 2026-10-23): score the live line if its anchor fell.
+                return self._line_ability(battle, u, deadline=deadline)
             heroes.activate(battle, u)
             return True
         if u.kit.has("Giant Arrow"):
             # Wiki: Giant Arrow, fires toward the Queen's current target and
             # travels through the entire village; building distance is no limit.
-            target = u.target
-            if target is None or not target.alive:
+            band, effect = self._ability_band(battle, u)
+            if band is None:
                 return False
-            dx, dy = target.x - u.x, target.y - u.y
-            length = math.hypot(dx, dy)
-            if length <= 0:
-                return False
-            for b in battle.buildings:
-                if b.alive and b.key == key:
-                    along = ((b.x - u.x) * dx + (b.y - u.y) * dy) / length
-                    off = abs((b.x - u.x) * dy - (b.y - u.y) * dx) / length
-                    if along > 0 and off <= b.half_hit + 1.0:
-                        self._fire_aimed(battle, u)
-                        return True
+            hits = sum(
+                1
+                for b in battle.buildings
+                if b.key == key
+                and battle.building_targetable(b)
+                and _band_hit(b, band, effect[0], effect[1])
+            )
+            if hits >= count:
+                return self._fire_aimed(battle, u, deadline=deadline)
             return False
         if u.kit.has("Fireball"):
             defs = heroes._targets(battle, defenses=True)
@@ -707,7 +833,9 @@ class PlaybookPlan(AttackPlan):
             if what in heroes.HEROES:
                 return what + " already deployed" if what in self._deployed else None
             return None
-        if self._impossible(battle, st.get("when")):
+        # Wiki: Hero Equipment, an ability already being held keeps its own deadline.
+        holding = act == "ability" and st["id"] in self._aim_since
+        if not holding and self._impossible(battle, st.get("when")):
             return "waits on a unit that is down"
         if act in ("spell", "recall"):
             k = "recall" if act == "recall" else SPELL_KEYS.get(what)
@@ -725,8 +853,11 @@ class PlaybookPlan(AttackPlan):
             if u is not None and (u.kit is None or u.ability_used):
                 return "ability already used"
             # Wiki: Giant Arrow, skip an Air Defense shot when its targets are gone.
-            if self._ad_target_count(st) and not any(
-                b.alive and b.key == "ad" for b in battle.buildings
+            # Wiki: Fireball, a lost anchor can be replaced by another defense cluster.
+            if (
+                self._ad_target_count(st)
+                and what != "Grand Warden"
+                and not any(b.alive and b.key == "ad" for b in battle.buildings)
             ):
                 return "ad gone"
         elif act == "redeploy":
@@ -752,6 +883,7 @@ class PlaybookPlan(AttackPlan):
         if not hasattr(self, "_deployed"):
             self._deployed = set()
         t = battle.t
+        self.opening_actions(battle)
         if int(t * 10) % 5 == 0:
             for u in battle.attackers:
                 if u.alive and (u.is_hero or u.housing >= 5):
@@ -802,7 +934,10 @@ class PlaybookPlan(AttackPlan):
             if rep and sid in self._done:
                 if t < self._next.get(sid, 0.0) or (s.get("until") and self._ready(battle, s["until"])):
                     continue
-            elif not self._ready(battle, s.get("when")):
+            # Wiki: Hero Equipment, the original trigger only starts the bounded hold.
+            elif not (act == "ability" and sid in self._aim_since) and not self._ready(
+                battle, s.get("when")
+            ):
                 # troops still go in when the army is wiped out (stalled), when
                 # the trigger waits on a unit that is down, and by LATE
                 forced = act == "deploy" and (stalled or t >= LATE or (
@@ -833,7 +968,9 @@ class PlaybookPlan(AttackPlan):
                     hero = self._fallen(battle, self._revive_names(s))
                     pos = (hero.x, hero.y) if hero is not None else None
                 else:
-                    pos = self.anchor(battle, s.get("at", "edge:main"))
+                    pos = self.anchor(
+                        battle, s.get("at", "edge:main"), unclaimed=act == "spell"
+                    )
                 if pos is None and forced:
                     pos = self._edge(battle, "main")  # the anchor is gone: with the main push (as rest steps)
                 # User (TH16 ranked, 2026-10-23): wait rather than stack Totems.
@@ -1024,6 +1161,9 @@ class PlaybookPlan(AttackPlan):
         self._fallback = True
         try:
             cast = self._spare_lightning(battle)
+            if not cast:
+                # Wiki: Earthquake Spell, spare casts weaken clustered defenses.
+                cast = self._spare_quake(battle)
         finally:
             self._fallback = False
         if cast:
@@ -1409,7 +1549,12 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
         build.get("own_levels") or build["archetype"].startswith("user-")
     )
     kw["event_ruleset"] = dict(pb.get("event_ruleset", base.event_ruleset))
+    # Wiki: Eagle Artillery, attack exposed key defenses before mass deployment.
+    # Red-team compares off/value/aggressive with the same army and playbook.
+    opening = (overrides or {}).get("__opening__", {})
+    kw["snipe_mode"] = opening.get("snipe_mode", base.snipe_mode)
     plan = PlaybookPlan(**kw)
+    plan.snipe_exposed = bool(opening.get("snipe_exposed", plan.snipe_exposed))
     plan.build_id = getattr(base, "build_id", None)
     plan.pol = base.pol
     inv = {n: c for n, c in build["troops"].items() if n != plan.siege}
