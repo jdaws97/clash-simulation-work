@@ -351,6 +351,14 @@ def main():
         help="nominal per-child false-rejection budget across looks in each stage",
     )
     ap.add_argument(
+        "--alloc",
+        choices=["uniform", "proportional"],
+        default="uniform",
+        help="battle sides per build: equal, or by weight (meta_scenarios budget)",
+    )
+    ap.add_argument("--quick-budget", type=int, default=200)
+    ap.add_argument("--confirm-budget", type=int, default=600)
+    ap.add_argument(
         "--seed-files",
         nargs="*",
         default=[],
@@ -362,7 +370,13 @@ def main():
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     rng = random.Random(args.seed)
-    quick = meta_scenarios(args.mode, 2 if args.mode == "ranked" else 4, (0,))
+    proportional = args.alloc == "proportional"
+    quick = meta_scenarios(
+        args.mode,
+        2 if args.mode == "ranked" else 4,
+        (0,),
+        budget=args.quick_budget if proportional else None,
+    )
     race = QuickRace(
         quick, chunk_size=args.race_chunk, alpha=args.race_alpha, seed=args.seed
     )
@@ -370,7 +384,15 @@ def main():
     # The quick set only prunes; a child takes a cell only on this score, so
     # a design that got lucky on 44 battles cannot win (the first run's
     # quick-set "best" of 11.1 trophies fell to 5.3 on the full set).
-    confirm = meta_scenarios(args.mode, 4, (1, 2), angle_offset=math.pi / 4)
+    # One confirm seed under --alloc proportional: two would double the
+    # two-sides-per-build floor (output/speedproof/exp_alloc_truth.py).
+    confirm = meta_scenarios(
+        args.mode,
+        4,
+        (1,) if proportional else (1, 2),
+        angle_offset=math.pi / 4,
+        budget=args.confirm_budget if proportional else None,
+    )
     confirm_race = QuickRace(
         confirm,
         chunk_size=args.race_chunk,

@@ -435,6 +435,9 @@ def _record_meta_mix(mode, th_mix, source, libraries):
     _META_MIX_PRINTED = True
 
 
+MAX_SIDES = 64  # meta_scenarios(budget=...): sides per build and seed stride
+
+
 def meta_scenarios(
     mode="ranked",
     n_angles=8,
@@ -443,6 +446,7 @@ def meta_scenarios(
     th_mix=None,
     techniques_on=False,
     angle_offset=0.0,
+    budget=None,
 ):
     """Scenarios from saved meta builds (meta_armies.py). Ranked Town Halls
     use smoothed defense-log counts; BASELAB_TH_MIX overrides the log, and an
@@ -458,7 +462,13 @@ def meta_scenarios(
     seeds, so a hold-out set needs `angle_offset` (e.g. half an angle step)
     to face sides the search never saw. Every seed covers all five skill
     quantiles (_assign_skill); fresh seeds change the charge flank
-    (seed % 2) and jitter."""
+    (seed % 2) and jitter.
+
+    budget (battles) gives each build sides in proportion to its weight, at
+    least two so best-of-SCOUT stays a choice, instead of n_angles each:
+    uniform sides spend most battles on rare builds (effective sample size
+    140 of 320; output/speedproof/exp_alloc_decisions.py). Seeds then use
+    m = s * MAX_SIDES + k, disjoint from every n_angles set's seeds."""
     from .meta_armies import library
 
     th_mix, source = _meta_th_mix(mode, th_mix)
@@ -488,12 +498,19 @@ def meta_scenarios(
                 total = sum(w for _, w in kept)
                 libraries[th] = [(b, w / total) for b, w in kept]
     out = []
+    stride = n_angles
+    if budget is not None:
+        stride = MAX_SIDES
+        units = budget / (len(_Z) * len(seeds))
     for th, tw in th_mix.items():
         for b, w in libraries[th]:
             bid = f"meta:{b['archetype']}-{b['th']}-{b['build']}"
             techs = techniques(b) if techniques_on else [None]
+            sides = n_angles
+            if budget is not None:
+                sides = min(MAX_SIDES, max(SCOUT, round(units * tw * w / len(techs))))
             for k, a in enumerate(
-                angles(n_angles, offset=0.31 * th + 0.07 * len(bid) + angle_offset)
+                angles(sides, offset=0.31 * th + 0.07 * len(bid) + angle_offset)
             ):
                 for s in seeds:
                     for tech in techs:
@@ -502,8 +519,8 @@ def meta_scenarios(
                                 bid,
                                 th,
                                 a,
-                                s * n_angles + k,
-                                tw * w / (n_angles * len(seeds) * len(techs)),
+                                s * stride + k,
+                                tw * w / (sides * len(seeds) * len(techs)),
                                 modifier,
                                 group=s,
                                 charge=tech,
