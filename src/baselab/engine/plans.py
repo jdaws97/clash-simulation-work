@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import json
 import math
+import warnings
+from pathlib import Path
 from dataclasses import InitVar, dataclass, field
 from functools import lru_cache
 from heapq import nlargest
@@ -27,59 +29,145 @@ from .entities import Building
 CENTER = WORLD / 2.0
 
 THREAT = {
-    "th": 6, "inferno": 10, "scatter": 8, "eagle": 7, "xbow": 5, "mono": 5, "mgt": 5, "firespitter": 4,
-    "swt": 5, "revenge": 4, "ad": 4, "ric": 4, "mat": 3, "wt": 3, "st": 3, "bt": 2, "at": 2, "tesla": 2,
-    "cannon": 1, "bh": 1, "mortar": 1, "sweeper": 1,
+    "th": 6,
+    "inferno": 10,
+    "scatter": 8,
+    "eagle": 7,
+    "xbow": 5,
+    "mono": 5,
+    "mgt": 5,
+    "firespitter": 4,
+    "swt": 5,
+    "revenge": 4,
+    "ad": 4,
+    "ric": 4,
+    "mat": 3,
+    "wt": 3,
+    "st": 3,
+    "bt": 2,
+    "at": 2,
+    "tesla": 2,
+    "cannon": 1,
+    "bh": 1,
+    "mortar": 1,
+    "sweeper": 1,
 }
 
 # Learnable attacker policy: every decision threshold of the brain below.
 # Defaults reproduce the hand-written brain exactly; tools/baselab/train_policy.py
 # learns better values across many bases (name: (default, lo, hi)).
 POLICY = {
-    "commit_progress": (3.0, 1.0, 6.0),     # funnel buildings down before the main push commits
-    "freeze_min_threat": (5.0, 3.0, 9.0),   # weakest defense worth a Freeze
-    "freeze_reach": (1.5, -1.0, 4.0),       # Freeze once the army is this far inside its range
-    "freeze_min_units": (0.0, 0.0, 10.0),   # ... and at least this many troops are in range
+    "commit_progress": (
+        3.0,
+        1.0,
+        6.0,
+    ),  # funnel buildings down before the main push commits
+    "freeze_min_threat": (5.0, 3.0, 9.0),  # weakest defense worth a Freeze
+    "freeze_reach": (
+        1.5,
+        -1.0,
+        4.0,
+    ),  # Freeze once the army is this far inside its range
+    "freeze_min_units": (
+        0.0,
+        0.0,
+        10.0,
+    ),  # ... and at least this many troops are in range
     "totem_min_threats": (3.0, 1.0, 5.0),
     "totem_gap": (5.0, 2.0, 12.0),
-    "og_min_score": (18.0, 6.0, 30.0),      # Overgrowth only on a cluster this dangerous
-    "rage_engaged": (0.5, 0.15, 0.9),       # share of the army fighting before Rage
+    "og_min_score": (18.0, 6.0, 30.0),  # Overgrowth only on a cluster this dangerous
+    "rage_engaged": (0.5, 0.15, 0.9),  # share of the army fighting before Rage
     "rage_gap": (9.0, 4.0, 15.0),
     "heal_hp": (0.6, 0.3, 0.9),
-    "invis_hp": (0.6, 0.3, 0.9),            # Invisibility when the army drops below this health ...
-    "invis_hot": (2.0, 1.0, 4.0),           # ... or this many heavy defenses shoot it
+    "invis_hp": (
+        0.6,
+        0.3,
+        0.9,
+    ),  # Invisibility when the army drops below this health ...
+    "invis_hot": (2.0, 1.0, 4.0),  # ... or this many heavy defenses shoot it
     "invis_gap": (4.5, 4.25, 8.0),
     "recall_after": (12.0, 5.0, 30.0),
     "recall_hp": (0.4, 0.2, 0.7),
     "haste_after": (3.0, 0.0, 12.0),
     "haste_gap": (8.0, 4.0, 15.0),
     "poison_min": (3.0, 1.0, 6.0),
-    "hero_hp": (0.5, 0.15, 0.85),           # generic hero ability: below this health ...
-    "hero_time": (25.0, 5.0, 60.0),         # ... or after this long fighting
+    "hero_hp": (0.5, 0.15, 0.85),  # generic hero ability: below this health ...
+    "hero_time": (25.0, 5.0, 60.0),  # ... or after this long fighting
     "warden_hp": (0.4, 0.15, 0.8),
-    "warden_hurt": (1.0 / 3.0, 0.1, 0.8),        # share of nearby troops hurt before Eternal Tome
+    "warden_hurt": (
+        1.0 / 3.0,
+        0.1,
+        0.8,
+    ),  # share of nearby troops hurt before Eternal Tome
     "duke_hp": (0.6, 0.2, 0.9),
-    "arrow_aim": (0.0, 0.0, 1.0),           # > 0.5: Giant Arrow is aimed at a heavy defense in reach
+    "arrow_aim": (
+        0.0,
+        0.0,
+        1.0,
+    ),  # > 0.5: Giant Arrow is aimed at a heavy defense in reach
     "arrow_reach": (12.0, 5.0, 20.0),
     "arrow_threat": (7.0, 3.0, 10.0),
-    "dash_aim": (0.0, 0.0, 1.0),            # > 0.5: Rocket Backpack dashes at a heavy defense in reach
+    "dash_aim": (
+        0.0,
+        0.0,
+        1.0,
+    ),  # > 0.5: Rocket Backpack dashes at a heavy defense in reach
     "dash_reach": (8.0, 4.0, 14.0),
     "dash_threat": (7.0, 3.0, 10.0),
-    "distract_reach": (0.0, 0.0, 10.0),     # > 2: a cleanup troop pulls a heavy defense off the push
+    "distract_reach": (
+        0.0,
+        0.0,
+        10.0,
+    ),  # > 2: a cleanup troop pulls a heavy defense off the push
     "distract_threat": (8.0, 4.0, 10.0),
     "distract_max": (2.0, 0.0, 4.0),
-    "lure_time": (-1.0, -5.0, 30.0),        # >= 0: one troop dropped by the Clan Castle at this time
-    "eq_core_dist": (0.0, 0.0, 12.0),       # > 2: Earthquakes on the core walls once the push is this close to the TH
+    "lure_time": (
+        -1.0,
+        -5.0,
+        30.0,
+    ),  # >= 0: one troop dropped by the Clan Castle at this time
+    "eq_core_dist": (
+        0.0,
+        0.0,
+        12.0,
+    ),  # > 2: Earthquakes on the core walls once the push is this close to the TH
     "eq_core_n": (2.0, 1.0, 4.0),
     # from the attack audit (docs/ATTACK_AUDIT.md); off by default until screened
-    "deep_drop": (0.0, 0.0, 1.0),           # > 0.5: drop into corridors / pockets on the attack side, as real players do
-    "angry_min": (0.0, 0.0, 8.0),           # > 0: Angry Spell when this many push troops chase non-defenses near a defense
-    "skeleton_on": (0.0, 0.0, 1.0),         # > 0.5: Skeleton Spell as a distraction by a heavy defense locked on the push
-    "bat_on": (0.0, 0.0, 1.0),              # > 0.5: Bat Spell onto defenses near the push
-    "tank_lead": (0.0, 0.0, 4.0),           # > 0.3: tanks land first, damage dealers this many seconds later
+    "deep_drop": (
+        0.0,
+        0.0,
+        1.0,
+    ),  # > 0.5: drop into corridors / pockets on the attack side, as real players do
+    "angry_min": (
+        0.0,
+        0.0,
+        8.0,
+    ),  # > 0: Angry Spell when this many push troops chase non-defenses near a defense
+    "skeleton_on": (
+        0.0,
+        0.0,
+        1.0,
+    ),  # > 0.5: Skeleton Spell as a distraction by a heavy defense locked on the push
+    "bat_on": (0.0, 0.0, 1.0),  # > 0.5: Bat Spell onto defenses near the push
+    "tank_lead": (
+        0.0,
+        0.0,
+        4.0,
+    ),  # > 0.3: tanks land first, damage dealers this many seconds later
 }
-TANKS = {"Ice Golem", "Golem", "Lava Hound", "Ice Hound", "Giant", "Super Giant", "Electro Titan", "P.E.K.K.A", "Yeti",
-         "Meteor Golem", "Headhunter"}
+TANKS = {
+    "Ice Golem",
+    "Golem",
+    "Lava Hound",
+    "Ice Hound",
+    "Giant",
+    "Super Giant",
+    "Electro Titan",
+    "P.E.K.K.A",
+    "Yeti",
+    "Meteor Golem",
+    "Headhunter",
+}
 
 # Army capacity. Game data v18.200.9 (Aug 2026) gives 4 camps x 80/85 =
 # 320/340 at TH16/17, but every real TH16 attacker in the user's battle log
@@ -118,6 +206,15 @@ SPELL_NAMES = {
     "birthday": "Birthday Boom",
     "yellow": "Yellow Card",
 }
+
+
+@lru_cache(maxsize=1)
+def _logged_builds(path):
+    return [
+        build
+        for build in json.loads(Path(path).read_text(encoding="utf-8"))["builds"]
+        if build.get("observed") and build.get("source_battle_timestamps")
+    ]
 
 
 @lru_cache(maxsize=1)
@@ -191,7 +288,10 @@ def edge_point(battle, angle: float, lateral: float = 0.0):
                 break
         r -= 0.5
     if last is None:
-        last = (min(WORLD - 1.0, max(1.0, CENTER + dx * 24)), min(WORLD - 1.0, max(1.0, CENTER + dy * 24)))
+        last = (
+            min(WORLD - 1.0, max(1.0, CENTER + dx * 24)),
+            min(WORLD - 1.0, max(1.0, CENTER + dy * 24)),
+        )
     return last
 
 
@@ -346,7 +446,9 @@ class AttackPlan:
     breakers: list = field(default_factory=list)  # (name, count) kept for wall access
     siege: str | None = None
     siege_donated: bool = False
-    cc_troops: list = field(default_factory=list)  # Clan Castle troops, released when the siege breaks
+    cc_troops: list = field(
+        default_factory=list
+    )  # Clan Castle troops, released when the siege breaks
     cc_spells: dict = field(default_factory=dict)  # Clan Castle spells (key -> count)
     spells: dict = field(default_factory=dict)  # key -> count (keys in SPELL_NAMES)
     ground: bool = True
@@ -373,13 +475,19 @@ class AttackPlan:
     revive_delay: float = 1.5  # Attacker policy assumption; no wiki delay.
     freeze_first: tuple = ()  # building keys to Freeze before anything else
     pol: dict = field(default_factory=dict)  # learned policy values (POLICY keys)
-    charge_hero: str | None = None  # Queen / Champion charge: this hero opens with Healers along the side
+    charge_hero: str | None = (
+        None  # Queen / Champion charge: this hero opens with Healers along the side
+    )
     charge_lat: float = 0.0
     charge_at: float = 0.0
     charge_recall_hp: float = 0.35  # Recall the charging hero below this health ...
-    charge_len: float = 25.0        # ... or this long after the charge starts
-    recall_funnel: bool = False     # Recall then redeploy the charge up the opposite flank (TrophyCoach QC guide)
-    split_main: float = 0.0         # > 0: the main wave lands on two flanks this far apart (radians), e.g. two-flank Hydra
+    charge_len: float = 25.0  # ... or this long after the charge starts
+    recall_funnel: bool = (
+        False  # Recall then redeploy the charge up the opposite flank (TrophyCoach QC guide)
+    )
+    split_main: float = (
+        0.0  # > 0: the main wave lands on two flanks this far apart (radians), e.g. two-flank Hydra
+    )
     recalled: list = field(default_factory=list)
     _cast_log: list = field(default_factory=list)
     _totem_casts: list = field(default_factory=list)  # (time, x, y)
@@ -505,6 +613,7 @@ class AttackPlan:
 
     def housing(self) -> dict:
         """Army and spell capacity, including actual attacking building levels."""
+
         def h(name):
             if name in heroes.HEROES:
                 return 0
@@ -524,6 +633,8 @@ class AttackPlan:
             for name, count in wave.units
         )
         camp += sum(h(name) * count for name, count in self.cleanup + self.breakers)
+        # Wiki: Army Camp, moving Healers into a charge does not free housing.
+        camp += h("Healer") * self._charge_n
         factory = self._building_level("Spell Factory", self.spell_factory_level)
         dark = self._building_level("Dark Spell Factory", self.dark_spell_factory_level)
         castle = self._building_level("Clan Castle", self.clan_castle_level)
@@ -561,7 +672,7 @@ class AttackPlan:
         }
 
     def legal(self) -> list:
-        """Problems with spell counts, levels, unlocks and army capacity."""
+        """Problems with roster, loadouts, levels, unlocks and army capacity."""
         out = []
         try:
             quantities = [(name, count) for name, count, _ in self.flank]
@@ -571,6 +682,78 @@ class AttackPlan:
                 for name, count in wave.units
             )
             quantities.extend(self.cleanup + self.breakers)
+            roster = [name for name, _ in self.funnel_heroes] + list(self.push_heroes)
+            if self.charge_hero:
+                roster.append(self.charge_hero)
+            roster.extend(
+                name
+                for name, count in quantities
+                if count and name in heroes.HEROES
+                for _ in range(count)
+            )
+            # Wiki: Hero Hall, L10 (TH16), L11 and L12 each have four Hero Slots.
+            hall = stats.max_level("Hero Hall", self.town_hall)
+            slots = int(stats.get("Hero Hall", hall, "Hero Slots", default=0))
+            if len(roster) > slots:
+                out.append(f"heroes {len(roster)} > {slots} slots")
+            seen = set()
+            pets = set()
+            for name in roster:
+                if name in seen:
+                    out.append(f"Duplicate hero: {name}")
+                    continue
+                seen.add(name)
+                if name not in heroes.HEROES:
+                    out.append(f"Unknown hero: {name}")
+                    continue
+                if stats.max_level(name, self.town_hall) is None:
+                    out.append(f"{name} is unavailable at Town Hall {self.town_hall}")
+                lo = self.loadouts.get(name) or heroes.DEFAULT_LOADOUTS[name]
+                if lo.hero != name:
+                    out.append(f"Loadout for {lo.hero} cannot be applied to {name}")
+                if len(lo.equipment) > 2:
+                    out.append(f"{name} can equip at most 2 equipment items")
+                if len(set(lo.equipment)) != len(lo.equipment):
+                    out.append(f"Duplicate equipment for {name}")
+                for item in lo.equipment:
+                    if stats.record(item)["kind"] != "equipment":
+                        out.append(f"{item} is not hero equipment")
+                        continue
+                    owner = stats.attrs(item).get("raw", {}).get("User")
+                    if owner != name:
+                        out.append(f"{item} belongs to {owner}, not {name}")
+                    maximum = stats.max_level(item, self.town_hall)
+                    if maximum is None:
+                        out.append(
+                            f"{item} is unavailable at Town Hall {self.town_hall}"
+                        )
+                    elif item in self.equipment_levels:
+                        stats.validate_level(
+                            item, self.equipment_levels[item], self.town_hall
+                        )
+                if lo.pet:
+                    if lo.pet in pets:
+                        out.append(f"Duplicate pet: {lo.pet}")
+                    pets.add(lo.pet)
+                    if stats.record(lo.pet)["kind"] != "pet":
+                        out.append(f"{lo.pet} is not a pet")
+                    elif stats.max_level(lo.pet, self.town_hall) is None:
+                        out.append(
+                            f"{lo.pet} is unavailable at Town Hall {self.town_hall}"
+                        )
+                    elif lo.pet in self.pet_levels:
+                        stats.validate_level(
+                            lo.pet, self.pet_levels[lo.pet], self.town_hall
+                        )
+            # Wiki: Super Troops, only two boosted types at once; donated troops
+            # do not occupy a boost slot. Count positive camp quantities only.
+            boosted = {
+                name
+                for name, count in quantities
+                if count > 0 and stats.record(name).get("super")
+            }
+            if len(boosted) > 2:
+                out.append(f"boosted super troop types {len(boosted)} > 2")
             for name, count in quantities:
                 if type(count) is not int or count < 0:
                     raise ValueError(f"Invalid troop count for {name}: {count}")
@@ -655,9 +838,106 @@ class AttackPlan:
             out.append(str(error))
         return out
 
+    def _logged_exception(self, problem):
+        # data/observed-armies.json: nine decoded TH17 armies have four donated
+        # spell spaces despite the mirrored Castle cap of three. An observed
+        # flag alone is not provenance. Only this cap and the logged Raven's
+        # existing replay replacement may warn; roster/equipment errors fail.
+        if problem not in (
+            "cc_spells 4 > 3.0",
+            "Greedy Raven is unavailable at Town Hall 17",
+        ) or not getattr(self, "observed", False):
+            return False
+        from collections import Counter
+
+        from ..meta_armies import OBSERVED, SIEGES, SPELL_KEYS, _loadouts
+
+        for build in _logged_builds(str(OBSERVED)):
+            key = f"{build['archetype']}-{build['th']}-{build['build']}"
+            if key != getattr(self, "build_id", None) or self.town_hall != build["th"]:
+                continue
+            brewed = {SPELL_KEYS[n]: c for n, c in build["spells"].items() if c}
+            donated = {
+                SPELL_KEYS[n]: c
+                for n, c in build.get("cc", {}).items()
+                if n in SPELL_KEYS and c
+            }
+            roster = [name for name, _ in self.funnel_heroes] + list(self.push_heroes)
+            if self.charge_hero:
+                roster.append(self.charge_hero)
+            expected = Counter(
+                {n: c for n, c in build["troops"].items() if n not in SIEGES}
+            )
+            fixed = Counter()
+            for n, c, _ in self.flank:
+                fixed[n] += c
+            for wave in self.main + self.support:
+                for n, c in wave.units:
+                    fixed[n] += c
+            fixed["Healer"] += self._charge_n
+            reserves = Counter()
+            for n, c in self.cleanup + self.breakers:
+                reserves[n] += c
+            # cleanup/breakers are mutable remaining stocks in the generic plan.
+            # Only their depletion is permitted; every other camp count is exact.
+            reserve_names = {n for n, _ in self.cleanup + self.breakers}
+            if self._phase == "done":
+                from ..meta_armies import BREAKERS, CLEANUP
+
+                reserve_names.update(CLEANUP | BREAKERS)
+            army_matches = all(
+                (
+                    fixed[n] + reserves[n] <= expected[n]
+                    if n in reserve_names
+                    else fixed[n] == expected[n]
+                )
+                for n in expected.keys() | fixed.keys() | reserves.keys()
+            )
+            expected_cc = Counter(
+                {
+                    n: c
+                    for n, c in build.get("cc", {}).items()
+                    if n not in SPELL_KEYS and n not in SIEGES
+                }
+            )
+            actual_cc = Counter()
+            for entry in self.cc_troops:
+                if isinstance(entry, str):
+                    actual_cc[entry] += 1
+                else:
+                    actual_cc[entry.get("name") or entry["type"]] += entry.get(
+                        "count", 1
+                    )
+            expected_siege = next(
+                (
+                    n
+                    for n in list(build["troops"]) + list(build.get("cc", {}))
+                    if n in SIEGES
+                ),
+                None,
+            )
+            return (
+                sorted(roster) == sorted(build["heroes"])
+                and army_matches
+                and actual_cc == expected_cc
+                and self.siege == expected_siege
+                and self.loadouts == _loadouts(build, build["heroes"])
+                and {k: c for k, c in self._spells0.items() if c} == brewed
+                and {k: c for k, c in self._cc_spells0.items() if c} == donated
+            )
+        return False
+
     def require_legal(self):
-        # armies replayed from real battles happened, so they are legal by definition
-        problems = [] if getattr(self, "observed", False) else self.legal()
+        problems = []
+        for problem in self.legal():
+            if self._logged_exception(problem):
+                warnings.warn(
+                    f"Logged army {self.build_id}: {problem}; using documented replay handling",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+            else:
+                problems.append(problem)
         if problems:
             raise ValueError("Illegal attack plan: " + "; ".join(problems))
         for stock in self._spell_stock:
@@ -722,15 +1002,32 @@ class AttackPlan:
         near her) before she dies or once the charge has done its job; she
         comes back with the main push (see on_tick / _launch_main)."""
         t = battle.t
-        hero = next((u for u in charge if u.is_hero and u.name == self.charge_hero), None)
+        hero = next(
+            (u for u in charge if u.is_hero and u.name == self.charge_hero), None
+        )
         if hero is None:
             return
         frac = hero.hp / max(1.0, hero.max_hp)
-        locked = any(b.alive and b.weapon is not None and b.weapon.target is hero and THREAT.get(b.key, 0) >= 4 for b in battle.buildings)
-        if self._have("invis") and t - self._last("invis") > self.P("invis_gap") and t >= hero.invisible_until and (locked or frac < 0.6):
+        locked = any(
+            b.alive
+            and b.weapon is not None
+            and b.weapon.target is hero
+            and THREAT.get(b.key, 0) >= 4
+            for b in battle.buildings
+        )
+        if (
+            self._have("invis")
+            and t - self._last("invis") > self.P("invis_gap")
+            and t >= hero.invisible_until
+            and (locked or frac < 0.6)
+        ):
             self._use(battle, "invis", hero.x, hero.y)
         done = t - self.charge_at > self.charge_len
-        if self._have("recall") and self._last("recall_charge") < 0 and (frac < self.charge_recall_hp or done):
+        if (
+            self._have("recall")
+            and self._last("recall_charge") < 0
+            and (frac < self.charge_recall_hp or done)
+        ):
             self._use(battle, "recall", hero.x, hero.y)
             self._cast_log.append((round(t, 1), "recall_charge"))
 
@@ -760,7 +1057,12 @@ class AttackPlan:
                     units.append((n, c))
             waves.append(Wave(w.group, units, spread=w.spread))
         self.support = [w for w in waves if w.units]
-        self.charge_hero, self._charge_n, self.charge_lat, self.charge_at = hero, taken, lateral, at
+        self.charge_hero, self._charge_n, self.charge_lat, self.charge_at = (
+            hero,
+            taken,
+            lateral,
+            at,
+        )
         return True
 
     def charge_point(self, battle, angle, lateral=0.0):
@@ -836,7 +1138,17 @@ class AttackPlan:
             x, y = edge_point(battle, self.angle, lateral)
             if name == "Dragon Duke" and self._has_backpack():
                 x, y = self.backpack_point(battle, self.angle, lateral)
-            out.append(Deployment(0.0, name, x, y, group="funnel", level=self._level(name), town_hall=th))
+            out.append(
+                Deployment(
+                    0.0,
+                    name,
+                    x,
+                    y,
+                    group="funnel",
+                    level=self._level(name),
+                    town_hall=th,
+                )
+            )
         if self.charge_hero:
             # User (TH16 ranked, 2026-10-23): scout the charge flank for clusters.
             x, y = self.charge_point(battle, self.angle, self.charge_lat)
@@ -844,14 +1156,44 @@ class AttackPlan:
                 x, y = self.backpack_point(battle, self.angle, self.charge_lat)
             elif self.P("deep_drop") > 0.5:
                 x, y = self._deep_charge_point(battle, (x, y))
-            out.append(Deployment(self.charge_at, self.charge_hero, x, y, group="charge", level=self._level(self.charge_hero), town_hall=th))
+            out.append(
+                Deployment(
+                    self.charge_at,
+                    self.charge_hero,
+                    x,
+                    y,
+                    group="charge",
+                    level=self._level(self.charge_hero),
+                    town_hall=th,
+                )
+            )
             for k in range(self._charge_n):
-                out.append(Deployment(self.charge_at + 0.6 + 0.1 * k, "Healer", x, y, group="charge", level=self._level("Healer"), town_hall=th))
+                out.append(
+                    Deployment(
+                        self.charge_at + 0.6 + 0.1 * k,
+                        "Healer",
+                        x,
+                        y,
+                        group="charge",
+                        level=self._level("Healer"),
+                        town_hall=th,
+                    )
+                )
         t = 0.5
         for name, count, lateral in self.flank:
             for k in range(count):
                 x, y = edge_point(battle, self.angle, lateral + (k - count / 2) * 0.6)
-                out.append(Deployment(t, name, x, y, group="funnel", level=self._level(name), town_hall=th))
+                out.append(
+                    Deployment(
+                        t,
+                        name,
+                        x,
+                        y,
+                        group="funnel",
+                        level=self._level(name),
+                        town_hall=th,
+                    )
+                )
                 t += 0.15
         return out
 
@@ -1634,7 +1976,11 @@ class AttackPlan:
                 continue
             # players drop the push against the base, next to what the funnel
             # opened; a spot far from every building just costs walking time
-            score = 0.5 * _cheb(nearest.x, nearest.y) + 2.0 * max(0.0, nd - 1.5) + 0.3 * abs(lat)
+            score = (
+                0.5 * _cheb(nearest.x, nearest.y)
+                + 2.0 * max(0.0, nd - 1.5)
+                + 0.3 * abs(lat)
+            )
             if best is None or score < best[0]:
                 best = (score, x, y, lat)
         # holes inside the walls: players drop the push straight in when a
@@ -1684,17 +2030,37 @@ class AttackPlan:
         """A charging hero drops at the legal tile on its side closest to the
         most dangerous defense there (e.g. right beside the Monolith)."""
         ang = math.atan2(default[1] - CENTER, default[0] - CENTER)
-        defs = [b for b in battle.buildings if b.alive and b.weapon is not None and THREAT.get(b.key, 0) >= 5
-                and abs((math.atan2(b.y - CENTER, b.x - CENTER) - ang + math.pi) % (2 * math.pi) - math.pi) <= 0.8]
+        defs = [
+            b
+            for b in battle.buildings
+            if b.alive
+            and b.weapon is not None
+            and THREAT.get(b.key, 0) >= 5
+            and abs(
+                (math.atan2(b.y - CENTER, b.x - CENTER) - ang + math.pi) % (2 * math.pi)
+                - math.pi
+            )
+            <= 0.8
+        ]
         tiles = self._sector_tiles(battle, ang, 0.6)
         if not defs or not tiles:
             return default
-        tgt = max(defs, key=lambda b: (THREAT.get(b.key, 0), -math.hypot(b.x - default[0], b.y - default[1])))
+        tgt = max(
+            defs,
+            key=lambda b: (
+                THREAT.get(b.key, 0),
+                -math.hypot(b.x - default[0], b.y - default[1]),
+            ),
+        )
         return min(tiles, key=lambda p: math.hypot(p[0] - tgt.x, p[1] - tgt.y))
 
     def _funnel_progress(self, battle):
         ex, ey = edge_point(battle, self.angle, 0.0)
-        return sum(1 for b in battle.buildings if not b.alive and b.counted and math.hypot(b.x - ex, b.y - ey) < 10)
+        return sum(
+            1
+            for b in battle.buildings
+            if not b.alive and b.counted and math.hypot(b.x - ex, b.y - ey) < 10
+        )
 
     def _launch_main(self, battle):
         self._entry = self._best_entry(battle)
@@ -1707,7 +2073,11 @@ class AttackPlan:
             from . import units
 
             units.release_cc_at(battle, ex, ey, "main")
-        e2 = edge_point(battle, self.angle + self.split_main, 0.0) if self.split_main > 0.05 else None
+        e2 = (
+            edge_point(battle, self.angle + self.split_main, 0.0)
+            if self.split_main > 0.05
+            else None
+        )
         k = 0
         tank_k = 0
         damage_k = 0
@@ -1743,7 +2113,9 @@ class AttackPlan:
         # the no-spawn zone shrinks as buildings fall, and holes inside the
         # walls count too, so recompute the candidate spots each time
         if getattr(self, "_snipe_t", None) != battle.t:
-            self._snipe_pts = [edge_point(battle, 2 * math.pi * k / 64, 0.0) for k in range(64)] + battle.inside_spots()
+            self._snipe_pts = [
+                edge_point(battle, 2 * math.pi * k / 64, 0.0) for k in range(64)
+            ] + battle.inside_spots()
             self._snipe_t = battle.t
         return min(self._snipe_pts, key=lambda p: math.hypot(p[0] - b.x, p[1] - b.y))
 
@@ -1752,7 +2124,11 @@ class AttackPlan:
         best, bs = None, -1
         for k in range(16):
             x, y = edge_point(battle, self.angle + 2 * math.pi * k / 16, 0.0)
-            s = sum(1 for b in battle.buildings if b.alive and b.counted and math.hypot(b.x - x, b.y - y) < 11)
+            s = sum(
+                1
+                for b in battle.buildings
+                if b.alive and b.counted and math.hypot(b.x - x, b.y - y) < 11
+            )
             if s > bs:
                 best, bs = (x, y), s
         return best
@@ -1767,9 +2143,21 @@ class AttackPlan:
             self._later = [d for d in self._later if d[0] > t]
             for _, name, x, y, group, jit in due:
                 self._drop(battle, name, x, y, group, jitter=jit)
-        hold = self.charge_hero and self._phase == "funnel" and not self.recall_funnel  # a recalled charge comes back with the main push
-        if battle.portal_stash and t >= battle.portal_ready_at and self.recall_funnel and self.charge_hero and self._phase == "funnel":
-            x, y = edge_point(battle, self.angle, -self.charge_lat if abs(self.charge_lat) > 1 else 8.0)
+        hold = (
+            self.charge_hero and self._phase == "funnel" and not self.recall_funnel
+        )  # a recalled charge comes back with the main push
+        if (
+            battle.portal_stash
+            and t >= battle.portal_ready_at
+            and self.recall_funnel
+            and self.charge_hero
+            and self._phase == "funnel"
+        ):
+            x, y = edge_point(
+                battle,
+                self.angle,
+                -self.charge_lat if abs(self.charge_lat) > 1 else 8.0,
+            )
             heroes.portal_redeploy(battle, x, y)  # recall funnel: the other flank
             hold = True
         if battle.portal_stash and t >= battle.portal_ready_at and not hold:
@@ -1783,7 +2171,10 @@ class AttackPlan:
                 and self.zap_ad != (0, 0)
             ):
                 self._zap(battle)
-            if t >= self.main_max or (t >= self.main_min and self._funnel_progress(battle) >= self.P("commit_progress")):
+            if t >= self.main_max or (
+                t >= self.main_min
+                and self._funnel_progress(battle) >= self.P("commit_progress")
+            ):
                 self._launch_main(battle)
         elif self._phase == "support" and t >= self._main_at + 2.0:
             ex, ey = self._entry
@@ -1807,18 +2198,25 @@ class AttackPlan:
             # cleanup: each spare troop goes to the legal spot nearest a
             # different building far from the push, so the far side does not
             # run the clock out (players snipe the outer ring early)
-            names = [n for n, c in self.cleanup for _ in range(c)] + [n for n, _lvl, _h in self.recalled]
+            names = [n for n, c in self.cleanup for _ in range(c)] + [
+                n for n, _lvl, _h in self.recalled
+            ]
             # Wiki: Healer, only undeployed reserves count toward battle survival.
             self.cleanup.clear()
             self.recalled.clear()
             army = self.main_units(battle)
             cx, cy = self.centroid(army) if army else (CENTER, CENTER)
-            far = sorted((b for b in battle.buildings if b.alive and b.counted), key=lambda b: -math.hypot(b.x - cx, b.y - cy))
+            far = sorted(
+                (b for b in battle.buildings if b.alive and b.counted),
+                key=lambda b: -math.hypot(b.x - cx, b.y - cy),
+            )
             for k, name in enumerate(names):
                 if not far:
                     x, y = edge_point(battle, self.angle + math.pi, 0.0)
                 else:
-                    x, y = self._snipe_point(battle, far[k % min(len(far), max(1, len(names) // 2 + 1))])
+                    x, y = self._snipe_point(
+                        battle, far[k % min(len(far), max(1, len(names) // 2 + 1))]
+                    )
                 self._drop(battle, name, x, y, "cleanup", jitter=0.3)
             self._phase = "done"
         if not self._lured and self.P("lure_time") >= 0 and t >= self.P("lure_time"):
@@ -1857,19 +2255,38 @@ class AttackPlan:
             engaged = u.target is not None and t - u.spawned_at > 2.0
             if u.name == "Minion Prince" and u.kit.has("Portal Pendant"):
                 # pull the push out of a dead or losing spot and drop it fresh
-                near = [a for a in battle.attackers_near(u.x, u.y, 7.0) if not a.is_hero and a.kind != "pet" and a.name != "Totem"]
+                near = [
+                    a
+                    for a in battle.attackers_near(u.x, u.y, 7.0)
+                    if not a.is_hero and a.kind != "pet" and a.name != "Totem"
+                ]
                 if near:
                     cx, cy = self.centroid(near)
-                    work = any(b.alive and b.counted and b.edge_distance(cx, cy) < 7 for b in battle.buildings)
+                    work = any(
+                        b.alive and b.counted and b.edge_distance(cx, cy) < 7
+                        for b in battle.buildings
+                    )
                     hurt = sum(a.hp / a.max_hp for a in near) / len(near)
-                    if len(near) >= 6 and (not work or hurt < 0.45) and t - u.spawned_at > 15.0:
+                    if (
+                        len(near) >= 6
+                        and (not work or hurt < 0.45)
+                        and t - u.spawned_at > 15.0
+                    ):
                         heroes.activate(battle, u)
                 elif frac < 0.35:
                     heroes.activate(battle, u)
             elif u.name == "Grand Warden":
-                near = [a for a in battle.attackers_near(u.x, u.y, 7.0) if a.name != "Totem" and not a.is_hero]
+                near = [
+                    a
+                    for a in battle.attackers_near(u.x, u.y, 7.0)
+                    if a.name != "Totem" and not a.is_hero
+                ]
                 hurt = sum(1 for a in near if a.hp < 0.55 * a.max_hp)
-                if len(near) >= 5 and hurt >= int(len(near) * self.P("warden_hurt") + 1e-9) or frac < self.P("warden_hp"):
+                if (
+                    len(near) >= 5
+                    and hurt >= int(len(near) * self.P("warden_hurt") + 1e-9)
+                    or frac < self.P("warden_hp")
+                ):
                     heroes.activate(battle, u)
                 elif u.kit.has("Fireball"):
                     # Wiki: Fireball, time the nearest-defense blast for cluster value.
@@ -1883,9 +2300,13 @@ class AttackPlan:
                 # Wiki: Giant Arrow, time the actual firing line through defenses.
                 self._line_ability(battle, u, force=frac < self.P("hero_hp"))
             elif u.name == "Dragon Duke":
-                if engaged and (frac < self.P("duke_hp") or getattr(u.target, "is_defense", False)):
+                if engaged and (
+                    frac < self.P("duke_hp") or getattr(u.target, "is_defense", False)
+                ):
                     self._fire_aimed(battle, u)
-            elif frac < self.P("hero_hp") or (engaged and t - u.spawned_at > self.P("hero_time")):
+            elif frac < self.P("hero_hp") or (
+                engaged and t - u.spawned_at > self.P("hero_time")
+            ):
                 heroes.activate(battle, u)
 
     def _aim(self, battle, u, kind):
@@ -2199,12 +2620,19 @@ class AttackPlan:
         return -100.0
 
     def main_units(self, battle, group="main"):
-        return [u for u in battle.attackers if u.alive and u.group == group and u.name != "Totem" and u.kind != "pet"]
+        return [
+            u
+            for u in battle.attackers
+            if u.alive and u.group == group and u.name != "Totem" and u.kind != "pet"
+        ]
 
     @staticmethod
     def centroid(units):
         w = sum(max(1, u.housing) for u in units)
-        return sum(u.x * max(1, u.housing) for u in units) / w, sum(u.y * max(1, u.housing) for u in units) / w
+        return (
+            sum(u.x * max(1, u.housing) for u in units) / w,
+            sum(u.y * max(1, u.housing) for u in units) / w,
+        )
 
     @staticmethod
     def threats_near(battle, x, y, r):
@@ -2266,7 +2694,14 @@ class AttackPlan:
         if len(stuck) < 2:
             return
         w = stuck[0].wall_target
-        if sum(1 for v in stuck if abs(v.wall_target.x - w.x) + abs(v.wall_target.y - w.y) <= 3) < 2:
+        if (
+            sum(
+                1
+                for v in stuck
+                if abs(v.wall_target.x - w.x) + abs(v.wall_target.y - w.y) <= 3
+            )
+            < 2
+        ):
             return
         cx, cy = self.centroid(stuck)
         # Wiki: Wall Breaker, sacrifices itself; fallback spends the same army.
@@ -2285,7 +2720,7 @@ class AttackPlan:
         if self._have("jump"):
             self._use(battle, "jump", w.x, w.y)
             self._cast_log.append((round(battle.t, 1), "breach"))
-        elif self.spells.get("eq", 0) >= 4:
+        elif self._unreserved_spells("eq") >= 4:
             # Video: docs/VIDEO_MEASUREMENTS.md:31, spell drops have nonzero spacing.
             if single_cast:
                 self._fallback_quakes = [(w.x, w.y)] * 3
@@ -2573,11 +3008,24 @@ class AttackPlan:
         engaged = sum(1 for u in units if u.target is not None and u.cooldown > 0)
         if self._have("freeze"):
             prio = {k: 100 - i for i, k in enumerate(self.freeze_first)}
-            for b, d in sorted(self.threats_near(battle, cx, cy, 12), key=lambda bd: -(prio.get(bd[0].key) or THREAT.get(bd[0].key, 1))):
-                if (b.key in prio or THREAT.get(b.key, 0) >= self.P("freeze_min_threat")) and d <= b.weapon.range + self.P("freeze_reach") \
-                        and (b.weapon.target is not None or b.weapon.multi):
+            for b, d in sorted(
+                self.threats_near(battle, cx, cy, 12),
+                key=lambda bd: -(prio.get(bd[0].key) or THREAT.get(bd[0].key, 1)),
+            ):
+                if (
+                    (
+                        b.key in prio
+                        or THREAT.get(b.key, 0) >= self.P("freeze_min_threat")
+                    )
+                    and d <= b.weapon.range + self.P("freeze_reach")
+                    and (b.weapon.target is not None or b.weapon.multi)
+                ):
                     if self.P("freeze_min_units") > 0:
-                        inr = sum(1 for u in units if math.hypot(u.x - b.x, u.y - b.y) <= b.weapon.range)
+                        inr = sum(
+                            1
+                            for u in units
+                            if math.hypot(u.x - b.x, u.y - b.y) <= b.weapon.range
+                        )
                         if inr < self.P("freeze_min_units"):
                             continue
                     self._use(battle, "freeze", b.x, b.y)
@@ -2599,18 +3047,29 @@ class AttackPlan:
             for b, d in self.threats_near(battle, cx, cy, 13):
                 if THREAT.get(b.key, 0) < 4:
                     continue
-                score = sum(THREAT.get(o.key, 1) for o, _ in self.threats_near(battle, b.x, b.y, 6))
+                score = sum(
+                    THREAT.get(o.key, 1)
+                    for o, _ in self.threats_near(battle, b.x, b.y, 6)
+                )
                 if best is None or score > best[0]:
                     best = (score, b)
             if best is not None and best[0] >= self.P("og_min_score"):
                 self._use(battle, "overgrowth", best[1].x, best[1].y)
                 if single_cast:
                     return
-        if self._have("rage") and engaged >= max(2, int(len(units) * self.P("rage_engaged"))) and t - self._last("rage") > self.P("rage_gap"):
+        if (
+            self._have("rage")
+            and engaged >= max(2, int(len(units) * self.P("rage_engaged")))
+            and t - self._last("rage") > self.P("rage_gap")
+        ):
             self._use(battle, "rage", cx, cy)
             if single_cast:
                 return
-        if self._have("heal") and avg_hp < self.P("heal_hp") and t - self._last("heal") > 6:
+        if (
+            self._have("heal")
+            and avg_hp < self.P("heal_hp")
+            and t - self._last("heal") > 6
+        ):
             self._use(battle, "heal", cx, cy)
             if single_cast:
                 return
@@ -2621,21 +3080,37 @@ class AttackPlan:
         ):
             # players chain Invisibility over the push whenever heavy
             # defenses are shooting it (wiki: 4.25 s per spell)
-            hot = [b for b, d in self.threats_near(battle, cx, cy, 11) if THREAT.get(b.key, 0) >= 4 and (b.weapon.target is not None or b.weapon.multi)]
+            hot = [
+                b
+                for b, d in self.threats_near(battle, cx, cy, 11)
+                if THREAT.get(b.key, 0) >= 4
+                and (b.weapon.target is not None or b.weapon.multi)
+            ]
             # Wiki: Battle Blimp, keep its Super Archer/Wizard cargo invisible.
             if cargo or avg_hp < self.P("invis_hp") or len(hot) >= self.P("invis_hot"):
                 ix, iy = self.centroid(cargo) if cargo else (cx, cy)
                 self._use(battle, "invis", ix, iy)
                 if single_cast:
                     return
-        if self._have("recall") and t - self._last("recall") > 6.0 and t - self._main_at > self.P("recall_after"):
+        if (
+            self._have("recall")
+            and t - self._last("recall") > 6.0
+            and t - self._main_at > self.P("recall_after")
+        ):
             # pull a stalled or dying push back and drop it where buildings remain
-            work = any(b.alive and b.counted and b.edge_distance(cx, cy) < 7 for b in battle.buildings)
+            work = any(
+                b.alive and b.counted and b.edge_distance(cx, cy) < 7
+                for b in battle.buildings
+            )
             if len(units) >= 6 and (not work or avg_hp < self.P("recall_hp")):
                 self._use(battle, "recall", cx, cy)
                 if single_cast:
                     return
-        if self._have("clone") and t - self._main_at > 1.0 and t - self._last("clone") > 1.0:
+        if (
+            self._have("clone")
+            and t - self._main_at > 1.0
+            and t - self._last("clone") > 1.0
+        ):
             # Wiki: Battle Blimp, Clone supports its released payload, not the push.
             big = [
                 u
@@ -2647,7 +3122,11 @@ class AttackPlan:
                 self._use(battle, "clone", bx, by)
                 if single_cast:
                     return
-        if self._have("haste") and t - self._main_at > self.P("haste_after") and t - self._last("haste") > self.P("haste_gap"):
+        if (
+            self._have("haste")
+            and t - self._main_at > self.P("haste_after")
+            and t - self._last("haste") > self.P("haste_gap")
+        ):
             self._use(battle, "haste", cx, cy)
             if single_cast:
                 return
@@ -2656,9 +3135,18 @@ class AttackPlan:
             if single_cast:
                 return
         if self._have("poison"):
-            foes = [d for d in battle.defenders if d.alive and t >= d.active_at and math.hypot(d.x - cx, d.y - cy) < 7]
+            foes = [
+                d
+                for d in battle.defenders
+                if d.alive and t >= d.active_at and math.hypot(d.x - cx, d.y - cy) < 7
+            ]
             if len(foes) >= self.P("poison_min") or any(f.is_hero for f in foes):
-                self._use(battle, "poison", sum(f.x for f in foes) / len(foes), sum(f.y for f in foes) / len(foes))
+                self._use(
+                    battle,
+                    "poison",
+                    sum(f.x for f in foes) / len(foes),
+                    sum(f.y for f in foes) / len(foes),
+                )
                 if single_cast:
                     return
         self._learned_plays(battle, units, cx, cy, single_cast=single_cast)
@@ -2667,19 +3155,46 @@ class AttackPlan:
         """Plays switched on by the learned policy (all off by default)."""
         t = battle.t
         # Angry Spell: push troops chasing non-defenses next to a defense turn onto it
-        if self.P("angry_min") > 0 and self._have("angry") and t - self._last("angry") > 6:
-            astray = [u for u in units if u.target is not None and not getattr(u.target, "is_defense", True)
-                      and any(b.alive and b.weapon is not None and math.hypot(b.x - u.x, b.y - u.y) < 7 for b in battle.buildings)]
+        if (
+            self.P("angry_min") > 0
+            and self._have("angry")
+            and t - self._last("angry") > 6
+        ):
+            astray = [
+                u
+                for u in units
+                if u.target is not None
+                and not getattr(u.target, "is_defense", True)
+                and any(
+                    b.alive
+                    and b.weapon is not None
+                    and math.hypot(b.x - u.x, b.y - u.y) < 7
+                    for b in battle.buildings
+                )
+            ]
             if len(astray) >= self.P("angry_min"):
                 ax, ay = self.centroid(astray)
                 self._use(battle, "angry", ax, ay)
                 if single_cast:
                     return
         # Skeleton Spell: a distraction beside a heavy defense that is locked on the push
-        if self.P("skeleton_on") > 0.5 and self._have("skeleton") and t - self._last("skeleton") > 8:
+        if (
+            self.P("skeleton_on") > 0.5
+            and self._have("skeleton")
+            and t - self._last("skeleton") > 8
+        ):
             for b, d in self.threats_near(battle, cx, cy, 12):
-                if THREAT.get(b.key, 0) >= 5 and b.weapon.target is not None and not b.weapon.multi:
-                    self._use(battle, "skeleton", b.x + (cx - b.x) * 0.25, b.y + (cy - b.y) * 0.25)
+                if (
+                    THREAT.get(b.key, 0) >= 5
+                    and b.weapon.target is not None
+                    and not b.weapon.multi
+                ):
+                    self._use(
+                        battle,
+                        "skeleton",
+                        b.x + (cx - b.x) * 0.25,
+                        b.y + (cy - b.y) * 0.25,
+                    )
                     if single_cast:
                         return
                     break
@@ -2687,14 +3202,25 @@ class AttackPlan:
         if self.P("bat_on") > 0.5 and self._have("bat") and t - self._last("bat") > 6:
             hot = self.threats_near(battle, cx, cy, 10)
             if len(hot) >= 2:
-                self._use(battle, "bat", sum(b.x for b, _ in hot) / len(hot), sum(b.y for b, _ in hot) / len(hot))
+                self._use(
+                    battle,
+                    "bat",
+                    sum(b.x for b, _ in hot) / len(hot),
+                    sum(b.y for b, _ in hot) / len(hot),
+                )
                 if single_cast:
                     return
         th = battle.th
         # Earthquakes on the core walls between the push and the Town Hall
         d_core = self.P("eq_core_dist")
         n_eq = int(round(self.P("eq_core_n")))
-        if d_core > 2 and th is not None and th.alive and self.spells.get("eq", 0) >= n_eq and self._last("eq_core") < 0:
+        if (
+            d_core > 2
+            and th is not None
+            and th.alive
+            and self._unreserved_spells("eq") >= n_eq
+            and self._last("eq_core") < 0
+        ):
             if math.hypot(th.x - cx, th.y - cy) <= d_core + 4:
                 px, py = cx + (th.x - cx) * 0.6, cy + (th.y - cy) * 0.6
                 # Video: docs/VIDEO_MEASUREMENTS.md:31, pace the remaining quakes.
@@ -2707,28 +3233,45 @@ class AttackPlan:
                     return
         # distraction: one cleanup troop pulls a heavy defense off the push
         reach = self.P("distract_reach")
-        if reach > 2 and self._distracts < int(round(self.P("distract_max"))) and t - self._last("distract") > 3.0:
+        if (
+            reach > 2
+            and self._distracts < int(round(self.P("distract_max")))
+            and t - self._last("distract") > 3.0
+        ):
             for b, d in self.threats_near(battle, cx, cy, 16):
-                if THREAT.get(b.key, 0) >= self.P("distract_threat") and b.weapon.range < d <= b.weapon.range + reach:
+                if (
+                    THREAT.get(b.key, 0) >= self.P("distract_threat")
+                    and b.weapon.range < d <= b.weapon.range + reach
+                ):
                     name = self._spare_troop()
                     if name is None:
                         break
-                    x, y = self._snipe_point_xy(battle, b.x + (b.x - cx), b.y + (b.y - cy))  # far side of the defense
+                    x, y = self._snipe_point_xy(
+                        battle, b.x + (b.x - cx), b.y + (b.y - cy)
+                    )  # far side of the defense
                     self._drop(battle, name, x, y, "cleanup", jitter=0.3)
                     self._distracts += 1
                     self._cast_log.append((round(t, 1), "distract"))
                     break
 
     def _spare_troop(self):
+        # Wiki: Army Camp, fallback distractions spend the same undeployed stock
+        # as cited steps. cleanup describes roles; inventory owns playbook stock.
+        inventory = getattr(self, "inventory", None)
         for c in self.cleanup:
-            if c[1] > 0:
-                c[1] -= 1
+            left = c[1] if inventory is None else inventory.get(c[0], 0)
+            if left > 0:
+                c[1] = left - 1
+                if inventory is not None:
+                    inventory[c[0]] = left - 1
                 return c[0]
         return None
 
     def _snipe_point_xy(self, battle, x, y):
         if getattr(self, "_snipe_t", None) != battle.t:
-            self._snipe_pts = [edge_point(battle, 2 * math.pi * k / 64, 0.0) for k in range(64)] + battle.inside_spots()
+            self._snipe_pts = [
+                edge_point(battle, 2 * math.pi * k / 64, 0.0) for k in range(64)
+            ] + battle.inside_spots()
             self._snipe_t = battle.t
         return min(self._snipe_pts, key=lambda p: math.hypot(p[0] - x, p[1] - y))
 
@@ -2742,27 +3285,47 @@ class AttackPlan:
 # ==========================================================================
 def hydra(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
     """Dragons + Dragon Riders + mass Invisibility (3* 100% on the user)."""
-    camp = {16: [("Dragon", 8), ("Dragon Rider", 6)],
-            17: [("Dragon", 9), ("Dragon Rider", 6)],
-            18: [("Dragon", 9), ("Dragon Rider", 6), ("Minion", 6)]}[town_hall]
+    camp = {
+        16: [("Dragon", 8), ("Dragon Rider", 6)],
+        17: [("Dragon", 9), ("Dragon Rider", 6)],
+        18: [("Dragon", 9), ("Dragon Rider", 6), ("Minion", 6)],
+    }[town_hall]
     return AttackPlan(
-        angle=angle, town_hall=town_hall, seed=seed, label="Hydra (Dragons + Dragon Riders, mass Invisibility)",
+        angle=angle,
+        town_hall=town_hall,
+        seed=seed,
+        label="Hydra (Dragons + Dragon Riders, mass Invisibility)",
         funnel_heroes=[("Dragon Duke", -6.0), ("Royal Champion", 6.0)],
         flank=[("Baby Dragon", 1, -4.0)],
         main=[Wave("main", camp, spread=3.0)],
         push_heroes=["Grand Warden", "Minion Prince"],
         siege="Sky Wagon",
-        cc_troops=["Dragon", "Dragon", "Baby Dragon"] if town_hall == 16 else ["Super Dragon", "Inferno Dragon"],
+        cc_troops=(
+            ["Dragon", "Dragon", "Baby Dragon"]
+            if town_hall == 16
+            else ["Super Dragon", "Inferno Dragon"]
+        ),
         spells={"invis": 9, "revive": 1},
-        cc_spells={"freeze": 2, "invis": 1} if town_hall < 18 else {"freeze": 2, "invis": 2},
+        cc_spells=(
+            {"freeze": 2, "invis": 1} if town_hall < 18 else {"freeze": 2, "invis": 2}
+        ),
         ground=False,
         loadouts={
-            "Dragon Duke": L("Dragon Duke", ("Revenge Deck", "Rocket Backpack"), "Diggy"),
-            "Royal Champion": L("Royal Champion", ("Rocket Spear", "Electro Boots"), "Phoenix"),
-            "Grand Warden": L("Grand Warden", ("Eternal Tome", "Rage Gem"), "Electro Owl"),
-            "Minion Prince": L("Minion Prince", ("Meteor Staff", "Dark Orb"), "Angry Jelly"),
+            "Dragon Duke": L(
+                "Dragon Duke", ("Revenge Deck", "Rocket Backpack"), "Diggy"
+            ),
+            "Royal Champion": L(
+                "Royal Champion", ("Rocket Spear", "Electro Boots"), "Phoenix"
+            ),
+            "Grand Warden": L(
+                "Grand Warden", ("Eternal Tome", "Rage Gem"), "Electro Owl"
+            ),
+            "Minion Prince": L(
+                "Minion Prince", ("Meteor Staff", "Dark Orb"), "Angry Jelly"
+            ),
         },
-        main_min=10.0, main_max=20.0,
+        main_min=10.0,
+        main_max=20.0,
     )
 
 
@@ -2770,10 +3333,19 @@ def throwers(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
     if town_hall == 16:
         # 3* 100% on the user from a TH16
         return AttackPlan(
-            angle=angle, town_hall=town_hall, seed=seed, label="Mass Throwers + Healers (Log Launcher)",
+            angle=angle,
+            town_hall=town_hall,
+            seed=seed,
+            label="Mass Throwers + Healers (Log Launcher)",
             funnel_heroes=[("Barbarian King", -6.0), ("Dragon Duke", 6.0)],
             flank=[("Balloon", 2, 0.0)],
-            main=[Wave("main", [("Ice Golem", 2), ("Furnace", 1), ("Thrower", 11), ("Wizard", 2)], spread=2.5)],
+            main=[
+                Wave(
+                    "main",
+                    [("Ice Golem", 2), ("Furnace", 1), ("Thrower", 11), ("Wizard", 2)],
+                    spread=2.5,
+                )
+            ],
             support=[Wave("main", [("Healer", 5)], spread=1.0)],
             push_heroes=["Archer Queen", "Grand Warden"],
             cleanup=[("Archer", 4)],
@@ -2783,17 +3355,29 @@ def throwers(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
             spells={"totem": 4, "poison": 1, "freeze": 2, "revive": 2},
             cc_spells={"totem": 1, "freeze": 2},
             loadouts={
-                "Barbarian King": L("Barbarian King", ("Earthquake Boots", "Spiky Ball"), "Mighty Yak"),
-                "Archer Queen": L("Archer Queen", ("Giant Arrow", "Healer Puppet"), "Frosty"),
-                "Grand Warden": L("Grand Warden", ("Eternal Tome", "Rage Gem"), "Electro Owl"),
-                "Dragon Duke": L("Dragon Duke", ("Fire Heart", "Electro Fangs"), "Phoenix"),
+                "Barbarian King": L(
+                    "Barbarian King", ("Earthquake Boots", "Spiky Ball"), "Mighty Yak"
+                ),
+                "Archer Queen": L(
+                    "Archer Queen", ("Giant Arrow", "Healer Puppet"), "Frosty"
+                ),
+                "Grand Warden": L(
+                    "Grand Warden", ("Eternal Tome", "Rage Gem"), "Electro Owl"
+                ),
+                "Dragon Duke": L(
+                    "Dragon Duke", ("Fire Heart", "Electro Fangs"), "Phoenix"
+                ),
             },
-            main_min=8.0, main_max=18.0,
+            main_min=8.0,
+            main_max=18.0,
         )
     # 2* 94% on the user from a TH17: 17 Throwers, 4 Healers, 4 Invisibility
     n, archers = {17: (15, 9), 18: (16, 5)}[town_hall]
     return AttackPlan(
-        angle=angle, town_hall=town_hall, seed=seed, label="Mass Throwers + Healers (Log Launcher)",
+        angle=angle,
+        town_hall=town_hall,
+        seed=seed,
+        label="Mass Throwers + Healers (Log Launcher)",
         funnel_heroes=[("Royal Champion", -6.0), ("Dragon Duke", 6.0)],
         flank=[("Balloon", 4, 0.0)],
         main=[Wave("main", [("Ice Golem", 1), ("Thrower", n)], spread=3.0)],
@@ -2803,35 +3387,61 @@ def throwers(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
         siege="Log Launcher",
         cc_troops=["Thrower", "Thrower", "Thrower", "Balloon", "Wall Breaker"],
         spells={"invis": 4, "freeze": 2, "totem": 3, "revive": 1},
-        cc_spells={"totem": 2, "freeze": 1} if town_hall == 17 else {"totem": 2, "freeze": 2},
+        cc_spells=(
+            {"totem": 2, "freeze": 1} if town_hall == 17 else {"totem": 2, "freeze": 2}
+        ),
         loadouts={
-            "Archer Queen": L("Archer Queen", ("Healer Puppet", "Magic Mirror"), "Mighty Yak"),
-            "Grand Warden": L("Grand Warden", ("Healing Tome", "Eternal Tome"), "Sneezy"),
-            "Royal Champion": L("Royal Champion", ("Electro Boots", "Rocket Spear"), "Unicorn"),
-            "Dragon Duke": L("Dragon Duke", ("Electro Fangs", "Rocket Backpack"), "Phoenix"),
+            "Archer Queen": L(
+                "Archer Queen", ("Healer Puppet", "Magic Mirror"), "Mighty Yak"
+            ),
+            "Grand Warden": L(
+                "Grand Warden", ("Healing Tome", "Eternal Tome"), "Sneezy"
+            ),
+            "Royal Champion": L(
+                "Royal Champion", ("Electro Boots", "Rocket Spear"), "Unicorn"
+            ),
+            "Dragon Duke": L(
+                "Dragon Duke", ("Electro Fangs", "Rocket Backpack"), "Phoenix"
+            ),
         },
-        main_min=8.0, main_max=18.0,
+        main_min=8.0,
+        main_max=18.0,
     )
 
 
 def edrag(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
     """Electro Dragons + Clone/Haste (3* 100% on the user from a TH17)."""
-    camp = {16: [("Electro Dragon", 10), ("Balloon", 2)],
-            17: [("Electro Dragon", 11), ("Balloon", 2)],
-            18: [("Electro Dragon", 11), ("Minion", 6)]}[town_hall]
+    camp = {
+        16: [("Electro Dragon", 10), ("Balloon", 2)],
+        17: [("Electro Dragon", 11), ("Balloon", 2)],
+        18: [("Electro Dragon", 11), ("Minion", 6)],
+    }[town_hall]
     return AttackPlan(
-        angle=angle, town_hall=town_hall, seed=seed, label="Electro Dragon spam (Clone + Haste)",
+        angle=angle,
+        town_hall=town_hall,
+        seed=seed,
+        label="Electro Dragon spam (Clone + Haste)",
         funnel_heroes=[("Barbarian King", -6.0), ("Archer Queen", 6.0)],
         flank=[("Baby Dragon", 1, -3.0)] if town_hall != 17 else [],
         main=[Wave("main", camp, spread=6.0)],
         push_heroes=["Grand Warden", "Minion Prince"],
         siege="Log Launcher",
-        cc_troops=["Super Witch", "Balloon", "Balloon"] if town_hall == 16 else ["Super Witch", "Super Hog Rider", "Sneaky Goblin"],
+        cc_troops=(
+            ["Super Witch", "Balloon", "Balloon"]
+            if town_hall == 16
+            else ["Super Witch", "Super Hog Rider", "Sneaky Goblin"]
+        ),
         spells={"clone": 3, "haste": 2},
-        cc_spells={"eq": 1, "freeze": 1, "haste": 1} if town_hall < 18 else {"eq": 1, "freeze": 2, "haste": 1},
+        cc_spells=(
+            {"eq": 1, "freeze": 1, "haste": 1}
+            if town_hall < 18
+            else {"eq": 1, "freeze": 2, "haste": 1}
+        ),
         ground=False,
         loadouts={
-            "Barbarian King": L("Barbarian King", ("Spiky Ball", "Snake Bracelet"), "Spirit Fox"),
+            "Barbarian King": L(
+                "Barbarian King", ("Spiky Ball", "Snake Bracelet"), "Spirit Fox"
+            ),
             # Wiki: Greedy Raven, requires TH18; lower THs use the Queen's default pet.
             "Archer Queen": L(
                 "Archer Queen",
@@ -2842,10 +3452,15 @@ def edrag(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
                     else heroes.DEFAULT_LOADOUTS["Archer Queen"].pet
                 ),
             ),
-            "Grand Warden": L("Grand Warden", ("Eternal Tome", "Life Gem"), "Electro Owl"),
-            "Minion Prince": L("Minion Prince", ("Meteor Staff", "Dark Orb"), "Angry Jelly"),
+            "Grand Warden": L(
+                "Grand Warden", ("Eternal Tome", "Life Gem"), "Electro Owl"
+            ),
+            "Minion Prince": L(
+                "Minion Prince", ("Meteor Staff", "Dark Orb"), "Angry Jelly"
+            ),
         },
-        main_min=5.0, main_max=12.0,
+        main_min=5.0,
+        main_max=12.0,
     )
 
 
@@ -2854,26 +3469,53 @@ def root_riders(angle=0.0, town_hall=18, seed=0) -> AttackPlan:
     rr = {16: 4, 17: 5, 18: 5}[town_hall]
     minions = {16: 6, 17: 6, 18: 12}[town_hall]
     return AttackPlan(
-        angle=angle, town_hall=town_hall, seed=seed, label="Root Riders + Valkyries (Siege Barracks)",
+        angle=angle,
+        town_hall=town_hall,
+        seed=seed,
+        label="Root Riders + Valkyries (Siege Barracks)",
         funnel_heroes=[("Royal Champion", -6.0), ("Dragon Duke", 6.0)],
         flank=[("Rocket Balloon", 4, -4.0), ("Balloon", 2, 4.0)],
-        main=[Wave("main", [("Ice Golem", 2), ("Root Rider", rr), ("Valkyrie", 8)], spread=2.0)],
+        main=[
+            Wave(
+                "main",
+                [("Ice Golem", 2), ("Root Rider", rr), ("Valkyrie", 8)],
+                spread=2.0,
+            )
+        ],
         support=[Wave("main", [("Healer", 5), ("Apprentice Warden", 1)], spread=1.0)],
         push_heroes=["Archer Queen", "Grand Warden"],
         cleanup=[("Minion", minions), ("Archer", 2)],
         siege="Siege Barracks",
-        cc_troops=["Super Hog Rider"] * 4 + ["Minion"] if town_hall == 16 else ["Super Hog Rider"] * 4 + ["Minion"] * 3 + ["Archer"],
+        cc_troops=(
+            ["Super Hog Rider"] * 4 + ["Minion"]
+            if town_hall == 16
+            else ["Super Hog Rider"] * 4 + ["Minion"] * 3 + ["Archer"]
+        ),
         spells={"invis": 5, "recall": 1, "freeze": 1, "poison": 1, "overgrowth": 1},
-        cc_spells={"rage": 1, "totem": 1} if town_hall < 18 else {"rage": 1, "totem": 2},
+        cc_spells=(
+            {"rage": 1, "totem": 1} if town_hall < 18 else {"rage": 1, "totem": 2}
+        ),
         loadouts={
-            "Royal Champion": L("Royal Champion", ("Rocket Spear", "Electro Boots"), "Unicorn"),
+            "Royal Champion": L(
+                "Royal Champion", ("Rocket Spear", "Electro Boots"), "Unicorn"
+            ),
             "Dragon Duke": L("Dragon Duke", ("Revenge Deck", "Fire Heart"), "Phoenix"),
-            "Archer Queen": L("Archer Queen", ("Action Figure", "Giant Arrow"), "Frosty"),
-            "Grand Warden": L("Grand Warden", ("Eternal Tome", "Rage Gem"), "Poison Lizard"),
+            "Archer Queen": L(
+                "Archer Queen", ("Action Figure", "Giant Arrow"), "Frosty"
+            ),
+            "Grand Warden": L(
+                "Grand Warden", ("Eternal Tome", "Rage Gem"), "Poison Lizard"
+            ),
         },
-        main_min=8.0, main_max=18.0,
+        main_min=8.0,
+        main_max=18.0,
     )
 
 
-ARMIES = {"hydra": hydra, "throwers": throwers, "edrag": edrag, "rootrider": root_riders}
+ARMIES = {
+    "hydra": hydra,
+    "throwers": throwers,
+    "edrag": edrag,
+    "rootrider": root_riders,
+}
 META_WEIGHTS = {"hydra": 0.271, "throwers": 0.260, "edrag": 0.115, "rootrider": 0.097}

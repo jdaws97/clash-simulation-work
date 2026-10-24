@@ -753,19 +753,12 @@
    "at": "building:inferno",
    "group": "main",
    "when": {
-    "all": [
+    "any": [
      {
-      "group_inside": "main"
+      "heavy_fire": "Dragon"
      },
      {
-      "any": [
-       {
-        "heavy_fire": "Dragon"
-       },
-       {
-        "heavy_fire": "Dragon Rider"
-       }
-      ]
+      "heavy_fire": "Dragon Rider"
      }
     ]
    },

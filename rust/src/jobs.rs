@@ -1,25 +1,23 @@
-//! Task 5 CLI: shared prepared inputs, thread-local battles, ordered results.
+//! CLI adapters for prepared jobs, setup comparison and battle traces.
 
-use std::any::Any;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
 use crate::catalog::Catalog;
-use crate::field_profile;
 use crate::json::{self, Json};
 use crate::load::{self, Node};
+use crate::runner::{Job, PreparedInputs, RunError, Runner};
 use crate::setup;
 use crate::state::Battle;
 use crate::trace;
 
 fn read(path: &Path) -> Result<Json, String> {
-    let text = std::fs::read_to_string(path)
-        .map_err(|error| format!("{}: {error}", path.display()))?;
+    let text =
+        std::fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
     json::parse(&text).map_err(|error| format!("{}: {error}", path.display()))
 }
 
@@ -29,16 +27,11 @@ fn build_job(input: &Json, index: usize, catalog: Arc<Catalog>) -> Battle {
     let job = jobs
         .get(index)
         .unwrap_or_else(|| panic!("job index {index} outside {} jobs", jobs.len()));
-    let layout_index = Node::new(job.at("layout"), "job.layout").usize();
-    let plan_index = Node::new(job.at("plan"), "job.plan").usize();
-    let layout = input.at("layouts").arr().get(layout_index)
-        .expect("job layout index out of range");
-    let plan = input.at("plans").arr().get(plan_index)
-        .expect("job plan index out of range");
-    if field_profile::enabled() {
-        field_profile::set_layout(layout_index);
-    }
-    setup::build(layout, plan, job, catalog)
+    let inputs = PreparedInputs::new(
+        input.at("layouts").arr().to_vec(),
+        input.at("plans").arr().to_vec(),
+    );
+    Runner::new(catalog, inputs).build(&Job::from_json(job))
 }
 
 pub fn command(command: &str, paths: &[PathBuf], catalog: Arc<Catalog>) -> Result<(), String> {
@@ -78,123 +71,56 @@ pub fn command(command: &str, paths: &[PathBuf], catalog: Arc<Catalog>) -> Resul
             out.flush().map_err(|error| error.to_string())
         }
         "jobs" if paths.len() == 2 || paths.len() == 4 => {
-            let threads = if paths.len() == 4 {
-                if paths[2].as_os_str() != "--threads" {
-                    return Err("expected --threads N".to_owned());
-                }
-                paths[3]
-                    .to_str()
-                    .ok_or("invalid thread count")?
-                    .parse::<usize>()
-                    .map_err(|_| "invalid thread count")?
-            } else {
-                std::thread::available_parallelism().map_or(1, |value| value.get())
-            };
-            if threads == 0 {
-                return Err("thread count must be positive".to_owned());
-            }
+            let threads = thread_count(paths, 2)?;
             run(&read(&paths[0])?, &paths[1], threads, catalog)
         }
-        _ => Err("usage: setup-check <battle.json> <job.json> | trace-job <jobs.json> <k> <trace.txt> | jobs <jobs.json> <results.jsonl> [--threads N]".to_owned()),
+        "bench-runner" if paths.len() == 1 || paths.len() == 3 => {
+            let threads = thread_count(paths, 1)?;
+            let inputs = PreparedInputs::load(&paths[0])?;
+            bench(&Runner::new(catalog, inputs), threads)
+        }
+        _ => Err("usage: setup-check <battle.json> <job.json> | trace-job <jobs.json> <k> <trace.txt> | jobs <jobs.json> <results.jsonl> [--threads N] | bench-runner <jobs.json> [--threads N]".to_owned()),
     }
 }
 
-struct Metrics {
-    stars: usize,
-    destruction: usize,
-    th_destroyed: bool,
-    time: f64,
-    units_left: usize,
-}
-
-fn panic_message(error: Box<dyn Any + Send>) -> String {
-    if let Some(message) = error.downcast_ref::<String>() {
-        message.clone()
-    } else if let Some(message) = error.downcast_ref::<&str>() {
-        (*message).to_owned()
+fn thread_count(paths: &[PathBuf], required: usize) -> Result<usize, String> {
+    let threads = if paths.len() == required + 2 {
+        if paths[required].as_os_str() != "--threads" {
+            return Err("expected --threads N".to_owned());
+        }
+        paths[required + 1]
+            .to_str()
+            .ok_or("invalid thread count")?
+            .parse::<usize>()
+            .map_err(|_| "invalid thread count")?
     } else {
-        "battle panicked".to_owned()
+        std::thread::available_parallelism().map_or(1, |value| value.get())
+    };
+    if threads == 0 {
+        return Err("thread count must be positive".to_owned());
     }
+    Ok(threads)
+}
+
+fn report_error(error: RunError) -> String {
+    if let RunError::Jobs(failures) = &error {
+        for failure in failures {
+            eprintln!("job {}: {}", failure.index, failure.message);
+        }
+    }
+    error.to_string()
 }
 
 fn run(input: &Json, output: &Path, threads: usize, catalog: Arc<Catalog>) -> Result<(), String> {
-    Node::new(input, "jobs").keys(&["layouts", "plans", "jobs"]);
-    let count = input.at("jobs").arr().len();
-    let counter = AtomicUsize::new(0);
-    let profiling = field_profile::enabled().then(field_profile::Session::default);
+    let runner = Runner::new(catalog, PreparedInputs::from_json(input));
+    let jobs = &runner.inputs().jobs;
+    let count = jobs.len();
     let started = Instant::now();
-    // Json inputs and the catalog are shared read-only. Rc plan vectors and all
-    // mutable simulation state are created and dropped within their worker.
-    let batches = std::thread::scope(|scope| {
-        let mut handles = Vec::new();
-        for _ in 0..threads.min(count) {
-            let catalog = &catalog;
-            let counter = &counter;
-            let profiling = &profiling;
-            handles.push(scope.spawn(move || {
-                let mut results = Vec::new();
-                loop {
-                    let index = counter.fetch_add(1, Ordering::Relaxed);
-                    if index >= count {
-                        break;
-                    }
-                    if profiling.is_some() {
-                        field_profile::begin_job(index);
-                    }
-                    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        let mut battle = build_job(input, index, Arc::clone(catalog));
-                        if profiling.is_some() {
-                            field_profile::begin_battle();
-                        }
-                        let result = battle.run();
-                        if profiling.is_some() {
-                            field_profile::end_battle();
-                        }
-                        Metrics {
-                            stars: result.stars,
-                            destruction: result.destruction,
-                            th_destroyed: result.th_destroyed,
-                            time: result.time,
-                            units_left: result.units_left,
-                        }
-                    }))
-                    .map_err(panic_message);
-                    if let Some(profiling) = profiling {
-                        profiling.finish_job(result.is_err());
-                    }
-                    results.push((index, result));
-                }
-                results
-            }));
-        }
-        handles
-            .into_iter()
-            .map(|handle| handle.join().map_err(panic_message))
-            .collect::<Result<Vec<_>, _>>()
-    })?;
+    let results = runner.run(jobs, threads).map_err(report_error)?;
     let elapsed = started.elapsed().as_secs_f64();
-    let mut results: Vec<Option<Metrics>> = (0..count).map(|_| None).collect();
-    let mut failures = Vec::new();
-    for batch in batches {
-        for (index, result) in batch {
-            match result {
-                Ok(result) => results[index] = Some(result),
-                Err(error) => failures.push((index, error)),
-            }
-        }
-    }
-    failures.sort_by_key(|(index, _)| *index);
-    if !failures.is_empty() {
-        for (index, error) in &failures {
-            eprintln!("job {index}: {error}");
-        }
-        return Err(format!("{} jobs failed", failures.len()));
-    }
-    let file = File::create(output)
-        .map_err(|error| format!("{}: {error}", output.display()))?;
+    let file = File::create(output).map_err(|error| format!("{}: {error}", output.display()))?;
     let mut out = BufWriter::new(file);
     for (index, result) in results.into_iter().enumerate() {
-        let result = result.expect("worker omitted a job");
         writeln!(
             out,
             "{{\"job\":{index},\"stars\":{},\"destruction\":{},\"th_destroyed\":{},\"time\":{},\"units_left\":{}}}",
@@ -211,6 +137,20 @@ fn run(input: &Json, output: &Path, threads: usize, catalog: Arc<Catalog>) -> Re
         "battles={count} wall_seconds={elapsed:.6} battles_per_second={:.3}",
         count as f64 / elapsed,
     );
+    Ok(())
+}
+
+fn bench(runner: &Runner, threads: usize) -> Result<(), String> {
+    let jobs = &runner.inputs().jobs;
+    let started = Instant::now();
+    let first = runner.run(jobs, threads).map_err(report_error)?;
+    let first_elapsed = started.elapsed().as_secs_f64();
+    let started = Instant::now();
+    let second = runner.run(jobs, threads).map_err(report_error)?;
+    let second_elapsed = started.elapsed().as_secs_f64();
+    println!("run=1 battles={} wall_seconds={first_elapsed:.6}", jobs.len());
+    println!("run=2 battles={} wall_seconds={second_elapsed:.6}", jobs.len());
+    println!("identical={}", first == second);
     Ok(())
 }
 

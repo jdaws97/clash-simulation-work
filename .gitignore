@@ -19,3 +19,4 @@ output/
 data/wiki/
 data/*-pre-*.json
 .claude/worktrees/
+rust/target-*/

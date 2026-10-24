@@ -1190,7 +1190,7 @@ impl AttackPlan {
                 .find(|b| b.key == "cc" && b.alive)
                 .map(|b| (b.x, b.y));
             if let Some((x, y)) = cc {
-                if let Some(name) = self.spare_troop() {
+                if let Some(name) = self.spare_troop(None) {
                     let (x, y) = self.snipe_point(battle, x, y);
                     self.drop(battle, &name, x, y, "cleanup", 0.2);
                     self.cast_log.push((round_decimal(t, 1), "lure".to_owned()));
@@ -1255,10 +1255,24 @@ impl AttackPlan {
     }
 
     // plans.py:1411-1417: consume the first positive cleanup reserve.
-    fn spare_troop(&mut self) -> Option<String> {
-        let entry = self.cleanup.iter_mut().find(|(_, n)| *n > 0)?;
-        entry.1 -= 1;
-        Some(entry.0.clone())
+    fn spare_troop(
+        &mut self,
+        mut inventory: Option<&mut Vec<(String, i64)>>,
+    ) -> Option<String> {
+        // Wiki: Army Camp, playbook fallbacks spend its shared undeployed stock.
+        for entry in self.cleanup.iter_mut() {
+            let left = inventory
+                .as_deref()
+                .map_or(entry.1, |stock| count(stock, &entry.0));
+            if left > 0 {
+                entry.1 = left - 1;
+                if let Some(stock) = inventory.as_deref_mut() {
+                    set(stock, entry.0.clone(), left - 1);
+                }
+                return Some(entry.0.clone());
+            }
+        }
+        None
     }
 
     // plans.py:817-825: first maximum over the sixteen candidate edges.
@@ -1563,7 +1577,7 @@ impl AttackPlan {
         if have(self, "jump") {
             self.use_spell(battle, "jump", w.x, w.y);
             self.cast_log.push((round_decimal(battle.t, 1), "breach".to_owned()));
-        } else if count(&self.spells, "eq") >= 4 {
+        } else if have(self, "eq") && self.unreserved_spells("eq", self.fallback) >= 4 {
             if single_cast {
                 self.fallback_quakes = vec![(w.x, w.y); 3].into();
             }
@@ -1619,7 +1633,7 @@ impl AttackPlan {
         battle: &mut Battle,
         units: &[UnitRef],
         have: &impl Fn(&Self, &str) -> bool,
-        inventory: Option<&mut Vec<(String, i64)>>,
+        mut inventory: Option<&mut Vec<(String, i64)>>,
         single_cast: bool,
         _lightning_reserved: i64,
     ) {
@@ -1639,7 +1653,7 @@ impl AttackPlan {
         let t = battle.t;
         if t - self.last("breach") > 3.0 {
             let before = self.cast_log.len();
-            self.breach(battle, units, have, inventory, single_cast);
+            self.breach(battle, units, have, inventory.as_deref_mut(), single_cast);
             if single_cast && self.cast_log.len() > before {
                 return;
             }
@@ -1829,7 +1843,7 @@ impl AttackPlan {
                 }
             }
         }
-        self.learned_plays(battle, units, cx, cy, have, single_cast);
+        self.learned_plays(battle, units, cx, cy, have, inventory, single_cast);
     }
 
     // plans.py:1133-1190: learned casts share the one-action fallback limit.
@@ -1840,6 +1854,7 @@ impl AttackPlan {
         cx: f64,
         cy: f64,
         have: &impl Fn(&Self, &str) -> bool,
+        mut inventory: Option<&mut Vec<(String, i64)>>,
         single_cast: bool,
     ) {
         let t = battle.t;
@@ -1897,7 +1912,8 @@ impl AttackPlan {
         let d_core = self.p("eq_core_dist");
         let n_eq = round_half_even(self.p("eq_core_n")) as i64;
         if d_core > 2.0
-            && count(&self.spells, "eq") >= n_eq
+            && have(self, "eq")
+            && self.unreserved_spells("eq", self.fallback) >= n_eq
             && self.last("eq_core") < 0.0 {
             if let Some(th) = battle.th.map(|id| battle.building(id)).filter(|b| b.alive) {
                 if th.dist(cx, cy) <= d_core + 4.0 {
@@ -1927,7 +1943,7 @@ impl AttackPlan {
                     && w.range < d
                     && d <= w.range + reach {
                     let (x, y) = (b.x + (b.x - cx), b.y + (b.y - cy));
-                    let Some(name) = self.spare_troop() else {
+                    let Some(name) = self.spare_troop(inventory.as_deref_mut()) else {
                         break;
                     };
                     let point = self.snipe_point(battle, x, y);

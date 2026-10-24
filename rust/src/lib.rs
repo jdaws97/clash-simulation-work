@@ -1,0 +1,34 @@
+//! Battle engine and reusable prepared-job runner (std only).
+
+pub mod ai;
+pub mod battle;
+pub mod catalog;
+pub mod combat;
+pub mod defense;
+pub mod effects;
+pub mod fast_hash;
+mod field_profile;
+pub mod geom;
+pub mod grid;
+pub mod heroes;
+pub mod jobs;
+pub mod json;
+pub mod labels;
+pub mod load;
+pub mod movement;
+pub mod pets;
+pub mod plans;
+pub mod playbook;
+pub mod pyrandom;
+pub mod runner;
+pub mod setup;
+pub mod shared;
+pub mod source;
+pub mod spells;
+pub mod state;
+pub mod stats;
+pub mod trace;
+pub mod traps;
+pub mod units;
+
+pub use runner::{Job, JobFailure, JobResult, PreparedInputs, RunError, Runner, SummaryHook};

@@ -87,7 +87,9 @@ def _fill_missing_cc(builds):
         ]
         if not donors:
             continue
-        donor = min(donors, key=lambda d: (abs(d["th"] - b["th"]), -d["th"], d["build"]))
+        donor = min(
+            donors, key=lambda d: (abs(d["th"] - b["th"]), -d["th"], d["build"])
+        )
         cc, room = {}, CC_SPELLS.get(b["th"], 3)
         for name, count in donor["cc"].items():
             if name in SPELL_KEYS:
@@ -111,11 +113,22 @@ def compose(build: dict, angle: float = 0.0, seed: int = 0) -> AttackPlan:
     th = build["th"]
     troops = dict(build["troops"])
     cc = dict(build.get("cc", {}))
-    siege = next((n for n in troops if n in SIEGES), None)
+    # Wiki: Army Camp / Clan Castle, reject malformed stocks before expanding
+    # counts or assigning roles; normalization must not erase illegal inputs.
+    for stock in (troops, cc, build["spells"]):
+        for name, count in stock.items():
+            if type(count) is not int or count < 0:
+                raise ValueError(f"Invalid count for {name}: {count}")
+    heroes = list(build["heroes"])
+    if len(set(heroes)) != len(heroes):
+        raise ValueError("Duplicate heroes in build")
+    if any(hero not in HEROES for hero in heroes):
+        raise ValueError("Unknown hero in build")
+    siege = next((n for n, count in troops.items() if n in SIEGES and count), None)
     if siege:
         troops.pop(siege)
     else:
-        siege = next((n for n in cc if n in SIEGES), None)
+        siege = next((n for n, count in cc.items() if n in SIEGES and count), None)
     cc_troops = []
     cc_spells = {}
     for n, c in cc.items():
@@ -128,9 +141,10 @@ def compose(build: dict, angle: float = 0.0, seed: int = 0) -> AttackPlan:
     spells = {}
     for n, c in build["spells"].items():
         spells[SPELL_KEYS[n]] = spells.get(SPELL_KEYS[n], 0) + c
-    heroes = [h for h in build["heroes"] if h in HEROES]
-    funnel = build.get("funnel") or [h for h in FUNNEL_ORDER if h in heroes][:2]
-    push = build.get("push") or [h for h in heroes if h not in funnel]
+    funnel = build.get("funnel", [h for h in FUNNEL_ORDER if h in heroes][:2])
+    push = build.get("push", [h for h in heroes if h not in funnel])
+    if sorted(list(funnel) + list(push)) != sorted(heroes):
+        raise ValueError("Hero roles must assign each build hero exactly once")
     flank, main, support, cleanup, breakers = [], [], [], [], []
     bulk = (
         max(
@@ -254,6 +268,8 @@ def _loadouts(build, heroes):
 
     out = {h: DEFAULT_LOADOUTS[h] for h in heroes if h in DEFAULT_LOADOUTS}
     for h, spec in (build.get("loadouts") or {}).items():
+        if len(spec) > 3:
+            raise ValueError(f"Too many loadout entries for {h}: {len(spec)}")
         # replay_log.to_build pads a hero shown with fewer items with None.
         out[h] = HeroLoadout(
             h, tuple(e for e in spec[:2] if e), spec[2] if len(spec) > 2 else None

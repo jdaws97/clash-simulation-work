@@ -98,7 +98,9 @@ class PlaybookPlan(AttackPlan):
     _next: dict = field(default_factory=dict)  # repeating step id -> next time
     _cancelled: set = field(default_factory=set)  # skipped or stopped step ids
     _hurt: dict = field(default_factory=dict)  # unit id -> [(t, hp)]
-    _no_target: dict = field(default_factory=dict)  # step id -> time it was first ready with no target
+    _no_target: dict = field(
+        default_factory=dict
+    )  # step id -> time it was first ready with no target
     log_steps: list = field(default_factory=list)
 
     # the battle asks for initial deployments; everything here is dynamic
@@ -112,7 +114,12 @@ class PlaybookPlan(AttackPlan):
         for step in self.steps:
             if step["action"] == "deploy" and step.get("what") in opened:
                 self._done.setdefault(step["id"], opened[step["what"]])
-                self.log_steps.append((round(opened[step["what"]], 1), step["id"] + " (opened on a snipe)"))
+                self.log_steps.append(
+                    (
+                        round(opened[step["what"]], 1),
+                        step["id"] + " (opened on a snipe)",
+                    )
+                )
         for deployment in out:
             if deployment.name not in heroes.HEROES:
                 self.inventory[deployment.name] -= 1
@@ -262,7 +269,11 @@ class PlaybookPlan(AttackPlan):
         return None
 
     def _group(self, battle, g):
-        return [u for u in battle.attackers if u.alive and u.group == g and u.name != "Totem" and u.kind != "pet"]
+        return [
+            u
+            for u in battle.attackers
+            if u.alive and u.group == g and u.name != "Totem" and u.kind != "pet"
+        ]
 
     def anchor(self, battle, at, *, unclaimed=False):
         # Wiki: Rocket Spear, spell targets exclude a defense with lethal damage claimed.
@@ -281,7 +292,11 @@ class PlaybookPlan(AttackPlan):
             u = self._unit(battle, arg)
             if u is None:
                 return None
-            tgt = u.target if u.target is not None and getattr(u.target, "alive", False) else None
+            tgt = (
+                u.target
+                if u.target is not None and getattr(u.target, "alive", False)
+                else None
+            )
             if tgt is None:
                 return (u.x, u.y)
             dx, dy = tgt.x - u.x, tgt.y - u.y
@@ -292,7 +307,11 @@ class PlaybookPlan(AttackPlan):
             g = self._group(battle, arg)
             return self.centroid(g) if g else None
         if kind == "th":
-            return (battle.th.x, battle.th.y) if battle.th is not None and battle.th.alive else None
+            return (
+                (battle.th.x, battle.th.y)
+                if battle.th is not None and battle.th.alive
+                else None
+            )
         if kind == "threat":
             g = self._group(battle, arg) or self._group(battle, "main")
             if not g:
@@ -318,11 +337,25 @@ class PlaybookPlan(AttackPlan):
             if not g:
                 return None
             cx, cy = self.centroid(g)
-            d = [u for u in battle.defenders if u.alive and u.target is not None and math.hypot(u.x - cx, u.y - cy) <= 8.0]
+            d = [
+                u
+                for u in battle.defenders
+                if u.alive
+                and u.target is not None
+                and math.hypot(u.x - cx, u.y - cy) <= 8.0
+            ]
             return self.centroid(d) if d else None
         if kind == "building":
             g = self._group(battle, "main") or [u for u in battle.attackers if u.alive]
-            cx, cy = self.centroid(g) if g else (battle.th.x, battle.th.y) if battle.th is not None else (WORLD / 2, WORLD / 2)
+            cx, cy = (
+                self.centroid(g)
+                if g
+                else (
+                    (battle.th.x, battle.th.y)
+                    if battle.th is not None
+                    else (WORLD / 2, WORLD / 2)
+                )
+            )
             pool = [
                 b
                 for b in battle.buildings
@@ -394,14 +427,21 @@ class PlaybookPlan(AttackPlan):
         tile within 2 is a no-drop tile), not just standing on the red line."""
         blocked = battle._live_no_deploy()
         x, y = int(u.x), int(u.y)
-        return all((x + dx, y + dy) in blocked for dx in (-2, 0, 2) for dy in (-2, 0, 2))
+        return all(
+            (x + dx, y + dy) in blocked for dx in (-2, 0, 2) for dy in (-2, 0, 2)
+        )
 
     def _heavy_fire(self, battle, u, frac):
         hist = self._hurt.get(u.id, [])
         recent = [h for t, h in hist if battle.t - t <= 2.0]
         lost = (max(recent) - u.hp) if recent else 0.0
-        locked = any(b.alive and b.weapon is not None and (b.weapon.target is u or u in (getattr(b.weapon, "multi", None) or []))
-                     and THREAT.get(b.key, 0) >= 4 for b in battle.buildings)
+        locked = any(
+            b.alive
+            and b.weapon is not None
+            and (b.weapon.target is u or u in (getattr(b.weapon, "multi", None) or []))
+            and THREAT.get(b.key, 0) >= 4
+            for b in battle.buildings
+        )
         return lost >= frac * u.max_hp or locked
 
     def _down(self, battle, name):
@@ -435,8 +475,14 @@ class PlaybookPlan(AttackPlan):
     def _fallen(self, battle, names=()):
         """The most recently knocked-out hero a Revive Spell can bring back
         (one of `names` when given)."""
-        fallen = [u for u in battle.attackers if u.is_hero and not u.alive and u.extra.get("revivable")
-                  and (not names or u.name in names)]
+        fallen = [
+            u
+            for u in battle.attackers
+            if u.is_hero
+            and not u.alive
+            and u.extra.get("revivable")
+            and (not names or u.name in names)
+        ]
         return max(fallen, key=lambda u: u.extra.get("ko_at", 0.0), default=None)
 
     def _revive_names(self, s):
@@ -486,8 +532,14 @@ class PlaybookPlan(AttackPlan):
                 return False
             if sum(self._inside(battle, u) for u in g) >= max(1, len(g) // 2):
                 return True
-            engaged = sum(1 for u in g if u.target is not None and getattr(u.target, "alive", False)
-                          and not isinstance(u.target, type(u)) and u.cooldown > 0)
+            engaged = sum(
+                1
+                for u in g
+                if u.target is not None
+                and getattr(u.target, "alive", False)
+                and not isinstance(u.target, type(u))
+                and u.cooldown > 0
+            )
             key = "engaged_since:" + w["group_inside"]
             if engaged >= max(1, len(g) // 2):
                 since = self._hurt.setdefault(key, battle.t)
@@ -499,7 +551,9 @@ class PlaybookPlan(AttackPlan):
             if not g or battle.th is None:
                 return False
             cx, cy = self.centroid(g)
-            return not battle.th.alive or math.hypot(cx - battle.th.x, cy - battle.th.y) <= w.get("r", 8.0)
+            return not battle.th.alive or math.hypot(
+                cx - battle.th.x, cy - battle.th.y
+            ) <= w.get("r", 8.0)
         if "heavy_fire" in w:
             # any unit of that name under heavy fire (several Throwers, etc.)
             # Wiki: Magic Mirror, a clone is separate from the real Hero.
@@ -514,7 +568,9 @@ class PlaybookPlan(AttackPlan):
             u = self._unit(battle, w["hp_below"])
             return u is not None and u.hp < w.get("frac", 0.5) * u.max_hp
         if "spells_left" in w:
-            return self.spells.get(SPELL_KEYS.get(w["spells_left"], w["spells_left"]), 0) <= w.get("n", 0)
+            return self.spells.get(
+                SPELL_KEYS.get(w["spells_left"], w["spells_left"]), 0
+            ) <= w.get("n", 0)
         if "dead" in w:
             # knocked out, not recalled into the portal stash
             # Wiki: Magic Mirror, only the real Queen satisfies named-Hero checks.
@@ -567,7 +623,12 @@ class PlaybookPlan(AttackPlan):
         at = str(s.get("at", ""))
         # Video: docs/VIDEO_MEASUREMENTS.md:30 -> 0.133 s between held troops.
         tap = PACE_TAP * float(os.environ.get("BASELAB_PACE", "1.0"))
-        if at.startswith("edge:") and n >= 3 and "spread" not in s and what not in LINE_EXEMPT:
+        if (
+            at.startswith("edge:")
+            and n >= 3
+            and "spread" not in s
+            and what not in LINE_EXEMPT
+        ):
             # several troops at an edge are dragged in a line along the
             # deploy border (about a tile apart, at most 8 tiles wide), not
             # stacked on one tile
@@ -784,8 +845,11 @@ class PlaybookPlan(AttackPlan):
         the Warden fires it once that defense is within the blast radius of
         the building. The step waits until then; if the building is gone it
         fires normally."""
-        tgt = min((b for b in battle.buildings if b.alive and b.key == key),
-                  key=lambda b: math.hypot(b.x - u.x, b.y - u.y), default=None)
+        tgt = min(
+            (b for b in battle.buildings if b.alive and b.key == key),
+            key=lambda b: math.hypot(b.x - u.x, b.y - u.y),
+            default=None,
+        )
         if tgt is None:
             if u.kit.has("Fireball") or (
                 u.name == "Royal Champion"
@@ -853,7 +917,9 @@ class PlaybookPlan(AttackPlan):
             k = "recall" if act == "recall" else SPELL_KEYS.get(what)
             if k is not None and self.spells.get(k, 0) <= 0:
                 return "no " + SPELL_NAMES[k] + " left"
-            if at.startswith("building:") and not any(b.alive and b.key == at[9:] for b in battle.buildings):
+            if at.startswith("building:") and not any(
+                b.alive and b.key == at[9:] for b in battle.buildings
+            ):
                 return at[9:] + " gone"
             if at == "th" and (battle.th is None or not battle.th.alive):
                 return "Town Hall gone"
@@ -873,7 +939,11 @@ class PlaybookPlan(AttackPlan):
             ):
                 return "ad gone"
         elif act == "redeploy":
-            if not battle.portal_stash and self.spells.get("recall", 0) <= 0 and battle.t - self._last("recall") > 5.0:
+            if (
+                not battle.portal_stash
+                and self.spells.get("recall", 0) <= 0
+                and battle.t - self._last("recall") > 5.0
+            ):
                 return "nothing recalled"
         elif act == "release_siege":
             # Wiki: Siege Barracks, destruction already releases the Clan Castle troops.
@@ -903,7 +973,10 @@ class PlaybookPlan(AttackPlan):
                     h.append((t, u.hp))
                     if len(h) > 8:
                         del h[0]
-        alive = any(u.alive and u.name != "Totem" and u.kind not in ("pet", "siege_idle") for u in battle.attackers)
+        alive = any(
+            u.alive and u.name != "Totem" and u.kind not in ("pet", "siege_idle")
+            for u in battle.attackers
+        )
         if alive:
             self._last_alive = t
         stalled = t - getattr(self, "_last_alive", 0.0) > 3.0
@@ -925,7 +998,9 @@ class PlaybookPlan(AttackPlan):
                     # Wiki: Invisibility Spell, remaining copies can support other units.
                     self._done.setdefault(st["id"], t)
                     self._cancelled.add(st["id"])
-                    self.log_steps.append((round(t, 1), st["id"] + " (skipped: " + why + ")"))
+                    self.log_steps.append(
+                        (round(t, 1), st["id"] + " (skipped: " + why + ")")
+                    )
         # Wiki: Lightning Spell, remove defenses to pave the way for troops.
         if not self._zap_done and self.zap_ad != (0, 0):
             self._fallback_spells(battle, opening=True)
@@ -944,7 +1019,9 @@ class PlaybookPlan(AttackPlan):
             act = s["action"]
             forced = False
             if rep and sid in self._done:
-                if t < self._next.get(sid, 0.0) or (s.get("until") and self._ready(battle, s["until"])):
+                if t < self._next.get(sid, 0.0) or (
+                    s.get("until") and self._ready(battle, s["until"])
+                ):
                     continue
             # Wiki: Hero Equipment, the original trigger only starts the bounded hold.
             elif not (act == "ability" and sid in self._aim_since) and not self._ready(
@@ -952,8 +1029,14 @@ class PlaybookPlan(AttackPlan):
             ):
                 # troops still go in when the army is wiped out (stalled), when
                 # the trigger waits on a unit that is down, and by LATE
-                forced = act == "deploy" and (stalled or t >= LATE or (
-                    self._impossible(battle, s.get("when")) and self._ready(battle, s.get("when"), relax=True)))
+                forced = act == "deploy" and (
+                    stalled
+                    or t >= LATE
+                    or (
+                        self._impossible(battle, s.get("when"))
+                        and self._ready(battle, s.get("when"), relax=True)
+                    )
+                )
                 if not forced:
                     continue
             # Playbook: root-rider.json, exhausted main_ice still waits for its trigger.
@@ -984,7 +1067,9 @@ class PlaybookPlan(AttackPlan):
                         battle, s.get("at", "edge:main"), unclaimed=act == "spell"
                     )
                 if pos is None and forced:
-                    pos = self._edge(battle, "main")  # the anchor is gone: with the main push (as rest steps)
+                    pos = self._edge(
+                        battle, "main"
+                    )  # the anchor is gone: with the main push (as rest steps)
                 # User (TH16 ranked, 2026-10-23): wait rather than stack Totems.
                 totem_covered = False
                 if (
@@ -1017,7 +1102,16 @@ class PlaybookPlan(AttackPlan):
                 elif act in ("spell", "recall"):
                     # a recall step's "what" may name the unit recalled; the
                     # spell is always Recall
-                    ok = self._spell(battle, {**s, "what": "Recall Spell" if act == "recall" else s.get("what")}, pos)
+                    ok = self._spell(
+                        battle,
+                        {
+                            **s,
+                            "what": (
+                                "Recall Spell" if act == "recall" else s.get("what")
+                            ),
+                        },
+                        pos,
+                    )
                 elif act == "redeploy":
                     if battle.portal_stash and t >= battle.portal_ready_at:
                         # Playbook: gWXxU_sp7Kg 43.5, Queen returns with Bowlers and Warden.
@@ -1026,7 +1120,11 @@ class PlaybookPlan(AttackPlan):
                         heroes.portal_redeploy(battle, pos[0], pos[1])
                         ok = True
             if ok:
-                n = max(1, before - self.inventory.get(s.get("what"), 0)) if act == "deploy" else 1
+                n = (
+                    max(1, before - self.inventory.get(s.get("what"), 0))
+                    if act == "deploy"
+                    else 1
+                )
                 self._busy_until = t + action_time(act, n)
             if ok or s.get("skip_if_impossible"):
                 if sid not in self._done:
@@ -1039,12 +1137,27 @@ class PlaybookPlan(AttackPlan):
             # still in the camp: they go in with the main push (uncited, as
             # the rest steps of fit_steps)
             # Wiki: Healer, undeployed non-healing reserves must still be used.
-            pending = {x.get("what") for x in self.steps if x["action"] == "deploy" and x["id"] not in self._done}
-            left = next((n for n, c in self.inventory.items() if c > 0 and n not in pending), None)
+            pending = {
+                x.get("what")
+                for x in self.steps
+                if x["action"] == "deploy" and x["id"] not in self._done
+            }
+            left = next(
+                (n for n, c in self.inventory.items() if c > 0 and n not in pending),
+                None,
+            )
             if left is not None:
                 n = self.inventory[left]
-                self._deploy(battle, {"id": "late-" + left, "what": left, "count": "all", "at": "edge:main"},
-                             self._edge(battle, "main"))
+                self._deploy(
+                    battle,
+                    {
+                        "id": "late-" + left,
+                        "what": left,
+                        "count": "all",
+                        "at": "edge:main",
+                    },
+                    self._edge(battle, "main"),
+                )
                 self._busy_until = t + action_time("deploy", n)
                 self.log_steps.append((round(t, 1), "late-" + left))
         self._fallback_spells(battle)
@@ -1089,7 +1202,9 @@ class PlaybookPlan(AttackPlan):
             ]
             if any(st.get("every") for st in mine):
                 return False
-            return self.spells.get(kind, 0) > sum(1 for st in mine if st["id"] not in self._done)
+            return self.spells.get(kind, 0) > sum(
+                1 for st in mine if st["id"] not in self._done
+            )
         return super()._have(kind)
 
     def _zap(self, battle, *, single_cast=False):
@@ -1153,9 +1268,28 @@ class PlaybookPlan(AttackPlan):
         a real player does not finish an attack with half of them unused."""
         self._step_kinds()
         t = battle.t
-        if t < getattr(self, "_next_fallback", 0.0) or t < getattr(self, "_busy_until", 0.0):
+        if t < getattr(self, "_next_fallback", 0.0) or t < getattr(
+            self, "_busy_until", 0.0
+        ):
             return
         self._next_fallback = t + 0.5
+        if not opening:
+            # Wiki: Hero abilities, save endangered heroes before another spare
+            # spell. A pending cited trigger holds normal timing, never low-HP
+            # emergency use. This policy does not wait for automatic KO use.
+            for u in battle.attackers:
+                if not u.alive or not u.is_hero or u.kit is None or u.ability_used:
+                    continue
+                threshold = self.P(
+                    "warden_hp"
+                    if u.name == "Grand Warden"
+                    else "duke_hp" if u.name == "Dragon Duke" else "hero_hp"
+                )
+                if u.hp / max(1.0, u.max_hp) < threshold:
+                    heroes.activate(battle, u)
+                    if u.ability_used:
+                        self._busy_until = t + action_time("ability")
+                        return
         # Wiki: Lightning Spell, opening defense removal precedes the troop push.
         if not self._zap_done and self.zap_ad != (0, 0):
             self._fallback = True
@@ -1187,8 +1321,14 @@ class PlaybookPlan(AttackPlan):
         if sum(self.spells.values()) < left:
             self._busy_until = t + action_time("spell")
             return
-        if battle.portal_stash and t >= battle.portal_ready_at and not any(
-                st["action"] == "redeploy" and st["id"] not in self._done for st in self.steps):
+        if (
+            battle.portal_stash
+            and t >= battle.portal_ready_at
+            and not any(
+                st["action"] == "redeploy" and st["id"] not in self._done
+                for st in self.steps
+            )
+        ):
             # units no redeploy step will bring back (a Portal Pendant or a
             # fallback Recall): redeployed where most buildings stand, as the
             # scripted plans do
@@ -1201,7 +1341,13 @@ class PlaybookPlan(AttackPlan):
             # Wiki: Battle Blimp, cargo support continues without a surviving push.
             main = self._cargo_support(battle) or []
             if not main:
-                return
+                # Wiki: Heroes, independent charges and funnel flanks still
+                # receive spare support after the main push has fallen.
+                main = [
+                    u
+                    for u in battle.attackers
+                    if u.alive and u.name != "Totem" and u.kind != "pet"
+                ]
         self._fallback = True
         left = sum(self.spells.values())
         try:
@@ -1219,8 +1365,16 @@ class PlaybookPlan(AttackPlan):
         # heroes whose ability the playbook never names use the scripted
         # plans' ability timing (uncited, like the spells above); the
         # playbook's own ability steps keep control of theirs
-        mine = {st.get("what") for st in self.steps if st["action"] == "ability" and st["id"] not in self._done}
-        held = [u for u in battle.attackers if u.alive and u.is_hero and u.name in mine and not u.ability_used]
+        mine = {
+            st.get("what")
+            for st in self.steps
+            if st["action"] == "ability" and st["id"] not in self._done
+        }
+        held = [
+            u
+            for u in battle.attackers
+            if u.alive and u.is_hero and u.name in mine and not u.ability_used
+        ]
         for u in held:
             u.ability_used = True
         try:
@@ -1274,14 +1428,26 @@ def _usable(st, have, heroes_in, pets, steps):
 
 
 def pick_variants(
-    pb: dict, inventory: dict, heroes_in: list, spells: dict, loadouts=None
+    pb: dict,
+    inventory: dict,
+    heroes_in: list,
+    spells: dict,
+    loadouts=None,
+    selected=None,
+    equipment_levels=None,
+    account_equipment=False,
 ) -> list:
     """The playbook's steps with its cited variants swapped in where the
     army needs them: a variant that replaces steps this army cannot play
     (e.g. a Flame Flinger it does not bring) with steps it can (its Log
-    Launcher) takes their place. Best-supported variant first; additive
-    variants (replacing nothing) are left out."""
-    have = set(inventory) | set(heroes_in) | {SPELL_NAMES[k] for k, c in spells.items() if c}
+    Launcher) takes their place. Best-supported repairs come first. Explicit
+    selections also allow feasible alternatives and additive variants; their
+    complete sequence must fit the stock and required equipment."""
+    have = (
+        set(inventory)
+        | set(heroes_in)
+        | {SPELL_NAMES[k] for k, c in spells.items() if c}
+    )
     # Wiki: Spirit Fox, the pet supports its assigned Hero, not another hero.
     pets = {}
     for hero in heroes_in:
@@ -1291,26 +1457,78 @@ def pick_variants(
     # from_playbook), which used to mutate the cached playbook itself, so
     # every later plan of the family accumulated another citation
     steps = copy.deepcopy(pb["steps"])
+    checker = PlaybookPlan(
+        loadouts=loadouts or {},
+        equipment_levels=equipment_levels or {},
+        account_equipment=account_equipment,
+    )
+
+    def feasible(candidate, added):
+        stock = {**inventory, **{hero: 1 for hero in heroes_in}}
+        stock.update({SPELL_NAMES[k]: count for k, count in spells.items()})
+        for st in candidate:
+            usable = _usable(st, have, heroes_in, pets, candidate)
+            if st["action"] == "ability":
+                checker._equipment_steps = {}
+                usable = usable and not checker._missing_equipment(st)
+            if not usable:
+                if st["id"] in added:
+                    return False
+                continue
+            if st["action"] not in ("deploy", "spell", "recall"):
+                continue
+            name = "Recall Spell" if st["action"] == "recall" else st.get("what")
+            left = stock.get(name, 0)
+            amount = st.get("count", 1)
+            amount = left if amount in (None, "all") else int(amount)
+            if amount <= 0 or amount > left:
+                return False
+            stock[name] = left - amount
+        return True
+
+    used = set()
     for v in sorted(pb.get("variants", []), key=lambda v: -v.get("support", 0)):
         repl = set(v.get("replaces") or [])
         cur = [x for x in steps if x["id"] in repl]
         # Playbook: Yeti, KDalGKrAyL0 50.2 -> Barracks and Queen share the variant.
-        if (
-            not repl
-            or not cur
-            or all(_usable(x, have, heroes_in, pets, steps) for x in cur)
-        ):
+        requested = selected is not None and v["name"] in selected
+        if selected is not None and not requested:
+            continue
+        if repl & used or (repl and not cur):
             continue
         new = [dict(copy.deepcopy(x), variant=v["name"]) for x in v.get("steps", [])]
         if not new or not all(_usable(x, have, heroes_in, pets, new) for x in new):
             continue
-        i = min(n for n, x in enumerate(steps) if x["id"] in repl)
-        steps = [x for x in steps if x["id"] not in repl]
-        steps[i:i] = new
+        i = min((n for n, x in enumerate(steps) if x["id"] in repl), default=len(steps))
+        candidate = [x for x in steps if x["id"] not in repl]
+        candidate[i:i] = new
+        if not feasible(candidate, {x["id"] for x in new}):
+            if requested:
+                raise ValueError(f"Infeasible playbook variant: {v['name']}")
+            continue
+        # Policy: automatic substitution repairs unusable defaults. Explicit
+        # selection also exposes feasible alternatives and additive variants.
+        if not requested and (
+            not repl
+            or all(_usable(x, have, heroes_in, pets, steps) for x in cur)
+            and feasible(steps, {x["id"] for x in cur})
+        ):
+            continue
+        steps = candidate
+        used.update(repl)
+    if selected is not None:
+        applied = {st.get("variant") for st in steps}
+        missing = set(selected) - applied
+        if missing:
+            raise ValueError(
+                "Unavailable playbook variants: " + ", ".join(sorted(missing))
+            )
     return steps
 
 
-def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict, cc=()) -> list:
+def fit_steps(
+    steps: list, inventory: dict, heroes_in: list, spells: dict, cc=()
+) -> list:
     """The playbook's steps for a particular army: steps for troops, heroes
     or spells the army does not carry are dropped, and any step triggered
     "after" a dropped step inherits the dropped step's own trigger (delays
@@ -1322,18 +1540,88 @@ def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict, cc=()
     needs a Recall Spell to have something to redeploy. Troops the steps
     never mention join the main push right after its first deploy: that
     last rule is NOT from a source (real armies differ from the playbook's
-    example army) and is marked "uncited". `cc`: the Clan Castle troops."""
-    have = set(inventory) | set(heroes_in) | {SPELL_NAMES[k] for k, c in spells.items() if c}
-    bring = set(inventory) | set(heroes_in) | {e if isinstance(e, str) else e.get("name") or e.get("type") for e in cc}
+    example army) and is marked "uncited". Unmentioned heroes inherit the
+    place/group/trigger of a comparable cited hero, preferring an absent
+    assault or ranged-support hero. `cc`: the Clan Castle troops."""
+    # Policy (uncited): roster substitutions inherit a comparable cited hero's
+    # place, group and trigger, preferably replacing an absent hero. King/RC/
+    # Duke are assault heroes; Queen/Prince/Warden are ranged support. This
+    # retains a funnel or a delayed push instead of treating a siege as a tank.
+    templates = [
+        st
+        for st in steps
+        if st["action"] == "deploy" and st.get("what") in heroes.HEROES
+    ]
+    mentioned_heroes = {st["what"] for st in templates}
+    assault = {"Barbarian King", "Royal Champion", "Dragon Duke"}
+    replacements = set()
+    steps = copy.deepcopy(steps)
+    for hero in heroes_in:
+        if hero in mentioned_heroes:
+            continue
+        comparable = [
+            st for st in templates if (st["what"] in assault) == (hero in assault)
+        ]
+        choices = comparable or templates
+        if not choices:
+            continue
+        template = min(
+            choices,
+            key=lambda st: (
+                st["what"] in heroes_in,
+                st["what"] in replacements,
+                st.get("group", "main") == "charge",
+                st["what"] == "Grand Warden",
+            ),
+        )
+        replacements.add(template["what"])
+
+        def substitute(value):
+            if isinstance(value, dict):
+                return {k: substitute(v) for k, v in value.items()}
+            if isinstance(value, list):
+                return [substitute(v) for v in value]
+            return hero if value == template["what"] else value
+
+        place = template.get("at", "edge:main")
+        if place in ("unit:" + template["what"], "unit_ahead:" + template["what"]):
+            place = "edge:main"
+        steps.append(
+            {
+                "id": f"rest-{hero}",
+                "action": "deploy",
+                "what": hero,
+                "count": 1,
+                "at": place,
+                "group": template.get("group", "main"),
+                "when": substitute(copy.deepcopy(template.get("when"))),
+                "uncited": True,
+                "cite": [],
+            }
+        )
+    have = (
+        set(inventory)
+        | set(heroes_in)
+        | {SPELL_NAMES[k] for k, c in spells.items() if c}
+    )
+    bring = (
+        set(inventory)
+        | set(heroes_in)
+        | {e if isinstance(e, str) else e.get("name") or e.get("type") for e in cc}
+    )
     # units the playbook itself deploys (summons such as Firemites or pets
     # are never "absent")
-    army_units = {x.get("what") for x in steps if x["action"] == "deploy"} | set(heroes.HEROES)
+    army_units = {x.get("what") for x in steps if x["action"] == "deploy"} | set(
+        heroes.HEROES
+    )
 
     def absent(name):
         return name in army_units and name not in bring
 
     def absent_cond(w):
-        return isinstance(w, dict) and any(k in w and absent(w[k]) for k in UNIT_TRIGGERS + ("dead",))
+        return isinstance(w, dict) and any(
+            k in w and absent(w[k]) for k in UNIT_TRIGGERS + ("dead",)
+        )
 
     def usable(st):
         w = st.get("what")
@@ -1356,8 +1644,11 @@ def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict, cc=()
 
     steps = [dict(x) for x in steps]
     dropped = {x["id"]: x for x in steps if not usable(x)}
-    casters = {("Recall Spell" if x["action"] == "recall" else x.get("what")) for x in steps
-               if x["id"] not in dropped and x["action"] in ("spell", "recall")}
+    casters = {
+        ("Recall Spell" if x["action"] == "recall" else x.get("what"))
+        for x in steps
+        if x["id"] not in dropped and x["action"] in ("spell", "recall")
+    }
 
     def relink(w):
         """w with dropped steps and absent units taken out; None when nothing
@@ -1376,12 +1667,28 @@ def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict, cc=()
                 up["t"] = up["t"] + w.get("delay", 0.0)
             return up
         name = SPELL_NAMES.get(w.get("spells_left"), w.get("spells_left"))
-        if "spells_left" in w and name not in casters and spells.get(SPELL_KEYS.get(name), 0) > w.get("n", 0):
+        if (
+            "spells_left" in w
+            and name not in casters
+            and spells.get(SPELL_KEYS.get(name), 0) > w.get("n", 0)
+        ):
             # the army carries the spell but no kept step spends it (its
             # caster was dropped): wait for what that caster waited for
-            caster = next((x for x in dropped.values() if x["action"] in ("spell", "recall")
-                           and ("Recall Spell" if x["action"] == "recall" else x.get("what")) == name), None)
-            return relink(dict(caster.get("when") or {"t": 0.0})) if caster is not None else {"t": 0.0}
+            caster = next(
+                (
+                    x
+                    for x in dropped.values()
+                    if x["action"] in ("spell", "recall")
+                    and ("Recall Spell" if x["action"] == "recall" else x.get("what"))
+                    == name
+                ),
+                None,
+            )
+            return (
+                relink(dict(caster.get("when") or {"t": 0.0}))
+                if caster is not None
+                else {"t": 0.0}
+            )
         for k in ("all", "any"):
             if k in w:
                 parts = [p for p in (relink(x) for x in w[k]) if p is not None]
@@ -1403,33 +1710,79 @@ def fit_steps(steps: list, inventory: dict, heroes_in: list, spells: dict, cc=()
         kept.append(x)
     mentioned = {x.get("what") for x in kept if x["action"] == "deploy"}
     rest = [n for n, c in inventory.items() if c and n not in mentioned]
-    main_deploys = [x["id"] for x in kept if x["action"] == "deploy" and x.get("at", "edge:main") == "edge:main"
-                    and x.get("what") not in heroes.HEROES]
+    main_deploys = [
+        x["id"]
+        for x in kept
+        if x["action"] == "deploy"
+        and x.get("at", "edge:main") == "edge:main"
+        and x.get("what") not in heroes.HEROES
+    ]
     # the leftovers go with the main push: right after its first deploy
     anchor = {"after": main_deploys[0], "delay": 1.0} if main_deploys else {"t": 15.0}
     for x in orphans:  # nothing is left of its trigger: it goes with the main push
         x["when"] = dict(anchor) if x["id"] != anchor.get("after") else {"t": 15.0}
     for n in rest:
-        kept.append({"id": f"rest-{n}", "action": "deploy", "what": n, "count": "all", "at": "edge:main",
-                     "when": anchor, "uncited": True, "cite": []})
+        kept.append(
+            {
+                "id": f"rest-{n}",
+                "action": "deploy",
+                "what": n,
+                "count": "all",
+                "at": "edge:main",
+                "when": anchor,
+                "uncited": True,
+                "cite": [],
+            }
+        )
     # a hero the playbook never deploys (the army brings a different hero
     # than the playbook's example) goes in with the main push too
     for h in heroes_in:
         if h not in mentioned:
-            kept.append({"id": f"rest-{h}", "action": "deploy", "what": h, "count": 1, "at": "edge:main",
-                         "group": "main", "when": anchor, "uncited": True, "cite": []})
+            kept.append(
+                {
+                    "id": f"rest-{h}",
+                    "action": "deploy",
+                    "what": h,
+                    "count": 1,
+                    "at": "edge:main",
+                    "group": "main",
+                    "when": anchor,
+                    "uncited": True,
+                    "cite": [],
+                }
+            )
     # troops the steps name but only partly use (a step for 1 Super Minion
     # when the army has 5): the rest follow that unit's last step, and no
     # troop is still in the camp at 150 s (a player spends the army)
     for n, c in inventory.items():
-        mine = [x for x in kept if x["action"] == "deploy" and x.get("what") == n and not x.get("uncited")]
-        if not c or n in heroes.HEROES or not mine or any(x.get("count") in (None, "all") for x in mine):
+        mine = [
+            x
+            for x in kept
+            if x["action"] == "deploy" and x.get("what") == n and not x.get("uncited")
+        ]
+        if (
+            not c
+            or n in heroes.HEROES
+            or not mine
+            or any(x.get("count") in (None, "all") for x in mine)
+        ):
             continue
         if sum(int(x["count"]) for x in mine) >= c:
             continue
-        kept.append({"id": f"rest2-{n}", "action": "deploy", "what": n, "count": "all", "at": "edge:main",
-                     "when": {"any": [{"after": mine[-1]["id"], "delay": 4.5}, {"t": 150.0}]},
-                     "uncited": True, "cite": []})
+        kept.append(
+            {
+                "id": f"rest2-{n}",
+                "action": "deploy",
+                "what": n,
+                "count": "all",
+                "at": "edge:main",
+                "when": {
+                    "any": [{"after": mine[-1]["id"], "delay": 4.5}, {"t": 150.0}]
+                },
+                "uncited": True,
+                "cite": [],
+            }
+        )
     return kept
 
 
@@ -1458,6 +1811,26 @@ def add_waits(steps: list) -> None:
     group = {s["id"]: s.get("group", "main") for s in steps}
     act = {s["id"]: s["action"] for s in steps}
     by_id = {s["id"]: s for s in steps}
+    # Playbook: fireball-warden, 12Z_sTAEOHw 95/104.4 and 7rzBODLfnug
+    # 288.1/292.4 describe Ice Block -> Fireball; Healers complete the walk.
+    # Policy: do not add population-median idle time to that exposed walk's
+    # preparation chain. Keep its order, explicit waits and paced input costs.
+    walk_support = set()
+    for step in steps:
+        if step["action"] != "deploy" or step.get("what") != "Healer":
+            continue
+        chain = []
+        current = step
+        while current["id"] not in chain:
+            chain.append(current["id"])
+            previous = (current.get("when") or {}).get("after")
+            if previous not in by_id:
+                break
+            current = by_id[previous]
+            if current["action"] == "deploy" and current.get("what") == "Grand Warden":
+                if current.get("group", "main") == "charge":
+                    walk_support.update(chain)
+                break
 
     def immediate(st, previous):
         quotes = " ".join(c.get("quote", "") for c in st.get("cite", [])).lower()
@@ -1490,7 +1863,7 @@ def add_waits(steps: list) -> None:
         if not isinstance(w, dict):
             return w
         if "after" in w and not w.get("delay") and w["after"] in group:
-            if not immediate(st, by_id[w["after"]]):
+            if st["id"] not in walk_support and not immediate(st, by_id[w["after"]]):
                 gap = same if group[w["after"]] == mine else change
                 w = {**w, "delay": max(0.0, gap - action_time(act[w["after"]], 1))}
         for k in ("all", "any"):
@@ -1499,7 +1872,9 @@ def add_waits(steps: list) -> None:
         return w
 
     for st in steps:
-        if not st.get("uncited"):
+        if not st.get("uncited") or (
+            st["action"] == "deploy" and st.get("what") in heroes.HEROES
+        ):
             st["when"] = fix(st.get("when"), st.get("group", "main"), st)
 
 
@@ -1524,8 +1899,17 @@ def apply_overrides(steps: list, overrides: dict | None) -> None:
                 if isinstance(w, dict) and "after" in w:
                     st["when"] = {**w, "delay": float(v)}
                 elif isinstance(w, dict) and "all" in w:
-                    st["when"] = {**w, "all": [{**x, "delay": float(v)} if isinstance(x, dict) and "after" in x else x
-                                               for x in w["all"]]}
+                    st["when"] = {
+                        **w,
+                        "all": [
+                            (
+                                {**x, "delay": float(v)}
+                                if isinstance(x, dict) and "after" in x
+                                else x
+                            )
+                            for x in w["all"]
+                        ],
+                    }
             elif k == "aim" and v is None:
                 st.pop("aim", None)
             elif k in ("at", "aim", "every"):
@@ -1534,9 +1918,17 @@ def apply_overrides(steps: list, overrides: dict | None) -> None:
                 raise ValueError(f"unknown override field {k}")
 
 
-def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own_levels: bool = False,
-                  flank_offset: float = 0.9, charge_side: str = "left", build: dict | None = None,
-                  overrides: dict | None = None) -> PlaybookPlan:
+def from_playbook(
+    pb: dict,
+    angle: float = 0.0,
+    seed: int = 0,
+    th: int = 16,
+    own_levels: bool = False,
+    flank_offset: float = 0.9,
+    charge_side: str = "left",
+    build: dict | None = None,
+    overrides: dict | None = None,
+) -> PlaybookPlan:
     """A PlaybookPlan for a playbook dict (data/playbooks/*.json). With
     `build` (a meta or custom army), that army is played through the
     playbook's steps (fit_steps); otherwise the playbook's example army.
@@ -1549,11 +1941,25 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
 
     if build is None:
         a = pb["army"]
-        build = {"archetype": ("user-" if own_levels else "pb-") + pb.get("family", "x"), "build": 1, "th": th, "share": 1.0,
-                 "three_star": 0.0, "troops": dict(a["troops"]), "spells": dict(a["spells"]), "cc": dict(a.get("cc", {})),
-                 "heroes": list(a["heroes"]), "loadouts": a.get("loadouts", {}), "own_levels": own_levels}
+        build = {
+            "archetype": ("user-" if own_levels else "pb-") + pb.get("family", "x"),
+            "build": 1,
+            "th": th,
+            "share": 1.0,
+            "three_star": 0.0,
+            "troops": dict(a["troops"]),
+            "spells": dict(a["spells"]),
+            "cc": dict(a.get("cc", {})),
+            "heroes": list(a["heroes"]),
+            "loadouts": a.get("loadouts", {}),
+            "own_levels": own_levels,
+        }
     base = compose(build, angle=angle, seed=seed)
-    kw = {f.name: getattr(base, f.name) for f in fields(AttackPlan) if not f.name.startswith("_")}
+    kw = {
+        f.name: getattr(base, f.name)
+        for f in fields(AttackPlan)
+        if not f.name.startswith("_")
+    }
     kw["spells"] = dict(base._spells0)
     kw["auto_revive"] = False
     # data/your-levels.json: own-level builds use a complete equipment inventory.
@@ -1568,6 +1974,9 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
     plan = PlaybookPlan(**kw)
     plan.snipe_exposed = bool(opening.get("snipe_exposed", plan.snipe_exposed))
     plan.build_id = getattr(base, "build_id", None)
+    # data/observed-armies.json: direct and wrapper construction share the
+    # same validated replay exceptions; observed alone never bypasses legality.
+    plan.observed = getattr(base, "observed", False)
     plan.pol = base.pol
     inv = {n: c for n, c in build["troops"].items() if n != plan.siege}
     if plan.siege:
@@ -1576,7 +1985,16 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
     heroes_in = [h for h in build["heroes"] if h in heroes.HEROES]
     sp = dict(plan.spells)  # brewed + Clan Castle
     plan.steps = fit_steps(
-        pick_variants(pb, inv, heroes_in, sp, plan.loadouts),
+        pick_variants(
+            pb,
+            inv,
+            heroes_in,
+            sp,
+            plan.loadouts,
+            selected=(overrides or {}).get("__variants__", {}).get("names"),
+            equipment_levels=plan.equipment_levels,
+            account_equipment=plan.account_equipment,
+        ),
         inv,
         heroes_in,
         sp,
@@ -1625,14 +2043,55 @@ def from_playbook(pb: dict, angle: float = 0.0, seed: int = 0, th: int = 16, own
             lo = plan.loadouts.get(hero)
             if hero in heroes.HEROES and (lo is None or lo.pet != "Spirit Fox"):
                 st["every"] = 4.0
-                st.setdefault("cite", []).append({"video": "L_LKqcL56NE", "t": 63.8, "quote": "invisibility spells every 4 seconds to"})
+                st.setdefault("cite", []).append(
+                    {
+                        "video": "L_LKqcL56NE",
+                        "t": 63.8,
+                        "quote": "invisibility spells every 4 seconds to",
+                    }
+                )
     apply_overrides(plan.steps, overrides)
     # Wiki: Healer, cannot heal air units; a Warden walk with attached Healers
     # therefore uses ground mode, regardless of the rest of this army.
+    by_id = {st["id"]: st for st in plan.steps}
+
+    def follows(trigger, previous, seen=()):
+        if not isinstance(trigger, dict):
+            return False
+        if "t" in trigger:
+            start = by_id[previous].get("when") or {}
+            return "t" in start and trigger["t"] >= start["t"]
+        if "after" in trigger:
+            reference = trigger["after"]
+            if reference == previous:
+                return True
+            if reference in seen or reference not in by_id:
+                return False
+            return follows(by_id[reference].get("when"), previous, (*seen, reference))
+        if "all" in trigger:
+            return any(follows(part, previous, seen) for part in trigger["all"])
+        if "any" in trigger:
+            return bool(trigger["any"]) and all(
+                follows(part, previous, seen) for part in trigger["any"]
+            )
+        return False
+
     if plan.inventory.get("Healer", 0) > 0 and any(
         st["action"] == "deploy"
         and st.get("what") == "Healer"
-        and st.get("at") in ("unit:Grand Warden", "unit_ahead:Grand Warden")
+        and (
+            st.get("at") in ("unit:Grand Warden", "unit_ahead:Grand Warden")
+            or any(
+                w["action"] == "deploy"
+                and w.get("what") == "Grand Warden"
+                and w.get("group", "main") == "charge"
+                and w.get("at") == st.get("at")
+                and st.get("group", "main") == "charge"
+                and w.get("at", "").startswith("edge:")
+                and follows(st.get("when"), w["id"])
+                for w in plan.steps
+            )
+        )
         and st.get("count", "all") != 0
         for st in plan.steps
     ):

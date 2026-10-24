@@ -1617,6 +1617,31 @@ impl PlaybookPlan {
             return;
         }
         self.next_fallback = t + 0.5;
+        if !opening {
+            // Wiki: Hero abilities, a cited hold never suppresses low-HP rescue.
+            // Match Python's one paced emergency action before spare spells.
+            let emergency = battle
+                .attackers_pool()
+                .find(|u| {
+                    if !u.alive || !u.is_hero || u.kit.is_none() || u.ability_used {
+                        return false;
+                    }
+                    let threshold = self.attack.p(match u.name_id {
+                        Name::GrandWarden => "warden_hp",
+                        Name::DragonDuke => "duke_hp",
+                        _ => "hero_hp",
+                    });
+                    u.hp / 1.0_f64.max(u.max_hp) < threshold
+                })
+                .map(Unit::reference);
+            if let Some(hero) = emergency {
+                heroes::activate(battle, hero, false);
+                if battle.unit(hero).ability_used {
+                    self.attack.busy_until = t + action_time(battle, Action::Ability, 1);
+                    return;
+                }
+            }
+        }
         let kinds = self.step_spells.as_ref().expect("step kinds");
         let reservations: Vec<_> = kinds
             .iter()
@@ -1681,7 +1706,13 @@ impl PlaybookPlan {
         if units.is_empty() {
             units = self.attack.cargo_support(battle).unwrap_or_default();
             if units.is_empty() {
-                return;
+                // Wiki: Heroes, independent charges and surviving flanks still
+                // receive spare support after the main push has fallen.
+                units = battle
+                    .attackers_pool()
+                    .filter(|u| u.alive && u.name_id != Name::Totem && u.kind != Tag::Pet)
+                    .map(Unit::reference)
+                    .collect();
             }
         }
         let left = self.attack.spells.iter()

@@ -53,7 +53,7 @@ from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from pathlib import Path
 
-from .evaluate import STRENGTH, attacker_trophies, pool, skill
+from .evaluate import attacker_trophies, pool, skill
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -453,7 +453,12 @@ def redteam(
     t0 = time.time()
     lj = layout.to_json()
     ev = _Evaluator(
-        lj, army, (strength or STRENGTH).get(army, 1.0), parallel, modifier, mode
+        lj,
+        army,
+        (strength if strength is not None else {}).get(army, 1.0),
+        parallel,
+        modifier,
+        mode,
     )
     score_unit = "war score" if mode == "war" else "tr"
     log = []
@@ -473,9 +478,23 @@ def redteam(
 
     cands = []
     scout = None
+    # output/rustfirst/c-bughunt.out #10: feasible cited branches, including
+    # additive ones, must remain reachable even when the default is usable.
+    _family, playbook = playbook_for(army)
+    branches = [()]
+    for variant in (playbook or {}).get("variants", []):
+        names = (variant["name"],)
+        attack = Attack(0.0).with_override("__variants__", "names", names)
+        try:
+            make_attack_plan(army, attack, search_seeds[0])
+        except ValueError:
+            continue
+        branches.append(names)
     for angle in angles:
         for side in ("left", "right"):
             attack = Attack(angle, side)
+            for names in branches[1:]:
+                cands.append(attack.with_override("__variants__", "names", names))
             plan = make_attack_plan(army, attack, search_seeds[0])
             plan.strength = ev.strength * skill(search_seeds[0])
             if not plan.snipe_exposed or not plan._snipe_tools():
