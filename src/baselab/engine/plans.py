@@ -1205,6 +1205,8 @@ class AttackPlan:
         return best[:2] if best is not None else point
 
     def deployments(self, battle):
+        from .playbook import PACE_TAP, action_time
+
         out = self.opening_deployments(battle)
         th = self.town_hall
         for name, lateral in self.funnel_heroes:
@@ -1245,7 +1247,7 @@ class AttackPlan:
             for k in range(self._charge_n):
                 out.append(
                     Deployment(
-                        self.charge_at + 0.6 + 0.1 * k,
+                        self.charge_at + 0.6 + PACE_TAP * k,
                         "Healer",
                         x,
                         y,
@@ -1269,7 +1271,28 @@ class AttackPlan:
                         town_hall=th,
                     )
                 )
-                t += 0.15
+                t += PACE_TAP * float(os.environ.get("BASELAB_PACE", "1.0"))
+        # docs/VIDEO_MEASUREMENTS.md: held taps share a slot; changing slots
+        # takes another action. https://www.youtube.com/watch?v=w4RTiOi6C_w&t=88
+        out.sort(key=lambda deployment: deployment.time)
+        available = 0.0
+        tap = PACE_TAP * float(os.environ.get("BASELAB_PACE", "1.0"))
+        i = 0
+        while i < len(out):
+            first = out[i]
+            end = i + 1
+            while end < len(out) and (out[end].name, out[end].group) == (
+                first.name,
+                first.group,
+            ):
+                end += 1
+            if first.name not in self._snipe_deployed:
+                started = max(first.time, available)
+                for k, deployment in enumerate(out[i:end]):
+                    deployment.time = max(deployment.time, started + k * tap)
+            available = max(available, out[end - 1].time + action_time("deploy"))
+            i = end
+        self._busy_until = max(getattr(self, "_busy_until", 0.0), available)
         return out
 
     def _snipe_available(self, name):
@@ -2211,48 +2234,51 @@ class AttackPlan:
         )
 
     def _launch_main(self, battle):
+        from .playbook import PACE_TAP, action_time
+
         self._entry = self._best_entry(battle)
         ex, ey = self._entry
+        started = max(battle.t, getattr(self, "_busy_until", 0.0))
+        available = started
+        tap = PACE_TAP * float(os.environ.get("BASELAB_PACE", "1.0"))
         if self.siege:
             # Wiki: Flame Flinger, an opening siege retains its cargo until it opens.
             if self.siege not in self._snipe_deployed:
-                self._drop(battle, self.siege, ex, ey, "main")
+                self._drop(battle, self.siege, ex, ey, "main", at=available)
+                available += action_time("deploy")
         elif self.cc_troops and not self._cc_released:
             from . import units
 
             units.release_cc_at(battle, ex, ey, "main")
+            available += action_time("deploy")
         e2 = (
             edge_point(battle, self.angle + self.split_main, 0.0)
             if self.split_main > 0.05
             else None
         )
         k = 0
-        tank_k = 0
-        damage_k = 0
         lead = self.P("tank_lead")
-        # Video: docs/VIDEO_MEASUREMENTS.md:30 -> each sequence uses 0.133 s per troop.
-        # Attacker policy: tanks start now; damage starts tank_lead seconds later.
+        # docs/VIDEO_MEASUREMENTS.md: held troops use 0.133 s; each new slot
+        # also consumes the shared action cost (switch time is an assumption).
+        # https://www.youtube.com/watch?v=w4RTiOi6C_w&t=88
         # Jitter draws keep wave/unit order (x then y) when scheduling each troop.
         for wave in self.main:
             for name, c in wave.units:
-                for _ in range(c):
+                if lead > 0.3 and name not in TANKS:
+                    available = max(available, started + lead)
+                for i in range(c):
                     px, py = (e2[0], e2[1]) if e2 is not None and k % 2 else (ex, ey)
-                    if lead > 0.3 and name in TANKS:
-                        at = battle.t + tank_k * 0.133
-                        tank_k += 1
-                    elif lead > 0.3:
-                        at = battle.t + lead + damage_k * 0.133
-                        damage_k += 1
-                    else:
-                        at = battle.t + k * 0.133
+                    at = available + i * tap
                     self._drop(battle, name, px, py, "main", jitter=wave.spread, at=at)
                     k += 1
+                if c:
+                    available += action_time("deploy", c)
         for name in self.push_heroes:
             if name in self._snipe_deployed:
                 continue
-            self._drop(battle, name, ex, ey, "main", jitter=0.5)
-        if self.charge_hero and battle.portal_stash:
-            heroes.portal_redeploy(battle, ex, ey)  # the recalled charge joins the push
+            self._drop(battle, name, ex, ey, "main", jitter=0.5, at=available)
+            available += action_time("deploy")
+        self._busy_until = available
         self._main_at = battle.t
         self._phase = "support"
 
@@ -2301,6 +2327,7 @@ class AttackPlan:
             and self.recall_funnel
             and self.charge_hero
             and self._phase == "funnel"
+            and t >= getattr(self, "_busy_until", 0.0)
         ):
             x, y = edge_point(
                 battle,
@@ -2308,10 +2335,24 @@ class AttackPlan:
                 -self.charge_lat if abs(self.charge_lat) > 1 else 8.0,
             )
             heroes.portal_redeploy(battle, x, y)  # recall funnel: the other flank
+            from .playbook import action_time
+
+            self._busy_until = t + action_time("redeploy")
             hold = True
-        if battle.portal_stash and t >= battle.portal_ready_at and not hold:
-            x, y = self.portal_point(battle)
+        if (
+            battle.portal_stash
+            and t >= battle.portal_ready_at
+            and not hold
+            and t >= getattr(self, "_busy_until", 0.0)
+        ):
+            if self.charge_hero and self._phase == "support":
+                x, y = self._entry
+            else:
+                x, y = self.portal_point(battle)
             heroes.portal_redeploy(battle, x, y)
+            from .playbook import action_time
+
+            self._busy_until = t + action_time("redeploy")
         if self._phase == "funnel":
             if (
                 not opening
@@ -2320,18 +2361,28 @@ class AttackPlan:
                 and self.zap_ad != (0, 0)
             ):
                 self._zap(battle, single_cast=True)
-            if t >= self.main_max or (
-                t >= self.main_min
-                and self._funnel_progress(battle) >= self.P("commit_progress")
+            if t >= getattr(self, "_busy_until", 0.0) and (
+                t >= self.main_max
+                or (
+                    t >= self.main_min
+                    and self._funnel_progress(battle) >= self.P("commit_progress")
+                )
             ):
                 self._launch_main(battle)
-        elif self._phase == "support" and t >= self._main_at + 2.0:
+        elif (
+            self._phase == "support"
+            and t >= self._main_at + 2.0
+            and t >= getattr(self, "_busy_until", 0.0)
+        ):
+            from .playbook import PACE_TAP, action_time
+
             ex, ey = self._entry
             # Video: docs/VIDEO_MEASUREMENTS.md:30 -> support uses the same queue.
-            k = 0
+            available = t
+            tap = PACE_TAP * float(os.environ.get("BASELAB_PACE", "1.0"))
             for wave in self.support:
                 for name, c in wave.units:
-                    for _ in range(c):
+                    for i in range(c):
                         self._drop(
                             battle,
                             name,
@@ -2339,9 +2390,11 @@ class AttackPlan:
                             ey,
                             "main",
                             jitter=wave.spread,
-                            at=t + k * 0.133,
+                            at=available + i * tap,
                         )
-                        k += 1
+                    if c:
+                        available += action_time("deploy", c)
+            self._busy_until = available
             self._phase = "push"
         elif self._phase == "push" and t >= self._main_at + 25.0:
             # cleanup: each spare troop goes to the legal spot nearest a

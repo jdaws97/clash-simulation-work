@@ -205,6 +205,8 @@ pub struct PlaybookPlan {
     hurt_indices: SharedVec<Option<usize>>,
     pub no_target: SharedVec<(String, f64)>,
     pub log_steps: SharedVec<(f64, String)>,
+    entered: SharedVec<String>,
+    charge_closed: bool,
     pub deployed: SharedVec<String>,
     pub aim_since: SharedVec<(String, f64)>,
     pub last_alive: f64,
@@ -245,6 +247,10 @@ impl PlaybookPlan {
             .collect();
         Self {
             attack: AttackPlan::load(p),
+            entered: p.get("_entered").map_or_else(SharedVec::default, |v| {
+                v.arr().iter().map(|v| v.str().to_owned()).collect()
+            }),
+            charge_closed: flag(p, "_charge_closed"),
             steps: Rc::new(p.at("steps").arr().iter().map(Step::load).collect()),
             inventory: plans::counts(p, "inventory").into(),
             flank_offset: p.at("flank_offset").f64(),
@@ -539,7 +545,7 @@ impl PlaybookPlan {
         }
         self.steps.iter().any(|s| {
             !self.done(&s.id)
-                && s.action == Action::Deploy
+                && (s.action == Action::Deploy || self.initial_return(s))
                 && s.what.as_deref() != Some("Healer")
                 && s.what
                     .as_deref()
@@ -781,15 +787,104 @@ impl PlaybookPlan {
     }
 
     // playbook.py:226-231.
-    fn inside(&self, battle: &mut Battle, unit: UnitRef) -> bool {
+    fn inside(&self, battle: &Battle, unit: UnitRef) -> bool {
         let u = battle.unit(unit);
         let (x, y) = (u.x as i32, u.y as i32);
-        battle.live_no_deploy();
+        // output/research/usage/root-rider.md: Duke follows the Riders' entry.
+        // https://www.youtube.com/watch?v=C0lnvxJraoM&t=256
+        // Policy: milestones retain the original deployment boundary.
         [-2, 0, 2].iter().all(|dx| {
             [-2, 0, 2]
                 .iter()
-                .all(|dy| battle.no_deploy_tile(x + dx, y + dy))
+                .all(|dy| battle.no_deploy.contains(&(x + dx, y + dy)))
         })
+    }
+
+    fn initial_return(&self, step: &Step) -> bool {
+        step.action == Action::Redeploy
+            && step.what.as_deref().is_some_and(|name| {
+                plans::is_hero(name) && !self.deployed.iter().any(|n| n == name)
+            })
+    }
+
+    fn support_troop(name: &str) -> bool {
+        matches!(
+            name,
+            "Healer"
+                | "Druid"
+                | "Apprentice Warden"
+                | "Wall Breaker"
+                | "Super Wall Breaker"
+                | "Headhunter"
+        )
+    }
+
+    fn main_started(&self, battle: &Battle) -> bool {
+        // output/research/usage/root-rider.md: support follows the main troops.
+        // https://www.youtube.com/watch?v=g9UjZ9xFQOU&t=169
+        let candidates: Vec<&Step> = self
+            .steps
+            .iter()
+            .filter(|step| {
+                step.action == Action::Deploy
+                    && step.group == "main"
+                    && step.what.as_deref().is_some_and(|name| {
+                        self.inventory.iter().any(|(n, _)| n == name)
+                            && !Self::support_troop(name)
+                            && !crate::armies::is_siege(name)
+                    })
+            })
+            .collect();
+        let bulk: Vec<&Step> = candidates
+            .iter()
+            .copied()
+            .filter(|step| step.count.is_none_or(|n| n >= 2))
+            .collect();
+        let steps = if bulk.is_empty() { &candidates } else { &bulk };
+        battle.attackers_pool().any(|u| {
+            u.group == "main"
+                && steps
+                    .iter()
+                    .any(|step| step.what.as_deref() == Some(u.name.as_str()))
+        })
+    }
+
+    fn invisibility_anchor(
+        &self,
+        battle: &mut Battle,
+        step: &Step,
+        pos: Option<(f64, f64)>,
+    ) -> Option<(f64, f64)> {
+        // output/research/usage/invisibility-spell.md: cover advancing heroes.
+        // https://clashofclans.fandom.com/wiki/Invisibility_Spell
+        if step.what.as_deref() != Some("Invisibility Spell") || step.at != "group:charge" {
+            return pos;
+        }
+        let group: Vec<_> = plans::main_units(battle, "charge")
+            .into_iter()
+            .filter(|r| battle.unit(*r).is_hero)
+            .collect();
+        let first = group.first()?;
+        let anchor = format!("unit_ahead:{}", battle.unit(*first).name);
+        let lead = self.anchor(battle, &anchor, false)?;
+        let (mut x, mut y) = lead;
+        for r in group.iter().skip(1) {
+            let u = battle.unit(*r);
+            let distance = py_hypot(u.x - x, u.y - y);
+            if distance > 4.0 {
+                let shift = (distance - 4.0) / distance;
+                x += (u.x - x) * shift;
+                y += (u.y - y) * shift;
+            }
+        }
+        if group.iter().all(|r| {
+            let u = battle.unit(*r);
+            py_hypot(u.x - x, u.y - y) <= 4.0
+        }) {
+            Some((x, y))
+        } else {
+            Some(lead)
+        }
     }
 
     // playbook.py:233-239.
@@ -852,6 +947,13 @@ impl PlaybookPlan {
         match trigger {
             Trigger::All(parts) => parts.iter().any(|part| self.impossible(battle, part)),
             Trigger::Any(parts) => parts.iter().all(|part| self.impossible(battle, part)),
+            Trigger::Inside(name)
+                if self.entered.contains(name)
+                    || !plans::is_hero(name)
+                        && battle.attackers_pool().any(|u| u.name == *name) =>
+            {
+                false
+            }
             _ => trigger
                 .unit_condition()
                 .is_some_and(|name| self.down(battle, name) && !self.recoverable(battle, name)),
@@ -944,10 +1046,31 @@ impl PlaybookPlan {
                 .iter()
                 .find(|(key, _)| key == id)
                 .is_some_and(|(_, at)| battle.t >= at + delay),
-            Trigger::Inside(name) => self
-                .unit(battle, name)
-                .is_some_and(|u| self.inside(battle, u)),
+            Trigger::Inside(name) => {
+                if self.entered.contains(name) {
+                    return true;
+                }
+                let matching: Vec<_> = battle
+                    .attackers_pool()
+                    .filter(|u| u.name == *name && u.kind != Tag::HeroClone)
+                    .map(Unit::reference)
+                    .collect();
+                let inside = matching
+                    .iter()
+                    .any(|r| battle.unit(*r).alive && self.inside(battle, *r));
+                // Policy fallback: five seconds from deployment, never a death gate.
+                inside
+                    || !plans::is_hero(name)
+                        && matching
+                            .iter()
+                            .map(|r| battle.unit(*r).spawned_at)
+                            .reduce(f64::min)
+                            .is_some_and(|at| battle.t >= at + 5.0)
+            }
             Trigger::GroupInside(group) => {
+                if group == "main" && !self.main_started(battle) {
+                    return false;
+                }
                 let units = plans::main_units(battle, group);
                 if units.is_empty() {
                     return false;
@@ -1009,7 +1132,15 @@ impl PlaybookPlan {
                 let u = battle.unit(r);
                 u.hp < fraction * u.max_hp
             }),
-            Trigger::SpellsLeft(key, n) => count(&self.attack.spells, key) <= *n,
+            Trigger::SpellsLeft(key, n) => {
+                count(&self.attack.spells, key) <= *n
+                    || self.charge_closed
+                        && self.steps.iter().any(|step| {
+                            step.action == Action::Spell
+                                && step.group == "charge"
+                                && step.what.as_deref() == Some(spell_name(key))
+                        })
+            }
             Trigger::Dead(name) => {
                 self.unit(battle, name).is_none()
                     && self.deployed.contains(name)
@@ -1507,6 +1638,15 @@ impl PlaybookPlan {
             return None;
         }
         let what = step.what.as_deref().unwrap_or("");
+        if self.initial_return(step) {
+            return None;
+        }
+        if self.charge_closed
+            && step.group == "charge"
+            && matches!(step.action, Action::Spell | Action::Recall)
+        {
+            return Some("charge closed".to_owned());
+        }
         let target = if what != "Revive Spell" {
             step.at
                 .strip_prefix("unit:")
@@ -1651,6 +1791,53 @@ impl PlaybookPlan {
             }
         }
         let t = battle.t;
+        let living: Vec<_> = battle
+            .attackers_pool()
+            .filter(|u| u.alive && u.kind != Tag::HeroClone)
+            .map(Unit::reference)
+            .collect();
+        for r in living {
+            if self.inside(battle, r) {
+                let name = battle.unit(r).name.clone();
+                if !self.entered.contains(&name) {
+                    self.entered.push(name);
+                }
+            }
+        }
+        // output/research/usage/root-rider.md: Recall closes the opener.
+        // https://www.youtube.com/watch?v=C0lnvxJraoM&t=165
+        // Policy: hero loss closes it too, regardless of surviving cleanup.
+        let steps = self.steps.clone();
+        let charge: Vec<_> = steps
+            .iter()
+            .filter(|step| {
+                step.action == Action::Deploy
+                    && step.group == "charge"
+                    && step.what.as_deref().is_some_and(plans::is_hero)
+            })
+            .collect();
+        if !charge.is_empty()
+            && !self.charge_closed
+            && charge
+                .iter()
+                .any(|step| self.deployed.contains(step.what.as_ref().unwrap()))
+        {
+            let active = charge.iter().any(|step| {
+                let name = step.what.as_deref().unwrap();
+                self.unit(battle, name).is_some()
+                    || self.recoverable(battle, name)
+                    || battle.portal_units().any(|r| battle.unit(r).name == name)
+            });
+            let pending = charge.iter().any(|step| {
+                !self.done(&step.id)
+                    && !self.cancelled(&step.id)
+                    && self.cannot(battle, step).is_none()
+                    && !self.impossible(battle, &step.when)
+            });
+            if !active && !pending {
+                self.charge_closed = true;
+            }
+        }
         self.sync_scouting(battle);
         self.attack.opening_actions(battle);
         if (t * 10.0) as i64 % 5 == 0 {
@@ -1726,16 +1913,36 @@ impl PlaybookPlan {
             .iter()
             .filter(|s| !(s.completion || s.uncited))
             .chain(steps.iter().filter(|s| s.completion || s.uncited));
-        for step in order {
+        for original in order {
             if t < self.attack.busy_until {
                 break;
             }
+            let mut returned;
+            let step = if self.initial_return(original) {
+                returned = original.clone();
+                returned.action = Action::Deploy;
+                returned.at = "edge:main".to_owned();
+                returned.group = "main".to_owned();
+                &returned
+            } else {
+                original
+            };
             let done = self.done(&step.id);
             if self.cancelled(&step.id) || done && step.every.is_none() {
                 continue;
             }
             // Do not start no-target expiry clocks while revival is possible.
             if self.awaiting_revive(battle, step) {
+                continue;
+            }
+            if step.action == Action::Spell
+                && matches!(
+                    step.what.as_deref(),
+                    Some("Poison Spell" | "Freeze Spell" | "Rage Spell" | "Totem Spell")
+                )
+                && step.at.ends_with(":main")
+                && !self.main_started(battle)
+            {
                 continue;
             }
             let mut forced = false;
@@ -1799,6 +2006,7 @@ impl PlaybookPlan {
                     } else {
                         self.anchor(battle, &step.at, step.action == Action::Spell)
                     };
+                    position = self.invisibility_anchor(battle, step, position);
                     if position.is_none() && forced {
                         position = Some(self.edge(battle, "main"));
                     }
@@ -2134,10 +2342,15 @@ impl PlaybookPlan {
             self.attack.busy_until = t + action_time(battle, Action::Redeploy, 1);
             return;
         }
-        let mut units = plans::main_units(battle, "main");
+        let mut units = if self.main_started(battle) {
+            plans::main_units(battle, "main")
+        } else {
+            Vec::new()
+        };
         if units.is_empty() {
             units = self.attack.cargo_support(battle).unwrap_or_default();
             if units.is_empty()
+                && self.main_started(battle)
                 && battle
                     .attackers_pool()
                     .any(|u| u.group == "main" && u.name_id != Name::Totem && u.kind != Tag::Pet)

@@ -86,6 +86,17 @@ UNIT_TRIGGERS = ("inside", "hp_below", "heavy_fire")
 # follow whoever they are healing, Wall Breakers open one wall section
 LINE_EXEMPT = {"Healer", "Wall Breaker"}
 
+# output/research/usage/root-rider.md: the smash includes its healing support.
+# https://www.youtube.com/watch?v=g9UjZ9xFQOU&t=169
+SUPPORT_TROOPS = {
+    "Healer",
+    "Druid",
+    "Apprentice Warden",
+    "Wall Breaker",
+    "Super Wall Breaker",
+    "Headhunter",
+}
+
 
 @dataclass
 class PlaybookPlan(AttackPlan):
@@ -102,6 +113,8 @@ class PlaybookPlan(AttackPlan):
         default_factory=dict
     )  # step id -> time it was first ready with no target
     log_steps: list = field(default_factory=list)
+    _entered: set = field(default_factory=set)
+    _charge_closed: bool = False
 
     # the battle asks for initial deployments; everything here is dynamic
     def deployments(self, battle):
@@ -238,7 +251,7 @@ class PlaybookPlan(AttackPlan):
             return True
         return any(
             step["id"] not in self._done
-            and step["action"] == "deploy"
+            and (step["action"] == "deploy" or self._initial_return(step))
             and step.get("what") != "Healer"
             and (
                 step.get("what") in heroes.HEROES
@@ -435,10 +448,57 @@ class PlaybookPlan(AttackPlan):
     def _inside(self, battle, u):
         """Inside the base: at least 2 tiles past the deployable area (every
         tile within 2 is a no-drop tile), not just standing on the red line."""
-        blocked = battle._live_no_deploy()
+        # output/research/usage/root-rider.md: Duke follows the Riders' entry.
+        # https://www.youtube.com/watch?v=C0lnvxJraoM&t=256
+        # Policy milestones use the original boundary, including cleared lanes.
+        blocked = battle.no_deploy
         x, y = int(u.x), int(u.y)
         return all(
             (x + dx, y + dy) in blocked for dx in (-2, 0, 2) for dy in (-2, 0, 2)
+        )
+
+    def _initial_return(self, step):
+        return (
+            step["action"] == "redeploy"
+            and step.get("what") in heroes.HEROES
+            and step["what"] not in getattr(self, "_deployed", set())
+        )
+
+    def _main_started(self, battle):
+        candidates = [
+            step
+            for step in self.steps
+            if step["action"] == "deploy"
+            and step.get("group", "main") == "main"
+            and step.get("what") in self.inventory
+            and step["what"] not in SUPPORT_TROOPS
+            and stats.record(step["what"])["kind"] != "siege"
+        ]
+        bulk = [
+            step
+            for step in candidates
+            if step.get("count") in (None, "all") or int(step["count"]) >= 2
+        ]
+        names = {step["what"] for step in bulk or candidates}
+        return any(u.group == "main" and u.name in names for u in battle.attackers)
+
+    def _invisibility_anchor(self, battle, step, pos):
+        # output/research/usage/invisibility-spell.md: cover moving heroes.
+        # https://clashofclans.fandom.com/wiki/Invisibility_Spell
+        if step.get("what") != "Invisibility Spell" or step.get("at") != "group:charge":
+            return pos
+        group = [u for u in self._group(battle, "charge") if u.is_hero]
+        if not group:
+            return None
+        lead = self.anchor(battle, "unit_ahead:" + group[0].name)
+        x, y = lead
+        for u in group[1:]:
+            distance = math.hypot(u.x - x, u.y - y)
+            if distance > 4.0:
+                shift = (distance - 4.0) / distance
+                x, y = x + (u.x - x) * shift, y + (u.y - y) * shift
+        return (
+            (x, y) if all(math.hypot(u.x - x, u.y - y) <= 4.0 for u in group) else lead
         )
 
     def _heavy_fire(self, battle, u, frac):
@@ -480,6 +540,12 @@ class PlaybookPlan(AttackPlan):
             return any(self._impossible(battle, x) for x in w["all"])
         if "any" in w:
             return all(self._impossible(battle, x) for x in w["any"])
+        if "inside" in w and (
+            w["inside"] in self._entered
+            or w["inside"] not in heroes.HEROES
+            and any(u.name == w["inside"] for u in battle.attackers)
+        ):
+            return False
         return any(
             k in w and self._down(battle, w[k]) and not self._recoverable(battle, w[k])
             for k in UNIT_TRIGGERS
@@ -553,12 +619,25 @@ class PlaybookPlan(AttackPlan):
             ft = self._done.get(w["after"])
             return ft is not None and t >= ft + w.get("delay", 0.0)
         if "inside" in w:
-            u = self._unit(battle, w["inside"])
-            return u is not None and self._inside(battle, u)
+            name = w["inside"]
+            if name in self._entered:
+                return True
+            matching = [
+                u for u in battle.attackers if u.name == name and u.kind != "hero_clone"
+            ]
+            # Policy fallback: a troop's entry gate waits at most five seconds
+            # from deployment, independently of its survival or the live red line.
+            return any(u.alive and self._inside(battle, u) for u in matching) or (
+                name not in heroes.HEROES
+                and bool(matching)
+                and t >= min(u.spawned_at for u in matching) + 5.0
+            )
         if "group_inside" in w:
             # "once the army enters the base": most of the group is deep
             # inside, or (ranged armies such as Throwers fight from outside)
             # most of it has been attacking buildings for 3 s
+            if w["group_inside"] == "main" and not self._main_started(battle):
+                return False
             g = self._group(battle, w["group_inside"])
             if not g:
                 return False
@@ -600,6 +679,14 @@ class PlaybookPlan(AttackPlan):
             u = self._unit(battle, w["hp_below"])
             return u is not None and u.hp < w.get("frac", 0.5) * u.max_hp
         if "spells_left" in w:
+            if self._charge_closed and any(
+                step.get("group") == "charge"
+                and step.get("what")
+                == SPELL_NAMES.get(w["spells_left"], w["spells_left"])
+                for step in self.steps
+                if step["action"] == "spell"
+            ):
+                return True
             return self.spells.get(
                 SPELL_KEYS.get(w["spells_left"], w["spells_left"]), 0
             ) <= w.get("n", 0)
@@ -969,6 +1056,14 @@ class PlaybookPlan(AttackPlan):
         if self._awaiting_revive(battle, st):
             return None
         act, what = st["action"], st.get("what")
+        if self._initial_return(st):
+            return None
+        if (
+            self._charge_closed
+            and st.get("group") == "charge"
+            and act in ("spell", "recall")
+        ):
+            return "charge closed"
         at = str(st.get("at", ""))
         target = None
         if at.startswith(("unit:", "unit_ahead:")) and what != "Revive Spell":
@@ -1074,6 +1169,39 @@ class PlaybookPlan(AttackPlan):
             unit.name for unit in battle.attackers if unit.kind != "hero_clone"
         )
         t = battle.t
+        for u in battle.attackers:
+            if u.alive and u.kind != "hero_clone" and self._inside(battle, u):
+                self._entered.add(u.name)
+        # output/research/usage/root-rider.md: Recall ends the opening phase.
+        # https://www.youtube.com/watch?v=C0lnvxJraoM&t=165
+        # Policy: losing its heroes also closes it; cleanup cannot hold the push.
+        charge = [
+            s
+            for s in self.steps
+            if s["action"] == "deploy"
+            and s.get("group") == "charge"
+            and s.get("what") in heroes.HEROES
+        ]
+        if (
+            charge
+            and not self._charge_closed
+            and any(s["what"] in self._deployed for s in charge)
+        ):
+            active = any(
+                self._unit(battle, s["what"]) is not None
+                or self._recoverable(battle, s["what"])
+                or any(u.name == s["what"] for u in battle.portal_stash)
+                for s in charge
+            )
+            pending = any(
+                s["id"] not in self._done
+                and s["id"] not in self._cancelled
+                and not self._cannot(battle, s)
+                and not self._impossible(battle, s.get("when"))
+                for s in charge
+            )
+            if not active and not pending:
+                self._charge_closed = True
         self.opening_actions(battle)
         if int(t * 10) % 5 == 0:
             for u in battle.attackers:
@@ -1132,7 +1260,17 @@ class PlaybookPlan(AttackPlan):
             # Do not start no-target expiry clocks while revival is still possible.
             if self._awaiting_revive(battle, s):
                 continue
+            if self._initial_return(s):
+                s = {**s, "action": "deploy", "at": "edge:main", "group": "main"}
             act = s["action"]
+            if (
+                act == "spell"
+                and s.get("what")
+                in ("Poison Spell", "Freeze Spell", "Rage Spell", "Totem Spell")
+                and str(s.get("at", "")).endswith(":main")
+                and not self._main_started(battle)
+            ):
+                continue
             forced = False
             if rep and sid in self._done:
                 if t < self._next.get(sid, 0.0) or (
@@ -1186,6 +1324,7 @@ class PlaybookPlan(AttackPlan):
                     pos = self.anchor(
                         battle, s.get("at", "edge:main"), unclaimed=act == "spell"
                     )
+                    pos = self._invisibility_anchor(battle, s, pos)
                 if pos is None and forced:
                     pos = self._edge(
                         battle, "main"
@@ -1489,13 +1628,17 @@ class PlaybookPlan(AttackPlan):
             heroes.portal_redeploy(battle, x, y)
             self._busy_until = t + action_time("redeploy")
             return
-        main = self.main_units(battle)
+        main = self.main_units(battle) if self._main_started(battle) else []
         if not main:
             # Wiki: Battle Blimp, cargo support continues without a surviving push.
             main = self._cargo_support(battle) or []
-            if not main and any(
-                u.group == "main" and u.name != "Totem" and u.kind != "pet"
-                for u in battle.attackers
+            if (
+                not main
+                and self._main_started(battle)
+                and any(
+                    u.group == "main" and u.name != "Totem" and u.kind != "pet"
+                    for u in battle.attackers
+                )
             ):
                 # Wiki: Heroes, independent charges and funnel flanks still
                 # receive spare support after the main push has fallen.
@@ -1657,11 +1800,59 @@ def pick_variants(
         if repl & used or (repl and not cur):
             continue
         new = [dict(copy.deepcopy(x), variant=v["name"]) for x in v.get("steps", [])]
+        # output/research/usage/root-rider.md: Barracks funnels while Wagon
+        # accompanies the push. https://www.youtube.com/watch?v=C0lnvxJraoM&t=246
+        # Policy: a siege-only mismatch repairs only the siege fragment.
+        broken = [x for x in cur if not _usable(x, have, heroes_in, pets, steps)]
+        if (
+            not requested
+            and broken
+            and all(
+                x["action"] == "deploy" and stats.record(x["what"])["kind"] == "siege"
+                for x in broken
+            )
+        ):
+            repl = {x["id"] for x in broken}
+            cur = broken
+            new = [
+                x
+                for x in new
+                if x["id"] in repl
+                and x["action"] == "deploy"
+                and stats.record(x["what"])["kind"] == "siege"
+            ]
         if not new or not all(_usable(x, have, heroes_in, pets, new) for x in new):
             continue
         i = min((n for n, x in enumerate(steps) if x["id"] in repl), default=len(steps))
-        candidate = [x for x in steps if x["id"] not in repl]
+        # output/research/usage/root-rider.md: preserve the chosen funnel/main roles.
+        # https://www.youtube.com/watch?v=C0lnvxJraoM&t=246
+        # Rewiring a rejected variant must not change the retained steps.
+        candidate = copy.deepcopy([x for x in steps if x["id"] not in repl])
         candidate[i:i] = new
+        if not requested:
+            for old in cur:
+                replacement = next((x for x in new if x["id"] == old["id"]), None)
+                if (
+                    old.get("group", "main") != "main"
+                    or replacement is None
+                    or replacement.get("group", "main") == "main"
+                ):
+                    continue
+                for step in candidate:
+                    when = step.get("when") or {}
+                    if (
+                        step["action"] in ("deploy", "redeploy")
+                        and step.get("group", "main") == "main"
+                        and when.get("after") == old["id"]
+                    ):
+                        parent = copy.deepcopy(old.get("when") or {})
+                        if "after" in parent:
+                            parent["delay"] = parent.get("delay", 0.0) + when.get(
+                                "delay", 0.0
+                            )
+                            step["when"] = parent
+                        elif "t" in parent:
+                            step["when"] = {"t": parent["t"] + when.get("delay", 0.0)}
         if not feasible(candidate, {x["id"] for x in new}):
             if requested:
                 raise ValueError(f"Infeasible playbook variant: {v['name']}")
@@ -1888,6 +2079,11 @@ def fit_steps(
     for x in orphans:  # nothing is left of its trigger: it goes with the main push
         x["when"] = dict(anchor) if x["id"] != anchor.get("after") else {"t": 15.0}
     for n in rest:
+        breach = n in ("Wall Breaker", "Super Wall Breaker") and bool(main_deploys)
+        # output/research/usage/super-wall-breaker.md: open the smash entry.
+        # https://blueprintcoc.com/blogs/town-hall-16/top-3-th16-army-links
+        # Policy fitting preserves this utility role at the main entry.
+        when = {"after": main_deploys[0], "delay": 0.0} if breach else anchor
         kept.append(
             {
                 "id": f"rest-{n}",
@@ -1895,11 +2091,19 @@ def fit_steps(
                 "what": n,
                 "count": "all",
                 "at": "edge:main",
-                "when": anchor,
+                "when": when,
                 "uncited": True,
                 "cite": [],
             }
         )
+        if breach:
+            for step in kept:
+                if (
+                    step["id"] != f"rest-{n}"
+                    and step["action"] == "deploy"
+                    and (step.get("when") or {}).get("after") == main_deploys[0]
+                ):
+                    step["when"] = {**step["when"], "after": f"rest-{n}"}
     # a hero the playbook never deploys (the army brings a different hero
     # than the playbook's example) goes in with the main push too
     for h in heroes_in:
@@ -2045,7 +2249,29 @@ def add_waits(steps: list) -> None:
         if not isinstance(w, dict):
             return w
         if "after" in w and not w.get("delay") and w["after"] in group:
-            if st["id"] not in walk_support and not immediate(st, by_id[w["after"]]):
+            previous = by_id[w["after"]]
+            # output/research/usage/root-rider.md: tanks, Riders, Healers and
+            # recalled heroes form one push; input costs still pace every slot.
+            # https://www.youtube.com/watch?v=g9UjZ9xFQOU&t=169
+            smash = (
+                st["action"] in ("deploy", "redeploy")
+                and mine == "main"
+                and previous.get("group", "main") == "main"
+                and previous["action"] in ("deploy", "redeploy")
+            )
+            protection = (
+                st.get("what") == "Invisibility Spell"
+                and mine == "charge"
+                and previous["action"] == "deploy"
+                and previous.get("group") == "charge"
+                and previous.get("what") in heroes.HEROES
+            )
+            if (
+                not smash
+                and not protection
+                and st["id"] not in walk_support
+                and not immediate(st, previous)
+            ):
                 gap = same if group[w["after"]] == mine else change
                 w = {**w, "delay": max(0.0, gap - action_time(act[w["after"]], 1))}
         for k in ("all", "any"):
@@ -2229,6 +2455,26 @@ def from_playbook(
         cc=plan.cc_troops,
     )
     add_spell_support(pb, plan.steps, sp)
+    # output/research/usage/invisibility-spell.md: protection follows the hero.
+    # https://clashofclans.fandom.com/wiki/Invisibility_Spell
+    # Policy: a second hero's entry gate must not gate the first hero's cover.
+    charge = [
+        s
+        for s in plan.steps
+        if s["action"] == "deploy"
+        and s.get("group") == "charge"
+        and s.get("what") in heroes.HEROES
+    ]
+    if charge:
+        for st in plan.steps:
+            when = st.get("when") or {}
+            if (
+                st.get("what") == "Invisibility Spell"
+                and st.get("at") == "group:charge"
+                and when.get("after") in {s["id"] for s in charge[1:]}
+                and not when.get("delay")
+            ):
+                st["when"] = {"after": charge[0]["id"], "delay": 0.0}
     # data/custom-armies.json: explicit roles apply only to unreferenced groups.
     # Playbook group anchors and group conditions retain their original heroes.
     # Wiki: Healer Puppet, send the Queen alongside the main army in smash attacks.

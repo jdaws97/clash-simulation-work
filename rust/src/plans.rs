@@ -810,6 +810,8 @@ impl AttackPlan {
 
     // plans.py:596-615: opening drops do not consume random draws or clamp points.
     pub fn deployments(&mut self, battle: &mut Battle) -> Vec<Deployment> {
+        use crate::playbook::{action_time, Action};
+
         let mut out = self.opening_deployments(battle);
         let mut add = |battle: &Battle, time, name: &str, x, y, group: &str| {
             out.push(Deployment {
@@ -846,7 +848,7 @@ impl AttackPlan {
             for k in 0..self.charge_n {
                 add(
                     battle,
-                    self.charge_at + 0.6 + 0.1 * k as f64,
+                    self.charge_at + 0.6 + 0.133 * k as f64,
                     "Healer",
                     point.0,
                     point.1,
@@ -863,10 +865,31 @@ impl AttackPlan {
                     *lateral + (k as f64 - *count as f64 / 2.0) * 0.6,
                 );
                 add(battle, t, name, x, y, "funnel");
-                t += 0.15;
+                t += battle.pace_tap * battle.pace;
             }
         }
         out.sort_by(|a, b| a.time.partial_cmp(&b.time).expect("deployment time"));
+        // docs/VIDEO_MEASUREMENTS.md: serialize opening slots as well.
+        // https://www.youtube.com/watch?v=w4RTiOi6C_w&t=88
+        let mut available: f64 = 0.0;
+        let tap = battle.pace_tap * battle.pace;
+        let mut i = 0;
+        while i < out.len() {
+            let mut end = i + 1;
+            while end < out.len() && out[end].name == out[i].name && out[end].group == out[i].group
+            {
+                end += 1;
+            }
+            if !self.snipe_deployed.contains(&out[i].name) {
+                let started = out[i].time.max(available);
+                for k in i..end {
+                    out[k].time = out[k].time.max(started + (k - i) as f64 * tap);
+                }
+            }
+            available = available.max(out[end - 1].time + action_time(battle, Action::Deploy, 1));
+            i = end;
+        }
+        self.busy_until = self.busy_until.max(available);
         out
     }
 
@@ -1160,38 +1183,42 @@ impl AttackPlan {
 
     // plans.py:770-806: jitter is drawn in wave order when scheduling taps.
     fn launch_main(&mut self, battle: &mut Battle) {
+        use crate::playbook::{action_time, Action};
+
         let (ex, ey) = self.best_entry(battle);
         self.entry = Some((ex, ey));
+        let started = battle.t.max(self.busy_until);
+        let mut available = started;
+        let tap = battle.pace_tap * battle.pace;
         if let Some(siege) = self.siege.as_deref().filter(|name| !name.is_empty()) {
             if !self.snipe_deployed.iter().any(|name| name == siege) {
-                self.drop(battle, siege, ex, ey, "main", 0.0);
+                self.drop_at(battle, siege, ex, ey, "main", 0.0, available);
+                available += action_time(battle, Action::Deploy, 1);
             }
         } else if !self.cc_names.is_empty() && !self.cc_released {
             crate::units::release_cc_at(battle, ex, ey, "main", false);
+            available += action_time(battle, Action::Deploy, 1);
         }
         let second =
             (self.split_main > 0.05).then(|| edge_point(battle, self.angle + self.split_main, 0.0));
         let mut k = 0;
-        let mut tank_k = 0;
-        let mut damage_k = 0;
         let lead = self.p("tank_lead");
+        // docs/VIDEO_MEASUREMENTS.md: 0.133 s held; serialize distinct slots.
+        // Switch cost remains a policy assumption, shared with playbooks.
+        // https://www.youtube.com/watch?v=w4RTiOi6C_w&t=88
         for wave in &self.main {
             for (name, count) in &wave.units {
-                for _ in 0..*count {
+                if lead > 0.3 && !is_tank(name) {
+                    available = available.max(started + lead);
+                }
+                for i in 0..*count {
                     let (x, y) = second.filter(|_| k % 2 != 0).unwrap_or((ex, ey));
-                    let at = if lead > 0.3 && is_tank(name) {
-                        let at = battle.t + tank_k as f64 * 0.133;
-                        tank_k += 1;
-                        at
-                    } else if lead > 0.3 {
-                        let at = battle.t + lead + damage_k as f64 * 0.133;
-                        damage_k += 1;
-                        at
-                    } else {
-                        battle.t + k as f64 * 0.133
-                    };
+                    let at = available + i as f64 * tap;
                     self.drop_at(battle, name, x, y, "main", wave.spread, at);
                     k += 1;
+                }
+                if *count > 0 {
+                    available += action_time(battle, Action::Deploy, *count);
                 }
             }
         }
@@ -1199,11 +1226,10 @@ impl AttackPlan {
             if self.snipe_deployed.contains(hero) {
                 continue;
             }
-            self.drop(battle, hero, ex, ey, "main", 0.5);
+            self.drop_at(battle, hero, ex, ey, "main", 0.5, available);
+            available += action_time(battle, Action::Deploy, 1);
         }
-        if self.charge_hero.is_some() && !battle.portal_stash.is_empty() {
-            heroes::portal_redeploy(battle, ex, ey);
-        }
+        self.busy_until = available;
         self.main_at = battle.t;
         self.phase = "support".to_owned();
     }
@@ -1252,6 +1278,8 @@ impl AttackPlan {
 
     // plans.py:827-905: phases advance once per tick, before the half-second brain.
     pub fn on_tick(&mut self, battle: &mut Battle) {
+        use crate::playbook::{action_time, Action};
+
         let t = battle.t;
         let opening = self.opening_actions(battle);
         if t >= self.busy_until {
@@ -1275,6 +1303,7 @@ impl AttackPlan {
             && self.recall_funnel
             && self.charge_hero.is_some()
             && self.phase == "funnel"
+            && t >= self.busy_until
         {
             let lateral = if self.charge_lat.abs() > 1.0 {
                 -self.charge_lat
@@ -1283,28 +1312,40 @@ impl AttackPlan {
             };
             let (x, y) = edge_point(battle, self.angle, lateral);
             heroes::portal_redeploy(battle, x, y);
+            self.busy_until = t + action_time(battle, Action::Redeploy, 1);
             hold = true;
         }
-        if !battle.portal_stash.is_empty() && t >= battle.portal_ready_at && !hold {
-            let (x, y) = self.portal_point(battle);
+        if !battle.portal_stash.is_empty()
+            && t >= battle.portal_ready_at
+            && !hold
+            && t >= self.busy_until
+        {
+            let (x, y) = if self.charge_hero.is_some() && self.phase == "support" {
+                self.entry.expect("main entry before recalled charge")
+            } else {
+                self.portal_point(battle)
+            };
             heroes::portal_redeploy(battle, x, y);
+            self.busy_until = t + action_time(battle, Action::Redeploy, 1);
         }
         if self.phase == "funnel" {
             if !opening && t >= self.busy_until && !self.zap_done && self.zap_ad != (0, 0) {
                 self.zap(battle, &Self::have, true, &[]);
             }
-            if t >= self.main_max
-                || (t >= self.main_min
-                    && self.funnel_progress(battle) as f64 >= self.p("commit_progress"))
+            if t >= self.busy_until
+                && (t >= self.main_max
+                    || (t >= self.main_min
+                        && self.funnel_progress(battle) as f64 >= self.p("commit_progress")))
             {
                 self.launch_main(battle);
             }
-        } else if self.phase == "support" && t >= self.main_at + 2.0 {
+        } else if self.phase == "support" && t >= self.main_at + 2.0 && t >= self.busy_until {
             let (x, y) = self.entry.expect("main entry before support");
-            let mut k = 0;
+            let mut available = t;
+            let tap = battle.pace_tap * battle.pace;
             for wave in &self.support {
                 for (name, count) in &wave.units {
-                    for _ in 0..*count {
+                    for i in 0..*count {
                         self.drop_at(
                             battle,
                             name,
@@ -1312,12 +1353,15 @@ impl AttackPlan {
                             y,
                             "main",
                             wave.spread,
-                            t + k as f64 * 0.133,
+                            available + i as f64 * tap,
                         );
-                        k += 1;
+                    }
+                    if *count > 0 {
+                        available += action_time(battle, Action::Deploy, *count);
                     }
                 }
             }
+            self.busy_until = available;
             self.phase = "push".to_owned();
         } else if self.phase == "push" && t >= self.main_at + 25.0 {
             self.deploy_cleanup(battle);

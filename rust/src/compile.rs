@@ -214,6 +214,33 @@ impl<'a> Compiler<'a> {
             list(&plan, "cc_troops"),
         )?;
         add_spell_support(pb, &mut steps, plan.at("spells"));
+        // output/research/usage/invisibility-spell.md: cover the first hero
+        // independently of the second hero's gate.
+        // https://clashofclans.fandom.com/wiki/Invisibility_Spell
+        let charge: Vec<String> = steps
+            .iter()
+            .filter(|step| {
+                text(step, "action", "") == "deploy"
+                    && text(step, "group", "") == "charge"
+                    && is_hero(text(step, "what", ""))
+            })
+            .map(|step| text(step, "id", "").to_owned())
+            .collect();
+        if let Some(first) = charge.first() {
+            for step in &mut steps {
+                let when = field(step, "when");
+                if text(step, "what", "") == "Invisibility Spell"
+                    && text(step, "at", "") == "group:charge"
+                    && charge
+                        .iter()
+                        .skip(1)
+                        .any(|id| id == text(&when, "after", ""))
+                    && !flag(&when, "delay")
+                {
+                    put(step, "when", after(first, 0.0));
+                }
+            }
+        }
         apply_roles(&mut steps, build, &options.overrides);
         if let Some(gaps) = self.gaps {
             add_waits(&mut steps, gaps, self.pace);
@@ -269,6 +296,8 @@ impl<'a> Compiler<'a> {
             put(&mut plan, key, object());
         }
         put(&mut plan, "_cancelled", array([]));
+        put(&mut plan, "_entered", array([]));
+        put(&mut plan, "_charge_closed", Json::Bool(false));
         put(&mut plan, "log_steps", array([]));
         Ok(plan)
     }
@@ -457,11 +486,12 @@ impl<'a> Compiler<'a> {
         variants.sort_by(|a, b| number(b, "support", 0.0).total_cmp(&number(a, "support", 0.0)));
         let mut used = Vec::new();
         for variant in variants {
-            let replaces = variant
+            let mut replaces = variant
                 .get("replaces")
                 .filter(|value| truth(value))
-                .map_or(&[][..], Json::arr);
-            let current: Vec<Json> = steps
+                .map_or(&[][..], Json::arr)
+                .to_vec();
+            let mut current: Vec<Json> = steps
                 .iter()
                 .filter(|step| replaces.contains(step.at("id")))
                 .cloned()
@@ -479,6 +509,27 @@ impl<'a> Compiler<'a> {
             for step in &mut new {
                 put(step, "variant", field(&variant, "name"));
             }
+            // output/research/usage/root-rider.md: siege alternatives retain
+            // the charge strategy. https://www.youtube.com/watch?v=C0lnvxJraoM&t=246
+            let broken: Vec<Json> = current
+                .iter()
+                .filter(|step| !self.usable(step, inventory, heroes, spells, plan, &steps))
+                .cloned()
+                .collect();
+            if !requested
+                && !broken.is_empty()
+                && broken.iter().all(|step| {
+                    text(step, "action", "") == "deploy" && armies::is_siege(text(step, "what", ""))
+                })
+            {
+                replaces = broken.iter().map(|step| field(step, "id")).collect();
+                current = broken;
+                new.retain(|step| {
+                    replaces.contains(step.at("id"))
+                        && text(step, "action", "") == "deploy"
+                        && armies::is_siege(text(step, "what", ""))
+                });
+            }
             if new.is_empty()
                 || !new
                     .iter()
@@ -490,12 +541,42 @@ impl<'a> Compiler<'a> {
                 .iter()
                 .position(|step| replaces.contains(step.at("id")))
                 .unwrap_or(steps.len());
+            // output/research/usage/root-rider.md: preserve the chosen funnel/main roles.
+            // https://www.youtube.com/watch?v=C0lnvxJraoM&t=246
+            // Clone before rewiring so a rejected variant cannot change retained steps.
             let mut candidate: Vec<Json> = steps
                 .iter()
                 .filter(|step| !replaces.contains(step.at("id")))
                 .cloned()
                 .collect();
             candidate.splice(index..index, new.iter().cloned());
+            if !requested {
+                for old in &current {
+                    let replacement = new.iter().find(|step| step.get("id") == old.get("id"));
+                    if text(old, "group", "main") != "main"
+                        || replacement.is_none_or(|step| text(step, "group", "main") == "main")
+                    {
+                        continue;
+                    }
+                    for step in &mut candidate {
+                        let when = field(step, "when");
+                        if matches!(text(step, "action", ""), "deploy" | "redeploy")
+                            && text(step, "group", "main") == "main"
+                            && when.get("after") == old.get("id")
+                        {
+                            let mut parent = field(old, "when");
+                            if parent.get("after").is_some() {
+                                let delay =
+                                    number(&parent, "delay", 0.0) + number(&when, "delay", 0.0);
+                                put(&mut parent, "delay", Json::Num(delay));
+                                put(step, "when", parent);
+                            } else if let Some(t) = parent.get("t") {
+                                put(step, "when", time(t.f64() + number(&when, "delay", 0.0)));
+                            }
+                        }
+                    }
+                }
+            }
             let ids: Vec<String> = new
                 .iter()
                 .map(|step| text(step, "id", "").to_owned())
@@ -533,7 +614,7 @@ impl<'a> Compiler<'a> {
                 continue;
             }
             steps = candidate;
-            used.extend_from_slice(replaces);
+            used.extend_from_slice(&replaces);
         }
         if let Some(names) = selected {
             let mut missing: Vec<&str> = names
@@ -951,14 +1032,36 @@ pub fn fit_steps(
     }
     for (name, count) in inventory.obj() {
         if truth(count) && !mentioned.contains(&string(name)) {
+            // output/research/usage/super-wall-breaker.md: breach with the push.
+            // https://blueprintcoc.com/blogs/town-hall-16/top-3-th16-army-links
+            let breach = matches!(name.as_str(), "Wall Breaker" | "Super Wall Breaker")
+                && anchor.get("after").is_some();
+            let when = if breach {
+                after(text(&anchor, "after", ""), 0.0)
+            } else {
+                anchor.clone()
+            };
             kept.push(rest_step(
                 &format!("rest-{name}"),
                 &string(name),
                 string("all"),
                 "edge:main",
                 None,
-                anchor.clone(),
+                when,
             ));
+            if breach {
+                let id = format!("rest-{name}");
+                for step in &mut kept {
+                    let mut when = field(step, "when");
+                    if text(step, "id", "") != id
+                        && text(step, "action", "") == "deploy"
+                        && when.get("after") == anchor.get("after")
+                    {
+                        put(&mut when, "after", string(&id));
+                        put(step, "when", when);
+                    }
+                }
+            }
         }
     }
     for hero in heroes {
@@ -1153,7 +1256,20 @@ fn fix_wait(
         .get("after")
         .and_then(|id| source.iter().find(|step| step.get("id") == Some(id)))
     {
+        // output/research/usage/root-rider.md: one paced smash deployment chain.
+        // https://www.youtube.com/watch?v=g9UjZ9xFQOU&t=169
+        let smash = matches!(text(step, "action", ""), "deploy" | "redeploy")
+            && text(step, "group", "main") == "main"
+            && text(previous, "group", "main") == "main"
+            && matches!(text(previous, "action", ""), "deploy" | "redeploy");
+        let protection = text(step, "what", "") == "Invisibility Spell"
+            && text(step, "group", "main") == "charge"
+            && text(previous, "action", "") == "deploy"
+            && text(previous, "group", "") == "charge"
+            && is_hero(text(previous, "what", ""));
         if !flag(trigger, "delay")
+            && !smash
+            && !protection
             && !walk.iter().any(|id| id == text(step, "id", ""))
             && !immediate(step, previous)
         {

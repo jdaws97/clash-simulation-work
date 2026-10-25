@@ -161,7 +161,7 @@ fn invalid_proof(genome: &ArmyGenome) -> Result<(), String> {
 /// The Healer is an alive nonattacking reserve at t=0, preventing the standard
 /// stalled-army rescue from advancing the t=30 Barbarian. Nine undefended
 /// storages give a reproducible engagement without incoming damage or heroes.
-/// A t=0 edge Rage expires before combat. A group_inside Rage follows the
+/// A t=0 reserve-flank Rage expires before combat. A group_inside Rage follows the
 /// Barbarian and increases measured native damage. All stats are unmodified.
 fn timing_fixture(
     account: &AccountRules,
@@ -215,7 +215,10 @@ fn timing_fixture(
             "spell",
             "Rage Spell",
             1,
-            "edge:main",
+            // output/research/usage/rage-spell.md: Rage has an 18-second duration.
+            // https://clashofclans.fandom.com/wiki/Rage_Spell
+            // Spend the baseline on the reserve flank; :main waits for the push.
+            "edge:right",
             "main",
             time(0.0),
         ),

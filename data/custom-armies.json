@@ -1379,6 +1379,76 @@
    "idea": "The user's own Fireball Warden army (Super Minion/Rocket Balloon, Warden Fireball + Rage Gem), decoded from their battle log (20261012), played with data/playbooks/fireball-warden.json (user, 2026-10-24).",
    "family": null,
    "own_levels": true
+  },
+  {
+   "archetype": "user-rr-oct25",
+   "build": 1,
+   "th": 16,
+   "share": 1.0,
+   "three_star": 0.0,
+   "family": "root-rider",
+   "idea": "The user's Root Rider army as seen in their 2026-10-25 ranked replays vs TH18 bases: user-rr with 4 Super Wall Breakers instead of 4 Rocket Balloons (output/ranked-bases-2026-10-25-th18/*/attacker*army*.json). Replay bars also show Rage/Earthquake; the fifth troop icon was read as Apprentice Warden/Ruin Witch/Headhunter (Apprentice Warden kept). Heroes and loadouts as user-rr (not readable from the bar).",
+   "troops": {
+    "Ice Golem": 2,
+    "Root Rider": 4,
+    "Valkyrie": 8,
+    "Healer": 5,
+    "Apprentice Warden": 1,
+    "Balloon": 2,
+    "Minion": 6,
+    "Archer": 2,
+    "Super Wall Breaker": 4
+   },
+   "spells": {
+    "Invisibility Spell": 5,
+    "Recall Spell": 1,
+    "Freeze Spell": 1,
+    "Poison Spell": 1,
+    "Overgrowth Spell": 1
+   },
+   "cc": {
+    "Siege Barracks": 1,
+    "Super Hog Rider": 4,
+    "Minion": 1,
+    "Rage Spell": 1,
+    "Totem Spell": 1
+   },
+   "heroes": [
+    "Royal Champion",
+    "Dragon Duke",
+    "Archer Queen",
+    "Grand Warden"
+   ],
+   "funnel": [
+    "Royal Champion",
+    "Dragon Duke"
+   ],
+   "push": [
+    "Archer Queen",
+    "Grand Warden"
+   ],
+   "loadouts": {
+    "Royal Champion": [
+     "Rocket Spear",
+     "Electro Boots",
+     "Unicorn"
+    ],
+    "Dragon Duke": [
+     "Revenge Deck",
+     "Fire Heart",
+     "Phoenix"
+    ],
+    "Archer Queen": [
+     "Action Figure",
+     "Giant Arrow",
+     "Frosty"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Rage Gem",
+     "Poison Lizard"
+    ]
+   }
   }
  ]
 }
