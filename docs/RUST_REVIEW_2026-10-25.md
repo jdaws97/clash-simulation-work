@@ -34,7 +34,10 @@ CC assumed per each layout's notes, placeholder donated-siege caps):
 | r18c | 2★ | 0.90 | 8/28/4/0 | 32% | 75% | 1.4 / 0.4 |
 | r18d | 3★ | 0.95 | 12/18/10/0 | 25% | 92% | 1.6 / 0.0 |
 
-The sim is about one star weaker than the user on every base and never
+Correction: the "8 sides" are 8 uneven directions. The angles were passed as
+0, 45, ... 315 radians (0°, 48°, 58°, 117°, 175°, 233°, 292°, 350°); see
+SIMULATION_METHODS_RESEARCH.md, which also shows most of this gap is side
+choice. The sim is about one star weaker than the user on every base and never
 three-stars in 160 tries. Attacks end because the army is spent (median end
 ~115-145 s), not on time. Side choice swings mean stars by up to 2.0, so how
 the attacker picks a side matters as much as most mechanics.
