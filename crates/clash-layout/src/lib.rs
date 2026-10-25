@@ -5,6 +5,7 @@ pub mod admit;
 pub mod geometry;
 pub mod json;
 pub mod model;
+pub mod render;
 pub mod rules;
 
 pub use admit::{admit, AdmissionIssue, AdmissionReport, AdmittedLayout};
