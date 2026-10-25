@@ -200,11 +200,9 @@ pub fn cv(
     if folds_n < 2 || observations.len() < folds_n {
         return Err("CV needs at least two nonempty folds".to_owned());
     }
-    let reference = args.flag("--reference-cv2");
-    let refit = args.flag("--refit") || !reference;
     let settings = args.settings(false)?;
     let mut fit_settings = args.settings(true)?;
-    // Replay and fit defaults differ exactly as the frozen scripts do.
+    // Fitting uses a fixed sampling budget independent of evaluation settings.
     fit_settings.angles = 4;
     fit_settings.seeds = 1;
     let options = args.fit_options()?;
@@ -218,19 +216,7 @@ pub fn cv(
     let mut held_out = BTreeSet::new();
     let mut pooled_rows = Vec::new();
     for fold in 0..folds_n {
-        let (training, mut test) = if reference {
-            let train_path = args
-                .root
-                .join(format!("output/overnight/cv2/train-{fold}.jsonl"));
-            let train_ids: BTreeSet<_> = history::battles(&train_path)?
-                .iter()
-                .filter_map(|battle| super::decode::identity(battle).ok())
-                .collect();
-            observations
-                .iter()
-                .cloned()
-                .partition::<Vec<_>, _>(|row| train_ids.contains(&row.id))
-        } else {
+        let (training, test) = {
             // Stable IDs, not outcome-stratified folds: no outcome enters assignment.
             let mut sorted = observations.clone();
             sorted.sort_by(|left, right| left.id.cmp(&right.id));
@@ -245,32 +231,12 @@ pub fn cv(
             }
             (training, test)
         };
-        if reference {
-            // Frozen replay_log used current account levels on the legacy
-            // layout; its fitter instead used the layout's historical levels.
-            let replay_rows = read_observations(args, false)?.0;
-            for row in &mut test {
-                let replay = replay_rows
-                    .iter()
-                    .find(|replay| replay.id == row.id)
-                    .ok_or("reference replay observation missing")?;
-                row.layout = replay.layout.clone();
-                row.setup_source = replay.setup_source.clone();
-            }
-        }
         if test.is_empty() || training.is_empty() {
             return Err(format!("empty CV fold {fold}"));
         }
-        let path = if refit {
-            directory.join(format!("{}-{fold}.json", settings.attacker))
-        } else {
-            args.root.join(format!(
-                "output/overnight/cv2/{}-{fold}.json",
-                settings.attacker
-            ))
-        };
+        let path = directory.join(format!("{}-{fold}.json", settings.attacker));
         let report_path = directory.join(format!("{}-{fold}-report.json", settings.attacker));
-        let binding = if refit {
+        let binding = {
             let train_path = directory.join(format!("train-{fold}-ids.json"));
             write(
                 &train_path,
@@ -300,12 +266,6 @@ pub fn cv(
                 return Err("CV test row occurs in calibration ancestry".to_owned());
             }
             binding.info
-        } else {
-            let old_report = args.root.join(format!(
-                "output/overnight/cv2/{}-{fold}-report.json",
-                settings.attacker
-            ));
-            provenance::binding(&args.root, &path, Some(&old_report))?.info
         };
         for row in &test {
             if !held_out.insert(row.id.clone()) {
@@ -348,11 +308,7 @@ pub fn cv(
         ),
         (
             "validation_status",
-            string(if refit {
-                "cross-validation; r8 prior; verified disjoint hash-bound ancestry"
-            } else {
-                "archival comparison only; legacy CV2 reports may have unbound calibration ancestry"
-            }),
+            string("cross-validation; r8 prior; verified disjoint hash-bound ancestry"),
         ),
         ("pooled", pool_fold_metrics(&folds)),
         (
@@ -362,29 +318,38 @@ pub fn cv(
         ("folds", arr(folds)),
         ("skipped", count_map(&skipped)),
     ]);
-    if reference {
-        let frozen = read(&args.root.join(format!(
-            "output/overnight/cv2/pooled-{}.json",
-            settings.attacker
-        )))?;
-        let delta = obj([
-            "sim_3star",
-            "brier",
-            "destruction_mae",
-            "time_to_3star_ratio",
-        ]
-        .into_iter()
-        .map(|key| {
-            (
-                key,
-                num(number(out.at("pooled"), key, 0.0) - number(&frozen, key, 0.0)),
-            )
-        }));
-        put(&mut out, "frozen_python", frozen);
-        put(&mut out, "rust_minus_frozen_python", delta);
-        put(&mut out, "frozen_baseline_note", string("CV2 constant_predictor_brier used the pooled held-out rate; Rust estimates a separate constant from each training fold"));
+    if let Some(path) = args.optional_path("--reference") {
+        let frozen = read(&path)?;
+        let frozen = frozen.get("pooled").unwrap_or(&frozen).clone();
+        let delta = compare_saved_metrics(out.at("pooled"), &frozen)?;
+        put(&mut out, "saved_reference", frozen);
+        put(&mut out, "difference_from_reference", delta);
+        put(&mut out, "reference_sha256", string(file_hash(&path)?));
     }
     Ok(out)
+}
+
+fn compare_saved_metrics(current: &Json, saved: &Json) -> Result<Json, String> {
+    let mut differences = Vec::new();
+    for key in [
+        "sim_3star",
+        "brier",
+        "destruction_mae",
+        "time_to_3star_ratio",
+    ] {
+        let difference = match (current.get(key), saved.get(key)) {
+            (Some(Json::Num(current)), Some(Json::Num(saved)))
+                if current.is_finite() && saved.is_finite() =>
+            {
+                num(current - saved)
+            }
+            (Some(Json::Null), Some(Json::Num(_) | Json::Null))
+            | (Some(Json::Num(_)), Some(Json::Null)) => Json::Null,
+            _ => return Err(format!("missing or invalid saved comparison metric {key}")),
+        };
+        differences.push((key, difference));
+    }
+    Ok(obj(differences))
 }
 
 pub fn proof(
@@ -574,7 +539,10 @@ fn check_d(
     compiler: &Compiler<'_>,
     catalog: Arc<Catalog>,
 ) -> Result<Json, String> {
-    let layout = read(&args.root.join("output/overnight/qd-main/qd-1212.json"))?;
+    let path = args
+        .optional_path("--base")
+        .ok_or("exposed-eagle check needs an explicit --base FILE")?;
+    let layout = read(&path)?;
     let strength = replay::strengths(&args.root, &args.calibration())?;
     let mut opened = 0;
     let mut down = 0;
@@ -795,4 +763,37 @@ pub fn score_jobs(args: &Arguments) -> Result<Json, String> {
         arr(rows.iter().map(ReplayRow::to_json)),
     );
     Ok(report)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn saved_metrics_compare_numbers_and_preserve_missing_measurements() {
+        let saved = obj([
+            ("sim_3star", num(0.25)),
+            ("brier", num(0.5)),
+            ("destruction_mae", num(10.0)),
+            ("time_to_3star_ratio", Json::Null),
+        ]);
+        let current = obj([
+            ("sim_3star", num(0.5)),
+            ("brier", num(0.25)),
+            ("destruction_mae", num(12.0)),
+            ("time_to_3star_ratio", num(1.0)),
+        ]);
+        assert_eq!(
+            compare_saved_metrics(&current, &saved).unwrap(),
+            obj([
+                ("sim_3star", num(0.25)),
+                ("brier", num(-0.25)),
+                ("destruction_mae", num(2.0)),
+                ("time_to_3star_ratio", Json::Null),
+            ])
+        );
+        let mut incomplete = saved;
+        remove(&mut incomplete, "brier");
+        assert!(compare_saved_metrics(&current, &incomplete).is_err());
+    }
 }
