@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import random
 import json
+import statistics
 import sys
 from pathlib import Path
 
@@ -38,6 +39,14 @@ from decode_battlelog import decode  # noqa: E402
 from replay_log import family_strength, to_build  # noqa: E402
 
 KEY_KINDS = ("ad", "inferno", "eagle", "scatter", "th", "mono", "xbow")
+
+
+def event_median(times):
+    """Median conditional on observation, with missing events counted separately."""
+    # output/hunt/r16/v1.out #5: absence is not a time beyond the battle limit.
+    observed = [time for time in times if time is not None]
+    median = round(statistics.median(observed), 2) if observed else "-"
+    return f"{median} ({len(observed)}/{len(times)} observed; {len(times) - len(observed)} missed)"
 
 
 class ObservedPlan(AttackPlan):
@@ -152,7 +161,7 @@ def make_plan(
         cc_troops=cc_troops,
         siege=siege,
         siege_donated=siege is not None,
-        ground=False,
+        ground=build.get("warden_mode") == "ground",
         loadouts=_loadouts(build, build["heroes"]),
     )
     plan.observed = True  # a real army from the battle log: legal by definition
@@ -308,20 +317,13 @@ def main():
             cells.append(f"{sum(v) / len(v):5.1f} [{min(v):3d}-{max(v):3d}]          ")
         print(f"{t:4d} {at(real_curve, t):4d} | " + " | ".join(cells))
     print()
-    print("== key defenses: real fall time vs sim median (n fell / n)")
+    print("== key defenses: real fall time vs sim median over observed falls")
     print(f"  {'':16s} {'real':>12s} | " + " | ".join(f"{c:24s}" for c in cfgs))
     for f in real["key_defense_falls"]:
         lab = f"{f['key']}({f['x']},{f['y']})"
         cells = []
         for c in cfgs:
-            ts = sorted(r["falls"].get(lab, 999) for r in groups[c])
-            # output/fidelity/diag/d2.out: conventional median for even counts
-            mid = len(ts) // 2
-            med = ts[mid] if len(ts) % 2 else round((ts[mid - 1] + ts[mid]) / 2, 2)
-            med = 999 if med >= 999 else med
-            cells.append(
-                f"{'-' if med == 999 else med:>6} ({sum(1 for x in ts if x < 999)}/{len(ts)})           "
-            )
+            cells.append(event_median([r["falls"].get(lab) for r in groups[c]]))
         print(
             f"  {lab:16s} {f['t']:6.1f} +-{f['plus_minus_s']:<3} | " + " | ".join(cells)
         )
@@ -330,13 +332,11 @@ def main():
     for s in real["stars"]:
         cells = []
         for c in cfgs:
-            ts = sorted(
-                r["stars_t"].get(s["star"], r["stars_t"].get(str(s["star"]), 999))
+            ts = [
+                r["stars_t"].get(s["star"], r["stars_t"].get(str(s["star"])))
                 for r in groups[c]
-            )
-            cells.append(
-                f"median {'-' if ts[len(ts) // 2] == 999 else ts[len(ts) // 2]} ({sum(1 for x in ts if x < 999)}/{len(ts)})"
-            )
+            ]
+            cells.append("median " + event_median(ts))
         print(f"  star {s['star']}: real {s['t']:5.1f} | " + " | ".join(cells))
     for c in cfgs:
         print(

@@ -223,9 +223,26 @@ pub(super) fn layout_identity(layout: &Json) -> String {
     if let Json::Obj(items) = &mut geometry {
         items
             .retain(|(key, _)| !matches!(key.as_str(), "name" | "notes" | "source" | "provenance"));
+        // setup.rs:514 and Layout.from_json: walls are a sorted, deduplicated
+        // tile set. Buildings and traps retain their execution/tie-break order.
+        if let Some((_, Json::Arr(walls))) = items.iter_mut().find(|(key, _)| key == "walls") {
+            let mut tiles: Vec<_> = walls
+                .iter()
+                .map(|wall| {
+                    let pair = wall.arr();
+                    (pair[0].i64(), pair[1].i64())
+                })
+                .collect();
+            tiles.sort();
+            tiles.dedup();
+            *walls = tiles
+                .into_iter()
+                .map(|(x, y)| Json::Arr(vec![Json::Num(x as f64), Json::Num(y as f64)]))
+                .collect();
+        }
     }
     // evaluate.py:467 groups the same battlefield independently of labels.
-    // Sort object keys recursively; arrays still retain their execution order.
+    // Sort object keys recursively; other arrays retain their execution order.
     encode(&super::program::canonical(&geometry))
 }
 
@@ -233,6 +250,7 @@ pub(super) fn layout_identity(layout: &Json) -> String {
 pub enum Stage {
     Quick,
     Confirm,
+    Finalist,
     Holdout,
 }
 
@@ -241,6 +259,7 @@ impl Stage {
         match self {
             Self::Quick => "quick",
             Self::Confirm => "confirm",
+            Self::Finalist => "finalist",
             Self::Holdout => "holdout",
         }
     }
@@ -352,6 +371,9 @@ pub fn allocate(
                 Stage::Quick => 0,
                 Stage::Confirm => 1,
                 Stage::Holdout => 2,
+                // output/hunt/r16/v2.out #1: frozen finalists, same search bases,
+                // fresh seeds whose high bits cannot collide with quick/confirm.
+                Stage::Finalist => 3,
             };
             let battle_seed =
                 ((hash(seed_key.as_bytes()) & ((1_u64 << 48) - 1)) | (domain << 48)) as i64;
@@ -588,6 +610,7 @@ impl CandidateEstimate {
         let stage = match value.at("stage").str() {
             "quick" => Stage::Quick,
             "confirm" => Stage::Confirm,
+            "finalist" => Stage::Finalist,
             "holdout" => Stage::Holdout,
             _ => return Err("unknown checkpoint stage".to_owned()),
         };

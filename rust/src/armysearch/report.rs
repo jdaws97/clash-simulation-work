@@ -104,6 +104,11 @@ fn input_files(root: &Path, catalog: &Path) -> Result<Vec<PathBuf>, String> {
         catalog.to_owned(),
         std::env::current_exe().map_err(|error| error.to_string())?,
     ];
+    // armies.rs overlays the latest ClashKing inventory onto your-levels.json.
+    let live = root.join("data/live/player-latest.json");
+    if live.is_file() {
+        paths.push(live);
+    }
     // meta_armies.py:61-104 and playbook.py:1957-2100 read both library
     // inputs and nested playbook/table inputs. Include the catalog explicitly
     // even when --catalog points outside the repository, plus balance inputs.
@@ -234,7 +239,7 @@ pub fn frozen_selection(path: &Path, elites: &[Elite]) -> Result<(), String> {
         &object([
             (
                 "selection_source",
-                string("confirmation on search split only; order frozen before holdout"),
+                string("confirmation on search split only; finalists and order frozen before fresh-seed search-base re-evaluation and holdout"),
             ),
             (
                 "armies",
@@ -309,7 +314,17 @@ fn uncertainty(manifest: &TargetManifest, estimate: &CandidateEstimate, seed: u6
         cluster_bootstrap.push(total / total_weight);
     }
     cluster_bootstrap.sort_by(f64::total_cmp);
+    // output/hunt/r16/v2.out #1: confirmation has selected parents/winners.
+    let selection_adjustment = if matches!(
+        estimate.stage,
+        super::score::Stage::Quick | super::score::Stage::Confirm
+    ) {
+        "unadjusted for selection"
+    } else {
+        "frozen finalists; fresh seeds; conditional on the fixed target bank"
+    };
     object([
+        ("selection_adjustment", string(selection_adjustment)),
         ("seed_group_standard_error", Json::Num(estimate.standard_error)),
         ("seed_group_bootstrap_95", if insufficient {
             Json::Null
@@ -414,6 +429,7 @@ pub fn army_report(
     path: &Path,
     rank: usize,
     elite: &Elite,
+    fresh: &CandidateEstimate,
     holdout: &CandidateEstimate,
     manifest: &TargetManifest,
     plan: Json,
@@ -436,9 +452,11 @@ pub fn army_report(
         ("compiled_plan", plan),
         ("quick", stage_report(manifest, &elite.quick, seed)),
         ("confirmation", stage_report(manifest, &elite.confirm, seed ^ 1)),
+        ("fresh_seed_search_bases", stage_report(manifest, fresh, seed ^ 3)),
         ("holdout", stage_report(manifest, holdout, seed ^ 2)),
         ("median_battle", replay),
         ("holdout_policy", string("frozen army and general plan; fresh disjoint seed domain and offset sides; results never update archive or order")),
+        ("fresh_seed_policy", string("finalists frozen before evaluation; same search bases and confirmation budget; seed domain disjoint from quick, confirmation and holdout; results never update archive or order")),
     ]))
 }
 

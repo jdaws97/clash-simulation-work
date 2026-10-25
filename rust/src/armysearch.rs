@@ -51,6 +51,7 @@ const USAGE: &str = concat!(
     "--out DIR --root REPO --catalog C.json]\n",
     "Budgets are per-candidate battle ceilings. Minimum coverage is two sides per base. ",
     "Holdout defaults to 8 sides x 16 fresh seed groups per base. ",
+    "Frozen finalists also receive a fresh-seed pass on the search bases at the confirmation budget. ",
     "Immigrant fractions are in [0,1], sum to at most 1, and reserve nearest-whole ",
     "slots in every batch before seeds/offspring. Families default to all. ",
     "Playbook-only mode uses compatible seeds/offspring for every slot. ",
@@ -476,6 +477,20 @@ pub fn run(
     let frozen = encode(&report::archive_json(&state));
     let mut index = Vec::new();
     for (position, elite) in finalists.iter().enumerate() {
+        eprintln!(
+            "armysearch fresh seeds {}/{}",
+            position + 1,
+            finalists.len()
+        );
+        let (fresh_keys, fresh_outcomes) =
+            evaluator.evaluate_rows(&elite.genome, Stage::Finalist, config.confirm_budget)?;
+        let fresh = score::summarise(
+            manifest,
+            Stage::Finalist,
+            &fresh_keys,
+            &fresh_outcomes,
+            config.confirm_budget,
+        )?;
         eprintln!("armysearch holdout {}/{}", position + 1, finalists.len());
         let (keys, outcomes) =
             evaluator.evaluate_rows(&elite.genome, Stage::Holdout, holdout_budget)?;
@@ -506,6 +521,7 @@ pub fn run(
             &config.out.join(&filename),
             position + 1,
             elite,
+            &fresh,
             &holdout,
             manifest,
             plan,
@@ -521,11 +537,13 @@ pub fn run(
             ("report", string(filename)),
             ("archive_cell", string(elite.genome.cell(account))),
             ("confirmation", elite.confirm.metrics.to_json()),
+            ("confirmation_intervals", string("unadjusted for selection")),
+            ("fresh_seed_search_bases", fresh.metrics.to_json()),
             ("holdout", holdout.metrics.to_json()),
         ]));
     }
     if frozen != encode(&report::archive_json(&state)) {
-        return Err("holdout changed the archive".to_owned());
+        return Err("finalist evaluation changed the archive".to_owned());
     }
     let summary = object([
         ("objective", string(config.objective.name())),

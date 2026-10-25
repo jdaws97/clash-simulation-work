@@ -200,7 +200,7 @@ impl ArmyLibrary {
         Ok(Self {
             root: root.to_owned(),
             builds,
-            user: read_json(&directory.join("your-levels.json"))?,
+            user: user_levels(&directory, stats)?,
             policy: if policy_path.exists() {
                 read_json(&policy_path)?
             } else {
@@ -227,6 +227,43 @@ impl ArmyLibrary {
             .cloned()
             .unwrap_or_else(object)
     }
+}
+
+fn user_levels(directory: &Path, stats: &Stats) -> Result<Json, String> {
+    let mut user = read_json(&directory.join("your-levels.json"))?;
+    let live = directory.join("live/player-latest.json");
+    if live.is_file() {
+        // ClashKing player inventory (snapshot_log.py), as meta_armies.user_levels.
+        // Preserve measured buildings and skip unboosted Super Troop placeholders.
+        let player = read_json(&live)?;
+        for section in ["heroes", "heroEquipment", "troops", "spells"] {
+            for item in list(&player, section) {
+                let name = item.at("name").str();
+                if text(item, "village", "home") != "home" {
+                    continue;
+                }
+                let Some(record) = stats.registry.get(name) else {
+                    continue;
+                };
+                let field = match text(record, "kind", "") {
+                    "hero" => "hero_levels",
+                    "equipment" => "equipment_levels",
+                    "pet" => "pet_levels",
+                    "troop" | "siege" | "spell" => "attack_levels",
+                    _ => continue,
+                };
+                let mut levels = user.get(field).cloned().unwrap_or_else(object);
+                put(&mut levels, name, item.at("level").clone());
+                put(&mut user, field, levels);
+            }
+        }
+        put(
+            &mut user,
+            "live_source",
+            string("data/live/player-latest.json"),
+        );
+    }
+    Ok(user)
 }
 
 // meta_armies.py:71-104: mutate in library order, so earlier borrowed castles
@@ -644,7 +681,15 @@ pub fn compose(
     );
     put(&mut plan, "cleanup", Json::Arr(cleanup));
     put(&mut plan, "breakers", Json::Arr(breakers));
-    put(&mut plan, "ground", Json::Bool(!air));
+    // output/research/usage/grand-warden.md: preserve the replay's chosen mode.
+    // https://clashofclans.fandom.com/wiki/Grand_Warden
+    let ground = match build.get("warden_mode") {
+        Some(Json::Str(mode)) if mode == "ground" => true,
+        Some(Json::Str(mode)) if mode == "air" => false,
+        None => !air,
+        _ => return Err("Grand Warden mode must be air or ground".to_owned()),
+    };
+    put(&mut plan, "ground", Json::Bool(ground));
     put(
         &mut plan,
         "siege",

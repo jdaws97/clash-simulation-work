@@ -244,7 +244,9 @@ impl<'a> Compiler<'a> {
             }
         }
         apply_overrides(&mut steps, &options.overrides)?;
-        if warden_walk(&steps, number(&inventory, "Healer", 0.0) > 0.0) {
+        if build.get("warden_mode").is_none()
+            && warden_walk(&steps, number(&inventory, "Healer", 0.0) > 0.0)
+        {
             put(&mut plan, "ground", Json::Bool(true));
         }
         put(&mut plan, "inventory", inventory);

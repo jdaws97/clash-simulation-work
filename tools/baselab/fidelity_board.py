@@ -124,8 +124,22 @@ def ancestry_battle_ids(ancestry):
             return None
         identities = prior.get("battle_ids")
         ancestors = ancestry_battle_ids(prior.get("ancestry"))
+        # output/hunt/r16/v1.out #1: recursive snapshots need the same binding
+        # as a directly selected fit. Legacy unbound ancestry stays unknown.
+        public_prior = (
+            prior.get("fit_status") == "not defense-fitted"
+            and identities == []
+            and prior.get("ancestry") == []
+        )
+        digest = prior.get("sha256")
+        bound = public_prior or (
+            isinstance(digest, str)
+            and len(digest) == 64
+            and prior.get("report_calibration_sha256") == digest
+        )
         if (
-            not isinstance(identities, list)
+            not bound
+            or not isinstance(identities, list)
             or not all(isinstance(identity, str) for identity in identities)
             or ancestors is None
         ):
@@ -138,19 +152,17 @@ def ancestry_battle_ids(ancestry):
 def fitted_battle_ids(report_path=None, *, calibration_path=None):
     """Identify training rows from the selected calibration's matching report.
 
-    Older reports lack identities: reconstruct only when both input hashes,
-    family counts and historical layout hashes still match exactly. Missing
-    prior ancestry is unknown, so callers must treat every row as in-sample.
+    Only an exact hash of the saved calibration identifies a report, including
+    an explicitly supplied report. Missing prior bindings are unknown, so
+    callers must treat every row as in-sample.
     """
-    from calibrate_defenses import observations
-    from replay_log import HISTORY
-
     calibration = Path(
         calibration_path
         or os.environ.get("BASELAB_CALIBRATION")
         or ROOT / "data/meta-calibration-r8.json"
     )
     selected = json.loads(calibration.read_text(encoding="utf-8"))
+    calibration_hash = hashlib.sha256(calibration.read_bytes()).hexdigest()
     entries = [v for v in selected.values() if isinstance(v, dict)]
     if not any("defense_group" in v for v in entries) and not any(
         k.startswith("defense-th") for k in selected
@@ -169,34 +181,28 @@ def fitted_battle_ids(report_path=None, *, calibration_path=None):
         [Path(report_path)]
         if report_path
         else [
+            *[
+                Path(value["calibration_report"])
+                for value in provenance
+                if isinstance(value, dict) and value.get("calibration_report")
+            ],
             calibration.with_name("report-" + calibration.name),
             calibration.with_suffix(".report.json"),
             *sorted((ROOT / "data").glob("*report*.json")),
             *sorted((ROOT / "output/overnight").glob("*report*.json")),
         ]
     )
-    log = ROOT / "data/live/battles.jsonl"
     for path in dict.fromkeys(candidates):
         if not path.is_file():
             continue
-        report = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            report = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
         if (
             not isinstance(report, dict)
-            or report.get("provenance") not in provenance
+            or report.get("calibration_sha256") != calibration_hash
             or not report.get("groups")
-        ):
-            continue
-        declared_groups = {
-            k: v for k, v in selected.items() if k.startswith("defense-th")
-        }
-        reported_groups = {
-            "defense-th" + key[2:].replace(":", "-", 1): value
-            for key, value in report["groups"].items()
-        }
-        if declared_groups.keys() != reported_groups.keys() or any(
-            value["n"] != reported_groups[key]["n"]
-            or value["strength"] != reported_groups[key]["correction"]
-            for key, value in declared_groups.items()
         ):
             continue
         if report.get("inputs_changed_during_run"):
@@ -205,6 +211,7 @@ def fitted_battle_ids(report_path=None, *, calibration_path=None):
             "fit_status": "identified",
             "calibration": str(calibration),
             "calibration_report": str(path),
+            "calibration_sha256": calibration_hash,
             "ancestry": report.get("ancestry"),
         }
         ancestors = ancestry_battle_ids(info["ancestry"])
@@ -212,36 +219,14 @@ def fitted_battle_ids(report_path=None, *, calibration_path=None):
             info["fit_status"] = "ancestry unknown"
             return None, info
         identities = report.get("battle_ids")
-        if identities is not None and len(identities) == report["n"]:
+        if (
+            isinstance(identities, list)
+            and all(isinstance(identity, str) for identity in identities)
+            and len(identities) == report.get("n")
+        ):
             return set(identities) | ancestors, info
-        hashes = report.get("inputs", {})
-        if (
-            hashes.get("battle_log_sha256")
-            != hashlib.sha256(log.read_bytes()).hexdigest()
-            or hashes.get("history_sha256")
-            != hashlib.sha256(HISTORY.read_bytes()).hexdigest()
-        ):
-            continue
-        ths = {int(key.split(":")[0][2:]) for key in report["groups"]}
-        rows, _ = observations(log, HISTORY, ths)
-        expected = Counter()
-        expected_layouts = Counter()
-        for key, group in report["groups"].items():
-            th = int(key.split(":")[0][2:])
-            expected.update(
-                {(th, family): n for family, n in group["family_counts"].items()}
-            )
-            expected_layouts.update(
-                {(v["path"], v["sha256"]): v["n"] for v in group["layouts"]}
-            )
-        if (
-            len(rows) == report["n"]
-            and Counter((r["th"], r["family"]) for r in rows) == expected
-            and Counter((r["layout_path"], r["layout_sha256"]) for r in rows)
-            == expected_layouts
-        ):
-            info["fit_status"] = "reconstructed from matching inputs"
-            return {r["battle_id"] for r in rows} | ancestors, info
+        info["fit_status"] = "ancestry unknown"
+        return None, info
     return None, {
         "fit_status": "ancestry unknown",
         "calibration": str(calibration),

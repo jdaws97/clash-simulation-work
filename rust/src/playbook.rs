@@ -1811,6 +1811,23 @@ impl PlaybookPlan {
                         Action::Redeploy
                             if !battle.portal_stash.is_empty() && t >= battle.portal_ready_at =>
                         {
+                            // output/research/usage/recall-spell.md: legal drops only.
+                            // https://clashofclans.fandom.com/wiki/Recall_Spell
+                            // Ordinary deploy's x-major, first-on-ties resolution.
+                            let mut position = position;
+                            if !battle.can_deploy(position.0, position.1) {
+                                let mut best = None;
+                                let mut best_distance = f64::INFINITY;
+                                for &(x, y) in battle.deploy_tiles() {
+                                    let distance = crate::geom::py_pow(x - position.0, 2.0)
+                                        + crate::geom::py_pow(y - position.1, 2.0);
+                                    if best.is_none() || distance < best_distance {
+                                        best = Some((x, y));
+                                        best_distance = distance;
+                                    }
+                                }
+                                position = best.expect("no legal deployment tile");
+                            }
                             let recalled: Vec<_> = battle.portal_units().collect();
                             for unit in recalled {
                                 battle.unit_mut(unit).group = step.group.clone();

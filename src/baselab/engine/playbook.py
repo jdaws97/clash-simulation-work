@@ -1212,6 +1212,15 @@ class PlaybookPlan(AttackPlan):
                     )
                 elif act == "redeploy":
                     if battle.portal_stash and t >= battle.portal_ready_at:
+                        # output/research/usage/recall-spell.md: legal drops only.
+                        # https://clashofclans.fandom.com/wiki/Recall_Spell
+                        # Resolve policy anchors with ordinary deploy's stable min.
+                        if not battle.can_deploy(*pos):
+                            pos = min(
+                                battle.deploy_tiles(),
+                                key=lambda p: (p[0] - pos[0]) ** 2
+                                + (p[1] - pos[1]) ** 2,
+                            )
                         # Playbook: gWXxU_sp7Kg 43.5, Queen returns with Bowlers and Warden.
                         for u in battle.portal_stash:
                             u.group = s.get("group", "main")
@@ -2219,7 +2228,9 @@ def from_playbook(
                     }
                 )
     apply_overrides(plan.steps, overrides)
-    if warden_walk(plan.steps, plan.inventory.get("Healer", 0) > 0):
+    if "warden_mode" not in build and warden_walk(
+        plan.steps, plan.inventory.get("Healer", 0) > 0
+    ):
         plan.ground = True
     plan.flank_offset, plan.charge_side = flank_offset, charge_side
     return plan

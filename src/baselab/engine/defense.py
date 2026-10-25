@@ -1129,7 +1129,12 @@ def opening_unit_damage(battle, u, x, y, flying, is_hero, seconds):
         or u.extra.get("suspended")
         or not battle.defender_in_leash(u, x, y)
         or not (u.hits_air if flying else u.hits_ground)
-        or u.spec.attack in ("none", "heal", "heal_chain")
+        # output/research/usage/ruin-witch.md; ClashKing/characters.csv:
+        # https://clashofclans.fandom.com/wiki/Ruin_Witch
+        # The mother's no-attack rule is offensive only (units.strike).
+        or u.spec.attack in ("heal", "heal_chain")
+        or u.spec.attack == "none"
+        and not (u.name == "Ruin Witch" and u.team == "def")
     ):
         return 0.0
     active_at = u.active_at
@@ -1173,6 +1178,21 @@ def opening_unit_damage(battle, u, x, y, flying, is_hero, seconds):
             (shots - 1.0) * stats.num(raw["Time Between Shots"])
             + stats.num(raw["Time Between Bursts"])
         ) / shots
+    slow = effects.slow_mult(u, battle.t)
+    if "long_shot" in u.spec.special and u.extra.get("long_shots", 0) > 0:
+        # output/research/usage/super-minion.md: three defensive Long Shots,
+        # then normal-range pursuit. https://clashofclans.fandom.com/wiki/Super_Minion
+        # Keep the estimator's continuous cadence; budget the finite allowance
+        # before charging the additional approach (CSV/ClashKing ranges).
+        long_exposure = min(exposure, u.extra["long_shots"] * interval / slow)
+        approach = max(0.0, min(separation, reach) - u.range)
+        if approach:
+            normal_exposure = (
+                max(0.0, exposure - long_exposure - approach / speed)
+                if speed > 0
+                else 0.0
+            )
+            exposure = long_exposure + normal_exposure
     damage = u.dmg * exposure
     if u.spec.attack == "beam":
         starts = (0.0, 1.5, 3.0) if u.name == "Super Miner" else (0.0, 1.7, 3.2)
@@ -1183,7 +1203,7 @@ def opening_unit_damage(battle, u, x, y, flying, is_hero, seconds):
     # Unit-sourced attacks already carry hero/Guardian modifiers; def_mult
     # applies only to building sources. Headhunter's executed hero multiplier.
     multiplier = u.spec.vs_heroes if is_hero else 1.0
-    return damage * rage * multiplier / interval * effects.slow_mult(u, battle.t)
+    return damage * rage * multiplier / interval * slow
 
 
 def act(battle, w: Weapon):

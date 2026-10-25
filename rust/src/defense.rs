@@ -606,7 +606,12 @@ pub fn opening_unit_damage(
         || u.extra.suspended
         || !battle.defender_in_leash(reference, x, y)
         || !hits_target
-        || matches!(u.spec.attack, Tag::None | Tag::Heal | Tag::HealChain)
+        // output/research/usage/ruin-witch.md; ClashKing/characters.csv:
+        // https://clashofclans.fandom.com/wiki/Ruin_Witch
+        // The mother's no-attack rule is offensive only (units::strike).
+        || matches!(u.spec.attack, Tag::Heal | Tag::HealChain)
+        || u.spec.attack == Tag::None
+            && !(u.name_id == Name::RuinWitch && reference.team == Team::Def)
     {
         return 0.0;
     }
@@ -638,7 +643,7 @@ pub fn opening_unit_damage(
     if let Some(projectile) = units::projectile_speed(battle, u, false) {
         delay += separation.min(reach) / projectile;
     }
-    let exposure = 0.0_f64.max(seconds - delay);
+    let mut exposure = 0.0_f64.max(seconds - delay);
     if exposure <= 0.0 {
         return 0.0;
     }
@@ -658,6 +663,22 @@ pub fn opening_unit_damage(
         interval =
             ((shots - 1.0) * value("Time Between Shots") + value("Time Between Bursts")) / shots;
     }
+    let slow = effects::slow_mult(u, battle.t, false);
+    if u.spec.has_special(crate::labels::Special::LongShot) && u.extra.long_shots > 0 {
+        // output/research/usage/super-minion.md: three defensive Long Shots,
+        // then normal pursuit. https://clashofclans.fandom.com/wiki/Super_Minion
+        // Same continuous cadence and CSV/ClashKing ranges as defense.py.
+        let long_exposure = exposure.min(u.extra.long_shots as f64 * interval / slow);
+        let approach = 0.0_f64.max(separation.min(reach) - u.range);
+        if approach != 0.0 {
+            let normal_exposure = if speed > 0.0 {
+                0.0_f64.max(exposure - long_exposure - approach / speed)
+            } else {
+                0.0
+            };
+            exposure = long_exposure + normal_exposure;
+        }
+    }
     let mut damage = u.dmg * exposure;
     if u.spec.attack == Tag::Beam {
         let starts = if u.name_id == Name::SuperMiner {
@@ -673,7 +694,7 @@ pub fn opening_unit_damage(
     }
     // Unit-sourced hits already carry Hero/Guardian modifiers; no def_mult.
     let multiplier = if is_hero { u.spec.vs_heroes } else { 1.0 };
-    damage * damage_rage * multiplier / interval * effects::slow_mult(u, battle.t, false)
+    damage * damage_rage * multiplier / interval * slow
 }
 
 // defense.py:601-633: carry cooldown remainders through up to twelve cycles.

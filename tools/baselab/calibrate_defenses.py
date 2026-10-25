@@ -39,7 +39,6 @@ from baselab.meta_armies import (  # noqa: E402
     _share_troops,
     data,
     family_of,
-    plan_for_build,
 )
 from calibrate_meta import calibration_provenance  # noqa: E402
 from decode_battlelog import decode  # noqa: E402
@@ -208,10 +207,9 @@ def make_jobs(rows, correction, *, quick=False, angles=4, seeds=1):
 
 def job_plan(job):
     row, sc, strength = job
-    if ATTACKER == "generic":
-        plan = plan_for_build(row["build"], angle=sc.angle, seed=sc.seed)
-    else:
-        plan = replay_plan(row["build"], sc.angle, sc.seed, ATTACKER)
+    # output/hunt/r16/v1.out #3: plan_for_build honours BASELAB_PLAYBOOKS, so an
+    # explicit generic fit must use the same builder as check A's generic replay
+    plan = replay_plan(row["build"], sc.angle, sc.seed, ATTACKER)
     plan.observed = True
     plan.strength = strength * skill(sc.seed)
     return plan
@@ -567,6 +565,8 @@ def main():
     if report_path.resolve() in {args.log.resolve(), args.history.resolve()}:
         parser.error("report cannot overwrite an input")
     provenance = calibration_provenance("rust" if args.engine != "python" else "python")
+    # output/hunt/r16/v1.out #1: bind the saved bytes to their particular report.
+    provenance["calibration_report"] = str(report_path.resolve())
     # output/hunt/r15/v1.out #1: corrections inherit the prior's training data.
     # Snapshot recursively so later replacement/movement of a prior cannot
     # make its fitted battles appear held out. Missing ancestry stays unknown.
@@ -580,6 +580,7 @@ def main():
         {
             "calibration": str(prior_path),
             "sha256": file_hash(prior_path),
+            "report_calibration_sha256": prior_info.get("calibration_sha256"),
             "battle_ids": sorted(prior_ids) if prior_ids is not None else None,
             "ancestry": prior_info.get("ancestry"),
             "fit_status": prior_info["fit_status"],
@@ -590,6 +591,15 @@ def main():
         "history_sha256": file_hash(args.history),
     }
     rows, skipped = observations(args.log, args.history, args.town_hall)
+    # Distinct training sets must produce distinct calibration bytes even if
+    # their grid corrections and output/report paths happen to be identical.
+    fit_provenance = {
+        "battle_ids_sha256": hashlib.sha256(
+            json.dumps(sorted(row["battle_id"] for row in rows)).encode("utf-8")
+        ).hexdigest(),
+        "prior_calibration_sha256": ancestry[0]["sha256"],
+    }
+    provenance.update(fit_provenance)
     groups = grouped(rows, args.min_family)
     if not groups:
         parser.error(f"no usable ranked defenses: {skipped}")
@@ -614,6 +624,8 @@ def main():
     final_provenance = calibration_provenance(
         "rust" if args.engine != "python" else "python"
     )
+    final_provenance["calibration_report"] = provenance["calibration_report"]
+    final_provenance.update(fit_provenance)
     provenance["engine"] = final_provenance["engine"] = "+".join(sorted(runner.used))
     inputs_changed = input_hashes != {
         "battle_log_sha256": file_hash(args.log),
@@ -657,6 +669,7 @@ def main():
         if report["inputs_changed_during_run"]:
             row["uncalibrated"] = True
     args.out.write_text(json.dumps(out, indent=1) + "\n", encoding="utf-8")
+    report["calibration_sha256"] = file_hash(args.out)
     report_path.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
     print(f"saved {args.out}; report {report_path}", flush=True)
 

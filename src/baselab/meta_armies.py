@@ -124,6 +124,8 @@ def compose(build: dict, angle: float = 0.0, seed: int = 0) -> AttackPlan:
         raise ValueError("Duplicate heroes in build")
     if any(hero not in HEROES for hero in heroes):
         raise ValueError("Unknown hero in build")
+    if "warden_mode" in build and build["warden_mode"] not in ("air", "ground"):
+        raise ValueError("Grand Warden mode must be air or ground")
     siege = next((n for n, count in troops.items() if n in SIEGES and count), None)
     if siege:
         troops.pop(siege)
@@ -191,7 +193,9 @@ def compose(build: dict, angle: float = 0.0, seed: int = 0) -> AttackPlan:
         cc_troops=cc_troops,
         spells=spells,
         cc_spells=cc_spells,
-        ground=not air,
+        ground=(
+            build["warden_mode"] == "ground" if "warden_mode" in build else not air
+        ),
         zap_ad=(lightning, 0) if lightning >= 3 else (0, 0),
         loadouts=_loadouts(build, heroes),
         main_min=10.0 if air else 8.0,
@@ -260,6 +264,31 @@ def user_levels() -> dict:
                 Path(__file__).resolve().parents[2] / "data" / "your-levels.json"
             ).read_text()
         )
+        # ClashKing player inventory (snapshot_log.py); retain measured building
+        # levels, and ignore unboosted Super Troop placeholder levels.
+        live = Path(__file__).resolve().parents[2] / "data/live/player-latest.json"
+        if live.is_file():
+            player = json.loads(live.read_text(encoding="utf-8"))
+            fields = {
+                "hero": "hero_levels",
+                "equipment": "equipment_levels",
+                "pet": "pet_levels",
+                "troop": "attack_levels",
+                "siege": "attack_levels",
+                "spell": "attack_levels",
+            }
+            for section in ("heroes", "heroEquipment", "troops", "spells"):
+                for item in player.get(section, []):
+                    name = item["name"]
+                    if (
+                        item.get("village", "home") != "home"
+                        or name not in stats.registry()
+                    ):
+                        continue
+                    field = fields.get(stats.record(name)["kind"])
+                    if field is not None:
+                        _USER.setdefault(field, {})[name] = item["level"]
+            _USER["live_source"] = "data/live/player-latest.json"
     return _USER
 
 

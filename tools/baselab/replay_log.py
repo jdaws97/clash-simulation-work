@@ -81,11 +81,21 @@ def to_build(army: dict, th: int, n: int) -> tuple[dict, list]:
             continue
         cc[t] = cc.get(t, 0) + c
     heroes, loadouts = [], {}
+    warden_mode = None
     for h in army.get("heroes", []):
         if h["hero"].startswith(("hero#", "unparsed:")):
             unknown.append(h["hero"])
             continue
         heroes.append(h["hero"])
+        if h["hero"] == "Grand Warden":
+            # output/research/usage/grand-warden.md: the chosen mode matters.
+            # https://clashofclans.fandom.com/wiki/Grand_Warden
+            # decode_battlelog: m1 is air; omitted/m0 is ground.
+            mode = h.get("mode") or 0
+            if mode not in (0, 1):
+                unknown.append(f"Grand Warden mode#{mode}")
+            else:
+                warden_mode = "air" if mode == 1 else "ground"
         eq = [e for e in h.get("equipment", []) if not e.startswith("equipment#")]
         unknown += [e for e in h.get("equipment", []) if e.startswith("equipment#")]
         pet = h.get("pet")
@@ -111,6 +121,8 @@ def to_build(army: dict, th: int, n: int) -> tuple[dict, list]:
         "heroes": heroes,
         "loadouts": loadouts,
     }
+    if warden_mode is not None:
+        build["warden_mode"] = warden_mode
     return build, unknown
 
 
