@@ -434,7 +434,8 @@
      "t": 240.4,
      "quote": "If I get my queen up top here, I get"
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "charge_scout",
@@ -469,7 +470,8 @@
      "t": 410.5,
      "quote": "I get balloons out just to get seeking air mines."
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "charge_healers",
@@ -499,7 +501,8 @@
      "t": 49.6,
      "quote": "before deploying the healers to make"
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "charge_wall",
@@ -529,7 +532,8 @@
      "t": 253.7,
      "quote": "have gotten a super wall breaker in early"
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "charge_tank",
@@ -566,7 +570,8 @@
      "t": 57.2,
      "quote": "We will send an ice golem in front of"
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "charge_invis",
@@ -738,7 +743,8 @@
      "t": 828.6,
      "quote": "So, I let it take as many shots. Boom, recall."
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "charge_cleanup",
@@ -783,7 +789,8 @@
      "t": 453.5,
      "quote": "baby dragon. I'm going to get a wizard."
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "funnel_duke",
@@ -828,7 +835,8 @@
      "t": 486.8,
      "quote": "There goes the king. There goes the dragon duke."
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "funnel_king",
@@ -873,7 +881,8 @@
      "t": 486.8,
      "quote": "There goes the king. There goes the dragon duke."
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "king_ability",
@@ -943,7 +952,8 @@
      "t": 455.5,
      "quote": "I'm going to get a valk all to start funneling."
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "funnel_wizards",
@@ -973,7 +983,8 @@
      "t": 453.5,
      "quote": "baby dragon. I'm going to get a wizard."
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "queen_join",
@@ -1018,7 +1029,8 @@
      "t": 474.8,
      "quote": "queen's back, she's going to get healed up."
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "main_tank",
@@ -1053,7 +1065,8 @@
      "t": 478.2,
      "quote": "golem in a tank."
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "main_balloons",
@@ -1078,7 +1091,8 @@
      "t": 86.5,
      "quote": "golem, loons, super bowlers, warden,"
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "bowlers",
@@ -1153,7 +1167,9 @@
      "t": 119.7,
      "quote": "barbarian king, the grand warden, all super bowlers, the healers, and the rest"
     }
-   ]
+   ],
+   "primary": true,
+   "packet": "bowler-packet"
   },
   {
    "id": "warden",
@@ -1198,7 +1214,8 @@
      "t": 739.4,
      "quote": "Ice golem in here. Okay, minions."
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "apprentice",
@@ -1238,7 +1255,8 @@
      "t": 263.9,
      "quote": "the log launcher queen down as well. I'm"
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "siege",
@@ -1273,7 +1291,9 @@
      "t": 89.2,
      "quote": "mini warden, and the sky warden. Super"
     }
-   ]
+   ],
+   "packet": "bowler-packet",
+   "siege_role": "siege"
   },
   {
    "id": "main_wall",
@@ -1323,7 +1343,8 @@
      "t": 905.3,
      "quote": "super wall breaker to give us access in"
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "duke_ability",
@@ -1538,7 +1559,8 @@
      "t": 266.3,
      "quote": "the back end of that compartment."
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "rage_torch",
@@ -1754,7 +1776,8 @@
      "t": 515.2,
      "quote": "head hunters in"
     }
-   ]
+   ],
+   "packet": "bowler-packet"
   },
   {
    "id": "cleanup_archers",
@@ -1779,7 +1802,54 @@
      "t": 1262.9,
      "quote": "Archers in for cleanup."
     }
-   ]
+   ],
+   "packet": "bowler-packet"
+  },
+  {
+   "id": "post_recall_poison",
+   "action": "spell",
+   "what": "Poison Spell",
+   "count": 1,
+   "at": "defenders:charge",
+   "group": "charge",
+   "when": {
+    "all": [
+     {
+      "after": "charge_recall",
+      "delay": 0
+     },
+     {
+      "defenders_near": "charge"
+     }
+    ]
+   },
+   "support": 4,
+   "cite": [
+    {
+     "video": "4TGHrJl3h1s",
+     "t": 193.5,
+     "quote": "Poison down first"
+    },
+    {
+     "video": "gWXxU_sp7Kg",
+     "t": 1437.6,
+     "quote": "Poison here."
+    },
+    {
+     "video": "qqdSRPKkDVY",
+     "t": 869.3,
+     "quote": "should have just poisoned the furnace."
+    },
+    {
+     "video": "yI1ZdPZswNM",
+     "t": 80.2,
+     "quote": "clan castle is triggered, place a poison"
+    }
+   ],
+   "post_recall": true,
+   "optional": true,
+   "spell_budget": "cc-poison",
+   "after_success": "charge_recall"
   }
  ],
  "variants": [
@@ -1803,7 +1873,8 @@
     "funnel_wizards",
     "queen_join",
     "main_tank",
-    "queen_ability"
+    "queen_ability",
+    "post_recall_poison"
    ],
    "steps": [
     {
@@ -1838,7 +1909,8 @@
        "t": 51.7,
        "quote": "6:00 side, deploy the Royal Champion and"
       }
-     ]
+     ],
+     "packet": "bowler-packet"
     },
     {
      "id": "charge_invis",
@@ -1872,7 +1944,10 @@
        "t": 88.9,
        "quote": "invisibility spells whenever needed to"
       }
-     ]
+     ],
+     "every": 4,
+     "recheck_when": true,
+     "spell_budget": "charge-protection"
     },
     {
      "id": "charge_poison",
@@ -1920,7 +1995,8 @@
        "t": 301.1,
        "quote": "Well, queen shot from this wizard tower."
       }
-     ]
+     ],
+     "packet": "bowler-packet"
     },
     {
      "id": "queen_ability",
@@ -1980,7 +2056,8 @@
        "t": 108.2,
        "quote": "at the 9:00 side and pair him with the"
       }
-     ]
+     ],
+     "packet": "bowler-packet"
     },
     {
      "id": "main_tank",
@@ -2010,7 +2087,8 @@
        "t": 116.5,
        "quote": "army. Now, deploy both ice golems, the"
       }
-     ]
+     ],
+     "packet": "bowler-packet"
     },
     {
      "id": "main_healers",
@@ -2040,7 +2118,8 @@
        "t": 119.7,
        "quote": "barbarian king, the grand warden, all super bowlers, the healers, and the rest"
       }
-     ]
+     ],
+     "packet": "bowler-packet"
     }
    ],
    "support": 4,
@@ -2064,8 +2143,24 @@
      "video": "yI1ZdPZswNM",
      "t": 51.7,
      "quote": "6:00 side, deploy the Royal Champion and"
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 307.2,
+     "quote": "want to activate your warden's eternal"
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 308.8,
+     "quote": "tome and heroic torch. This is This way"
     }
-   ]
+   ],
+   "required_loadouts": {
+    "Grand Warden": [
+     "Eternal Tome",
+     "Heroic Torch"
+    ]
+   }
   },
   {
    "name": "Dragon Duke charge with King and Queen support",
@@ -2083,7 +2178,8 @@
     "funnel_duke",
     "funnel_king",
     "queen_join",
-    "duke_ability"
+    "duke_ability",
+    "post_recall_poison"
    ],
    "steps": [
     {
@@ -2113,7 +2209,8 @@
        "t": 179.3,
        "quote": "you'll have access to the dragon duke charge."
       }
-     ]
+     ],
+     "packet": "bowler-packet"
     },
     {
      "id": "charge_invis",
@@ -2137,7 +2234,10 @@
        "t": 190.2,
        "quote": "using invisibility spells to keep him from being targeted by defenses."
       }
-     ]
+     ],
+     "every": 4,
+     "recheck_when": true,
+     "spell_budget": "charge-protection"
     },
     {
      "id": "duke_ability",
@@ -2149,8 +2249,11 @@
      "when": {
       "all": [
        {
-        "after": "charge_invis",
-        "delay": 0
+        "spells_left": "Invisibility Spell",
+        "n": 0
+       },
+       {
+        "effect_expired": "charge_invis"
        },
        {
         "heavy_fire": "Dragon Duke"
@@ -2193,7 +2296,8 @@
        "t": 223.2,
        "quote": "Over on the other side, you'll be using the archer queen"
       }
-     ]
+     ],
+     "packet": "bowler-packet"
     },
     {
      "id": "funnel_king",
@@ -2218,7 +2322,8 @@
        "t": 43.8,
        "quote": "Use the king and queen as support"
       }
-     ]
+     ],
+     "packet": "bowler-packet"
     },
     {
      "id": "main_healers",
@@ -2238,7 +2343,8 @@
        "t": 328.2,
        "quote": "help protect your healers"
       }
-     ]
+     ],
+     "packet": "bowler-packet"
     }
    ],
    "support": 3,
@@ -2257,8 +2363,24 @@
      "video": "QH4OIrEePh4",
      "t": 179.3,
      "quote": "you'll have access to the dragon duke charge."
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 307.2,
+     "quote": "want to activate your warden's eternal"
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 308.8,
+     "quote": "tome and heroic torch. This is This way"
     }
-   ]
+   ],
+   "required_loadouts": {
+    "Grand Warden": [
+     "Eternal Tome",
+     "Heroic Torch"
+    ]
+   }
   },
   {
    "name": "Protect the Queen with Totem and reserve Rage for Bowlers",
@@ -2329,7 +2451,9 @@
        "t": 500.3,
        "quote": "with the troop launcher just because I"
       }
-     ]
+     ],
+     "packet": "bowler-packet",
+     "siege_role": "siege"
     }
    ],
    "support": 3,
@@ -2386,7 +2510,9 @@
        "t": 295,
        "quote": "to trigger the invisibility towers. That"
       }
-     ]
+     ],
+     "packet": "bowler-packet",
+     "siege_role": "siege"
     },
     {
      "id": "warden",
@@ -2406,7 +2532,8 @@
        "t": 639.4,
        "quote": "this log launcher. Boom. Warden. Okay."
       }
-     ]
+     ],
+     "packet": "bowler-packet"
     }
    ],
    "support": 3,
@@ -2461,8 +2588,28 @@
      "video": "yxVyP7vPQPw",
      "t": 45.5,
      "quote": "like you really cheap funnel with that"
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 307.2,
+     "quote": "want to activate your warden's eternal"
+    },
+    {
+     "video": "QH4OIrEePh4",
+     "t": 308.8,
+     "quote": "tome and heroic torch. This is This way"
     }
-   ]
+   ],
+   "required_loadouts": {
+    "Dragon Duke": [
+     "Flame Blower",
+     "Rocket Backpack"
+    ],
+    "Grand Warden": [
+     "Eternal Tome",
+     "Heroic Torch"
+    ]
+   }
   }
  ],
  "notes": [
@@ -2494,12 +2641,40 @@
   "Other composition: qqdSRPKkDVY specifies 3 Archers, 1 Baby Dragon, 2 Valkyries, 2 Ice Golems, 1 Apprentice Warden, 2 Rage and 3 Invisibility; most other quantities and attacking cc are unknown. Duke equipment discussion is ambiguous between Fire Heart and Stun Blaster, and Phoenix is named.",
   "Other composition: yxVyP7vPQPw has 5 Bowlers, 5 Healers, 1 Ice Golem, 2 Archers, 2 Super Wall Breakers, 1 Balloon, 2 Wizards, 1 Baby Dragon, 1 Apprentice Warden, 1 Electro Titan, 1 Headhunter and 1 Yeti; home spells are 3 Rage, 2 Totem, 1 Invisibility, 1 Earthquake and 1 Skeleton, with 2 donated Freeze and 1 Revive. Duke has Rocket Backpack/Flame Blower/Phoenix; Queen has Action Figure/Magic Mirror/Diggy.",
   "Revive and Overgrowth are absent from the default composition. Sources describe reviving Duke, with _N5VEy9FTN0 allowing RC if Duke survives, and QH4OIrEePh4 describes Overgrowth for path control while warning against splits. These need their source-specific spell inventories. Ambiguous defense names such as logger, cake, candle and long shot are not assigned unsupported in-game identities.",
-  "No unambiguous shared siege release timing is provided, so no release_siege step is invented. No synthetic performance or real-game calibration claim is made."
+  "No unambiguous shared siege release timing is provided, so no release_siege step is invented. No synthetic performance or real-game calibration claim is made.",
+  "PB1b: recipe selects an explicit named source/variant; an ambiguous inventory retains repair-only selection. packet preserves the input action clock, primary marks the main cohort, objective binds one building, and effect prerequisites use actual cast expiry. Source inventory/loadout and frame-verification holds remain in force. These are controller policies and synthetic regression evidence, not real-game calibration."
  ],
  "check": {
   "steps_kept": 33,
   "steps_dropped": 0,
   "reasons": {},
   "dangling_after": []
+ },
+ "recipes": {
+  "default": [],
+  "variant-1": [
+   "Royal Champion charge with Queen and Duke counter funnel"
+  ],
+  "variant-2": [
+   "Dragon Duke charge with King and Queen support"
+  ],
+  "variant-3": [
+   "Protect the Queen with Totem and reserve Rage for Bowlers"
+  ],
+  "variant-4": [
+   "Troop Launcher for gradual wall access"
+  ],
+  "variant-5": [
+   "Log Launcher entry for Invisibility Towers or failed wall access"
+  ],
+  "variant-6": [
+   "Rocket Backpack and Flame Blower funnel"
+  ],
+  "P6twlQY3fLk": [
+   "Royal Champion charge with Queen and Duke counter funnel"
+  ],
+  "QH4OIrEePh4": [
+   "Dragon Duke charge with King and Queen support"
+  ]
  }
 }

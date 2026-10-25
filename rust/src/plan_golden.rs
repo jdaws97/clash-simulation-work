@@ -148,6 +148,16 @@ fn cases(compiler: &Compiler<'_>) -> Vec<Json> {
                     variant_options([field(variant, "name")]),
                 );
                 fixtures.push(case);
+                if !list(variant, "steps").is_empty() {
+                    let mut recipe_build = entry.value.clone();
+                    put(&mut recipe_build, "recipe", field(variant, "name"));
+                    fixtures.push(fixture(
+                        &format!("{family}:recipe:{}", text(variant, "name", "")),
+                        &recipe_build,
+                        0.37,
+                        1,
+                    ));
+                }
             }
             if let Some(step) = list(book, "steps").first() {
                 let mut case = fixture(&format!("overrides-{family}"), &entry.value, 0.37, 1);

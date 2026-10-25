@@ -493,7 +493,8 @@
      "t": 205.4,
      "quote": "We'll go ice block this."
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "ice_block_2",
@@ -505,11 +506,18 @@
    "when": {
     "all": [
      {
-      "after": "ice_block_1",
-      "delay": 0
+      "all": [
+       {
+        "after": "ice_block_1",
+        "delay": 0
+       },
+       {
+        "heavy_fire": "Dragon Duke"
+       }
+      ]
      },
      {
-      "heavy_fire": "Dragon Duke"
+      "effect_expired": "ice_block_1"
      }
     ]
    },
@@ -525,7 +533,8 @@
      "t": 211,
      "quote": "We'll ice block again."
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "ice_block_3",
@@ -537,11 +546,18 @@
    "when": {
     "all": [
      {
-      "after": "ice_block_2",
-      "delay": 0
+      "all": [
+       {
+        "after": "ice_block_2",
+        "delay": 0
+       },
+       {
+        "heavy_fire": "Dragon Duke"
+       }
+      ]
      },
      {
-      "heavy_fire": "Dragon Duke"
+      "effect_expired": "ice_block_2"
      }
     ]
    },
@@ -552,7 +568,8 @@
      "t": 184.1,
      "quote": "you go ice block right here once he approaches,"
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "duke_ability",
@@ -591,15 +608,22 @@
    "when": {
     "all": [
      {
-      "after": "ice_block_3",
-      "delay": 0
+      "all": [
+       {
+        "after": "ice_block_3",
+        "delay": 0
+       },
+       {
+        "after": "duke_ability",
+        "delay": 0
+       },
+       {
+        "heavy_fire": "Dragon Duke"
+       }
+      ]
      },
      {
-      "after": "duke_ability",
-      "delay": 0
-     },
-     {
-      "heavy_fire": "Dragon Duke"
+      "effect_expired": "ice_block_3"
      }
     ]
    },
@@ -620,7 +644,8 @@
      "t": 464.6,
      "quote": "going to pop the last ice block so we"
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "royal_champion",
@@ -740,7 +765,8 @@
      "t": 296.2,
      "quote": "Couple balloons, an ice hound, the minion prince, and the warden."
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "ice_hound",
@@ -765,7 +791,8 @@
      "t": 233.4,
      "quote": "Here comes the the Ice Hound."
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "minion_prince",
@@ -790,7 +817,8 @@
      "t": 231.2,
      "quote": "Minion Prince and then we'll drop the"
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "air_warden",
@@ -810,7 +838,8 @@
      "t": 300.6,
      "quote": "hound, the minion prince, and the warden."
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "sky_wagon",
@@ -830,7 +859,9 @@
      "t": 935.4,
      "quote": "sky wagon is placed on the opposite side with the Lo."
     }
-   ]
+   ],
+   "siege_role": "siege",
+   "packet": "lalo-packet"
   },
   {
    "id": "balloons_1",
@@ -855,7 +886,9 @@
      "t": 310.5,
      "quote": "three or four for each defense."
     }
-   ]
+   ],
+   "primary": true,
+   "packet": "lalo-packet"
   },
   {
    "id": "balloons_2",
@@ -880,7 +913,9 @@
      "t": 310.5,
      "quote": "three or four for each defense."
     }
-   ]
+   ],
+   "primary": true,
+   "packet": "lalo-packet"
   },
   {
    "id": "more_ice_hounds",
@@ -900,7 +935,8 @@
      "t": 327.4,
      "quote": "keep it distracted. Or you can use a totem spell."
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "balloons_3",
@@ -925,7 +961,9 @@
      "t": 310.5,
      "quote": "three or four for each defense."
     }
-   ]
+   ],
+   "primary": true,
+   "packet": "lalo-packet"
   },
   {
    "id": "overgrowth",
@@ -952,7 +990,8 @@
      "t": 338.5,
      "quote": "An overgrowth here is absolutely fantastic."
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "warden_ability",
@@ -979,7 +1018,8 @@
      "t": 353.4,
      "quote": "Combine the warden ability with the haste spell"
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "haste",
@@ -999,7 +1039,8 @@
      "t": 353.4,
      "quote": "Combine the warden ability with the haste spell"
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "prince_ability",
@@ -1019,7 +1060,8 @@
      "t": 1329.3,
      "quote": "haste, minion prince, and warden ability"
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "balloons_4",
@@ -1044,7 +1086,9 @@
      "t": 310.5,
      "quote": "three or four for each defense."
     }
-   ]
+   ],
+   "primary": true,
+   "packet": "lalo-packet"
   },
   {
    "id": "balloons_5",
@@ -1069,7 +1113,9 @@
      "t": 310.5,
      "quote": "three or four for each defense."
     }
-   ]
+   ],
+   "primary": true,
+   "packet": "lalo-packet"
   },
   {
    "id": "balloons_6",
@@ -1094,7 +1140,9 @@
      "t": 310.5,
      "quote": "three or four for each defense."
     }
-   ]
+   ],
+   "primary": true,
+   "packet": "lalo-packet"
   },
   {
    "id": "balloons_7",
@@ -1119,7 +1167,9 @@
      "t": 310.5,
      "quote": "three or four for each defense."
     }
-   ]
+   ],
+   "primary": true,
+   "packet": "lalo-packet"
   },
   {
    "id": "poison",
@@ -1151,7 +1201,8 @@
      "t": 1937.7,
      "quote": "Let's poison up the logger here."
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "totem",
@@ -1183,7 +1234,8 @@
      "t": 1932.5,
      "quote": "Total the logger."
     }
-   ]
+   ],
+   "packet": "lalo-packet"
   },
   {
    "id": "revive_duke",
@@ -1324,7 +1376,8 @@
        "t": 56,
        "quote": "My goal is to start with the grand warden"
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_invis_1",
@@ -1344,7 +1397,11 @@
        "t": 87.1,
        "quote": "one, I'm going to invis two, and then invis three"
       }
-     ]
+     ],
+     "packet": "lalo-packet",
+     "objective": "mask-fb_invis_1",
+     "mask_for": "fireball-core",
+     "mask_hero": "Grand Warden"
     },
     {
      "id": "fb_invis_2",
@@ -1364,7 +1421,11 @@
        "t": 87.1,
        "quote": "one, I'm going to invis two, and then invis three"
       }
-     ]
+     ],
+     "packet": "lalo-packet",
+     "objective": "mask-fb_invis_2",
+     "mask_for": "fireball-core",
+     "mask_hero": "Grand Warden"
     },
     {
      "id": "fb_invis_3",
@@ -1384,7 +1445,11 @@
        "t": 87.1,
        "quote": "one, I'm going to invis two, and then invis three"
       }
-     ]
+     ],
+     "packet": "lalo-packet",
+     "objective": "mask-fb_invis_3",
+     "mask_for": "fireball-core",
+     "mask_hero": "Grand Warden"
     },
     {
      "id": "fb_fireball",
@@ -1395,8 +1460,21 @@
      "at": "unit:Grand Warden",
      "group": "charge",
      "when": {
-      "after": "fb_invis_3",
-      "delay": 0
+      "all": [
+       {
+        "after": "fb_invis_3",
+        "delay": 0
+       },
+       {
+        "effect_active": "fb_invis_1"
+       },
+       {
+        "effect_active": "fb_invis_2"
+       },
+       {
+        "effect_active": "fb_invis_3"
+       }
+      ]
      },
      "support": 1,
      "cite": [
@@ -1405,14 +1483,18 @@
        "t": 89.5,
        "quote": "invis three so I can fireball,"
       }
-     ]
+     ],
+     "packet": "lalo-packet",
+     "objective": "fireball-core",
+     "objective_at": "building:revenge",
+     "aim": "building:revenge"
     },
     {
      "id": "fb_quake_1",
      "action": "spell",
      "what": "Earthquake Spell",
      "count": 1,
-     "at": "threat:charge",
+     "at": "building:revenge",
      "group": "charge",
      "when": {
       "after": "fb_fireball",
@@ -1430,14 +1512,17 @@
        "t": 1427.6,
        "quote": "forgot my second earthquake, duh."
       }
-     ]
+     ],
+     "packet": "lalo-packet",
+     "objective": "fireball-core",
+     "after_success": "fb_fireball"
     },
     {
      "id": "fb_quake_2",
      "action": "spell",
      "what": "Earthquake Spell",
      "count": 1,
-     "at": "threat:charge",
+     "at": "building:revenge",
      "group": "charge",
      "when": {
       "after": "fb_quake_1",
@@ -1455,7 +1540,10 @@
        "t": 1427.6,
        "quote": "forgot my second earthquake, duh."
       }
-     ]
+     ],
+     "packet": "lalo-packet",
+     "objective": "fireball-core",
+     "after_success": "fb_fireball"
     },
     {
      "id": "fb_recall",
@@ -1480,7 +1568,8 @@
        "t": 1735.5,
        "quote": "Warden, fireball, recall."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_golem_1",
@@ -1500,7 +1589,8 @@
        "t": 178.7,
        "quote": "with an ice golem,"
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_queen",
@@ -1520,7 +1610,8 @@
        "t": 178.7,
        "quote": "with an ice golem, queen,"
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_golem_2",
@@ -1540,7 +1631,8 @@
        "t": 186.5,
        "quote": "Let's go with another ice golem here."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_headhunter",
@@ -1560,7 +1652,8 @@
        "t": 189,
        "quote": "Give it a little head hunter."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_duke",
@@ -1580,7 +1673,8 @@
        "t": 191.2,
        "quote": "Let's go the Duke over like that."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_valkyrie",
@@ -1600,7 +1694,8 @@
        "t": 195,
        "quote": "Valkyrie to the right."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_ice_block_1",
@@ -1627,7 +1722,8 @@
        "t": 205.4,
        "quote": "We'll go ice block this."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_poison",
@@ -1654,7 +1750,9 @@
        "t": 208.1,
        "quote": "We'll poison up the furnace."
       }
-     ]
+     ],
+     "packet": "lalo-packet",
+     "post_recall": true
     },
     {
      "id": "fb_ice_block_2",
@@ -1666,8 +1764,7 @@
      "when": {
       "all": [
        {
-        "after": "fb_ice_block_1",
-        "delay": 0
+        "effect_expired": "fb_ice_block_1"
        },
        {
         "heavy_fire": "Dragon Duke"
@@ -1681,7 +1778,8 @@
        "t": 211,
        "quote": "We'll ice block again."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_queen_ability",
@@ -1708,7 +1806,8 @@
        "t": 218.7,
        "quote": "Pop queen ability."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_prince",
@@ -1728,7 +1827,8 @@
        "t": 231.2,
        "quote": "Minion Prince and then we'll drop the"
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_air_warden",
@@ -1753,7 +1853,8 @@
        "t": 1735.5,
        "quote": "Warden, fireball, recall."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_sky_wagon",
@@ -1773,7 +1874,9 @@
        "t": 476.2,
        "quote": "So, let's get the sky wagon."
       }
-     ]
+     ],
+     "packet": "lalo-packet",
+     "siege_role": "siege"
     },
     {
      "id": "fb_hound_1",
@@ -1801,7 +1904,8 @@
        "t": 233.4,
        "quote": "Here comes the the Ice Hound."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_balloons_1",
@@ -1826,7 +1930,9 @@
        "t": 158.6,
        "quote": "seven because then they can one-shot any defense with a group of seven."
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_hound_2",
@@ -1846,7 +1952,8 @@
        "t": 242.1,
        "quote": "another Ice Hound so we can try to trigger the Giga Bomb."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_revive_duke",
@@ -1881,7 +1988,8 @@
        "t": 917,
        "quote": "I got to wait. I got to be patient."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_balloons_2",
@@ -1906,7 +2014,9 @@
        "t": 158.6,
        "quote": "seven because then they can one-shot any defense with a group of seven."
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_haste_1",
@@ -1926,7 +2036,8 @@
        "t": 251.6,
        "quote": "let's try to haste through here."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_balloons_3",
@@ -1951,7 +2062,9 @@
        "t": 158.6,
        "quote": "seven because then they can one-shot any defense with a group of seven."
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_balloons_4",
@@ -1976,7 +2089,9 @@
        "t": 158.6,
        "quote": "seven because then they can one-shot any defense with a group of seven."
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_haste_2",
@@ -1986,7 +2101,7 @@
      "at": "group:main",
      "group": "main",
      "when": {
-      "after": "fb_haste_1",
+      "after": "fb_balloons_4",
       "delay": 0
      },
      "support": 1,
@@ -1996,7 +2111,8 @@
        "t": 147,
        "quote": "the edges around to push the Lalo"
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_balloons_5",
@@ -2021,7 +2137,9 @@
        "t": 158.6,
        "quote": "seven because then they can one-shot any defense with a group of seven."
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_balloons_6",
@@ -2048,7 +2166,7 @@
       },
       {
        "video": "ahiJ-bgdmSE",
-       "t": 156.0,
+       "t": 156,
        "quote": "balloons, try to drop them in groups of"
       },
       {
@@ -2057,7 +2175,9 @@
        "quote": "seven because then they can one-shot any"
       }
      ],
-     "note": "Five seven-Balloon packets use 35 of the source army's 38 Balloons; all uses the remaining three. Variant feasibility checks the complete budget before runtime; a sixth fixed seven cannot rely on clamping."
+     "note": "Five seven-Balloon packets use 35 of the source army's 38 Balloons; all uses the remaining three. Variant feasibility checks the complete budget before runtime; a sixth fixed seven cannot rely on clamping.",
+     "primary": true,
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_totem",
@@ -2084,7 +2204,8 @@
        "t": 1932.5,
        "quote": "Total the logger."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_minions",
@@ -2104,7 +2225,8 @@
        "t": 276.5,
        "quote": "Drop some Minions here, Minions down there."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_wall_breakers",
@@ -2124,7 +2246,8 @@
        "t": 280.1,
        "quote": "See if we wall break to distract,"
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_archers",
@@ -2144,7 +2267,8 @@
        "t": 514.4,
        "quote": "Some archers up top"
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     },
     {
      "id": "fb_prince_ability",
@@ -2176,7 +2300,8 @@
        "t": 888,
        "quote": "Minion prince ability would be clutch if I can hit this venge tower."
       }
-     ]
+     ],
+     "packet": "lalo-packet"
     }
    ],
    "support": 1,
@@ -2224,12 +2349,19 @@
   "Unsized cleanup deployments and additional Ice Hounds use all remaining inventory. This cannot reproduce the sources' unspecified splits across outside locations or gradual Hound reinforcements. The default chooses the stated Baby Dragon cleanup option and uses remaining Inferno Dragons outside.",
   "The default keeps the two Freeze Spells, a remaining Totem and four Minions in inventory because this source does not establish general further casts or a spoken Minion deployment. The conditional Archer Queen Freeze is recorded as a cited rule rather than applying it to arbitrary defenders.",
   "Same-side Lalo, Monolith removal and core targeting are base dependent: ahiJ-bgdmSE demonstrates other entry angles and leaves a Monolith for Balloons in one attack, while l0D7kFeev5g prefers dealing with it early. The corrected Lalo entry for l0D7kFeev5g's first live attack is contested, and omitting Overgrowth there is described as a mistake.",
-  "No fixed wait for Revive is stated. Both sources revive Dragon Duke during Lalo; ahiJ-bgdmSE specifically warns against an early revival that sends him to unwanted outside targets."
+  "No fixed wait for Revive is stated. Both sources revive Dragon Duke during Lalo; ahiJ-bgdmSE specifically warns against an early revival that sends him to unwanted outside targets.",
+  "PB1b: recipe selects an explicit named source/variant; an ambiguous inventory retains repair-only selection. packet preserves the input action clock, primary marks the main cohort, objective binds one building, and effect prerequisites use actual cast expiry. Source inventory/loadout and frame-verification holds remain in force. These are controller policies and synthetic regression evidence, not real-game calibration."
  ],
  "check": {
   "steps_kept": 35,
   "steps_dropped": 0,
   "reasons": {},
   "dangling_after": []
+ },
+ "recipes": {
+  "default": [],
+  "variant-1": [
+   "Fireball recall with Queen and Duke"
+  ]
  }
 }

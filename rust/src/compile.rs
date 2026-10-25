@@ -206,14 +206,49 @@ impl<'a> Compiler<'a> {
             remove(&mut inventory, siege);
             put(&mut inventory, siege, Json::Num(1.0));
         }
+        let mut stock = inventory.obj().to_vec();
+        stock.sort_by(|a, b| a.0.cmp(&b.0));
+        inventory = Json::Obj(stock);
         let heroes = list(build, "heroes");
-        let selected = options
+        let explicit_variants = options
             .overrides
             .get("__variants__")
             .and_then(|value| value.get("names"))
             .filter(|value| !value.is_null());
+        // Recipe dispatch is intentional. Ambiguous inventories retain the
+        // repair-only selector; a spare utility troop never chooses an opening.
+        let recipe = options
+            .overrides
+            .get("__recipe__")
+            .or_else(|| build.get("recipe"));
+        let recipe_variants = recipe
+            .map(|recipe| {
+                let name = recipe.opt_str().ok_or("recipe must be a name")?;
+                if let Some(declared) = pb.get("recipes").and_then(|recipes| recipes.get(name)) {
+                    Ok(declared.clone())
+                } else if list(pb, "variants")
+                    .iter()
+                    .any(|v| text(v, "name", "") == name)
+                {
+                    Ok(array([string(name)]))
+                } else if name == text(pb, "name", "") || name == "default" {
+                    Ok(array([]))
+                } else {
+                    Err(format!("Unknown playbook recipe: {name}"))
+                }
+            })
+            .transpose()?;
+        if recipe_variants.is_some() && explicit_variants.is_some() {
+            return Err("Choose recipe or __variants__, not both".to_owned());
+        }
+        let selected = explicit_variants.or(recipe_variants.as_ref());
         let variants =
             self.pick_variants(pb, &inventory, heroes, plan.at("spells"), &plan, selected)?;
+        put(
+            &mut plan,
+            "primary_cohort",
+            Json::Bool(variants.iter().any(|step| flag(step, "primary"))),
+        );
         let mut availability = variants.clone();
         apply_overrides(&mut availability, &options.overrides)?;
         let unavailable: Vec<Json> = availability
@@ -239,6 +274,7 @@ impl<'a> Compiler<'a> {
             list(&plan, "cc_troops"),
             &unavailable,
         )?;
+        normalize_recall_package(&mut steps, plan.at("spells"))?;
         add_spell_support(pb, &mut steps, plan.at("spells"));
         // output/research/usage/invisibility-spell.md: cover the first hero
         // independently of the second hero's gate.
@@ -299,6 +335,9 @@ impl<'a> Compiler<'a> {
         }
         apply_overrides(&mut steps, &options.overrides)?;
         validate_dependencies(&steps)?;
+        if let Some(recipe) = recipe {
+            put(&mut plan, "recipe", recipe.clone());
+        }
         if !unavailable.is_empty() {
             put(
                 &mut plan,
@@ -583,6 +622,26 @@ impl<'a> Compiler<'a> {
             if selected.is_some() && !requested {
                 continue;
             }
+            let compatible = items(&variant, "required_loadouts")
+                .iter()
+                .all(|(hero, required)| {
+                    let fallback = armies::default_loadout(hero).unwrap_or_else(object);
+                    let loadout = plan.at("loadouts").get(hero).unwrap_or(&fallback);
+                    required.arr().iter().all(|item| {
+                        list(loadout, "equipment").contains(item)
+                            && (!flag(plan, "account_equipment")
+                                || plan.at("equipment_levels").get(item.str()).is_some())
+                    })
+                });
+            if !compatible {
+                if requested {
+                    return Err(format!(
+                        "Incompatible required loadout for recipe: {}",
+                        text(&variant, "name", "")
+                    ));
+                }
+                continue;
+            }
             if replaces.iter().any(|id| used.contains(id))
                 || !replaces.is_empty() && current.is_empty()
             {
@@ -606,12 +665,16 @@ impl<'a> Compiler<'a> {
                     text(step, "action", "") == "deploy" && armies::is_siege(text(step, "what", ""))
                 })
             {
-                replaces = broken.iter().map(|step| field(step, "id")).collect();
-                current = broken;
+                current.retain(|step| {
+                    text(step, "action", "") == "deploy" && armies::is_siege(text(step, "what", ""))
+                });
+                replaces = current.iter().map(|step| field(step, "id")).collect();
                 new.retain(|step| {
-                    replaces.contains(step.at("id"))
-                        && text(step, "action", "") == "deploy"
+                    text(step, "action", "") == "deploy"
                         && armies::is_siege(text(step, "what", ""))
+                        && current.iter().any(|old| {
+                            text(old, "siege_role", "siege") == text(step, "siege_role", "siege")
+                        })
                 });
             }
             if new.is_empty()
@@ -635,7 +698,7 @@ impl<'a> Compiler<'a> {
                 .collect();
             candidate.splice(index..index, new.iter().cloned());
             validate_step_ids(&candidate)?;
-            if !requested {
+            {
                 for old in &current {
                     let replacement = new.iter().find(|step| step.get("id") == old.get("id"));
                     if text(old, "group", "main") != "main"
@@ -644,6 +707,9 @@ impl<'a> Compiler<'a> {
                         continue;
                     }
                     for step in &mut candidate {
+                        if new.iter().any(|added| added.get("id") == step.get("id")) {
+                            continue;
+                        }
                         let when = field(step, "when");
                         if matches!(text(step, "action", ""), "deploy" | "redeploy")
                             && text(step, "group", "main") == "main"
@@ -658,6 +724,31 @@ impl<'a> Compiler<'a> {
                             } else if let Some(t) = parent.get("t") {
                                 put(step, "when", time(t.f64() + number(&when, "delay", 0.0)));
                             }
+                        }
+                    }
+                }
+            }
+            // A siege's role survives an ID change. Retained successors follow
+            // the replacement; its own deliberately supplied prerequisites stay.
+            let old_siege: Vec<_> = current
+                .iter()
+                .filter(|s| armies::is_siege(text(s, "what", "")))
+                .collect();
+            let new_siege: Vec<_> = new
+                .iter()
+                .filter(|s| armies::is_siege(text(s, "what", "")))
+                .collect();
+            if old_siege.len() == 1 && new_siege.len() == 1 {
+                let old_id = old_siege[0].at("id");
+                let new_id = new_siege[0].at("id");
+                for step in &mut candidate {
+                    if new.iter().any(|added| added.get("id") == step.get("id")) {
+                        continue;
+                    }
+                    for key in ["when", "until"] {
+                        if let Some(trigger) = step.get(key) {
+                            let trigger = substitute(trigger, old_id, new_id);
+                            put(step, key, trigger);
                         }
                     }
                 }
@@ -754,6 +845,73 @@ fn caster_name(step: &Json) -> &str {
     } else {
         text(step, "what", "")
     }
+}
+
+/// Keep an opening hero and its healing package together when Recall is absent.
+/// A named return records its source before execution, never borrows any stash.
+fn normalize_recall_package(steps: &mut [Json], spells: &Json) -> Result<(), String> {
+    let source = steps.to_vec();
+    for step in steps
+        .iter_mut()
+        .filter(|s| text(s, "action", "") == "redeploy")
+    {
+        let hero = text(step, "what", "");
+        if let Some(recall) = source.iter().find(|s| {
+            text(s, "action", "") == "recall"
+                && (text(s, "what", "") == hero
+                    || text(s, "at", "") == format!("unit:{hero}")
+                    || text(s, "at", "") == "group:charge")
+        }) {
+            put(step, "recall_from", field(recall, "id"));
+        }
+    }
+    if number(spells, "recall", 0.0) > 0.0 {
+        return Ok(());
+    }
+    let charge_healers = source.iter().any(|s| {
+        text(s, "action", "") == "deploy"
+            && text(s, "what", "") == "Healer"
+            && text(s, "group", "") == "charge"
+    });
+    let had_return = source.iter().any(|s| text(s, "action", "") == "redeploy");
+    // fit_steps already removed returns when Recall was absent, so charge
+    // Healers themselves identify the package requiring a coherent fallback.
+    if charge_healers || had_return {
+        let hero = source.iter().find(|s| {
+            text(s, "action", "") == "deploy"
+                && text(s, "group", "") == "charge"
+                && is_hero(text(s, "what", ""))
+        });
+        if let Some(hero) = hero.filter(|_| charge_healers) {
+            // A non-Recall Fireball walk is a valid strategy. Only repair an
+            // opening that originally requested a returned hero (marked below
+            // by the fitter), rather than turning every walk into a smash.
+            if !flag(hero, "return_package") {
+                return Ok(());
+            }
+            let hero_id = text(hero, "id", "");
+            for step in steps {
+                if text(step, "group", "") != "charge" {
+                    continue;
+                }
+                if text(step, "action", "") == "deploy" {
+                    put(step, "group", string("main"));
+                    put(step, "at", string("edge:main"));
+                    let when = if text(step, "id", "") == hero_id {
+                        time(0.0)
+                    } else {
+                        after(hero_id, 0.0)
+                    };
+                    put(step, "when", when);
+                    put(step, "packet", string("non-recall-entry"));
+                } else {
+                    put(step, "group", string("main"));
+                    put(step, "when", after(hero_id, 0.0));
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 fn optional_spell(step: &Json) -> bool {
@@ -987,6 +1145,20 @@ pub fn validate_dependencies(steps: &[Json]) -> Result<(), String> {
             let id = after.opt_str().ok_or("after must name a step")?;
             out.push(id.to_owned());
         }
+        for key in [
+            "effect_active",
+            "effect_expired",
+            "cohort_absent",
+            "succeeded",
+        ] {
+            if let Some(id) = trigger.get(key) {
+                out.push(
+                    id.opt_str()
+                        .ok_or("effect dependency must name a step")?
+                        .to_owned(),
+                );
+            }
+        }
         for key in ["all", "any"] {
             if let Some(parts) = trigger.get(key) {
                 let Json::Arr(parts) = parts else {
@@ -1008,6 +1180,12 @@ pub fn validate_dependencies(steps: &[Json]) -> Result<(), String> {
             if let Some(trigger) = step.get(key) {
                 references(trigger, &mut dependencies)?;
             }
+        }
+        if let Some(id) = step.get("recall_from") {
+            dependencies.push(id.str().to_owned());
+        }
+        if let Some(id) = step.get("after_success") {
+            dependencies.push(id.str().to_owned());
         }
         let mut indices = Vec::new();
         for dependency in dependencies {
@@ -1111,6 +1289,16 @@ fn fit_steps_omitting(
         .collect();
     let mut replacements = Vec::new();
     let mut steps = source.to_vec();
+    for step in &mut steps {
+        if text(step, "action", "") == "deploy"
+            && is_hero(text(step, "what", ""))
+            && source
+                .iter()
+                .any(|s| text(s, "action", "") == "redeploy" && s.get("what") == step.get("what"))
+        {
+            put(step, "return_package", Json::Bool(true));
+        }
+    }
     for hero in heroes {
         if templates.iter().any(|step| step.get("what") == Some(hero)) {
             continue;
@@ -1223,12 +1411,32 @@ fn fit_steps_omitting(
             if amount <= 0 {
                 relinker.dropped.push(step.clone());
             } else {
+                put(step, "allocated_count", Json::Num(amount as f64));
                 if requested > amount {
                     put(step, "count", Json::Num(amount as f64));
                 }
                 put(&mut allocations, &name, Json::Num((left - amount) as f64));
             }
         }
+    }
+    loop {
+        let mut added = Vec::new();
+        for step in &steps {
+            if !relinker
+                .dropped
+                .iter()
+                .any(|s| s.get("id") == step.get("id"))
+                && step
+                    .get("after_success")
+                    .is_some_and(|id| relinker.dropped.iter().any(|s| s.get("id") == Some(id)))
+            {
+                added.push(step.clone());
+            }
+        }
+        if added.is_empty() {
+            break;
+        }
+        relinker.dropped.extend(added);
     }
     relinker.casters = steps
         .iter()
@@ -1290,7 +1498,9 @@ fn fit_steps_omitting(
             put(step, "when", when);
         }
     }
-    for (name, count) in inventory.obj() {
+    let mut ordered_inventory = inventory.obj().to_vec();
+    ordered_inventory.sort_by(|a, b| a.0.cmp(&b.0));
+    for (name, count) in &ordered_inventory {
         if truth(count) && !mentioned.contains(&string(name)) {
             // output/research/usage/super-wall-breaker.md: breach with the push.
             // https://blueprintcoc.com/blogs/town-hall-16/top-3-th16-army-links
@@ -1306,7 +1516,7 @@ fn fit_steps_omitting(
                 &string(name),
                 string("all"),
                 "edge:main",
-                None,
+                Some(if breach { "breach" } else { "cleanup" }),
                 when,
             ));
             if breach {
@@ -1336,7 +1546,7 @@ fn fit_steps_omitting(
             ));
         }
     }
-    for (name, count) in inventory.obj() {
+    for (name, count) in &ordered_inventory {
         let mine: Vec<&Json> = kept
             .iter()
             .filter(|step| {
@@ -1376,7 +1586,7 @@ fn fit_steps_omitting(
             &string(name),
             string("all"),
             "edge:main",
-            None,
+            Some(text(mine[mine.len() - 1], "group", "cleanup")),
             when,
         ));
     }
@@ -1459,6 +1669,26 @@ fn add_spell_support(pb: &Json, steps: &mut Vec<Json>, spells: &Json) {
 }
 
 fn apply_roles(steps: &mut [Json], build: &Json, overrides: &Json) {
+    // This library recipe explicitly replaces camp healing with Puppet Queen
+    // healing. Its declared role is stronger than the inherited generic funnel.
+    if text(build, "archetype", "") == "puppet-queen-throwers" {
+        let parent = if steps.iter().any(|s| text(s, "id", "") == "warden") {
+            "warden"
+        } else {
+            "throwers"
+        };
+        for step in steps.iter_mut() {
+            if text(step, "action", "") == "deploy" && text(step, "what", "") == "Archer Queen" {
+                put(step, "at", string("edge:main"));
+                put(step, "group", string("main"));
+                put(step, "when", after(parent, 0.0));
+                put(step, "packet", string("puppet-healing"));
+            }
+            if text(step, "id", "") == parent {
+                put(step, "packet", string("puppet-healing"));
+            }
+        }
+    }
     let mut referenced = Vec::new();
     for step in steps.iter() {
         let choices = overrides.get(text(step, "id", ""));
@@ -1479,6 +1709,8 @@ fn apply_roles(steps: &mut [Json], build: &Json, overrides: &Json) {
     }
     for step in steps {
         if text(step, "action", "") != "deploy"
+            || !list(step, "cite").is_empty()
+            || step.get("variant").is_some()
             || !list(build, "heroes").contains(&field(step, "what"))
             || referenced
                 .iter()
@@ -1517,6 +1749,7 @@ fn immediate(step: &Json, previous: &Json) -> bool {
         "straight away",
         "instantly",
         "quick succession",
+        "right after",
     ]
     .iter()
     .any(|word| words.contains(*word))
@@ -1563,7 +1796,10 @@ fn fix_wait(
             && text(previous, "action", "") == "deploy"
             && text(previous, "group", "") == "charge"
             && is_hero(text(previous, "what", ""));
+        let packet = !text(step, "packet", "").is_empty()
+            && text(step, "packet", "") == text(previous, "packet", "");
         if !flag(trigger, "delay")
+            && !packet
             && !smash
             && !protection
             && !walk.iter().any(|id| id == text(step, "id", ""))
