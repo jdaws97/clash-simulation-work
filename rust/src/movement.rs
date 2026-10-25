@@ -7,6 +7,45 @@ use crate::labels::{Name, Tag};
 use crate::state::*;
 use crate::{effects, geom, units};
 
+#[cfg(test)]
+mod attachment_tests {
+    use super::*;
+    use crate::battle::SpawnOptions;
+
+    #[test]
+    fn attached_jelly_is_excluded_on_both_sides_of_separation() {
+        for pet_first in [false, true] {
+            let mut battle = crate::test_support::battle();
+            let first = if pet_first {
+                "Angry Jelly"
+            } else {
+                "Dragon Duke"
+            };
+            let second = if pet_first {
+                "Dragon Duke"
+            } else {
+                "Angry Jelly"
+            };
+            let a = battle.spawn(first, Team::Atk, 10.0, 10.0, SpawnOptions::default());
+            let b = battle.spawn(second, Team::Atk, 10.0, 10.0, SpawnOptions::default());
+            let (hero, pet) = if pet_first { (b, a) } else { (a, b) };
+            battle.unit_mut(pet).owner = Some(hero);
+            battle.unit_mut(pet).extra.brainwash_until = 100.0;
+            battle.unit_mut(pet).flying = true;
+            battle.unit_mut(hero).flying = true;
+            battle.unit_mut(hero).frozen_until = 100.0;
+            battle.rebuild_buckets();
+            battle.separate();
+            for unit in [hero, pet] {
+                assert_eq!((battle.unit(unit).x, battle.unit(unit).y), (10.0, 10.0));
+            }
+            battle.unit_mut(pet).extra.brainwash_until = 0.0;
+            battle.separate();
+            assert_ne!((battle.unit(hero).x, battle.unit(hero).y), (10.0, 10.0));
+        }
+    }
+}
+
 impl Battle {
     // battle.py:_separate: neighboring buckets, pairs ordered by entity ID.
     pub fn separate(&mut self) {
@@ -31,7 +70,7 @@ impl Battle {
         attackers.sort_by_key(|unit| unit.id.0);
         for a in attackers {
             let ua = self.unit(a);
-            if !ua.alive || ua.speed <= 0.0 {
+            if !ua.alive || ua.speed <= 0.0 || ua.attached(self) {
                 continue;
             }
             // battle.py:_separate radius(): flyers use the measured base radius
@@ -56,7 +95,11 @@ impl Battle {
             for b in neighbors {
                 let ua = self.unit(a);
                 let ub = self.unit(b);
-                if b.id.0 <= a.id.0 || ub.flying != ua.flying || ub.speed <= 0.0 {
+                if b.id.0 <= a.id.0
+                    || ub.flying != ua.flying
+                    || ub.speed <= 0.0
+                    || ub.attached(self)
+                {
                     continue;
                 }
                 let rb = radius(ub);

@@ -28,6 +28,7 @@ pub mod load;
 pub mod movement;
 pub mod params;
 pub mod pets;
+pub mod plan_golden;
 pub mod plans;
 pub mod playbook;
 pub mod pyrandom;
@@ -48,3 +49,6 @@ pub mod traps;
 pub mod units;
 
 pub use runner::{Job, JobFailure, JobResult, PreparedInputs, RunError, Runner, SummaryHook};
+
+#[cfg(test)]
+mod test_support;

@@ -10,6 +10,10 @@ use crate::json::Json;
 use crate::plans::{flag, is_hero, number, spell_key, spell_name, text, truth};
 use crate::stats::{self, Level, Stats};
 
+#[cfg(test)]
+#[path = "compile_tests.rs"]
+mod tests;
+
 #[derive(Clone, Debug)]
 pub struct CompileOptions {
     pub playbooks: bool,
@@ -164,6 +168,9 @@ impl<'a> Compiler<'a> {
         seed: i64,
         options: &CompileOptions,
     ) -> Result<Json, String> {
+        let mut reviewed = pb.clone();
+        reviewed_spell_opportunities(&mut reviewed);
+        let pb = &reviewed;
         put(&mut plan, "$type", string("PlaybookPlan"));
         put(&mut plan, "auto_revive", Json::Bool(false));
         let event_ruleset = pb
@@ -207,12 +214,30 @@ impl<'a> Compiler<'a> {
             .filter(|value| !value.is_null());
         let variants =
             self.pick_variants(pb, &inventory, heroes, plan.at("spells"), &plan, selected)?;
-        let mut steps = fit_steps(
+        let mut availability = variants.clone();
+        apply_overrides(&mut availability, &options.overrides)?;
+        let unavailable: Vec<Json> = availability
+            .iter()
+            .filter(|step| {
+                text(step, "action", "") == "ability" && self.missing_equipment(step, &plan)
+            })
+            .cloned()
+            .collect();
+        for step in &unavailable {
+            if flag(step, "required") {
+                return Err(format!(
+                    "Required ability {} has unavailable equipment",
+                    text(step, "id", "")
+                ));
+            }
+        }
+        let mut steps = fit_steps_omitting(
             &variants,
             &inventory,
             heroes,
             plan.at("spells"),
             list(&plan, "cc_troops"),
+            &unavailable,
         )?;
         add_spell_support(pb, &mut steps, plan.at("spells"));
         // output/research/usage/invisibility-spell.md: cover the first hero
@@ -273,6 +298,21 @@ impl<'a> Compiler<'a> {
             }
         }
         apply_overrides(&mut steps, &options.overrides)?;
+        validate_dependencies(&steps)?;
+        if !unavailable.is_empty() {
+            put(
+                &mut plan,
+                "unavailable_steps",
+                array(unavailable.iter().map(|step| {
+                    Json::Obj(vec![
+                        ("id".to_owned(), field(step, "id")),
+                        ("hero".to_owned(), field(step, "what")),
+                        ("equipment".to_owned(), field(step, "equipment")),
+                        ("reason".to_owned(), string("unavailable equipment")),
+                    ])
+                })),
+            );
+        }
         if build.get("warden_mode").is_none()
             && warden_walk(&steps, number(&inventory, "Healer", 0.0) > 0.0)
         {
@@ -447,13 +487,15 @@ impl<'a> Compiler<'a> {
         for (key, count) in spells.obj() {
             put(&mut stock, spell_name(key), count.clone());
         }
+        let mut budgets: Vec<(String, String, i64)> = Vec::new();
         for step in candidate {
+            let optional = optional_spell(step);
             let usable = self.usable(step, inventory, heroes, spells, plan, candidate)
                 && (!check_equipment
                     || text(step, "action", "") != "ability"
                     || !self.missing_equipment(step, plan));
             if !usable {
-                if added.iter().any(|id| id == text(step, "id", "")) {
+                if !optional && added.iter().any(|id| id == text(step, "id", "")) {
                     return Ok(false);
                 }
                 continue;
@@ -463,11 +505,50 @@ impl<'a> Compiler<'a> {
             }
             let name = caster_name(step);
             let left = number(&stock, name, 0.0) as i64;
-            let amount = step_amount(step, left, 1)?;
+            let deploy = text(step, "action", "") == "deploy";
+            let amount = step_amount(step, left, if deploy { left } else { 1 })?;
+            if optional {
+                continue;
+            }
+            if !deploy {
+                if let Some(budget) = step.get("spell_budget").and_then(Json::opt_str) {
+                    if budget.is_empty() {
+                        return Err("spell_budget must name a shared budget".to_owned());
+                    }
+                    if let Some((_, spell, required)) =
+                        budgets.iter_mut().find(|(id, _, _)| id == budget)
+                    {
+                        if spell != name {
+                            return Err(format!("Shared spell budget {budget} mixes spell types"));
+                        }
+                        *required = (*required).max(amount);
+                    } else {
+                        budgets.push((budget.to_owned(), name.to_owned(), amount));
+                    }
+                    continue;
+                }
+            }
+            let inherited = !added.iter().any(|id| id == text(step, "id", ""));
+            let fitted_troop = deploy && inherited && !is_hero(name) && !armies::is_siege(name);
+            let amount = if fitted_troop {
+                amount.min(left)
+            } else {
+                amount
+            };
+            if amount <= 0 && fitted_troop {
+                continue;
+            }
             if amount <= 0 || amount > left {
                 return Ok(false);
             }
             put(&mut stock, name, Json::Num((left - amount) as f64));
+        }
+        for (_, name, amount) in budgets {
+            let left = number(&stock, &name, 0.0) as i64;
+            if amount <= 0 || amount > left {
+                return Ok(false);
+            }
+            put(&mut stock, &name, Json::Num((left - amount) as f64));
         }
         Ok(true)
     }
@@ -483,6 +564,7 @@ impl<'a> Compiler<'a> {
         selected: Option<&Json>,
     ) -> Result<Vec<Json>, String> {
         let mut steps = list(pb, "steps").to_vec();
+        validate_step_ids(&steps)?;
         let mut variants = list(pb, "variants").to_vec();
         variants.sort_by(|a, b| number(b, "support", 0.0).total_cmp(&number(a, "support", 0.0)));
         let mut used = Vec::new();
@@ -510,6 +592,7 @@ impl<'a> Compiler<'a> {
             for step in &mut new {
                 put(step, "variant", field(&variant, "name"));
             }
+            validate_step_ids(&new)?;
             // output/research/usage/root-rider.md: siege alternatives retain
             // the charge strategy. https://www.youtube.com/watch?v=C0lnvxJraoM&t=246
             let broken: Vec<Json> = current
@@ -532,9 +615,9 @@ impl<'a> Compiler<'a> {
                 });
             }
             if new.is_empty()
-                || !new
-                    .iter()
-                    .all(|step| self.usable(step, inventory, heroes, spells, plan, &new))
+                || !new.iter().all(|step| {
+                    optional_spell(step) || self.usable(step, inventory, heroes, spells, plan, &new)
+                })
             {
                 continue;
             }
@@ -551,6 +634,7 @@ impl<'a> Compiler<'a> {
                 .cloned()
                 .collect();
             candidate.splice(index..index, new.iter().cloned());
+            validate_step_ids(&candidate)?;
             if !requested {
                 for old in &current {
                     let replacement = new.iter().find(|step| step.get("id") == old.get("id"));
@@ -578,6 +662,19 @@ impl<'a> Compiler<'a> {
                     }
                 }
             }
+            // Timing references to an explicitly removed predecessor retain
+            // that predecessor's prerequisites. Unknown IDs still fail final
+            // validation; they are never treated as completed actions.
+            let removed = steps
+                .iter()
+                .filter(|step| {
+                    !candidate
+                        .iter()
+                        .any(|other| other.get("id") == step.get("id"))
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+            relink_removed(&mut candidate, removed)?;
             let ids: Vec<String> = new
                 .iter()
                 .map(|step| text(step, "id", "").to_owned())
@@ -633,6 +730,7 @@ impl<'a> Compiler<'a> {
                 ));
             }
         }
+        validate_dependencies(&steps)?;
         Ok(steps)
     }
 }
@@ -656,6 +754,10 @@ fn caster_name(step: &Json) -> &str {
     } else {
         text(step, "what", "")
     }
+}
+
+fn optional_spell(step: &Json) -> bool {
+    flag(step, "optional") && matches!(text(step, "action", ""), "spell" | "recall")
 }
 
 fn have(name: &str, inventory: &Json, heroes: &[Json], spells: &Json) -> bool {
@@ -727,6 +829,29 @@ struct Relinker<'a> {
     spells: &'a Json,
 }
 
+fn relink_removed(steps: &mut [Json], dropped: Vec<Json>) -> Result<(), String> {
+    if dropped.is_empty() {
+        return Ok(());
+    }
+    let spells = object();
+    let relinker = Relinker {
+        army_units: Vec::new(),
+        bring: Vec::new(),
+        dropped,
+        casters: Vec::new(),
+        spells: &spells,
+    };
+    for step in steps {
+        for key in ["when", "until"] {
+            if let Some(trigger) = step.get(key) {
+                let trigger = relinker.relink(trigger, &[])?;
+                put(step, key, trigger);
+            }
+        }
+    }
+    Ok(())
+}
+
 impl Relinker<'_> {
     fn absent(&self, name: &Json) -> bool {
         self.army_units.contains(name) && !self.bring.contains(name)
@@ -767,13 +892,7 @@ impl Relinker<'_> {
                 if up.is_null() {
                     return Ok(up);
                 }
-                if up.get("after").is_some() {
-                    let delay = number(&up, "delay", 0.0) + number(trigger, "delay", 0.0);
-                    put(&mut up, "delay", Json::Num(delay));
-                } else if let Some(t) = up.get("t") {
-                    let t = t.f64() + number(trigger, "delay", 0.0);
-                    put(&mut up, "t", Json::Num(t));
-                }
+                delay_trigger(&mut up, number(trigger, "delay", 0.0));
                 return Ok(up);
             }
         }
@@ -829,6 +948,26 @@ impl Relinker<'_> {
     }
 }
 
+fn delay_trigger(trigger: &mut Json, delay: f64) {
+    if trigger.get("after").is_some() {
+        let value = number(trigger, "delay", 0.0) + delay;
+        put(trigger, "delay", Json::Num(value));
+    } else if let Some(t) = trigger.get("t") {
+        let value = t.f64() + delay;
+        put(trigger, "t", Json::Num(value));
+    } else {
+        for key in ["all", "any"] {
+            if let Some(Json::Arr(parts)) = trigger.get(key) {
+                let mut parts = parts.clone();
+                for part in &mut parts {
+                    delay_trigger(part, delay);
+                }
+                put(trigger, key, array(parts));
+            }
+        }
+    }
+}
+
 fn time(t: f64) -> Json {
     Json::Obj(vec![("t".to_owned(), Json::Num(t))])
 }
@@ -837,6 +976,90 @@ fn after(id: &str, delay: f64) -> Json {
         ("after".to_owned(), string(id)),
         ("delay".to_owned(), Json::Num(delay)),
     ])
+}
+
+/// Validate the graph that the executor will actually receive. This also runs
+/// before fitting, so variant expansion cannot disguise an unknown predecessor
+/// as a temporarily unavailable action.
+pub fn validate_dependencies(steps: &[Json]) -> Result<(), String> {
+    fn references(trigger: &Json, out: &mut Vec<String>) -> Result<(), String> {
+        if let Some(after) = trigger.get("after") {
+            let id = after.opt_str().ok_or("after must name a step")?;
+            out.push(id.to_owned());
+        }
+        for key in ["all", "any"] {
+            if let Some(parts) = trigger.get(key) {
+                let Json::Arr(parts) = parts else {
+                    return Err(format!("{key} must contain a trigger array"));
+                };
+                for part in parts {
+                    references(part, out)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    let ids = validate_step_ids(steps)?;
+    let mut edges = Vec::new();
+    for step in steps {
+        let mut dependencies = Vec::new();
+        for key in ["when", "until"] {
+            if let Some(trigger) = step.get(key) {
+                references(trigger, &mut dependencies)?;
+            }
+        }
+        let mut indices = Vec::new();
+        for dependency in dependencies {
+            let index = ids.iter().position(|id| *id == dependency).ok_or_else(|| {
+                format!(
+                    "Playbook step {} references unknown predecessor {dependency}",
+                    text(step, "id", "")
+                )
+            })?;
+            indices.push(index);
+        }
+        edges.push(indices);
+    }
+    fn visit(
+        index: usize,
+        edges: &[Vec<usize>],
+        state: &mut [u8],
+        ids: &[&str],
+    ) -> Result<(), String> {
+        if state[index] == 1 {
+            return Err(format!("Cyclic playbook dependency at {}", ids[index]));
+        }
+        if state[index] == 2 {
+            return Ok(());
+        }
+        state[index] = 1;
+        for parent in &edges[index] {
+            visit(*parent, edges, state, ids)?;
+        }
+        state[index] = 2;
+        Ok(())
+    }
+    let mut state = vec![0; steps.len()];
+    for index in 0..steps.len() {
+        visit(index, &edges, &mut state, &ids)?;
+    }
+    Ok(())
+}
+
+fn validate_step_ids(steps: &[Json]) -> Result<Vec<&str>, String> {
+    let mut ids = Vec::new();
+    for step in steps {
+        let id = step.get("id").and_then(Json::opt_str).unwrap_or("");
+        if id.is_empty() {
+            return Err("Playbook step has an empty or missing id".to_owned());
+        }
+        if ids.contains(&id) {
+            return Err(format!("Duplicate playbook step id: {id}"));
+        }
+        ids.push(id);
+    }
+    Ok(ids)
 }
 
 fn rest_step(
@@ -870,6 +1093,17 @@ pub fn fit_steps(
     heroes: &[Json],
     spells: &Json,
     cc: &[Json],
+) -> Result<Vec<Json>, String> {
+    fit_steps_omitting(source, inventory, heroes, spells, cc, &[])
+}
+
+fn fit_steps_omitting(
+    source: &[Json],
+    inventory: &Json,
+    heroes: &[Json],
+    spells: &Json,
+    cc: &[Json],
+    unavailable: &[Json],
 ) -> Result<Vec<Json>, String> {
     let templates: Vec<&Json> = source
         .iter()
@@ -954,11 +1188,15 @@ pub fn fit_steps(
     let mut relinker = Relinker {
         army_units,
         bring,
-        dropped: Vec::new(),
+        dropped: unavailable.to_vec(),
         casters: Vec::new(),
         spells,
     };
-    for step in &steps {
+    let mut allocations = inventory.clone();
+    for hero in heroes {
+        put(&mut allocations, hero.str(), Json::Num(1.0));
+    }
+    for step in &mut steps {
         let missing_at = text(step, "at", "")
             .split_once(':')
             .is_some_and(|(kind, name)| {
@@ -968,7 +1206,28 @@ pub fn fit_steps(
             || (text(step, "action", "") != "deploy" && relinker.absent_cond(&field(step, "when")))
             || !basic_usable(step, inventory, heroes, spells, true)
         {
-            relinker.dropped.push(step.clone());
+            if !relinker
+                .dropped
+                .iter()
+                .any(|dropped| dropped.get("id") == step.get("id"))
+            {
+                relinker.dropped.push(step.clone());
+            }
+            continue;
+        }
+        if text(step, "action", "") == "deploy" {
+            let name = text(step, "what", "").to_owned();
+            let left = number(&allocations, &name, 0.0) as i64;
+            let requested = step_amount(step, left, left)?;
+            let amount = requested.min(left);
+            if amount <= 0 {
+                relinker.dropped.push(step.clone());
+            } else {
+                if requested > amount {
+                    put(step, "count", Json::Num(amount as f64));
+                }
+                put(&mut allocations, &name, Json::Num((left - amount) as f64));
+            }
         }
     }
     relinker.casters = steps
@@ -1121,6 +1380,7 @@ pub fn fit_steps(
             when,
         ));
     }
+    validate_dependencies(&kept)?;
     Ok(kept)
 }
 
@@ -1135,6 +1395,41 @@ fn collect_groups(condition: &Json, groups: &mut Vec<String>) {
             collect_groups(part, groups);
         }
     }
+}
+
+/// Compatibility declarations for the reviewed books, pending explicit data
+/// annotations. These are named discretionary policies from DW F1, SB F2 and
+/// TR F7, not a general inference from a pressure trigger. New books/packets
+/// must declare `optional` or `spell_budget` themselves.
+fn reviewed_spell_opportunities(book: &mut Json) {
+    let optional: &[&str] = match text(book, "family", "") {
+        "druid-ruin-witch" => &[
+            "cc_freeze_defending_headhunters",
+            "freeze_main",
+            "freeze_duke",
+        ],
+        "super-bowler" => &["charge_poison", "poison_main", "charge_rage"],
+        "thrower" => &["totem_defense", "totem_defenders"],
+        _ => &[],
+    };
+    let mut steps = list(book, "steps").to_vec();
+    for step in &mut steps {
+        if optional.contains(&text(step, "id", "")) && step.get("optional").is_none() {
+            put(step, "optional", Json::Bool(true));
+        }
+    }
+    put(book, "steps", array(steps));
+    let mut variants = list(book, "variants").to_vec();
+    for variant in &mut variants {
+        let mut steps = list(variant, "steps").to_vec();
+        for step in &mut steps {
+            if optional.contains(&text(step, "id", "")) && step.get("optional").is_none() {
+                put(step, "optional", Json::Bool(true));
+            }
+        }
+        put(variant, "steps", array(steps));
+    }
+    put(book, "variants", array(variants));
 }
 
 fn add_spell_support(pb: &Json, steps: &mut Vec<Json>, spells: &Json) {
@@ -1919,6 +2214,11 @@ impl Compiler<'_> {
     // including errors accumulated before an invalid level/count ends the try block.
     pub fn legal(&self, plan: &Json) -> Vec<String> {
         let mut problems = Vec::new();
+        if text(plan, "$type", "") == "PlaybookPlan" {
+            if let Err(error) = validate_dependencies(list(plan, "steps")) {
+                problems.push(error);
+            }
+        }
         // output/research/usage/lavaloon.md: summons cannot occupy camps.
         // https://clashofclans.fandom.com/wiki/Lavaloon_Puppet
         // Inspect every kind independently of waivable level/count errors.
@@ -2282,6 +2582,9 @@ impl Compiler<'_> {
 
     pub fn require_legal(&self, plan: &mut Json) -> Result<(), String> {
         crate::content::validate_plan(plan).map_err(|error| error.to_string())?;
+        if text(plan, "$type", "") == "PlaybookPlan" {
+            validate_dependencies(list(plan, "steps"))?;
+        }
         // plans.py:require_legal / tools/baselab/replay_log.py: decoded armies
         // and real_battle replays retain their documented inventories.
         let battle_log = flag(plan, "observed")

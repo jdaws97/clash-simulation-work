@@ -15,6 +15,10 @@ use crate::state::*;
 use crate::stats::Level;
 use crate::trace::round_decimal;
 
+#[cfg(test)]
+#[path = "playbook_tests.rs"]
+mod tests;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
     Deploy,
@@ -140,6 +144,14 @@ pub struct Step {
 }
 
 impl Step {
+    fn spell_kind(&self) -> Option<&str> {
+        match self.action {
+            Action::Spell => self.what.as_deref().and_then(spell_key),
+            Action::Recall => Some("recall"),
+            _ => None,
+        }
+    }
+
     pub fn load(s: &Json) -> Self {
         Self {
             id: s.at("id").str().to_owned(),
@@ -927,8 +939,10 @@ impl PlaybookPlan {
 
     // playbook.py:241-249.
     fn down(&self, battle: &Battle, name: &str) -> bool {
-        self.deployed.iter().any(|n| n == name)
+        let generated = name == "Firemite";
+        (generated || self.deployed.iter().any(|n| n == name))
             && self.unit(battle, name).is_none()
+            && !self.generated_possible(battle, name)
             && !battle.portal_units().any(|r| {
                 let u = battle.unit(r);
                 u.name == name && u.kind != Tag::HeroClone
@@ -937,6 +951,121 @@ impl PlaybookPlan {
                 .iter()
                 .any(|d| d.name == name)
             && (plans::is_hero(name) || count(&self.inventory, name) <= 0)
+    }
+
+    fn generated_possible(&self, battle: &Battle, name: &str) -> bool {
+        if name != "Firemite" {
+            return false;
+        }
+        battle
+            .attackers_pool()
+            .any(|unit| unit.alive && unit.name_id == Name::Furnace && unit.extra.mites > 0)
+            || battle.deployments[battle.next_deploy..]
+                .iter()
+                .any(|deployment| deployment.name == "Furnace" || deployment.name == name)
+            || count(&self.inventory, "Furnace") > 0
+    }
+
+    /// A scheduled spell opener is useful work even without a living army.
+    /// Follow only temporal spell chains; a pressure condition requiring a
+    /// not-yet-deployed unit cannot keep a failed opener alive indefinitely.
+    fn preparing(&self, battle: &Battle, trigger: &Trigger, seen: &mut Vec<String>) -> bool {
+        match trigger {
+            Trigger::All(parts) | Trigger::Any(parts) => {
+                parts.iter().any(|part| self.preparing(battle, part, seen))
+            }
+            Trigger::After(id, _) if !self.done(id) && !self.cancelled(id) => {
+                if seen.contains(id) {
+                    return false;
+                }
+                let Some(step) = self.steps.iter().find(|step| step.id == *id) else {
+                    return false;
+                };
+                seen.push(id.clone());
+                let possible = if step.action == Action::Spell {
+                    battle.t < number(&step.source, "timeout", battle.params.late_deployment)
+                        && self.scheduled_preparation(battle, &step.when, seen)
+                } else {
+                    self.preparing(battle, &step.when, seen)
+                };
+                seen.pop();
+                possible
+            }
+            _ => false,
+        }
+    }
+
+    fn scheduled_preparation(
+        &self,
+        battle: &Battle,
+        trigger: &Trigger,
+        seen: &mut Vec<String>,
+    ) -> bool {
+        match trigger {
+            Trigger::Always | Trigger::Time(_) => true,
+            Trigger::After(id, _) => self.done(id) || self.preparing(battle, trigger, seen),
+            Trigger::All(parts) => parts
+                .iter()
+                .all(|part| self.scheduled_preparation(battle, part, seen)),
+            Trigger::Any(parts) => parts
+                .iter()
+                .any(|part| self.scheduled_preparation(battle, part, seen)),
+            _ => false,
+        }
+    }
+
+    /// Runtime reservations belong to unfinished cited deployments. A terminal
+    /// skip releases its stock, just as a successful deployment consumes it.
+    fn unreserved_inventory(&self) -> Vec<(String, i64)> {
+        let mut available = self.inventory.to_vec();
+        for step in self.steps.iter().filter(|step| {
+            step.action == Action::Deploy
+                && !step.uncited
+                && !self.done(&step.id)
+                && !self.cancelled(&step.id)
+        }) {
+            if let Some(name) = &step.what {
+                let left = count(&available, name);
+                let reserved = step.count.unwrap_or(left).max(0).min(left);
+                set(&mut available, name.clone(), left - reserved);
+            }
+        }
+        available
+    }
+
+    fn opportunity_has_stock(&self, step: &Step) -> bool {
+        let Some(kind) = step.spell_kind() else {
+            return true;
+        };
+        let budget = step.source.get("spell_budget").and_then(Json::opt_str);
+        if !flag(&step.source, "optional") && budget.is_none() {
+            return true;
+        }
+        let mut mandatory = 0;
+        let mut groups: Vec<(&str, i64)> = Vec::new();
+        for other in self.steps.iter().filter(|other| {
+            other.spell_kind() == Some(kind)
+                && other.id != step.id
+                && !self.done(&other.id)
+                && !self.cancelled(&other.id)
+                && !flag(&other.source, "optional")
+        }) {
+            let amount = other.count.unwrap_or(1).max(0);
+            if let Some(group) = other.source.get("spell_budget").and_then(Json::opt_str) {
+                if Some(group) == budget {
+                    continue;
+                }
+                if let Some((_, reserved)) = groups.iter_mut().find(|(id, _)| *id == group) {
+                    *reserved = (*reserved).max(amount);
+                } else {
+                    groups.push((group, amount));
+                }
+            } else {
+                mandatory += amount;
+            }
+        }
+        mandatory += groups.iter().map(|(_, amount)| amount).sum::<i64>();
+        count(&self.attack.spells, kind) > mandatory
     }
 
     // playbook.py:251-260.
@@ -1421,7 +1550,7 @@ impl PlaybookPlan {
         if aim != "building:ad" && !quotes.contains("air defense") {
             return 0;
         }
-        let mut count: usize = 1;
+        let mut count = number(&step.source, "aim_count", 1.0).max(1.0) as usize;
         for (word, number) in [
             ("two", 2),
             ("three", 3),
@@ -1472,7 +1601,12 @@ impl PlaybookPlan {
             .as_deref()
             .and_then(|aim| aim.strip_prefix("building:"))
         {
-            if self.aim_building(battle, hero, key, Some(deadline), 1) {
+            let count = if key == "ad" {
+                Self::ad_target_count(step).max(1)
+            } else {
+                1
+            };
+            if self.aim_building(battle, hero, key, Some(deadline), count) {
                 return true;
             }
             if battle.t - since >= battle.params.aim_wait {
@@ -1965,7 +2099,7 @@ impl PlaybookPlan {
                 && !self.ready(battle, &step.when, false)
             {
                 forced = step.action == Action::Deploy
-                    && (stalled
+                    && (stalled && !self.preparing(battle, &step.when, &mut Vec::new())
                         || t >= battle.params.late_deployment
                         || self.impossible(battle, &step.when)
                             && self.ready(battle, &step.when, true));
@@ -1974,6 +2108,9 @@ impl PlaybookPlan {
                 }
             }
             let what = step.what.as_deref().unwrap_or("");
+            if !self.opportunity_has_stock(step) {
+                continue;
+            }
             if step.action == Action::Deploy
                 && !plans::is_hero(what)
                 && count(&self.inventory, what) <= 0
@@ -2370,15 +2507,23 @@ impl PlaybookPlan {
         if self.attack.spells.iter().map(|(_, n)| n).sum::<i64>() == left {
             self.sync_scouting(battle);
             self.attack.fallback = true;
+            let unreserved_inventory = self.unreserved_inventory();
+            let mut available_inventory = unreserved_inventory.clone();
             self.attack.generic_spells(
                 battle,
                 &units,
                 &have,
-                Some(&mut self.inventory),
+                Some(&mut available_inventory),
                 true,
                 lightning_reserved,
             );
             self.attack.fallback = false;
+            for ((name, total), (_, available)) in
+                self.inventory.iter_mut().zip(&available_inventory)
+            {
+                let before = count(&unreserved_inventory, name);
+                *total -= before - available;
+            }
         }
         if self.attack.spells.iter().map(|(_, n)| n).sum::<i64>() < left {
             self.attack.busy_until = t + action_time(battle, Action::Spell, 1);

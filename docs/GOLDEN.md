@@ -9,6 +9,9 @@ Python is frozen and is no longer a parity target. This suite runs Rust alone;
 it does not import Python, regenerate Python expectations, install crates, or
 require the old parity checkout. There are no game-mechanics changes in G2.
 
+PB1a subsequently accepts the intended mechanics/executor corrections documented
+at the end of this file. The current expectations include those corrections.
+
 These are **synthetic simulation regression scenarios**, including scenarios
 using existing village geometry and army configurations. They are not real-game
 calibration or recorded attacks. Personal layout names and descriptive notes
@@ -498,3 +501,205 @@ conversions have no approximated transcendental implementation to replace.
 No `recip`, `signum`, `to_radians`, `to_degrees`, `next_up`, `next_down` or
 `round_ties_away` library calls were found. Rust constant values and Rust
 decimal parsing/formatting do not select the host C maths library.
+
+## PB1a: compiled plans and intended runtime changes
+
+PB1a intentionally changes Rust fitting and therefore diverges from the frozen
+Python compiler. No Python was executed. The saved `/tmp/m2-plan-reference-0.json`
+and `-1.json` already failed baseline coverage because the current library includes
+`custom:user-rr-oct25`, which those references omit.
+
+`compile-check` now defaults to the Rust compiled-plan oracle in
+`rust/golden/plans.jsonl`. Explicit `--reference FILE` comparisons remain available
+for historical saved references; only an explicit `--python` requests the legacy
+Python exporter. Normal checking never starts Python.
+
+The plan oracle records complete current Rust inputs, output plans, legality
+diagnostics and expected errors for **1,196 declared synthetic cases** in both
+playbook modes. It covers the library at four angles/two seeds, roster changes,
+explicit variants, overrides, supported/unsupported tactics and invalid inputs.
+Checking regenerates the case list, so additions, removals, changed inputs,
+ordering and changed compilation outcomes fail. `compile-check` also retains the
+account admission fixtures.
+
+From the repository root, using the PB1a WSL binary and absolute catalog path:
+
+```sh
+. ~/.cargo/env
+export CARGO_TARGET_DIR=/tmp/clash-target-pb
+export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
+cargo build --release --offline --manifest-path rust/Cargo.toml
+/tmp/clash-target-pb/release/baselab-engine golden plans check rust/golden/plans.jsonl
+cd rust
+/tmp/clash-target-pb/release/baselab-engine compile-check --playbooks 1
+/tmp/clash-target-pb/release/baselab-engine compile-check --playbooks 0
+```
+
+After reviewing an intentional compiler or library change, record with
+`baselab-engine golden plans record rust/golden/plans.jsonl` from the repository
+root, then check both modes. Plan recording writes through a temporary file.
+The plan snapshot includes the concurrently corrected PB2 library; PB1a does not
+edit those source data files.
+
+The original battle fixtures remain unchanged. The untouched binary first passed
+868/868 old expectations. The intended engine then changed **134/868** cases.
+Independent Rust control recordings enabled each runtime correction separately;
+disabling all runtime corrections reproduced **868/868** old expectations exactly.
+Every changed case below differs under at least one identified individual fix:
+
+- **D1 — consumed Phoenix deadline:** terminal death/Revive clears the consumed
+  deadline. A revived hero survives instead of being killed again by the expired
+  Phoenix timer. This individually affects 41 cases.
+- **D2 — attached Angry Jelly separation:** attached Jelly is excluded from both
+  sides of collision pairing. Its owner no longer receives artificial repeated
+  displacement; detached units retain normal separation. This individually
+  affects 94 cases.
+- **A14 — Air Defense aim count:** explicit AD aiming honors the requested/inferred
+  count, changing the ability time/line instead of firing through only one AD.
+  This individually affects 11 cases.
+
+Overlaps are intentional: 36 D1-only, 84 D2-only, two A14-only, three D1+D2,
+two D1+A14 and seven D2+A14 cases, totaling 134. Other PB1a changes do not alter
+the old prepared battle traces; fitter regressions are covered by the new plan
+oracle, and A11–A13 have focused Rust tests and seeded witness replays.
+See [`PB1A.md`](PB1A.md) for before/after witnesses, source boundaries and the
+deferred PB1b interfaces. These are simulation regression results, not calibration.
+
+Every accepted changed case and its independently verified reason follows.
+
+| Case | Reason(s) defined above |
+| --- | --- |
+| stage-4-case-29 | D1 |
+| stage-4-case-31 | D1 |
+| stage-4-case-33 | D1 |
+| stage-4-case-39 | D1 |
+| stage-4-case-47 | D1 |
+| stage-4-case-49 | D1 |
+| stage-4-case-57 | D1 |
+| stage-4-case-63 | D1 |
+| stage-5-case-1 | D2 |
+| stage-5-case-2 | D2 |
+| stage-5-case-6 | D2 |
+| stage-5-case-8 | D2 + A14 |
+| stage-5-case-9 | D2 |
+| stage-5-case-10 | D2 |
+| stage-5-case-11 | A14 |
+| stage-5-case-12 | D1 + A14 |
+| stage-5-case-13 | D2 + A14 |
+| stage-5-case-16 | D1 |
+| stage-5-case-17 | D1 |
+| stage-5-case-18 | D1 |
+| stage-5-case-19 | D2 |
+| stage-5-case-22 | D1 |
+| stage-5-case-33 | D2 |
+| stage-5-case-34 | D2 + A14 |
+| stage-5-case-38 | D1 + D2 |
+| stage-5-case-40 | D2 |
+| stage-5-case-41 | D2 + A14 |
+| stage-5-case-42 | D2 + A14 |
+| stage-5-case-43 | A14 |
+| stage-5-case-44 | D1 + A14 |
+| stage-5-case-45 | D2 + A14 |
+| stage-5-case-48 | D1 |
+| stage-5-case-51 | D2 |
+| stage-5-case-62 | D1 |
+| stage-5-case-65 | D2 |
+| stage-5-case-66 | D2 + A14 |
+| stage-7-case-10 | D2 |
+| stage-7-case-20 | D2 |
+| stage-7-case-33 | D2 |
+| stage-7-case-43 | D2 |
+| stage-7-case-56 | D2 |
+| stage-7-case-66 | D2 |
+| stage-7-case-79 | D2 |
+| stage-7-case-89 | D2 |
+| stage-7-case-102 | D2 |
+| stage-7-case-112 | D2 |
+| stage-7-case-125 | D2 |
+| stage-7-case-135 | D2 |
+| stage-7-case-148 | D2 |
+| stage-7-case-158 | D2 |
+| stage-7-case-171 | D2 |
+| stage-7-case-181 | D2 |
+| stage-8-case-0 | D1 |
+| stage-8-case-6 | D2 |
+| stage-8-case-7 | D2 |
+| stage-8-case-8 | D2 |
+| stage-8-case-15 | D2 |
+| stage-8-case-16 | D2 |
+| stage-8-case-17 | D2 |
+| stage-8-case-21 | D2 |
+| stage-8-case-22 | D2 |
+| stage-8-case-29 | D2 |
+| stage-8-case-30 | D2 |
+| stage-8-case-31 | D2 |
+| stage-8-case-32 | D2 |
+| stage-8-case-33 | D2 |
+| stage-8-case-44 | D2 |
+| stage-8-case-45 | D2 |
+| stage-8-case-46 | D1 + D2 |
+| stage-8-case-65 | D2 |
+| stage-8-case-66 | D2 |
+| stage-8-case-70 | D1 |
+| stage-8-case-71 | D1 |
+| stage-8-case-72 | D1 |
+| stage-8-case-76 | D2 |
+| stage-8-case-77 | D2 |
+| stage-8-case-85 | D1 |
+| stage-8-case-90 | D1 |
+| stage-8-case-91 | D1 |
+| stage-8-case-92 | D1 |
+| stage-8-case-93 | D1 |
+| stage-8-case-95 | D1 |
+| stage-8-case-102 | D1 |
+| stage-8-case-105 | D2 |
+| stage-8-case-106 | D2 |
+| stage-8-case-107 | D2 |
+| stage-8-case-114 | D2 |
+| stage-8-case-115 | D2 |
+| stage-8-case-116 | D2 |
+| stage-8-case-120 | D2 |
+| stage-8-case-121 | D2 |
+| stage-8-case-128 | D2 |
+| stage-8-case-129 | D2 |
+| stage-8-case-130 | D2 |
+| stage-8-case-131 | D2 |
+| stage-8-case-132 | D2 |
+| stage-8-case-143 | D1 + D2 |
+| stage-8-case-144 | D2 |
+| stage-8-case-145 | D2 |
+| stage-9-case-6 | D2 |
+| stage-9-case-7 | D2 |
+| stage-9-case-8 | D2 |
+| stage-9-case-21 | D2 |
+| stage-9-case-22 | D2 |
+| stage-9-case-23 | D2 |
+| stage-9-case-36 | D2 |
+| stage-9-case-37 | D2 |
+| stage-9-case-38 | D2 |
+| stage-9-case-45 | D1 |
+| stage-9-case-46 | D1 |
+| stage-9-case-47 | D1 |
+| stage-9-case-48 | D1 |
+| stage-9-case-50 | D1 |
+| stage-9-case-51 | D2 |
+| stage-9-case-52 | D2 |
+| stage-9-case-53 | D2 |
+| stage-9-case-61 | D1 |
+| stage-9-case-66 | D2 |
+| stage-9-case-67 | D2 |
+| stage-9-case-68 | D2 |
+| stage-9-case-75 | D1 |
+| stage-9-case-76 | D1 |
+| stage-9-case-77 | D1 |
+| stage-9-case-79 | D1 |
+| stage-9-case-81 | D2 |
+| stage-9-case-82 | D2 |
+| stage-9-case-83 | D2 |
+| stage-9-case-96 | D2 |
+| stage-9-case-97 | D2 |
+| stage-9-case-98 | D2 |
+| stage-9-case-106 | D1 |
+| stage-9-case-111 | D2 |
+| stage-9-case-112 | D2 |
+| stage-9-case-113 | D2 |

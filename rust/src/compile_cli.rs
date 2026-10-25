@@ -1,4 +1,5 @@
-//! `compile` and `compile-check`; rust_bridge.py:39-105 is the wire oracle.
+//! Native compilation and Rust compiled-plan regression checks. Explicit saved
+//! reference comparisons retain the historical wire-oracle adapter.
 //!
 //! Wiring (the integration owner edits lib.rs/main.rs):
 //! lib.rs: `pub mod armies; pub mod compile; pub mod compile_cli;`
@@ -122,7 +123,7 @@ fn arguments(args: &[PathBuf]) -> Result<Arguments, String> {
     Ok(out)
 }
 
-fn repo_root(explicit: Option<&Path>) -> Result<PathBuf, String> {
+pub(crate) fn repo_root(explicit: Option<&Path>) -> Result<PathBuf, String> {
     if let Some(path) = explicit {
         return Ok(path.to_owned());
     }
@@ -166,6 +167,14 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
     let stats = Stats::new(field(&catalog, "registry"));
     let compiler = Compiler::load(&root, &stats)?;
     if args.command == "compile-check" {
+        if args.reference.is_none() && args.python.is_none() {
+            account_fixtures(&compiler)?;
+            return crate::plan_golden::check(
+                &root.join("rust/golden/plans.jsonl"),
+                &compiler,
+                Some(args.options.playbooks),
+            );
+        }
         return compile_check(&args, &compiler);
     }
     let input = args.positional.first().ok_or(USAGE)?;
@@ -381,7 +390,7 @@ fn reference(args: &Arguments, compiler: &Compiler<'_>) -> Result<Json, String> 
     json::parse(output.trim_start_matches('\u{feff}')).map_err(|error| error.to_string())
 }
 
-fn case_options(case: &Json, playbooks: bool) -> CompileOptions {
+pub(crate) fn case_options(case: &Json, playbooks: bool) -> CompileOptions {
     let mut options = CompileOptions {
         playbooks,
         ..CompileOptions::default()
@@ -400,7 +409,12 @@ fn case_options(case: &Json, playbooks: bool) -> CompileOptions {
     options
 }
 
-fn outcome(compiler: &Compiler<'_>, build: &Json, case: &Json, options: &CompileOptions) -> Json {
+pub(crate) fn outcome(
+    compiler: &Compiler<'_>,
+    build: &Json,
+    case: &Json,
+    options: &CompileOptions,
+) -> Json {
     let mut out = object();
     match compiler.plan_for_build(
         build,

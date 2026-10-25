@@ -34,7 +34,7 @@ fn catalog_path() -> Result<PathBuf, String> {
 
 fn run() -> Result<(), String> {
     let mut args = env::args_os().skip(1);
-    let usage = "usage: baselab-engine trace <battle.json> <trace.txt> | run <battle.json>... | stats-check <cases.json> | setup-check <battle.json> <job.json> | trace-job <jobs.json> <k> <trace.txt> | jobs <jobs.json> <results.jsonl> [--threads N] | bench-runner <jobs.json> [--threads N] | golden record|check <cases.jsonl> <expected.jsonl> [--threads N] | guardian-check";
+    let usage = "usage: baselab-engine trace <battle.json> <trace.txt> | run <battle.json>... | stats-check <cases.json> | setup-check <battle.json> <job.json> | trace-job <jobs.json> <k> <trace.txt> | jobs <jobs.json> <results.jsonl> [--threads N] | bench-runner <jobs.json> [--threads N] | golden record|check <cases.jsonl> <expected.jsonl> [--threads N] | golden plans record|check [plans.jsonl] [--root ROOT] | guardian-check";
     let command = args.next().ok_or(usage)?;
     let paths: Vec<PathBuf> = args.map(PathBuf::from).collect();
     let command = command.to_str().ok_or(usage)?;

@@ -1916,6 +1916,12 @@ fn revive_cast(battle: &mut Battle, f: &Field) -> bool {
 
 // spells.py:1214-1223.
 fn revive(battle: &mut Battle, hero: UnitRef, percentage: f64) {
+    let now = battle.t;
+    if let Some(kit) = &mut battle.unit_mut(hero).kit {
+        if kit.doomed_at.is_some_and(|deadline| deadline <= now) {
+            kit.doomed_at = None;
+        }
+    }
     // spells.py:1302-1311: clear stale aura health, then recompute living coverage.
     effects::health_aura(battle.unit_mut(hero), 0.0, 0.0);
     battle.unit_mut(hero).alive = true;
@@ -1935,6 +1941,79 @@ fn revive(battle: &mut Battle, hero: UnitRef, percentage: f64) {
         "revive".into(),
         name.into(),
     ]);
+}
+
+#[cfg(test)]
+mod phoenix_tests {
+    use super::*;
+    use crate::battle::SpawnOptions;
+    use crate::heroes::Kit;
+
+    #[test]
+    fn both_terminal_phoenix_paths_allow_revive_without_reusing_phoenix() {
+        for damage_death in [false, true] {
+            let mut battle = crate::test_support::battle();
+            let hero = battle.spawn(
+                "Dragon Duke",
+                Team::Atk,
+                10.0,
+                10.0,
+                SpawnOptions {
+                    kind: Tag::Hero,
+                    ..Default::default()
+                },
+            );
+            let mut kit = Kit::new("Dragon Duke");
+            kit.phoenix = false;
+            kit.doomed_at = Some(10.0);
+            battle.unit_mut(hero).kit = Some(kit);
+            battle.unit_mut(hero).ability_used = true;
+            battle.t = 10.0;
+            if damage_death {
+                battle.unit_mut(hero).hp = 0.0;
+                battle.kill(hero);
+            } else {
+                crate::heroes::tick(&mut battle, hero);
+            }
+            assert!(!battle.unit(hero).alive);
+            assert!(battle.unit(hero).extra.revivable);
+            assert_eq!(battle.unit(hero).kit.as_ref().unwrap().doomed_at, None);
+            battle.t = 20.0;
+            revive(&mut battle, hero, 0.5);
+            crate::heroes::tick(&mut battle, hero);
+            let unit = battle.unit(hero);
+            assert!(unit.alive);
+            assert!(unit.ability_used);
+            assert!(!unit.kit.as_ref().unwrap().phoenix);
+            battle.unit_mut(hero).hp = 0.0;
+            battle.kill(hero);
+            assert!(!battle.unit(hero).alive);
+        }
+    }
+
+    #[test]
+    fn revive_defensively_retires_an_expired_deadline() {
+        let mut battle = crate::test_support::battle();
+        let hero = battle.spawn(
+            "Dragon Duke",
+            Team::Atk,
+            10.0,
+            10.0,
+            SpawnOptions {
+                kind: Tag::Hero,
+                ..Default::default()
+            },
+        );
+        let mut kit = Kit::new("Dragon Duke");
+        kit.doomed_at = Some(5.0);
+        battle.unit_mut(hero).kit = Some(kit);
+        battle.unit_mut(hero).alive = false;
+        battle.t = 10.0;
+        revive(&mut battle, hero, 0.5);
+        crate::heroes::tick(&mut battle, hero);
+        assert!(battle.unit(hero).alive);
+        assert_eq!(battle.unit(hero).kit.as_ref().unwrap().doomed_at, None);
+    }
 }
 
 // spells.py:1154-1196: Totem bypasses ordinary spawn/equipment hooks.

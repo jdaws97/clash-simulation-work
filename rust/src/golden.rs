@@ -451,6 +451,12 @@ fn diagnose(
 }
 
 pub fn command(paths: &[PathBuf], catalog: Arc<Catalog>) -> Result<(), String> {
+    if paths
+        .first()
+        .is_some_and(|path| path.as_os_str() == "plans")
+    {
+        return crate::plan_golden::command(&paths[1..], &catalog.stats);
+    }
     if paths.len() != 3 && paths.len() != 5 {
         return Err(USAGE.to_owned());
     }

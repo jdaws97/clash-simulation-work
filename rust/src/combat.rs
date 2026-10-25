@@ -201,6 +201,11 @@ impl Battle {
         let u = self.unit_mut(victim);
         u.alive = false;
         u.hp = 0.0;
+        if let Some(kit) = &mut u.kit {
+            // A terminal death consumes the Phoenix lifetime, including damage
+            // on its expiry tick before the hero lifecycle tick runs.
+            kit.doomed_at = None;
+        }
         heroes::summon_death(self, victim);
         units::on_death(self, victim);
         let u = self.unit(victim);
