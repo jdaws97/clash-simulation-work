@@ -3592,6 +3592,10 @@ fn beam(battle: &mut Battle, unit: UnitRef, target: EntityRef) -> f64 {
     }
     let u = battle.unit(unit);
     let held = u.extra.beam_time.unwrap_or(0.0);
+    beam_damage(battle, u, held)
+}
+
+pub fn beam_damage(battle: &Battle, u: &Unit, held: f64) -> f64 {
     let stages = if u.name_id == Name::SuperMiner {
         [
             (0.0, "Damage per Second / Initial"),

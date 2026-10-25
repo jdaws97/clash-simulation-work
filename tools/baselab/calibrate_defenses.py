@@ -46,9 +46,14 @@ from decode_battlelog import decode  # noqa: E402
 from replay_log import (  # noqa: E402
     battle_identity,
     current_strength,
+    default_attacker,
     defensive_setup,
+    replay_plan,
     to_build,
 )
+
+# --attacker: generic default policy, or the cited playbook base scoring uses
+ATTACKER = "generic"
 
 
 def file_hash(path):
@@ -203,7 +208,10 @@ def make_jobs(rows, correction, *, quick=False, angles=4, seeds=1):
 
 def job_plan(job):
     row, sc, strength = job
-    plan = plan_for_build(row["build"], angle=sc.angle, seed=sc.seed)
+    if ATTACKER == "generic":
+        plan = plan_for_build(row["build"], angle=sc.angle, seed=sc.seed)
+    else:
+        plan = replay_plan(row["build"], sc.angle, sc.seed, ATTACKER)
     plan.observed = True
     plan.strength = strength * skill(sc.seed)
     return plan
@@ -506,6 +514,12 @@ def main():
         action="append",
         help="optionally restrict attacker TH; repeatable",
     )
+    parser.add_argument(
+        "--attacker",
+        choices=("generic", "playbook"),
+        default=default_attacker(),
+        help="attacker policy for fitting (BASELAB_REPLAY_PLAYBOOKS=1 selects playbook)",
+    )
     parser.add_argument("--min-family", type=int, default=8)
     parser.add_argument("--angles", type=int, default=4)
     parser.add_argument("--seeds", type=int, default=1)
@@ -525,6 +539,8 @@ def main():
         default=os.environ.get("BASELAB_ENGINE", "auto"),
     )
     args = parser.parse_args()
+    global ATTACKER
+    ATTACKER = args.attacker
     if (
         args.angles < 2
         or args.seeds < 1
@@ -551,6 +567,24 @@ def main():
     if report_path.resolve() in {args.log.resolve(), args.history.resolve()}:
         parser.error("report cannot overwrite an input")
     provenance = calibration_provenance("rust" if args.engine != "python" else "python")
+    # output/hunt/r15/v1.out #1: corrections inherit the prior's training data.
+    # Snapshot recursively so later replacement/movement of a prior cannot
+    # make its fitted battles appear held out. Missing ancestry stays unknown.
+    from fidelity_board import fitted_battle_ids
+
+    prior_path = Path(
+        os.environ.get("BASELAB_CALIBRATION") or ROOT / "data/meta-calibration-r8.json"
+    )
+    prior_ids, prior_info = fitted_battle_ids(calibration_path=prior_path)
+    ancestry = [
+        {
+            "calibration": str(prior_path),
+            "sha256": file_hash(prior_path),
+            "battle_ids": sorted(prior_ids) if prior_ids is not None else None,
+            "ancestry": prior_info.get("ancestry"),
+            "fit_status": prior_info["fit_status"],
+        }
+    ]
     input_hashes = {
         "battle_log_sha256": file_hash(args.log),
         "history_sha256": file_hash(args.history),
@@ -601,9 +635,11 @@ def main():
         ),
         "attacker_levels": "Town Hall maximum; share codes do not encode researched levels",
         "scouting": "evaluate.scouted and summarise; no technique search",
+        "attacker": ATTACKER,
         "skipped": skipped,
         "n": len(rows),
         "battle_ids": [row["battle_id"] for row in rows],
+        "ancestry": ancestry,
         "inputs": input_hashes,
         "provenance": provenance,
         "final_provenance": final_provenance,

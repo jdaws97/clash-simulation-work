@@ -483,6 +483,7 @@ pub fn opening_damage(
     seconds: f64,
     is_siege: bool,
     flying: bool,
+    position: Option<(f64, f64)>,
 ) -> f64 {
     let w = weapon(battle, owner);
     if seconds <= 0.0 || w.ammunition == Some(0) || battle.building(owner).disabled(battle.t) {
@@ -512,7 +513,30 @@ pub fn opening_damage(
         }
         return 0.0;
     }
-    let damage_rage = rage(battle, owner);
+    let mut damage_rage = rage(battle, owner);
+    if let Some((x, y)) = position {
+        // output/research/usage/spell-tower.md: Rage covers nearby weapons.
+        // https://clashofclans.fandom.com/wiki/Spell_Tower
+        // Budget the 18 s field after its 1.2 s trigger without stacking Rage.
+        for tower in &battle.buildings {
+            let Some(tw) = &tower.weapon else {
+                continue;
+            };
+            if tw.kind == Tag::SpellTower
+                && tw.mode.as_deref() == Some("rage")
+                && tw.cooldown <= 0.0
+                && tower.alive
+                && !tower.disabled(battle.t)
+                && !tower.extra.unavailable
+                && dist(tower.x, tower.y, x, y) <= tw.range
+                && battle.building(owner).edge_distance(tower.x, tower.y) <= 5.0
+            {
+                let exposure = 18.0_f64.min(0.0_f64.max(seconds - 1.2));
+                damage_rage = damage_rage.max(1.0 + 0.6 * exposure / seconds);
+                break;
+            }
+        }
+    }
     let mut interval = 0.1_f64.max(w.interval);
     if w.kind == Tag::InfernoSingle {
         let mut total = 0.0;
@@ -561,6 +585,95 @@ pub fn opening_damage(
     // Mirror hit_unit: scale weapon hits, cancelling Monolith's percent
     // compensation in hit_damage; spell/poison pools remain unscaled.
     damage * seconds / interval * battle.def_mult + extra_damage
+}
+
+pub fn opening_unit_damage(
+    battle: &Battle,
+    reference: UnitRef,
+    x: f64,
+    y: f64,
+    flying: bool,
+    is_hero: bool,
+    seconds: f64,
+) -> f64 {
+    // output/research/usage/flame-flinger.md: Heroes, Guardians and CC guard lanes.
+    // https://clashofclans.fandom.com/wiki/Flame_Flinger
+    // Policy: uninterrupted pursuit/lock using executed hit/range/projectile data;
+    // no hypothetical summons or unreleased Clan Castle troops.
+    let u = battle.unit(reference);
+    let hits_target = if flying { u.hits_air } else { u.hits_ground };
+    if !u.alive
+        || u.extra.suspended
+        || !battle.defender_in_leash(reference, x, y)
+        || !hits_target
+        || matches!(u.spec.attack, Tag::None | Tag::Heal | Tag::HealChain)
+    {
+        return 0.0;
+    }
+    let mut active_at = u.active_at;
+    let separation = dist(u.x, u.y, x, y);
+    if u.extra.waiting {
+        if separation > u.extra.guardian_trigger.expect("waiting Guardian trigger")
+            && battle.th.is_none_or(|th| battle.building(th).alive)
+        {
+            return 0.0;
+        }
+        active_at = battle.t.max(u.frozen_until) + 0.5;
+    }
+    let mut delay = 0.0_f64
+        .max(active_at - battle.t)
+        .max(u.frozen_until - battle.t)
+        .max(u.stun_until - battle.t)
+        .max(u.held_until - battle.t)
+        .max(u.extra.yellow_until - battle.t);
+    let reach = units::effective_range(battle, u);
+    let travel = 0.0_f64.max(separation - reach);
+    let speed = battle.speed_of(reference);
+    if travel != 0.0 && speed <= 0.0 {
+        return 0.0;
+    }
+    if travel != 0.0 {
+        delay += travel / speed;
+    }
+    if let Some(projectile) = units::projectile_speed(battle, u, false) {
+        delay += separation.min(reach) / projectile;
+    }
+    let exposure = 0.0_f64.max(seconds - delay);
+    if exposure <= 0.0 {
+        return 0.0;
+    }
+    let mut damage_rage = units::rage_boost(u, battle.t)
+        .0
+        .max(u.aura_dmg)
+        .max(u.extra.bell_damage);
+    let mut interval = 0.1_f64.max(u.interval);
+    if units::tantrum(battle, reference) {
+        damage_rage = damage_rage.max(2.0);
+        interval /= 1.5;
+    }
+    if u.spec.has_special(crate::labels::Special::Burst) {
+        let raw = battle.catalog.stats.attrs(&u.name).at("raw");
+        let value = |key| crate::stats::num(raw.at(key), None).expect("burst cadence");
+        let shots = value("Shots per Burst");
+        interval =
+            ((shots - 1.0) * value("Time Between Shots") + value("Time Between Bursts")) / shots;
+    }
+    let mut damage = u.dmg * exposure;
+    if u.spec.attack == Tag::Beam {
+        let starts = if u.name_id == Name::SuperMiner {
+            [0.0, 1.5, 3.0]
+        } else {
+            [0.0, 1.7, 3.2]
+        };
+        damage = 0.0;
+        for (index, &start) in starts.iter().enumerate() {
+            let end = starts.get(index + 1).copied().unwrap_or(exposure);
+            damage += units::beam_damage(battle, u, start) * 0.0_f64.max(exposure.min(end) - start);
+        }
+    }
+    // Unit-sourced hits already carry Hero/Guardian modifiers; no def_mult.
+    let multiplier = if is_hero { u.spec.vs_heroes } else { 1.0 };
+    damage * damage_rage * multiplier / interval * effects::slow_mult(u, battle.t, false)
 }
 
 // defense.py:601-633: carry cooldown remainders through up to twelve cycles.

@@ -318,8 +318,15 @@ impl PlaybookPlan {
                 p.obj()
                     .iter()
                     .filter(|(name, _)| {
+                        // playbook.py:113-123 records opening snipes in runtime log_steps.
+                        // output/research/usage/hero-sniping-of-exposed-defenses.md:
+                        // https://clashofclans.fandom.com/wiki/Rocket_Spear
+                        // Keep that mutable log out of the immutable input snapshot.
                         !name.starts_with('_')
-                            && !matches!(name.as_str(), "inventory" | "snipe_log" | "auto_revive")
+                            && !matches!(
+                                name.as_str(),
+                                "inventory" | "snipe_log" | "auto_revive" | "log_steps"
+                            )
                     })
                     .cloned()
                     .collect(),

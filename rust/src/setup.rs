@@ -342,6 +342,48 @@ fn unavailable(battle: &Battle, key: &str, id: usize) -> bool {
 }
 
 fn setup_layout(battle: &mut Battle, layout: &Json, options: &Json) {
+    // ClashKing heroes.csv: each named Hero occupies one defensive slot.
+    let mut heroes = HashSet::new();
+    for hero in layout.at("heroes").arr() {
+        let name = hero.str();
+        assert!(
+            matches!(
+                name,
+                "Archer Queen"
+                    | "Barbarian King"
+                    | "Grand Warden"
+                    | "Royal Champion"
+                    | "Minion Prince"
+                    | "Dragon Duke"
+            ),
+            "unknown defending hero: {name}"
+        );
+        assert!(heroes.insert(name), "duplicate defending hero: {name}");
+    }
+    // ClashKing buildings.csv/traps.csv: placements occupy whole village tiles.
+    for placement in layout
+        .at("buildings")
+        .arr()
+        .iter()
+        .chain(layout.at("traps").arr())
+    {
+        for key in ["x", "y"] {
+            let value = placement.at(key).f64();
+            assert!(
+                value.is_finite() && value.fract() == 0.0,
+                "non-integral coordinates"
+            );
+        }
+    }
+    for wall in layout.at("walls").arr() {
+        for value in wall.arr() {
+            let value = value.f64();
+            assert!(
+                value.is_finite() && value.fract() == 0.0,
+                "non-integral coordinates"
+            );
+        }
+    }
     // output/research/usage/archer-tower.md: the geared tower is merged.
     // https://clashofclans.fandom.com/wiki/Multi-Gear_Tower
     let placements = layout.at("buildings").arr();

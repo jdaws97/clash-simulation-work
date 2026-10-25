@@ -1431,6 +1431,28 @@ impl AttackPlan {
         let numbers = battle
             .catalog
             .numbers(name, &self.snipe_level(battle, name));
+        let hero = is_hero(name);
+        // output/research/usage/archer-queen.md: equipment supplies passive HP.
+        // https://clashofclans.fandom.com/wiki/Hero_Equipment
+        // Match deploy: strength, equipment HP, then the ranked Hero modifier.
+        let mut max_hp = numbers.hp * self.strength;
+        if hero {
+            let loadout = self.snipe_loadout(battle, name);
+            for item in &loadout.equipment {
+                if !self.owned(item) {
+                    continue;
+                }
+                let level = self.equipment_level(battle, item);
+                max_hp += heroes::col(
+                    battle,
+                    item,
+                    &level,
+                    &["hitpoint increase", "hp increase"],
+                    0.0,
+                );
+            }
+            max_hp *= battle.atk_hero_mult;
+        }
         match kind {
             "arrow" => seconds += distance / 35.0,
             "dash" => seconds += distance / 15.0,
@@ -1449,7 +1471,10 @@ impl AttackPlan {
                 seconds += (shots - 1.0) * numbers.interval + distance / 12.0;
             }
             _ => {
-                let dps = 1.0_f64.max(numbers.dps * self.strength * battle.atk_hero_mult);
+                // output/research/usage/flame-flinger.md: ranked penalties affect Heroes.
+                // https://supercell.com/en/games/clashofclans/blog/news/upcoming-changes-to-ranked-mode/
+                let hero_mult = if hero { battle.atk_hero_mult } else { 1.0 };
+                let dps = 1.0_f64.max(numbers.dps * self.strength * hero_mult);
                 seconds = action_time(battle, Action::Deploy, 1) + target.hp / dps;
                 let projectile_speed = if kind == "flinger" { 5.0 } else { 12.0 };
                 seconds += distance / projectile_speed;
@@ -1480,15 +1505,27 @@ impl AttackPlan {
                 incoming += crate::defense::opening_damage(
                     battle,
                     defense.id,
-                    numbers.hp,
-                    is_hero(name),
+                    max_hp,
+                    hero,
                     seconds,
                     name == "Flame Flinger",
                     flying,
+                    Some((x, y)),
                 );
             }
         }
-        let loss = 1.0_f64.min(incoming / 1.0_f64.max(numbers.hp));
+        for defender in &battle.defenders {
+            incoming += crate::defense::opening_unit_damage(
+                battle,
+                defender.reference(),
+                x,
+                y,
+                flying,
+                hero,
+                seconds,
+            );
+        }
+        let loss = 1.0_f64.min(incoming / 1.0_f64.max(max_hp));
         (damage, seconds, loss)
     }
 
@@ -1546,7 +1583,10 @@ impl AttackPlan {
                 if reached[ni * n + nj] || !walkable[ni * n + nj] {
                     continue;
                 }
-                if di != 0 && dj != 0 && (!walkable[i * n + nj] || !walkable[ni * n + j]) {
+                // Navigation blocks building corners, but permits diagonal wall gaps.
+                // data/wiki/text/Wall_Home_Village.txt:30:
+                // https://clashofclans.fandom.com/wiki/Wall/Home_Village
+                if di != 0 && dj != 0 && (blocked[i * n + nj] || blocked[ni * n + j]) {
                     continue;
                 }
                 reached[ni * n + nj] = true;

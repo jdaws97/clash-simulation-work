@@ -30,9 +30,8 @@ from __future__ import annotations
 
 import math
 import random
-from collections import deque
 
-from .deploy import inside_holes, outside
+from .deploy import flood_tiles, inside_holes, outside
 from .generator import Blueprint, _Board, _orient_sweepers, _place_traps, top_up_walls
 from .layout import Layout, Placement
 from .mechanics import BUILDING_TYPES, INVENTORY, VILLAGE, WALL_COUNT
@@ -41,17 +40,90 @@ ARCHETYPES = ("organic", "free", "grid", "offset", "rings", "wide")
 
 # role -> (target depth 0 = Town Hall compartment .. 1 = outermost, weight)
 ROLE = {
-    "inferno": (0.05, 6), "eagle": (0.1, 6), "scatter": (0.2, 5), "mono": (0.05, 6),
-    "cc": (0.15, 4), "crafting": (0.25, 4), "st": (0.1, 5), "banner": (0.15, 3),
-    "xbow": (0.4, 4), "ad": (0.45, 4), "wt": (0.55, 3), "ric": (0.45, 3), "mat": (0.4, 3),
-    "bt": (0.6, 3), "sweeper": (0.5, 3), "tesla": (0.5, 2), "ds": (0.3, 2),
-    "gs": (0.65, 2), "es": (0.65, 2), "at": (0.85, 3), "cannon": (0.9, 3), "mortar": (0.7, 3),
+    "inferno": (0.05, 6),
+    "eagle": (0.1, 6),
+    "scatter": (0.2, 5),
+    "mono": (0.05, 6),
+    "cc": (0.15, 4),
+    "crafting": (0.25, 4),
+    "st": (0.1, 5),
+    "banner": (0.15, 3),
+    "xbow": (0.4, 4),
+    "ad": (0.45, 4),
+    "wt": (0.55, 3),
+    "ric": (0.45, 3),
+    "mat": (0.4, 3),
+    "bt": (0.6, 3),
+    "sweeper": (0.5, 3),
+    "tesla": (0.5, 2),
+    "ds": (0.3, 2),
+    "gs": (0.65, 2),
+    "es": (0.65, 2),
+    "at": (0.85, 3),
+    "cannon": (0.9, 3),
+    "mortar": (0.7, 3),
 }
-INSIDE = ["inferno", "mono", "eagle", "st", "scatter", "cc", "crafting", "xbow", "ad", "ric", "mat",
-          "wt", "bt", "sweeper", "mortar", "at", "cannon", "tesla", "banner", "ds", "gs", "es"]
-BIG = {"inferno", "mono", "eagle", "scatter", "xbow", "ad", "ric", "mat", "wt", "bt", "mortar", "at", "cannon", "crafting", "sweeper", "st"}
+INSIDE = [
+    "inferno",
+    "mono",
+    "eagle",
+    "st",
+    "scatter",
+    "cc",
+    "crafting",
+    "xbow",
+    "ad",
+    "ric",
+    "mat",
+    "wt",
+    "bt",
+    "sweeper",
+    "mortar",
+    "at",
+    "cannon",
+    "tesla",
+    "banner",
+    "ds",
+    "gs",
+    "es",
+]
+BIG = {
+    "inferno",
+    "mono",
+    "eagle",
+    "scatter",
+    "xbow",
+    "ad",
+    "ric",
+    "mat",
+    "wt",
+    "bt",
+    "mortar",
+    "at",
+    "cannon",
+    "crafting",
+    "sweeper",
+    "st",
+}
 # hole pluggers, best first (Teslas do not block deployment, so never used)
-FILLERS = ["bh", "gm", "ec", "dd", "camp", "barracks", "dbarracks", "sf", "dsf", "lab", "pethouse", "smith", "helper", "bob", "workshop", "herohall"]
+FILLERS = [
+    "bh",
+    "gm",
+    "ec",
+    "dd",
+    "camp",
+    "barracks",
+    "dbarracks",
+    "sf",
+    "dsf",
+    "lab",
+    "pethouse",
+    "smith",
+    "helper",
+    "bob",
+    "workshop",
+    "herohall",
+]
 
 
 def _rect(x0, y0, x1, y1):
@@ -128,7 +200,11 @@ def _free(rng: random.Random):
         rects.append((ex, ey, ex + ew - 1, ey + eh - 1))
     for ax, ay, bx, by in rects:
         U |= {(x, y) for x in range(ax, bx + 1) for y in range(ay, by + 1)}
-    keep = {(x, y) for x, y in U if any((x + dx, y + dy) not in U for dx in (-1, 0, 1) for dy in (-1, 0, 1))}
+    keep = {
+        (x, y)
+        for x, y in U
+        if any((x + dx, y + dy) not in U for dx in (-1, 0, 1) for dy in (-1, 0, 1))
+    }
     inner = U - keep
     xs = [x for x, _ in U]
     ys = [y for _, y in U]
@@ -138,7 +214,9 @@ def _free(rng: random.Random):
 
     def split(ax, ay, bx, by):
         wd, ht = bx - ax - 1, by - ay - 1  # interior size between the bounding walls
-        area = sum(1 for x in range(ax + 1, bx) for y in range(ay + 1, by) if (x, y) in inner)
+        area = sum(
+            1 for x in range(ax + 1, bx) for y in range(ay + 1, by) if (x, y) in inner
+        )
         if area <= target * rng.uniform(0.7, 1.4):
             return
         horiz = ht > wd if abs(ht - wd) > 3 else rng.random() < 0.5
@@ -149,7 +227,11 @@ def _free(rng: random.Random):
             if hi - lo - 1 < 2 * min_cell + 1:
                 return
         p = rng.randint(lo + min_cell + 1, hi - min_cell - 1)
-        seg = {(x, p) for x in range(ax, bx + 1)} if horiz else {(p, y) for y in range(ay, by + 1)}
+        seg = (
+            {(x, p) for x in range(ax, bx + 1)}
+            if horiz
+            else {(p, y) for y in range(ay, by + 1)}
+        )
         seg &= inner
         if seg:
             segs.append(seg)
@@ -180,18 +262,30 @@ def _organic(rng: random.Random):
         for x in range(3, 41):
             for y in range(3, 41):
                 u, v = (x + 0.5 - ox) / rx, (y + 0.5 - oy) / ry
-                if (shape == "ellipse" and u * u + v * v <= 1) or (shape == "rect" and abs(u) <= 1 and abs(v) <= 1)                         or (shape == "diamond" and abs(u) + abs(v) <= 1.3):
+                if (
+                    (shape == "ellipse" and u * u + v * v <= 1)
+                    or (shape == "rect" and abs(u) <= 1 and abs(v) <= 1)
+                    or (shape == "diamond" and abs(u) + abs(v) <= 1.3)
+                ):
                     U.add((x, y))
     # fill pockets so the outline is one solid region
     outer = outside(Layout("tmp", walls=set(U)))
     U |= {(x, y) for x in range(VILLAGE) for y in range(VILLAGE) if (x, y) not in outer}
-    keep = {(x, y) for x, y in U if any((x + dx, y + dy) not in U for dx in (-1, 0, 1) for dy in (-1, 0, 1))}
+    keep = {
+        (x, y)
+        for x, y in U
+        if any((x + dx, y + dy) not in U for dx in (-1, 0, 1) for dy in (-1, 0, 1))
+    }
     inner = U - keep
     if len(inner) < 450:
         return keep, [], (int(cx), int(cy))
     # Town Hall point, then seeds by Poisson-disc with spacing growing outward
     cand = sorted(inner)
-    th = rng.choice(cand) if rng.random() < 0.35 else (int(cx + rng.uniform(-3, 3)), int(cy + rng.uniform(-3, 3)))
+    th = (
+        rng.choice(cand)
+        if rng.random() < 0.35
+        else (int(cx + rng.uniform(-3, 3)), int(cy + rng.uniform(-3, 3)))
+    )
     base, grow = rng.uniform(4.0, 5.5), rng.uniform(0.15, 0.4)
     seeds = [th]
     rng.shuffle(cand)
@@ -200,7 +294,9 @@ def _organic(rng: random.Random):
         sp = base + grow * d
         if all(math.hypot(t[0] - a, t[1] - b) >= sp for a, b in seeds):
             seeds.append(t)
-    p = rng.choice((1.0, 1.5, 2.0, 2.0, 3.0, 8.0))  # distance rule: diamond .. round .. square
+    p = rng.choice(
+        (1.0, 1.5, 2.0, 2.0, 3.0, 8.0)
+    )  # distance rule: diamond .. round .. square
     sx = rng.uniform(0.75, 1.3)  # skew
     wgt = [rng.uniform(-1.2, 1.2) for _ in seeds]
 
@@ -213,13 +309,17 @@ def _organic(rng: random.Random):
         cell[t] = min(range(len(seeds)), key=lambda i: dist(t, i) ** (1 / p) + wgt[i])
     edges: dict = {}
     for (x, y), c in cell.items():
-        lower = {cell[n] for n in ((x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)) if n in cell and cell[n] < c}
+        lower = {
+            cell[n]
+            for n in ((x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1))
+            if n in cell and cell[n] < c
+        }
         if lower:
             edges.setdefault((min(lower), c), set()).add((x, y))
     segs = list(edges.values())
     # random merges: drop a few room boundaries outright
     rng.shuffle(segs)
-    segs = segs[int(len(segs) * rng.uniform(0.0, 0.25)):]
+    segs = segs[int(len(segs) * rng.uniform(0.0, 0.25)) :]
     return keep, segs, th
 
 
@@ -241,13 +341,36 @@ def wall_plan(kind: str, rng: random.Random):
                 break
     elif kind in ("grid", "offset"):
         h = rng.randint(14, 16)
-        keep, segs = _brick(c - h, c - h, c + h - 1, c + h - 1, rng, band=rng.randint(5, 7), cell=rng.randint(6, 8))
-        th = (c, c) if kind == "grid" else (c + rng.choice((-1, 1)) * rng.randint(5, 8), c + rng.choice((-1, 1)) * rng.randint(3, 8))
+        keep, segs = _brick(
+            c - h,
+            c - h,
+            c + h - 1,
+            c + h - 1,
+            rng,
+            band=rng.randint(5, 7),
+            cell=rng.randint(6, 8),
+        )
+        th = (
+            (c, c)
+            if kind == "grid"
+            else (
+                c + rng.choice((-1, 1)) * rng.randint(5, 8),
+                c + rng.choice((-1, 1)) * rng.randint(3, 8),
+            )
+        )
     elif kind == "wide":
         hx, hy = rng.randint(17, 19), rng.randint(11, 13)
         if rng.random() < 0.5:
             hx, hy = hy, hx
-        keep, segs = _brick(c - hx, c - hy, c + hx - 1, c + hy - 1, rng, band=rng.randint(5, 6), cell=rng.randint(6, 8))
+        keep, segs = _brick(
+            c - hx,
+            c - hy,
+            c + hx - 1,
+            c + hy - 1,
+            rng,
+            band=rng.randint(5, 6),
+            cell=rng.randint(6, 8),
+        )
         th = (c, c)
     else:
         a = rng.randint(3, 4)
@@ -267,21 +390,19 @@ def wall_plan(kind: str, rng: random.Random):
 
 def compartments(walls):
     out_region = outside(Layout("tmp", walls=set(walls)))
+    legal = (
+        {(x, y) for x in range(VILLAGE) for y in range(VILLAGE)}
+        - set(walls)
+        - out_region
+    )
     seen, comps = set(), []
     for x in range(VILLAGE):
         for y in range(VILLAGE):
             t = (x, y)
             if t in walls or t in out_region or t in seen:
                 continue
-            comp, q = {t}, deque([t])
-            seen.add(t)
-            while q:
-                a, b = q.popleft()
-                for n in ((a + 1, b), (a - 1, b), (a, b + 1), (a, b - 1)):
-                    if 0 <= n[0] < VILLAGE and 0 <= n[1] < VILLAGE and n not in walls and n not in out_region and n not in seen:
-                        seen.add(n)
-                        comp.add(n)
-                        q.append(n)
+            comp = flood_tiles([t], legal - seen)
+            seen.update(comp)
             comps.append(comp)
     return comps, out_region
 
@@ -302,7 +423,13 @@ def _spikes(lay, board, rng):
         n = rng.randint(2, min(4, left))
         seg = [(wx + dx * k, wy + dy * k) for k in range(1, n + 1)]
         end = (wx + dx * (n + 1), wy + dy * (n + 1))
-        if all(0 <= x < VILLAGE and 0 <= y < VILLAGE and (x, y) not in board.occ for x, y in seg) and end not in lay.walls:
+        if (
+            all(
+                0 <= x < VILLAGE and 0 <= y < VILLAGE and (x, y) not in board.occ
+                for x, y in seg
+            )
+            and end not in lay.walls
+        ):
             for t in seg:
                 board.occ.add(t)
             lay.walls |= set(seg)
@@ -327,7 +454,9 @@ def th_zone(lay) -> str:
     return "center" if r < 0.3 else "mid" if r < 0.6 else "edge"
 
 
-def design(kind: str, seed: int, town_hall: int = 16, zone: str | None = None) -> Layout:
+def design(
+    kind: str, seed: int, town_hall: int = 16, zone: str | None = None
+) -> Layout:
     """`zone` (center / mid / edge) forces where the Town Hall goes inside
     the walled area, so every Town Hall placement gets explored."""
     rng = random.Random(seed)
@@ -340,7 +469,11 @@ def design(kind: str, seed: int, town_hall: int = 16, zone: str | None = None) -
         my = sum(t[1] for t in inner) / len(inner)
         dist = sorted(inner, key=lambda t: math.hypot(t[0] + 0.5 - mx, t[1] + 0.5 - my))
         n = len(dist)
-        band = {"center": dist[: n // 8], "mid": dist[n * 3 // 8: n * 5 // 8], "edge": dist[n * 7 // 8:]}[zone]
+        band = {
+            "center": dist[: n // 8],
+            "mid": dist[n * 3 // 8 : n * 5 // 8],
+            "edge": dist[n * 7 // 8 :],
+        }[zone]
         tx, ty = rng.choice(band)
     board = _Board(walls)
     lay = Layout(f"orig-{kind}-{seed}", town_hall=town_hall)
@@ -358,7 +491,11 @@ def design(kind: str, seed: int, town_hall: int = 16, zone: str | None = None) -
     for x in range(VILLAGE - 3):
         for y in range(VILLAGE - 3):
             f = _foot(x, y, 4)
-            if board.fits(x, y, 4) and all(t in cid for t in f) and len({cid[t] for t in f}) == 1:
+            if (
+                board.fits(x, y, 4)
+                and all(t in cid for t in f)
+                and len({cid[t] for t in f}) == 1
+            ):
                 d = math.hypot(x + 2 - tx, y + 2 - ty)
                 if best is None or d < best[0]:
                     best = (d, x, y)
@@ -377,7 +514,10 @@ def design(kind: str, seed: int, town_hall: int = 16, zone: str | None = None) -
     depth = {i: r / max(1, len(order) - 1) for r, i in enumerate(order)}
     load = {i: 0 for i in range(len(comps))}
     jit = 0.3 if kind == "free" else 0.0
-    role = {k: (min(1.0, max(0.0, t + rng.uniform(-jit, jit))), w) for k, (t, w) in ROLE.items()}
+    role = {
+        k: (min(1.0, max(0.0, t + rng.uniform(-jit, jit))), w)
+        for k, (t, w) in ROLE.items()
+    }
     placed: dict = {}
 
     queue = []
@@ -402,7 +542,9 @@ def design(kind: str, seed: int, town_hall: int = 16, zone: str | None = None) -
                 sibs = placed.get(key, [])
                 if sibs:
                     near = min(math.hypot(x - a, y - b) for a, b in sibs)
-                    sc += max(0.0, 9 - near) * (0.3 if key in ("gs", "es", "banner") else 1.2)
+                    sc += max(0.0, 9 - near) * (
+                        0.3 if key in ("gs", "es", "banner") else 1.2
+                    )
                 cands.append((sc + rng.random() * 2.5, x, y, i))
         if not cands:
             continue  # goes outside with the trash
@@ -421,14 +563,18 @@ def design(kind: str, seed: int, town_hall: int = 16, zone: str | None = None) -
         best = None
         for key in dict.fromkeys(fill):
             s = BUILDING_TYPES[key].size
-            for (hx, hy) in hole:
+            for hx, hy in hole:
                 for dx in range(-s, 2):
                     for dy in range(-s, 2):
                         x, y = hx + dx, hy + dy
                         f = _foot(x, y, s)
                         if not board.fits(x, y, s) or not all(t in cid for t in f):
                             continue
-                        cover = sum(1 for (a, b) in hole if x - 1 <= a <= x + s and y - 1 <= b <= y + s)
+                        cover = sum(
+                            1
+                            for (a, b) in hole
+                            if x - 1 <= a <= x + s and y - 1 <= b <= y + s
+                        )
                         sc = cover - 0.4 * s * s
                         if best is None or sc > best[0]:
                             best = (sc, key, x, y)
@@ -451,7 +597,10 @@ def design(kind: str, seed: int, town_hall: int = 16, zone: str | None = None) -
                 if not board.fits(x, y, s) or not all(t in out_region for t in f):
                     continue
                 cxx, cyy = x + s / 2, y + s / 2
-                d = min(max(abs(cxx - a - 0.5), abs(cyy - b - 0.5)) for a, b in wall_list[::3])
+                d = min(
+                    max(abs(cxx - a - 0.5), abs(cyy - b - 0.5))
+                    for a, b in wall_list[::3]
+                )
                 sc = d + rng.random() * 1.5
                 if best is None or sc < best[0]:
                     best = (sc, x, y)
@@ -474,6 +623,11 @@ def design(kind: str, seed: int, town_hall: int = 16, zone: str | None = None) -
     # every wall must be placed: the styled plans can leave up to ~90 unused
     top_up_walls(lay, board.occ, rng)
     _orient_sweepers(lay)
-    _place_traps(lay, board, rng, Blueprint(town_hall=town_hall, skeleton_air=rng.randint(1, 3), seed=seed))
+    _place_traps(
+        lay,
+        board,
+        rng,
+        Blueprint(town_hall=town_hall, skeleton_air=rng.randint(1, 3), seed=seed),
+    )
     lay.notes = f"Original {kind} design (seed {seed}), wall plan first; not derived from any existing base."
     return lay

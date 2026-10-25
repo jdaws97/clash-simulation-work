@@ -614,6 +614,17 @@ impl Battle {
         self.move_towards(reference, target, None);
     }
 
+    pub fn defender_in_leash(&self, reference: UnitRef, x: f64, y: f64) -> bool {
+        let u = self.unit(reference);
+        let center = u.home.unwrap_or((u.x, u.y));
+        let radius = if u.home.is_some() {
+            u.leash
+        } else {
+            f64::INFINITY
+        };
+        crate::geom::dist(center.0, center.1, x, y) <= radius
+    }
+
     // battle.py:1672-1753: defender retargeting is every half-second.
     pub fn act_defender(&mut self, reference: UnitRef) {
         let t = self.t;
@@ -673,12 +684,6 @@ impl Battle {
         if target.is_none() || u.name_id != Name::BarbarianKing && t >= u.extra.next_retarget {
             let u = self.unit_mut(reference);
             u.extra.next_retarget = t + 0.5;
-            let center = u.home.unwrap_or((u.x, u.y));
-            let radius = if u.home.is_some() {
-                u.leash
-            } else {
-                f64::INFINITY
-            };
             let u = self.unit(reference);
             let prefer_heroes = u.spec.prefer == Tag::Heroes;
             let mut hero_available = false;
@@ -697,9 +702,7 @@ impl Battle {
                 }
                 // With no leash this comparison can never reject a target.
                 // Filter ineligible attackers before calling CPython hypot.
-                if radius != f64::INFINITY
-                    && crate::geom::py_hypot(center.0 - a.x, center.1 - a.y) > radius
-                {
+                if !self.defender_in_leash(reference, a.x, a.y) {
                     continue;
                 }
                 let d = a.dist(u.x, u.y);

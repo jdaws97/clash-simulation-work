@@ -582,12 +582,24 @@ def mutate(lay: Layout, rng: random.Random, diag=None) -> tuple[Layout, str]:
         return new, "noop"
     if r < 0.85:
         # flip a defense mode
+        from .engine import stats
+        from .engine.defense import SPELL_TOWER_UNLOCKS
+
+        tower_level = new.levels.get(
+            "st", stats.max_level("Spell Tower", new.town_hall)
+        )
         dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
         options = {
             "inferno": ["single", "multi"],
             "xbow": ["ground", "both"],
-            # the Earthquake mode needs Spell Tower level 4 (TH17+)
-            "st": ["rage", "poison", "invis"] + (["eq"] if new.town_hall >= 17 else []),
+            # ClashKing Spell Tower: modes unlock at levels 1, 2, 3 and 4.
+            "st": [
+                mode
+                for mode in ("rage", "poison", "invis", "eq")
+                if tower_level is not None
+                and tower_level >= SPELL_TOWER_UNLOCKS[mode]
+                and (mode != "eq" or new.town_hall >= 17)
+            ],
             "sweeper": dirs,
             "mgt": ["fast", "long"],
             "crafting": ["cake", "candle", "hunter"],
@@ -600,7 +612,13 @@ def mutate(lay: Layout, rng: random.Random, diag=None) -> tuple[Layout, str]:
                 [g for g in ("Longshot", "Smasher", "Logger") if g != new.guardian]
             )
             return new, f"guardian {new.guardian}"
-        cands = [b for b in new.buildings if b.key in options]
+        cands = [
+            b
+            for b in new.buildings
+            if b.key in options and any(m != (b.mode or "rage") for m in options[b.key])
+        ]
+        if not cands:
+            return new, "noop"
         b = rng.choice(cands)
         b.mode = rng.choice([m for m in options[b.key] if m != b.mode])
         return new, f"mode {b.key}={b.mode}"

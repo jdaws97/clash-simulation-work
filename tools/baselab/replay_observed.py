@@ -315,7 +315,10 @@ def main():
         cells = []
         for c in cfgs:
             ts = sorted(r["falls"].get(lab, 999) for r in groups[c])
-            med = ts[len(ts) // 2]
+            # output/fidelity/diag/d2.out: conventional median for even counts
+            mid = len(ts) // 2
+            med = ts[mid] if len(ts) % 2 else round((ts[mid - 1] + ts[mid]) / 2, 2)
+            med = 999 if med >= 999 else med
             cells.append(
                 f"{'-' if med == 999 else med:>6} ({sum(1 for x in ts if x < 999)}/{len(ts)})           "
             )

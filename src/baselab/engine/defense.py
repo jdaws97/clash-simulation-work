@@ -1022,7 +1022,7 @@ def _candle_targets(battle, w):
 
 
 def opening_damage(
-    battle, w, max_hp, is_hero, seconds, *, is_siege=False, flying=False
+    battle, w, max_hp, is_hero, seconds, *, is_siege=False, flying=False, position=None
 ):
     """Estimate lone-target exposure using combat hit damage and firing cadence."""
     # output/research/usage/dealing-with-monolith-and-inferno-towers.md:
@@ -1050,6 +1050,27 @@ def opening_damage(
             return max_hp * 0.06 * hits
         return 0.0
     rage = _rage(battle, w.owner)
+    if position is not None:
+        # output/research/usage/spell-tower.md: Rage covers nearby weapons.
+        # https://clashofclans.fandom.com/wiki/Spell_Tower
+        # Policy: budget the prospective 18 s field after its 1.2 s trigger;
+        # use max rather than stacking it with a currently active Rage.
+        for tower in battle.buildings:
+            tw = tower.weapon
+            if (
+                tw is not None
+                and tw.kind == "spell_tower"
+                and tw.mode == "rage"
+                and tw.cooldown <= 0
+                and tower.alive
+                and not tower.disabled(battle.t)
+                and not tower.extra.get("unavailable")
+                and dist(tower.x, tower.y, *position) <= tw.range
+                and w.owner.edge_distance(tower.x, tower.y) <= 5.0
+            ):
+                exposure = min(18.0, max(0.0, seconds - 1.2))
+                rage = max(rage, 1.0 + 0.6 * exposure / seconds)
+                break
     interval = max(0.1, w.interval)
     if w.kind == "inferno_single":
         total = 0.0
@@ -1095,6 +1116,74 @@ def opening_damage(
     # Mirror hit_unit: scale weapon hits, cancelling Monolith's percent
     # compensation in _hit_damage; spell/poison pools remain unscaled.
     return damage * seconds / interval * battle.def_mult + extra_damage
+
+
+def opening_unit_damage(battle, u, x, y, flying, is_hero, seconds):
+    """Cheap lone-target budget from released defenders' executed hit values."""
+    # output/research/usage/flame-flinger.md: Heroes, Guardians and CC guard lanes.
+    # https://clashofclans.fandom.com/wiki/Flame_Flinger
+    # Reuse defender acquisition, movement speed, range and projectile data.
+    # Policy: uninterrupted pursuit/lock; no hypothetical summons or CC releases.
+    if (
+        not u.alive
+        or u.extra.get("suspended")
+        or not battle.defender_in_leash(u, x, y)
+        or not (u.hits_air if flying else u.hits_ground)
+        or u.spec.attack in ("none", "heal", "heal_chain")
+    ):
+        return 0.0
+    active_at = u.active_at
+    separation = dist(u.x, u.y, x, y)
+    if u.extra.get("waiting"):
+        if separation > u.extra["trigger"] and (battle.th is None or battle.th.alive):
+            return 0.0
+        active_at = max(battle.t, u.frozen_until) + 0.5
+    delay = max(
+        0.0,
+        active_at - battle.t,
+        u.frozen_until - battle.t,
+        u.stun_until - battle.t,
+        u.held_until - battle.t,
+        u.extra.get("yellow_until", 0.0) - battle.t,
+    )
+    reach = units.effective_range(u)
+    travel = max(0.0, separation - reach)
+    speed = battle.speed_of(u)
+    if travel and speed <= 0:
+        return 0.0
+    if travel:
+        delay += travel / speed
+    projectile = units.projectile_speed(u)
+    if projectile is not None:
+        delay += min(separation, reach) / projectile
+    exposure = max(0.0, seconds - delay)
+    if exposure <= 0:
+        return 0.0
+    rage = max(
+        units.rage_boost(u, battle.t)[0], u.aura_dmg, u.extra.get("bell_damage", 1.0)
+    )
+    interval = max(0.1, u.interval)
+    if units.tantrum(battle, u):
+        rage = max(rage, 2.0)
+        interval /= 1.5
+    if "burst" in u.spec.special:
+        raw = stats.attrs(u.name)["raw"]
+        shots = stats.num(raw["Shots per Burst"])
+        interval = (
+            (shots - 1.0) * stats.num(raw["Time Between Shots"])
+            + stats.num(raw["Time Between Bursts"])
+        ) / shots
+    damage = u.dmg * exposure
+    if u.spec.attack == "beam":
+        starts = (0.0, 1.5, 3.0) if u.name == "Super Miner" else (0.0, 1.7, 3.2)
+        damage = 0.0
+        for index, start in enumerate(starts):
+            end = starts[index + 1] if index + 1 < len(starts) else exposure
+            damage += units.beam_damage(u, start) * max(0.0, min(exposure, end) - start)
+    # Unit-sourced attacks already carry hero/Guardian modifiers; def_mult
+    # applies only to building sources. Headhunter's executed hero multiplier.
+    multiplier = u.spec.vs_heroes if is_hero else 1.0
+    return damage * rage * multiplier / interval * effects.slow_mult(u, battle.t)
 
 
 def act(battle, w: Weapon):

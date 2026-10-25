@@ -168,7 +168,7 @@ class Layout:
         return occ
 
     def problems(self, *, require_full: bool = True) -> list[str]:
-        issues: list[str] = []
+        issues = self.content_problems()
         seen: dict[tuple[int, int], str] = {}
 
         def claim(tile, owner):
@@ -227,6 +227,41 @@ class Layout:
         # https://clashofclans.fandom.com/wiki/Multi-Gear_Tower
         if self.town_hall >= 17 and counts["mgt"] and geared["at"]:
             issues.append("geared Archer Tower is merged into Multi-Gear Tower")
+        return issues
+
+    def content_problems(self, *, town_hall=None, defense_levels=None) -> list[str]:
+        """Rules shared by layout admission and direct engine setup."""
+        from .engine import heroes, stats
+        from .engine.defense import SPELL_TOWER_UNLOCKS
+
+        th = self.town_hall if town_hall is None else town_hall
+        levels = self.levels if defense_levels is None else defense_levels
+        issues = []
+        # ClashKing heroes.csv: named Heroes occupy independent defensive slots.
+        for name, count in Counter(self.heroes).items():
+            if name not in heroes.HEROES:
+                issues.append(f"unknown defending hero: {name}")
+            if count > 1:
+                issues.append(f"duplicate defending hero: {name}")
+        # ClashKing buildings.csv/traps.csv: placements occupy whole village tiles.
+        positions = [(b.x, b.y) for b in self.buildings]
+        positions += sorted(self.walls)
+        positions += [(t.x, t.y) for t in self.traps]
+        for x, y in positions:
+            if any(
+                type(value) not in (int, float) or value % 1 != 0 for value in (x, y)
+            ):
+                issues.append(f"non-integral coordinates: {(x, y)}")
+        # ClashKing Spell Tower levels unlock Rage/Poison/Invisibility/Earthquake.
+        for b in self.buildings:
+            if b.key != "st":
+                continue
+            level = levels.get("st", stats.max_level("Spell Tower", th))
+            required = SPELL_TOWER_UNLOCKS.get(b.mode or "rage")
+            if required is None or level is None or level < required:
+                issues.append("Spell Tower mode is not unlocked")
+            elif required == 4 and th < 17:
+                issues.append("Earthquake Spell Towers require Town Hall 17")
         return issues
 
 

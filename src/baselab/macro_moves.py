@@ -23,6 +23,7 @@ from collections import deque
 from itertools import combinations
 
 from .archetypes import ROLE, compartments
+from .deploy import tile_neighbors
 from .layout import Layout
 from .mechanics import BUILDING_TYPES, VILLAGE, WALL_COUNT
 
@@ -61,7 +62,7 @@ def wall_depth(lay: Layout) -> dict:
     """Walls an attacker must break to reach each tile from the map edge
     (0-1 BFS; buildings are walked around)."""
     walls = lay.walls
-    INF = 10 ** 9
+    INF = 10**9
     d = {(x, y): INF for x in range(VILLAGE) for y in range(VILLAGE)}
     q = deque()
     for i in range(VILLAGE):
@@ -72,7 +73,7 @@ def wall_depth(lay: Layout) -> dict:
                 (q.appendleft if c == 0 else q.append)(t)
     while q:
         x, y = q.popleft()
-        for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+        for n in tile_neighbors(x, y):
             if n in d:
                 c = d[(x, y)] + (1 if n in walls else 0)
                 if c < d[n]:
@@ -89,7 +90,10 @@ class Geo:
         self.depth = wall_depth(lay)
         inner = [t for t, v in self.depth.items() if v >= 1 and t not in lay.walls]
         if inner:
-            self.mid = (sum(t[0] for t in inner) / len(inner) + 0.5, sum(t[1] for t in inner) / len(inner) + 0.5)
+            self.mid = (
+                sum(t[0] for t in inner) / len(inner) + 0.5,
+                sum(t[1] for t in inner) / len(inner) + 0.5,
+            )
         else:
             self.mid = (VILLAGE / 2, VILLAGE / 2)
         self.th = centre(th_of(lay))
@@ -159,10 +163,19 @@ def role_repack(lay: Layout, ref: str = "walls"):
     g = Geo(new)
     moved = []
     for size, idx in _by_size(new).items():
-        slots = sorted(((new.buildings[i].x, new.buildings[i].y) for i in idx),
-                       key=lambda p: g.inward(_Probe(p, size), ref), reverse=True)
+        slots = sorted(
+            ((new.buildings[i].x, new.buildings[i].y) for i in idx),
+            key=lambda p: g.inward(_Probe(p, size), ref),
+            reverse=True,
+        )
         # stable: among equals keep the building that is already deeper first
-        order = sorted(idx, key=lambda i: (target(new.buildings[i].key), tuple(-v for v in g.inward(new.buildings[i], ref))))
+        order = sorted(
+            idx,
+            key=lambda i: (
+                target(new.buildings[i].key),
+                tuple(-v for v in g.inward(new.buildings[i], ref)),
+            ),
+        )
         moved += _permute(new, idx, dict(zip(order, slots)))
     if not moved:
         return None
@@ -206,14 +219,24 @@ def pull_strongest(lay: Layout, n: int = 6):
     out of opener reach)."""
     new = lay.copy()
     g = Geo(new)
-    cands = sorted((b for b in new.buildings if b.key in KEY and b.key != "th"), key=lambda b: (target(b.key), -g.th_dist(b)))
+    cands = sorted(
+        (b for b in new.buildings if b.key in KEY and b.key != "th"),
+        key=lambda b: (target(b.key), -g.th_dist(b)),
+    )
     moved, done = [], 0
     for b in cands:
         if done >= n:
             break
         d0 = g.th_dist(b)
-        partners = [o for o in new.buildings if o.size == b.size and o.key not in KEY and o.key != "th"
-                    and target(o.key) > target(b.key) + 0.15 and g.th_dist(o) < d0 - 2.0]
+        partners = [
+            o
+            for o in new.buildings
+            if o.size == b.size
+            and o.key not in KEY
+            and o.key != "th"
+            and target(o.key) > target(b.key) + 0.15
+            and g.th_dist(o) < d0 - 2.0
+        ]
         if not partners:
             continue
         o = min(partners, key=lambda o: (g.th_dist(o) - 0.0) - 2.0 * target(o.key))
@@ -233,8 +256,16 @@ def splash_inward(lay: Layout):
     new = lay.copy()
     g = Geo(new)
     moved = []
-    for b in sorted((b for b in new.buildings if b.key in SPLASH), key=lambda b: -g.th_dist(b)):
-        partners = [o for o in new.buildings if o.size == b.size and target(o.key) >= TRASH and g.th_dist(o) < g.th_dist(b) - 3.0]
+    for b in sorted(
+        (b for b in new.buildings if b.key in SPLASH), key=lambda b: -g.th_dist(b)
+    ):
+        partners = [
+            o
+            for o in new.buildings
+            if o.size == b.size
+            and target(o.key) >= TRASH
+            and g.th_dist(o) < g.th_dist(b) - 3.0
+        ]
         if not partners:
             continue
         o = min(partners, key=g.th_dist)
@@ -271,10 +302,21 @@ def spread_ads(lay: Layout):
     if len(ads) < 2:
         return None
     lo, hi = min(g.bdepth(b) for b in ads), max(g.bdepth(b) for b in ads)
-    pool = [b for b in new.buildings if b.size == ads[0].size and (b.key == "ad" or target(b.key) > target("ad"))
-            and lo <= g.bdepth(b) <= hi and b.key not in KEY | {"th"} | {"ad"} or b.key == "ad"]
-    if len(pool) > 22:  # keep the search small: the ADs plus the nearest-to-centre others
-        rest = sorted((b for b in pool if b.key != "ad"), key=lambda b: -g.inward(b, "th")[1])
+    pool = [
+        b
+        for b in new.buildings
+        if b.size == ads[0].size
+        and (b.key == "ad" or target(b.key) > target("ad"))
+        and lo <= g.bdepth(b) <= hi
+        and b.key not in KEY | {"th"} | {"ad"}
+        or b.key == "ad"
+    ]
+    if (
+        len(pool) > 22
+    ):  # keep the search small: the ADs plus the nearest-to-centre others
+        rest = sorted(
+            (b for b in pool if b.key != "ad"), key=lambda b: -g.inward(b, "th")[1]
+        )
         pool = ads + rest[: 22 - len(ads)]
     pts = {id(b): centre(b) for b in pool}
 
@@ -300,7 +342,10 @@ def spread_ads(lay: Layout):
         _swap(a, o)
         moved += [a, o]
     _aim_sweepers(new, moved)
-    return new, f"spread ADs (min gap {cur:.1f} -> {best_s:.1f} score, {len(movers)} moved, {len(stay)} kept)"
+    return (
+        new,
+        f"spread ADs (min gap {cur:.1f} -> {best_s:.1f} score, {len(movers)} moved, {len(stay)} kept)",
+    )
 
 
 def fireball_spread(lay: Layout, gap: float = 7.5, rounds: int = 6):
@@ -316,20 +361,52 @@ def fireball_spread(lay: Layout, gap: float = 7.5, rounds: int = 6):
 
         def near(b, skip=None):
             cx, cy = centre(b)
-            return min((math.hypot(cx - centre(o)[0], cy - centre(o)[1]) for o in H if o is not b and o is not skip), default=99.0)
+            return min(
+                (
+                    math.hypot(cx - centre(o)[0], cy - centre(o)[1])
+                    for o in H
+                    if o is not b and o is not skip
+                ),
+                default=99.0,
+            )
 
-        pairs = sorted(((math.hypot(centre(a)[0] - centre(b)[0], centre(a)[1] - centre(b)[1]), a, b) for a, b in combinations(H, 2)), key=lambda t: t[0])
+        pairs = sorted(
+            (
+                (
+                    math.hypot(
+                        centre(a)[0] - centre(b)[0], centre(a)[1] - centre(b)[1]
+                    ),
+                    a,
+                    b,
+                )
+                for a, b in combinations(H, 2)
+            ),
+            key=lambda t: t[0],
+        )
         if not pairs or pairs[0][0] >= gap:
             break
         _, a, b = pairs[0]
         mover = a if target(a.key) >= target(b.key) else b
         d0 = g.bdepth(mover)
-        partners = [o for o in new.buildings if o.size == mover.size and o.key not in KEY and o.key != "th"
-                    and abs(g.bdepth(o) - d0) <= 1]
+        partners = [
+            o
+            for o in new.buildings
+            if o.size == mover.size
+            and o.key not in KEY
+            and o.key != "th"
+            and abs(g.bdepth(o) - d0) <= 1
+        ]
         best, best_d = None, near(mover)
         for o in partners:
             ox, oy = centre(o)
-            dmin = min((math.hypot(ox - centre(h)[0], oy - centre(h)[1]) for h in H if h is not mover), default=99.0)
+            dmin = min(
+                (
+                    math.hypot(ox - centre(h)[0], oy - centre(h)[1])
+                    for h in H
+                    if h is not mover
+                ),
+                default=99.0,
+            )
             if dmin > best_d + 1.0 and dmin >= 4.0:
                 best, best_d = o, dmin
         if best is None:
@@ -354,9 +431,19 @@ def outer_screen(lay: Layout):
     outer = min(depths)
     moved = []
     for b in [b for b in new.buildings if b.key in KEY and g.bdepth(b) <= outer]:
-        partners = [o for o in new.buildings if o.size == b.size and o.key in LOW_DEF and g.bdepth(o) > g.bdepth(b)]
+        partners = [
+            o
+            for o in new.buildings
+            if o.size == b.size and o.key in LOW_DEF and g.bdepth(o) > g.bdepth(b)
+        ]
         if not partners:
-            partners = [o for o in new.buildings if o.size == b.size and target(o.key) >= TRASH and g.bdepth(o) > g.bdepth(b)]
+            partners = [
+                o
+                for o in new.buildings
+                if o.size == b.size
+                and target(o.key) >= TRASH
+                and g.bdepth(o) > g.bdepth(b)
+            ]
         if not partners:
             continue
         o = min(partners, key=lambda o: (-(g.bdepth(o)), g.th_dist(o)))
@@ -378,8 +465,17 @@ def _match(new: Layout, members: list, targets: dict) -> list:
         by.setdefault(new.buildings[i].size, []).append(i)
     for size, idx in by.items():
         slots = [(new.buildings[i].x, new.buildings[i].y) for i in idx]
-        pairs = sorted((math.hypot(sx + size / 2 - targets[i][0], sy + size / 2 - targets[i][1]), i, k)
-                       for i in idx for k, (sx, sy) in enumerate(slots))
+        pairs = sorted(
+            (
+                math.hypot(
+                    sx + size / 2 - targets[i][0], sy + size / 2 - targets[i][1]
+                ),
+                i,
+                k,
+            )
+            for i in idx
+            for k, (sx, sy) in enumerate(slots)
+        )
         used_i, used_k, pos = set(), set(), {}
         for _d, i, k in pairs:
             if i in used_i or k in used_k:
@@ -397,7 +493,11 @@ def rotate_core(lay: Layout, quarter: int = 2, radius: float = 9.0):
     at a different side. Realised by same-size slot matching."""
     new = lay.copy()
     tx, ty = centre(th_of(new))
-    members = [i for i, b in enumerate(new.buildings) if b.key != "th" and math.hypot(centre(b)[0] - tx, centre(b)[1] - ty) <= radius]
+    members = [
+        i
+        for i, b in enumerate(new.buildings)
+        if b.key != "th" and math.hypot(centre(b)[0] - tx, centre(b)[1] - ty) <= radius
+    ]
     if len(members) < 4:
         return None
     a = quarter * math.pi / 2
@@ -423,12 +523,21 @@ def swap_core_flank(lay: Layout, side: int = 0, radius: float = 8.0):
     g = Geo(new)
     tx, ty = g.th
     ang = side * math.pi / 2 + math.pi / 4
-    core = [i for i, b in enumerate(new.buildings) if b.key != "th" and g.th_dist(b) <= radius]
+    core = [
+        i
+        for i, b in enumerate(new.buildings)
+        if b.key != "th" and g.th_dist(b) <= radius
+    ]
     flank = []
     for i, b in enumerate(new.buildings):
         cx, cy = centre(b)
         a = math.atan2(cy - ty, cx - tx)
-        if b.key != "th" and i not in core and g.bdepth(b) >= 1 and abs((a - ang + math.pi) % (2 * math.pi) - math.pi) <= math.pi / 4:
+        if (
+            b.key != "th"
+            and i not in core
+            and g.bdepth(b) >= 1
+            and abs((a - ang + math.pi) % (2 * math.pi) - math.pi) <= math.pi / 4
+        ):
             flank.append(i)
     if len(core) < 3 or len(flank) < 3:
         return None
@@ -461,7 +570,16 @@ def transpose(lay: Layout):
         t.x, t.y = t.y, t.x
     new.walls = {(y, x) for x, y in new.walls}
     new.wall_levels = {(y, x): v for (x, y), v in new.wall_levels.items()}
-    flip = {"N": "W", "W": "N", "S": "E", "E": "S", "NE": "SW", "SW": "NE", "NW": "NW", "SE": "SE"}
+    flip = {
+        "N": "W",
+        "W": "N",
+        "S": "E",
+        "E": "S",
+        "NE": "SW",
+        "SW": "NE",
+        "NW": "NW",
+        "SE": "SE",
+    }
     for b in new.buildings:
         if b.key in ("sweeper", "firespitter") and b.mode in flip:
             b.mode = flip[b.mode]
@@ -486,7 +604,11 @@ def _relocate_trap(lay: Layout, t, occ: set, near) -> bool:
     best = None
     for x in range(VILLAGE - t.size + 1):
         for y in range(VILLAGE - t.size + 1):
-            if all((x + dx, y + dy) not in occ for dx in range(t.size) for dy in range(t.size)):
+            if all(
+                (x + dx, y + dy) not in occ
+                for dx in range(t.size)
+                for dy in range(t.size)
+            ):
                 d = math.hypot(x - nx, y - ny)
                 if best is None or d < best[0]:
                     best = (d, x, y)
@@ -512,9 +634,19 @@ def ring_th(lay: Layout):
     for b in new.buildings:
         bocc.update(b.tiles())
     for gap in (1, 2):
-        x0, y0, x1, y1 = th.x - gap, th.y - gap, th.x + th.size - 1 + gap, th.y + th.size - 1 + gap
-        ring = {(x, y) for x in range(x0, x1 + 1) for y in (y0, y1)} | {(x, y) for y in range(y0, y1 + 1) for x in (x0, x1)}
-        if any(not (0 <= x < VILLAGE and 0 <= y < VILLAGE) for x, y in ring) or ring & bocc:
+        x0, y0, x1, y1 = (
+            th.x - gap,
+            th.y - gap,
+            th.x + th.size - 1 + gap,
+            th.y + th.size - 1 + gap,
+        )
+        ring = {(x, y) for x in range(x0, x1 + 1) for y in (y0, y1)} | {
+            (x, y) for y in range(y0, y1 + 1) for x in (x0, x1)
+        }
+        if (
+            any(not (0 <= x < VILLAGE and 0 <= y < VILLAGE) for x, y in ring)
+            or ring & bocc
+        ):
             continue
         # the enclosed square must hold nothing but the TH and free tiles/traps
         need = len(ring - new.walls)
@@ -526,7 +658,16 @@ def ring_th(lay: Layout):
         for _ in range(take * 4 + 10):
             if removed >= take:
                 break
-            tips = [w for w in walls if w not in ring and sum((w[0] + dx, w[1] + dy) in walls for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))) <= 1]
+            tips = [
+                w
+                for w in walls
+                if w not in ring
+                and sum(
+                    (w[0] + dx, w[1] + dy) in walls
+                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                )
+                <= 1
+            ]
             if not tips:
                 break
             w = max(tips, key=lambda w: math.hypot(w[0] - tx, w[1] - ty))
@@ -546,7 +687,10 @@ def ring_th(lay: Layout):
                 occ.update(t.tiles())
         if new.problems():
             continue
-        return new, f"ring the Town Hall (gap {gap}, {need} walls, {removed} tips taken)"
+        return (
+            new,
+            f"ring the Town Hall (gap {gap}, {need} walls, {removed} tips taken)",
+        )
     return None
 
 
@@ -554,8 +698,26 @@ def ring_th(lay: Layout):
 
 # placement order and the spacing kept between traps of one type (tiles):
 # Giant Bombs, mines and Air Bombs may pair (principles 3.3, 3.4), but not pile
-TRAP_ORDER = ("tornado", "giant", "seeking", "skeleton", "airbomb", "spring", "bomb", "giga")
-TRAP_GAP = {"tornado": 0, "giant": 2.0, "seeking": 1.5, "skeleton": 3.0, "airbomb": 2.5, "spring": 1.5, "bomb": 2.5, "giga": 3.0}
+TRAP_ORDER = (
+    "tornado",
+    "giant",
+    "seeking",
+    "skeleton",
+    "airbomb",
+    "spring",
+    "bomb",
+    "giga",
+)
+TRAP_GAP = {
+    "tornado": 0,
+    "giant": 2.0,
+    "seeking": 1.5,
+    "skeleton": 3.0,
+    "airbomb": 2.5,
+    "spring": 1.5,
+    "bomb": 2.5,
+    "giga": 3.0,
+}
 
 
 def traps_on_traffic(lay: Layout, diag, *, top: int = 400):
@@ -568,17 +730,32 @@ def traps_on_traffic(lay: Layout, diag, *, top: int = 400):
     occ = _occ(new, skip_traps=True)
     placed_at: dict = {}
     moved = 0
-    order = sorted(range(len(new.traps)), key=lambda i: TRAP_ORDER.index(new.traps[i].key) if new.traps[i].key in TRAP_ORDER else 99)
+    order = sorted(
+        range(len(new.traps)),
+        key=lambda i: (
+            TRAP_ORDER.index(new.traps[i].key) if new.traps[i].key in TRAP_ORDER else 99
+        ),
+    )
     for i in order:
         t = new.traps[i]
         hot = diag.trap_tiles(t.key, t.mode, top)
         gap = TRAP_GAP.get(t.key, 2.0)
         spot = None
         for (x, y), _v in hot:
-            x0, y0 = x - (t.size - 1 if t.size > 1 else 0), y - (t.size - 1 if t.size > 1 else 0)
+            x0, y0 = x - (t.size - 1 if t.size > 1 else 0), y - (
+                t.size - 1 if t.size > 1 else 0
+            )
             for px, py in ((x0, y0), (x, y)):
-                tiles = [(px + dx, py + dy) for dx in range(t.size) for dy in range(t.size)]
-                if all(0 <= a < VILLAGE and 0 <= b < VILLAGE and (a, b) not in occ for a, b in tiles) and                         all(math.hypot(px - qx, py - qy) >= gap for qx, qy in placed_at.get(t.key, [])):
+                tiles = [
+                    (px + dx, py + dy) for dx in range(t.size) for dy in range(t.size)
+                ]
+                if all(
+                    0 <= a < VILLAGE and 0 <= b < VILLAGE and (a, b) not in occ
+                    for a, b in tiles
+                ) and all(
+                    math.hypot(px - qx, py - qy) >= gap
+                    for qx, qy in placed_at.get(t.key, [])
+                ):
                     spot = (px, py)
                     break
             if spot:
@@ -617,11 +794,18 @@ def traps_to_core(lay: Layout):
         occ.update(t.tiles())
     if not out_traps:
         return None
-    free = [(x, y) for x in range(VILLAGE) for y in range(VILLAGE) if (x, y) not in occ and g.depth[(x, y)] >= 1]
+    free = [
+        (x, y)
+        for x in range(VILLAGE)
+        for y in range(VILLAGE)
+        if (x, y) not in occ and g.depth[(x, y)] >= 1
+    ]
     placed: list = [(t.x, t.y) for t in keep]
     moved = 0
     for t in out_traps:
-        air = t.key in ("seeking", "airbomb") or (t.key == "skeleton" and t.mode == "air")
+        air = t.key in ("seeking", "airbomb") or (
+            t.key == "skeleton" and t.mode == "air"
+        )
 
         def cost(p):
             if air and ads:
@@ -630,8 +814,13 @@ def traps_to_core(lay: Layout):
             return abs(math.hypot(p[0] + 0.5 - tx, p[1] + 0.5 - ty) - 5.0)
 
         for p in sorted(free, key=cost):
-            tiles = [(p[0] + dx, p[1] + dy) for dx in range(t.size) for dy in range(t.size)]
-            if all(q not in occ and 0 <= q[0] < VILLAGE and 0 <= q[1] < VILLAGE for q in tiles) and                     all(math.hypot(p[0] - a, p[1] - b) >= 2.0 for a, b in placed):
+            tiles = [
+                (p[0] + dx, p[1] + dy) for dx in range(t.size) for dy in range(t.size)
+            ]
+            if all(
+                q not in occ and 0 <= q[0] < VILLAGE and 0 <= q[1] < VILLAGE
+                for q in tiles
+            ) and all(math.hypot(p[0] - a, p[1] - b) >= 2.0 for a, b in placed):
                 t.x, t.y = p
                 occ.update(tiles)
                 placed.append(p)
@@ -672,7 +861,9 @@ def apply(name: str, lay: Layout, **kw):
         return None
     new, desc = out
     assert not new.problems(), (name, new.problems()[:3])
-    assert sorted(b.key for b in new.buildings) == sorted(b.key for b in lay.buildings), name
+    assert sorted(b.key for b in new.buildings) == sorted(
+        b.key for b in lay.buildings
+    ), name
     assert len(new.walls) >= len(lay.walls) and len(new.traps) == len(lay.traps), name
     return new, desc
 

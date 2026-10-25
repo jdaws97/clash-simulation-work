@@ -246,6 +246,11 @@ class Battle:
         return stats.validate_level(name, level, self.town_hall)
 
     def _setup(self, layout: Layout, cc_troops):
+        issues = layout.content_problems(
+            town_hall=self.town_hall, defense_levels=self.defense_levels
+        )
+        if issues:
+            raise ValueError("; ".join(issues))
         th = self.town_hall
         for i, p in enumerate(layout.buildings):
             bt = BUILDING_TYPES[p.key]
@@ -448,23 +453,13 @@ class Battle:
         wider than two squares)."""
         blocked = self._live_no_deploy()
         walls = {k for k, w in self.walls.items() if w.alive}
-        seen = set()
+        from ..deploy import flood_tiles
+
         q = [(i, j) for i in range(WORLD) for j in (0, WORLD - 1)] + [
             (j, i) for i in range(WORLD) for j in (0, WORLD - 1)
         ]
-        seen.update(q)
-        while q:
-            x, y = q.pop()
-            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                n = (x + dx, y + dy)
-                if (
-                    0 <= n[0] < WORLD
-                    and 0 <= n[1] < WORLD
-                    and n not in walls
-                    and n not in seen
-                ):
-                    seen.add(n)
-                    q.append(n)
+        legal = {(x, y) for x in range(WORLD) for y in range(WORLD)} - walls
+        seen = flood_tiles(q, legal)
         return [
             (x + 0.5, y + 0.5)
             for x in range(WORLD)
@@ -2045,6 +2040,11 @@ class Battle:
         self._update_bucket(u, previous)
 
     # ========================================================== defender AI
+    def defender_in_leash(self, u: Unit, x, y):
+        center = u.home if u.home is not None else (u.x, u.y)
+        radius = u.leash if u.home is not None else math.inf
+        return dist(center[0], center[1], x, y) <= radius
+
     def _act_defender(self, u: Unit):
         t = self.t
         if u.name == "Barbarian King" and u.home is not None:
@@ -2082,11 +2082,9 @@ class Battle:
             and t >= u.extra.get("next_retarget", 0.0)
         ):
             u.extra["next_retarget"] = t + 0.5
-            center = u.home if u.home is not None else (u.x, u.y)
-            radius = u.leash if u.home is not None else math.inf
             best, bd = None, math.inf
             for a in self.attackers:
-                if dist(center[0], center[1], a.x, a.y) > radius:
+                if not self.defender_in_leash(u, a.x, a.y):
                     continue
                 if not a.targetable(t) or not self.can_hit(u, a):
                     continue

@@ -1417,6 +1417,23 @@ class AttackPlan:
         seconds = action_time("deploy") + action_time("ability")
         level = self._level(name) or stats.max_level(name, self.town_hall)
         numbers = unit_numbers(name, level)
+        is_hero = name in heroes.HEROES
+        # output/research/usage/archer-queen.md: equipment supplies passive HP.
+        # https://clashofclans.fandom.com/wiki/Hero_Equipment
+        # Match deploy: strength scales base HP, then equipment, then ranked HP.
+        max_hp = numbers["hp"] * self.strength
+        if is_hero:
+            loadout = self.loadouts.get(name) or heroes.DEFAULT_LOADOUTS.get(name)
+            for item in loadout.equipment if loadout is not None else ():
+                if self.account_equipment and item not in self.equipment_levels:
+                    continue
+                equipment_level = self.equipment_levels.get(item) or stats.max_level(
+                    item, self.town_hall
+                )
+                max_hp += heroes._col(
+                    item, equipment_level, "hitpoint increase", "hp increase"
+                )
+            max_hp *= battle.atk_hero_mult
         if kind == "arrow":
             seconds += distance / 35.0
         elif kind == "dash":
@@ -1435,7 +1452,10 @@ class AttackPlan:
         else:
             # Wiki: Flame Flinger/Archer Queen, sustained damage needs combat time.
             # Replace the helper's infinite rank estimate with a finite HP budget.
-            dps = max(1.0, numbers["dps"] * self.strength * battle.atk_hero_mult)
+            # output/research/usage/flame-flinger.md: ranked penalties affect Heroes.
+            # https://supercell.com/en/games/clashofclans/blog/news/upcoming-changes-to-ranked-mode/
+            hero_mult = battle.atk_hero_mult if is_hero else 1.0
+            dps = max(1.0, numbers["dps"] * self.strength * hero_mult)
             seconds = action_time("deploy") + target.hp / dps
             seconds += distance / (5.0 if kind == "flinger" else 12.0)
             damage = target.hp  # Candidates taking over 12 s are rejected below.
@@ -1463,15 +1483,20 @@ class AttackPlan:
                 incoming += defense_combat.opening_damage(
                     battle,
                     weapon,
-                    numbers["hp"],
-                    name in heroes.HEROES,
+                    max_hp,
+                    is_hero,
                     seconds,
                     is_siege=name == "Flame Flinger",
                     flying=flying,
+                    position=(x, y),
                 )
+        for defender in battle.defenders:
+            incoming += defense_combat.opening_unit_damage(
+                battle, defender, x, y, flying, is_hero, seconds
+            )
         # Wiki: Rocket Spear, X-Bows can retaliate; high damage can waste the volley.
         # Policy: HP loss lowers kill confidence and costs up to 4 THREAT units.
-        loss = min(1.0, incoming / max(1.0, numbers["hp"]))
+        loss = min(1.0, incoming / max(1.0, max_hp))
         return damage, seconds, loss
 
     def _snipe_tools(self):
@@ -1503,7 +1528,8 @@ class AttackPlan:
     def _opening_reachable(self, battle, tiles):
         # Wiki: Walls, an exposed attack position has a wall-free ground approach.
         # Use the grid's eight neighbors and corner rule, once from legal deploy tiles.
-        from ..pathing import RES, _NEIGHBORS
+        from ..deploy import flood_tiles
+        from ..pathing import RES
 
         if hasattr(battle, "_opening_reachable"):
             return battle._opening_reachable
@@ -1518,26 +1544,16 @@ class AttackPlan:
                 j0 = int(round((building.y - building.half_hit) * RES))
                 j1 = int(round((building.y + building.half_hit) * RES))
                 blocked[i0:i1, j0:j1] = False
-        walkable = (~(blocked | grid.wall)).tolist()
-        reached = [[False] * n for _ in range(n)]
-        queue = []
-        for x, y in tiles:
-            i, j = grid.cell(x, y)
-            if walkable[i][j] and not reached[i][j]:
-                reached[i][j] = True
-                queue.append((i, j))
-        neighbors = _NEIGHBORS.tolist()
-        for i, j in queue:
-            for di, dj in neighbors:
-                ni, nj = i + di, j + dj
-                if not (0 <= ni < n and 0 <= nj < n):
-                    continue
-                if reached[ni][nj] or not walkable[ni][nj]:
-                    continue
-                if di and dj and (not walkable[i][nj] or not walkable[ni][j]):
-                    continue
-                reached[ni][nj] = True
-                queue.append((ni, nj))
+        walkable = ~(blocked | grid.wall)
+        legal = {(i, j) for i in range(n) for j in range(n) if walkable[i, j]}
+        # Navigation blocks diagonal building corners, but permits wall gaps.
+        # data/wiki/text/Wall_Home_Village.txt:30:
+        # https://clashofclans.fandom.com/wiki/Wall/Home_Village
+        corners = {(i, j) for i in range(n) for j in range(n) if blocked[i, j]}
+        seen = flood_tiles(
+            [grid.cell(x, y) for x, y in tiles], legal, corner_blocked=corners
+        )
+        reached = [[(i, j) in seen for j in range(n)] for i in range(n)]
         battle._opening_reachable = reached
         return reached
 

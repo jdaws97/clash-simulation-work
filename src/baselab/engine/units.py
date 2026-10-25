@@ -2689,6 +2689,11 @@ def _beam(battle, u, target):
     if u.extra.get("beam_target") is not target:
         track_beam(battle, u, target)
     held = u.extra.get("beam_time", 0.0)
+    return beam_damage(u, held)
+
+
+def beam_damage(u, held):
+    """Executed beam hit at a given uninterrupted lock duration."""
     if u.name == "Super Miner":
         # Wiki: Super Miner/Home Village.
         stages = [

@@ -18,6 +18,7 @@ a warning and the legacy layout for that day (or today's layout if unknown).
 
 Usage: python tools/baselab/replay_log.py BATTLELOG.json [--base data/reference-bases/your-base.json]
        [--since 20261012] [--until 20261016] [--seeds 3] [--techniques] [--strength calibrated|raw]
+       [--attacker generic|playbook] (or BASELAB_REPLAY_PLAYBOOKS=1)
 """
 
 from __future__ import annotations
@@ -27,7 +28,9 @@ import hashlib
 import itertools
 import json
 import math
+import os
 import sys
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -37,6 +40,7 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tools" / "baselab"))
 
 from baselab.evaluate import (
+    CHARGE_HEALERS,
     SCOUT,
     STRENGTH,
     apply_charge,
@@ -44,7 +48,6 @@ from baselab.evaluate import (
     group_seed,
     pool,
     skill,
-    techniques,
 )  # noqa: E402
 from baselab.layout import Layout  # noqa: E402
 from baselab.meta_armies import SPELL_KEYS, _share_troops, data, family_of  # noqa: E402
@@ -111,19 +114,92 @@ def to_build(army: dict, th: int, n: int) -> tuple[dict, list]:
     return build, unknown
 
 
-def _run(args):
-    lj, build, angle, seed, strength, tech = args
-    from baselab.engine.battle import Battle
-    from baselab.meta_armies import plan_for_build
+def default_attacker():
+    return (
+        "playbook" if os.environ.get("BASELAB_REPLAY_PLAYBOOKS") == "1" else "generic"
+    )
 
-    plan = plan_for_build(build, angle=angle, seed=seed)
+
+def attacker_for_build(build, attacker):
+    """Return the actual attacker, resolved family and any generic fallback note."""
+    from baselab.meta_armies import _playbook
+
+    family = family_of(build)
+    if attacker == "playbook":
+        if family is None:
+            return "generic", family, "unclassified army family"
+        if _playbook(family) is None:
+            return "generic", family, f"no cited playbook for {family}"
+    return attacker, family, None
+
+
+def replay_plan(build, angle, seed, attacker="generic"):
+    from baselab.meta_armies import _playbook, compose
+
+    kind, family, _note = attacker_for_build(build, attacker)
+    if kind == "playbook":
+        from baselab.engine.playbook import from_playbook
+
+        # output/research/usage/dragon.md: cited family openings depend on the army.
+        # https://www.youtube.com/watch?v=55I-qks9qdI
+        # Match meta_armies.plan_for_build: fit the real build, never the example.
+        plan = from_playbook(
+            _playbook(family),
+            angle=angle,
+            seed=seed,
+            th=build["th"],
+            build=build,
+            charge_side="left" if seed % 2 == 0 else "right",
+        )
+    else:
+        plan = compose(build, angle=angle, seed=seed)
     plan.observed = True  # a real army from the battle log
+    return plan
+
+
+def replay_techniques(build, attacker):
+    """Use evaluate.techniques' generic charges without inheriting its env switch."""
+    out = [None]
+    if attacker == "generic":
+        for hero, healers in CHARGE_HEALERS.items():
+            if hero in build.get("heroes", []):
+                out.append(
+                    (hero, min(healers, int(build.get("troops", {}).get("Healer", 0))))
+                )
+    return out
+
+
+def battle_end_reason(battle):
+    """Observe the finished battle; do not extend combat or spend inventory."""
+    if battle.destroyed_counted >= battle.total_counted:
+        return "all_buildings_destroyed"
+    if battle.t >= battle.max_time:
+        # output/fidelity/diag/d1.out: separate fighting from inventory-only waits.
+        # output/research/usage/healer.md; https://clashofclans.fandom.com/wiki/Healer
+        # Use Battle.offense_finished's live-unit exclusions, including idle siege.
+        if any(
+            unit.alive
+            and unit.name not in ("Healer", "Unicorn", "Totem")
+            and unit.kind != "siege_idle"
+            for unit in battle.attackers
+        ):
+            return "timer_live_fighting_units"
+        return "timer_inventory_only"
+    return "exhausted_offense"
+
+
+def _run(args):
+    lj, build, angle, seed, strength, tech, attacker = args
+    from baselab.engine.battle import Battle
+
+    plan = replay_plan(build, angle, seed, attacker)
     if tech is not None:
         apply_charge(plan, tech)
     plan.strength = strength * skill(seed)
     layout = Layout.from_json(lj)
-    r = Battle(layout, plan, seed=seed, town_hall=layout.town_hall).run()
-    return r.stars, r.destruction, r.time
+    battle = Battle(layout, plan, seed=seed, town_hall=layout.town_hall)
+    r = battle.run()
+    return r.stars, r.destruction, r.time, battle_end_reason(battle)
 
 
 def current_strength(th, family):
@@ -254,6 +330,12 @@ def main():
     ap.add_argument("--seeds", type=int, default=3)
     ap.add_argument("--angles", type=int, default=8)
     ap.add_argument("--techniques", action="store_true")
+    ap.add_argument(
+        "--attacker",
+        choices=["playbook", "generic"],
+        default=default_attacker(),
+        help="attacker policy (default: generic; BASELAB_REPLAY_PLAYBOOKS=1 selects playbook)",
+    )
     ap.add_argument("--strength", choices=["calibrated", "raw"], default="calibrated")
     ap.add_argument("--out")
     ap.add_argument("--exclude-unknown", action="store_true")
@@ -313,7 +395,8 @@ def main():
                 flush=True,
             )
         st = family_strength(build) if args.strength == "calibrated" else 1.0
-        techs = techniques(build) if args.techniques else [None]
+        attacker, family, fallback = attacker_for_build(build, args.attacker)
+        techs = replay_techniques(build, attacker) if args.techniques else [None]
         jobs, keys = [], []
         for k in range(args.angles):
             for s in range(args.seeds):
@@ -326,6 +409,7 @@ def main():
                             replay_seed(identity, s, k, args.angles),
                             st,
                             tech,
+                            attacker,
                         )
                     )
                     keys.append((s, k))
@@ -360,6 +444,9 @@ def main():
             day=day,
             th=b["opponentTownHallLevel"],
             army=main_troop,
+            attacker=attacker,
+            attacker_family=family,
+            attacker_fallback=fallback,
             real_stars=b["stars"],
             real_pct=b["destructionPercentage"],
             p3=p3,
@@ -376,6 +463,9 @@ def main():
             sim_timeout=float(np.mean([r[2] >= 179.5 for r in picked])),
             sim_times=[round(r[2], 1) for r in picked],
             sim_stars=[r[0] for r in picked],
+            sim_end_reasons=[r[3] for r in picked],
+            # Count actual runs before scouting repeats winners across side pairs.
+            sim_end_reason_counts=dict(Counter(r[3] for r in res)),
             battleTimestamp=battle_time,
             snapshot_id=entry["id"] if entry else None,
             current_levels_fallback=entry is None,
@@ -383,7 +473,9 @@ def main():
         rows.append(row)
         print(
             f"{day} TH{row['th']} {main_troop:16s} real {b['stars']}* {b['destructionPercentage']:3d}% | sim P(3*) {p3:4.0%} "
-            f"E[stars] {es:.2f} E[%] {ep:5.1f}  time real {b.get('battleTime')}s sim-3* {sim_t3 or 0:.0f}s  str {st:.2f} {'unknown: ' + ','.join(unknown) if unknown else ''}",
+            f"E[stars] {es:.2f} E[%] {ep:5.1f}  time real {b.get('battleTime')}s sim-3* {sim_t3 or 0:.0f}s  str {st:.2f} "
+            f"attacker {attacker}{' (fallback: ' + fallback + ')' if fallback else ''} "
+            f"{'unknown: ' + ','.join(unknown) if unknown else ''}",
             flush=True,
         )
     if rows:
@@ -409,8 +501,14 @@ def main():
                 f"== time to 3-star on {len(tt)} real 3-star defenses: sim/real {ratio:.2f} (1.00 = same speed; check 6 target 0.85-1.15)",
                 flush=True,
             )
+    attacker_counts = dict(Counter(row["attacker"] for row in rows))
+    fallback_notes = dict(
+        Counter(row["attacker_fallback"] for row in rows if row["attacker_fallback"])
+    )
     print(
-        f"== engine: python; excluded unknown/undecodable armies: {excluded_unknown}",
+        f"== engine: python; attacker requested: {args.attacker}; "
+        f"attacker counts (defenses): {attacker_counts}; fallback notes: {fallback_notes}; "
+        f"excluded unknown/undecodable armies: {excluded_unknown}",
         flush=True,
     )
     if args.out:
@@ -418,6 +516,9 @@ def main():
             "rows": rows,
             "excluded_unknown": excluded_unknown,
             "engine": "python",
+            "attacker": args.attacker,
+            "attacker_counts": attacker_counts,
+            "attacker_fallback_counts": fallback_notes,
         }
         Path(args.out).write_text(json.dumps(report if args.report else rows, indent=1))
 

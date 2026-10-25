@@ -14,6 +14,7 @@ each run appends one line to output/fidelity/history.jsonl.
   D  exposed Eagle: on qd-1212 (Eagle on the edge) attackers must open on it.
 
 Usage: python tools/baselab/fidelity_board.py --label "after snipe fix" [--quick]
+       [--attacker generic|playbook] (A only; or BASELAB_REPLAY_PLAYBOOKS=1)
 """
 
 from __future__ import annotations
@@ -44,12 +45,40 @@ def run(cmd):
 
 
 def defense_metrics(rows):
+    attacker_counts = Counter(r.get("attacker", "unrecorded") for r in rows)
+    fallback_counts = Counter(
+        r["attacker_fallback"] for r in rows if r.get("attacker_fallback")
+    )
+    end_reasons = Counter()
+    for row in rows:
+        end_reasons.update(row.get("sim_end_reason_counts", {}))
+    counts = {
+        "attacker_counts": dict(attacker_counts),
+        "attacker_fallback_counts": dict(fallback_counts),
+        # Actual simulated battles, before best-side selection duplicates outcomes.
+        "sim_end_reason_counts": dict(end_reasons),
+        "sim_end_reason_unrecorded_defenses": sum(
+            "sim_end_reason_counts" not in row for row in rows
+        ),
+    }
     if not rows:
-        return {"defenses": 0}
+        return {
+            "defenses": 0,
+            **counts,
+            "real_failed_n": 0,
+            "sim_failed_n": 0,
+            "sim_failed_matched_median_s": None,
+            "sim_failed_matched_n": 0,
+        }
     real3 = [r["real_stars"] >= 3 for r in rows]
     fails = [r for r in rows if r["real_stars"] < 3]
     sim_fail_times = [
         t for r in rows for t, s in zip(r["sim_times"], r["sim_stars"]) if s < 3
+    ]
+    # output/fidelity/diag/d1.out: compare failures on the same real defenses.
+    # Selected simulated failures retain the pooled metric's scouting weights.
+    matched_fail_times = [
+        t for r in fails for t, s in zip(r["sim_times"], r["sim_stars"]) if s < 3
     ]
     t3 = [
         (r["sim_time_3star"], r["real_time"])
@@ -58,6 +87,7 @@ def defense_metrics(rows):
     ]
     return {
         "defenses": len(rows),
+        **counts,
         "real_3star": round(st.mean(real3), 3),
         "sim_3star": round(st.mean(r["p3"] for r in rows), 3),
         "brier": round(
@@ -70,34 +100,69 @@ def defense_metrics(rows):
         "real_failed_median_s": (
             st.median(r["real_time"] for r in fails) if fails else None
         ),
+        "real_failed_n": len(fails),
         "sim_failed_median_s": (
             round(st.median(sim_fail_times), 1) if sim_fail_times else None
         ),
+        "sim_failed_n": len(sim_fail_times),
+        "sim_failed_matched_median_s": (
+            round(st.median(matched_fail_times), 1) if matched_fail_times else None
+        ),
+        "sim_failed_matched_n": len(matched_fail_times),
         "real_timeout_share": round(st.mean(r["real_time"] >= 179 for r in rows), 3),
         "sim_timeout_share": round(st.mean(r["sim_timeout"] for r in rows), 3),
     }
 
 
-def fitted_battle_ids(report_path=None):
+def ancestry_battle_ids(ancestry):
+    """Read the self-contained prior snapshots; missing provenance is unknown."""
+    if not isinstance(ancestry, list):
+        return None
+    fitted = set()
+    for prior in ancestry:
+        if not isinstance(prior, dict) or not prior.get("calibration"):
+            return None
+        identities = prior.get("battle_ids")
+        ancestors = ancestry_battle_ids(prior.get("ancestry"))
+        if (
+            not isinstance(identities, list)
+            or not all(isinstance(identity, str) for identity in identities)
+            or ancestors is None
+        ):
+            return None
+        fitted.update(identities)
+        fitted.update(ancestors)
+    return fitted
+
+
+def fitted_battle_ids(report_path=None, *, calibration_path=None):
     """Identify training rows from the selected calibration's matching report.
 
     Older reports lack identities: reconstruct only when both input hashes,
-    family counts and historical layout hashes still match exactly.
+    family counts and historical layout hashes still match exactly. Missing
+    prior ancestry is unknown, so callers must treat every row as in-sample.
     """
     from calibrate_defenses import observations
     from replay_log import HISTORY
 
     calibration = Path(
-        os.environ.get("BASELAB_CALIBRATION") or ROOT / "data/meta-calibration-r8.json"
+        calibration_path
+        or os.environ.get("BASELAB_CALIBRATION")
+        or ROOT / "data/meta-calibration-r8.json"
     )
     selected = json.loads(calibration.read_text(encoding="utf-8"))
     entries = [v for v in selected.values() if isinstance(v, dict)]
     if not any("defense_group" in v for v in entries) and not any(
         k.startswith("defense-th") for k in selected
     ):
-        return set(), {
-            "fit_status": "not defense-fitted",
+        # data/meta-calibration-r8.json was fitted to public meta rates, not logs.
+        known = (
+            calibration.resolve() == (ROOT / "data/meta-calibration-r8.json").resolve()
+        )
+        return (set() if known else None), {
+            "fit_status": "not defense-fitted" if known else "ancestry unknown",
             "calibration": str(calibration),
+            "ancestry": [] if known else None,
         }
     provenance = [v["provenance"] for v in entries if v.get("provenance")]
     candidates = (
@@ -140,10 +205,15 @@ def fitted_battle_ids(report_path=None):
             "fit_status": "identified",
             "calibration": str(calibration),
             "calibration_report": str(path),
+            "ancestry": report.get("ancestry"),
         }
+        ancestors = ancestry_battle_ids(info["ancestry"])
+        if ancestors is None:
+            info["fit_status"] = "ancestry unknown"
+            return None, info
         identities = report.get("battle_ids")
         if identities is not None and len(identities) == report["n"]:
-            return set(identities), info
+            return set(identities) | ancestors, info
         hashes = report.get("inputs", {})
         if (
             hashes.get("battle_log_sha256")
@@ -171,16 +241,18 @@ def fitted_battle_ids(report_path=None):
             == expected_layouts
         ):
             info["fit_status"] = "reconstructed from matching inputs"
-            return {r["battle_id"] for r in rows}, info
+            return {r["battle_id"] for r in rows} | ancestors, info
     return None, {
-        "fit_status": "unknown: matching report/identities unavailable",
+        "fit_status": "ancestry unknown",
         "calibration": str(calibration),
+        "ancestry": None,
     }
 
 
-def check_a(quick, exclude_fitted=False, calibration_report=None):
-    from replay_log import battle_identity, read_battles
+def check_a(quick, exclude_fitted=False, calibration_report=None, attacker=None):
+    from replay_log import battle_identity, default_attacker, read_battles
 
+    attacker = attacker or default_attacker()
     path = OUT / "replay_log.json"
     seeds = "2" if quick else "5"
     r = run(
@@ -190,6 +262,8 @@ def check_a(quick, exclude_fitted=False, calibration_report=None):
             "data/live/battles.jsonl",
             "--seeds",
             seeds,
+            "--attacker",
+            attacker,
             "--exclude-unknown",
             "--report",
             "--out",
@@ -197,7 +271,7 @@ def check_a(quick, exclude_fitted=False, calibration_report=None):
         ]
     )
     if r.returncode:
-        return {"engine": "python", "error": r.stderr[-800:]}
+        return {"engine": "python", "attacker": attacker, "error": r.stderr[-800:]}
     report = json.loads(path.read_text())
     rows = report["rows"] if isinstance(report, dict) else report
     excluded_unknown = (
@@ -218,35 +292,24 @@ def check_a(quick, exclude_fitted=False, calibration_report=None):
     in_sample = (
         [row for row in rows if row["battle_id"] in fitted]
         if fitted is not None
-        else []
+        else list(rows)
     )
     out_of_sample = (
         [row for row in rows if row["battle_id"] not in fitted]
         if fitted is not None
         else []
     )
-    if exclude_fitted and fitted is None:
-        return {
-            "engine": "python",
-            **info,
-            "error": "cannot exclude fitted defenses without verified training identities",
-        }
     scored = out_of_sample if exclude_fitted else rows
     return {
         "engine": "python",
+        "attacker": attacker,
         **info,
         **defense_metrics(scored),
         "excluded_unknown": excluded_unknown,
-        "fitted_defenses": (
-            (0 if exclude_fitted else len(in_sample)) if fitted is not None else None
-        ),
+        "fitted_defenses": 0 if exclude_fitted else len(in_sample),
         "excluded_fitted": len(in_sample) if exclude_fitted else 0,
-        "in_sample": (
-            defense_metrics([] if exclude_fitted else in_sample)
-            if fitted is not None
-            else None
-        ),
-        "out_of_sample": defense_metrics(out_of_sample) if fitted is not None else None,
+        "in_sample": defense_metrics([] if exclude_fitted else in_sample),
+        "out_of_sample": defense_metrics(out_of_sample),
     }
 
 
@@ -379,6 +442,11 @@ def main():
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--only", default="ABCD")
     ap.add_argument(
+        "--attacker",
+        choices=["playbook", "generic"],
+        help="A: attacker policy (default: generic; BASELAB_REPLAY_PLAYBOOKS=1 selects playbook)",
+    )
+    ap.add_argument(
         "--exclude-fitted",
         action="store_true",
         help="A: score only verified out-of-sample defenses",
@@ -404,7 +472,12 @@ def main():
     ):
         if key[0] in args.only:
             board[key] = (
-                fn(args.quick, args.exclude_fitted, args.calibration_report)
+                fn(
+                    args.quick,
+                    args.exclude_fitted,
+                    args.calibration_report,
+                    args.attacker,
+                )
                 if key.startswith("A_")
                 else fn(args.quick)
             )
