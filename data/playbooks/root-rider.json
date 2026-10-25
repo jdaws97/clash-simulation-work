@@ -1010,6 +1010,26 @@
    ],
    "steps": [
     {
+     "id": "charge_furnace",
+     "action": "deploy",
+     "what": "Furnace",
+     "count": 1,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "rc",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "--MRQU7FUxQ",
+       "t": 62.2,
+       "quote": "release our royal champion and a furnace"
+      }
+     ]
+    },
+    {
      "id": "rc_opening_spear",
      "action": "ability",
      "what": "Royal Champion",
@@ -1387,7 +1407,8 @@
     "funnel_ice",
     "queen",
     "main_ice",
-    "rc_main"
+    "rc_main",
+    "completion_rocket_charge"
    ],
    "steps": [
     {
@@ -1451,11 +1472,11 @@
      ]
     },
     {
-     "id": "angry",
-     "action": "spell",
-     "what": "Angry Spell",
-     "count": 1,
-     "at": "unit:Dragon Duke",
+     "id": "completion_rocket_charge",
+     "action": "deploy",
+     "what": "Rocket Balloon",
+     "count": 2,
+     "at": "building:at",
      "group": "duke",
      "when": {
       "after": "recall",
@@ -1464,9 +1485,57 @@
      "support": 1,
      "cite": [
       {
+       "video": "WlWHcFAz7ys",
+       "t": 207.8,
+       "quote": "These two rocket balloons take",
+       "verified_t": 207.8
+      },
+      {
+       "video": "WlWHcFAz7ys",
+       "t": 210.2,
+       "quote": "down the arch tower just in time.",
+       "verified_t": 210.2
+      },
+      {
+       "video": "QCrKyyMDYr4",
+       "t": 190.4,
+       "quote": "Then I use a few super balloons to help"
+      },
+      {
+       "video": "QCrKyyMDYr4",
+       "t": 192.5,
+       "quote": "with the pathing, followed by the angry"
+      }
+     ],
+     "note": "Retains the existing two-Rocket allocation and approximate Archer Tower anchor. In this variant the Rockets belong to the Duke opening, not optional completion; Angry follows them. QCrKyyMDYr4 does not establish an exact Rocket count or bound pathing target."
+    },
+    {
+     "id": "angry",
+     "action": "spell",
+     "what": "Angry Spell",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "after": "completion_rocket_charge",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
        "video": "QCrKyyMDYr4",
        "t": 192.5,
        "quote": "followed by the angry spell."
+      },
+      {
+       "video": "QCrKyyMDYr4",
+       "t": 190.4,
+       "quote": "Then I use a few super balloons to help"
+      },
+      {
+       "video": "QCrKyyMDYr4",
+       "t": 192.5,
+       "quote": "with the pathing, followed by the angry"
       }
      ]
     },
@@ -2014,7 +2083,7 @@
   "The two-hero variant requires its source army rather than the default inventory: L_LKqcL56NE has five Root Riders, eight Valkyries, five Healers, two Ice Golems, one Furnace and supporting troops; six Invisibility Spells, Recall, Rage and Freeze; Siege Barracks, two donated Totems and Poison. Its Duke uses Stun Blaster and Fire Heart. --MRQU7FUxQ instead has six Root Riders, eight Valkyries, one Ice Golem and Barbarian King. Both recall and redeploy the two heroes together; the single redeploy action represents the recalled group.",
   "The Flame Blower opening requires QCrKyyMDYr4's loadout and inventory: Flame Blower and Rocket Backpack on Dragon Duke, four Earthquakes, two Freezes, Overgrowth, Revive and Poison, plus donated Angry Spell and two Totems. The source does not give Earthquake counts per placement; the listed step represents one cast and does not invent the remaining allocation. Its instruction to wait for the Queen to commit has no matching trigger or stated duration; the existing zero-delay sequence cannot enforce that wait.",
   "The Ice Block and revival variant requires rBhknrms4J4's composition: four Root Riders, four Valkyries, five Healers, one main-army Ice Golem and supporting troops; five Ice Blocks, Revive, Freeze, Overgrowth and Poison; Sky Wagon with Inferno Dragons and three donated Totems. Dragon Duke uses Revenge Deck and Fire Heart, Queen uses Magic Mirror and Action Figure, and Royal Champion uses Diggy. Duke-inside and main-group-inside approximate assessing his cleared section and waiting for friendly tanking. The source's instruction to wait for defending Ice Golems to die before deploying Queen cannot be expressed by the available triggers.",
-  "The executor's unit: anchor resolves living units. Consequently the revival variant's unit:Dragon Duke anchor cannot locate a dead Duke even though the dead trigger is valid. The sourced revival is retained, but cannot execute faithfully with this anchor vocabulary; no death location or substitute coordinate is invented.",
+  "Current Rust resolves the revival variant's unit:Dragon Duke anchor at his actual corpse, as confirmed by the Root Rider revival audit. Surplus spells can use fallback. Hero lifecycle handling, including spent Phoenix state, is separate from corpse positioning.",
   "Thrower compositions differ: 40ln9NIrCUU has four Root Riders, seven Throwers, five Healers and two Ice Golems, with Stun Blaster Dragon Duke; b46w2PUASJI has six Root Riders, six Throwers, five Healers and one Ice Golem, with Barbarian King and Troop Launcher. The latter also has six Invisibility Spells, Recall, Rage, Overgrowth, two Totems and Poison across its listed spell inventory. A Thrower substitution requires the corresponding troop inventory. The King variant requires replacing Duke in the hero roster; its ability order comes specifically from b46w2PUASJI.",
   "u9owFe-ervU supplies the Super Archer variant, two scouting Balloons, two Ice Golems and a Stun Blaster Duke, but leaves Root Rider, Super Archer and Healer totals unstated. No Super Archer quantity is invented. Ff0NfWFgSiY instead names two Super Yetis and leaves its Root Rider total unstated.",
   "Other substantial compositions include eQAelt6VLeE's four Root Riders, three Valkyries, five Healers, two Ice Golems and one Druid, and WlWHcFAz7ys's similar four-Root-Rider, three-Valkyrie army. Both carry five Invisibility Spells, Recall and two Overgrowth Spells. Their two-Overgrowth sequencing differs from the default, and no expiration duration is invented.",

@@ -888,7 +888,9 @@
     "warden",
     "duke",
     "funnel_golems",
-    "main_golems"
+    "main_golems",
+    "rage_core",
+    "warden_ability"
    ],
    "steps": [
     {
@@ -1009,6 +1011,33 @@
        "quote": "So we're going to use our meteor golems"
       }
      ]
+    },
+    {
+     "id": "warden_ability",
+     "action": "ability",
+     "what": "Grand Warden",
+     "equipment": "Eternal Tome",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "main",
+     "when": {
+      "after": "rage_entry",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "MUssbWM-qpk",
+       "t": 228.6,
+       "quote": "the rage and the warden's eternal tome"
+      },
+      {
+       "video": "MUssbWM-qpk",
+       "t": 230.2,
+       "quote": "all at the same time to gut all this"
+      }
+     ],
+     "note": "Entry activation follows the source's single Rage; emergency hero activation remains available. Exact same-packet synchronization needs the engine timing repair."
     }
    ],
    "support": 2,
@@ -1149,7 +1178,8 @@
    "name": "Queen opposite the Meteor Golem push; delay her ability",
    "replaces": [
     "queen",
-    "queen_ability"
+    "queen_ability",
+    "warden"
    ],
    "steps": [
     {
@@ -1172,6 +1202,36 @@
      },
      "support": 1,
      "cite": [
+      {
+       "video": "uRJw__PO-Iw",
+       "t": 97.0,
+       "quote": "the archer queen on the opposite side."
+      }
+     ]
+    },
+    {
+     "id": "warden",
+     "action": "deploy",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "apprentice",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "uRJw__PO-Iw",
+       "t": 93.9,
+       "quote": "While the meteor golem is tanking"
+      },
+      {
+       "video": "uRJw__PO-Iw",
+       "t": 95.5,
+       "quote": "through the center of the base, I place"
+      },
       {
        "video": "uRJw__PO-Iw",
        "t": 97.0,
@@ -1263,7 +1323,7 @@
   "t=0 means the stated start of the attack. Citation times are video timestamps, not attack-clock delays. No source supplies a fixed wait for funnel completion. All zero-delay dependencies preserve narrated order without inventing a duration; they do not establish that the funnel has actually finished.",
   "group_inside:main approximates reaching the core and the main army approaching the fallen Dragon Duke. It cannot establish the actual core location, proximity to his fallen position, destruction of an Air Defense or a distracted Monolith. The heavy_fire and defenders_near alternatives approximate the narrated Warden ability conditions without inventing health thresholds.",
   "Totem support is described as repeated, discretionary placement, but no source supplies a casting interval. Consequently no every value is invented. totem_main encodes one supported cast; the remaining Totems have no executable schedule in this object. Additional Dragon Duke revivals in compositions carrying multiple Revive Spells likewise have no invented repeat interval.",
-  "The literal revival anchor is unit:Dragon Duke. The current executor resolves unit anchors only for living units, so this step cannot currently resolve its anchor after dead:Dragon Duke becomes true. The vocabulary also cannot express the source's safe-revival conditions exactly. No guessed corpse coordinates were substituted.",
+  "The revival anchor unit:Dragon Duke resolves his actual corpse in current Rust, as confirmed by the Meteor Golem review. Source-specific safe-revival conditions remain approximate; hero lifecycle handling is separate from anchor resolution. Surplus spells can use fallback.",
   "The Warden-walk and Fireball variants are supported partial substitutions, not complete executable conversions between the source armies. Their inventories, hero rosters and loadouts differ from the default army. The schema provides no variant army field. The two variants with empty steps document distinct plans whose complete deployment sequence cannot be reconstructed without supplying unspoken placements or prerequisites.",
   "The Warden-walk variant uses MUssbWM-qpk's two test Balloons; yBFCuLpbDbU uses one. MUssbWM-qpk deploys the Dragon Duke on the opposite corner and uses Ruin Witches. yBFCuLpbDbU instead uses three Furnaces, a funneling Queen and a King/Royal Champion flank. Their later hero and spell sequences must not be treated as interchangeable.",
   "Fireball sources specify Invisibility setup but do not identify the spell circles. lHLHvW8vFTg budgets four Invisibility Spells; lTp7FjulP8Q and y7npC3rCP3g describe two in particular openings. lHLHvW8vFTg follows Fireball with Earthquakes, but their placement is unspecified. These casts are not assigned invented anchors. The zero-delay Fireball dependency does not reproduce the omitted targeting setup. Ruin Witches belong to lHLHvW8vFTg's composition, not every Fireball composition.",

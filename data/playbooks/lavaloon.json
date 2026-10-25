@@ -591,6 +591,10 @@
    "when": {
     "all": [
      {
+      "after": "ice_block_3",
+      "delay": 0
+     },
+     {
       "after": "duke_ability",
       "delay": 0
      },
@@ -610,6 +614,11 @@
      "video": "l0D7kFeev5g",
      "t": 461.2,
      "quote": "support a little bit here with his ability."
+    },
+    {
+     "video": "l0D7kFeev5g",
+     "t": 464.6,
+     "quote": "going to pop the last ice block so we"
     }
    ]
   },
@@ -2018,7 +2027,7 @@
      "id": "fb_balloons_6",
      "action": "deploy",
      "what": "Balloon",
-     "count": 7,
+     "count": "all",
      "at": "edge:main",
      "group": "main",
      "when": {
@@ -2036,8 +2045,19 @@
        "video": "ahiJ-bgdmSE",
        "t": 158.6,
        "quote": "seven because then they can one-shot any defense with a group of seven."
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 156.0,
+       "quote": "balloons, try to drop them in groups of"
+      },
+      {
+       "video": "ahiJ-bgdmSE",
+       "t": 158.6,
+       "quote": "seven because then they can one-shot any"
       }
-     ]
+     ],
+     "note": "Five seven-Balloon packets use 35 of the source army's 38 Balloons; all uses the remaining three. Variant feasibility checks the complete budget before runtime; a sixth fixed seven cannot rely on clamping."
     },
     {
      "id": "fb_totem",
@@ -2188,17 +2208,17 @@
   "Exactly two relevant lavaloon source playbooks were found. Each complete composition and opening has support 1, so no majority composition or dominant opening exists. The Royal Champion plan is the default tie choice; Fireball and recall has equal support.",
   "Army counts, equipment and pets come from the source descriptions' army links. l0D7kFeev5g states Town Hall 18; ahiJ-bgdmSE does not explicitly state a Town Hall level.",
   "The default source's three trained and two donated Sky Wagons are inventory options. Only one Sky Wagon is deployed; it is normalized into the flat cc map and omitted from ordinary troops.",
-  "The Fireball variant requires replacing the default army and loadouts with this complete composition: {\"troops\":{\"Balloon\":38,\"Minion\":10,\"Ice Golem\":2,\"Ice Hound\":2,\"Headhunter\":1,\"Valkyrie\":1,\"Super Wall Breaker\":2,\"Archer\":2},\"spells\":{\"Invisibility Spell\":3,\"Totem Spell\":1,\"Revive Spell\":1,\"Poison Spell\":1,\"Ice Block Spell\":2,\"Recall Spell\":1},\"cc\":{\"Sky Wagon\":1,\"Ice Hound\":1,\"Inferno Dragon\":1,\"Haste Spell\":2,\"Earthquake Spell\":2},\"heroes\":[\"Archer Queen\",\"Grand Warden\",\"Minion Prince\",\"Dragon Duke\"],\"loadouts\":{\"Archer Queen\":[\"Invisibility Vial\",\"Phoenix\"],\"Grand Warden\":[\"Fireball\",\"Life Gem\",\"Sneezy\"],\"Minion Prince\":[\"Dark Crown\",\"Dark Orb\",\"Greedy Raven\"],\"Dragon Duke\":[\"Revenge Deck\",\"Fire Heart\",\"Angry Jelly\"]}}",
-  "The Fireball source also lists Battle Blimp and Flame Flinger as inventory options without spoken deployment plans. Its additional Archer Queen equipment e16 is unidentified and omitted.",
+  "The Fireball variant requires replacing the default army and loadouts with this complete composition: {\"troops\":{\"Balloon\":38,\"Minion\":10,\"Ice Golem\":2,\"Ice Hound\":2,\"Headhunter\":1,\"Valkyrie\":1,\"Super Wall Breaker\":2,\"Archer\":2},\"spells\":{\"Invisibility Spell\":3,\"Totem Spell\":1,\"Revive Spell\":1,\"Poison Spell\":1,\"Ice Block Spell\":2,\"Recall Spell\":1},\"cc\":{\"Sky Wagon\":1,\"Ice Hound\":1,\"Inferno Dragon\":1,\"Haste Spell\":2,\"Earthquake Spell\":2},\"heroes\":[\"Archer Queen\",\"Grand Warden\",\"Minion Prince\",\"Dragon Duke\"],\"loadouts\":{\"Archer Queen\":[\"Monolith Arrow\",\"Invisibility Vial\",\"Phoenix\"],\"Grand Warden\":[\"Fireball\",\"Life Gem\",\"Sneezy\"],\"Minion Prince\":[\"Dark Crown\",\"Dark Orb\",\"Greedy Raven\"],\"Dragon Duke\":[\"Revenge Deck\",\"Fire Heart\",\"Angry Jelly\"]}}",
+  "The Fireball source ahiJ-bgdmSE also lists Battle Blimp and Flame Flinger as inventory options without spoken deployment plans. Its linked Queen equipment e16 is Monolith Arrow in the local clashking-static-data.json; the full loadout is Monolith Arrow/Invisibility Vial/Phoenix. Phoenix is the pet, not an equipment slot. This restores the decoded source link, not an inferred equipment choice.",
   "Support counts distinct videos describing the operation, not attacks, repeated casts or duplicate quotations within a video. Exact packet sizes and plan-specific actions retain support 1.",
   "No source supplies deployment intervals or Ice Block renewal intervals. All after triggers use delay 0 as required; t 0 means the opening. These preserve stated ordering but cannot reproduce gradual Balloon feeding, waiting for a funnel to finish or successive Ice Blocks expiring. No repeat interval or health percentage has been invented.",
-  "Four Balloons per packet selects one of l0D7kFeev5g's stated three-or-four options; it also allows two for smaller defenses. Two entry Balloons plus seven packets of four use its 30 Balloons. The Fireball variant uses repeated packets of seven; the executor limits its final packet to the three remaining from 38. Packet numbers are scheduling labels derived from the inventory, not narrated deployment times.",
+  "Four Balloons per packet selects one of l0D7kFeev5g's stated three-or-four options; it also allows two for smaller defenses. Two entry Balloons plus seven packets of four use its 30 Balloons. ahiJ-bgdmSE 156.0–158.6 says to drop Balloons in groups of seven. The Fireball variant uses five packets of seven and a final all packet, leaving three from 38; compile-time feasibility no longer relies on runtime clamping. Packet numbers are scheduling labels derived from inventory, not narrated deployment times.",
   "The videos disagree on initial air deployment order: the default sends entry Balloons, an Ice Hound, Minion Prince and Grand Warden; the Fireball source sends Minion Prince, the recalled Warden, an Ice Hound and Balloon packets. Neither order has a majority.",
   "In the default, the Dragon Duke ability before the last Ice Block and Minion Prince ability paired with Haste and Warden ability are particular attacks described by l0D7kFeev5g. These timings have support 1.",
   "heavy_fire approximates defenses targeting Dragon Duke or Archer Queen's forced ability; group_inside approximates the Lalo reaching dangerous coverage, the remaining Revenge Tower or the outside having been cleared before Revive. The vocabulary cannot test those exact buildings being cleared or an ability's firing angle.",
   "The Fireball source's first explanation places Earthquakes before Recall, while its first live attack recalls before Earthquakes. The variant follows the extracted explanation. Sky Wagon is added from its second demonstration, after Minion Prince and before the next Hound and Balloon deployments.",
   "The source does not identify all Invisibility footprints or expose a persistent Fireball-impact anchor. threat:charge is a coarse placeholder for the alternative targets and impact area in the Fireball variant; it cannot guarantee the intended masking or Earthquake coverage.",
-  "Revive is located at unit:Dragon Duke to express the narrated fallen hero's position. The current executor resolves unit anchors only for living attackers, so this location needs corpse-anchor support before the Revive step can execute.",
+  "Revive uses unit:Dragon Duke for the narrated fallen hero. Current Rust resolves his corpse position and can spend surplus spells through fallback, as confirmed in the Lavaloon review. Hero lifecycle handling is separate from corpse positioning.",
   "All source placements described only as here, there or like this are approximated by the available flank, edge, threat or group anchors. The default Sky Wagon uses edge:funnel for the opposite side; exact footprints, compartment boundaries and positions around the outside are unavailable.",
   "defenders:main and defenders_near cannot distinguish Logger from other nearby defenders. Totem is intended for Logger, while Poison is intended for Logger or defending Clan Castle troops; the encoded guard is broader than those narrated targets.",
   "Unsized cleanup deployments and additional Ice Hounds use all remaining inventory. This cannot reproduce the sources' unspecified splits across outside locations or gradual Hound reinforcements. The default chooses the stated Baby Dragon cleanup option and uses remaining Inferno Dragons outside.",

@@ -895,7 +895,10 @@
    "name": "Three-Earthquake opening and opposite Sky Wagon funnel",
    "replaces": [
     "duke",
-    "sky"
+    "sky",
+    "earthquake_opening_first",
+    "earthquake_opening_second",
+    "earthquake_opening_third"
    ],
    "steps": [
     {
@@ -1586,9 +1589,84 @@
    ]
   },
   {
+   "name": "Ice Hound leads the Dragons and Dragon Riders",
+   "replaces": [
+    "hound"
+   ],
+   "steps": [
+    {
+     "id": "hound",
+     "action": "deploy",
+     "what": "Ice Hound",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "sky",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "55I-qks9qdI",
+       "t": 170.6,
+       "quote": "funnels. Using an Ice Hound with the"
+      },
+      {
+       "video": "55I-qks9qdI",
+       "t": 172.6,
+       "quote": "Hydra allows for more tanking early on"
+      },
+      {
+       "video": "55I-qks9qdI",
+       "t": 178.3,
+       "quote": "dragons and dragon riders into the base."
+      },
+      {
+       "video": "55I-qks9qdI",
+       "t": 287.3,
+       "quote": "sure that we're using an Ice Hound to"
+      },
+      {
+       "video": "55I-qks9qdI",
+       "t": 289.4,
+       "quote": "protect our dragons and dragon riders as"
+      }
+     ]
+    }
+   ],
+   "support": 1,
+   "cite": [
+    {
+     "video": "55I-qks9qdI",
+     "t": 170.6,
+     "quote": "funnels. Using an Ice Hound with the"
+    },
+    {
+     "video": "55I-qks9qdI",
+     "t": 172.6,
+     "quote": "Hydra allows for more tanking early on"
+    },
+    {
+     "video": "55I-qks9qdI",
+     "t": 178.3,
+     "quote": "dragons and dragon riders into the base."
+    },
+    {
+     "video": "55I-qks9qdI",
+     "t": 287.3,
+     "quote": "sure that we're using an Ice Hound to"
+    },
+    {
+     "video": "55I-qks9qdI",
+     "t": 289.4,
+     "quote": "protect our dragons and dragon riders as"
+    }
+   ]
+  },
+  {
    "name": "Mass Dragons",
    "replaces": [
-    "hound",
     "dragons",
     "riders"
    ],
@@ -1976,6 +2054,11 @@
        "video": "PY3LIEa1Wck",
        "t": 198.5,
        "quote": "duke shot. Look at that, that's perfect."
+      },
+      {
+       "video": "PY3LIEa1Wck",
+       "t": 201.3,
+       "quote": "I fired it a little bit too quickly. Got"
       }
      ]
     }
@@ -1986,6 +2069,11 @@
      "video": "PY3LIEa1Wck",
      "t": 198.5,
      "quote": "duke shot. Look at that, that's perfect."
+    },
+    {
+     "video": "PY3LIEa1Wck",
+     "t": 201.3,
+     "quote": "I fired it a little bit too quickly. Got"
     }
    ]
   },
@@ -2059,7 +2147,10 @@
     "overgrowth",
     "totem",
     "freeze",
-    "poison"
+    "poison",
+    "earthquake_opening_first",
+    "earthquake_opening_second",
+    "earthquake_opening_third"
    ],
    "steps": [
     {
@@ -2418,10 +2509,12 @@
   "The Flame Flinger variant's approximately 60-second lead comes only from twbdjMD07No; the other Flame Flinger sources give no number. Use that source's Fire Heart/Stun Blaster/Angry Jelly Duke and Flame Flinger inventory. Siege Barracks is an alternative machine, not an additional simultaneous deployment. The Siege Barracks variant replaces the Sky Wagon and requires that source's siege inventory and payload.",
   "The Flame Blower variant uses PY3LIEa1Wck's Flame Blower/Rocket Backpack/Angry Jelly Duke. That source also revises its army to two Overgrowth Spells by removing one Poison and one Freeze. The repeated-Overgrowth variant needs two spells; delay 0 is the required unspecified-delay placeholder because spell expiration has no trigger, and does not reproduce waiting for the first spell to expire.",
   "Sin7pQqHJLo's zapquake variant needs four Earthquake and six Lightning Spells and uses Eternal Tome/Rage Gem Warden. Its Queen and Duke deployment ordering is supplied by _sotzQjtl2A because Sin7pQqHJLo narrates only their abilities. Monolith and Inferno anchors approximate its stated high-value target areas; zero-delay single casts preserve its two-plus-two Earthquake and six-Lightning counts.",
-  "Revive is carried and repeatedly recommended for fallen Duke, but no Revive step is scheduled: this executor resolves unit anchors only for living units, while the vocabulary supplies no fallen-hero anchor. Assigning an edge or group position would invent the corpse's location.",
+  "Revive is carried without a dedicated Revive step in this book. The current Rust executor resolves fallen-hero unit anchors at the corpse and can spend surplus spells through fallback; that behavior does not encode a source-specific revival policy. See the Dragon review's already-known-limitations audit.",
   "Town Hall entry is contested: KHh13uguqf0 recommends an early Town Hall entry after one failure but later succeeds through the Monolith; s5btI1E0LdY changes entry with Sweepers and hero concentrations, while wanC6B7TJyk generally finishes toward the Town Hall and defending heroes. No universal Town Hall-first rule is imposed.",
   "Sources span TH16-TH18, and several have no fixed attacking Town Hall. The representative army comes from a TH18 link. Missing counts, unresolved names such as logger or cake, accidental casts, missed arrows and explicitly criticized ability timings are not promoted to new instructions. No recall, redeploy or manual siege-release timing is established.",
-  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py)."
+  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py).",
+  "The Ice Hound alternative preserves the hound ID and its lead dependency; Mass Dragons replaces only the Dragon/Rider deployments, so a missing Lava Hound does not by itself select mass Dragons. 55I-qks9qdI 170.6–178.3: \"Using an Ice Hound\" provides \"more tanking early on\" for Dragons/Riders.",
+  "PY3LIEa1Wck 198.5–203.2 corrects the apparent praise of the Duke shot: \"I fired it a little bit too quickly.\" The Flame Blower variant's zero-delay placeholder is not a recommendation to fire immediately; equipment-pair prerequisites and aligned-value timing still need engine support."
  ],
  "check": {
   "steps_kept": 17,

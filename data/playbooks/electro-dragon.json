@@ -885,7 +885,7 @@
      "action": "spell",
      "what": "Earthquake Spell",
      "count": 1,
-     "at": "building:swt",
+     "at": "building:st",
      "group": "charge",
      "when": {
       "after": "rocket_lightning_3",
@@ -897,6 +897,11 @@
        "video": "f-qsCT8GujY",
        "t": 53.7,
        "quote": "two earthquakes there, that'll take that out."
+      },
+      {
+       "video": "f-qsCT8GujY",
+       "t": 38.3,
+       "quote": "out spell towers with the rocket"
       }
      ]
     },
@@ -905,7 +910,7 @@
      "action": "spell",
      "what": "Earthquake Spell",
      "count": 1,
-     "at": "building:swt",
+     "at": "building:st",
      "group": "charge",
      "when": {
       "after": "rocket_secondary_eq_1",
@@ -917,6 +922,11 @@
        "video": "f-qsCT8GujY",
        "t": 53.7,
        "quote": "two earthquakes there, that'll take that out."
+      },
+      {
+       "video": "f-qsCT8GujY",
+       "t": 38.3,
+       "quote": "out spell towers with the rocket"
       }
      ]
     },
@@ -1138,7 +1148,8 @@
     "prince",
     "tome",
     "orb",
-    "totem"
+    "totem",
+    "poison_cc_main"
    ],
    "steps": [
     {
@@ -1498,9 +1509,9 @@
   "Support counts distinct videos describing the shared action or rule; equipment and precise timing can differ. Queen-first and Duke-first openings both occur. The Rocket Backpack variant retains Duke-first order. Rapid Warden and Minion Prince deployment is explicitly supplied by XtLqXV-ab6U.",
   "Orb timing follows vbPEc45cUK4's permitted activation together with Eternal Tome. NLIGb_T2Ll0 supplies alignment advice without an activation time. The allowed vocabulary cannot specify directional ability aiming; entry positions and facing must supply the Arrow, Dark Orb and Rocket Backpack alignment.",
   "The default Totem step encodes one placement. group_inside approximates an advancing army, and threat:main approximates a threatening defense in front of it. No source supplies a numerical repeat cadence, so additional moving placements are unscheduled. Freeze casts with unidentified targets are also unscheduled.",
-  "Revive inventories are retained. NLIGb_T2Ll0 normally prioritizes Duke; XtLqXV-ab6U prefers him later; L8NYban_eLc revives him immediately when needed, reserves spells for him when uncertain, and allows other heroes when overkilling. Revive steps are unencoded because unit anchors resolve only living units and the allowed vocabulary has no fallen-hero anchor.",
+  "Revive inventories are retained. NLIGb_T2Ll0 normally prioritizes Duke; XtLqXV-ab6U prefers him later; L8NYban_eLc revives him immediately when needed and allows other heroes when overkilling. Current Rust supports corpse-anchored Revive and surplus-spell fallback, as verified in the family reviews; these source-specific policies remain unencoded.",
   "Spell combinations are expanded into individual casts because the executor casts one spell per step. Zero delays preserve the source counts without inventing spacing. building:revenge approximates the chosen compartment. Use the Siege Barracks Zapquake variant when that compartment offers the described value and the main army can take the Town Hall quickly.",
-  "The Rocket Backpack variant selects the demonstrated Revenge Tower target and a secondary Spell Tower on the crossing. building:swt approximates that selected tower. Duke activation uses the zero-delay fallback for an unstated activation time. Queen is selected from the explicit Electro Dragon-or-hero opposite-flank option.",
+  "The Rocket Backpack variant selects the demonstrated Revenge Tower target and a secondary Spell Tower on the crossing. building:st selects Spell Towers, not Super Wizard Towers: f-qsCT8GujY 36.0–39.8, \"Two earthquake spells will take out spell towers with the rocket backpack.\" Stable identity for the selected crossing still needs bound objectives. Duke activation retains the zero-delay placeholder for an unstated activation time.",
   "The Rage-assisted variant applies when the flank needs help. edge:funnel approximates that flank. The Skeleton target is captioned only as bomb pipe; threat:main is a coarse proxy, and no defense identity is asserted. Exact Electro Dragon spacing is unspecified.",
   "In the ground variant, individual hero order is unspecified; the listed order serializes their deployment. Queen ability is immediate as stated. Super Wall Breaker count all commits the two listed breakers together, although the count per narrated placement is unknown. Wall-break and Totem ordering varies; the encoded order follows the protected-entry narration. heavy_fire approximates the Warden or Champion needing early protection without inventing an HP threshold.",
   "XtLqXV-ab6U also describes a Battle Blimp Town Hall snipe before the main deployment, with Super Yeti and Super Valkyrie, then Minion Prince on the left and Electro Dragons on the right. The vocabulary has no Town Hall-destroyed trigger, so this sequence is retained here without inventing a wait. Its suggested inventory adjustment is one fewer Revive and two Totems.",

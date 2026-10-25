@@ -271,8 +271,20 @@
      "video": "g36z6N8CfTc",
      "t": 35.2,
      "quote": "with my queen fire her shot"
+    },
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 166.3,
+     "quote": "Preferably to get the air defense. Okay,"
+    },
+    {
+     "video": "3O9g9-Gujcw",
+     "t": 167.9,
+     "quote": "that's our number one target. Why do I"
     }
-   ]
+   ],
+   "equipment": "Giant Arrow",
+   "aim": "building:ad"
   },
   {
    "id": "siege_funnel",
@@ -807,7 +819,8 @@
        "t": 176.2,
        "quote": "Activate the queen ability."
       }
-     ]
+     ],
+     "equipment": "Magic Mirror"
     }
    ],
    "support": 2,
@@ -1065,11 +1078,11 @@
   "Baby Dragon counts vary: two in the chosen seven-Yeti army, one in KDalGKrAyL0 and RPYN96e1hvE. RPYN96e1hvE introduces Duke before the Baby Dragon; the other three describe preparing his path first.",
   "The Ice Golem precedes the main Yetis in KDalGKrAyL0 and g36z6N8CfTc; RPYN96e1hvE lists it after Yetis and Druids. Main support troops are deployed rapidly together, with differing internal order. Quantities follow the selected roster, and all means the remaining inventory.",
   "Apprentice Warden and Super Wall Breaker deployment timing comes only from AAawYGfV-AE. The Barbarian, Archer and Valkyrie cleanup counts are known there, but their precise deployment instructions are not; no cleanup steps are invented.",
-  "edge:charge and edge:funnel encode the two narrated flanks, not recovered coordinates. The executor's edge:main cannot reproduce an explicitly spread line exactly using this vocabulary.",
+  "edge:charge and edge:funnel approximate the two narrated flanks. Current Rust spreads the Super Yeti main deployment as a line; the transcript does not recover its exact tiles. The Yeti review verifies line deployment.",
   "inside:Barbarian King approximates middle/deeper/back-end wall access. group_inside:main approximates an advancing push. heavy_fire approximates heavy damage, defense lock-on, or using protection as needed; no health fraction, radius or repeat interval is invented.",
   "Threat-based Freeze and Totem steps combine different narrated targets. Logger, cake and hot candle are not confidently identified; no building key is invented for them. Skeleton uses the explicitly identified Monolith; 3O9g9-Gujcw also allows another distraction when it is too deep.",
   "Ice Blocks should affect Dragon Duke without catching the surrounding army (dMcpXZ_wc8Q, 497.0). Additional Ice Blocks, Freezes and Totems are narrated, but no common repeat interval is stated, so the executable policy does not invent one.",
-  "Revive placement is unresolved. edge:charge approximates the charge-side revival position recorded in Z9mIhJiByqE; it is not an inferred corpse tile. The vocabulary has no fallen-hero anchor. Both revival steps require Duke to be dead; the second also requires the first revive, without an invented delay.",
+  "Current Rust resolves the actual fallen Duke position for Revive, including the legacy edge:charge steps. Both revival steps require a dead Duke; the second also follows the first. Surplus spells can use fallback. The Yeti step audit verifies corpse positioning and surplus Revive behavior.",
   "Poison use is contested: 3O9g9-Gujcw saves it against an Ice-Golem-only CC without Furnace, while g36z6N8CfTc explicitly Poisons emerging Ice Golems. The generic defenders trigger cannot distinguish CC composition; choose that situational policy when selecting the plan.",
   "Early Warden activation is common. AAawYGfV-AE recommends delaying Torch against early defending Ice Golems; dMcpXZ_wc8Q separately waits for the last friendly Ice Golem to die. The delayed-Torch variant represents the friendly case only. 3O9g9-Gujcw describes Torch as active without narrating a manual activation.",
   "Siege variants require matching active siege inventory and, for the later Queen ability, the corresponding Queen loadout. RPYN96e1hvE's introduction says Siege Barracks, while its later narration and army link say Sky Wagon; its two Sky Wagons are inventory, not two deployments. Log Launcher is used by Z9mIhJiByqE and permitted by g36z6N8CfTc. Its precise deployment time is unspecified, so the variant uses the siege setup slot with zero delay.",

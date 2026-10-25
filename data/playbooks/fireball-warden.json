@@ -1031,7 +1031,8 @@
    "replaces": [
     "ice_block",
     "fireball",
-    "furnaces"
+    "furnaces",
+    "warden_invisibility"
    ],
    "steps": [
     {
@@ -1079,6 +1080,37 @@
        "quote": "I will even invest two furnaces because time is always an issue"
       }
      ]
+    },
+    {
+     "id": "warden_invisibility",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "unit_ahead:Grand Warden",
+     "group": "charge",
+     "when": {
+      "after": "rocket_snipe",
+      "delay": 0
+     },
+     "support": 2,
+     "cite": [
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1356.2,
+       "quote": "I would just invis to be honest."
+      },
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 100.7,
+       "quote": "line up your invis"
+      },
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 95.8,
+       "quote": "just actually just fireball this. It's"
+      }
+     ],
+     "note": "Quick Fireball removes Ice Block, so the retained Invisibility must not depend on ice_block. This repairs reachability only; distinct offensive concealment and defensive protection windows remain engine-dependent."
     }
    ],
    "support": 2,
@@ -1273,8 +1305,31 @@
   },
   {
    "name": "Giant Arrow through the opened core",
-   "replaces": [],
+   "replaces": [
+    "queen",
+    "king"
+   ],
    "steps": [
+    {
+     "id": "queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "ice_golem",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1055.8,
+       "quote": "get the core out with the arrow and"
+      }
+     ]
+    },
     {
      "id": "queen_giant_arrow",
      "action": "ability",
@@ -1292,6 +1347,37 @@
        "video": "pTmX2vmv4sc",
        "t": 1055.8,
        "quote": "get the core out with the arrow"
+      }
+     ],
+     "equipment": "Giant Arrow"
+    },
+    {
+     "id": "king",
+     "action": "deploy",
+     "what": "Barbarian King",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "queen_giant_arrow",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1083.9,
+       "quote": "the king in? Do we send the king into"
+      },
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1085.4,
+       "quote": "the core? I don't think so. I will send"
+      },
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1086.8,
+       "quote": "the king in from here. I forgot about"
       }
      ]
     }

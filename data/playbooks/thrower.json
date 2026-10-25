@@ -1764,6 +1764,111 @@
      ]
     },
     {
+     "id": "walk_funnel_thrower",
+     "action": "deploy",
+     "what": "Thrower",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "healers",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 105.1,
+       "quote": "move to other side and use a wizard,"
+      },
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 107.0,
+       "quote": "baby dragon and a thrower to clear the"
+      },
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 113.6,
+       "quote": "use only one thrower for the funnel. We"
+      },
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 115.6,
+       "quote": "need rest of them to destroy the base."
+      }
+     ]
+    },
+    {
+     "id": "walk_funnel_wizard",
+     "action": "deploy",
+     "what": "Wizard",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "walk_funnel_thrower",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 105.1,
+       "quote": "move to other side and use a wizard,"
+      },
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 107.0,
+       "quote": "baby dragon and a thrower to clear the"
+      },
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 113.6,
+       "quote": "use only one thrower for the funnel. We"
+      },
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 115.6,
+       "quote": "need rest of them to destroy the base."
+      }
+     ]
+    },
+    {
+     "id": "walk_funnel_baby",
+     "action": "deploy",
+     "what": "Baby Dragon",
+     "count": 1,
+     "at": "edge:funnel",
+     "group": "funnel",
+     "when": {
+      "after": "walk_funnel_wizard",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 105.1,
+       "quote": "move to other side and use a wizard,"
+      },
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 107.0,
+       "quote": "baby dragon and a thrower to clear the"
+      },
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 113.6,
+       "quote": "use only one thrower for the funnel. We"
+      },
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 115.6,
+       "quote": "need rest of them to destroy the base."
+      }
+     ]
+    },
+    {
      "id": "throwers",
      "action": "deploy",
      "what": "Thrower",
@@ -1771,7 +1876,19 @@
      "at": "edge:main",
      "group": "main",
      "when": {
-      "group_inside": "walk"
+      "all": [
+       {
+        "after": "healers",
+        "delay": 0
+       },
+       {
+        "after": "walk_funnel_baby",
+        "delay": 0
+       },
+       {
+        "group_inside": "walk"
+       }
+      ]
      },
      "support": 3,
      "cite": [
@@ -1789,6 +1906,11 @@
        "video": "uzgXTc3seHY",
        "t": 91.4,
        "quote": "Let's send the throwers in without letting the warden go too deep inside."
+      },
+      {
+       "video": "XTTBlGH4zXE",
+       "t": 98.6,
+       "quote": "furnace, healers and a coco loon to keep"
       }
      ]
     },
@@ -2371,7 +2493,7 @@
   "edge:main represents the narrated deployment behind or alongside the Throwers without inventing tile offsets. edge:charge and edge:funnel are scouted flanks, not fixed compass directions. The chosen entry and Log Launcher angle still need to give the intended route toward the Town Hall.",
   "threat:main is the closest available anchor for an indicated dangerous compartment. heavy_fire:Thrower approximates substantial incoming damage; it cannot identify a Rage Tower activation, an Overgrowth expiry, or the precise area that would split the army. The default Skeleton cast uses the same coarse danger trigger for the Monolith. These approximations may make several protective spells eligible together.",
   "One Ice Block is scripted when Duke takes heavy fire. The remaining donated Ice Blocks are held because no numerical repeat interval is stated. No every interval, HP fraction, Town Hall radius, destruction percentage, or cleanup timestamp has been invented. Totem replacement after a previous Totem dies and spell-effect expiry are not expressible by the listed triggers.",
-  "Revive is retained as a cited policy instead of a knowingly nonfunctional step: the current executor's unit anchor resolves only living units, so unit:Dragon Duke with dead:Dragon Duke cannot locate his fallen position. The vocabulary provides no corpse anchor. No unrelated edge or living group is substituted for the fallen hero. The two default Revive Spells therefore remain unscripted.",
+  "Revive remains a cited policy without dedicated default steps. Current Rust resolves fallen-hero unit anchors at the corpse and can spend the two default Revives through fallback, as confirmed by the Thrower default audit. That fallback does not encode a source-specific revival recipient or timing policy.",
   "Revive priorities are contested: NrogBoJyRVI allows Duke or King, T9LOFmCucwo and dHij_8HI47w revive Queen late, and XTTBlGH4zXE forbids King/Queen revives and chooses Warden when many Throwers remain or Duke when few remain. No numerical definition of many or few is supplied.",
   "The default rear Ruin Witch uses the selected preset's single remaining witch. BMlNYGg37J8 calls it only 'a witch'; its army identifies Ruin Witch, while other cited sources explicitly name Ruin Witches. The primary script does not invent deployment timing for the remaining Archers, Baby Dragon, Balloons, Super Barbarians, or second Super Wall Breaker.",
   "The default Grand Warden has Life Gem and Rage Gem, with no invented active-ability timing. Early Warden activation belongs to gVNS9seD83w's Heroic Torch variant. XTTBlGH4zXE's endgame Warden policy is not the TH15 Root Rider ability policy in BMlNYGg37J8, which is outside this thrower plan.",

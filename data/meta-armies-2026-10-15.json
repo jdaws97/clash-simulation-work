@@ -31,11 +31,28 @@
     {"th": 18, "archetype": "super-bowler-smash", "build": 1, "share": 0.413, "three_star": 0.600, "n": 804,
      "troops": {"Super Wall Breaker": 2, "Ice Golem": 2, "Balloon": 2, "Healer": 5, "Headhunter": 2, "Electro Titan": 1, "Super Bowler": 5, "Apprentice Warden": 1, "Baby Dragon": 1, "Archer": 2},
      "spells": {"Invisibility Spell": 3, "Recall Spell": 1, "Rage Spell": 2, "Totem Spell": 1, "Freeze Spell": 1}, "cc": {"Sky Wagon": 1, "Super Valkyrie": 1, "Super Yeti": 1, "Revive Spell": 1},
-     "heroes": ["Barbarian King", "Archer Queen", "Grand Warden", "Dragon Duke"]},
+     "heroes": ["Barbarian King", "Archer Queen", "Grand Warden", "Dragon Duke"],
+     "loadouts": {
+       "Grand Warden": ["Eternal Tome", "Heroic Torch", "Electro Owl"],
+       "Dragon Duke": ["Electro Fangs", "Fire Heart", "Phoenix"]
+     },
+     "loadout_note": "Equipment adapts the cited Super Bowler strategy to this saved composition; pets retain the previous generic defaults. The TrophyCoach composition and rate do not establish a historical equipment/pet pairing or a rate for this adaptation.",
+     "loadout_cite": [
+       {"video": "gWXxU_sp7Kg", "t": 53.7, "quote": "which is the eternal tome, the heroic"},
+       {"video": "gWXxU_sp7Kg", "t": 55.5, "quote": "torch, and we're going to rage those"},
+       {"video": "QH4OIrEePh4", "t": 183.0, "quote": "electro fangs as it offers chip damage"},
+       {"video": "QH4OIrEePh4", "t": 210.3, "quote": "you can heal him right back up with his"}
+     ]},
     {"th": 18, "archetype": "super-bowler-smash", "build": 3, "share": 0.225, "three_star": 0.638, "n": 439,
      "troops": {"Healer": 5, "Ice Golem": 2, "Super Bowler": 6, "Super Wall Breaker": 2, "Baby Dragon": 1, "Minion": 1, "Archer": 2, "Headhunter": 2, "Apprentice Warden": 1, "Balloon": 2},
      "spells": {"Invisibility Spell": 5, "Freeze Spell": 2, "Revive Spell": 2}, "cc": {"Sky Wagon": 1, "Balloon": 1, "Ice Golem": 2, "Super Valkyrie": 1, "Rage Spell": 2},
-     "heroes": ["Barbarian King", "Archer Queen", "Grand Warden", "Royal Champion"]},
+     "heroes": ["Barbarian King", "Archer Queen", "Grand Warden", "Royal Champion"],
+     "loadouts": {"Grand Warden": ["Eternal Tome", "Heroic Torch", "Electro Owl"]},
+     "loadout_note": "Equipment adapts the cited Super Bowler strategy to this saved composition; Warden's pet retains the previous generic default. The TrophyCoach composition and rate do not establish a historical equipment/pet pairing or a rate for this adaptation. A coherent non-Recall Healer package still requires the separate fitter repair.",
+     "loadout_cite": [
+       {"video": "QH4OIrEePh4", "t": 307.2, "quote": "want to activate your warden's eternal"},
+       {"video": "QH4OIrEePh4", "t": 308.8, "quote": "tome and heroic torch. This is This way"}
+     ]},
     {"th": 18, "archetype": "mass-super-yeti", "build": 1, "share": 0.323, "three_star": 0.563, "n": 348,
      "troops": {"Ice Golem": 2, "Super Wall Breaker": 2, "Super Yeti": 6, "Apprentice Warden": 1, "Druid": 4, "Baby Dragon": 1, "Archer": 2},
      "spells": {"Rage Spell": 2, "Totem Spell": 2, "Revive Spell": 1}, "cc": {"Troop Launcher": 1, "Super Valkyrie": 1, "Super Yeti": 1, "Ice Block Spell": 2, "Totem Spell": 1},

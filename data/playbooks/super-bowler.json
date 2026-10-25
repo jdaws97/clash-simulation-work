@@ -2354,7 +2354,8 @@
   {
    "name": "Log Launcher entry for Invisibility Towers or failed wall access",
    "replaces": [
-    "siege"
+    "siege",
+    "warden"
    ],
    "steps": [
     {
@@ -2384,6 +2385,26 @@
        "video": "h-6DBh45ozk",
        "t": 295,
        "quote": "to trigger the invisibility towers. That"
+      }
+     ]
+    },
+    {
+     "id": "warden",
+     "action": "deploy",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "siege",
+      "delay": 0
+     },
+     "support": 1,
+     "cite": [
+      {
+       "video": "NC_E4SvSb_E",
+       "t": 639.4,
+       "quote": "this log launcher. Boom. Warden. Okay."
       }
      ]
     }

@@ -1505,7 +1505,8 @@
   {
    "name": "Log Launcher hero dive",
    "replaces": [
-    "flinger"
+    "flinger",
+    "log_launcher_hero_entry"
    ],
    "steps": [
     {
@@ -1970,7 +1971,10 @@
   {
    "name": "Three Earthquakes before Rocket Backpack",
    "replaces": [
-    "duke_backpack"
+    "duke_backpack",
+    "cc_fireball_finish_quake",
+    "rage_tower_finish_quake_1",
+    "rage_tower_finish_quake_2"
    ],
    "steps": [
     {
@@ -2147,7 +2151,9 @@
   },
   {
    "name": "One Super Minion to accelerate a lengthy Warden charge",
-   "replaces": [],
+   "replaces": [
+    "super_minion_walk_support"
+   ],
    "steps": [
     {
      "id": "charge_super_minion",
