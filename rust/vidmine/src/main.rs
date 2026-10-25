@@ -1,5 +1,8 @@
+mod appearance;
 mod audit;
+mod camera;
 mod extract;
+mod grid;
 mod icons;
 mod identity;
 mod identity_review;
@@ -11,7 +14,10 @@ mod positions;
 mod probe;
 mod replay;
 mod review;
+mod spatial;
+mod spatial_review;
 mod timing;
+mod townhall;
 mod video;
 
 use image::{Image, Mask, Rect};
@@ -89,6 +95,72 @@ fn run() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let input = || argument(&args, 2, "video or directory").map(Path::new);
     match args.get(1).map(String::as_str) {
+        Some("spatial-prepare") => {
+            let out = argument(&args, 4, "output directory after --out")?;
+            if argument(&args, 3, "--out")? != "--out" {
+                return Err(io::Error::other("spatial-prepare VIDEO --out DIR"));
+            }
+            spatial::prepare(input()?, Path::new(out))
+        }
+        Some("spatial-saved-review") => spatial::saved_review(input()?),
+        Some("spatial") => {
+            let option = |name: &str| -> io::Result<&str> {
+                args.iter()
+                    .position(|a| a == name)
+                    .and_then(|i| args.get(i + 1))
+                    .map(String::as_str)
+                    .ok_or_else(|| io::Error::other(format!("spatial requires {name}")))
+            };
+            spatial::run(
+                input()?,
+                Path::new(option("--out")?),
+                Path::new(option("--labels")?),
+                Path::new(TEMPLATE_DIR),
+                args.iter().any(|a| a == "--preview"),
+                args.iter()
+                    .position(|a| a == "--attack")
+                    .and_then(|i| args.get(i + 1))
+                    .map(|s| s.parse::<usize>().map_err(io::Error::other))
+                    .transpose()?,
+            )
+        }
+        Some("spatial-learn") => spatial::learn(input()?, Path::new(TEMPLATE_DIR)),
+        Some("spatial-keyframes") => spatial::keyframes(
+            input()?,
+            Path::new(argument(&args, 3, "grid labels")?),
+            Path::new(TEMPLATE_DIR),
+        ),
+        Some("spatial-score") => spatial_review::score(
+            input()?,
+            Path::new(argument(&args, 3, "deployment truth TSV")?),
+            Path::new(argument(&args, 4, "score destination")?),
+        ),
+        Some("spatial-score-th") => spatial_review::score_townhalls(
+            input()?,
+            Path::new(argument(&args, 3, "Town Hall truth TSV")?),
+            Path::new(argument(&args, 4, "score destination")?),
+        ),
+        Some("spatial-verify") => spatial_review::verify(input()?, args.get(3).map(Path::new)),
+        Some("spatial-summary") => spatial_review::overview(input()?),
+        Some("spatial-camera-check") => spatial::camera_check(
+            input()?,
+            timestamp(argument(&args, 3, "key time")?)?,
+            timestamp(argument(&args, 4, "frame time")?)?,
+        ),
+        Some("spatial-reposition") => spatial::reposition(
+            input()?,
+            Path::new(argument(&args, 3, "M4 output directory")?),
+            Path::new(argument(&args, 4, "regions JSON")?),
+        ),
+        Some("spatial-spacing") => {
+            spatial::spacing(input()?, Path::new(argument(&args, 3, "grid labels")?))
+        }
+        Some("spatial-refresh") => spatial::refresh(
+            input()?,
+            Path::new(argument(&args, 3, "M4 output directory")?),
+            Path::new(argument(&args, 4, "grid labels")?),
+            Path::new(TEMPLATE_DIR),
+        ),
         Some("identity-data") => identity::inspect_data(),
         Some("identity-caps") => identity::caps(input()?),
         Some("league-audit") => league::audit(input()?),
@@ -205,6 +277,11 @@ fn run() -> io::Result<()> {
         Some("icon-cluster") => icons::cluster(input()?),
         Some("icon-learn") => icons::learn(input()?, Path::new(TEMPLATE_DIR)),
         Some("icons") => icons::update(input()?, Path::new(TEMPLATE_DIR)),
+        Some("cleanup-m4") => match fs::remove_dir_all(spatial::WORK) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(error),
+        },
         Some("cleanup") => match fs::remove_dir_all("/tmp/vidmine-work") {
             Ok(()) => Ok(()),
             Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
@@ -232,13 +309,13 @@ fn run() -> io::Result<()> {
         Some("sample") => {
             let t = timestamp(argument(&args, 3, "time")?)?;
             let out = Path::new(argument(&args, 4, "temporary PPM path")?);
-            if !out.starts_with("/tmp/vidmine-work")
+            if (!out.starts_with(spatial::WORK) && !out.starts_with("/tmp/vidmine-work"))
                 || out
                     .components()
                     .any(|c| c == std::path::Component::ParentDir)
             {
                 return Err(io::Error::other(
-                    "sample frames must stay under /tmp/vidmine-work/",
+                    "sample frames must stay under a vidmine scratch directory",
                 ));
             }
             fs::create_dir_all(out.parent().unwrap())?;
@@ -393,6 +470,20 @@ fn run() -> io::Result<()> {
             ))
         }
         Some("--help" | "-h") => {
+            println!(concat!(
+                "vidmine spatial VIDEO --out DIR --labels GRID_TSV [--preview] [--attack N]\n",
+                "vidmine spatial-prepare VIDEO --out DIR\n",
+                "vidmine spatial-spacing|spatial-keyframes VIDEO GRID_TSV\n",
+                "vidmine spatial-refresh VIDEO DIR GRID_TSV\n",
+                "vidmine spatial-reposition VIDEO DIR REGIONS_JSON\n",
+                "vidmine spatial-score|spatial-score-th ROOT TRUTH_TSV SCORE_DIR\n",
+                "vidmine spatial-verify ROOT [ORIGINAL_ROOT]\n",
+                "vidmine spatial-summary ROOT\n",
+                "vidmine spatial-learn SPRITE_MANIFEST_TSV\n",
+                "vidmine spatial-camera-check VIDEO KEY_TIME FRAME_TIME\n",
+                "vidmine spatial-saved-review ROOT\n",
+                "vidmine cleanup-m4"
+            ));
             println!("vidmine probe VIDEO [--out DIR]\nvidmine extract VIDEO --out DIR\nvidmine positions VIDEO --out DIR\nvidmine resegment DIR\nvidmine icons DIR\nvidmine timing DIR\nvidmine verify DIR\nvidmine summary DIR\nvidmine audit VIDEO --out DIR\nvidmine score DIR\nvidmine icon-cluster DIR\nvidmine icon-learn DIR\nvidmine icon-audit DIR\nvidmine label-hud|label-icons|label-positions DIR\nvidmine score-positions DIR\nvidmine cleanup\nvidmine bootstrap VIDEO clock|damage|count|counts TIME...\nvidmine bootstrap-box VIDEO KIND X Y W H TIME...\nvidmine label-crop VIDEO NAME TIME X Y W H\nvidmine sample VIDEO TIME /tmp/vidmine-work/frame.ppm");
             println!(concat!(
                 "vidmine identity DIR\n",

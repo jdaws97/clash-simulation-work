@@ -1,0 +1,11 @@
+source	image_or_video	video_t	a	b	center_x	center_y	level
+WRFPgMQfRmI-a01-prep	WRFPgMQfRmI.mp4	6.8	12.2845	9.1305	788	358	18
+55LNGorvOqw-a01-prep	55LNGorvOqw.mp4	3	10.7812	8.1068	841	199	18
+S50ZlHsVhfQ-a01	web-videos/S50ZlHsVhfQ/attack-01-keyframe.jpg	na	11.5	8.625	573	343	17
+MtZsw40-Sr0-a01	web-videos/MtZsw40-Sr0/attack-01-keyframe.jpg	na	9	6.75	639	265	17
+local-web-base-a	web-bases/a.png	na	20	15	1000	444	16
+local-web-base-b	web-bases/b.png	na	20	15	1034	505	16
+WRFPgMQfRmI-a02-prep	WRFPgMQfRmI.mp4	188	15.6428	11.5385	558	370	18
+WRFPgMQfRmI-a03-prep	WRFPgMQfRmI.mp4	384.6	13.8915	10.3153	665	270	18
+WRFPgMQfRmI-a06-prep	WRFPgMQfRmI.mp4	923.4	17.7935	13.0118	850	360	18
+WRFPgMQfRmI-a10-prep	WRFPgMQfRmI.mp4	1657.4	13.2231	9.88	702	278	18

@@ -1,4 +1,4 @@
-# vidmine M3
+# vidmine M4
 
 A std-only Rust CLI for inspecting Clash of Clans video HUDs with the installed
 `ffmpeg` and `ffprobe`. No Rust dependencies, Python, external OCR, model/tool
@@ -260,9 +260,9 @@ friendly, older ranked UI, or another mode. Similarity/absence scores are not
 calibrated probabilities. `league_observations` preserves per-frame decisions.
 Cropped replays explicitly leave the field unavailable.
 
-`defender_th` remains null with `defender_th_reason`: the keyframes lack a
-reviewed grid scale/origin and a labeled, scale-normalized TH sprite library.
-No automatic sprite accuracy or TH18 confirmation is claimed.
+The M3 pass leaves `defender_th` null with `defender_th_reason`. The optional M4
+pass below can replace that abstention using a reviewed spatial reference and
+the small scale-normalized sprite library. Run M4 after M3.
 
 ## M3 template development and review
 
@@ -298,3 +298,124 @@ Recreating temporary source PPMs requires the caller's videos: use `sample VIDEO
 30 /tmp/vidmine-work/m3/ID.ppm`, plus n5 at 48.2s. Manifests also reference preserved
 M1 crops and frozen M3 review crops. Templates retain only small masks/RGB
 features, never whole source frames.
+
+## M4: camera, village grid, deployment candidates and defender sprites
+
+Build with `CARGO_TARGET_DIR=/tmp/vidmine-target-m4`, offline. M4 reads existing
+attack intervals; it does not download videos or change the v29 engine. Its
+frames and review sheets stay under `/tmp/vidmine-work-m4`. No new full frames
+are saved in the output directories. `spatial_keyframe` records the selected
+preparation reference time, dimensions and RGB fingerprint. The original saved
+`keyframe` and M3 evidence remain intact. Camera transforms and `grid_fit` refer
+to **spatial_keyframe**, which may differ from that original JPEG.
+
+```sh
+. ~/.cargo/env
+export CARGO_TARGET_DIR=/tmp/vidmine-target-m4
+cargo build --release --offline --manifest-path rust/vidmine/Cargo.toml
+cargo test --offline --manifest-path rust/vidmine/Cargo.toml
+cargo fmt --check --manifest-path rust/vidmine/Cargo.toml
+VIDMINE=/tmp/vidmine-target-m4/release/vidmine
+
+# OUT is the existing per-video output directory; VIDEO stays read-only.
+"$VIDMINE" spatial-prepare "$VIDEO" --out "$OUT"
+# Inspect the temporary key candidates and choose a preparation reference.
+"$VIDMINE" spatial-spacing "$VIDEO" "$GRID_LABELS" > "$OUT/m4-spacing-review.tsv"
+# Review the proposed wall spacing and fit the boundary origin before running.
+"$VIDMINE" spatial "$VIDEO" --out "$OUT" --labels "$GRID_LABELS"
+"$VIDMINE" spatial-verify "$OUT"
+"$VIDMINE" spatial-summary "$OUTPUT_ROOT" > "$OUTPUT_ROOT/m4-summary.tsv"
+"$VIDMINE" spatial-score "$OUTPUT_ROOT" "$DEPLOYMENT_TRUTH" "$OUTPUT_ROOT"
+"$VIDMINE" spatial-score-th "$OUTPUT_ROOT" "$TH_TRUTH" "$OUTPUT_ROOT"
+"$VIDMINE" cleanup-m4
+```
+
+Grid labels are tab-separated, with a header and one row per attack:
+`attack video_t cx top a b wall_pairs`. The last field is optional. The projection
+is `screen_x=cx+(x-y)*a`, `screen_y=top+(x+y)*b`, over 44×44 tiles, with x down-right
+and y down-left. Tile positions are continuous and never clamped to the village;
+units can appear outside its boundary. `spatial-spacing` finds compact yellow
+wall-cap components and the dominant diagonal displacement between neighboring
+caps. Its pair count is a diagnostic, not proof that every component is a wall.
+It abstains with insufficient support. It preserves the initial projected map
+center when proposing a new scale. Inspect the result before adopting it.
+
+The origin is fitted manually from the visible boundary and scenery. Clipped
+corners require extrapolation. This is a **provisional grid fit**, not an
+independently verified absolute tile origin. The least-squares landmark fitter
+and forward/inverse projection are available in `grid.rs`; parameter manifests
+do not invent observed landmarks or a zero residual. Their landmark RMS is null.
+
+The camera pass tracks textured patches inside the village, excludes the HUD
+and preparation buttons, matches patches through an averaged image pyramid,
+fits scale and translation with deterministic pair consensus, and refines the
+inliers with least squares. One-second preparation samples bridge initial zooms;
+battle samples occur every two seconds plus the event brackets. Adjacent fits
+are composed back to the reference. A direct reference search attempts recovery
+after tracking loss. Saved samples include actual correspondences, reference
+times, inlier counts, photometric error and residuals. They have no interpolated
+trajectory. A good residual does not independently certify camera accuracy;
+composition can drift, repeated roofs can match incorrectly, and battle damage
+can leave insufficient static evidence.
+
+Each event is examined at -0.65 and +0.15 seconds. A separate local camera fit
+registers the two frames, so a lost reference track need not erase screen
+proposals. Color novelty in a small neighborhood suppresses ordinary sprite
+motion and revealed ground. Changed components are ranked with color cues and,
+for known troops, a village-edge prior. Up to five alternatives are retained.
+Unknown identities receive no troop-only edge prior. This does not read a touch
+coordinate or reliably distinguish a new unit from combat effects. Multiple
+consumed units retain one group proposal and unassociated alternatives;
+`individual_unit_positions_resolved` remains false. A failed local fit yields
+no position; a failed reference fit yields screen-only proposals with null tiles.
+All proposals remain `accepted: false`.
+
+The sprite library contains ten manually reviewed 20×28 RGB features: two TH16,
+two TH17 and six TH18 examples. See
+[templates/townhalls/README.md](templates/townhalls/README.md). Features are sampled
+in fitted tile units. A full reference-frame search combines color difference
+and normalized correlation, refines spatially separated candidates at nearby
+scales, and abstains on weak matches or a small inter-class margin. It supports
+only TH16–18. Its scores are not probabilities. Lower THs, different skins,
+obscured roofs and unfamiliar renderings can fail. No video title supplies a
+prediction. Template membership is separate from validation membership.
+The error cutoff 0.22 and margin cutoff 0.008 were selected during development
+using the inspected references; non-template measurements are still not held out.
+
+Deployment truth has columns `video attack event x_truth y_truth visible note`,
+with explicit tab separators. `yes` requires an identifiable sprite/group/effect
+center in the +0.15s frame, `ambiguous` excludes an unidentifiable appearance,
+`no_event` records a separately reviewed upstream event problem, and blank or
+`unlabeled` means no truth. Null predictions on visible labels count as errors.
+Pixel and conditional tile thresholds use **all visible labels** as their
+denominator. Means and medians describe only available predictions; missing
+counts are reported alongside them. Tile error reprojects the manual pixel
+center through the same fitted grid and camera. It measures conditional
+localization error, **not independent absolute tile accuracy**. Sprite elevation,
+movement since the touch, grouped units and the manual center uncertainty remain
+unmodeled.
+
+TH truth has columns `video attack th_truth training note`. `na` excludes a roof
+that cannot be identified. Template-source keyframes are reported separately as
+resubstitution. Other labeled keyframes are development measurements; template
+and parameter selection were informed by this review. TH16 and TH17 library
+examples do not establish held-out accuracy for those classes.
+
+`spatial --preview` writes a temporary pending result beneath the fixed scratch
+root while reading the existing output tree. `--attack N` limits a diagnostic
+run. Review helpers include `spatial-keyframes VIDEO GRID_LABELS`,
+`spatial-camera-check VIDEO KEY_TIME FRAME_TIME`, and `spatial-saved-review ROOT`.
+After a reviewed spacing correction, `spatial-refresh VIDEO OUT GRID_LABELS`
+updates grid/TH evidence without changing the reference time or trajectory;
+then `spatial-reposition VIDEO OUT REGIONS_JSON` remaps event proposals. The
+latter can also rerun local appearance detection without rebuilding every camera
+sample. `spatial-verify ANALYSIS_ROOT ORIGINAL_ROOT` additionally checks that M4
+preserved the original HUD, army, timing, keyframe and event fields.
+
+M2 `positions` and M3 `identity` can replace spatial/defender fields. Re-run M4
+when applying those older passes afterward. Synthetic tests cover projection,
+wall pitch, image registration with fixed HUD content, transformed appearance
+changes, scoring abstentions and malformed truth. They are not real-game
+calibration. The output report records the separate hand-check measurements and
+limitations; this milestone does not establish reliable automatic deployment
+reconstruction.
