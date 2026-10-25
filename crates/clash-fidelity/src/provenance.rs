@@ -95,7 +95,7 @@ pub fn binding(root: &Path, calibration: &Path, report: Option<&Path>) -> Result
             format!("report-{}", calibration.file_name().unwrap_or_default().to_string_lossy()),
         ));
         candidates.push(calibration.with_extension("report.json"));
-        for directory in [root.join("data"), root.join("output/overnight")] {
+        for directory in [root.join("data")] {
             if let Ok(entries) = std::fs::read_dir(directory) {
                 let mut paths: Vec<_> = entries
                     .flatten()

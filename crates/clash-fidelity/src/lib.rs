@@ -52,10 +52,8 @@ impl Arguments {
             "--monotonic-cap",
             "--exclude-fitted",
             "--techniques",
-            "--reference-cv2",
             "--refit",
             "--full-scout",
-            "--archive-cv2",
         ];
         let valued = [
             "--root",
@@ -95,6 +93,9 @@ impl Arguments {
             "--tolerance",
         ];
         while let Some(argument) = args.next() {
+            if ["--reference-cv2", "--archive-cv2", "--python"].contains(&argument.as_str()) {
+                return Err(format!("{argument} is retired; use native CV and --reference FILE for an explicit saved metrics comparison"));
+            }
             if boolean.contains(&argument.as_str()) {
                 flags.insert(argument);
             } else if valued.contains(&argument.as_str()) {
@@ -370,9 +371,6 @@ pub fn run(arguments: Vec<String>) -> Result<(), String> {
 
 fn export_jobs(args: &Arguments, compiler: &Compiler<'_>) -> Result<Json, String> {
     let settings = args.settings(false)?;
-    if args.flag("--archive-cv2") && settings.attacker != "generic" {
-        return Err("--archive-cv2 exports generic plans only; historical playbooks require their historical compiler and books".to_owned());
-    }
     let observations = read_observations(args, false)?.0;
     let strength = replay::strengths(&args.root, &args.calibration())?;
     let mut layouts = Vec::new();
@@ -396,11 +394,8 @@ fn export_jobs(args: &Arguments, compiler: &Compiler<'_>) -> Result<Json, String
                 );
                 let angle =
                     2.0 * std::f64::consts::PI * side as f64 / settings.angles as f64 + 0.21;
-                let mut prepared =
+                let prepared =
                     replay::plan(compiler, &row.build, angle, seed, value, &settings.attacker)?;
-                if args.flag("--archive-cv2") {
-                    remove(&mut prepared, "warden_mode");
-                }
                 plans.push(prepared);
                 jobs.push(obj([
                     ("layout", num(layout_index as f64)),
@@ -426,4 +421,20 @@ fn emit(args: &Arguments, output: &Json) -> Result<(), String> {
         println!("{}", encode(output));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn retired_reference_modes_fail_before_loading_inputs() {
+        for flag in ["--reference-cv2", "--archive-cv2", "--python"] {
+            let error = Arguments::parse(vec!["cv".to_owned(), flag.to_owned()])
+                .err()
+                .unwrap();
+            assert!(error.contains("retired"));
+            assert!(error.contains("--reference FILE"));
+        }
+    }
 }

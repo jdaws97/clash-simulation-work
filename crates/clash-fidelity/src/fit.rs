@@ -306,7 +306,7 @@ pub fn calibrate(
     let extras = [prior, log, history];
     let inputs = provenance::fingerprint(root, &extras)?;
     let ids: BTreeSet<_> = rows.iter().map(|row| row.id.clone()).collect();
-    let python_ids = format!(
+    let archived_ids = format!(
         "[{}]",
         ids.iter()
             .map(|id| ascii_string(id))
@@ -316,7 +316,7 @@ pub fn calibrate(
     let provenance = obj([
         ("engine", string("rust")),
         ("calibration_report", string(report_path.to_string_lossy())),
-        ("battle_ids_sha256", string(sha256(python_ids.as_bytes()))),
+        ("battle_ids_sha256", string(sha256(archived_ids.as_bytes()))),
         ("prior_calibration_sha256", string(file_hash(prior)?)),
         ("source_hashes", inputs.clone()),
     ]);
