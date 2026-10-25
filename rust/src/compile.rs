@@ -194,19 +194,7 @@ impl<'a> Compiler<'a> {
             }
         }
         apply_overrides(&mut steps, &options.overrides)?;
-        // output/research/usage/grand-warden-walk.md: Healers support a ground Warden.
-        // https://clashofclans.fandom.com/wiki/Grand_Warden
-        if number(&inventory, "Healer", 0.0) > 0.0 && steps.iter().any(|step| {
-            text(step, "action", "") == "deploy" && text(step, "what", "") == "Healer"
-                && step.get("count") != Some(&Json::Num(0.0))
-                && (matches!(text(step, "at", ""), "unit:Grand Warden" | "unit_ahead:Grand Warden")
-                || steps.iter().any(|warden| {
-                text(warden, "action", "") == "deploy" && text(warden, "what", "") == "Grand Warden"
-                    && text(warden, "group", "main") == text(step, "group", "main")
-                    && warden.get("at") == step.get("at") && text(warden, "at", "").starts_with("edge:")
-                    && follows(&field(step, "when"), text(warden, "id", ""), &steps, &[])
-            }))
-        }) {
+        if warden_walk(&steps, number(&inventory, "Healer", 0.0) > 0.0) {
             put(&mut plan, "ground", Json::Bool(true));
         }
         put(&mut plan, "inventory", inventory);
@@ -900,6 +888,34 @@ pub fn apply_overrides(steps: &mut [Json], overrides: &Json) -> Result<(), Strin
         }
     }
     Ok(())
+}
+
+// playbook.py:warden_walk: compilation and learned installation share this rule.
+// output/research/usage/grand-warden-walk.md: Healers require ground mode.
+// https://clashofclans.fandom.com/wiki/Grand_Warden
+pub fn warden_walk(steps: &[Json], has_healers: bool) -> bool {
+    has_healers
+        && steps.iter().any(|healer| {
+            text(healer, "action", "") == "deploy"
+                && text(healer, "what", "") == "Healer"
+                && healer.get("count") != Some(&Json::Num(0.0))
+                && (matches!(
+                    text(healer, "at", ""),
+                    "unit:Grand Warden" | "unit_ahead:Grand Warden"
+                ) || steps.iter().any(|warden| {
+                    text(warden, "action", "") == "deploy"
+                        && text(warden, "what", "") == "Grand Warden"
+                        && text(warden, "group", "main") == text(healer, "group", "main")
+                        && warden.get("at") == healer.get("at")
+                        && text(warden, "at", "").starts_with("edge:")
+                        && follows(
+                            &field(healer, "when"),
+                            text(warden, "id", ""),
+                            steps,
+                            &[],
+                        )
+                }))
+        })
 }
 
 fn follows(trigger: &Json, previous: &str, steps: &[Json], seen: &[String]) -> bool {

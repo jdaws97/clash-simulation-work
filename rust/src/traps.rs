@@ -38,10 +38,9 @@ pub fn raw(battle: &Battle, name: &str, key: &str, default: Option<f64>) -> Opti
 // traps.py:114-123.
 pub fn housing(unit: &Unit) -> i64 {
     if unit.name_id == Name::Totem {
-        // output/research/usage/spring-trap.md: post-August interception is
-        // unresolved; retain legacy selection separately from ejection immunity.
-        // https://clashofclans.fandom.com/wiki/Totem_Spell
-        return 20;
+        // output/research/usage/totem-spell.md:36; August fixed 20 to 1 housing.
+        // https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/
+        return 1;
     }
     if unit.is_hero {
         return 25;
@@ -351,15 +350,12 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
             let unit = battle.unit(target);
             let special =
                 unit.is_hero || matches!(unit.kind, Tag::Pet | Tag::Siege | Tag::SiegeIdle);
-            // output/research/usage/totem-spell.md: traps can damage Totems,
-            // but displacement cannot move them; one housing is not springability.
-            // https://clash-of-clans.1337wiki.com/totem-spell/
-            if unit.name_id != Name::Totem
-                && !special
-                && 0 < unit.housing
-                && unit.housing as f64 <= tr.extra.capacity
-            {
-                let housing = unit.housing;
+            // output/research/usage/spring-trap.md; verify/c1.out #5 corrects immunity:
+            // springs can eject Totems when another troop triggers the trap.
+            // https://clashofclans.fandom.com/wiki/Totem_Spell
+            // https://www.mumuplayer.com/blog/clash-of-clans-th18-totem-spell.html
+            if !special && 0 < weight && weight as f64 <= tr.extra.capacity {
+                let housing = weight;
                 if let Some((_, total)) = battle
                     .kills_by_source
                     .iter_mut()

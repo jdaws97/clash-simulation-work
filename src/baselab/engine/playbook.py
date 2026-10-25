@@ -1955,6 +1955,52 @@ def apply_overrides(steps: list, overrides: dict | None) -> None:
                 raise ValueError(f"unknown override field {k}")
 
 
+def warden_walk(steps, has_healers):
+    # output/research/usage/grand-warden-walk.md: Healers require ground mode.
+    # https://clashofclans.fandom.com/wiki/Grand_Warden
+    by_id = {step["id"]: step for step in steps}
+
+    def follows(trigger, previous, seen=()):
+        if not isinstance(trigger, dict):
+            return False
+        if "t" in trigger:
+            start = by_id[previous].get("when") or {}
+            return "t" in start and trigger["t"] >= start["t"]
+        if "after" in trigger:
+            reference = trigger["after"]
+            if reference == previous:
+                return True
+            if reference in seen or reference not in by_id:
+                return False
+            return follows(by_id[reference].get("when"), previous, (*seen, reference))
+        if "all" in trigger:
+            return any(follows(part, previous, seen) for part in trigger["all"])
+        if "any" in trigger:
+            return bool(trigger["any"]) and all(
+                follows(part, previous, seen) for part in trigger["any"]
+            )
+        return False
+
+    return has_healers and any(
+        step["action"] == "deploy"
+        and step.get("what") == "Healer"
+        and step.get("count", "all") != 0
+        and (
+            step.get("at") in ("unit:Grand Warden", "unit_ahead:Grand Warden")
+            or any(
+                warden["action"] == "deploy"
+                and warden.get("what") == "Grand Warden"
+                and warden.get("group", "main") == step.get("group", "main")
+                and warden.get("at") == step.get("at")
+                and warden.get("at", "").startswith("edge:")
+                and follows(step.get("when"), warden["id"])
+                for warden in steps
+            )
+        )
+        for step in steps
+    )
+
+
 def from_playbook(
     pb: dict,
     angle: float = 0.0,
@@ -2088,51 +2134,7 @@ def from_playbook(
                     }
                 )
     apply_overrides(plan.steps, overrides)
-    # Wiki: Healer, cannot heal air units; a Warden walk with attached Healers
-    # therefore uses ground mode, regardless of the rest of this army.
-    by_id = {st["id"]: st for st in plan.steps}
-
-    def follows(trigger, previous, seen=()):
-        if not isinstance(trigger, dict):
-            return False
-        if "t" in trigger:
-            start = by_id[previous].get("when") or {}
-            return "t" in start and trigger["t"] >= start["t"]
-        if "after" in trigger:
-            reference = trigger["after"]
-            if reference == previous:
-                return True
-            if reference in seen or reference not in by_id:
-                return False
-            return follows(by_id[reference].get("when"), previous, (*seen, reference))
-        if "all" in trigger:
-            return any(follows(part, previous, seen) for part in trigger["all"])
-        if "any" in trigger:
-            return bool(trigger["any"]) and all(
-                follows(part, previous, seen) for part in trigger["any"]
-            )
-        return False
-
-    # output/research/usage/grand-warden-walk.md: Healers support a ground Warden.
-    # https://clashofclans.fandom.com/wiki/Grand_Warden
-    if plan.inventory.get("Healer", 0) > 0 and any(
-        st["action"] == "deploy"
-        and st.get("what") == "Healer"
-        and (
-            st.get("at") in ("unit:Grand Warden", "unit_ahead:Grand Warden")
-            or any(
-                w["action"] == "deploy"
-                and w.get("what") == "Grand Warden"
-                and w.get("group", "main") == st.get("group", "main")
-                and w.get("at") == st.get("at")
-                and w.get("at", "").startswith("edge:")
-                and follows(st.get("when"), w["id"])
-                for w in plan.steps
-            )
-        )
-        and st.get("count", "all") != 0
-        for st in plan.steps
-    ):
+    if warden_walk(plan.steps, plan.inventory.get("Healer", 0) > 0):
         plan.ground = True
     plan.flank_offset, plan.charge_side = flank_offset, charge_side
     return plan

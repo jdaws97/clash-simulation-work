@@ -938,6 +938,23 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
             w
         }
         "scatter" => {
+            // registry.json / wiki Scattershot supercharge rows retain the
+            // base cadence; ClashKing exports only integer-level intervals.
+            let cadence_level = match &level {
+                Level::Int(_) => level.clone(),
+                Level::Text(_) => Level::Int(
+                    catalog.stats.record(&name)
+                        .at("levels")
+                        .arr()
+                        .iter()
+                        .filter_map(|row| match row.at("level") {
+                            Json::Num(_) => Some(row.at("level").i64()),
+                            _ => None,
+                        })
+                        .max()
+                        .expect("integer Scattershot level"),
+                ),
+            };
             let mut w = weapon(
                 building,
                 "scatter",
@@ -946,7 +963,7 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
                 3.0,
                 catalog.resolved
                     .at("scatter_intervals")
-                    .at(&level.to_string())
+                    .at(&cadence_level.to_string())
                     .f64(),
                 s(&["Damage per Shot*"], Some(576.0)),
             );

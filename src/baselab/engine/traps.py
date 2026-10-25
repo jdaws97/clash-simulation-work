@@ -131,12 +131,9 @@ def make_trap(battle, tp) -> Trap:
 
 def _housing(u):
     if u.name == "Totem":
-        # Legacy spring selection weight (Characters.csv Totem.HousingSpace=20).
-        # output/research/usage/spring-trap.md: post-August interception is
-        # unresolved; retain selection separately from ejection immunity.
-        # https://clashofclans.fandom.com/wiki/Totem_Spell
-
-        return 20
+        # output/research/usage/totem-spell.md:36; August fixed 20 to 1 housing.
+        # https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/
+        return 1
     if u.is_hero:
         return 25  # game data v18.200.9: Heroes.csv HousingSpace=25 (every hero).
     if u.kind == "pet":
@@ -352,12 +349,13 @@ def _fire_effect(battle, tr: Trap):
         # Pets.csv CantBeEjected=TRUE for every pet.
 
         special = u.is_hero or u.kind in ("pet", "siege", "siege_idle")
-        # output/research/usage/totem-spell.md: traps can damage Totems,
-        # but displacement cannot move them; one housing is not springability.
-        # https://clash-of-clans.1337wiki.com/totem-spell/
-
-        if u.name != "Totem" and not special and 0 < u.housing <= tr.extra["capacity"]:
-            battle.kills_by_source[src] = battle.kills_by_source.get(src, 0) + u.housing
+        # output/research/usage/spring-trap.md; verify/c1.out #5 corrects immunity:
+        # springs can eject Totems when another troop triggers the trap.
+        # https://clashofclans.fandom.com/wiki/Totem_Spell
+        # https://www.mumuplayer.com/blog/clash-of-clans-th18-totem-spell.html
+        housing = _housing(u)
+        if not special and 0 < housing <= tr.extra["capacity"]:
+            battle.kills_by_source[src] = battle.kills_by_source.get(src, 0) + housing
             u.extra["sprung"] = True  # Spring Trap: Druid cannot become a Bear.
             battle.kill(
                 u

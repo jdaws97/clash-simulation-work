@@ -371,7 +371,7 @@ impl Battle {
         self.pending.push(pending);
     }
 
-    // battle.py:960-1076: partition BEFORE resolving; newly queued impacts wait.
+    // battle.py:_resolve_pending: newly queued impacts wait, except due Revenge hops.
     pub fn resolve_pending(&mut self) {
         let mut due = Vec::new();
         let pending = std::mem::take(&mut self.pending);
@@ -384,7 +384,8 @@ impl Battle {
         }
         // battle.py:_resolve_pending: stable arrival order, including ties.
         due.sort_by(|a, b| a.at.partial_cmp(&b.at).expect("pending arrival time"));
-        for mut p in due {
+        while !due.is_empty() {
+            let mut p = due.remove(0);
             if let Some(trap) = p.extra.trap_skeleton {
                 traps::spawn_skeleton(self, trap, p.x, p.y);
                 continue;
@@ -410,10 +411,28 @@ impl Battle {
                 continue;
             }
             let effect = p.effect.clone().expect("pending effect");
+            let revenge = p.extra.scatter
+                .is_some_and(|owner| self.building(owner).key == "revenge");
             effects::damage_source(self, p.actor, effect, |battle| {
                 battle.src = p.src.clone();
                 battle.resolve_impact(p);
             });
+            if revenge {
+                // projectiles.csv RevengeTowerProjectile*: bounce flight begins
+                // at nominal arrival, including hops due in this same tick.
+                let pending = std::mem::take(&mut self.pending);
+                for next in pending {
+                    if next.at <= self.t
+                        && next.extra.scatter
+                            .is_some_and(|owner| self.building(owner).key == "revenge")
+                    {
+                        due.push(next);
+                    } else {
+                        self.pending.push(next);
+                    }
+                }
+                due.sort_by(|a, b| a.at.partial_cmp(&b.at).expect("pending arrival time"));
+            }
         }
     }
 

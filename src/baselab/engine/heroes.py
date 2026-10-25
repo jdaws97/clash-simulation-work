@@ -270,12 +270,15 @@ def equip(battle, u: Unit, plan):
                 _col(e, lvl, "slow down duration"),
             )
         if e == "Stick Horse":
-            # Duration and speed tiers (wiki: Stick Horse).
-            u.extra["horse_until"] = battle.t + _col(e, lvl, "ability duration")
-            u.extra["horse_speed"] = _col(e, lvl, "movement speed increase") / 8.0
-            u.extra["horse_attack"] = (
-                _col(e, lvl, "ability attributes / attack speed increase") / 100.0
+            # ClashKing / special_abilities.csv StickHorseBoost: exact ability
+            # values, rather than the wiki's rounded display percentages.
+            ability = _ability_data(e, lvl, "StickHorseBoost")
+            u.extra["horse_until"] = (
+                battle.t + float(ability["DeactivateAfterTime"]) / 1000.0
             )
+            u.extra["horse_speed"] = float(ability["SpeedBoost"]) / 100.0
+            attack_interval = float(ability["AttackSpeed"]) / 1000.0
+            u.extra["horse_attack"] = base_interval / attack_interval - 1.0
             u.extra["horse_interval"] = base_interval
             # Gap-versus-jump routing constants: NUMBER NOT STATED.
         if e == "Monolith Arrow":
@@ -1902,13 +1905,17 @@ def _free_pet(unit, t):
 
 def stash(battle, taken, bonuses):
     for unit in list(taken):
+        # output/research/usage/rocket-backpack.md; cached Rocket_Backpack.txt:
+        # https://clashofclans.fandom.com/wiki/Rocket_Backpack
+        # The transported pet accompanies a mid-flight Recall for free.
+        transported = unit.dash.get("pet") if unit.dash is not None else None
         if unit.dash is not None:
             end_dash(battle, unit)
         pet = unit.pet
         if (
             pet is not None
             and pet.alive
-            and _free_pet(pet, battle.t)
+            and (pet is transported or _free_pet(pet, battle.t))
             and pet not in taken
         ):
             taken.append(pet)

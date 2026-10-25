@@ -12,7 +12,7 @@ use crate::state::{
     Weapon, WeaponTrigger,
 };
 use crate::stats::Level;
-use crate::{effects, geom, spells};
+use crate::{effects, geom, spells, units};
 
 // defense.py:17-57: access the original weapon across damage callbacks.
 fn weapon(battle: &Battle, owner: BuildingId) -> &Weapon {
@@ -88,8 +88,8 @@ pub fn eagle_pick(battle: &Battle, owner: BuildingId, pool: &[UnitRef]) -> UnitR
     let mut best_distance = 0.0;
     for &reference in pool {
         let unit = battle.unit(reference);
-        let score: i64 = battle
-            .attackers_near_iter(unit.x, unit.y, 5.0)
+        let score: i64 = ordered_attackers_near(battle, unit.x, unit.y, 5.0)
+            .into_iter()
             .filter_map(|other| {
                 let other = battle.unit(other);
                 (other.targetable(battle) && dist(other.x, other.y, unit.x, unit.y) <= 5.0)
@@ -109,15 +109,118 @@ pub fn eagle_pick(battle: &Battle, owner: BuildingId, pool: &[UnitRef]) -> UnitR
     best.expect("Eagle target pool is nonempty")
 }
 
-// defense.py:500-517.
+fn tesla_target_priority(battle: &Battle, pref: &Tag, target: EntityRef) -> i32 {
+    let EntityRef::Building(owner) = target else {
+        return 0;
+    };
+    let building = battle.building(owner);
+    if *pref == Tag::AirDefense && building.key == "ad" {
+        return 2;
+    }
+    if matches!(pref, Tag::Defense | Tag::AirDefense) {
+        return i32::from(battle.is_defense_target(owner));
+    }
+    if *pref == Tag::Resource {
+        return i32::from(building.resource_target);
+    }
+    0
+}
+
+// defense.py:_tesla_keeps_target: compare preference before edge distance.
+fn tesla_keeps_target(battle: &mut Battle, reference: UnitRef) -> bool {
+    let unit = battle.unit(reference);
+    if !unit.flying {
+        return false;
+    }
+    let Some(current) = unit.target else {
+        return false;
+    };
+    if unit.target_kind == Some(Tag::Destination) {
+        return true;
+    }
+    if !battle.entity_alive(current) {
+        return false;
+    }
+    if let EntityRef::Unit(target) = current {
+        if matches!(unit.spec.attack, Tag::Heal | Tag::HealChain) {
+            return true;
+        }
+        if !battle.unit(target).targetable(battle) || battle.t < unit.extra.angry_until {
+            return false;
+        }
+        let retaliation = matches!(unit.name_id, Name::RoyalChampion | Name::GiantGiant)
+            || unit.pet.is_some_and(|pet| battle.unit(pet).attached(battle));
+        let preferred = match &unit.spec.prefer {
+            Tag::Wall => battle.walls.iter().any(|wall| wall.alive),
+            Tag::Defense | Tag::AirDefense => battle.buildings.iter().any(|building| {
+                building.targetable(battle.t) && battle.is_defense_target(building.id)
+            }),
+            Tag::Resource => battle.buildings.iter().any(|building| {
+                building.targetable(battle.t) && building.resource_target
+            }),
+            Tag::Building => battle.buildings.iter().any(|building| building.targetable(battle.t)),
+            _ => false,
+        };
+        return retaliation || !preferred;
+    }
+    if let EntityRef::Building(owner) = current {
+        if !battle.building_targetable(owner) {
+            return false;
+        }
+    }
+    let (candidate, kind) = battle.choose_target(reference);
+    let Some(candidate) = candidate else {
+        return true;
+    };
+    if candidate == current {
+        return true;
+    }
+    let unit = battle.unit(reference);
+    let mut pref = unit.spec.prefer.clone();
+    if battle.t < unit.extra.angry_until
+        || unit.pet.is_some_and(|pet| battle.unit(pet).attached(battle))
+    {
+        pref = Tag::Defense;
+    }
+    if pref == Tag::Follow && units::follow_target(battle, reference) == Some(candidate) {
+        return false;
+    }
+    if matches!(kind, Some(Tag::Destination | Tag::Unit)) {
+        return false;
+    }
+    let origin = EntityRef::Unit(reference);
+    (
+        tesla_target_priority(battle, &pref, current),
+        -units::target_distance(battle, origin, current),
+    ) >= (
+        tesla_target_priority(battle, &pref, candidate),
+        -units::target_distance(battle, origin, candidate),
+    )
+}
+
+// defense.py:reveal_tesla.
 pub fn reveal_tesla(battle: &mut Battle, owner: BuildingId) {
     let building = battle.building(owner);
     if building.revealed || !building.alive {
         return;
     }
     battle.building_mut(owner).revealed = true;
-    // output/research/usage/baby-dragon.md:16; reveal preserves valid targets.
+    // output/research/usage/baby-dragon.md:16; verify/c2.out #9: only flying
+    // units keep a better current target (October 2020); ground units retarget.
     // https://clashofclans.fandom.com/wiki/Baby_Dragon
+    // https://www.clash.ninja/blog/october-2020-update-is-here
+    // https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
+    let attackers: Vec<_> = battle.attackers_pool().map(Unit::reference).collect();
+    for reference in attackers {
+        if tesla_keeps_target(battle, reference) {
+            continue;
+        }
+        let unit = battle.unit_mut(reference);
+        unit.target = None;
+        unit.wall_target = None;
+        unit.target_kind = None;
+        unit.extra.next_engage = 0.0;
+    }
     for index in 0..battle.fields.len() {
         let field = &battle.fields[index];
         if !(field.started <= battle.t && battle.t < field.until) {
@@ -207,11 +310,22 @@ pub fn on_destroyed(battle: &mut Battle, owner: BuildingId) {
 }
 
 // defense.py:574-590: the bucket helper already applies the outer radius.
+fn ordered_attackers_near(battle: &Battle, x: f64, y: f64, radius: f64) -> Vec<UnitRef> {
+    // output/hunt/r10/t3.out #2: bucket alignment must not decide target ties.
+    // output/research/usage/dealing-with-monolith-and-inferno-towers.md:
+    // https://clashofclans.fandom.com/wiki/Monolith
+    // Stable spawn IDs define candidate and accumulation order. This is a
+    // deterministic tie policy, not a sourced game tie-break rule.
+    let mut units = battle.attackers_near(x, y, radius);
+    units.sort_by_key(|reference| battle.unit(*reference).id.0);
+    units
+}
+
 pub fn visible(battle: &Battle, owner: BuildingId, radius: f64) -> Vec<UnitRef> {
     let building = battle.building(owner);
     let w = weapon(battle, owner);
     let mut out = Vec::new();
-    for reference in battle.attackers_near_iter(building.x, building.y, radius) {
+    for reference in ordered_attackers_near(battle, building.x, building.y, radius).into_iter() {
         let unit = battle.unit(reference);
         if !unit.targetable(battle) {
             continue;
@@ -261,8 +375,8 @@ pub fn act(battle: &mut Battle, owner: BuildingId) {
         let Some(WeaponTrigger::Radius(radius)) = w.extra.trigger.as_ref() else {
             panic!("Hidden Tesla trigger radius");
         };
-        if battle
-            .attackers_near_iter(building.x, building.y, *radius)
+        if ordered_attackers_near(battle, building.x, building.y, *radius)
+            .into_iter()
             .any(|unit| {
                 let unit = battle.unit(unit);
                 unit.name_id != Name::Totem && !unit.underground
@@ -504,7 +618,7 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
             let (tx, ty) = battle.entity_position(EntityRef::Unit(target));
             let mut best = None;
             let mut best_distance = w.extra.bounce_range;
-            for reference in battle.attackers_near_iter(tx, ty, best_distance) {
+            for reference in ordered_attackers_near(battle, tx, ty, best_distance).into_iter() {
                 let unit = battle.unit(reference);
                 if reference != target && !unit.flying && unit.indirect_targetable(battle) {
                     let distance = dist(unit.x, unit.y, tx, ty);
@@ -606,7 +720,7 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
     }
 }
 
-// defense.py:646,697,904: Python min keeps the first equal-distance unit.
+// defense.py:_visible: candidates use stable spawn order, including distance ties.
 fn nearest(battle: &Battle, pool: &[UnitRef], x: f64, y: f64) -> Option<UnitRef> {
     let mut best = None;
     let mut best_distance = 0.0;
@@ -907,7 +1021,7 @@ pub fn scatter(
     let splash_max = w.extra.splash_max * damage_rage;
     let splash_min = w.extra.splash_min * damage_rage;
     let inner_min = w.extra.inner_min.unwrap_or(w.extra.splash_max) * damage_rage;
-    for reference in battle.attackers_near(tx, ty, 5.0) {
+    for reference in ordered_attackers_near(battle, tx, ty, 5.0) {
         let unit = battle.unit(reference);
         if reference == target
             || (unit.name_id != Name::Totem && unit.flying != battle.unit(target).flying)
@@ -1033,7 +1147,7 @@ pub fn sweeper(battle: &mut Battle, owner: BuildingId) {
     let mut aim = None;
     let mut best_distance = 0.0;
     let mut best_id = usize::MAX;
-    for reference in battle.attackers_near(bx, by, w.range) {
+    for reference in ordered_attackers_near(battle, bx, by, w.range) {
         let unit = battle.unit(reference);
         if !unit.flying || unit.name_id == Name::Totem || !unit.targetable(battle) {
             continue;
@@ -1057,7 +1171,7 @@ pub fn sweeper(battle: &mut Battle, owner: BuildingId) {
     let Some(aim) = aim else {
         return;
     };
-    let mut arrivals = battle.attackers_near(bx, by, w.range);
+    let mut arrivals = ordered_attackers_near(battle, bx, by, w.range);
     arrivals.sort_by(|a, b| {
         let a = battle.unit(*a);
         let b = battle.unit(*b);
@@ -1400,7 +1514,7 @@ fn super_wizard(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
         let mut next = None;
         let mut next_distance = w.extra.chain_range;
         let (tx, ty) = battle.entity_position(EntityRef::Unit(target));
-        for reference in battle.attackers_near(tx, ty, next_distance) {
+        for reference in ordered_attackers_near(battle, tx, ty, next_distance) {
             let unit = battle.unit(reference);
             if !hit.contains(&unit.id) && unit.indirect_targetable(battle) {
                 let distance = dist(unit.x, unit.y, tx, ty);
@@ -1461,7 +1575,7 @@ fn firespitter(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
     let ux = (unit.x - bx) / length.max(1e-9);
     let uy = (unit.y - by) / length.max(1e-9);
     let mut path = vec![(length, target.id.0, target)];
-    for reference in battle.attackers_near(bx, by, length + 2.0) {
+    for reference in ordered_attackers_near(battle, bx, by, length + 2.0) {
         let unit = battle.unit(reference);
         if reference == target || !unit.indirect_targetable(battle) {
             continue;
@@ -1506,6 +1620,7 @@ fn revenge_projectile(
     damage_rage: f64,
     x: f64,
     y: f64,
+    at: f64,
     offset: f64,
 ) {
     // game data v18.200.9: projectiles.csv RevengeTowerProjectile1/2/3:
@@ -1514,7 +1629,7 @@ fn revenge_projectile(
     let unit = battle.unit(target);
     let flight = 0.0_f64.max(dist(x, y, unit.x, unit.y) - offset) / speed;
     let mut pending = Pending::new(
-        battle.t + flight,
+        at + flight,
         unit.x,
         unit.y,
         0.0,
@@ -1551,10 +1666,12 @@ pub fn revenge_impact(battle: &mut Battle, pending: Pending) {
     let (x, y) = (unit.x, unit.y);
     // Keep the wiki's two-tile radius: projectiles.csv MaxBounceDistance=450
     // conflicts with it (output/hunt/r9/s5.out #1).
-    let next = battle.attackers_near_iter(x, y, 2.0).find(|reference| {
-        let unit = battle.unit(*reference);
-        !shot.hit.contains(&EntityRef::Unit(*reference)) && unit.indirect_targetable(battle)
-    });
+    let next = ordered_attackers_near(battle, x, y, 2.0)
+        .into_iter()
+        .find(|reference| {
+            let unit = battle.unit(*reference);
+            !shot.hit.contains(&EntityRef::Unit(*reference)) && unit.indirect_targetable(battle)
+        });
     let Some(next) = next else {
         return;
     };
@@ -1576,7 +1693,9 @@ pub fn revenge_impact(battle: &mut Battle, pending: Pending) {
         * pending.extra.rage;
     let mut following = shot;
     following.hit.push(EntityRef::Unit(next));
-    revenge_projectile(battle, following, next, damage, pending.extra.rage, x, y, 0.0);
+    revenge_projectile(
+        battle, following, next, damage, pending.extra.rage, x, y, pending.at, 0.0,
+    );
 }
 
 // defense.py:_revenge: stage and damage are fixed when each shot launches.
@@ -1613,7 +1732,8 @@ fn revenge(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage:
         stage,
         hit: vec![EntityRef::Unit(target)],
     };
-    revenge_projectile(battle, shot, target, damage, damage_rage, x, y, 1.35);
+    let at = battle.t;
+    revenge_projectile(battle, shot, target, damage, damage_rage, x, y, at, 1.35);
     weapon_mut(battle, owner).cooldown += if stage == 1 {
         1.2
     } else if stage == 2 {

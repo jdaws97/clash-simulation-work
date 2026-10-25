@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from . import effects, stats
+from . import effects, stats, units
 from .entities import Building, Pending, Unit, dist
 from .specs import game_data
 
@@ -258,7 +258,7 @@ def _eagle_pick(battle, w, pool):
     def score(unit):
         return sum(
             _group_weight(other)
-            for other in battle.attackers_near(unit.x, unit.y, EAGLE_GROUP_RADIUS)
+            for other in _attackers_near(battle, unit.x, unit.y, EAGLE_GROUP_RADIUS)
             if other.targetable(t)
             and dist(other.x, other.y, unit.x, unit.y) <= EAGLE_GROUP_RADIUS
         )
@@ -623,12 +623,24 @@ def attach_weapon(battle, b: Building):
         # game data v18.200.9: Scattershot.CoolDownOverride=1500 -> meaning unstated.
         # Keep CoolDownOverride unused; acquisition does not alter repeat cadence.
         # ClashKing b8f42a7: attack_speed=3228 -> 3.228 s takes precedence.
+        # registry.json / wiki Scattershot supercharge rows retain the base
+        # cadence; ClashKing supplies attack_speed only for integer levels.
+        cadence_level = (
+            lvl
+            if isinstance(lvl, int)
+            else max(
+                row["level"]
+                for row in stats.record(name)["levels"]
+                if isinstance(row["level"], int)
+            )
+        )
         b.weapon = W(
             b,
             "scatter",
             range_=10.0,
             min_range=3.0,
-            interval=stats.clashking_level(name, lvl)["attack_speed"] / 1000.0,
+            interval=stats.clashking_level(name, cadence_level)["attack_speed"]
+            / 1000.0,
             damage=stats.get(name, lvl, "Damage per Shot*", default=576.0),
             extra={"splash_max": 420.0, "splash_min": 150.0, "new_target_delay": 2.2},
         )
@@ -812,12 +824,72 @@ def _gear_up(battle, b):
         w.damage = dps * cycle / w.extra["shots"]
 
 
+def _tesla_keeps_target(battle, unit):
+    current = unit.target
+    if not unit.flying or current is None:
+        return False
+    if unit.target_kind == "destination":
+        return True
+    if not current.alive:
+        return False
+    if isinstance(current, Unit):
+        if unit.spec.attack in ("heal", "heal_chain"):
+            return True
+        if not current.targetable(battle.t) or battle.t < unit.extra.get(
+            "angry_until", 0.0
+        ):
+            return False
+        retaliation = unit.name in ("Royal Champion", "Giant Giant") or (
+            unit.pet is not None and unit.pet.attached(battle.t)
+        )
+        return retaliation or not battle._preferred_pool(unit)
+    if isinstance(current, Building) and not battle.building_targetable(current):
+        return False
+    candidate, kind = battle.choose_target(unit)
+    if candidate is None or candidate is current:
+        return True
+    pref = unit.spec.prefer
+    if battle.t < unit.extra.get("angry_until", 0.0) or (
+        unit.pet is not None and unit.pet.attached(battle.t)
+    ):
+        pref = "defense"
+    if pref == "follow" and units.follow_target(battle, unit) is candidate:
+        return False
+    if kind in ("destination", "unit"):
+        return False
+
+    def priority(target):
+        if not isinstance(target, Building):
+            return 0
+        if pref == "air_defense" and target.key == "ad":
+            return 2
+        if pref in ("defense", "air_defense"):
+            return int(battle.is_defense_target(target))
+        if pref == "resource":
+            return int(target.kind == "resource" or target.key in units.RESOURCE_KEYS)
+        return 0
+
+    return (priority(current), -units.target_distance(unit, current)) >= (
+        priority(candidate),
+        -units.target_distance(unit, candidate),
+    )
+
+
 def reveal_tesla(battle, b):
     if b.revealed or not b.alive:
         return
     b.revealed = True
-    # output/research/usage/baby-dragon.md:16; reveal preserves valid targets.
+    # output/research/usage/baby-dragon.md:16; verify/c2.out #9: only flying
+    # units keep a better current target (October 2020); ground units retarget.
     # https://clashofclans.fandom.com/wiki/Baby_Dragon
+    # https://www.clash.ninja/blog/october-2020-update-is-here
+    # https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
+    for unit in battle.attackers:
+        if _tesla_keeps_target(battle, unit):
+            continue
+        unit.target = unit.wall_target = None
+        unit.target_kind = None
+        unit.extra.pop("next_engage", None)
     # Wiki: Hidden Tesla/Home Village, residual spell coverage survives reveal.
     for field in battle.fields:
         if not field.started <= battle.t < field.until:
@@ -885,11 +957,20 @@ def on_destroyed(battle, b: Building):
         )
 
 
+def _attackers_near(battle, x, y, radius):
+    # output/hunt/r10/t3.out #2: bucket alignment must not decide target ties.
+    # output/research/usage/dealing-with-monolith-and-inferno-towers.md:
+    # https://clashofclans.fandom.com/wiki/Monolith
+    # Use the engine's stable spawn IDs for candidate and accumulation order;
+    # this is a deterministic tie policy, not a sourced game tie-break rule.
+    return sorted(battle.attackers_near(x, y, radius), key=lambda unit: unit.id)
+
+
 def _visible(battle, w: Weapon, r: float):
     b = w.owner
     t = battle.t
     out = []
-    for a in battle.attackers_near(b.x, b.y, r):
+    for a in _attackers_near(battle, b.x, b.y, r):
         if not a.targetable(t):
             continue
         if a.name != "Totem":
@@ -921,7 +1002,7 @@ def act(battle, w: Weapon):
     if b.key == "tesla" and not b.revealed:
         if any(
             a.name != "Totem" and not a.underground
-            for a in battle.attackers_near(b.x, b.y, w.extra["trigger"])
+            for a in _attackers_near(battle, b.x, b.y, w.extra["trigger"])
         ):
             reveal_tesla(battle, b)
         else:
@@ -1111,7 +1192,7 @@ def _act_once(battle, w: Weapon):
     elif k == "ricochet":
         battle.hit_unit(tgt, dmg)
         best, bd = None, w.extra["bounce_range"]
-        for a in battle.attackers_near(tgt.x, tgt.y, bd):
+        for a in _attackers_near(battle, tgt.x, tgt.y, bd):
             if a is not tgt and not a.flying and a.indirect_targetable(t):
                 d = dist(a.x, a.y, tgt.x, tgt.y)
                 if d <= bd:
@@ -1365,14 +1446,14 @@ def _hunter_hit(battle, w, tgt, rage):
     )
 
 
-def _scatter(battle, w, tgt, dmg, rage):
+def _scatter(battle, w, tgt, dmg, rage, *, at=None):
     """Primary hit plus a 90-degree cone behind the target with two falloff
     hitboxes (wiki: Scattershot, table footnotes): within 1 tile the shot's
     damage falls from the primary's maximum to the listed minimum at 1 tile;
     from 1 to 5 tiles the splash falls from its maximum to its minimum."""
     # Battle's existing defense-impact hook also delivers Revenge bounces.
     if w.kind == "revenge":
-        _revenge_impact(battle, w, tgt, dmg, rage)
+        _revenge_impact(battle, w, tgt, dmg, rage, at=at)
         return
     b = w.owner
     battle.hit_unit(tgt, dmg)
@@ -1380,7 +1461,7 @@ def _scatter(battle, w, tgt, dmg, rage):
     ang = math.atan2(ay, ax)
     smax, smin = w.extra["splash_max"] * rage, w.extra["splash_min"] * rage
     inner_min = w.extra.get("inner_min", w.extra["splash_max"]) * rage
-    for a in battle.attackers_near(tgt.x, tgt.y, 5.0):
+    for a in _attackers_near(battle, tgt.x, tgt.y, 5.0):
         # game data v18.200.9: Totem.TargetableByGroundAndAir=TRUE -> air splash too.
         if (
             a is tgt
@@ -1490,7 +1571,7 @@ def _sweeper(battle, w: Weapon):
     # wiki's "30-degree angle"), but whether the arc stays 7 tiles as the wave
     # expands (so wider near the Sweeper) is not stated.
     cands = []
-    for a in battle.attackers_near(b.x, b.y, w.range):
+    for a in _attackers_near(battle, b.x, b.y, w.range):
         if not a.flying or a.name == "Totem" or not a.targetable(battle.t):
             continue
         d = dist(a.x, a.y, b.x, b.y)
@@ -1510,7 +1591,7 @@ def _sweeper(battle, w: Weapon):
     push = w.extra["push"]
     # Enqueue by distance, then unit ID, so equal-time arrivals keep a stable order.
     for a in sorted(
-        battle.attackers_near(b.x, b.y, w.range),
+        _attackers_near(battle, b.x, b.y, w.range),
         key=lambda unit: (dist(unit.x, unit.y, b.x, b.y), unit.id),
     ):
         if not a.flying or a.name == "Totem":
@@ -1749,7 +1830,7 @@ def _super_wizard(battle, w, rage):
     hit = {tgt.id}
     for _ in range(w.extra["chain"]):
         nxt, nd = None, w.extra["chain_range"]
-        for a in battle.attackers_near(tgt.x, tgt.y, nd):
+        for a in _attackers_near(battle, tgt.x, tgt.y, nd):
             if a.id not in hit and a.indirect_targetable(battle.t):
                 d = dist(a.x, a.y, tgt.x, tgt.y)
                 if d <= nd:
@@ -1810,7 +1891,7 @@ def _firespitter(battle, w, rage):
     length = dist(tgt.x, tgt.y, b.x, b.y)
     ux, uy = (tgt.x - b.x) / max(length, 1e-9), (tgt.y - b.y) / max(length, 1e-9)
     path = [(length, tgt.id, tgt)]
-    for a in battle.attackers_near(b.x, b.y, length + 2.0):
+    for a in _attackers_near(battle, b.x, b.y, length + 2.0):
         if a is tgt or not a.indirect_targetable(t):
             continue
         along = (a.x - b.x) * ux + (a.y - b.y) * uy
@@ -1825,14 +1906,16 @@ def _firespitter(battle, w, rage):
     w.cooldown += w.extra["gap"] if w.burst_left > 0 else w.interval
 
 
-def _revenge_projectile(battle, shot, target, damage, rage, x, y, *, offset=0.0):
+def _revenge_projectile(
+    battle, shot, target, damage, rage, x, y, *, offset=0.0, at=None
+):
     # game data v18.200.9: projectiles.csv RevengeTowerProjectile1/2/3:
     # Speed=1400/1800/2200, StartOffset=135 -> 14/18/22 tiles/s, 1.35 tiles.
     speed = (14.0, 18.0, 22.0)[shot.extra["remaining"] - 1]
     flight = max(0.0, dist(x, y, target.x, target.y) - offset) / speed
     battle.add_pending(
         Pending(
-            battle.t + flight,
+            (battle.t if at is None else at) + flight,
             target.x,
             target.y,
             0.0,
@@ -1846,7 +1929,7 @@ def _revenge_projectile(battle, shot, target, damage, rage, x, y, *, offset=0.0)
     )
 
 
-def _revenge_impact(battle, shot, target, damage, rage):
+def _revenge_impact(battle, shot, target, damage, rage, *, at=None):
     if not target.indirect_targetable(battle.t):
         return
     battle.hit_unit(target, damage)
@@ -1859,7 +1942,7 @@ def _revenge_impact(battle, shot, target, damage, rage):
     next_target = next(
         (
             unit
-            for unit in battle.attackers_near(target.x, target.y, 2.0)
+            for unit in _attackers_near(battle, target.x, target.y, 2.0)
             if unit not in hit and unit.indirect_targetable(battle.t)
         ),
         None,
@@ -1873,7 +1956,7 @@ def _revenge_impact(battle, shot, target, damage, rage):
         owner, "revenge", extra={"remaining": stage, "hit": (*hit, next_target)}
     )
     _revenge_projectile(
-        battle, following, next_target, damage, rage, target.x, target.y
+        battle, following, next_target, damage, rage, target.x, target.y, at=at
     )
 
 

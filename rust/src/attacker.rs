@@ -1504,6 +1504,19 @@ impl AttackPlan {
 
     pub fn opening_actions(&mut self, battle: &mut Battle) -> bool {
         use crate::playbook::{action_time, Action};
+        // output/research/usage/hero-sniping-of-exposed-defenses.md:
+        // https://clashofclans.fandom.com/wiki/Rocket_Spear
+        // Claims predict the opening, not permanent destruction. Release any
+        // survivor when the existing 12-second opening policy ends.
+        if battle.t > 12.0 {
+            self.snipe_claimed.clear();
+            // Tick callbacks also read the previous copy-on-write plan.
+            match &mut battle.plan {
+                Plan::Attack(plan) => plan.snipe_claimed.clear(),
+                Plan::Playbook(plan) => plan.attack.snipe_claimed.clear(),
+                Plan::Stage { .. } => {}
+            }
+        }
         if !self.snipe_exposed || self.snipe_mode == "off" || battle.t > 12.0 || battle.t < self.busy_until {
             return false;
         }

@@ -1681,6 +1681,16 @@ impl AttackPlan {
             });
             for (id, d) in threats {
                 let b = battle.building(id);
+                // output/research/usage/freeze-spell.md: overlapping Freezes
+                // do not stack. Include bottles awaiting their landing tick.
+                // https://houseofclashers.com/home-village/spells-elixir/freeze-spell
+                if battle.fields.iter().any(|field| {
+                    field.kind == Tag::Freeze
+                        && field.team == Team::Atk
+                        && b.edge_distance(field.x, field.y) <= field.radius
+                }) {
+                    continue;
+                }
                 let w = b.weapon.as_ref().expect("weapon");
                 if (priority(&b.key).is_some() || threat(&b.key, 0.0) >= self.p("freeze_min_threat"))
 

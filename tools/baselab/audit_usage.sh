@@ -13,5 +13,5 @@ one() {
   if [ "$(wc -c < "$out.tmp")" -gt 800 ]; then mv "$out.tmp" "$out"; echo "audited $slug"; else rm -f "$out.tmp"; echo "FAIL $slug"; fi
 }
 export -f one
-ls output/research/usage/*.md | xargs -P "$PAR" -I{} bash -c 'one {}'
+ls output/research/usage/*.md | grep -v -x -F -f <(sed "s#^#output/research/usage/#; s#\$#.md#" output/research/gaps/skip-event.txt 2>/dev/null) | xargs -P "$PAR" -I{} bash -c 'one {}'
 echo "== audit pass complete: $(ls output/research/gaps/*.md 2>/dev/null | wc -l) files"

@@ -1111,6 +1111,14 @@ class Battle:
         if int(round(t * 10)) % 50 == 0:
             self.grid.prune()
         if len(self.attackers) > 160:
+            # output/research/usage/bag-of-frostmites.md: generated Frostmites
+            # can die between plan ticks; retain their history before pruning.
+            # https://clashofclans.fandom.com/wiki/Bag_of_Frostmites
+            deployed = getattr(self.plan, "_deployed", None)
+            if deployed is not None:
+                deployed.update(
+                    unit.name for unit in self.attackers if unit.kind != "hero_clone"
+                )
             self.attackers = [
                 u
                 for u in self.attackers
@@ -1147,7 +1155,8 @@ class Battle:
         # game data v18.200.9: Cannonball16/UnicornHealEnergy.Speed=1200 -> resolve
         # arrival deadlines first; stable sorting preserves equal-time insertion order.
         due.sort(key=lambda p: p.at)
-        for pending in due:
+        while due:
+            pending = due.pop(0)
             # game data v18.200.9: SkeletonTrap.TimeBetweenSpawnsMs=150 -> staggered births.
             if "trap_skeleton" in pending.extra:
                 traps.spawn_skeleton(
@@ -1216,7 +1225,23 @@ class Battle:
                         pending.target,
                         pending.damage,
                         pending.extra["rage"],
+                        at=pending.at,
                     )
+                    if pending.extra["scatter"].kind == "revenge":
+                        # projectiles.csv RevengeTowerProjectile*: bounce flight
+                        # begins at nominal arrival, including hops due this tick.
+                        following = [
+                            shot
+                            for shot in self.pending
+                            if shot.at <= t
+                            and "scatter" in shot.extra
+                            and shot.extra["scatter"].kind == "revenge"
+                        ]
+                        self.pending = [
+                            shot for shot in self.pending if shot not in following
+                        ]
+                        due.extend(following)
+                        due.sort(key=lambda shot: shot.at)
                     continue
                 if pending.extra.get("direct"):
                     target = pending.target

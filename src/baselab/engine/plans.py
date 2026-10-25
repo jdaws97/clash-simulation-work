@@ -1815,6 +1815,12 @@ class AttackPlan:
         """Spend one spare opening action using the normal spell/ability machinery."""
         from .playbook import action_time
 
+        # output/research/usage/hero-sniping-of-exposed-defenses.md:
+        # https://clashofclans.fandom.com/wiki/Rocket_Spear
+        # Claims predict the opening, not permanent destruction. Release any
+        # survivor when the existing 12-second opening policy ends.
+        if battle.t > 12.0:
+            self._snipe_claimed.clear()
         if not self.snipe_exposed or self.snipe_mode == "off" or battle.t > 12.0:
             return False
         # Video: docs/VIDEO_MEASUREMENTS.md:31, spells share the player's action clock.
@@ -3052,6 +3058,16 @@ class AttackPlan:
                 self.threats_near(battle, cx, cy, 12),
                 key=lambda bd: -(prio.get(bd[0].key) or THREAT.get(bd[0].key, 1)),
             ):
+                # output/research/usage/freeze-spell.md: overlapping Freezes
+                # do not stack. Include bottles awaiting their landing tick.
+                # https://houseofclashers.com/home-village/spells-elixir/freeze-spell
+                if any(
+                    field.kind == "freeze"
+                    and field.team == "atk"
+                    and b.edge_distance(field.x, field.y) <= field.radius
+                    for field in battle.fields
+                ):
+                    continue
                 if (
                     (
                         b.key in prio

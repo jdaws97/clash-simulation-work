@@ -435,6 +435,15 @@ fn ground_proof(
     ];
     genome.normalize();
     enable(account, compiler, catalog, &mut genome)?;
+    // The shared walk rule (F3) grounds Healers following the Warden at his
+    // edge under any group, so start from Healers on the other flank: a real
+    // air baseline that only the installed Warden walk below should ground.
+    if let Some(healer) = genome.plan.program.as_mut().unwrap().steps.iter_mut()
+        .find(|step| text(step, "what", "") == "Healer")
+    {
+        put(healer, "at", string("edge:funnel"));
+        put(healer, "group", string("funnel"));
+    }
     let original = account.compile(compiler, catalog, &genome, 0.0, 0)?;
     require(
         !original.at("ground").bool(),

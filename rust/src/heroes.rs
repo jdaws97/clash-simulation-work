@@ -348,22 +348,21 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
                 ));
             }
             "Stick Horse" => {
-                let until = battle.t
-                    + col(battle, equipment, &level, &["ability duration"], 0.0);
-                let speed = col(
-                    battle,
-                    equipment,
-                    &level,
-                    &["movement speed increase"],
-                    0.0,
-                ) / 8.0;
-                let attack = col(
-                    battle,
-                    equipment,
-                    &level,
-                    &["ability attributes / attack speed increase"],
-                    0.0,
-                ) / 100.0;
+                // ClashKing / special_abilities.csv StickHorseBoost: exact
+                // ability values, rather than rounded display percentages.
+                let Level::Int(equipment_level) = &level else {
+                    panic!("Stick Horse needs an integer level");
+                };
+                let ability_level = Level::Int(equipment_level / 3 + 1);
+                let ability = battle.catalog.game_data(
+                    "special_abilities",
+                    "StickHorseBoost",
+                    Some(&ability_level),
+                );
+                let until = battle.t + game_float(ability, "DeactivateAfterTime") / 1000.0;
+                let speed = game_float(ability, "SpeedBoost") / 100.0;
+                let attack_interval = game_float(ability, "AttackSpeed") / 1000.0;
+                let attack = base_interval / attack_interval - 1.0;
                 let unit = battle.unit_mut(hero);
                 unit.extra.horse_until = until;
                 unit.extra.paused_timers.horse_until = true;
@@ -3066,11 +3065,20 @@ pub fn free_pet(battle: &Battle, reference: UnitRef) -> bool {
 // heroes.py:1248-1268: Recall and Portal Pendant share the same stash path.
 pub fn stash(battle: &mut Battle, mut taken: Vec<UnitRef>, bonuses: (f64, f64, f64)) {
     for reference in taken.clone() {
+        // output/research/usage/rocket-backpack.md; cached Rocket_Backpack.txt:
+        // https://clashofclans.fandom.com/wiki/Rocket_Backpack
+        // The transported pet accompanies a mid-flight Recall for free.
+        let transported = battle.unit(reference)
+            .dash.as_ref()
+            .and_then(|dash| dash.pet);
         if battle.unit(reference).dash.is_some() {
             end_dash(battle, reference);
         }
         if let Some(pet) = battle.unit(reference).pet {
-            if battle.unit(pet).alive && free_pet(battle, pet) && !taken.contains(&pet) {
+            if battle.unit(pet).alive
+                && (Some(pet) == transported || free_pet(battle, pet))
+                && !taken.contains(&pet)
+            {
                 taken.push(pet);
             }
         }
