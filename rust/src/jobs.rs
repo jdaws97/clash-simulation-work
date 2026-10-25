@@ -21,7 +21,7 @@ fn read(path: &Path) -> Result<Json, String> {
     json::parse(&text).map_err(|error| format!("{}: {error}", path.display()))
 }
 
-fn build_job(input: &Json, index: usize, catalog: Arc<Catalog>) -> Battle {
+fn build_job(input: &Json, index: usize, catalog: Arc<Catalog>) -> Result<Battle, String> {
     Node::new(input, "jobs").keys(&["layouts", "plans", "jobs"]);
     let jobs = input.at("jobs").arr();
     let job = jobs
@@ -31,7 +31,9 @@ fn build_job(input: &Json, index: usize, catalog: Arc<Catalog>) -> Battle {
         input.at("layouts").arr().to_vec(),
         input.at("plans").arr().to_vec(),
     );
-    Runner::new(catalog, inputs).build(&Job::from_json(job))
+    Runner::new(catalog, inputs)
+        .build(&Job::from_json(job))
+        .map_err(|error| error.to_string())
 }
 
 pub fn command(command: &str, paths: &[PathBuf], catalog: Arc<Catalog>) -> Result<(), String> {
@@ -43,10 +45,10 @@ pub fn command(command: &str, paths: &[PathBuf], catalog: Arc<Catalog>) -> Resul
                 if input.at("jobs").arr().len() != 1 {
                     return Err("setup-check requires exactly one job".to_owned());
                 }
-                build_job(&input, 0, catalog)
+                build_job(&input, 0, catalog)?
             } else {
                 // Also accept a self-contained {layout, plan, ...options} job.
-                setup::build(input.at("layout"), input.at("plan"), &input, catalog)
+                setup::build(input.at("layout"), input.at("plan"), &input, catalog).map_err(|error| error.to_string())?
             };
             let differences = compare(&expected, &actual);
             if differences == 0 {
@@ -63,7 +65,7 @@ pub fn command(command: &str, paths: &[PathBuf], catalog: Arc<Catalog>) -> Resul
                 .ok_or("invalid job index")?
                 .parse::<usize>()
                 .map_err(|_| "invalid job index")?;
-            let mut battle = build_job(&input, index, catalog);
+            let mut battle = build_job(&input, index, catalog)?;
             let file = File::create(&paths[2])
                 .map_err(|error| format!("{}: {error}", paths[2].display()))?;
             let mut out = BufWriter::new(file);

@@ -47,6 +47,20 @@ impl TargetManifest {
         } else {
             Self::default_json()
         };
+        // gap-triage D1 / gaps/dragon.md U14: preserve ranked difficulty.
+        // output/research/usage/dragon.md U14, Supercell battle modifiers:
+        // https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/
+        let modifier = match source.get("modifier") {
+            None | Some(Json::Null) => None,
+            Some(Json::Str(value)) => Some(value.clone()),
+            _ => return Err("modifier must be a string or null".to_owned()),
+        };
+        if modifier
+            .as_deref()
+            .is_some_and(|value| !matches!(value, "legend1" | "legend2" | "legend3"))
+        {
+            return Err("modifier must be null, legend1, legend2, or legend3".to_owned());
+        }
         let entries = match &source {
             Json::Arr(entries) => entries.as_slice(),
             _ => source
@@ -102,7 +116,13 @@ impl TargetManifest {
             {
                 return Err(format!("lineage crosses search/holdout: {lineage}"));
             }
-            let layout = read(&path)?;
+            let mut layout = read(&path)?;
+            // Retain run configuration with each target so subsets preserve it.
+            crate::armies::put(
+                &mut layout,
+                "ranked_modifier",
+                modifier.clone().map_or(Json::Null, Json::Str),
+            );
             let town_hall = numeric(&layout, "town_hall", 16.0) as i64;
             if !(16..=18).contains(&town_hall) {
                 return Err(format!("{id}: defender TH must be 16..18"));
@@ -149,6 +169,15 @@ impl TargetManifest {
         Ok(Self { targets })
     }
 
+    pub fn modifier(&self) -> Option<String> {
+        self.targets
+            .first()?
+            .layout
+            .get("ranked_modifier")?
+            .opt_str()
+            .map(str::to_owned)
+    }
+
     pub fn default_json() -> Json {
         let mut targets = Vec::new();
         for index in 1..=10 {
@@ -173,13 +202,13 @@ impl TargetManifest {
             ),
             (
                 "target17",
-                "output/bases/target17-winner.json",
+                "rust/data/target17.json",
                 0.25,
                 "generated TH17 target; synthetic",
             ),
             (
                 "target18",
-                "output/bases/target18-winner.json",
+                "rust/data/target18.json",
                 0.25,
                 "generated TH18 target; synthetic",
             ),
@@ -196,25 +225,28 @@ impl TargetManifest {
     }
 
     pub fn to_json(&self) -> Json {
-        object([(
-            "targets",
-            Json::Arr(
-                self.targets
-                    .iter()
-                    .map(|target| {
-                        object([
-                            ("id", string(&target.id)),
-                            ("path", string(target.path.to_string_lossy())),
-                            ("weight", Json::Num(target.weight)),
-                            ("split", string(target.split.name())),
-                            ("lineage", string(&target.lineage)),
-                            ("provenance", string(&target.provenance)),
-                            ("town_hall", Json::Num(target.town_hall as f64)),
-                        ])
-                    })
-                    .collect(),
+        object([
+            ("modifier", self.modifier().map_or(Json::Null, Json::Str)),
+            (
+                "targets",
+                Json::Arr(
+                    self.targets
+                        .iter()
+                        .map(|target| {
+                            object([
+                                ("id", string(&target.id)),
+                                ("path", string(target.path.to_string_lossy())),
+                                ("weight", Json::Num(target.weight)),
+                                ("split", string(target.split.name())),
+                                ("lineage", string(&target.lineage)),
+                                ("provenance", string(&target.provenance)),
+                                ("town_hall", Json::Num(target.town_hall as f64)),
+                            ])
+                        })
+                        .collect(),
+                ),
             ),
-        )])
+        ])
     }
 }
 

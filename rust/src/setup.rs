@@ -133,7 +133,32 @@ fn deployments(plan: &Json, margin: f64) -> Vec<Deployment> {
     }
 }
 
-pub fn build(layout: &Json, plan_json: &Json, options: &Json, catalog: Arc<Catalog>) -> Battle {
+pub fn build(
+    layout: &Json,
+    plan_json: &Json,
+    options: &Json,
+    catalog: Arc<Catalog>,
+) -> Result<Battle, crate::content::ContentError> {
+    crate::content::validate_plan(plan_json)?;
+    let modifier = options
+        .get("modifier")
+        .and_then(Json::opt_str)
+        .unwrap_or("null");
+    if catalog.setup.at("modifiers").get(modifier).is_none() {
+        return Err(crate::content::ContentError::unsupported(
+            "ranked modifier",
+            modifier,
+        ));
+    }
+    Ok(build_validated(layout, plan_json, options, catalog))
+}
+
+fn build_validated(
+    layout: &Json,
+    plan_json: &Json,
+    options: &Json,
+    catalog: Arc<Catalog>,
+) -> Battle {
     Node::new(options, "job").keys(&[
         "layout",
         "plan",

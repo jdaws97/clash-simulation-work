@@ -70,7 +70,11 @@ fn support(
     main_space: usize,
     rng: &mut Random,
 ) {
-    let budget = budget.min(320 - used(&genome.troops, &account.roster.troops));
+    let budget = budget.min(
+        account
+            .camp_capacity
+            .saturating_sub(used(&genome.troops, &account.roster.troops)),
+    );
     let eligible: Vec<_> = pool
         .iter()
         .copied()
@@ -145,9 +149,9 @@ pub(super) fn for_main(
     main: &EligibleUnit,
     rng: &mut Random,
 ) -> Result<ArmyGenome, String> {
-    // Integral counts keep the main at 45-80% of the 320-space camp.
-    let minimum = (144 + main.housing - 1) / main.housing;
-    let maximum = 256 / main.housing;
+    // Integral counts keep the main at 45-80% of the account camp.
+    let minimum = (account.camp_capacity * 45).div_ceil(100 * main.housing);
+    let maximum = account.camp_capacity * 80 / (100 * main.housing);
     if minimum > maximum {
         return Err(format!("no 45-80% themed count for {}", main.name));
     }
@@ -259,9 +263,19 @@ pub(super) fn for_main(
     } else {
         &["Healing Spell", "Rage Spell", "Freeze Spell", "Jump Spell"]
     };
-    genome.spells = spells(&account.roster.spells, 11, preferred, rng);
-    genome.cc_spells = spells(&account.roster.spells, 3, preferred, rng);
-    let mut free = 50;
+    genome.spells = spells(
+        &account.roster.spells,
+        account.spell_capacity,
+        preferred,
+        rng,
+    );
+    genome.cc_spells = spells(
+        &account.roster.spells,
+        account.cc_spell_capacity,
+        preferred,
+        rng,
+    );
+    let mut free = account.cc_capacity;
     loop {
         let eligible: Vec<_> = account
             .roster
@@ -283,7 +297,8 @@ pub(super) fn for_main(
         .iter()
         .find(|unit| unit.name == main.name)
         .map_or(0, |unit| unit.count * main.housing);
-    if !(144..=256).contains(&repaired_space)
+    if repaired_space * 100 < account.camp_capacity * 45
+        || repaired_space * 100 > account.camp_capacity * 80
         || genome.main_troop(account) != Some(main.name.as_str())
     {
         return Err("repair changed the themed main troop or its housing range".to_owned());

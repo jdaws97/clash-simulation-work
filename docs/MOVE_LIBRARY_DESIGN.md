@@ -124,7 +124,7 @@ Finally, distinguish this from existing “skill”: `evaluate.skill()` currentl
 
 **Representation.** Keep `ArmyGenome` for composition/loadout, and add a versioned move program to `PlanGenes`. Represent it as an ordered list with dependency edges, bounded repeats, named objectives/cohorts, and explicit recovery branches. Start with at most 64 move instances and retain the existing 256-step limit after lowering.
 
-Compile into the normal `PlaybookPlan` path; installation already does this at [program.rs:568](rust/src/armysearch/program.rs:568). Rust owns optimization; Python needs the reference compiler/executor behavior, not a duplicate optimizer.
+Compile into the normal `PlaybookPlan` path; installation already does this at [program.rs:568](rust/src/armysearch/program.rs:568). Rust owns the reference compiler, executor and optimization. Python is frozen at `python-frozen`.
 
 **Operators.** Reuse the current add/delete/anchor/trigger/count/group/swap/split/aim machinery, but operate on registered moves and typed bindings:
 
@@ -206,7 +206,10 @@ Use the discovered result as a finalist robustness gate or Pareto dimension. Do 
 
 This fits the existing quick/confirm archive pipeline and finalist red-team hook in [qd_search.py:449](tools/baselab/qd_search.py:449) and [funnel.py:149](tools/baselab/funnel.py:149).
 
-Before broadening army search, fix two current correctness restrictions: native evaluation constructs scenarios/jobs without a modifier, and account admission is TH16-only with fixed capacities. Defender TH18 support does not imply TH18 attacker-account support. See [eval.rs:120](rust/src/armysearch/eval.rs:120), [account.rs:60](rust/src/armysearch/account.rs:60), and [account.rs:349](rust/src/armysearch/account.rs:349).
+RW1 carries the manifest's ranked modifier through native scenarios/jobs, cache
+identity, replays and reports. Admission supports data-derived TH16–18 capacities;
+`--account FILE` selects an account, while the user's TH16 snapshot stays default.
+Explicit CC reservations and donation availability remain separate milestones.
 
 **4. Safeguards against simulator exploitation**
 
@@ -283,8 +286,8 @@ A stronger searched attacker alone does not demonstrate improved fidelity. Ordin
 |---|---|---|
 | **M0 — Freeze F14 baseline** | Coordinate with the writer; record engine/catalog/configuration identity and rerun current diagnostics | Demonstrate the failure/recovery invariants exposed by d3; archive post-fix check A and TH18 results |
 | **M1 — Move registry** | Proposed `rust/src/moves/{schema,library,validate,lower}.rs`; extract source mappings and role matrix | Every source occurrence mapped or explicitly unresolved; exact citations retained; original programs reconstruct |
-| **M2 — Human controller** | Shared observation, attention, queue, input scheduling, and error semantics in Python reference and Rust runtime | No overlapping inputs; correct held cadence; reactive delay enforced; fallback and rescue use the same controller |
-| **M3 — Missing vocabulary** | Persistent objectives/cohorts, effect events, funnel predicates, constrained circles, payload and named-Revive identity | Focused declared-synthetic proofs, compiled-plan agreement, and Python/Rust trace parity |
+| **M2 — Human controller** | Shared observation, attention, queue, input scheduling, and error semantics in the Rust reference runtime | No overlapping inputs; correct held cadence; reactive delay enforced; fallback and rescue use the same controller |
+| **M3 — Missing vocabulary** | Persistent objectives/cohorts, effect events, funnel predicates, constrained circles, payload and named-Revive identity | Focused declared-synthetic proofs, compiled-plan agreement, and Rust golden trace/outcome checks |
 | **M4 — Search correctness** | Move operators, modifier propagation, account-derived TH16–18 rules, explicit CC reservations, versioned cache/checkpoints | Reject unsupported combinations; cold/warm cache and restart equivalence; deterministic results across worker counts |
 | **M5 — Bounded attack search** | Fixed-army tuning, joint search, diverse archive, racing, fresh-seed reports | At equal battle budgets, outperform existing red-team tuning on held-out synthetic/reference targets; publish sensitivity and mechanic flags |
 | **M6 — Scoring integration** | Preserve meta score; add discovered-attack report and finalist gate; reuse attacks against later base candidates | Correct score weights/signs, no duplicate scouting advantage, no final-seed selection leakage |
@@ -292,6 +295,11 @@ A stronger searched attacker alone does not demonstrate improved fidelity. Ordin
 
 F14’s ownership remains with the current writer. Use its diagnostic as a regression specification: charge failure must not discard unused heroes; main support must wait for the actual push; dependent deployment must recover without waiting for its prerequisite troop’s death. Those failures are documented at [d3.out:34](output/fidelity/diag/d3.out:34), [d3.out:77](output/fidelity/diag/d3.out:77), and [d3.out:94](output/fidelity/diag/d3.out:94).
 
-Keep optimization Rust-first while preserving Python as the executable reference. Executor changes need matching per-tick traces, stars, destruction, time, event ordering, and RNG behavior—not merely similar averages. That contract is explicit at [RUST_PORT.md:3](docs/RUST_PORT.md:3). Give human errors a separately specified deterministic stream in the new mode; leave legacy RNG consumption unchanged.
+Rust is the executable reference; Python is frozen at `python-frozen`. Executor
+changes must pass the Rust golden suite's per-tick traces, outcomes and RNG
+ordering, or explicitly review and re-record intended changes. Mathematical
+operations use the platform-identical implementations in `rust/src/detmath.rs`
+and `geom.rs`; see [RUST_PORT.md](RUST_PORT.md). Give human errors a separately
+specified deterministic stream, preserving existing RNG consumption.
 
-Extend the existing program proofs rather than replacing them: they already cover identity, invalid programs, native execution, mutation, and worker-count determinism at [program_proof.rs:427](rust/src/armysearch/program_proof.rs:427). At implementation time, apply Rust formatting and Black 24.10.0, run the project verification entry point (`python -B verify.py` where provided), and complete compiler, executor, and scorer parity checks before production base searches.
+Extend the existing program proofs rather than replacing them: they already cover identity, invalid programs, native execution, mutation, and worker-count determinism at [program_proof.rs:427](rust/src/armysearch/program_proof.rs:427). Apply `cargo fmt`, run the native proofs and the Rust golden gate before production base searches. Do not edit frozen Python.

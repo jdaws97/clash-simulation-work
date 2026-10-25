@@ -1,4 +1,9 @@
-# Gap analysis (2026-10-22)
+# Gap analysis (2026-10-22; Rust status refreshed 2026-10-25)
+
+Rust is the reference; Python is frozen. The Rust golden suite replaces Python
+parity, and `rust/src/detmath.rs` supplies platform-identical maths. Historical
+Python findings below need current Rust verification; see
+[RUST_PORT.md](RUST_PORT.md) and [RUST_REVIEW_2026-10-25.md](RUST_REVIEW_2026-10-25.md).
 
 What the lab does not model, models crudely, or cannot check, ranked by how
 likely each gap is to make a base the sim calls best fail in real ranked play.
@@ -59,12 +64,10 @@ needs real-game footage or new defenses.
   placement, timing and mistakes; scaling shifts one-shot breakpoints
   instead. A base that induces human errors and a base that resists strong
   stats are different bases. Repo (behavioural profiles) + measure.
-- **Scouting with hindsight (verified in code).** "Scouting" picks the
-  better completed simulated battle of two sides (`evaluate.py:424`): the
-  attacker effectively sees how both attacks end, including hidden traps,
-  Teslas and CC. Real attackers choose before hidden information is
-  revealed. Undervalues surprise and bait; overvalues bases that are only
-  bad from one side. Repo.
+- **Scouting prior quality (Rust R5 update).** Scoring now defaults to
+  visible-state hidden ensembles and commits before real-state execution.
+  The old completed-battle selection remains explicitly `oracle`. Priors are
+  assumed and need held-out validation; see [SCOUTING.md](SCOUTING.md).
 - **No route planning per layout.** Red-team search controls entry angle,
   flank and step overrides, but cannot choose a specific funnel, compartment
   or building instance; most `base_reading` rules in playbooks never become
@@ -144,11 +147,10 @@ needs real-game footage or new defenses.
 
 ## 6. Engine coverage and data currency (M)
 
-- **Rust covers the scored armies only.** 27 `todo!` paths: Witch, Super
-  Dragon, Battle Blimp, Battle Drill, Miners, Ice Hound, Inferno Dragon /
-  Super Miner beams, Flame Flinger, Mighty Yak, Sneezy, Greedy Raven, and
-  21 of 43 equipment pieces. An army using one fails loudly. Repo (in
-  progress: a coverage stage plus the port).
+- **Rust content coverage requires admission checks.** There are no remaining
+  `todo!` paths in `rust/src`. Supported equipment/pets are checked before
+  compile/setup; catalog presence alone does not prove combat support. The
+  868-case golden suite protects existing traces, not real-game fidelity.
 - **No versioned data chain.** Registry, wiki tables, CSV folders, Rust
   catalog, calibration and saved winners are not tied to one data version;
   `wiki_mirror.py fetch` skips existing pages, so refreshed wiki text never

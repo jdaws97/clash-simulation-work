@@ -46,7 +46,7 @@ const USAGE: &str = concat!(
     "--objective ranked|stars|destruction --holdout-budget H ",
     "--themed-fraction 0.25 --random-fraction 0.05 ",
     "--families all|playbook|generic --programs on|off ",
-    "--program-mutation-rate 0.5 --root REPO --catalog C.json]\n",
+    "--program-mutation-rate 0.5 --account ACCOUNT.json --root REPO --catalog C.json]\n",
     "       baselab-engine armysearch-proof [--manifest M.json --fuzz 4096 ",
     "--out DIR --root REPO --catalog C.json]\n",
     "Budgets are per-candidate battle ceilings. Minimum coverage is two sides per base. ",
@@ -63,6 +63,7 @@ const USAGE: &str = concat!(
 pub struct Config {
     pub root: PathBuf,
     pub catalog: PathBuf,
+    pub account: Option<PathBuf>,
     pub manifest: Option<PathBuf>,
     pub out: PathBuf,
     pub batches: usize,
@@ -127,6 +128,7 @@ impl Config {
                 key,
                 "--root"
                     | "--catalog"
+                    | "--account"
                     | "--manifest"
                     | "--out"
                     | "--batches"
@@ -203,6 +205,7 @@ impl Config {
                 .cloned()
                 .unwrap_or_else(|| root.join("rust/data/catalog.json")),
             manifest: argument("--manifest").cloned(),
+            account: argument("--account").cloned(),
             out: argument("--out")
                 .cloned()
                 .unwrap_or_else(|| root.join("rust/output/armysearch")),
@@ -270,6 +273,9 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
     let config = Config::parse(args)?;
     let catalog = Arc::new(Catalog::load(&config.catalog)?);
     let mut compiler = Compiler::load(&config.root, &catalog.stats)?;
+    if let Some(path) = &config.account {
+        compiler.library.user = self::util::read(path)?;
+    }
     compiler
         .playbooks
         .retain(|(family, _)| !family.starts_with("test-"));
@@ -347,7 +353,11 @@ pub fn run(
     let identity = report::input_identity(
         &config.root,
         &config.catalog,
-        &config.identity_settings(),
+        &{
+            let mut settings = config.identity_settings();
+            crate::armies::put(&mut settings, "account", compiler.library.user.clone());
+            settings
+        },
         manifest,
     )?;
     let checkpoint = config.out.join("checkpoint.json");

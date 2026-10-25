@@ -1,3 +1,8 @@
+> Legacy v29 status: the document below describes the preserved engine, not
+> the current Rust reference. For current setup, fixed-tick navigation,
+> platform-identical maths and the golden gate, see [RUST_PORT.md](RUST_PORT.md)
+> and [GOLDEN.md](GOLDEN.md). Python is frozen at `python-frozen`.
+
 # Engine status and next decisions
 
 This is a preserved v29 conditional combat engine with a stabilization layer.

@@ -85,7 +85,7 @@ impl<'a> Compiler<'a> {
         if !pace.is_finite() {
             return Err("BASELAB_PACE must be finite".to_owned());
         }
-        let siege_caps = armies::read_json(&root.join("data/wiki/tables/Clan_Castle.json"))?;
+        let siege_caps = armies::read_json(&root.join("rust/data/clan_castle.json"))?;
         Ok(Self {
             library,
             stats,
@@ -103,6 +103,7 @@ impl<'a> Compiler<'a> {
         seed: i64,
         options: &CompileOptions,
     ) -> Result<Json, String> {
+        crate::content::validate_loadouts(build).map_err(|error| error.to_string())?;
         let mut build = build.clone();
         if options.account {
             put(&mut build, "own_levels", Json::Bool(true));
@@ -1669,26 +1670,34 @@ impl Compiler<'_> {
         )
     }
 
-    fn siege_cap(&self, plan: &Json) -> i64 {
+    fn siege_cap(&self, plan: &Json) -> Result<i64, String> {
         let siege = text(plan, "siege", "");
         let castle = self
             .building_level(plan, "Clan Castle", "clan_castle_level")
             .min(13);
         if castle < 6 {
-            return 0;
+            return Ok(0);
         }
         let table = list(&self.siege_caps, "tables")
             .iter()
             .find(|table| text(table, "heading", "") == "Siege Machine Level Cap");
-        table
+        // Derived wiki table: rust/data/clan_castle.json, Siege Machine Level Cap.
+        // https://clashofclans.fandom.com/wiki/Clan_Castle
+        let value = table
             .and_then(|table| {
                 list(table, "rows")
                     .iter()
                     .find(|row| row.arr().first().is_some_and(|name| name == &string(siege)))
             })
             .and_then(|row| row.arr().get((castle - 5) as usize))
-            .and_then(|value| stats::num(value, Some(0.0)))
-            .unwrap_or(0.0) as i64
+            .ok_or_else(|| format!("missing siege donation cap: {siege}, Clan Castle {castle}"))?;
+        if value == &string("-") {
+            return Ok(0);
+        }
+        stats::num(value, None)
+            .filter(|cap| cap.is_finite() && *cap > 0.0 && cap.fract() == 0.0)
+            .map(|cap| cap as i64)
+            .ok_or_else(|| format!("invalid siege donation cap: {siege}, Clan Castle {castle}"))
     }
 
     // plans.py:574-612: donated research uses the Castle's Laboratory cap;
@@ -2085,7 +2094,7 @@ impl Compiler<'_> {
                 put(
                     &mut troop_levels,
                     siege,
-                    Json::Num(self.siege_cap(plan) as f64),
+                    Json::Num(self.siege_cap(plan)? as f64),
                 );
             }
         }
@@ -2094,7 +2103,7 @@ impl Compiler<'_> {
                 let level = integer(value, name, 1)?;
                 if plan.get("siege") == Some(&string(name)) && flag(plan, "siege_donated") {
                     self.row_exists(name, level)?;
-                    let cap = self.siege_cap(plan);
+                    let cap = self.siege_cap(plan)?;
                     if level > cap {
                         return Err(format!(
                             "{name} level {level} exceeds Clan Castle donation cap {cap}"
@@ -2272,6 +2281,7 @@ impl Compiler<'_> {
     }
 
     pub fn require_legal(&self, plan: &mut Json) -> Result<(), String> {
+        crate::content::validate_plan(plan).map_err(|error| error.to_string())?;
         // plans.py:require_legal / tools/baselab/replay_log.py: decoded armies
         // and real_battle replays retain their documented inventories.
         let battle_log = flag(plan, "observed")
@@ -2311,11 +2321,30 @@ impl Compiler<'_> {
     pub fn account_legal(&self, build: &Json, plan: &Json) -> Vec<String> {
         let mut out = self.legal(plan);
         if let Ok(housing) = self.housing(plan) {
+            let levels = self.library.user.at("levels");
+            let capacity = |name: &str, key: &str, column: &str| {
+                let level = number(levels, key, 0.0) as i64;
+                if level > 0 {
+                    self.get(name, level, column)
+                } else {
+                    0.0
+                }
+            };
             for (key, cap) in [
-                ("camp", 320.0),
-                ("spells", 11.0),
-                ("cc", 50.0),
-                ("cc_spells", 3.0),
+                (
+                    "camp",
+                    4.0 * capacity("Army Camp", "camp", "Troop Capacity"),
+                ),
+                (
+                    "spells",
+                    self.get(
+                        "Spell Factory",
+                        self.building_level(plan, "Spell Factory", "spell_factory_level"),
+                        "Spell Storage Capacity",
+                    ) + capacity("Dark Spell Factory", "dsf", "Spell Storage Capacity"),
+                ),
+                ("cc", capacity("Clan Castle", "cc", "Troop Capacity")),
+                ("cc_spells", capacity("Clan Castle", "cc", "Spell Capacity")),
             ] {
                 if housing.at(key).f64() > cap {
                     out.push(format!(

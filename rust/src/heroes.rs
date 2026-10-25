@@ -2985,6 +2985,7 @@ pub fn guardian_check(catalog: std::sync::Arc<crate::catalog::Catalog>) -> Resul
         ))
         .expect("synthetic Guardian options");
         crate::setup::build(&layout, &plan, &options, Arc::clone(&catalog))
+            .expect("supported Guardian fixture")
     };
     let mut cases = 0;
     for name in ["Longshot", "Smasher", "Logger"] {

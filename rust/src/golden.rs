@@ -252,7 +252,8 @@ fn simulate(
 ) -> Result<(Outcome, String), String> {
     // setup::build is the same path Runner::build uses for prepared jobs.
     // No state, RNG, mutable plan, or iteration order is shared across workers.
-    let mut battle = setup::build(&case.layout, &case.plan, &case.options, catalog);
+    let mut battle = setup::build(&case.layout, &case.plan, &case.options, catalog)
+        .map_err(|error| error.to_string())?;
     let mut sink = TraceSink::new(capture);
     trace::write_trace(&mut battle, &mut sink).map_err(|error| error.to_string())?;
     sink.finish_event();

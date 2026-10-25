@@ -184,7 +184,7 @@ impl Runner {
     }
 
     /// Builds fresh state on the calling thread, also used by setup and trace.
-    pub fn build(&self, job: &Job) -> Battle {
+    pub fn build(&self, job: &Job) -> Result<Battle, crate::content::ContentError> {
         let (layout_idx, plan_idx) = job.indices();
         let layout = self
             .inputs
@@ -202,7 +202,7 @@ impl Runner {
         setup::build(layout, plan, job.options(), Arc::clone(&self.catalog))
     }
 
-    pub fn build_job(&self, index: usize) -> Battle {
+    pub fn build_job(&self, index: usize) -> Result<Battle, crate::content::ContentError> {
         let jobs = &self.inputs.jobs;
         let job = jobs
             .get(index)
@@ -245,7 +245,7 @@ impl Runner {
                         }
                         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                             let job = &jobs[index];
-                            let mut battle = self.build(job);
+                            let mut battle = self.build(job).map_err(|error| error.to_string())?;
                             if profiling.is_some() {
                                 field_profile::begin_battle();
                             }
@@ -256,9 +256,10 @@ impl Runner {
                             if let Some(summary) = summary {
                                 summary(index, job, &battle, &result);
                             }
-                            JobResult::from(&result)
+                            Ok(JobResult::from(&result))
                         }))
-                        .map_err(panic_message);
+                        .map_err(panic_message)
+                        .and_then(|result| result);
                         if let Some(profiling) = profiling {
                             profiling.finish_job(result.is_err());
                         }

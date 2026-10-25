@@ -116,7 +116,7 @@ fn input_files(root: &Path, catalog: &Path) -> Result<Vec<PathBuf>, String> {
         (root.join("rust/src"), true),
         (root.join("data"), false),
         (root.join("data/playbooks"), true),
-        (root.join("data/wiki/tables"), true),
+        (root.join("rust/data"), true),
     ] {
         collect(&directory, &mut paths, recursive)?;
     }
@@ -146,7 +146,7 @@ pub(super) fn fingerprint_proof(
         catalog.to_owned(),
         root.join("data").join(crate::armies::META_FILE),
         root.join("data/your-levels.json"),
-        root.join("data/wiki/tables/Clan_Castle.json"),
+        root.join("rust/data/clan_castle.json"),
     ];
     for name in [
         "custom-armies.json",
@@ -348,6 +348,16 @@ fn uncertainty(manifest: &TargetManifest, estimate: &CandidateEstimate, seed: u6
 
 pub fn stage_report(manifest: &TargetManifest, estimate: &CandidateEstimate, seed: u64) -> Json {
     let mut result = estimate.to_json();
+    crate::armies::put(
+        &mut result,
+        "modifier",
+        manifest.modifier().map_or(Json::Null, Json::Str),
+    );
+    crate::armies::put(
+        &mut result,
+        "scout_policy",
+        string("oracle (completed-battle upper bound)"),
+    );
     let per_base = estimate
         .bases
         .iter()
@@ -442,6 +452,13 @@ pub fn army_report(
 ) -> Result<(), String> {
     write(path, &object([
         ("rank_before_holdout", number(rank)),
+        ("attacker_town_hall", Json::Num(account.town_hall as f64)),
+        ("account_capacities", object([
+            ("camp", number(account.camp_capacity)),
+            ("spells", number(account.spell_capacity)),
+            ("cc_troops", number(account.cc_capacity)),
+            ("cc_spells", number(account.cc_spell_capacity)),
+        ])),
         ("archive_cell", string(elite.genome.cell(account))),
         ("novelty", novelty),
         ("program", program),

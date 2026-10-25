@@ -123,7 +123,7 @@ impl<'a, 'b> NativeEvaluator<'a, 'b> {
                 angle,
                 seed: key.seed,
                 weight: 1.0,
-                modifier: None,
+                modifier: self.manifest.modifier(),
                 group: key.replicate as i64,
                 tactic: Json::Null,
                 charge: None,
@@ -133,12 +133,19 @@ impl<'a, 'b> NativeEvaluator<'a, 'b> {
             if plan.at("strength").f64().to_bits() != 1.0_f64.to_bits() {
                 return Err("compiled plan changed strength".to_owned());
             }
-            let job = Job::new(key.target, plans.len(), key.seed, target.town_hall, None);
+            let job = Job::new(
+                key.target,
+                plans.len(),
+                key.seed,
+                target.town_hall,
+                self.manifest.modifier(),
+            );
             let cache_key = format!(
-                "{}|{}|{}|{}",
+                "{}|{}|{}|{:?}|{}",
                 key.target,
                 key.seed,
                 target.town_hall,
+                self.manifest.modifier(),
                 encode(&plan)
             );
             if let Some(outcome) = self.cache.get(&cache_key) {
@@ -200,6 +207,10 @@ impl<'a, 'b> NativeEvaluator<'a, 'b> {
                         ),
                     ),
                     ("strength", Json::Num(1.0)),
+                    (
+                        "modifier",
+                        self.manifest.modifier().map_or(Json::Null, Json::Str),
+                    ),
                     ("outcome", outcome.to_json()),
                 ]);
                 writeln!(raw, "{}", encode(&row)).map_err(|error| error.to_string())?;
@@ -242,7 +253,7 @@ impl<'a, 'b> NativeEvaluator<'a, 'b> {
                         angle: keys[*index].angle,
                         seed: keys[*index].seed,
                         weight: base.weight / groups as f64 / indices.len() as f64,
-                        modifier: None,
+                        modifier: self.manifest.modifier(),
                         group: replicate as i64,
                         tactic: Json::Null,
                         charge: None,
@@ -289,8 +300,8 @@ impl<'a, 'b> NativeEvaluator<'a, 'b> {
             Arc::clone(&self.catalog),
             PreparedInputs::new(vec![target.layout.clone()], vec![plan]),
         );
-        let job = Job::new(0, 0, key.seed, target.town_hall, None);
-        let mut battle = runner.build(&job);
+        let job = Job::new(0, 0, key.seed, target.town_hall, self.manifest.modifier());
+        let mut battle = runner.build(&job).map_err(|error| error.to_string())?;
         battle.record = true;
         let result = battle.run();
         self.executed += 1;

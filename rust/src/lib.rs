@@ -10,6 +10,7 @@ pub mod catalog;
 pub mod combat;
 pub mod compile;
 pub mod compile_cli;
+pub mod content;
 pub mod defense;
 pub mod detmath;
 pub mod effects;
@@ -32,6 +33,7 @@ pub mod runner;
 #[path = "scoring_cli.rs"]
 pub mod score_cli;
 pub mod scoring;
+pub mod scouting;
 pub mod setup;
 pub mod shared;
 pub mod source;

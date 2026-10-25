@@ -1,5 +1,5 @@
 //! Search admission: plans.py:563-839, heroes.py:119, spells.py:60.
-//! The search deliberately narrows the frozen oracle's capacities to 320/11/50/3.
+//! Capacities come from the selected account buildings and catalog rows.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -32,6 +32,11 @@ pub struct EligibleRoster {
 
 #[derive(Clone, Debug)]
 pub struct AccountRules {
+    pub town_hall: i64,
+    pub camp_capacity: usize,
+    pub spell_capacity: usize,
+    pub cc_capacity: usize,
+    pub cc_spell_capacity: usize,
     pub roster: EligibleRoster,
     pub spell_factory: i64,
     pub assumptions: Vec<String>,
@@ -57,9 +62,11 @@ fn raw_requirement(record: &Json, key: &str) -> f64 {
 impl AccountRules {
     pub fn load(catalog: &Catalog, compiler: &Compiler<'_>) -> Result<Self, String> {
         let user = &compiler.library.user;
-        if numeric(user.at("levels"), "gm", 0.0) != 16.0 {
-            return Err("armysearch currently requires the TH16 account".to_owned());
+        let town_hall = numeric(user.at("levels"), "gm", 0.0);
+        if !(16.0..=18.0).contains(&town_hall) || town_hall.fract() != 0.0 {
+            return Err("armysearch requires a TH16, TH17, or TH18 account".to_owned());
         }
+        let town_hall = town_hall as i64;
         let mut assumptions = Vec::new();
         let spell_factory = if let Some(level) = user.at("levels").get("sf") {
             level.i64()
@@ -76,7 +83,11 @@ impl AccountRules {
                 }
             }
             if required <= 0.0
-                || required > catalog.stats.max_level("Spell Factory", 16).unwrap_or(0) as f64
+                || required
+                    > catalog
+                        .stats
+                        .max_level("Spell Factory", town_hall)
+                        .unwrap_or(0) as f64
             {
                 return Err(
                     "cannot derive a validated Spell Factory level from owned spells".to_owned(),
@@ -85,6 +96,42 @@ impl AccountRules {
             assumptions.push(format!("Missing levels.sf: use validated lower bound {} from owned spell unlock requirements", required as i64));
             required as i64
         };
+        // gap-triage D2 / gaps/greedy-raven.md: use actual building rows.
+        // ClashKing/catalog registry: Army Camp, Spell Factory, Dark Spell Factory, Clan Castle.
+        let capacity = |name: &str, level: i64, column: &str| -> Result<usize, String> {
+            let valid = catalog.stats.registry.get(name).is_some_and(|record| {
+                array(record, "levels")
+                    .iter()
+                    .any(|row| row.get("level") == Some(&Json::Num(level as f64)))
+            });
+            if !valid
+                || catalog.stats.required_town_hall(name, &Level::Int(level)) > town_hall as f64
+            {
+                return Err(format!(
+                    "invalid account {name} level {level} at TH{town_hall}"
+                ));
+            }
+            catalog
+                .stats
+                .get(name, &Level::Int(level), &[column], None)
+                .filter(|value| value.is_finite() && *value >= 0.0 && value.fract() == 0.0)
+                .map(|value| value as usize)
+                .ok_or_else(|| format!("missing account capacity: {name} {level} {column}"))
+        };
+        let camp_capacity = 4 * capacity(
+            "Army Camp",
+            numeric(user.at("levels"), "camp", 0.0) as i64,
+            "Troop Capacity",
+        )?;
+        let spell_capacity = capacity("Spell Factory", spell_factory, "Spell Storage Capacity")?
+            + capacity(
+                "Dark Spell Factory",
+                numeric(user.at("levels"), "dsf", 0.0) as i64,
+                "Spell Storage Capacity",
+            )?;
+        let castle = numeric(user.at("levels"), "cc", 0.0) as i64;
+        let cc_capacity = capacity("Clan Castle", castle, "Troop Capacity")?;
+        let cc_spell_capacity = capacity("Clan Castle", castle, "Spell Capacity")?;
         let mut roster = EligibleRoster {
             troops: Vec::new(),
             spells: Vec::new(),
@@ -136,7 +183,7 @@ impl AccountRules {
             else {
                 continue;
             };
-            if catalog.stats.required_town_hall(name, &Level::Int(level)) > 16.0 {
+            if catalog.stats.required_town_hall(name, &Level::Int(level)) > town_hall as f64 {
                 continue;
             }
             let mut available = true;
@@ -168,6 +215,9 @@ impl AccountRules {
             match kind {
                 "hero" => roster.heroes.push(name.clone()),
                 "equipment" => {
+                    if !crate::content::equipment(name) {
+                        continue;
+                    }
                     let owner = record
                         .at("attrs")
                         .get("raw")
@@ -178,7 +228,7 @@ impl AccountRules {
                         .or_default()
                         .push(name.clone());
                 }
-                "pet" => roster.pets.push(name.clone()),
+                "pet" if crate::content::pet(name) => roster.pets.push(name.clone()),
                 "troop" | "super_troop" | "spell" | "siege" | "siege_machine" => {
                     let housing = if kind == "spell" {
                         numeric(record.at("attrs"), "housing", 0.0)
@@ -238,6 +288,11 @@ impl AccountRules {
             return Err("insufficient supported account inventory".to_owned());
         }
         Ok(Self {
+            town_hall,
+            camp_capacity,
+            spell_capacity,
+            cc_capacity,
+            cc_spell_capacity,
             roster,
             spell_factory,
             assumptions,
@@ -246,10 +301,30 @@ impl AccountRules {
 
     pub fn check(&self, genome: &ArmyGenome) -> Result<(), String> {
         for (values, roster, cap, label) in [
-            (&genome.troops, &self.roster.troops, 320, "camp"),
-            (&genome.spells, &self.roster.spells, 11, "spells"),
-            (&genome.cc_troops, &self.roster.troops, 50, "CC troops"),
-            (&genome.cc_spells, &self.roster.spells, 3, "CC spells"),
+            (
+                &genome.troops,
+                &self.roster.troops,
+                self.camp_capacity,
+                "camp",
+            ),
+            (
+                &genome.spells,
+                &self.roster.spells,
+                self.spell_capacity,
+                "spells",
+            ),
+            (
+                &genome.cc_troops,
+                &self.roster.troops,
+                self.cc_capacity,
+                "CC troops",
+            ),
+            (
+                &genome.cc_spells,
+                &self.roster.spells,
+                self.cc_spell_capacity,
+                "CC spells",
+            ),
         ] {
             let mut total = 0usize;
             let mut seen = BTreeSet::new();
@@ -347,10 +422,30 @@ impl AccountRules {
     /// Integer DP fills representable residual housing, including capacities
     /// whose eligible roster has no one-space filler. It never changes levels.
     pub fn repair(&self, genome: &mut ArmyGenome) -> Result<(), String> {
-        repair_counts(&mut genome.troops, &self.roster.troops, 320, true);
-        repair_counts(&mut genome.spells, &self.roster.spells, 11, false);
-        repair_counts(&mut genome.cc_troops, &self.roster.troops, 50, false);
-        repair_counts(&mut genome.cc_spells, &self.roster.spells, 3, false);
+        repair_counts(
+            &mut genome.troops,
+            &self.roster.troops,
+            self.camp_capacity,
+            true,
+        );
+        repair_counts(
+            &mut genome.spells,
+            &self.roster.spells,
+            self.spell_capacity,
+            false,
+        );
+        repair_counts(
+            &mut genome.cc_troops,
+            &self.roster.troops,
+            self.cc_capacity,
+            false,
+        );
+        repair_counts(
+            &mut genome.cc_spells,
+            &self.roster.spells,
+            self.cc_spell_capacity,
+            false,
+        );
         if genome
             .siege
             .as_ref()
@@ -430,7 +525,8 @@ impl AccountRules {
         let genome = &canonical;
         self.check(genome)?;
         compatible(compiler, genome)?;
-        let build = genome.to_build();
+        let mut build = genome.to_build();
+        crate::armies::put(&mut build, "th", Json::Num(self.town_hall as f64));
         let cited = genome.plan.family != "generic";
         let mut tactics = genome.plan.tactics;
         tactics[0] = angle;
@@ -450,8 +546,8 @@ impl AccountRules {
             &mut plan,
             "label",
             string(format!(
-                "armysearch {} (TH16, account levels, uncalibrated)",
-                genome.plan.family,
+                "armysearch {} (TH{}, account levels, uncalibrated)",
+                genome.plan.family, self.town_hall,
             )),
         );
         crate::armies::put(&mut plan, "strength", Json::Num(1.0));

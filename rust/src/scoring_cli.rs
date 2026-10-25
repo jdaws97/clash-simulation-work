@@ -3,14 +3,16 @@
 //! score-check BUNDLE REFERENCE [--battles] [--threads N] [--root REPO]
 //!
 //! BUNDLE: layouts, scenarios, plans, optional plan_indices (default 0..N).
-//! mode defaults to ranked; scout defaults to SCOUT. hole_penalty overrides
+//! mode defaults to ranked; scout defaults to SCOUT; scout_policy defaults to
+//! visible (independent hidden ensemble). random and oracle are explicit options.
+//! hole_penalty overrides
 //! BASELAB_HOLE_PENALTY; an explicit null freezes the mode's default penalty.
 //! Plans are rust_bridge.py:129-149 scenario_plan JSON, including strength.
 //! Optional scenario_options regenerates meta scenarios from data snapshots
 //! (or --root files); optional results is a layout-major array of Python
 //! (stars, destruction, th_destroyed, time) rows, used only with --replay.
-//! score-check replays oracle results by default; --battles also checks the
-//! engine. tools/baselab/score_reference.py writes both reference formats.
+//! Replaying completed results requires scout_policy: oracle. score-check is a
+//! legacy comparison adapter; the reference regression gate is Rust golden.
 //! Embedded data freezes calibration, builds, observations and available
 //! playbooks. Without data, these are loaded from --root and the environment.
 
@@ -21,6 +23,7 @@ use std::sync::Arc;
 use crate::catalog::Catalog;
 use crate::json::Json;
 use crate::scoring::{self, MetaOptions, Outcome, Scenario, Scorer, ScoringData};
+use crate::scouting::{ScoutPolicy, ScoutRun, HIDDEN_SAMPLES};
 
 struct Options {
     root: PathBuf,
@@ -164,37 +167,82 @@ fn score_bundle(bundle: &Json, options: &Options, replay: bool) -> Result<Json, 
             .map(|(key, value)| (key.clone(), value.size))
             .collect()
     };
-    let results = if replay {
+    let policy = ScoutPolicy::parse(
+        bundle
+            .get("scout_policy")
+            .and_then(Json::opt_str)
+            .unwrap_or("visible"),
+    )?;
+    let runs = if replay {
+        if policy != ScoutPolicy::Oracle {
+            return Err("replaying completed battles requires explicit scout_policy: oracle; visible scouting needs independent ensemble battles".to_owned());
+        }
         let rows = bundle
             .get("results")
             .ok_or("replay requires bundle.results")?
             .arr();
         rows.iter()
-            .map(|rows| rows.arr().iter().map(Outcome::from_json).collect())
-            .collect::<Vec<Vec<Outcome>>>()
+            .map(|rows| {
+                let outcomes: Vec<_> = rows.arr().iter().map(Outcome::from_json).collect();
+                if outcomes.len() != scenarios.len() {
+                    return Err("replay needs one outcome per scenario".to_owned());
+                }
+                let selections = scoring::scouted(&scenarios, &outcomes, scout);
+                let mut selected = Vec::new();
+                let mut selected_outcomes = Vec::new();
+                let mut source_indices = Vec::new();
+                for row in selections {
+                    let mut scenario = scenarios[row.scenario].clone();
+                    scenario.weight = row.weight;
+                    selected.push(scenario);
+                    selected_outcomes.push(outcomes[row.scenario]);
+                    source_indices.push(row.scenario);
+                }
+                Ok(ScoutRun {
+                    scenarios: selected,
+                    outcomes: selected_outcomes,
+                    source_indices,
+                    planning_battles: 0,
+                    evaluation_battles: 0,
+                })
+            })
+            .collect::<Result<Vec<_>, String>>()?
     } else {
-        run_bundle(
+        let scorer = prepare_bundle(
             bundle,
             layouts,
             &scenarios,
             &data,
             catalog.as_ref().unwrap(),
-            options.threads,
-        )?
+        )?;
+        (0..layouts.len())
+            .map(|index| {
+                scorer.scout(
+                    Arc::clone(catalog.as_ref().unwrap()),
+                    index,
+                    options.threads,
+                    policy,
+                    scout,
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?
     };
-    if results.len() != layouts.len() || results.iter().any(|rows| rows.len() != scenarios.len()) {
-        return Err("results must have one row per layout and one outcome per scenario".to_owned());
+    if runs.len() != layouts.len() {
+        return Err("results must have one row per layout".to_owned());
     }
     let village = scoring::number(bundle, "village", 44.0) as i64;
     let margin = scoring::number(bundle, "margin", 3.0) as i64;
     let mut output = Vec::new();
-    for (layout, rows) in layouts.iter().zip(results) {
-        let summary = scoring::summarise(&scenarios, &rows, scout)?;
+    for (layout, run) in layouts.iter().zip(runs) {
+        let summary = scoring::summarise(&run.scenarios, &run.outcomes, Some(1))?;
         let holes = scoring::hole_tiles(layout, &sizes, village, margin);
-        let selections = scoring::scouted(&scenarios, &rows, scout);
-        let selections = selections
+        let selections = run
+            .source_indices
             .iter()
-            .map(|row| Json::Arr(vec![Json::Num(row.scenario as f64), Json::Num(row.weight)]))
+            .zip(&run.scenarios)
+            .map(|(index, scenario)| {
+                Json::Arr(vec![Json::Num(*index as f64), Json::Num(scenario.weight)])
+            })
             .collect();
         output.push(scoring::object(vec![
             (
@@ -209,7 +257,16 @@ fn score_bundle(bundle: &Json, options: &Options, replay: bool) -> Result<Json, 
             ("scouting", Json::Arr(selections)),
             (
                 "results",
-                Json::Arr(rows.iter().map(Outcome::to_json).collect()),
+                Json::Arr(run.outcomes.iter().map(Outcome::to_json).collect()),
+            ),
+            (
+                "evaluation_scenarios",
+                Json::Arr(run.scenarios.iter().map(Scenario::to_json).collect()),
+            ),
+            ("planning_battles", Json::Num(run.planning_battles as f64)),
+            (
+                "evaluation_battles",
+                Json::Num(run.evaluation_battles as f64),
             ),
             ("holes", Json::Num(holes as f64)),
         ]));
@@ -238,6 +295,15 @@ fn score_bundle(bundle: &Json, options: &Options, replay: bool) -> Result<Json, 
         Json::Obj(entries)
     });
     let mut output = scoring::object(vec![
+        ("scout_policy", Json::Str(policy.name().to_owned())),
+        (
+            "hidden_samples",
+            Json::Num(if policy == ScoutPolicy::Visible {
+                HIDDEN_SAMPLES as f64
+            } else {
+                0.0
+            }),
+        ),
         (
             "scenarios",
             Json::Arr(scenarios.iter().map(Scenario::to_json).collect()),
@@ -284,14 +350,13 @@ fn score_bundle(bundle: &Json, options: &Options, replay: bool) -> Result<Json, 
     Ok(output)
 }
 
-fn run_bundle(
+fn prepare_bundle(
     bundle: &Json,
     layouts: &[Json],
     scenarios: &[Scenario],
     data: &ScoringData,
     catalog: &Arc<Catalog>,
-    threads: usize,
-) -> Result<Vec<Vec<Outcome>>, String> {
+) -> Result<Scorer, String> {
     let plans = bundle.at("plans").arr().to_vec();
     let indices: Vec<usize> = bundle.get("plan_indices").map_or_else(
         || (0..scenarios.len()).collect(),
@@ -314,14 +379,13 @@ fn run_bundle(
             ));
         }
     }
-    let scorer = Scorer::new(
+    Scorer::new(
         Arc::clone(catalog),
         layouts.to_vec(),
         scenarios.to_vec(),
         plans,
         indices,
-    )?;
-    scorer.run(&(0..layouts.len()).collect::<Vec<_>>(), threads)
+    )
 }
 
 fn check(options: &Options) -> Result<(), String> {

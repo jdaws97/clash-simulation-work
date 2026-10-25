@@ -1,0 +1,125 @@
+{
+  "title": "Clan Castle",
+  "source": "https://clashofclans.fandom.com/wiki/Clan_Castle",
+  "revid": 623293,
+  "retrieved_utc": "2026-10-15T01:57:36+00:00",
+  "note": "Derived donation caps only; a dash explicitly means unavailable. Castle levels 13 and above share the last column.",
+  "tables": [
+    {
+      "kind": "other",
+      "columns": [
+        "Siege Machine",
+        "Clan Castle Level / Level 6",
+        "Clan Castle Level / Level 7",
+        "Clan Castle Level / Level 8",
+        "Clan Castle Level / Level 9",
+        "Clan Castle Level / Level 10",
+        "Clan Castle Level / Level 11",
+        "Clan Castle Level / Level 12",
+        "Clan Castle Level / Level 13+"
+      ],
+      "rows": [
+        [
+          "Wall Wrecker",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "6",
+          "6",
+          "6"
+        ],
+        [
+          "Battle Blimp",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "6",
+          "6",
+          "6"
+        ],
+        [
+          "Stone Slammer",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "6",
+          "6",
+          "6"
+        ],
+        [
+          "Siege Barracks",
+          "-",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "6",
+          "6"
+        ],
+        [
+          "Log Launcher",
+          "-",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "6",
+          "6"
+        ],
+        [
+          "Flame Flinger",
+          "-",
+          "-",
+          "2",
+          "3",
+          "4",
+          "5",
+          "5",
+          "5"
+        ],
+        [
+          "Battle Drill",
+          "-",
+          "-",
+          "-",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        [
+          "Troop Launcher",
+          "-",
+          "-",
+          "-",
+          "-",
+          "2",
+          "3",
+          "4",
+          "4"
+        ],
+        [
+          "Sky Wagon",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "2",
+          "3",
+          "4"
+        ]
+      ],
+      "heading": "Siege Machine Level Cap"
+    }
+  ]
+}

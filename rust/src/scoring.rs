@@ -1107,20 +1107,33 @@ pub struct Selection {
     pub weight: f64,
 }
 
-fn better(left: &Outcome, right: &Outcome) -> bool {
-    let a = attacker_trophies(left.stars, left.destruction);
-    let b = attacker_trophies(right.stars, right.destruction);
-    a > b || (a == b && left.destruction > right.destruction)
-}
-
 // evaluate.py:723-762: insertion-ordered groups/sides, lexicographic
 // itertools.combinations, and Python max's first occurrence on ties.
+/// Oracle upper bound: uses completed real-state battles. Visible scouting
+/// must call `scouted_by` with independent hidden-ensemble predictions instead.
 pub fn scouted(
     scenarios: &[Scenario],
     results: &[Outcome],
     scout: Option<usize>,
 ) -> Vec<Selection> {
-    let count = scenarios.len().min(results.len());
+    let utility: Vec<_> = results
+        .iter()
+        .map(|row| {
+            (
+                attacker_trophies(row.stars, row.destruction) as f64,
+                row.destruction,
+            )
+        })
+        .collect();
+    scouted_by(scenarios, &utility, scout)
+}
+
+pub fn scouted_by(
+    scenarios: &[Scenario],
+    utility: &[(f64, f64)],
+    scout: Option<usize>,
+) -> Vec<Selection> {
+    let count = scenarios.len().min(utility.len());
     let scout = scout.unwrap_or(SCOUT);
     if scout <= 1 {
         return (0..count)
@@ -1170,7 +1183,7 @@ pub fn scouted(
             let mut best = sides[indices[0]].1[0];
             for side in &indices {
                 for candidate in &sides[*side].1 {
-                    if better(&results[*candidate], &results[best]) {
+                    if utility[*candidate] > utility[best] {
                         best = *candidate;
                     }
                 }
