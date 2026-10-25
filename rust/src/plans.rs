@@ -1830,6 +1830,16 @@ impl AttackPlan {
         if battle.t < self.busy_until {
             return;
         }
+        // output/research/usage/earthquake-spell.md:18: four casts open walls.
+        // https://www.gibiarena.com/en/clash-of-clans/upgrades/earthquake-spell
+        // Generic openings must drain the same paced queue as playbook fallback.
+        if !self.fallback_quakes.is_empty() {
+            let (x, y) = self.fallback_quakes.remove(0);
+            if self.have("eq") {
+                self.use_spell(battle, "eq", x, y);
+                return;
+            }
+        }
         if self.spare_lightning_cluster(battle) && single_cast {
             return;
         }

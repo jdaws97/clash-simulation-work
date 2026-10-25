@@ -490,10 +490,15 @@ def meta_scenarios(
                 if PLAYBOOK_FAMILY.get(b["archetype"])
                 and _playbook(PLAYBOOK_FAMILY[b["archetype"]]) is not None
             ]
-            dropped = sorted({b["archetype"] for b, _ in builds} - {b["archetype"] for b, _ in kept})
+            dropped = sorted(
+                {b["archetype"] for b, _ in builds} - {b["archetype"] for b, _ in kept}
+            )
             if dropped:
                 META_MIX_INFO.setdefault("no_playbook", {})[th] = dropped
-                print(f"meta_scenarios: TH{th} without a cited playbook, left out: {', '.join(dropped)}", file=sys.stderr)
+                print(
+                    f"meta_scenarios: TH{th} without a cited playbook, left out: {', '.join(dropped)}",
+                    file=sys.stderr,
+                )
             if kept:
                 total = sum(w for _, w in kept)
                 libraries[th] = [(b, w / total) for b, w in kept]
@@ -670,7 +675,7 @@ def evaluate(
 ) -> Evaluation:
     strength = strength or STRENGTH
     if os.environ.get("BASELAB_REDTEAM") == "1":
-        # opt-in: playbook armies attack with their red-team best attack
+        # opt-in: playbook armies keep the better ordinary/red-team outcome
         # (redteam.py, docs/REDTEAM.md); a few hundred battles per army
         from .redteam import redteam_rows
 

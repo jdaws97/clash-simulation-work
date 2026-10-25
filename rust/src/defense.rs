@@ -264,24 +264,9 @@ pub fn reveal_tesla(battle: &mut Battle, owner: BuildingId) {
         return;
     }
     battle.building_mut(owner).revealed = true;
-    // output/research/usage/baby-dragon.md:16; verify/c2.out #9: only flying
-    // units keep a better current target (October 2020); ground units retarget.
-    // https://clashofclans.fandom.com/wiki/Baby_Dragon
-    // https://www.clash.ninja/blog/october-2020-update-is-here
+    // output/research/usage/overgrowth-spell.md:36: a covered Tesla stays untargetable.
     // https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
-    let attackers: Vec<_> = battle.attackers_pool().map(Unit::reference).collect();
-    // Warden follow_target reads allies' targets: decide before clearing any.
-    let retarget: Vec<_> = attackers
-        .into_iter()
-        .filter(|&reference| !tesla_keeps_target(battle, reference))
-        .collect();
-    for reference in retarget {
-        let unit = battle.unit_mut(reference);
-        unit.target = None;
-        unit.wall_target = None;
-        unit.target_kind = None;
-        unit.extra.next_engage = 0.0;
-    }
+    // Apply residual coverage before comparing the newly revealed target.
     for index in 0..battle.fields.len() {
         let field = &battle.fields[index];
         if !(field.started <= battle.t && battle.t < field.until) {
@@ -302,6 +287,24 @@ pub fn reveal_tesla(battle: &mut Battle, owner: BuildingId) {
             }
             _ => {}
         }
+    }
+    // output/research/usage/baby-dragon.md:16; verify/c2.out #9: only flying
+    // units keep a better current target (October 2020); ground units retarget.
+    // https://clashofclans.fandom.com/wiki/Baby_Dragon
+    // https://www.clash.ninja/blog/october-2020-update-is-here
+    // https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
+    let attackers: Vec<_> = battle.attackers_pool().map(Unit::reference).collect();
+    // Warden follow_target reads allies' targets: decide before clearing any.
+    let retarget: Vec<_> = attackers
+        .into_iter()
+        .filter(|&reference| !tesla_keeps_target(battle, reference))
+        .collect();
+    for reference in retarget {
+        let unit = battle.unit_mut(reference);
+        unit.target = None;
+        unit.wall_target = None;
+        unit.target_kind = None;
+        unit.extra.next_engage = 0.0;
     }
 }
 

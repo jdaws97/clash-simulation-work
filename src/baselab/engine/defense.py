@@ -879,6 +879,18 @@ def reveal_tesla(battle, b):
     if b.revealed or not b.alive:
         return
     b.revealed = True
+    # output/research/usage/overgrowth-spell.md:36: a covered Tesla stays untargetable.
+    # https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
+    # Apply residual coverage before comparing the newly revealed target.
+    for field in battle.fields:
+        if not field.started <= battle.t < field.until:
+            continue
+        if b.edge_distance(field.x, field.y) > field.radius:
+            continue
+        if field.kind == "tesla_freeze":
+            b.frozen_until = max(b.frozen_until, field.until)
+        elif field.kind == "tesla_overgrowth":
+            b.overgrown_until = max(b.overgrown_until, field.until)
     # output/research/usage/baby-dragon.md:16; verify/c2.out #9: only flying
     # units keep a better current target (October 2020); ground units retarget.
     # https://clashofclans.fandom.com/wiki/Baby_Dragon
@@ -892,16 +904,6 @@ def reveal_tesla(battle, b):
         unit.target = unit.wall_target = None
         unit.target_kind = None
         unit.extra.pop("next_engage", None)
-    # Wiki: Hidden Tesla/Home Village, residual spell coverage survives reveal.
-    for field in battle.fields:
-        if not field.started <= battle.t < field.until:
-            continue
-        if b.edge_distance(field.x, field.y) > field.radius:
-            continue
-        if field.kind == "tesla_freeze":
-            b.frozen_until = max(b.frozen_until, field.until)
-        elif field.kind == "tesla_overgrowth":
-            b.overgrown_until = max(b.overgrown_until, field.until)
 
 
 def on_destroyed(battle, b: Building):

@@ -304,11 +304,14 @@ def _repeats_cited(what):
     return out
 
 
-def step_knobs(army: str, keys: set) -> list:
+def step_knobs(army: str, keys: set, attack: Attack | None = None) -> list:
     """[(step id, field, [alternative values])] for this army's fitted
     playbook on a base with building `keys`. The step's current value is
     not listed (the incumbent already has it)."""
-    plan = make_attack_plan(army, Attack(0.0), 0)
+    # output/research/usage/earthquake-spell.md: split casts retain their targets.
+    # https://clashofclans.fandom.com/wiki/Earthquake_Spell
+    # Refine the selected branch's fitted steps, including its existing overrides.
+    plan = make_attack_plan(army, attack if attack is not None else Attack(0.0), 0)
     present = {"th", "threat:main"} | {"building:" + k for k in keys}
     cited = _cited_anchors()
     reading = _reading_targets()
@@ -555,7 +558,7 @@ def redteam(
         ("angle", [best.angle - half, best.angle + half]),
         ("flank_offset", [x for x in (0.6, 1.2) if x != best.flank_offset]),
     ]
-    groups += [((sid, fld), alts) for sid, fld, alts in step_knobs(army, keys)]
+    groups += [((sid, fld), alts) for sid, fld, alts in step_knobs(army, keys, best)]
     if all(ev.cache[(coarse, seed)][0] >= 3 for seed in seeds):
         note("three stars on every search seed: nothing to refine")
         groups = []
@@ -620,16 +623,22 @@ def evaluate_redteam(
     verbose=False,
     modifier=None,
     mode="ranked",
+    strength=None,
 ):
     """Base score against red-team attackers, for a base search to call.
     `armies`: [(army id, weight)], each with a cited playbook. Returns
     (Evaluation, {army: RedTeamResult}); the Evaluation is summarise() over
-    the fresh-seed battles of each army's best attack."""
-    from .evaluate import Scenario, summarise
+    the stronger ordinary/red-team outcomes within each skill group.
+    `strength` defaults to evaluate.STRENGTH, matching ordinary evaluation;
+    pass an explicit mapping (including {}) to override that calibration."""
+    from .evaluate import STRENGTH, Scenario, _assign_skill, summarise
 
-    scs = [Scenario(a, _build(a)["th"], 0.0, 0, w, modifier) for a, w in armies]
+    strength = STRENGTH if strength is None else strength
+    scs = _assign_skill(
+        [Scenario(a, _build(a)["th"], 0.0, 0, w, modifier) for a, w in armies]
+    )
     sc, res, rest, found = redteam_rows(
-        layout, scs, budget=budget, verbose=verbose, mode=mode
+        layout, scs, strength, budget=budget, verbose=verbose, mode=mode
     )
     if rest:
         raise ValueError(f"no cited playbook for {[s.army for s in rest]}")
@@ -656,19 +665,26 @@ def redteam_rows(
     *,
     mode="ranked",
 ):
-    """BASELAB_REDTEAM=1 in evaluate.evaluate(): every scenario army with a
-    cited playbook is replaced by its red-team attack. Its total scenario
-    weight (per army, Town Hall and league modifier) is spread over the
-    fresh-seed battles of the best attack, each in its own scouting group so
-    summarise() takes them as they are (hero-charge techniques and tuned
-    tactics of those armies are absorbed: the red team plays the playbook).
+    """BASELAB_REDTEAM=1 in evaluate.evaluate(): add the selected red-team
+    attack to ordinary scouting for each army with a cited playbook. Compare
+    each ordinary scouted outcome with fresh red-team outcomes of the same
+    skill, retaining the better attacker outcome and the ordinary weight.
+    Emit each comparison in its own group so summarise() does not scout twice.
     Returns (scenarios, results) for those rows, the scenarios left for the
     normal path (armies without a playbook) and {(army, th, modifier):
     RedTeamResult}. Supplied seeds are split between search and fresh replay;
     a short seed list is extended consecutively above its maximum. Supplied
     angles seed the coarse search, including any hold-out angle offset.
     `mode` selects the scenario objective independently of league modifiers.
+    Fresh replay covers every supplied skill quantile.
     """
+    from .evaluate import run_batch, scouted
+
+    def attacker_key(result):
+        if mode == "war":
+            return (result[0] >= 3, result[0], result[1])
+        return (attacker_trophies(result[0], result[1]), result[1])
+
     keyed: dict = {}
     rest = []
     for sc in scenarios:
@@ -680,10 +696,9 @@ def redteam_rows(
         else:
             rest.append(sc)
     out_sc, out_r, found = [], [], {}
+    lj = layout.to_json()
     g = 900000
     for key, rows in keyed.items():
-        sc0 = rows[0]
-        w = sum(sc.weight for sc in rows)
         b = budget or budget_from_env()
         count = max([b.coarse_seeds, b.refine_seeds] + [n for _, n in b.halving])
         # evaluate._assign_skill: sorted seeds cover fixed quantiles in blocks of five.
@@ -693,7 +708,18 @@ def redteam_rows(
         if need > 0:
             seeds.extend(range(seeds[-1] + 1, seeds[-1] + 1 + need))
         search_seeds = tuple(seeds[:count])
-        fresh_seeds = tuple(seeds[count : count + b.fresh_seeds])
+        fresh_seeds = seeds[count : count + b.fresh_seeds]
+        # Sparse caller seeds may omit a skill from the replay range. Add only
+        # unseen seeds; never compare attackers from different skill quantiles.
+        missing = {sc.seed % 5 for sc in rows} - {s % 5 for s in fresh_seeds}
+        next_seed = seeds[-1] + 1
+        for quantile in sorted(missing):
+            while next_seed % 5 != quantile:
+                next_seed += 1
+            fresh_seeds.append(next_seed)
+            next_seed += 1
+        fresh_seeds = tuple(fresh_seeds)
+        b = replace(b, fresh_seeds=len(fresh_seeds))
         angles = tuple(sorted({sc.angle for sc in rows}))
         r = redteam(
             layout,
@@ -708,18 +734,30 @@ def redteam_rows(
             mode=mode,
         )
         found[key] = r
-        for seed, res in zip(fresh_seeds, r.fresh):
-            g += 1
-            out_sc.append(
-                replace(
-                    sc0,
-                    angle=r.attack.angle,
-                    seed=seed,
-                    weight=w / len(r.fresh),
-                    group=g,
-                    tactic=None,
-                    charge=None,
-                )
-            )
-            out_r.append(res)
+        # output/hunt/r12/v2.out #1: adaptation must retain ordinary scouting,
+        # including its side/technique choices and per-skill population weights.
+        # Search picks the red-team plan; only unseen replay outcomes compete here.
+        jobs = [(lj, sc, (strength or {}).get(sc.army, 1.0)) for sc in rows]
+        ordinary = run_batch(jobs)
+        for sc, normal, weight in scouted(rows, ordinary):
+            fresh = [
+                (seed, result)
+                for seed, result in zip(fresh_seeds, r.fresh)
+                if seed % 5 == sc.seed % 5
+            ]
+            for seed, result in fresh:
+                g += 1
+                chosen = sc
+                if attacker_key(result) > attacker_key(normal):
+                    chosen = replace(
+                        sc,
+                        angle=r.attack.angle,
+                        seed=seed,
+                        tactic=None,
+                        charge=None,
+                    )
+                else:
+                    result = normal
+                out_sc.append(replace(chosen, weight=weight / len(fresh), group=g))
+                out_r.append(result)
     return out_sc, out_r, rest, found

@@ -3071,6 +3071,14 @@ class AttackPlan:
         # Video: docs/VIDEO_MEASUREMENTS.md:31, finish the paired cast action first.
         if battle.t < getattr(self, "_busy_until", 0.0):
             return
+        # output/research/usage/earthquake-spell.md:18: four casts open walls.
+        # https://www.gibiarena.com/en/clash-of-clans/upgrades/earthquake-spell
+        # Generic openings must drain the same paced queue as playbook fallback.
+        if getattr(self, "_fallback_quakes", None):
+            x, y = self._fallback_quakes.pop(0)
+            if self._have("eq"):
+                self._use(battle, "eq", x, y)
+                return
         # Wiki: Lightning Spell/Home Village, surplus casts remove other defenses.
         if self._spare_lightning(battle) and single_cast:
             return
