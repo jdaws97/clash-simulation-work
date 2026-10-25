@@ -270,10 +270,12 @@ pub fn reveal_tesla(battle: &mut Battle, owner: BuildingId) {
     // https://www.clash.ninja/blog/october-2020-update-is-here
     // https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
     let attackers: Vec<_> = battle.attackers_pool().map(Unit::reference).collect();
-    for reference in attackers {
-        if tesla_keeps_target(battle, reference) {
-            continue;
-        }
+    // Warden follow_target reads allies' targets: decide before clearing any.
+    let retarget: Vec<_> = attackers
+        .into_iter()
+        .filter(|&reference| !tesla_keeps_target(battle, reference))
+        .collect();
+    for reference in retarget {
         let unit = battle.unit_mut(reference);
         unit.target = None;
         unit.wall_target = None;

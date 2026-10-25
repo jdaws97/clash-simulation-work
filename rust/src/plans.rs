@@ -759,7 +759,13 @@ impl AttackPlan {
     }
 
     pub fn use_spell(&mut self, battle: &mut Battle, kind: &str, x: f64, y: f64) -> usize {
-        self.cast_spell(battle, spell_name(kind), x, y, None, None)
+        let field = self.cast_spell(battle, spell_name(kind), x, y, None, None);
+        // Video: docs/VIDEO_MEASUREMENTS.md:31; one spell action at a time.
+        // https://www.youtube.com/watch?v=w4RTiOi6C_w&t=52
+        self.busy_until = self.busy_until.max(
+            battle.t + crate::playbook::action_time(battle, crate::playbook::Action::Spell, 1),
+        );
+        field
     }
 
     // plans.py:540-548. Construction resolves donated siege caps in the catalog.
@@ -856,6 +862,9 @@ impl AttackPlan {
 
     // plans.py:617-662: only non-Healer reserves keep a wiped offense alive.
     pub fn has_offensive_pending(&self, battle: &Battle) -> bool {
+        if self.has_deployable_cc(battle) {
+            return true;
+        }
         if self.auto_revive
             && self.have("revive")
             && battle
@@ -901,6 +910,23 @@ impl AttackPlan {
     // plans.py:664-665: the portal list snapshot lasts until the next plan tick.
     pub fn has_pending(&self) -> bool {
         self.phase != "done" || self.battle_portal
+    }
+
+    pub fn has_deployable_cc(&self, battle: &Battle) -> bool {
+        // output/research/usage/cleanup-troops-and-end-of-attack-play.md:
+        // spend remaining troops rather than ending with reserves onboard.
+        // https://www.youtube.com/watch?v=ahiJ-bgdmSE&t=2125
+        self.has_unreleased_cc()
+            && battle
+                .onboard_cargo
+                .iter()
+                .any(|entry| entry.name != "Healer")
+    }
+
+    pub fn has_unreleased_cc(&self) -> bool {
+        !self.siege.as_ref().is_some_and(|name| !name.is_empty())
+            && !self.cc_names.is_empty()
+            && !self.cc_released
     }
 
     fn have(&self, kind: &str) -> bool {
@@ -1174,6 +1200,9 @@ impl AttackPlan {
 
     // plans.py:551-568: Invisibility precedes Recall on the same brain tick.
     fn charge_spells(&mut self, battle: &mut Battle, charge: &[UnitRef]) {
+        if battle.t < self.busy_until {
+            return;
+        }
         let hero = charge.iter().copied().find(|r| {
             let u = battle.unit(*r);
             u.is_hero && self.charge_hero.as_deref() == Some(u.name.as_str())
@@ -1198,6 +1227,7 @@ impl AttackPlan {
             && (locked || frac < 0.6)
         {
             self.use_spell(battle, "invis", x, y);
+            return;
         }
         let done = t - self.charge_at > self.charge_len;
         if self.have("recall")
@@ -1214,7 +1244,9 @@ impl AttackPlan {
     pub fn on_tick(&mut self, battle: &mut Battle) {
         let t = battle.t;
         let opening = self.opening_actions(battle);
-        self.revive_knocked_out(battle, &Self::have, false);
+        if t >= self.busy_until {
+            self.revive_knocked_out(battle, &Self::have, true);
+        }
         // Python retains the old list when portal_redeploy replaces the stash.
         self.battle_portal = !battle.portal_stash.is_empty();
         let due: Vec<_> = self
@@ -1249,7 +1281,7 @@ impl AttackPlan {
         }
         if self.phase == "funnel" {
             if !opening && t >= self.busy_until && !self.zap_done && self.zap_ad != (0, 0) {
-                self.zap(battle, &Self::have, false, &[]);
+                self.zap(battle, &Self::have, true, &[]);
             }
             if t >= self.main_max
                 || (t >= self.main_min
@@ -1304,13 +1336,13 @@ impl AttackPlan {
                 if !charge.is_empty() {
                     self.charge_spells(battle, &charge);
                     if self.phase == "funnel" {
-                        self.generic_spells(battle, &charge, &Self::have, None, false, 0);
+                        self.generic_spells(battle, &charge, &Self::have, None, true, 0);
                     }
                 }
             }
             if matches!(self.phase.as_str(), "support" | "push" | "done") {
                 let units = main_units(battle, "main");
-                self.generic_spells(battle, &units, &Self::have, None, false, 0);
+                self.generic_spells(battle, &units, &Self::have, None, true, 0);
             }
         }
     }
@@ -1342,6 +1374,11 @@ impl AttackPlan {
         far.sort_by(|a, b| {
             (-py_hypot(a.0 - cx, a.1 - cy)).total_cmp(&(-py_hypot(b.0 - cx, b.1 - cy)))
         });
+        // Video: docs/VIDEO_MEASUREMENTS.md:30, held troops are 0.133 s
+        // apart; slot-switch time remains action_time's policy assumption.
+        // https://www.youtube.com/watch?v=w4RTiOi6C_w&t=88
+        let started = battle.t.max(self.busy_until);
+        let tap = battle.pace_tap * battle.pace;
         for (k, name) in names.iter().enumerate() {
             let (x, y) = if far.is_empty() {
                 edge_point(battle, self.angle + std::f64::consts::PI, 0.0)
@@ -1350,7 +1387,15 @@ impl AttackPlan {
                 let target = far[k % targets];
                 self.snipe_point(battle, target.0, target.1)
             };
-            self.drop(battle, name, x, y, "cleanup", 0.3);
+            self.drop_at(battle, name, x, y, "cleanup", 0.3, started + k as f64 * tap);
+        }
+        if !names.is_empty() {
+            self.busy_until = started
+                + crate::playbook::action_time(
+                    battle,
+                    crate::playbook::Action::Deploy,
+                    names.len() as i64,
+                );
         }
     }
 

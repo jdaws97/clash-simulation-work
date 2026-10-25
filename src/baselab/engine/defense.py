@@ -884,9 +884,11 @@ def reveal_tesla(battle, b):
     # https://clashofclans.fandom.com/wiki/Baby_Dragon
     # https://www.clash.ninja/blog/october-2020-update-is-here
     # https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
-    for unit in battle.attackers:
-        if _tesla_keeps_target(battle, unit):
-            continue
+    # Warden follow_target reads allies' targets: decide before clearing any.
+    retarget = [
+        unit for unit in battle.attackers if not _tesla_keeps_target(battle, unit)
+    ]
+    for unit in retarget:
         unit.target = unit.wall_target = None
         unit.target_kind = None
         unit.extra.pop("next_engage", None)

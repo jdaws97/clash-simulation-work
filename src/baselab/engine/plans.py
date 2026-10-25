@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import warnings
 from pathlib import Path
 from dataclasses import InitVar, dataclass, field
@@ -1036,6 +1037,8 @@ class AttackPlan:
         near her) before she dies or once the charge has done its job; she
         comes back with the main push (see on_tick / _launch_main)."""
         t = battle.t
+        if t < getattr(self, "_busy_until", 0.0):
+            return
         hero = next(
             (u for u in charge if u.is_hero and u.name == self.charge_hero), None
         )
@@ -1056,6 +1059,7 @@ class AttackPlan:
             and (locked or frac < 0.6)
         ):
             self._use(battle, "invis", hero.x, hero.y)
+            return
         done = t - self.charge_at > self.charge_len
         if (
             self._have("recall")
@@ -1914,6 +1918,8 @@ class AttackPlan:
         return False
 
     def has_offensive_pending(self, battle):
+        if self._has_deployable_cc(battle):
+            return True
         if (
             self.auto_revive
             and self._have("revive")
@@ -1962,6 +1968,18 @@ class AttackPlan:
 
     def has_pending(self) -> bool:
         return self._phase != "done" or bool(getattr(self, "_battle_portal", None))
+
+    def _has_deployable_cc(self, battle):
+        from . import units
+
+        # output/research/usage/cleanup-troops-and-end-of-attack-play.md:
+        # spend remaining troops rather than ending with reserves onboard.
+        # https://www.youtube.com/watch?v=ahiJ-bgdmSE&t=2125
+        return (
+            not self.siege
+            and not self._cc_released
+            and any(entry["name"] != "Healer" for entry in units.onboard_cargo(battle))
+        )
 
     def _drop(
         self,
@@ -2182,7 +2200,8 @@ class AttackPlan:
     def on_tick(self, battle):
         t = battle.t
         opening = self.opening_actions(battle)
-        self.revive_knocked_out(battle)
+        if t >= getattr(self, "_busy_until", 0.0):
+            self.revive_knocked_out(battle, single_cast=True)
         self._battle_portal = battle.portal_stash
         if self._later:
             due = [d for d in self._later if d[0] <= t]
@@ -2216,7 +2235,7 @@ class AttackPlan:
                 and not self._zap_done
                 and self.zap_ad != (0, 0)
             ):
-                self._zap(battle)
+                self._zap(battle, single_cast=True)
             if t >= self.main_max or (
                 t >= self.main_min
                 and self._funnel_progress(battle) >= self.P("commit_progress")
@@ -2256,6 +2275,13 @@ class AttackPlan:
                 (b for b in battle.buildings if b.alive and b.counted),
                 key=lambda b: -math.hypot(b.x - cx, b.y - cy),
             )
+            # Video: docs/VIDEO_MEASUREMENTS.md:30, held troops are 0.133 s
+            # apart; slot-switch time remains action_time's policy assumption.
+            # https://www.youtube.com/watch?v=w4RTiOi6C_w&t=88
+            from .playbook import PACE_TAP, action_time
+
+            started = max(t, getattr(self, "_busy_until", 0.0))
+            tap = PACE_TAP * float(os.environ.get("BASELAB_PACE", "1.0"))
             for k, name in enumerate(names):
                 if not far:
                     x, y = edge_point(battle, self.angle + math.pi, 0.0)
@@ -2263,7 +2289,11 @@ class AttackPlan:
                     x, y = self._snipe_point(
                         battle, far[k % min(len(far), max(1, len(names) // 2 + 1))]
                     )
-                self._drop(battle, name, x, y, "cleanup", jitter=0.3)
+                self._drop(
+                    battle, name, x, y, "cleanup", jitter=0.3, at=started + k * tap
+                )
+            if names:
+                self._busy_until = started + action_time("deploy", len(names))
             self._phase = "done"
         if not self._lured and self.P("lure_time") >= 0 and t >= self.P("lure_time"):
             self._lured = True
@@ -2283,9 +2313,9 @@ class AttackPlan:
                 if charge:
                     self._charge_spells(battle, charge)
                     if self._phase == "funnel":
-                        self.generic_spells(battle, charge)
+                        self.generic_spells(battle, charge, single_cast=True)
             if self._phase in ("support", "push", "done"):
-                self.generic_spells(battle, self.main_units(battle))
+                self.generic_spells(battle, self.main_units(battle), single_cast=True)
 
     # ---------------------------------------------------------- abilities
     def hero_abilities(self, battle):
@@ -2657,7 +2687,15 @@ class AttackPlan:
         return self.spells.get(kind, 0) > 0
 
     def _use(self, battle, kind, x, y):
-        return spells.cast(battle, SPELL_NAMES[kind], x, y)
+        from .playbook import action_time
+
+        field = spells.cast(battle, SPELL_NAMES[kind], x, y)
+        # Video: docs/VIDEO_MEASUREMENTS.md:31; one spell action at a time.
+        # https://www.youtube.com/watch?v=w4RTiOi6C_w&t=52
+        self._busy_until = max(
+            getattr(self, "_busy_until", 0.0), battle.t + action_time("spell")
+        )
+        return field
 
     def _last(self, kind):
         for t, k in reversed(self._cast_log):

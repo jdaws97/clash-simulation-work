@@ -514,6 +514,44 @@ impl AccountRules {
             apply_timing(&mut steps, &genome.plan.step_timing)?;
         }
         if cited {
+            crate::armies::put(&mut plan, "steps", Json::Arr(steps));
+        }
+        if genome.plan.program.is_some() {
+            // meta_armies.py:170-173 derives the composition's default mode.
+            // Discard source-step walk inference before installing new steps.
+            let mut main_space = 0_i64;
+            let mut air_space = 0_i64;
+            for wave in array(&plan, "main") {
+                for unit in array(wave, "units") {
+                    let parts = unit.arr();
+                    let attrs = compiler.stats.attrs(parts[0].str());
+                    let space = parts[1].i64() * numeric(attrs, "housing", 1.0).max(1.0) as i64;
+                    main_space += space;
+                    if crate::plans::flag(attrs, "flying") || crate::plans::flag(attrs, "is_flying")
+                    {
+                        air_space += space;
+                    }
+                }
+            }
+            crate::armies::put(
+                &mut plan,
+                "ground",
+                Json::Bool(!(air_space as f64 > 0.5 * main_space as f64)),
+            );
+        }
+        super::program::install(&mut plan, genome)?;
+        if genome.plan.program.is_some() {
+            // tactics.py:135-164 and redteam.py:360-383 apply to the final
+            // executable steps, after the learned program replaces its seed.
+            crate::compile::apply_tactics(&mut plan, &tactics)?;
+            let mut steps = array(&plan, "steps").to_vec();
+            apply_timing(&mut steps, &genome.plan.step_timing)?;
+            crate::armies::put(&mut plan, "steps", Json::Arr(steps));
+        }
+        if cited {
+            // output/hunt/r11/u2.out #3: only the installed program can
+            // justify cited-family admission; source steps may be replaced.
+            let steps = array(&plan, "steps");
             // fit_steps intentionally emits uncited leftovers (playbook.py:1313).
             // Retain the family label only while cited deployments cover a
             // substantial part of the actual home army.
@@ -523,7 +561,7 @@ impl AccountRules {
                 .iter()
                 .map(|unit| (unit.name.clone(), unit.count))
                 .collect();
-            for step in &steps {
+            for step in steps {
                 if text(step, "action", "") == "ability"
                     && step.get("aim").is_some_and(|aim| !aim.is_null())
                     && !step.get("uncited").is_some_and(Json::bool)
@@ -588,39 +626,6 @@ impl AccountRules {
                     "family incompatible: fewer than 35% cited troop deployments".to_owned(),
                 );
             }
-            crate::armies::put(&mut plan, "steps", Json::Arr(steps));
-        }
-        if genome.plan.program.is_some() {
-            // meta_armies.py:170-173 derives the composition's default mode.
-            // Discard source-step walk inference before installing new steps.
-            let mut main_space = 0_i64;
-            let mut air_space = 0_i64;
-            for wave in array(&plan, "main") {
-                for unit in array(wave, "units") {
-                    let parts = unit.arr();
-                    let attrs = compiler.stats.attrs(parts[0].str());
-                    let space = parts[1].i64() * numeric(attrs, "housing", 1.0).max(1.0) as i64;
-                    main_space += space;
-                    if crate::plans::flag(attrs, "flying") || crate::plans::flag(attrs, "is_flying")
-                    {
-                        air_space += space;
-                    }
-                }
-            }
-            crate::armies::put(
-                &mut plan,
-                "ground",
-                Json::Bool(!(air_space as f64 > 0.5 * main_space as f64)),
-            );
-        }
-        super::program::install(&mut plan, genome)?;
-        if genome.plan.program.is_some() {
-            // tactics.py:135-164 and redteam.py:360-383 apply to the final
-            // executable steps, after the learned program replaces its seed.
-            crate::compile::apply_tactics(&mut plan, &tactics)?;
-            let mut steps = array(&plan, "steps").to_vec();
-            apply_timing(&mut steps, &genome.plan.step_timing)?;
-            crate::armies::put(&mut plan, "steps", Json::Arr(steps));
         }
         compiler.require_legal(&mut plan)?;
         let problems = compiler.account_legal(&build, &plan);

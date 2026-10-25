@@ -488,14 +488,24 @@ pub fn run(
                     .ok_or("program mutation lost program")?;
                 program.validate(&genome)?;
                 let plan =
-                    account.compile(compiler, &catalog, &genome, genome.plan.angle_offset, 0)?;
+                    match account.compile(compiler, &catalog, &genome, genome.plan.angle_offset, 0)
+                    {
+                        Ok(plan) => plan,
+                        Err(reason)
+                            if reason.contains("fewer than 35% cited troop deployments") =>
+                        {
+                            *rejected.entry(reason).or_default() += 1;
+                            continue;
+                        }
+                        Err(reason) => return Err(reason),
+                    };
                 require(
                     text(&plan, "$type", "") == "PlaybookPlan"
                         && plan.at("strength").f64().to_bits() == 1.0_f64.to_bits(),
                     "program bypassed the normal compile path or changed strength",
                 )?;
                 require(
-                    canonical(plan.at("steps")) == program.identity_json(),
+                    canonical(plan.at("steps")) == canonical(&Json::Arr(program.steps.clone())),
                     "compiled steps differ from genome program",
                 )?;
                 current = genome;

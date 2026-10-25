@@ -43,7 +43,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 
 from ..mechanics import WORLD
-from . import heroes, spells, stats
+from . import heroes, spells, stats, units
 from .plans import SPELL_NAMES, THREAT, AttackPlan, _band_hit, edge_point
 
 SPELL_KEYS = {v: k for k, v in SPELL_NAMES.items()}
@@ -196,14 +196,20 @@ class PlaybookPlan(AttackPlan):
         otherwise ends when every attacker is down (see on_tick: an army
         with nothing alive deploys its remaining steps, as players do)."""
         # Wiki: Healer, undeployed reserves keep the battle running.
-        return any(self.inventory.values()) or any(
-            s["id"] not in self._done
-            for s in self.steps
-            if s["action"] in ("deploy", "redeploy")
+        return (
+            (bool(self.cc_troops) and not self.siege and not self._cc_released)
+            or any(self.inventory.values())
+            or any(
+                s["id"] not in self._done
+                for s in self.steps
+                if s["action"] in ("deploy", "redeploy")
+            )
         )
 
     def has_offensive_pending(self, battle):
         self._step_kinds()
+        if self._has_deployable_cc(battle):
+            return True
         # Wiki: Revive Spell, eligible fallen heroes can return through fallback too.
         if (
             self._have("revive")
@@ -627,17 +633,15 @@ class PlaybookPlan(AttackPlan):
         at = str(s.get("at", ""))
         # Video: docs/VIDEO_MEASUREMENTS.md:30 -> 0.133 s between held troops.
         tap = PACE_TAP * float(os.environ.get("BASELAB_PACE", "1.0"))
-        if (
-            at.startswith("edge:")
-            and n >= 3
-            and "spread" not in s
-            and what not in LINE_EXEMPT
-        ):
-            # several troops at an edge are dragged in a line along the
-            # deploy border (about a tile apart, at most 8 tiles wide), not
-            # stacked on one tile
+        spread = s.get("spread", 1.0)
+        if at.startswith("edge:") and n >= 3 and what not in LINE_EXEMPT:
+            # Several edge troops are dragged along the deploy border; the
+            # neutral line is about a tile apart, at most 8 tiles wide.
+            # output/research/usage/archer.md: spread deployments avoid splash.
+            # A spread multiplier scales this formation, never selects a stack.
+            # https://clashofclans.fandom.com/wiki/Archer
             ang = self._edge_angle(at.split(":", 1)[1])
-            w = min(float(n - 1), 8.0)
+            w = min(float(n - 1), 8.0) * spread
             for i in range(n):
                 x, y = edge_point(battle, ang, -w / 2 + w * i / (n - 1))
                 self._drop(
@@ -646,7 +650,7 @@ class PlaybookPlan(AttackPlan):
                     x,
                     y,
                     s.get("group", "main"),
-                    jitter=0.3,
+                    jitter=0.3 * spread,
                     at=battle.t + i * tap,
                 )
         else:
@@ -657,7 +661,7 @@ class PlaybookPlan(AttackPlan):
                     pos[0],
                     pos[1],
                     s.get("group", "main"),
-                    jitter=s.get("spread", 1.0),
+                    jitter=spread,
                     at=battle.t + i * tap,
                 )
         self.inventory[what] = left - n
@@ -1197,6 +1201,30 @@ class PlaybookPlan(AttackPlan):
                 )
                 self._busy_until = t + action_time("deploy", n)
                 self.log_steps.append((round(t, 1), "late-" + left))
+        if (
+            t >= getattr(self, "_busy_until", 0.0)
+            and not self.siege
+            and self.cc_troops
+            and not self._cc_released
+            and (
+                stalled
+                or t >= LATE
+                or any(
+                    step["action"] == "deploy"
+                    and step.get("group", "main") == "main"
+                    and step["id"] in self._done
+                    and step["id"] not in self._cancelled
+                    for step in self.steps
+                )
+            )
+        ):
+            # output/research/usage/cleanup-troops-and-end-of-attack-play.md:
+            # commit unused support with the push, or rescue a stalled attack.
+            # https://www.youtube.com/watch?v=ahiJ-bgdmSE&t=2125
+            x, y = self._edge(battle, "main")
+            units.release_cc_at(battle, x, y, "main")
+            self._busy_until = t + action_time("deploy")
+            self.log_steps.append((round(t, 1), "clan-castle"))
         self._fallback_spells(battle)
 
     # ------------------------------------------------- uncited spell fallback

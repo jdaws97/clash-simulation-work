@@ -52,7 +52,23 @@ pub fn canonical(value: &Json) -> Json {
 
 impl AttackProgram {
     pub fn identity_json(&self) -> Json {
-        canonical(&Json::Arr(self.steps.clone()))
+        // output/hunt/r11/u2.out #1: learned records provenance only. Keep
+        // uncited/completion and citations: they affect executor priority/aim.
+        let steps = self
+            .steps
+            .iter()
+            .map(|step| match step {
+                Json::Obj(fields) => Json::Obj(
+                    fields
+                        .iter()
+                        .filter(|(key, _)| key != "learned")
+                        .cloned()
+                        .collect(),
+                ),
+                _ => step.clone(),
+            })
+            .collect();
+        canonical(&Json::Arr(steps))
     }
 
     pub fn identity(&self) -> String {
@@ -66,7 +82,7 @@ impl AttackProgram {
 
     pub fn to_json(&self) -> Json {
         object([
-            ("steps", self.identity_json()),
+            ("steps", canonical(&Json::Arr(self.steps.clone()))),
             ("seed_steps", canonical(&Json::Arr(self.seed_steps.clone()))),
             ("seed_family", string(&self.seed_family)),
             ("seed_army", string(&self.seed_army)),
@@ -555,7 +571,7 @@ pub fn install(plan: &mut Json, genome: &ArmyGenome) -> Result<(), String> {
     };
     program.validate(genome)?;
     put(plan, "$type", string("PlaybookPlan"));
-    put(plan, "steps", program.identity_json());
+    put(plan, "steps", canonical(&Json::Arr(program.steps.clone())));
     // playbook.py:2055-2099: the final learned opening, rather than the
     // replaced source steps, decides whether Healers require a ground Warden.
     let has_healers = genome
@@ -693,7 +709,7 @@ pub fn report(genome: &ArmyGenome, compiler: &Compiler<'_>) -> Json {
         ("label", string(label)),
         ("matching_cited_playbooks", Json::Arr(matches)),
         ("seed_family", string(&program.seed_family)),
-        ("steps", program.identity_json()),
+        ("steps", canonical(&Json::Arr(program.steps.clone()))),
         (
             "readable_steps",
             Json::Arr(

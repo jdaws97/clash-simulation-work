@@ -1,4 +1,4 @@
-//! Round-nine CLI fixtures. All layouts and local citations are synthetic.
+//! Round-nine and round-eleven CLI fixtures. Layouts/citations are synthetic.
 
 use std::sync::{Arc, Mutex};
 
@@ -14,6 +14,8 @@ use super::{army_identity, enable, generic_steps, step, time, AttackProgram};
 use crate::armysearch::account::AccountRules;
 use crate::armysearch::genome::{ArmyGenome, PlanGenes, UnitCount};
 use crate::armysearch::operators;
+use crate::armysearch::score::{BattleMetrics, CandidateEstimate, Stage};
+use crate::armysearch::search::{Elite, Objective, SearchState};
 use crate::armysearch::util::{array, encode, number, object, string, text, Random};
 
 fn require(condition: bool, message: &str) -> Result<(), String> {
@@ -75,6 +77,7 @@ fn delayed_heroes(genome: &ArmyGenome) -> Vec<Json> {
 struct Opening {
     log: Vec<String>,
     deployed: Vec<String>,
+    dragon_positions: Vec<(f64, f64)>,
 }
 
 /// playbook.py:1007-1138 supplies the real scheduling and log order. Nine
@@ -121,7 +124,22 @@ fn native_openings(
             };
             let log = plan.log_steps.iter().map(|(_, id)| id.clone()).collect();
             let deployed = plan.deployed.iter().cloned().collect();
-            rows.lock().unwrap()[index] = Some(Opening { log, deployed });
+            let dragon_positions = battle
+                .attackers_pool()
+                .filter(|unit| unit.name == "Dragon")
+                .map(|unit| (unit.x, unit.y))
+                .chain(
+                    battle.deployments[battle.next_deploy..]
+                        .iter()
+                        .filter(|drop| drop.name == "Dragon")
+                        .map(|drop| (drop.x, drop.y)),
+                )
+                .collect();
+            rows.lock().unwrap()[index] = Some(Opening {
+                log,
+                deployed,
+                dragon_positions,
+            });
         };
     Runner::new(catalog, PreparedInputs::new(vec![layout], plans))
         .run_with_summary(&jobs, 1, Some(&hook))
@@ -544,6 +562,166 @@ fn ground_proof(
     Ok(())
 }
 
+fn provenance_proof(
+    account: &AccountRules,
+    compiler: &Compiler<'_>,
+    catalog: &Catalog,
+    template: &ArmyGenome,
+) -> Result<(), String> {
+    let mut parent = fixture(template);
+    enable(account, compiler, catalog, &mut parent)?;
+    let mut unchanged_anchor = false;
+    for seed in 0..4096 {
+        if let Ok(child) = mutate::apply(&parent, Mutation::Anchor, &mut Random(seed)) {
+            if child.plan.program.as_ref().unwrap().steps
+                != parent.plan.program.as_ref().unwrap().steps
+                && child.identity() == parent.identity()
+            {
+                unchanged_anchor = true;
+                break;
+            }
+        }
+    }
+    require(
+        unchanged_anchor,
+        "same-anchor mutation changed executable identity",
+    )?;
+    let estimate = CandidateEstimate {
+        stage: Stage::Quick,
+        metrics: BattleMetrics::default(),
+        bases: Vec::new(),
+        battles: 0,
+        unused_budget: 0,
+        standard_error: 0.0,
+    };
+    let mut archive = SearchState::new(11);
+    for index in 0..3 {
+        let mut genome = parent.clone();
+        put(
+            &mut genome.plan.program.as_mut().unwrap().steps[index],
+            "learned",
+            Json::Bool(true),
+        );
+        require(
+            genome.identity() == parent.identity(),
+            "learned flag changed identity",
+        )?;
+        let roundtrip = ArmyGenome::from_json(&genome.to_json())?;
+        require(
+            roundtrip.plan.program.as_ref().unwrap().steps[index]
+                .at("learned")
+                .bool(),
+            "checkpoint discarded learned provenance",
+        )?;
+        archive.insert(
+            Elite {
+                genome,
+                quick: estimate.clone(),
+                confirm: estimate.clone(),
+            },
+            Objective::Ranked,
+            account,
+        );
+    }
+    require(
+        archive.archive.values().map(Vec::len).sum::<usize>() == 1,
+        "provenance-only variants occupied multiple archive slots",
+    )
+}
+
+fn spread_proof(
+    account: &AccountRules,
+    compiler: &Compiler<'_>,
+    catalog: Arc<Catalog>,
+    template: &ArmyGenome,
+) -> Result<(), String> {
+    let mut genome = fixture(template);
+    genome.troops = vec![UnitCount {
+        name: "Dragon".to_owned(),
+        count: 9,
+    }];
+    let mut steps = vec![step(
+        "dragons",
+        "deploy",
+        "Dragon",
+        9,
+        "edge:main",
+        "main",
+        time(0.0),
+    )];
+    steps.extend(delayed_heroes(&genome));
+    set_steps(&mut genome, steps);
+    let mut plans = Vec::new();
+    for scale in [1.0 - 0.000001, 1.0, 1.0 + 0.000001, 1.6] {
+        genome.plan.tactics[4] = scale;
+        plans.push(account.compile(compiler, &catalog, &genome, 0.0, 0)?);
+    }
+    let rows = native_openings(catalog, plans, 0.1)?;
+    let mut spans = Vec::new();
+    for row in rows {
+        require(
+            row.dragon_positions.len() == 9,
+            "spread fixture lost scheduled Dragons",
+        )?;
+        let low = row
+            .dragon_positions
+            .iter()
+            .map(|point| point.1)
+            .fold(f64::INFINITY, f64::min);
+        let high = row
+            .dragon_positions
+            .iter()
+            .map(|point| point.1)
+            .fold(f64::NEG_INFINITY, f64::max);
+        spans.push(high - low);
+    }
+    require(
+        spans[1] > 6.0
+            && (spans[0] - spans[1]).abs() < 0.001
+            && (spans[2] - spans[1]).abs() < 0.001
+            && spans[3] > spans[1],
+        "spread scaling collapsed a deployment line into a stack",
+    )
+}
+
+fn installed_coverage_proof(
+    account: &AccountRules,
+    compiler: &Compiler<'_>,
+    catalog: &Catalog,
+    templates: &[ArmyGenome],
+) -> Result<(), String> {
+    let mut checked = false;
+    for template in templates
+        .iter()
+        .filter(|genome| genome.plan.family != "generic")
+    {
+        let mut genome = template.clone();
+        enable(account, compiler, catalog, &mut genome)?;
+        account.compile(compiler, catalog, &genome, 0.0, 0)?;
+        genome.plan.program.as_mut().unwrap().steps.retain(|step| {
+            text(step, "action", "") == "deploy" && crate::plans::is_hero(text(step, "what", ""))
+        });
+        for step in &mut genome.plan.program.as_mut().unwrap().steps {
+            put(step, "when", time(0.0));
+            put(step, "at", string("edge:main"));
+            put(step, "group", string("main"));
+        }
+        genome.plan.program.as_ref().unwrap().validate(&genome)?;
+        match account.compile(compiler, catalog, &genome, 0.0, 0) {
+            Err(reason) if reason.contains("fewer than 35% cited troop deployments") => {}
+            _ => {
+                return Err(
+                    "armysearch-proof round11: source coverage admitted hero-only program"
+                        .to_owned(),
+                );
+            }
+        }
+        checked = true;
+        break;
+    }
+    require(checked, "coverage proof requires a cited template")
+}
+
 pub(super) fn run(
     account: &AccountRules,
     compiler: &Compiler<'_>,
@@ -557,6 +735,9 @@ pub(super) fn run(
     priority_proof(account, compiler, Arc::clone(&catalog), template)?;
     spell_proof(account, compiler, Arc::clone(&catalog), template)?;
     ground_proof(account, compiler, &catalog, template)?;
+    provenance_proof(account, compiler, &catalog, template)?;
+    spread_proof(account, compiler, Arc::clone(&catalog), template)?;
+    installed_coverage_proof(account, compiler, &catalog, templates)?;
     Ok(object([
         ("admission_preserves_timing_and_tactics", Json::Bool(true)),
         ("generic_opening_controls_mutate", Json::Bool(true)),
@@ -564,5 +745,11 @@ pub(super) fn run(
         ("learned_provenance_preserves_priority", Json::Bool(true)),
         ("spell_origins_are_order_independent", Json::Bool(true)),
         ("installed_warden_walk_is_ground", Json::Bool(true)),
+        ("provenance_deduplicates_archive", Json::Bool(true)),
+        ("spread_preserves_lines", Json::Bool(true)),
+        (
+            "installed_program_requires_cited_coverage",
+            Json::Bool(true),
+        ),
     ]))
 }

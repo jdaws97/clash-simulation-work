@@ -473,7 +473,8 @@ impl PlaybookPlan {
 
     // playbook.py:114-125: undeployed reserves keep the battle running.
     pub fn has_pending(&self) -> bool {
-        self.inventory.iter().any(|(_, n)| *n != 0)
+        self.attack.has_unreleased_cc()
+            || self.inventory.iter().any(|(_, n)| *n != 0)
             || self
                 .steps
                 .iter()
@@ -482,6 +483,9 @@ impl PlaybookPlan {
 
     // playbook.py:127-165.
     pub fn has_offensive_pending(&self, battle: &Battle) -> bool {
+        if self.attack.has_deployable_cc(battle) {
+            return true;
+        }
         // Read the current _step_kinds result even before the first fallback
         // tick; this query runs through an immutable Battle snapshot.
         let auto_revive = self.auto_revive();
@@ -1015,11 +1019,17 @@ impl PlaybookPlan {
         }
         let tap = battle.pace_tap * battle.pace;
         let started = battle.t;
-        if let Some(edge) = step.at.strip_prefix("edge:").filter(|_| {
-            n >= 3 && step.spread.is_none() && !matches!(what, "Healer" | "Wall Breaker")
-        }) {
+        let spread = step.spread.unwrap_or(1.0);
+        if let Some(edge) = step
+            .at
+            .strip_prefix("edge:")
+            .filter(|_| n >= 3 && !matches!(what, "Healer" | "Wall Breaker"))
+        {
+            // output/research/usage/archer.md: spread deployments avoid splash.
+            // A spread multiplier scales this formation, never selects a stack.
+            // https://clashofclans.fandom.com/wiki/Archer
             let angle = self.edge_angle(edge);
-            let width = ((n - 1) as f64).min(8.0);
+            let width = ((n - 1) as f64).min(8.0) * spread;
             for i in 0..n {
                 let (x, y) = plans::edge_point(
                     battle,
@@ -1032,7 +1042,7 @@ impl PlaybookPlan {
                     x,
                     y,
                     &step.group,
-                    0.3,
+                    0.3 * spread,
                     started + i as f64 * tap,
                 );
             }
@@ -1044,7 +1054,7 @@ impl PlaybookPlan {
                     position.0,
                     position.1,
                     &step.group,
-                    step.spread.unwrap_or(1.0),
+                    spread,
                     started + i as f64 * tap,
                 );
             }
@@ -1763,6 +1773,27 @@ impl PlaybookPlan {
                 self.log_steps
                     .push((round_decimal(t, 1), format!("late-{name}")));
             }
+        }
+        if t >= self.attack.busy_until
+            && self.attack.has_unreleased_cc()
+            && (stalled
+                || t >= LATE
+                || self.steps.iter().any(|step| {
+                    step.action == Action::Deploy
+                        && step.group == "main"
+                        && self.done(&step.id)
+                        && !self.cancelled(&step.id)
+                }))
+        {
+            // output/research/usage/cleanup-troops-and-end-of-attack-play.md:
+            // commit unused support with the push, or rescue a stalled attack.
+            // https://www.youtube.com/watch?v=ahiJ-bgdmSE&t=2125
+            let (x, y) = self.edge(battle, "main");
+            crate::units::release_cc_at(battle, x, y, "main", false);
+            self.attack.cc_released = true;
+            self.attack.busy_until = t + action_time(battle, Action::Deploy, 1);
+            self.log_steps
+                .push((round_decimal(t, 1), "clan-castle".to_owned()));
         }
         self.fallback_spells(battle, false);
     }
