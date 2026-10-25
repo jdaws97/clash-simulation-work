@@ -1,5 +1,7 @@
 //! Battle engine and reusable prepared-job runner (std only).
 
+#![forbid(unsafe_code)]
+
 pub mod ai;
 pub mod armies;
 pub mod armysearch;
@@ -9,10 +11,12 @@ pub mod combat;
 pub mod compile;
 pub mod compile_cli;
 pub mod defense;
+pub mod detmath;
 pub mod effects;
 pub mod fast_hash;
 mod field_profile;
 pub mod geom;
+pub mod golden;
 pub mod grid;
 pub mod heroes;
 pub mod jobs;

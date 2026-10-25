@@ -147,91 +147,25 @@ pub fn py_hypot(a: f64, b: f64) -> f64 {
     (h + x / (2.0 * h)) / scale
 }
 
-// ---------------------------------------------------------------- C runtime math
-// Python's math.cos/sin/atan2 and float ** call the C runtime's libm; on
-// Windows CPython 3.10 that is ucrtbase.dll. Rust's f64::cos/sin/atan2 come
-// from another libm and differ in the last bit for ~3% of cos/sin inputs and
-// ~0.1% of atan2 inputs, which changed Skeleton spawn points and Air Sweeper
-// pushes in parity runs. So these call ucrtbase.dll's own functions. This is
-// the crate's only `unsafe`: loading four functions from a system DLL.
-// On other platforms the f64 methods are used (parity with a Python built
-// against that platform's libm is then likely but unverified).
-
-#[cfg(windows)]
-mod crt {
-    use std::ffi::c_void;
-    use std::sync::OnceLock;
-
-    type F1 = unsafe extern "C" fn(f64) -> f64;
-    type F2 = unsafe extern "C" fn(f64, f64) -> f64;
-
-    #[link(name = "kernel32")]
-    extern "system" {
-        fn LoadLibraryA(name: *const u8) -> *mut c_void;
-        fn GetProcAddress(module: *mut c_void, name: *const u8) -> *mut c_void;
-    }
-
-    pub struct Crt {
-        pub cos: F1,
-        pub sin: F1,
-        pub atan2: F2,
-        pub pow: F2,
-    }
-
-    static CRT: OnceLock<Crt> = OnceLock::new();
-
-    pub fn get() -> &'static Crt {
-        CRT.get_or_init(|| unsafe {
-            let module = LoadLibraryA(b"ucrtbase.dll\0".as_ptr());
-            assert!(!module.is_null(), "cannot load ucrtbase.dll");
-            let find = |name: &[u8]| {
-                let f = GetProcAddress(module, name.as_ptr());
-                assert!(
-                    !f.is_null(),
-                    "ucrtbase.dll lacks {}",
-                    String::from_utf8_lossy(name)
-                );
-                f
-            };
-            Crt {
-                cos: std::mem::transmute::<*mut c_void, F1>(find(b"cos\0")),
-                sin: std::mem::transmute::<*mut c_void, F1>(find(b"sin\0")),
-                atan2: std::mem::transmute::<*mut c_void, F2>(find(b"atan2\0")),
-                pow: std::mem::transmute::<*mut c_void, F2>(find(b"pow\0")),
-            }
-        })
-    }
-}
+// Since python-frozen, maths is platform-identical by construction through
+// detmath's fixed musl algorithms on every platform (see docs/GOLDEN.md).
 
 /// math.cos
 pub fn py_cos(x: f64) -> f64 {
-    #[cfg(windows)]
-    return unsafe { (crt::get().cos)(x) };
-    #[cfg(not(windows))]
-    return x.cos();
+    crate::detmath::cos(x)
 }
 
 /// math.sin
 pub fn py_sin(x: f64) -> f64 {
-    #[cfg(windows)]
-    return unsafe { (crt::get().sin)(x) };
-    #[cfg(not(windows))]
-    return x.sin();
+    crate::detmath::sin(x)
 }
 
 /// math.atan2(y, x)
 pub fn py_atan2(y: f64, x: f64) -> f64 {
-    #[cfg(windows)]
-    return unsafe { (crt::get().atan2)(y, x) };
-    #[cfg(not(windows))]
-    return y.atan2(x);
+    crate::detmath::atan2(y, x)
 }
 
-/// Python `x ** y` for floats (CPython float_pow calls the C runtime's pow
-/// after handling special cases that never arise here).
+/// Floating-point power, using the same fixed algorithm on every platform.
 pub fn py_pow(x: f64, y: f64) -> f64 {
-    #[cfg(windows)]
-    return unsafe { (crt::get().pow)(x, y) };
-    #[cfg(not(windows))]
-    return x.powf(y);
+    crate::detmath::pow(x, y)
 }

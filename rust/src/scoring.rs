@@ -96,37 +96,10 @@ pub fn defender_trophies(stars: i64, pct: f64) -> i64 {
     }
 }
 
-// evaluate.py:182-187: exp is distinct from pow(e, x). geom.rs uses the same
-// Windows C runtime for its math helpers; exp is private here until M2 needs it.
-#[cfg(windows)]
-fn py_exp(value: f64) -> f64 {
-    use std::ffi::c_void;
-    use std::sync::OnceLock;
-    type Exp = unsafe extern "C" fn(f64) -> f64;
-    #[link(name = "kernel32")]
-    extern "system" {
-        fn LoadLibraryA(name: *const u8) -> *mut c_void;
-        fn GetProcAddress(module: *mut c_void, name: *const u8) -> *mut c_void;
-    }
-    static EXP: OnceLock<Exp> = OnceLock::new();
-    let exp = EXP.get_or_init(|| unsafe {
-        let module = LoadLibraryA(b"ucrtbase.dll\0".as_ptr());
-        assert!(!module.is_null(), "cannot load ucrtbase.dll");
-        let address = GetProcAddress(module, b"exp\0".as_ptr());
-        assert!(!address.is_null(), "ucrtbase.dll lacks exp");
-        std::mem::transmute::<*mut c_void, Exp>(address)
-    });
-    unsafe { exp(value) }
-}
-
-#[cfg(not(windows))]
-fn py_exp(value: f64) -> f64 {
-    value.exp()
-}
-
+// evaluate.py:182-187: exp remains distinct from pow(e, x).
 pub fn skill(seed: i64) -> f64 {
     const Z: [f64; 5] = [-1.28, -0.52, 0.0, 0.52, 1.28];
-    py_exp(0.15 * Z[seed.rem_euclid(5) as usize])
+    crate::detmath::exp(0.15 * Z[seed.rem_euclid(5) as usize])
 }
 
 pub fn group_seed(j: i64, s: i64, k: i64, n: i64) -> i64 {
