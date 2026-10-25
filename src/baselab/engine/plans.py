@@ -553,6 +553,15 @@ class AttackPlan:
 
     # ----------------------------------------------------------- inventory
     def _building_level(self, name, supplied):
+        production = {
+            "Barracks": "barracks",
+            "Dark Barracks": "dbarracks",
+            "Workshop": "workshop",
+        }
+        if supplied is None and self.account_equipment and name in production:
+            from ..meta_armies import user_levels
+
+            return user_levels().get("levels", {}).get(production[name], 0)
         return stats.max_level(name, self.town_hall) if supplied is None else supplied
 
     def _siege_level_cap(self):
@@ -768,6 +777,23 @@ class AttackPlan:
                         raise ValueError(f"Invalid {name} level {supplied}")
                     if supplied:
                         stats.validate_level(name, supplied, self.town_hall)
+            # game data v18.200.9 / registry raw: Meteor Golem requires
+            # Barracks 19; Sky Wagon requires Workshop 9 (TH16 maxima 18/8).
+            # output/research/usage/meteor-golem.md and sky-wagon.md.
+            trained = list(quantities)
+            if self.siege and not self.siege_donated:
+                trained.append((self.siege, 1))
+            for name, count in trained:
+                if count <= 0:
+                    continue
+                raw = stats.attrs(name).get("raw", {})
+                for building in ("Barracks", "Dark Barracks", "Workshop"):
+                    required = stats.num(raw.get(building + " Level Required"), 0)
+                    available = self._building_level(building, None) or 0
+                    if available < required:
+                        raise ValueError(
+                            f"{name} requires {building} level {required:g} (available {available})"
+                        )
             # game data v18.200.9: Laboratory L14.TownHallLevel=16;
             # Dragon L11/L12.LaboratoryLevel=14/15 -> cap explicit overrides.
             # game data v18.200.9: Archer Queen L96.RequiredTownHallLevel=17.
@@ -1254,7 +1280,13 @@ class AttackPlan:
                 if name == "Healer"
             )
         weights = {}
-        others = [b for b in battle.buildings if b.key != "wall"]
+        # output/research/usage/hidden-tesla.md: concealed Teslas are not scouted.
+        # https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
+        others = [
+            b
+            for b in battle.buildings
+            if b.key != "wall" and (b.key != "tesla" or b.revealed)
+        ]
         for building in battle.buildings:
             weight = float(THREAT.get(building.key, 1))
             if air_army:

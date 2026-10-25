@@ -1370,6 +1370,10 @@ def _scatter(battle, w, tgt, dmg, rage):
     hitboxes (wiki: Scattershot, table footnotes): within 1 tile the shot's
     damage falls from the primary's maximum to the listed minimum at 1 tile;
     from 1 to 5 tiles the splash falls from its maximum to its minimum."""
+    # Battle's existing defense-impact hook also delivers Revenge bounces.
+    if w.kind == "revenge":
+        _revenge_impact(battle, w, tgt, dmg, rage)
+        return
     b = w.owner
     battle.hit_unit(tgt, dmg)
     ax, ay = tgt.x - b.x, tgt.y - b.y
@@ -1821,40 +1825,76 @@ def _firespitter(battle, w, rage):
     w.cooldown += w.extra["gap"] if w.burst_left > 0 else w.interval
 
 
+def _revenge_projectile(battle, shot, target, damage, rage, x, y, *, offset=0.0):
+    # game data v18.200.9: projectiles.csv RevengeTowerProjectile1/2/3:
+    # Speed=1400/1800/2200, StartOffset=135 -> 14/18/22 tiles/s, 1.35 tiles.
+    speed = (14.0, 18.0, 22.0)[shot.extra["remaining"] - 1]
+    flight = max(0.0, dist(x, y, target.x, target.y) - offset) / speed
+    battle.add_pending(
+        Pending(
+            battle.t + flight,
+            target.x,
+            target.y,
+            0.0,
+            damage,
+            target.flying,
+            not target.flying,
+            shot.owner.key,
+            extra={**shot.extra, "scatter": shot, "rage": rage},
+            target=target,
+        )
+    )
+
+
+def _revenge_impact(battle, shot, target, damage, rage):
+    if not target.indirect_targetable(battle.t):
+        return
+    battle.hit_unit(target, damage)
+    hit = shot.extra["hit"]
+    stage = shot.extra["remaining"]
+    if len(hit) >= stage:
+        return
+    # Keep the wiki's two-tile radius: projectiles.csv MaxBounceDistance=450
+    # conflicts with it (output/hunt/r9/s5.out #1).
+    next_target = next(
+        (
+            unit
+            for unit in battle.attackers_near(target.x, target.y, 2.0)
+            if unit not in hit and unit.indirect_targetable(battle.t)
+        ),
+        None,
+    )
+    if next_target is None:
+        return
+    column = ("Damage per Shot (Secondary)", "Damage per Shot (Tertiary)")[len(hit) - 1]
+    owner = shot.owner
+    damage = stats.get(owner.name, owner.level, column) * rage
+    following = Weapon(
+        owner, "revenge", extra={"remaining": stage, "hit": (*hit, next_target)}
+    )
+    _revenge_projectile(
+        battle, following, next_target, damage, rage, target.x, target.y
+    )
+
+
 def _revenge(battle, w, tgt, rage):
     # Wiki: Revenge Tower, stages after 5, 25 and 50 destroyed buildings.
     destroyed = battle.destroyed_counted
     if destroyed < 5:
         return
     stage = 3 if destroyed >= 50 else 2 if destroyed >= 25 else 1
-    if stage == 1:
-        battle.hit_unit(tgt, w.damage * rage)
-        w.cooldown += 1.2
-        return
-    columns = (
-        "Damage per Shot (Primary)",
-        "Damage per Shot (Secondary)",
-        "Damage per Shot (Tertiary)",
+    damage = (
+        w.damage
+        if stage == 1
+        else stats.get(w.owner.name, w.owner.level, "Damage per Shot (Primary)")
+    ) * rage
+    # A per-shot weapon carries the chain through Battle's defense-impact hook.
+    # Existing Pending hit/remaining fields also preserve exported battle states.
+    shot = Weapon(w.owner, "revenge", extra={"remaining": stage, "hit": (tgt,)})
+    _revenge_projectile(
+        battle, shot, tgt, damage, rage, w.owner.x, w.owner.y, offset=1.35
     )
-    current, hit = tgt, {tgt.id}
-    battle.hit_unit(tgt, stats.get(w.owner.name, w.owner.level, columns[0]) * rage)
-    for column in columns[1:stage]:
-        next_target = next(
-            (
-                unit
-                for unit in battle.attackers_near(current.x, current.y, 2.0)
-                if unit.id not in hit and unit.indirect_targetable(battle.t)
-            ),
-            None,
-        )
-        if next_target is None:
-            break
-        battle.hit_unit(
-            next_target, stats.get(w.owner.name, w.owner.level, column) * rage
-        )
-        hit.add(next_target.id)
-        current = next_target
-    w.cooldown += 0.6 if stage == 2 else 0.35
+    w.cooldown += 1.2 if stage == 1 else 0.6 if stage == 2 else 0.35
 
 
 def bell_tick(battle):

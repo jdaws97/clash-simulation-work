@@ -142,6 +142,10 @@ class PlaybookPlan(AttackPlan):
                 continue
             if step.get("completion") or step.get("uncited"):
                 continue
+            # output/research/usage/grand-warden.md: equipment supplies abilities.
+            # https://clashofclans.fandom.com/wiki/Grand_Warden
+            if step["action"] == "ability" and self._missing_equipment(step):
+                continue
             if (
                 name == "Flame Flinger"
                 and step["action"] == "release_siege"
@@ -894,6 +898,32 @@ class PlaybookPlan(AttackPlan):
         heroes.activate(battle, u)
         return True
 
+    def _pendant_possible(self, battle):
+        # output/research/usage/minion-prince.md: Pendant recalls the Prince
+        # and nearby allies for a later redeployment.
+        # https://clashofclans.fandom.com/wiki/Portal_Pendant
+        name = "Minion Prince"
+        unit = self._unit(battle, name)
+        if unit is not None:
+            return (
+                not unit.ability_used
+                and unit.kit is not None
+                and unit.kit.has("Portal Pendant")
+            )
+        pending = any(
+            step["action"] == "deploy"
+            and step.get("what") == name
+            and step["id"] not in self._done
+            and step["id"] not in self._cancelled
+            for step in self.steps
+        ) or any(d.name == name for d in battle.deployments[battle._next_deploy :])
+        if not pending or self._down(battle, name):
+            return False
+        loadout = self.loadouts.get(name) or heroes.DEFAULT_LOADOUTS[name]
+        return "Portal Pendant" in loadout.equipment and (
+            not self.account_equipment or "Portal Pendant" in self.equipment_levels
+        )
+
     def _cannot(self, battle, st):
         """Why step st can no longer happen (None while it still can)."""
         act, what = st["action"], st.get("what")
@@ -943,6 +973,7 @@ class PlaybookPlan(AttackPlan):
                 not battle.portal_stash
                 and self.spells.get("recall", 0) <= 0
                 and battle.t - self._last("recall") > 5.0
+                and not self._pendant_possible(battle)
             ):
                 return "nothing recalled"
         elif act == "release_siege":
@@ -964,6 +995,12 @@ class PlaybookPlan(AttackPlan):
     def on_tick(self, battle):
         if not hasattr(self, "_deployed"):
             self._deployed = set()
+        # output/hunt/r9/s2.out #4: pets, summons and cargo also arrive in battle.
+        # output/research/usage/archer-queen.md: Mirror clones are separate heroes.
+        # https://clashofclans.fandom.com/wiki/Magic_Mirror
+        self._deployed.update(
+            unit.name for unit in battle.attackers if unit.kind != "hero_clone"
+        )
         t = battle.t
         self.opening_actions(battle)
         if int(t * 10) % 5 == 0:
@@ -2076,6 +2113,8 @@ def from_playbook(
             )
         return False
 
+    # output/research/usage/grand-warden-walk.md: Healers support a ground Warden.
+    # https://clashofclans.fandom.com/wiki/Grand_Warden
     if plan.inventory.get("Healer", 0) > 0 and any(
         st["action"] == "deploy"
         and st.get("what") == "Healer"
@@ -2084,9 +2123,8 @@ def from_playbook(
             or any(
                 w["action"] == "deploy"
                 and w.get("what") == "Grand Warden"
-                and w.get("group", "main") == "charge"
+                and w.get("group", "main") == st.get("group", "main")
                 and w.get("at") == st.get("at")
-                and st.get("group", "main") == "charge"
                 and w.get("at", "").startswith("edge:")
                 and follows(st.get("when"), w["id"])
                 for w in plan.steps

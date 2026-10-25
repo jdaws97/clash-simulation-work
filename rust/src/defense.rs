@@ -1492,7 +1492,94 @@ fn firespitter(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
     };
 }
 
-// defense.py:1337-1370: next() selects the first eligible chain target.
+struct RevengeShot {
+    owner: BuildingId,
+    stage: usize,
+    hit: Vec<EntityRef>,
+}
+
+fn revenge_projectile(
+    battle: &mut Battle,
+    shot: RevengeShot,
+    target: UnitRef,
+    damage: f64,
+    damage_rage: f64,
+    x: f64,
+    y: f64,
+    offset: f64,
+) {
+    // game data v18.200.9: projectiles.csv RevengeTowerProjectile1/2/3:
+    // Speed=1400/1800/2200, StartOffset=135 -> 14/18/22 tiles/s, 1.35 tiles.
+    let speed = [14.0, 18.0, 22.0][shot.stage - 1];
+    let unit = battle.unit(target);
+    let flight = 0.0_f64.max(dist(x, y, unit.x, unit.y) - offset) / speed;
+    let mut pending = Pending::new(
+        battle.t + flight,
+        unit.x,
+        unit.y,
+        0.0,
+        damage,
+        unit.flying,
+        !unit.flying,
+        battle.building(shot.owner).source.clone(),
+    );
+    pending.extra.scatter = Some(shot.owner);
+    pending.extra.remaining = shot.stage;
+    pending.extra.hit = shot.hit;
+    pending.extra.rage = damage_rage;
+    pending.target = Some(EntityRef::Unit(target));
+    battle.add_pending(pending);
+}
+
+pub fn revenge_impact(battle: &mut Battle, pending: Pending) {
+    let shot = RevengeShot {
+        owner: pending.extra.scatter.expect("Revenge projectile owner"),
+        stage: pending.extra.remaining,
+        hit: pending.extra.hit,
+    };
+    let Some(EntityRef::Unit(target)) = pending.target else {
+        panic!("Revenge projectile target");
+    };
+    if !battle.unit(target).indirect_targetable(battle) {
+        return;
+    }
+    battle.hit_unit(target, pending.damage, None, "normal", None);
+    if shot.hit.len() >= shot.stage {
+        return;
+    }
+    let unit = battle.unit(target);
+    let (x, y) = (unit.x, unit.y);
+    // Keep the wiki's two-tile radius: projectiles.csv MaxBounceDistance=450
+    // conflicts with it (output/hunt/r9/s5.out #1).
+    let next = battle.attackers_near_iter(x, y, 2.0).find(|reference| {
+        let unit = battle.unit(*reference);
+        !shot.hit.contains(&EntityRef::Unit(*reference)) && unit.indirect_targetable(battle)
+    });
+    let Some(next) = next else {
+        return;
+    };
+    let column = [
+        "Damage per Shot (Secondary)",
+        "Damage per Shot (Tertiary)",
+    ][shot.hit.len() - 1];
+    let owner = battle.building(shot.owner);
+    let damage = battle
+        .catalog
+        .stats
+        .get(
+            &owner.name,
+            owner.level.as_ref().expect("Revenge Tower level"),
+            &[column],
+            None,
+        )
+        .expect("Revenge Tower chain damage")
+        * pending.extra.rage;
+    let mut following = shot;
+    following.hit.push(EntityRef::Unit(next));
+    revenge_projectile(battle, following, next, damage, pending.extra.rage, x, y, 0.0);
+}
+
+// defense.py:_revenge: stage and damage are fixed when each shot launches.
 fn revenge(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage: f64) {
     let destroyed = battle.destroyed_counted;
     if destroyed < 5 {
@@ -1505,51 +1592,31 @@ fn revenge(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage:
     } else {
         1
     };
-    if stage == 1 {
-        let damage = weapon(battle, owner).damage * damage_rage;
-        battle.hit_unit(target, damage, None, "normal", None);
-        weapon_mut(battle, owner).cooldown += 1.2;
-        return;
-    }
-    let columns = [
-        "Damage per Shot (Primary)",
-        "Damage per Shot (Secondary)",
-        "Damage per Shot (Tertiary)",
-    ];
-    let mut current = target;
-    let mut hit = vec![target.id];
     let building = battle.building(owner);
-    let name = building.name.clone();
-    let level = building.level.clone().expect("Revenge Tower level");
-    let damage = battle
-        .catalog
-        .stats
-        .get(&name, &level, &[columns[0]], None)
-        .expect("Revenge Tower primary damage")
-        * damage_rage;
-    battle.hit_unit(target, damage, None, "normal", None);
-    for column in &columns[1..stage] {
-        let (x, y) = battle.entity_position(EntityRef::Unit(current));
-        let next = battle
-            .attackers_near_iter(x, y, 2.0)
-            .find(|reference| {
-                let unit = battle.unit(*reference);
-                !hit.contains(&unit.id) && unit.indirect_targetable(battle)
-            });
-        let Some(next) = next else {
-            break;
-        };
-        let damage = battle
+    let (x, y) = (building.x, building.y);
+    let damage = if stage == 1 {
+        weapon(battle, owner).damage
+    } else {
+        battle
             .catalog
             .stats
-            .get(&name, &level, &[*column], None)
-            .expect("Revenge Tower chain damage")
-            * damage_rage;
-        battle.hit_unit(next, damage, None, "normal", None);
-        hit.push(next.id);
-        current = next;
-    }
-    weapon_mut(battle, owner).cooldown += if stage == 2 {
+            .get(
+                &building.name,
+                building.level.as_ref().expect("Revenge Tower level"),
+                &["Damage per Shot (Primary)"],
+                None,
+            )
+            .expect("Revenge Tower primary damage")
+    } * damage_rage;
+    let shot = RevengeShot {
+        owner,
+        stage,
+        hit: vec![EntityRef::Unit(target)],
+    };
+    revenge_projectile(battle, shot, target, damage, damage_rage, x, y, 1.35);
+    weapon_mut(battle, owner).cooldown += if stage == 1 {
+        1.2
+    } else if stage == 2 {
         0.6
     } else {
         0.35

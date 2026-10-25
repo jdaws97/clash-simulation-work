@@ -916,11 +916,12 @@ impl AttackPlan {
                 .flat_map(|wave| wave.units.iter()).filter(|(name, _)| name == "Healer")
                 .map(|(_, count)| *count).sum::<i64>()
         }, |context| count(&context.inventory, "Healer"));
-        // plans.py:907,928-941: count coverage in building-list order, including dead buildings.
+        // output/research/usage/hidden-tesla.md: concealed Teslas are not scouted.
+        // https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
         let others: Vec<_> = battle
             .buildings
             .iter()
-            .filter(|b| b.key != "wall")
+            .filter(|b| b.key != "wall" && (b.key != "tesla" || b.revealed))
             .collect();
         battle.buildings.iter().map(|b| {
             let mut weight = threat(&b.key, 1.0);

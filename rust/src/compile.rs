@@ -194,13 +194,15 @@ impl<'a> Compiler<'a> {
             }
         }
         apply_overrides(&mut steps, &options.overrides)?;
+        // output/research/usage/grand-warden-walk.md: Healers support a ground Warden.
+        // https://clashofclans.fandom.com/wiki/Grand_Warden
         if number(&inventory, "Healer", 0.0) > 0.0 && steps.iter().any(|step| {
             text(step, "action", "") == "deploy" && text(step, "what", "") == "Healer"
                 && step.get("count") != Some(&Json::Num(0.0))
                 && (matches!(text(step, "at", ""), "unit:Grand Warden" | "unit_ahead:Grand Warden")
                 || steps.iter().any(|warden| {
                 text(warden, "action", "") == "deploy" && text(warden, "what", "") == "Grand Warden"
-                    && text(warden, "group", "main") == "charge" && text(step, "group", "main") == "charge"
+                    && text(warden, "group", "main") == text(step, "group", "main")
                     && warden.get("at") == step.get("at") && text(warden, "at", "").starts_with("edge:")
                     && follows(&field(step, "when"), text(warden, "id", ""), &steps, &[])
             }))
@@ -1058,6 +1060,21 @@ impl Compiler<'_> {
     }
 
     fn building_level(&self, plan: &Json, name: &str, key: &str) -> i64 {
+        let production = match name {
+            "Barracks" => Some("barracks"),
+            "Dark Barracks" => Some("dbarracks"),
+            "Workshop" => Some("workshop"),
+            _ => None,
+        };
+        if let Some(account_key) = production {
+            if flag(plan, "account_equipment") {
+                return number(self.library.user.at("levels"), account_key, 0.0) as i64;
+            }
+            return self
+                .stats
+                .max_level(name, plan.at("town_hall").i64())
+                .unwrap_or(0);
+        }
         plan.get(key).filter(|value| !value.is_null()).map_or_else(|| self.stats.max_level(name,
             plan.at("town_hall").i64()).unwrap_or(0), Json::i64)
     }
@@ -1351,6 +1368,39 @@ impl Compiler<'_> {
                 }
             }
         }
+        // game data v18.200.9 / registry raw: Meteor Golem requires
+        // Barracks 19; Sky Wagon requires Workshop 9 (TH16 maxima 18/8).
+        // output/research/usage/meteor-golem.md and sky-wagon.md.
+        let mut trained = quantities.clone();
+        if flag(plan, "siege") && !flag(plan, "siege_donated") {
+            trained.push((plan.at("siege").str().to_owned(), Json::Num(1.0)));
+        }
+        for (name, count) in &trained {
+            if count.f64() <= 0.0 {
+                continue;
+            }
+            self.record(name)?;
+            let raw = self
+                .stats
+                .attrs(name)
+                .get("raw")
+                .cloned()
+                .unwrap_or_else(object);
+            for (building, key) in [
+                ("Barracks", "barracks_level"),
+                ("Dark Barracks", "dark_barracks_level"),
+                ("Workshop", "workshop_level"),
+            ] {
+                let required = raw
+                    .get(&format!("{building} Level Required"))
+                    .and_then(|value| stats::num(value, Some(0.0)))
+                    .unwrap_or(0.0);
+                let available = self.building_level(plan, building, key);
+                if (available as f64) < required {
+                    return Err(format!("{name} requires {building} level {required} (available {available})"));
+                }
+            }
+        }
         let lab = self.building_level(plan, "Laboratory", "laboratory_level");
         let mut troop_levels = plan.at("troop_levels").clone();
         if flag(plan, "siege_donated") && flag(plan, "siege") {
@@ -1486,8 +1536,22 @@ impl Compiler<'_> {
     }
 
     pub fn require_legal(&self, plan: &mut Json) -> Result<(), String> {
-        let problems: Vec<String> = self.legal(plan).into_iter().filter(|problem| !self
-            .logged_exception(plan, problem)).collect();
+        // plans.py:require_legal / tools/baselab/replay_log.py: decoded armies
+        // and real_battle replays retain their documented inventories.
+        let battle_log = flag(plan, "observed")
+            && (text(plan, "build_id", "").starts_with("log-")
+                || flag(plan, "real_battle"));
+        let mut problems = Vec::new();
+        for problem in self.legal(plan) {
+            if battle_log || self.logged_exception(plan, &problem) {
+                eprintln!(
+                    "Logged army {}: {problem}; using documented replay handling",
+                    text(plan, "build_id", "(replay)")
+                );
+            } else {
+                problems.push(problem);
+            }
+        }
         if !problems.is_empty() {
             return Err(format!("Illegal attack plan: {}", problems.join("; ")));
         }

@@ -461,6 +461,10 @@ impl Battle {
         }
         // battle.py:1212-1220: released Scattershot shells retain their live weapon.
         if let Some(owner) = p.extra.scatter {
+            if self.building(owner).key == "revenge" {
+                defense::revenge_impact(self, p);
+                return;
+            }
             let Some(EntityRef::Unit(target)) = p.target else {
                 panic!("Scattershot unit target");
             };

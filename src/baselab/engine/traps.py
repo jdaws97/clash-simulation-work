@@ -25,6 +25,7 @@ from .entities import Field, Pending, Trap, dist
 # (all 677 constants) and the other v18.200.9 tables have no frame-rate or
 # FPS field, so the Bomb-derived rate stays. Skeleton Trap gives its delay in
 # ms instead.
+
 _FRAME_S = 1.5 / 35
 FUSE = {
     "bomb": 35 * _FRAME_S,
@@ -44,6 +45,7 @@ FUSE = {
 # Shielded/Unshielded Skeleton, Skeleton, Spell Bat, Totem, Yetimite,
 # Electromite, Firemite Spawn, Icemite = Frostmite, Booger) and Pets.csv
 # (Electro Owl, Poison Lizard). Engine names are used here.
+
 NO_TRIGGER = {
     "Spell Skeleton",
     "Skeleton",
@@ -64,18 +66,23 @@ NO_TRIGGER = {
 # game data v18.200.9: Spells.csv TornadoTrap.TornadoForce1..5 (ground) and
 # TornadoForceAir1..5 (air) by weight 1..5: 400/300/200/100/100 and
 # 500/400/300/200/150, read as hundredths of a tile per second.
+
 TORNADO_FORCE = {False: (4.0, 3.0, 2.0, 1.0, 1.0), True: (5.0, 4.0, 3.0, 2.0, 1.5)}
 # game data v18.200.9: TornadoTrap.TornadoInnerRadius=70 -> 0.7 tiles,
 # TornadoInnerForcePercent=100, TornadoOuterForcePercent=65.
+
 TORNADO_INNER, TORNADO_INNER_PCT, TORNADO_OUTER_PCT = 0.7, 1.0, 0.65
 # game data v18.200.9: Tornado Trap.TornadoRotationSpeed=-180 -> -pi radians/s.
 # Wiki: Tornado Trap, counter-clockwise motion (the engine's y axis points down).
+
 TORNADO_ROTATION = -math.pi
 # game data v18.200.9: Bomb/GiantBomb.Pushback=100 -> 1 tile,
 # PushbackHousingLimit=3 -> the same housing eligibility as Mortar.
+
 TRAP_PUSH = 1.0
 # game data v18.200.9: Traps.csv GigaBomb.RadialThrowDistance=200 -> 2 tiles,
 # RadialThrowRadius=450 -> 4.5 tiles.
+
 GIGA_THROW = 2.0
 
 
@@ -85,13 +92,21 @@ def _raw(name, key, default):
 
 def make_trap(battle, tp) -> Trap:
     name = TRAP_NAMES[tp.key]
-    lv = battle.defense_levels.get("trap:" + tp.key) or stats.max_level(name, battle.town_hall) or 1
+    lv = (
+        battle.defense_levels.get("trap:" + tp.key)
+        or stats.max_level(name, battle.town_hall)
+        or 1
+    )
     size = TRAP_SIZES.get(tp.key, 1)
     x, y = tp.x + MARGIN + size / 2.0, tp.y + MARGIN + size / 2.0
     trigger = _raw(name, "Trigger Radius", 1.5)
-    radius = stats.get(name, lv, "Damage Radius", default=None) or _raw(name, "Damage Radius", 0.0)
+    radius = stats.get(name, lv, "Damage Radius", default=None) or _raw(
+        name, "Damage Radius", 0.0
+    )
     dmg = stats.get(name, lv, "damage", "Damage", default=0.0)
-    targets = (stats.attrs(name).get("raw", {}).get("Unit Type Targeted") or "Ground").lower()
+    targets = (
+        stats.attrs(name).get("raw", {}).get("Unit Type Targeted") or "Ground"
+    ).lower()
     air, ground = "air" in targets, "ground" in targets
     tr = Trap(tp.key, name, x, y, lv, trigger, radius, dmg, air, ground, mode=tp.mode)
     if tp.key == "skeleton":
@@ -106,6 +121,7 @@ def make_trap(battle, tp) -> Trap:
         tr.radius = radius or 3.0
         tr.extra["time"] = stats.get(name, lv, "Duration", default=7.0)
         # Tornado Trap: 39/47/55 one-damage pulses over 5/6/7 seconds.
+
         tr.extra["pulses"] = int(stats.get(name, lv, "Total Damage"))
     elif tp.key == "giga":
         tr.air = tr.ground = True
@@ -115,8 +131,11 @@ def make_trap(battle, tp) -> Trap:
 
 def _housing(u):
     if u.name == "Totem":
-        # Totem Spell: Spring and Dark Crown interaction weight;
-        # game data v18.200.9: Characters.csv Totem.HousingSpace=20.
+        # Legacy spring selection weight (Characters.csv Totem.HousingSpace=20).
+        # output/research/usage/spring-trap.md: post-August interception is
+        # unresolved; retain selection separately from ejection immunity.
+        # https://clashofclans.fandom.com/wiki/Totem_Spell
+
         return 20
     if u.is_hero:
         return 25  # game data v18.200.9: Heroes.csv HousingSpace=25 (every hero).
@@ -137,17 +156,20 @@ def _eligible(tr: Trap, u, t=0.0) -> bool:
     if u.extra.get("egg"):
         # game data v18.200.9: Phoenix Egg.TriggersTraps=FALSE.
         # Conflicts with Wiki: Phoenix, eggs trigger aerial traps; game data wins.
+
         return False
     if not _effect_target(tr, u, t) or u.name in NO_TRIGGER:
         return False
     if u.name == "Dragon Duke" and u.dash is not None:
         # game data v18.200.9: DragonDukeDeadlyDash*.TriggersTraps=FALSE (wiki: Rocket Backpack).
+
         return False
     if tr.key == "seeking":
         if u.kind in ("siege", "siege_idle") and u.flying:
             return True  # Seeking Air Mine: aerial sieges are explicit targets.
         if _housing(u) < 5:
             # game data v18.200.9: Traps.csv SeekingAirMine.MinTriggerHousingLimit=5.
+
             return False
     return True
 
@@ -182,6 +204,7 @@ def tick(battle):
 def _fire(battle, tr: Trap):
     # Restore the damage label afterwards: later untagged hits in the same
     # tick (Clan Castle, Guardians, attackers) must not be credited to traps.
+
     prev = battle._src
     try:
         _fire_effect(battle, tr)
@@ -198,11 +221,22 @@ def _fire_effect(battle, tr: Trap):
         battle.log.append((round(t, 1), "trap", tr.key))
     k = tr.key
     if k in ("bomb", "giant"):
-        battle.splash_units(tr.x, tr.y, tr.radius, tr.damage, tr.air, tr.ground, team="atk", src=src, kind="trap")
+        battle.splash_units(
+            tr.x,
+            tr.y,
+            tr.radius,
+            tr.damage,
+            tr.air,
+            tr.ground,
+            team="atk",
+            src=src,
+            kind="trap",
+        )
         # Bomb/Giant Bomb: surviving ground troops of housing <=3 are knocked
         # away from the blast, even through Tome (wiki: Bomb; Giant Bomb).
         # Wiki: Bomb, larger housing reduces knockback; use inverse housing
         # within Mortar's <=3 housing rule (the exact reduction is unstated).
+
         for u in battle.attackers_near(tr.x, tr.y, tr.radius):
             if (
                 u.alive
@@ -219,8 +253,10 @@ def _fire_effect(battle, tr: Trap):
                 u.target = u.wall_target = None
     elif k == "airbomb":
         # Opening time: FUSE (ActionFrame=7).
+
         u = tr.extra.get("trigger_unit")
         # Air Bomb: replacements can be within twice the trigger radius.
+
         radius = tr.trigger if u is not None and u.alive else 2 * tr.trigger
         cands = [
             a for a in battle.attackers_near(tr.x, tr.y, radius) if _eligible(tr, a, t)
@@ -232,6 +268,7 @@ def _fire_effect(battle, tr: Trap):
         u = min(cands, key=lambda a: dist(a.x, a.y, tr.x, tr.y))
         # game data v18.200.9: Projectiles.csv AirTrapBalloon.Speed=250 -> 2.5 tiles/s,
         # StartOffset=20 -> 0.2 tiles forward; DontTrackTarget=TRUE -> acquired location.
+
         flight = max(0.0, dist(tr.x, tr.y, u.x, u.y) - 0.2) / 2.5
         battle.add_pending(
             Pending(
@@ -247,8 +284,22 @@ def _fire_effect(battle, tr: Trap):
             )
         )
     elif k == "giga":
-        pool = [u for u in battle.attackers_near(tr.x, tr.y, tr.radius) if u.name != "Totem" and not u.underground]
-        battle.splash_units(tr.x, tr.y, tr.radius, tr.damage, True, True, team="atk", src=src, kind="trap")
+        pool = [
+            u
+            for u in battle.attackers_near(tr.x, tr.y, tr.radius)
+            if u.name != "Totem" and not u.underground
+        ]
+        battle.splash_units(
+            tr.x,
+            tr.y,
+            tr.radius,
+            tr.damage,
+            True,
+            True,
+            team="atk",
+            src=src,
+            kind="trap",
+        )
         for u in pool:
             if (
                 u.alive
@@ -259,9 +310,12 @@ def _fire_effect(battle, tr: Trap):
                 # a unit exactly at the centre is blasted upwards instead
                 # (wiki: Giga Bomb). The wiki's longer throw for farther ground
                 # units and the airtime are NUMBER NOT STATED.
+
                 d = dist(u.x, u.y, tr.x, tr.y)
                 if d > 0:
-                    battle._nudge(u, GIGA_THROW * (u.x - tr.x) / d, GIGA_THROW * (u.y - tr.y) / d)
+                    battle._nudge(
+                        u, GIGA_THROW * (u.x - tr.x) / d, GIGA_THROW * (u.y - tr.y) / d
+                    )
                 u.target = None
                 u.wall_target = None
     elif k == "seeking":
@@ -269,8 +323,10 @@ def _fire_effect(battle, tr: Trap):
         if u is None or not u.alive or not _effect_target(tr, u, t):
             return  # Seeking Air Mine: a committed dead target wastes the mine.
         # Opening time: FUSE (ActionFrame=7); then the homing flight.
+
         tr.extra["state"] = "flight"
         # game data v18.200.9: LargeDarkElixirBalloon.StartOffset=20 -> 0.2 tiles toward target.
+
         distance = dist(tr.x, tr.y, u.x, u.y)
         offset = min(0.2, distance) / (distance or 1.0)
         tr.extra["projectile"] = (
@@ -281,6 +337,7 @@ def _fire_effect(battle, tr: Trap):
         # Spring Trap: select among units still in the stated trigger radius
         # (wiki). game data v18.200.9 EjectRadius=200 is not used: with it no
         # fast troop could pass, contrary to the wiki; F11 stays open.
+
         cands = [
             a
             for a in battle.attackers_near(tr.x, tr.y, tr.trigger)
@@ -289,20 +346,31 @@ def _fire_effect(battle, tr: Trap):
         if not cands:
             return
         # game data v18.200.9: SpringTrap.TargetHighestHousing=TRUE (also wiki).
+
         u = max(cands, key=lambda a: (_housing(a), -dist(a.x, a.y, tr.x, tr.y)))
         # game data v18.200.9: AttemptEjectBeforeDamage=TRUE, EjectHousingLimit=capacity;
         # Pets.csv CantBeEjected=TRUE for every pet.
+
         special = u.is_hero or u.kind in ("pet", "siege", "siege_idle")
-        if not special and 0 < u.housing <= tr.extra["capacity"]:
+        # output/research/usage/totem-spell.md: traps can damage Totems,
+        # but displacement cannot move them; one housing is not springability.
+        # https://clash-of-clans.1337wiki.com/totem-spell/
+
+        if u.name != "Totem" and not special and 0 < u.housing <= tr.extra["capacity"]:
             battle.kills_by_source[src] = battle.kills_by_source.get(src, 0) + u.housing
             u.extra["sprung"] = True  # Spring Trap: Druid cannot become a Bear.
-            battle.kill(u)  # flung off the map; death effects still happen (wiki: Ice Golem)
+            battle.kill(
+                u
+            )  # flung off the map; death effects still happen (wiki: Ice Golem)
             return
         # game data v18.200.9: SpringTrap.Hero/Pet/SiegeDamageReductionPercent=50 (also wiki).
+
         dmg = tr.damage * (0.5 if special else 1.0)
         battle.hit_unit(u, dmg, src=src, kind="trap")
         if u.alive and u.kind not in ("siege", "siege_idle"):
-            u.stun_until = max(u.stun_until, t + 1.0)  # "stun them for a short while" (assumed 1 s)
+            u.stun_until = max(
+                u.stun_until, t + 1.0
+            )  # "stun them for a short while" (assumed 1 s)
     elif k == "skeleton":
         n = tr.extra["count"]
         for j in range(n):
@@ -311,6 +379,7 @@ def _fire_effect(battle, tr: Trap):
             y = tr.y + 0.7 * math.sin(ang)
             # game data v18.200.9: SkeletonTrap.SpawnInitialDelayMs=600,
             # TimeBetweenSpawnsMs=150 -> create units only at their spawn times.
+
             at = tr.fuse_at + 0.15 * j
             if at <= t:
                 spawn_skeleton(battle, tr, x, y)
@@ -357,12 +426,14 @@ def spawn_skeleton(battle, tr: Trap, x, y):
     # matches game data v18.200.9 Characters.csv Trap Skeleton / Trap Air
     # Skeleton: Hitpoints=30|45, AttackSpeed=700, DPS=25|30, Speed=300/220,
     # IsFlying FALSE/TRUE, AirTargets FALSE/TRUE.
+
     lv = tr.extra["skel_level"]
     s.hp = s.max_hp = s.base_max_hp = stats.get(tr.name, lv, "Hitpoints")
     s.dmg = stats.get(tr.name, lv, "Damage per Hit")
     s.interval = _raw(tr.name, "Attack Speed", None)
     # game data v18.200.9: Trap Air Skeleton.AttackRange=0 -> 0 tiles;
     # Trap Skeleton.AttackRange=40 -> 0.4 tiles.
+
     s.range = 0.0 if tr.mode == "air" else 0.4
     s.flying = tr.mode == "air"
     s.hits_air, s.hits_ground = s.flying, not s.flying
@@ -378,6 +449,7 @@ def _seeking_step(battle, tr: Trap):
     d = dist(x, y, u.x, u.y)
     # game data v18.200.9: Projectiles.csv LargeDarkElixirBalloon.Speed=350 -> 3.5 tiles/s,
     # DontTrackTarget=FALSE: it homes on its committed target.
+
     step = 3.5 * battle.DT
     if d <= step:
         tr.extra["projectile"] = (u.x, u.y)
@@ -394,6 +466,7 @@ def tornado_tick(battle, f: Field):
     """Deliver the wiki pulse budget independently of the solver interval."""
     t = battle.t
     # Tornado Trap: each pulse deals 1 damage, at 0.128-second intervals.
+
     delivered = f.extra["delivered"]
     while delivered < f.extra["pulses"]:
         at = f.started + delivered * 0.128
@@ -405,6 +478,7 @@ def tornado_tick(battle, f: Field):
                 if not u.underground:
                     # Wiki: Ranked Battles, the defense damage bonus skips
                     # "Damage of Traps, with the exception of the Tornado Trap".
+
                     battle.hit_unit(
                         u, 1.0 * battle.def_mult, src="trap:tornado", kind="trap"
                     )
@@ -425,6 +499,7 @@ def tornado_tick(battle, f: Field):
             continue  # Tornado Trap: damage and displacement exemptions differ.
         # Tornado Trap: heroes/pets weigh 5; sieges weigh 1 (also game data
         # v18.200.9: Globals.csv TORNADO_SIEGE_FORCE_TIER=1).
+
         if u.is_hero or u.kind == "pet":
             weight = 5
         elif u.kind in ("siege", "siege_idle"):
@@ -436,6 +511,7 @@ def tornado_tick(battle, f: Field):
         # Pull speed: the game-data force for this weight (air table for
         # flying units), 100% inside TORNADO_INNER and 65% at the edge.
         # Assumed: the force is the pull speed toward the centre, linear in between.
+
         d = dist(u.x, u.y, f.x, f.y)
         nx, ny = u.x, u.y
         if d > TORNADO_INNER:
@@ -447,6 +523,7 @@ def tornado_tick(battle, f: Field):
             ny = u.y + (f.y - u.y) / d * step
         # game data v18.200.9: Tornado Trap.TornadoRotationSpeed=-180;
         # rotate the pulled position, including units inside the inner radius.
+
         dx, dy = nx - f.x, ny - f.y
         nx = f.x + dx * cos_angle - dy * sin_angle
         ny = f.y + dx * sin_angle + dy * cos_angle
@@ -478,6 +555,7 @@ def _tornado_move(battle, u, nx, ny, until):
         u.x, u.y = nx, ny
         return
     # Tornado Trap: ground units caught on walls stay until the field ends.
+
     u.extra["tornado_wall_until"] = max(u.extra.get("tornado_wall_until", 0.0), until)
     u.x = math.nextafter(u.x + (nx - u.x) * first, u.x)
     u.y = math.nextafter(u.y + (ny - u.y) * first, u.y)

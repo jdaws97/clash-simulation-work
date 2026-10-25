@@ -331,6 +331,13 @@ impl PlaybookPlan {
             if cancelled || done && step.every.is_none() || step.completion || step.uncited {
                 continue;
             }
+            // output/research/usage/grand-warden.md: equipment supplies abilities.
+            // https://clashofclans.fandom.com/wiki/Grand_Warden
+            if step.action == Action::Ability
+                && self.missing_equipment(battle, step, None).is_some()
+            {
+                continue;
+            }
             for name in [
                 "Archer Queen",
                 "Royal Champion",
@@ -1203,6 +1210,45 @@ impl PlaybookPlan {
         true
     }
 
+    fn pendant_possible(&self, battle: &Battle) -> bool {
+        // output/research/usage/minion-prince.md: Pendant recalls the Prince
+        // and nearby allies for a later redeployment.
+        // https://clashofclans.fandom.com/wiki/Portal_Pendant
+        let name = "Minion Prince";
+        if let Some(reference) = self.unit(battle, name) {
+            let unit = battle.unit(reference);
+            return !unit.ability_used
+                && unit.kit.as_ref().is_some_and(|kit| kit.has("Portal Pendant"));
+        }
+        let pending = self.steps.iter().any(|step| {
+            step.action == Action::Deploy
+                && step.what.as_deref() == Some(name)
+                && !self.done(&step.id)
+                && !self.cancelled(&step.id)
+        }) || battle.deployments[battle.next_deploy..]
+            .iter()
+            .any(|entry| entry.name == name);
+        if !pending || self.down(battle, name) {
+            return false;
+        }
+        let loadout = self
+            .attack
+            .loadouts
+            .iter()
+            .find(|(hero, _)| hero == name)
+            .map(|(_, loadout)| loadout.clone())
+            .or_else(|| heroes::default_loadout(battle, name));
+        loadout.is_some_and(|loadout| {
+            loadout.equipment.iter().any(|item| item == "Portal Pendant")
+        })
+            && (!self.attack.account_equipment
+                || self
+                    .attack
+                    .equipment_levels
+                    .iter()
+                    .any(|(item, _)| item == "Portal Pendant"))
+    }
+
     // playbook.py:471-501.
     fn cannot(&mut self, battle: &Battle, step: &Step) -> Option<String> {
         let what = step.what.as_deref().unwrap_or("");
@@ -1266,7 +1312,9 @@ impl PlaybookPlan {
             Action::Redeploy => {
                 if battle.portal_stash.is_empty()
                     && count(&self.attack.spells, "recall") <= 0
-                    && battle.t - self.attack.last("recall") > 5.0 {
+                    && battle.t - self.attack.last("recall") > 5.0
+                    && !self.pendant_possible(battle)
+                {
                     return Some("nothing recalled".to_owned());
                 }
             }
@@ -1297,6 +1345,14 @@ impl PlaybookPlan {
 
     // playbook.py:527-661: skip pass, cited steps, completion steps, rescue drops.
     pub fn on_tick(&mut self, battle: &mut Battle) {
+        // output/hunt/r9/s2.out #4: pets, summons and cargo also arrive in battle.
+        // output/research/usage/archer-queen.md: Mirror clones are separate heroes.
+        // https://clashofclans.fandom.com/wiki/Magic_Mirror
+        for unit in battle.attackers_pool() {
+            if unit.kind != Tag::HeroClone && !self.deployed.contains(&unit.name) {
+                self.deployed.push(unit.name.clone());
+            }
+        }
         let t = battle.t;
         self.sync_scouting(battle);
         self.attack.opening_actions(battle);
