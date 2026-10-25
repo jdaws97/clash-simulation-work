@@ -189,7 +189,8 @@
    "at": "building:bt",
    "group": "charge",
    "when": {
-    "t": 0
+    "after": "duke",
+    "delay": 0
    },
    "support": 1,
    "cite": [
@@ -212,7 +213,12 @@
      "verified_t": 93.2
     }
    ],
-   "completion": true
+   "completion": true,
+   "packet": "opening-combination",
+   "objective": "duke-obstruction",
+   "route_hero": "Dragon Duke",
+   "per_target": true,
+   "every": 0.1
   },
   {
    "id": "earthquake_opening_first",
@@ -245,7 +251,9 @@
      "verified_t": 339.6
     }
    ],
-   "completion": true
+   "completion": true,
+   "packet": "opening-combination",
+   "objective": "opening-core"
   },
   {
    "id": "earthquake_opening_second",
@@ -267,7 +275,9 @@
      "verified_t": 122.4
     }
    ],
-   "completion": true
+   "completion": true,
+   "packet": "opening-combination",
+   "objective": "opening-core"
   },
   {
    "id": "earthquake_opening_third",
@@ -289,7 +299,9 @@
      "verified_t": 122.4
     }
    ],
-   "completion": true
+   "completion": true,
+   "packet": "opening-combination",
+   "objective": "opening-core"
   },
   {
    "id": "duke",
@@ -308,7 +320,8 @@
      "t": 189.4,
      "quote": "I deploy the duke at the top and use the"
     }
-   ]
+   ],
+   "packet": "opening-combination"
   },
   {
    "id": "duke_ability",
@@ -334,7 +347,8 @@
      "t": 135.7,
      "quote": "and Dragon Duke, you're using the giant arrow and rocket backpack respectively"
     }
-   ]
+   ],
+   "packet": "opening-combination"
   },
   {
    "id": "queen",
@@ -444,7 +458,8 @@
      "t": 293.8,
      "quote": "prince and the grand warden alongside the sky wagon."
     }
-   ]
+   ],
+   "siege_role": "siege"
   },
   {
    "id": "hound",
@@ -481,9 +496,9 @@
    "cite": [
     {
      "video": "KYxypCKWh-E",
-     "t": 1013.0,
+     "t": 1013,
      "quote": "much damage and not get the air defense",
-     "verified_t": 1013.0
+     "verified_t": 1013
     },
     {
      "video": "KYxypCKWh-E",
@@ -518,7 +533,8 @@
      "t": 168.4,
      "quote": "Hydra spam portion between the two funnels."
     }
-   ]
+   ],
+   "primary": true
   },
   {
    "id": "riders",
@@ -825,15 +841,15 @@
    "cite": [
     {
      "video": "t5yxQTXbY6w",
-     "t": 862.0,
+     "t": 862,
      "quote": "Look at this bottom side.",
-     "verified_t": 862.0
+     "verified_t": 862
     },
     {
      "video": "t5yxQTXbY6w",
-     "t": 864.0,
+     "t": 864,
      "quote": "Maybe get a minion down.",
-     "verified_t": 864.0
+     "verified_t": 864
     }
    ],
    "completion": true
@@ -906,7 +922,7 @@
      "action": "spell",
      "what": "Earthquake Spell",
      "count": 1,
-     "at": "building:mono",
+     "at": "building:st",
      "group": "charge",
      "when": {
       "t": 0
@@ -923,14 +939,17 @@
        "t": 76.2,
        "quote": "The monolith, the CC, um, and the revenge tower,"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "target_mode": "rage",
+     "objective": "opening-core"
     },
     {
      "id": "quake_2",
      "action": "spell",
      "what": "Earthquake Spell",
      "count": 1,
-     "at": "building:mono",
+     "at": "building:st",
      "group": "charge",
      "when": {
       "after": "quake_1",
@@ -943,14 +962,17 @@
        "t": 122.4,
        "quote": "earthquakes on this rage tower"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "target_mode": "rage",
+     "objective": "opening-core"
     },
     {
      "id": "quake_3",
      "action": "spell",
      "what": "Earthquake Spell",
      "count": 1,
-     "at": "building:mono",
+     "at": "building:st",
      "group": "charge",
      "when": {
       "after": "quake_2",
@@ -963,7 +985,10 @@
        "t": 122.4,
        "quote": "earthquakes on this rage tower"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "target_mode": "rage",
+     "objective": "opening-core"
     },
     {
      "id": "duke",
@@ -983,7 +1008,8 @@
        "t": 126.5,
        "quote": "dragon duke from the top side."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "sky",
@@ -1003,7 +1029,8 @@
        "t": 262.5,
        "quote": "So to funnel this side, skywagon."
       }
-     ]
+     ],
+     "siege_role": "siege"
     }
    ],
    "support": 1,
@@ -1048,7 +1075,8 @@
        "t": 96.7,
        "quote": "him to reflect damage with the revenge deck under an ice box spell."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     }
    ],
    "support": 8,
@@ -1115,7 +1143,8 @@
        "t": 291.2,
        "quote": "Having the Inferno Dragons move in alongside"
       }
-     ]
+     ],
+     "primary": true
     }
    ],
    "support": 6,
@@ -1168,7 +1197,8 @@
        "t": 198.4,
        "quote": "maybe they just start the dragon duke on"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "duke_invisibility",
@@ -1279,7 +1309,8 @@
        "t": 1019.7,
        "quote": "I popped the Dragon Duke ability because I'm out of invisibilities,"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "hound",
@@ -1339,7 +1370,8 @@
        "t": 490.6,
        "quote": "Dragon Riders in behind, Inferno Dragons in behind that."
       }
-     ]
+     ],
+     "primary": true
     }
    ],
    "support": 1,
@@ -1460,7 +1492,8 @@
        "t": 177.9,
        "quote": "opposite side using our dragon duke."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "duke_ability",
@@ -1479,7 +1512,8 @@
        "t": 193.6,
        "quote": "blaster, which can be used to stun"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "funnel_inferno",
@@ -1526,7 +1560,8 @@
        "t": 220.3,
        "quote": "dragon riders, inferno dragons, minion"
       }
-     ]
+     ],
+     "siege_role": "siege"
     },
     {
      "id": "riders",
@@ -1566,7 +1601,8 @@
        "t": 220.3,
        "quote": "dragon riders, inferno dragons, minion"
       }
-     ]
+     ],
+     "primary": true
     }
    ],
    "support": 1,
@@ -1743,7 +1779,8 @@
        "t": 147,
        "quote": "also use your ice block spells here to"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "riders",
@@ -1885,7 +1922,8 @@
        "t": 167.1,
        "quote": "If you're using the flame slinger,"
       }
-     ]
+     ],
+     "siege_role": "siege"
     },
     {
      "id": "queen",
@@ -1951,7 +1989,8 @@
        "t": 133.7,
        "quote": "dragon duke supporting whichever flank."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "dragons",
@@ -1971,7 +2010,8 @@
        "t": 139.9,
        "quote": "dragons, dragon riders in there. And the"
       }
-     ]
+     ],
+     "primary": true
     }
    ],
    "support": 3,
@@ -2019,7 +2059,8 @@
        "t": 246.7,
        "quote": "the siege barracks and Archer Queen, where her giant arrow will still again"
       }
-     ]
+     ],
+     "siege_role": "siege"
     }
    ],
    "support": 3,
@@ -2059,8 +2100,17 @@
        "video": "PY3LIEa1Wck",
        "t": 201.3,
        "quote": "I fired it a little bit too quickly. Got"
+      },
+      {
+       "video": "PY3LIEa1Wck",
+       "t": 200,
+       "quote": "Actually end up missing the inferno cuz"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "flame-line",
+     "objective_at": "building:inferno",
+     "aim": "building:inferno"
     }
    ],
    "support": 1,
@@ -2075,7 +2125,13 @@
      "t": 201.3,
      "quote": "I fired it a little bit too quickly. Got"
     }
-   ]
+   ],
+   "required_loadouts": {
+    "Dragon Duke": [
+     "Flame Blower",
+     "Rocket Backpack"
+    ]
+   }
   },
   {
    "name": "Repeat Overgrowth on the Monolith compartment",
@@ -2100,7 +2156,8 @@
        "t": 713.2,
        "quote": "Should we go monolith and cake? I think so."
       }
-     ]
+     ],
+     "objective": "monolith-overgrowth"
     },
     {
      "id": "overgrowth_again",
@@ -2110,8 +2167,7 @@
      "at": "building:mono",
      "group": "main",
      "when": {
-      "after": "overgrowth",
-      "delay": 0
+      "effect_expired": "overgrowth"
      },
      "support": 1,
      "cite": [
@@ -2120,7 +2176,8 @@
        "t": 613.4,
        "quote": "second overgrowth exactly where you use the first overgrowth."
       }
-     ]
+     ],
+     "objective": "monolith-overgrowth"
     }
    ],
    "support": 1,
@@ -2191,7 +2248,10 @@
        "t": 35,
        "quote": "Giant arrow through the base"
       }
-     ]
+     ],
+     "objective": "hero-core",
+     "objective_at": "building:revenge",
+     "aim": "building:revenge"
     },
     {
      "id": "duke",
@@ -2211,7 +2271,8 @@
        "t": 69.3,
        "quote": "on the exact opposite side, I will deploy the DD,"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "duke_ability",
@@ -2232,14 +2293,18 @@
        "t": 36.4,
        "quote": "rocket backpack through the base,"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "hero-core",
+     "objective_at": "building:revenge",
+     "aim": "building:revenge"
     },
     {
      "id": "zap_quake_1",
      "action": "spell",
      "what": "Earthquake Spell",
      "count": 1,
-     "at": "building:mono",
+     "at": "building:revenge",
      "group": "main",
      "when": {
       "after": "duke_ability",
@@ -2252,14 +2317,16 @@
        "t": 38.4,
        "quote": "two earthquake spells take out high-value targets,"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "hero-core"
     },
     {
      "id": "zap_quake_2",
      "action": "spell",
      "what": "Earthquake Spell",
      "count": 1,
-     "at": "building:mono",
+     "at": "building:revenge",
      "group": "main",
      "when": {
       "after": "zap_quake_1",
@@ -2272,7 +2339,9 @@
        "t": 38.4,
        "quote": "two earthquake spells take out high-value targets,"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "hero-core"
     },
     {
      "id": "zap_quake_3",
@@ -2292,7 +2361,9 @@
        "t": 39.6,
        "quote": "then you've got two earthquake spells"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "zapquake-core"
     },
     {
      "id": "zap_quake_4",
@@ -2312,7 +2383,9 @@
        "t": 39.6,
        "quote": "then you've got two earthquake spells"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "zapquake-core"
     },
     {
      "id": "lightning_1",
@@ -2332,7 +2405,8 @@
        "t": 41.1,
        "quote": "six lightning to take out other high-value targets."
       }
-     ]
+     ],
+     "objective": "zapquake-core"
     },
     {
      "id": "lightning_2",
@@ -2352,7 +2426,8 @@
        "t": 41.1,
        "quote": "six lightning to take out other high-value targets."
       }
-     ]
+     ],
+     "objective": "zapquake-core"
     },
     {
      "id": "lightning_3",
@@ -2372,7 +2447,8 @@
        "t": 41.1,
        "quote": "six lightning to take out other high-value targets."
       }
-     ]
+     ],
+     "objective": "zapquake-core"
     },
     {
      "id": "lightning_4",
@@ -2392,7 +2468,8 @@
        "t": 41.1,
        "quote": "six lightning to take out other high-value targets."
       }
-     ]
+     ],
+     "objective": "zapquake-core"
     },
     {
      "id": "lightning_5",
@@ -2412,7 +2489,8 @@
        "t": 41.1,
        "quote": "six lightning to take out other high-value targets."
       }
-     ]
+     ],
+     "objective": "zapquake-core"
     },
     {
      "id": "lightning_6",
@@ -2432,7 +2510,8 @@
        "t": 41.1,
        "quote": "six lightning to take out other high-value targets."
       }
-     ]
+     ],
+     "objective": "zapquake-core"
     },
     {
      "id": "riders",
@@ -2452,7 +2531,8 @@
        "t": 172.2,
        "quote": "Then it's just a beautiful spam attack."
       }
-     ]
+     ],
+     "primary": true
     },
     {
      "id": "sky",
@@ -2472,7 +2552,8 @@
        "t": 150,
        "quote": "Put it behind your main attack."
       }
-     ]
+     ],
+     "siege_role": "siege"
     }
    ],
    "support": 1,
@@ -2507,19 +2588,62 @@
   "vUaNIZU3eno's charge uses five Invisibility Spells, Rocket Spear/Electro Boots Royal Champion and Fire Heart/Stun Blaster/Angry Jelly Duke. inside Royal Champion approximates Rocket Spear shots being exhausted because no ammunition trigger exists. Its four-second interval is explicit and is not assigned to k4aW1ytbOZ8 or llu35f-7RFk, whose single/double/quadruple cycles have no stated seconds. Those mass-Dragon plans start with Royal Champion and send Duke after the main push.",
   "Repeated Ice Blocks have no shared stated interval. The Ice Block variants encode an initial damage-triggered cast; additional casts and movement between them are unscheduled. 47wtlBeNIPw instead activates Rocket Backpack seven seconds after Phoenix activates; no Phoenix trigger exists, so that timing is not converted into an invented attack-clock time.",
   "The Flame Flinger variant's approximately 60-second lead comes only from twbdjMD07No; the other Flame Flinger sources give no number. Use that source's Fire Heart/Stun Blaster/Angry Jelly Duke and Flame Flinger inventory. Siege Barracks is an alternative machine, not an additional simultaneous deployment. The Siege Barracks variant replaces the Sky Wagon and requires that source's siege inventory and payload.",
-  "The Flame Blower variant uses PY3LIEa1Wck's Flame Blower/Rocket Backpack/Angry Jelly Duke. That source also revises its army to two Overgrowth Spells by removing one Poison and one Freeze. The repeated-Overgrowth variant needs two spells; delay 0 is the required unspecified-delay placeholder because spell expiration has no trigger, and does not reproduce waiting for the first spell to expire.",
+  "The Flame Blower variant uses PY3LIEa1Wck's Flame Blower/Rocket Backpack/Angry Jelly Duke. That source also revises its army to two Overgrowth Spells by removing one Poison and one Freeze. The repeated-Overgrowth variant needs two spells; renewal now waits for the first actual Overgrowth effect to expire.",
   "Sin7pQqHJLo's zapquake variant needs four Earthquake and six Lightning Spells and uses Eternal Tome/Rage Gem Warden. Its Queen and Duke deployment ordering is supplied by _sotzQjtl2A because Sin7pQqHJLo narrates only their abilities. Monolith and Inferno anchors approximate its stated high-value target areas; zero-delay single casts preserve its two-plus-two Earthquake and six-Lightning counts.",
   "Revive is carried without a dedicated Revive step in this book. The current Rust executor resolves fallen-hero unit anchors at the corpse and can spend surplus spells through fallback; that behavior does not encode a source-specific revival policy. See the Dragon review's already-known-limitations audit.",
   "Town Hall entry is contested: KHh13uguqf0 recommends an early Town Hall entry after one failure but later succeeds through the Monolith; s5btI1E0LdY changes entry with Sweepers and hero concentrations, while wanC6B7TJyk generally finishes toward the Town Hall and defending heroes. No universal Town Hall-first rule is imposed.",
   "Sources span TH16-TH18, and several have no fixed attacking Town Hall. The representative army comes from a TH18 link. Missing counts, unresolved names such as logger or cake, accidental casts, missed arrows and explicitly criticized ability timings are not promoted to new instructions. No recall, redeploy or manual siege-release timing is established.",
   "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py).",
   "The Ice Hound alternative preserves the hound ID and its lead dependency; Mass Dragons replaces only the Dragon/Rider deployments, so a missing Lava Hound does not by itself select mass Dragons. 55I-qks9qdI 170.6–178.3: \"Using an Ice Hound\" provides \"more tanking early on\" for Dragons/Riders.",
-  "PY3LIEa1Wck 198.5–203.2 corrects the apparent praise of the Duke shot: \"I fired it a little bit too quickly.\" The Flame Blower variant's zero-delay placeholder is not a recommendation to fire immediately; equipment-pair prerequisites and aligned-value timing still need engine support."
+  "PY3LIEa1Wck 198.5–203.2 corrects the apparent praise of the Duke shot: \"I fired it a little bit too quickly.\" The Flame Blower variant's zero-delay placeholder is not a recommendation to fire immediately; equipment-pair prerequisites and aligned-value timing still need engine support.",
+  "PB1b: recipe selects an explicit named source/variant; an ambiguous inventory retains repair-only selection. packet preserves the input action clock, primary marks the main cohort, objective binds one building, and effect prerequisites use actual cast expiry. Source inventory/loadout and frame-verification holds remain in force. These are controller policies and synthetic regression evidence, not real-game calibration."
  ],
  "check": {
   "steps_kept": 17,
   "steps_dropped": 0,
   "reasons": {},
   "dangling_after": []
+ },
+ "recipes": {
+  "default": [],
+  "variant-1": [
+   "Three-Earthquake opening and opposite Sky Wagon funnel"
+  ],
+  "variant-2": [
+   "Revenge Deck Duke charge with Ice Block"
+  ],
+  "variant-3": [
+   "Dragon Riders with Inferno Dragons"
+  ],
+  "variant-4": [
+   "Spirit Fox Duke Invisibility charge and Royal Champion funnel"
+  ],
+  "variant-5": [
+   "Rocket Spear Royal Champion charge before the Duke funnel"
+  ],
+  "variant-6": [
+   "Ice Hound leads the Dragons and Dragon Riders"
+  ],
+  "variant-7": [
+   "Mass Dragons"
+  ],
+  "variant-8": [
+   "Super Dragons after a Revenge Deck Duke funnel"
+  ],
+  "variant-9": [
+   "Flame Flinger opening with a sixty-second lead"
+  ],
+  "variant-10": [
+   "Siege Barracks with the Queen on the opposite flank"
+  ],
+  "variant-11": [
+   "Flame Blower Duke opening"
+  ],
+  "variant-12": [
+   "Repeat Overgrowth on the Monolith compartment"
+  ],
+  "variant-13": [
+   "Giant Arrow and Rocket Backpack followed by zapquake"
+  ]
  }
 }

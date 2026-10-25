@@ -127,6 +127,7 @@ struct References {
     groups: BTreeSet<String>,
     ids: BTreeSet<String>,
     spells: BTreeMap<String, usize>,
+    objectives: BTreeSet<String>,
 }
 
 fn contains(names: &BTreeSet<String>, name: &str, kind: &str) -> Result<(), String> {
@@ -148,6 +149,16 @@ fn anchor(value: &str, refs: &References, aim: bool) -> Result<(), String> {
         "edge" if matches!(arg, "main" | "charge" | "funnel" | "left" | "right") => Ok(()),
         "unit" | "unit_ahead" => contains(&refs.units, arg, "unit"),
         "group" | "threat" | "defenders" => contains(&refs.groups, arg, "group"),
+        "cohort" => contains(&refs.ids, arg, "cohort deployment"),
+        "defender" => {
+            let (name, group) = arg
+                .split_once(':')
+                .ok_or("named defender anchor requires a group")?;
+            if name != "Headhunter" {
+                return Err("unsupported named defender".to_owned());
+            }
+            contains(&refs.groups, group, "group")
+        }
         "building" if BUILDING_KEYS.contains(&arg) => Ok(()),
         _ => Err(format!("unknown anchor: {value}")),
     }
@@ -177,6 +188,12 @@ fn trigger(value: &Json, refs: &References, edges: &mut Vec<String>) -> Result<(
         "destruction",
         "all",
         "any",
+        "effect_active",
+        "effect_expired",
+        "cohort_absent",
+        "succeeded",
+        "objective",
+        "defender",
     ];
     let selected: Vec<_> = operations
         .iter()
@@ -192,6 +209,8 @@ fn trigger(value: &Json, refs: &References, edges: &mut Vec<String>) -> Result<(
         "near_th" => "r",
         "heavy_fire" | "hp_below" => "frac",
         "spells_left" => "n",
+        "objective" => "state",
+        "defender" => "group",
         _ => "",
     };
     if fields
@@ -218,10 +237,25 @@ fn trigger(value: &Json, refs: &References, edges: &mut Vec<String>) -> Result<(
         "destruction" => {
             scalar(value.at(key), 0.0, 100.0)?;
         }
-        "after" => {
+        "after" | "effect_active" | "effect_expired" | "cohort_absent" | "succeeded" => {
             let id = name(value, key)?;
             contains(&refs.ids, id, "step")?;
             edges.push(id.to_owned());
+        }
+        "objective" => {
+            contains(&refs.objectives, name(value, key)?, "objective")?;
+            if !matches!(
+                text(value, "state", "alive"),
+                "alive" | "destroyed" | "damaged" | "rage"
+            ) {
+                return Err("unknown objective state".to_owned());
+            }
+        }
+        "defender" => {
+            if name(value, key)? != "Headhunter" {
+                return Err("unsupported named defender".to_owned());
+            }
+            contains(&refs.groups, text(value, "group", "main"), "group")?;
         }
         "inside" | "heavy_fire" | "hp_below" | "dead" => {
             contains(&refs.units, name(value, key)?, "unit")?;
@@ -417,6 +451,7 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
         groups: BTreeSet::new(),
         ids: BTreeSet::new(),
         spells: spell_stock(genome),
+        objectives: BTreeSet::new(),
     };
     for step in &program.steps {
         finite(step, 0)?;
@@ -450,6 +485,9 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
         }
         if !refs.ids.insert(name(step, "id")?.to_owned()) {
             return Err("duplicate program step id".to_owned());
+        }
+        if step.get("objective").is_some() {
+            refs.objectives.insert(name(step, "objective")?.to_owned());
         }
         if matches!(text(step, "action", ""), "deploy" | "redeploy") {
             refs.groups.insert(text(step, "group", "main").to_owned());
@@ -507,6 +545,35 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                 "variant",
                 "note",
                 "notes",
+                "primary",
+                "packet",
+                "siege_role",
+                "allocated_count",
+                "return_package",
+                "recall_from",
+                "objective",
+                "objective_at",
+                "target_keys",
+                "target_mode",
+                "route_hero",
+                "per_target",
+                "repeat_effect_remaining",
+                "repeat_units_absent",
+                "snipe",
+                "ahead_of",
+                "bind_before",
+                "after_success",
+                "reserved",
+                "timeout",
+                "post_recall",
+                "required",
+                "optional",
+                "spell_budget",
+                "aim_count",
+                "timing_note",
+                "target_note",
+                "mask_for",
+                "mask_hero",
             ];
             if step
                 .obj()
@@ -536,6 +603,14 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                 "learned",
                 "skip_if_impossible",
                 "recheck_when",
+                "primary",
+                "return_package",
+                "per_target",
+                "snipe",
+                "reserved",
+                "post_recall",
+                "required",
+                "optional",
             ] {
                 if step
                     .get(key)
@@ -566,6 +641,59 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                 }
             }
             anchor(text(step, "at", "edge:main"), &refs, false)?;
+            for key in [
+                "packet",
+                "siege_role",
+                "objective",
+                "target_mode",
+                "spell_budget",
+                "timing_note",
+                "target_note",
+            ] {
+                if step.get(key).is_some() {
+                    name(step, key)?;
+                }
+            }
+            if step.get("objective_at").is_some() {
+                anchor(name(step, "objective_at")?, &refs, false)?;
+            }
+            if step.get("mask_for").is_some() {
+                contains(&refs.objectives, name(step, "mask_for")?, "mask objective")?;
+                if text(step, "mask_for", "") == text(step, "objective", "") {
+                    return Err("mask cannot conceal its own objective".into());
+                }
+            }
+            if step.get("mask_hero").is_some() {
+                contains(&refs.units, name(step, "mask_hero")?, "mask hero")?;
+                if !crate::plans::is_hero(name(step, "mask_hero")?) {
+                    return Err("mask_hero must name a hero".into());
+                }
+            }
+            if let Some(value) = step.get("allocated_count") {
+                scalar(value, 1.0, 10000.0)?;
+            }
+            if let Some(value) = step.get("repeat_effect_remaining") {
+                scalar(value, 0.0, 1.0)?;
+            }
+            if let Some(value) = step.get("timeout") {
+                scalar(value, 0.0, 180.0)?;
+            }
+            for key in ["route_hero", "ahead_of", "repeat_units_absent"] {
+                if step.get(key).is_some() {
+                    contains(&refs.units, name(step, key)?, "unit")?;
+                }
+            }
+            if let Some(keys) = step.get("target_keys") {
+                if !matches!(keys, Json::Arr(_))
+                    || keys.arr().is_empty()
+                    || keys.arr().iter().any(|key| {
+                        key.opt_str()
+                            .is_none_or(|key| !BUILDING_KEYS.contains(&key))
+                    })
+                {
+                    return Err("target_keys requires known building keys".to_owned());
+                }
+            }
             if let Some(aim) = step.get("aim") {
                 anchor(aim.str(), &refs, true)?;
             }
@@ -577,6 +705,13 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                 return Err("program levels are fixed account inputs".to_owned());
             }
             let mut edges = Vec::new();
+            for key in ["recall_from", "after_success", "bind_before"] {
+                if step.get(key).is_some() {
+                    let id = name(step, key)?;
+                    contains(&refs.ids, id, "step")?;
+                    edges.push(id.to_owned());
+                }
+            }
             for key in ["when", "until"] {
                 if let Some(value) = step.get(key) {
                     trigger(value, &refs, &mut edges)?;
@@ -591,7 +726,9 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
         let repeated = step.get("every").is_some();
         if let Some(every) = step.get("every") {
             scalar(every, 0.1, 180.0).map_err(|reason| format!("step {index}: {reason}"))?;
-            if !matches!(action, "spell" | "recall") {
+            if !matches!(action, "spell" | "recall")
+                && !(action == "deploy" && step.get("per_target") == Some(&Json::Bool(true)))
+            {
                 return Err(format!("step {index}: repetition only supports casts"));
             }
         }
@@ -600,7 +737,7 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                 "deploy" => {
                     let left = stock.get(what).copied().unwrap_or(0);
                     let count = amount(step, left, left)?;
-                    stock.insert(what.to_owned(), left - count);
+                    stock.insert(what.to_owned(), if repeated { 0 } else { left - count });
                 }
                 "spell" | "recall" => {
                     if action == "recall"

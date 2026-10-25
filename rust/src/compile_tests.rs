@@ -254,3 +254,131 @@ fn expansion_rewires_known_removed_predecessors_before_fitting() {
         validate_dependencies(&steps).unwrap();
     });
 }
+
+#[test]
+fn declared_recipe_selects_additive_branch_and_enforces_all_loadout_items() {
+    with_compiler(|compiler| {
+        let mut build = json(
+            r#"{"th":18,"archetype":"mass-dragons","build":1,"troops":{"Dragon":1},"spells":{},"cc":{},"heroes":["Dragon Duke"],"loadouts":{"Dragon Duke":["Rocket Backpack","Fire Heart"]},"recipe":"flame"}"#,
+        );
+        let book = json(
+            r#"{"family":"synthetic","recipes":{"flame":["Flame"]},"steps":[{"id":"dragons","action":"deploy","what":"Dragon","count":"all","when":{"t":0}}],"variants":[{"name":"Flame","required_loadouts":{"Dragon Duke":["Flame Blower","Rocket Backpack"]},"steps":[{"id":"duke","action":"deploy","what":"Dragon Duke","when":{"t":0}}]}]}"#,
+        );
+        let base = armies::compose(&compiler.library, compiler.stats, &build, 0.0, 2).unwrap();
+        assert!(compiler
+            .from_playbook(&book, &build, base, 2, &Default::default())
+            .unwrap_err()
+            .contains("required loadout"));
+        put(
+            &mut build,
+            "loadouts",
+            json(r#"{"Dragon Duke":["Rocket Backpack","Flame Blower"]}"#),
+        );
+        let base = armies::compose(&compiler.library, compiler.stats, &build, 0.0, 2).unwrap();
+        let plan = compiler
+            .from_playbook(&book, &build, base, 2, &Default::default())
+            .unwrap();
+        assert!(list(&plan, "steps")
+            .iter()
+            .any(|s| text(s, "variant", "") == "Flame"));
+    });
+}
+
+#[test]
+fn packets_keep_input_pacing_and_explicit_waits_across_roles() {
+    let mut steps=json(r#"[
+        {"id":"tank","action":"deploy","what":"Ice Golem","group":"tank","packet":"entry","when":{"t":0}},
+        {"id":"left","action":"deploy","what":"Super Yeti","group":"left","packet":"entry","when":{"after":"tank","delay":0}},
+        {"id":"bulk","action":"deploy","what":"Super Yeti","group":"main","packet":"entry","when":{"after":"left","delay":2}},
+        {"id":"later","action":"deploy","what":"Archer Queen","group":"flank","when":{"after":"bulk","delay":0}}
+    ]"#).arr().to_vec();
+    add_waits(&mut steps, (4.5, 16.6), 1.0);
+    assert_eq!(number(steps[1].at("when"), "delay", -1.0), 0.0);
+    assert_eq!(number(steps[2].at("when"), "delay", -1.0), 2.0);
+    assert!(number(steps[3].at("when"), "delay", 0.0) > 15.0);
+}
+
+#[test]
+fn cited_roles_and_remainder_order_survive_generic_hints() {
+    let mut steps=json(r#"[{"id":"queen","action":"deploy","what":"Archer Queen","at":"edge:charge","group":"charge","when":{"t":0},"cite":[{"quote":"charge"}]}]"#).arr().to_vec();
+    let build = json(r#"{"heroes":["Archer Queen"],"push":["Archer Queen"]}"#);
+    apply_roles(&mut steps, &build, &object());
+    assert_eq!(text(&steps[0], "group", ""), "charge");
+    let source = json(
+        r#"[{"id":"bulk","action":"deploy","what":"Thrower","count":"all","group":"main","primary":true,"when":{"t":10}}]"#,
+    );
+    let a = fit_steps(
+        source.arr(),
+        &json(r#"{"Thrower":3,"Balloon":1,"Super Barbarian":1}"#),
+        &[],
+        &object(),
+        &[],
+    )
+    .unwrap();
+    let b = fit_steps(
+        source.arr(),
+        &json(r#"{"Super Barbarian":1,"Balloon":1,"Thrower":3}"#),
+        &[],
+        &object(),
+        &[],
+    )
+    .unwrap();
+    assert_eq!(a, b);
+    assert!(a
+        .iter()
+        .filter(|s| flag(s, "uncited"))
+        .all(|s| text(s, "group", "") != "main"));
+}
+
+#[test]
+fn siege_repair_preserves_a_different_id_and_its_cited_dependency() {
+    with_compiler(|compiler| {
+        let book = json(
+            r#"{"steps":[{"id":"backpack","action":"ability","what":"Dragon Duke","when":{"t":3}},{"id":"flinger","action":"deploy","what":"Flame Flinger","when":{"t":0}}],"variants":[{"name":"Launcher","replaces":["flinger"],"steps":[{"id":"launcher","action":"deploy","what":"Troop Launcher","when":{"after":"backpack"}}]}]}"#,
+        );
+        let result = compiler
+            .pick_variants(
+                &book,
+                &json(r#"{"Troop Launcher":1}"#),
+                &[string("Dragon Duke")],
+                &object(),
+                &json(r#"{"loadouts":{}}"#),
+                None,
+            )
+            .unwrap();
+        let siege = result
+            .iter()
+            .find(|s| text(s, "id", "") == "launcher")
+            .unwrap();
+        assert_eq!(text(siege.at("when"), "after", ""), "backpack");
+        assert!(!result.iter().any(|s| text(s, "id", "") == "flinger"));
+    });
+}
+
+#[test]
+fn missing_recall_keeps_the_opening_hero_and_healers_in_one_package() {
+    let source = json(
+        r#"[
+        {"id":"hero","action":"deploy","what":"Archer Queen","group":"charge","at":"edge:charge","when":{"t":0}},
+        {"id":"healers","action":"deploy","what":"Healer","count":"all","group":"charge","at":"edge:charge","when":{"after":"hero"}},
+        {"id":"recall","action":"recall","what":"Recall Spell","at":"unit:Archer Queen","when":{"after":"healers"}},
+        {"id":"return","action":"redeploy","what":"Archer Queen","when":{"after":"recall"}}
+    ]"#,
+    );
+    let mut steps = fit_steps(
+        source.arr(),
+        &json(r#"{"Healer":5}"#),
+        &[string("Archer Queen")],
+        &object(),
+        &[],
+    )
+    .unwrap();
+    normalize_recall_package(&mut steps, &object()).unwrap();
+    assert!(!steps.iter().any(|s| text(s, "action", "") == "redeploy"));
+    for id in ["hero", "healers"] {
+        let step = steps.iter().find(|s| text(s, "id", "") == id).unwrap();
+        assert_eq!(text(step, "group", ""), "main");
+        assert_eq!(text(step, "at", ""), "edge:main");
+    }
+    validate_dependencies(&steps).unwrap();
+}

@@ -379,7 +379,8 @@
      "t": 925.7,
      "quote": "start my warden walk down here."
     }
-   ]
+   ],
+   "packet": "warden-to-entry"
   },
   {
    "id": "flinger",
@@ -434,7 +435,8 @@
      "t": 908.2,
      "quote": "Put a flame flinger on the right."
     }
-   ]
+   ],
+   "siege_role": "siege"
   },
   {
    "id": "fireball",
@@ -511,9 +513,9 @@
     },
     {
      "video": "HnEtYULN4Y0",
-     "t": 239.0,
+     "t": 239,
      "quote": "better. I get rid of the CC and the lava",
-     "verified_t": 239.0
+     "verified_t": 239
     },
     {
      "video": "O8of3SqwmUo",
@@ -547,9 +549,9 @@
     },
     {
      "video": "x5AiCcU008Y",
-     "t": 57.0,
+     "t": 57,
      "quote": "troops get dragged out.",
-     "verified_t": 57.0
+     "verified_t": 57
     },
     {
      "video": "yiUwu_vHfng",
@@ -557,14 +559,17 @@
      "quote": "gets the clan castle. The eagle. I just",
      "verified_t": 479.6
     }
-   ]
+   ],
+   "packet": "warden-to-entry",
+   "objective": "fireball-core",
+   "objective_at": "building:cc"
   },
   {
    "id": "rocket_balloons_flinger_xbow",
    "action": "deploy",
    "what": "Rocket Balloon",
-   "count": "all",
-   "at": "building:xbow",
+   "count": 2,
+   "at": "building:mono",
    "group": "funnel",
    "when": {
     "after": "warden",
@@ -583,9 +588,16 @@
      "t": 1122.6,
      "quote": "Rest of these loons are going for that",
      "verified_t": 1122.6
+    },
+    {
+     "video": "x5AiCcU008Y",
+     "t": 673.4,
+     "quote": "end up sending in a few of those rocket"
     }
    ],
-   "completion": true
+   "completion": true,
+   "route_hero": "Grand Warden",
+   "objective": "flinger-obstruction"
   },
   {
    "id": "balloon_healer_screen",
@@ -607,17 +619,18 @@
      "verified_t": 967.2
     }
    ],
-   "completion": true
+   "completion": true,
+   "packet": "warden-to-entry"
   },
   {
    "id": "furnaces_opening_walk",
    "action": "deploy",
    "what": "Furnace",
    "count": 2,
-   "at": "unit:Grand Warden",
-   "group": "charge",
+   "at": "edge:charge",
+   "group": "cleanup",
    "when": {
-    "after": "warden",
+    "after": "recall_warden",
     "delay": 0
    },
    "support": 1,
@@ -667,7 +680,7 @@
    "at": "unit:Grand Warden",
    "group": "charge",
    "when": {
-    "after": "warden",
+    "after": "redeploy_warden",
     "delay": 0
    },
    "support": 3,
@@ -688,11 +701,12 @@
      "video": "12Z_sTAEOHw",
      "t": 799,
      "quote": "One of the healers doesn't get recalled",
-     "verified_t": 799.0
+     "verified_t": 799
     }
    ],
    "completion": true,
-   "note": "Added by Claude, not Codex: the sources narrate the Healers walking and being recalled with the Warden, not the drop itself."
+   "note": "Added by Claude, not Codex: the sources narrate the Healers walking and being recalled with the Warden, not the drop itself.",
+   "packet": "warden-to-entry"
   },
   {
    "id": "warden_invisibility",
@@ -760,8 +774,16 @@
    "at": "unit:Grand Warden",
    "group": "charge",
    "when": {
-    "after": "fireball",
-    "delay": 0
+    "all": [
+     {
+      "after": "fireball",
+      "delay": 0
+     },
+     {
+      "after": "minion_warden_funnel",
+      "delay": 0
+     }
+    ]
    },
    "support": 9,
    "cite": [
@@ -810,7 +832,8 @@
      "t": 141.1,
      "quote": "Recall my warden"
     }
-   ]
+   ],
+   "packet": "warden-to-entry"
   },
   {
    "id": "minion_warden_funnel",
@@ -832,7 +855,8 @@
      "verified_t": 1259.6
     }
    ],
-   "completion": true
+   "completion": true,
+   "packet": "warden-to-entry"
   },
   {
    "id": "wizard_entry_setup",
@@ -864,8 +888,16 @@
    "at": "building:cc",
    "group": "charge",
    "when": {
-    "after": "fireball",
-    "delay": 0
+    "all": [
+     {
+      "after": "fireball",
+      "delay": 0
+     },
+     {
+      "objective": "fireball-core",
+      "state": "damaged"
+     }
+    ]
    },
    "support": 1,
    "cite": [
@@ -882,7 +914,11 @@
      "verified_t": 584.6
     }
    ],
-   "completion": true
+   "completion": true,
+   "optional": true,
+   "spell_budget": "finishing-quakes",
+   "after_success": "fireball",
+   "objective": "fireball-core"
   },
   {
    "id": "redeploy_warden",
@@ -937,7 +973,8 @@
      "t": 143,
      "quote": "warden and send up to this top side."
     }
-   ]
+   ],
+   "packet": "warden-to-entry"
   },
   {
    "id": "ice_golem",
@@ -962,7 +999,8 @@
      "t": 983.4,
      "quote": "King, ice golem,"
     }
-   ]
+   ],
+   "packet": "warden-to-entry"
   },
   {
    "id": "queen",
@@ -992,7 +1030,9 @@
      "t": 987,
      "quote": "queen with this."
     }
-   ]
+   ],
+   "primary": true,
+   "packet": "warden-to-entry"
   },
   {
    "id": "queen_arrow",
@@ -1049,7 +1089,7 @@
      "quote": "course the giant arrow with the dragon"
     }
    ],
-   "aim": "building:cc",
+   "aim": "building:st",
    "aim_cite": [
     {
      "video": "HnEtYULN4Y0",
@@ -1117,7 +1157,10 @@
      "quote": "CC with the jetack and arrow as well.",
      "verified_t": 385.2
     }
-   ]
+   ],
+   "packet": "warden-to-entry",
+   "objective": "arrow-tower",
+   "objective_at": "building:st"
   },
   {
    "id": "log_launcher_hero_entry",
@@ -1148,7 +1191,7 @@
      "video": "O8of3SqwmUo",
      "t": 883,
      "quote": "Now, here I'm going to use the log",
-     "verified_t": 883.0
+     "verified_t": 883
     },
     {
      "video": "qlLv2Bvu4ig",
@@ -1163,7 +1206,8 @@
      "verified_t": 846.2
     }
    ],
-   "completion": true
+   "completion": true,
+   "siege_role": "siege"
   },
   {
    "id": "rage_tower_finish_quake_1",
@@ -1173,8 +1217,20 @@
    "at": "building:st",
    "group": "main",
    "when": {
-    "after": "queen_arrow",
-    "delay": 0
+    "all": [
+     {
+      "after": "queen_arrow",
+      "delay": 0
+     },
+     {
+      "objective": "arrow-tower",
+      "state": "damaged"
+     },
+     {
+      "objective": "arrow-tower",
+      "state": "rage"
+     }
+    ]
    },
    "support": 1,
    "cite": [
@@ -1185,7 +1241,11 @@
      "verified_t": 1067.4
     }
    ],
-   "completion": true
+   "completion": true,
+   "optional": true,
+   "spell_budget": "finishing-quakes",
+   "after_success": "queen_arrow",
+   "objective": "arrow-tower"
   },
   {
    "id": "rage_tower_finish_quake_2",
@@ -1195,8 +1255,20 @@
    "at": "building:st",
    "group": "main",
    "when": {
-    "after": "rage_tower_finish_quake_1",
-    "delay": 0
+    "all": [
+     {
+      "after": "rage_tower_finish_quake_1",
+      "delay": 0
+     },
+     {
+      "objective": "arrow-tower",
+      "state": "damaged"
+     },
+     {
+      "objective": "arrow-tower",
+      "state": "rage"
+     }
+    ]
    },
    "support": 1,
    "cite": [
@@ -1207,7 +1279,11 @@
      "verified_t": 1067.4
     }
    ],
-   "completion": true
+   "completion": true,
+   "optional": true,
+   "spell_budget": "finishing-quakes",
+   "after_success": "queen_arrow",
+   "objective": "arrow-tower"
   },
   {
    "id": "duke",
@@ -1217,15 +1293,8 @@
    "at": "edge:main",
    "group": "duke",
    "when": {
-    "all": [
-     {
-      "after": "queen_arrow",
-      "delay": 0
-     },
-     {
-      "inside": "Grand Warden"
-     }
-    ]
+    "after": "queen_arrow",
+    "delay": 0
    },
    "support": 1,
    "cite": [
@@ -1234,7 +1303,8 @@
      "t": 954.6,
      "quote": "had the king, queen, and drag juke push towards the tunnel."
     }
-   ]
+   ],
+   "packet": "warden-to-entry"
   },
   {
    "id": "duke_backpack",
@@ -1280,7 +1350,8 @@
      "t": 128.1,
      "quote": "the dragon duke ability a little bit."
     }
-   ]
+   ],
+   "packet": "warden-to-entry"
   },
   {
    "id": "wall_breakers",
@@ -1305,7 +1376,8 @@
      "t": 771.4,
      "quote": "I invis and deploy five wall breakers"
     }
-   ]
+   ],
+   "packet": "warden-to-entry"
   },
   {
    "id": "king",
@@ -1345,7 +1417,8 @@
      "t": 155.6,
      "quote": "on my hero charge, I don't send him my"
     }
-   ]
+   ],
+   "packet": "warden-to-entry"
   },
   {
    "id": "king_spiky_ball",
@@ -1375,7 +1448,8 @@
      "t": 172.8,
      "quote": "spiky ball can target the revenge tower."
     }
-   ]
+   ],
+   "packet": "warden-to-entry"
   },
   {
    "id": "archers_late_cleanup",
@@ -1499,6 +1573,60 @@
     }
    ],
    "completion": true
+  },
+  {
+   "id": "surgical_minions",
+   "action": "deploy",
+   "what": "Super Minion",
+   "count": "all",
+   "at": "defenders:main",
+   "group": "reserve",
+   "reserved": true,
+   "when": {
+    "all": [
+     {
+      "after": "queen",
+      "delay": 0
+     },
+     {
+      "defenders_near": "main"
+     }
+    ]
+   },
+   "cite": [
+    {
+     "video": "qlLv2Bvu4ig",
+     "t": 1219.1,
+     "quote": "Now, on that back end, you can use"
+    }
+   ]
+  },
+  {
+   "id": "surgical_rockets",
+   "action": "deploy",
+   "what": "Rocket Balloon",
+   "count": "all",
+   "at": "defenders:main",
+   "group": "reserve",
+   "reserved": true,
+   "when": {
+    "all": [
+     {
+      "after": "queen",
+      "delay": 0
+     },
+     {
+      "defenders_near": "main"
+     }
+    ]
+   },
+   "cite": [
+    {
+     "video": "x5AiCcU008Y",
+     "t": 673.4,
+     "quote": "end up sending in a few of those rocket"
+    }
+   ]
   }
  ],
  "variants": [
@@ -1557,7 +1685,8 @@
        "t": 846.2,
        "quote": "log launcher with the hero dive on the"
       }
-     ]
+     ],
+     "siege_role": "siege"
     }
    ],
    "support": 7,
@@ -1623,7 +1752,10 @@
        "t": 154.1,
        "quote": "So, I'm using troop launcher here."
       }
-     ]
+     ],
+     "siege_role": "siege",
+     "packet": "warden-to-entry",
+     "reserved": true
     }
    ],
    "support": 1,
@@ -1633,7 +1765,12 @@
      "t": 323,
      "quote": "because I am going from the town hall"
     }
-   ]
+   ],
+   "required_loadouts": {
+    "Dragon Duke": [
+     "Rocket Backpack"
+    ]
+   }
   },
   {
    "name": "Battle Drill siege choice",
@@ -1659,7 +1796,9 @@
        "t": 1267.2,
        "quote": "going to use the battle drill this time"
       }
-     ]
+     ],
+     "siege_role": "siege",
+     "packet": "warden-to-entry"
     }
    ],
    "support": 1,
@@ -1685,8 +1824,16 @@
      "at": "edge:charge",
      "group": "funnel",
      "when": {
-      "after": "fireball",
-      "delay": 0
+      "all": [
+       {
+        "after": "fireball",
+        "delay": 0
+       },
+       {
+        "objective": "same-side-xbow",
+        "state": "destroyed"
+       }
+      ]
      },
      "support": 1,
      "cite": [
@@ -1695,7 +1842,11 @@
        "t": 350,
        "quote": "So, instead, I once I take out that expo"
       }
-     ]
+     ],
+     "siege_role": "siege",
+     "objective": "same-side-xbow",
+     "objective_at": "building:xbow",
+     "bind_before": "fireball"
     }
    ],
    "support": 1,
@@ -1727,7 +1878,8 @@
         "delay": 0
        },
        {
-        "heavy_fire": "Grand Warden"
+        "after": "minion_warden_funnel",
+        "delay": 0
        }
       ]
      },
@@ -1743,7 +1895,8 @@
        "t": 625.4,
        "quote": "just have to recall him before he ends"
       }
-     ]
+     ],
+     "packet": "warden-to-entry"
     }
    ],
    "support": 2,
@@ -1784,7 +1937,8 @@
        "t": 711.7,
        "quote": "make sure I could focus on the arrow without having to split my attention."
       }
-     ]
+     ],
+     "packet": "warden-to-entry"
     }
    ],
    "support": 1,
@@ -1820,7 +1974,8 @@
        "t": 1199.8,
        "quote": "Pop the spiky bolt early here just to crush through the rage tower"
       }
-     ]
+     ],
+     "packet": "warden-to-entry"
     }
    ],
    "support": 1,
@@ -1835,9 +1990,30 @@
   {
    "name": "Ice Block-assisted Fireball",
    "replaces": [
-    "fireball"
+    "fireball",
+    "furnaces_opening_walk"
    ],
    "steps": [
+    {
+     "id": "furnaces_opening_walk",
+     "action": "deploy",
+     "what": "Furnace",
+     "count": 2,
+     "at": "edge:charge",
+     "group": "charge",
+     "when": {
+      "after": "warden",
+      "delay": 0
+     },
+     "packet": "warden-to-entry",
+     "cite": [
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 224.4,
+       "quote": "Now, let's have a look at this warden"
+      }
+     ]
+    },
     {
      "id": "ice_block",
      "action": "spell",
@@ -1856,7 +2032,31 @@
        "t": 95,
        "quote": "Then we're going to use the ice block"
       }
-     ]
+     ],
+     "packet": "warden-to-entry"
+    },
+    {
+     "id": "fireball_mask",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "after": "ice_block",
+      "delay": 0
+     },
+     "packet": "warden-to-entry",
+     "cite": [
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 95,
+       "quote": "Then we're going to use the ice block"
+      }
+     ],
+     "objective": "mask-fireball_mask",
+     "mask_for": "fireball-core",
+     "mask_hero": "Grand Warden"
     },
     {
      "id": "fireball",
@@ -1867,8 +2067,18 @@
      "at": "unit:Grand Warden",
      "group": "charge",
      "when": {
-      "after": "ice_block",
-      "delay": 0
+      "all": [
+       {
+        "after": "fireball_mask",
+        "delay": 0
+       },
+       {
+        "effect_active": "ice_block"
+       },
+       {
+        "effect_active": "fireball_mask"
+       }
+      ]
      },
      "support": 1,
      "cite": [
@@ -1877,7 +2087,11 @@
        "t": 104.4,
        "quote": "fireball into the center of the base."
       }
-     ]
+     ],
+     "packet": "warden-to-entry",
+     "objective": "fireball-core",
+     "objective_at": "building:cc",
+     "aim": "building:cc"
     }
    ],
    "support": 1,
@@ -2000,7 +2214,8 @@
        "t": 121.9,
        "quote": "sent in the three earthquakes"
       }
-     ]
+     ],
+     "objective": "backpack-core"
     },
     {
      "id": "core_quake_2",
@@ -2025,7 +2240,8 @@
        "t": 121.9,
        "quote": "sent in the three earthquakes"
       }
-     ]
+     ],
+     "objective": "backpack-core"
     },
     {
      "id": "core_quake_3",
@@ -2050,7 +2266,8 @@
        "t": 121.9,
        "quote": "sent in the three earthquakes"
       }
-     ]
+     ],
+     "objective": "backpack-core"
     },
     {
      "id": "duke_backpack",
@@ -2078,7 +2295,11 @@
        "t": 128.1,
        "quote": "the dragon duke ability a little bit."
       }
-     ]
+     ],
+     "packet": "warden-to-entry",
+     "objective": "backpack-core",
+     "objective_at": "building:revenge",
+     "aim": "building:revenge"
     }
    ],
    "support": 2,
@@ -2204,11 +2425,19 @@
      "action": "deploy",
      "what": "Super Minion",
      "count": 2,
-     "at": "edge:funnel",
+     "at": "building:swt",
      "group": "cleanup",
      "when": {
-      "after": "king_spiky_ball",
-      "delay": 0
+      "all": [
+       {
+        "after": "king_spiky_ball",
+        "delay": 0
+       },
+       {
+        "objective": "sniper-tower",
+        "state": "alive"
+       }
+      ]
      },
      "support": 1,
      "cite": [
@@ -2217,7 +2446,10 @@
        "t": 1346.2,
        "quote": "but usually it's two super minions per super wizard tower"
       }
-     ]
+     ],
+     "snipe": true,
+     "reserved": true,
+     "objective": "sniper-tower"
     }
    ],
    "support": 1,
@@ -2250,7 +2482,8 @@
        "t": 676.6,
        "quote": "get the troops out in front of the queen to tank."
       }
-     ]
+     ],
+     "ahead_of": "Archer Queen"
     }
    ],
    "support": 1,
@@ -2261,6 +2494,818 @@
      "quote": "get the troops out in front of the queen to tank."
     }
    ]
+  },
+  {
+   "name": "Ricochet Fireball with complementary hero objectives",
+   "replaces": [
+    "fireball",
+    "queen_arrow",
+    "duke_backpack",
+    "cc_fireball_finish_quake",
+    "rage_tower_finish_quake_1",
+    "rage_tower_finish_quake_2"
+   ],
+   "steps": [
+    {
+     "id": "fireball",
+     "action": "ability",
+     "what": "Grand Warden",
+     "equipment": "Fireball",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "charge",
+     "when": {
+      "after": "warden",
+      "delay": 0
+     },
+     "support": 10,
+     "cite": [
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 104.4,
+       "quote": "fireball into the center of the base."
+      },
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 259,
+       "quote": "yeah, usually fire balling the Rico"
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 63.2,
+       "quote": "Oh, that was a risky fireball."
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 44,
+       "quote": "fire by the scatter shot."
+      },
+      {
+       "video": "dn6J46bW0ts",
+       "t": 164.2,
+       "quote": "easy fireball. As you see, I took out"
+      },
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 95.8,
+       "quote": "just actually just fireball this. It's"
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 1121.6,
+       "quote": "Now, your fireball should be a really"
+      },
+      {
+       "video": "tFITZCY8XhU",
+       "t": 209.7,
+       "quote": "Just take the CC side. Easy fireball."
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 55.5,
+       "quote": "the fireball. Take it out before those"
+      },
+      {
+       "video": "yiUwu_vHfng",
+       "t": 951.6,
+       "quote": "Okay, I'll just go for the wizard tower now"
+      },
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 259,
+       "quote": "yeah, usually fire balling the Rico"
+      }
+     ],
+     "aim": "building:ric",
+     "aim_cite": [
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 619.4,
+       "quote": "get the clan castle and rage tower.",
+       "verified_t": 619.4
+      },
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 239,
+       "quote": "better. I get rid of the CC and the lava",
+       "verified_t": 239
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 53.2,
+       "quote": "the clan castle as well. So, let's see",
+       "verified_t": 53.2
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 941.6,
+       "quote": "the clan castle, like the expo or",
+       "verified_t": 941.6
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 336.9,
+       "quote": "fireball, uh get down the clan castle",
+       "verified_t": 336.9
+      },
+      {
+       "video": "tFITZCY8XhU",
+       "t": 1274.2,
+       "quote": "is the best fireball. Gets the CC and",
+       "verified_t": 1274.2
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 55.5,
+       "quote": "the fireball. Take it out before those",
+       "verified_t": 55.5
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 57,
+       "quote": "troops get dragged out.",
+       "verified_t": 57
+      },
+      {
+       "video": "yiUwu_vHfng",
+       "t": 479.6,
+       "quote": "gets the clan castle. The eagle. I just",
+       "verified_t": 479.6
+      }
+     ],
+     "packet": "warden-to-entry",
+     "objective": "fireball-core",
+     "objective_at": "building:ric",
+     "target_note": "Controller assigns the source's combined objectives to these individual shots; exact player aim tiles are not recovered."
+    },
+    {
+     "id": "queen_arrow",
+     "action": "ability",
+     "what": "Archer Queen",
+     "equipment": "Giant Arrow",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "main",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 8,
+     "cite": [
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 372.8,
+       "quote": "Aim the arrow there"
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 134.2,
+       "quote": "I'm going to use the arrow from the"
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 54.2,
+       "quote": "giant arrow backpack combo."
+      },
+      {
+       "video": "dn6J46bW0ts",
+       "t": 225.6,
+       "quote": "the revenge tower and the monolith."
+      },
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1055.8,
+       "quote": "get the core out with the arrow"
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 50.5,
+       "quote": "first, look for giant arrow and backpack"
+      },
+      {
+       "video": "tFITZCY8XhU",
+       "t": 1091.7,
+       "quote": "set up an arrow off the town hall side for the revenge tower."
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 97.1,
+       "quote": "course the giant arrow with the dragon"
+      },
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 259,
+       "quote": "yeah, usually fire balling the Rico"
+      }
+     ],
+     "aim": "building:mono",
+     "aim_cite": [
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 127.9,
+       "quote": "I'm going to arrow through that CC",
+       "verified_t": 127.9
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 692.1,
+       "quote": "let's take down the CC and the monolith",
+       "verified_t": 692.1
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 695.6,
+       "quote": "with the rocket backpack and the giant",
+       "verified_t": 695.6
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 697.9,
+       "quote": "arrow. Okay,",
+       "verified_t": 697.9
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 48.4,
+       "quote": "and then I will get the clan castle",
+       "verified_t": 48.4
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 54.2,
+       "quote": "giant arrow backpack combo.",
+       "verified_t": 54.2
+      },
+      {
+       "video": "dn6J46bW0ts",
+       "t": 721.7,
+       "quote": "you angle your queen correctly, you can",
+       "verified_t": 721.7
+      },
+      {
+       "video": "dn6J46bW0ts",
+       "t": 723.6,
+       "quote": "get either the CC or the lava launcher.",
+       "verified_t": 723.6
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 789.4,
+       "quote": "revenge tower and clan castle even",
+       "verified_t": 789.4
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 808.1,
+       "quote": "the giant arrow gets everything down",
+       "verified_t": 808.1
+      },
+      {
+       "video": "tFITZCY8XhU",
+       "t": 385.2,
+       "quote": "CC with the jetack and arrow as well.",
+       "verified_t": 385.2
+      }
+     ],
+     "packet": "warden-to-entry",
+     "objective": "arrow-core",
+     "objective_at": "building:mono",
+     "target_note": "Controller assigns the source's combined objectives to these individual shots; exact player aim tiles are not recovered."
+    },
+    {
+     "id": "duke_backpack",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "equipment": "Rocket Backpack",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 6,
+     "cite": [
+      {
+       "video": "O8of3SqwmUo",
+       "t": 127.8,
+       "quote": "backpack on the revenge tower."
+      },
+      {
+       "video": "dn6J46bW0ts",
+       "t": 199.5,
+       "quote": "you have the backpack and you have the arrows."
+      },
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 369,
+       "quote": "Perfect. And now we can set up the rocket backpack here."
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 1034.5,
+       "quote": "castle with my dragon duke ability."
+      },
+      {
+       "video": "tFITZCY8XhU",
+       "t": 382.8,
+       "quote": "just to clip the CC with the jetack and arrow as well."
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 128.1,
+       "quote": "the dragon duke ability a little bit."
+      },
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 259,
+       "quote": "yeah, usually fire balling the Rico"
+      }
+     ],
+     "packet": "warden-to-entry",
+     "objective": "backpack-core",
+     "objective_at": "building:revenge",
+     "aim": "building:revenge",
+     "target_note": "Controller assigns the source's combined objectives to these individual shots; exact player aim tiles are not recovered."
+    },
+    {
+     "id": "objective_quake_1",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:ric",
+     "group": "charge",
+     "when": {
+      "all": [
+       {
+        "after": "fireball",
+        "delay": 0
+       },
+       {
+        "objective": "fireball-core",
+        "state": "damaged"
+       }
+      ]
+     },
+     "objective": "fireball-core",
+     "after_success": "fireball",
+     "packet": "warden-to-entry",
+     "cite": [
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 259,
+       "quote": "yeah, usually fire balling the Rico"
+      }
+     ]
+    },
+    {
+     "id": "objective_quake_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:ric",
+     "group": "charge",
+     "when": {
+      "all": [
+       {
+        "after": "objective_quake_1",
+        "delay": 0
+       },
+       {
+        "objective": "fireball-core",
+        "state": "damaged"
+       }
+      ]
+     },
+     "objective": "fireball-core",
+     "after_success": "fireball",
+     "packet": "warden-to-entry",
+     "cite": [
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 259,
+       "quote": "yeah, usually fire balling the Rico"
+      }
+     ]
+    }
+   ],
+   "required_loadouts": {
+    "Grand Warden": [
+     "Fireball"
+    ],
+    "Archer Queen": [
+     "Giant Arrow"
+    ],
+    "Dragon Duke": [
+     "Rocket Backpack"
+    ]
+   }
+  },
+  {
+   "name": "Scatter Fireball with Clan Castle and Super Wizard Tower shots",
+   "replaces": [
+    "fireball",
+    "queen_arrow",
+    "duke_backpack",
+    "cc_fireball_finish_quake",
+    "rage_tower_finish_quake_1",
+    "rage_tower_finish_quake_2"
+   ],
+   "steps": [
+    {
+     "id": "fireball",
+     "action": "ability",
+     "what": "Grand Warden",
+     "equipment": "Fireball",
+     "count": 1,
+     "at": "unit:Grand Warden",
+     "group": "charge",
+     "when": {
+      "after": "warden",
+      "delay": 0
+     },
+     "support": 10,
+     "cite": [
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 104.4,
+       "quote": "fireball into the center of the base."
+      },
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 259,
+       "quote": "yeah, usually fire balling the Rico"
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 63.2,
+       "quote": "Oh, that was a risky fireball."
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 44,
+       "quote": "fire by the scatter shot."
+      },
+      {
+       "video": "dn6J46bW0ts",
+       "t": 164.2,
+       "quote": "easy fireball. As you see, I took out"
+      },
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 95.8,
+       "quote": "just actually just fireball this. It's"
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 1121.6,
+       "quote": "Now, your fireball should be a really"
+      },
+      {
+       "video": "tFITZCY8XhU",
+       "t": 209.7,
+       "quote": "Just take the CC side. Easy fireball."
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 55.5,
+       "quote": "the fireball. Take it out before those"
+      },
+      {
+       "video": "yiUwu_vHfng",
+       "t": 951.6,
+       "quote": "Okay, I'll just go for the wizard tower now"
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 44,
+       "quote": "fire by the scatter shot."
+      }
+     ],
+     "aim": "building:scatter",
+     "aim_cite": [
+      {
+       "video": "12Z_sTAEOHw",
+       "t": 619.4,
+       "quote": "get the clan castle and rage tower.",
+       "verified_t": 619.4
+      },
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 239,
+       "quote": "better. I get rid of the CC and the lava",
+       "verified_t": 239
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 53.2,
+       "quote": "the clan castle as well. So, let's see",
+       "verified_t": 53.2
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 941.6,
+       "quote": "the clan castle, like the expo or",
+       "verified_t": 941.6
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 336.9,
+       "quote": "fireball, uh get down the clan castle",
+       "verified_t": 336.9
+      },
+      {
+       "video": "tFITZCY8XhU",
+       "t": 1274.2,
+       "quote": "is the best fireball. Gets the CC and",
+       "verified_t": 1274.2
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 55.5,
+       "quote": "the fireball. Take it out before those",
+       "verified_t": 55.5
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 57,
+       "quote": "troops get dragged out.",
+       "verified_t": 57
+      },
+      {
+       "video": "yiUwu_vHfng",
+       "t": 479.6,
+       "quote": "gets the clan castle. The eagle. I just",
+       "verified_t": 479.6
+      }
+     ],
+     "packet": "warden-to-entry",
+     "objective": "fireball-core",
+     "objective_at": "building:scatter",
+     "target_note": "Controller assigns the source's combined objectives to these individual shots; exact player aim tiles are not recovered."
+    },
+    {
+     "id": "queen_arrow",
+     "action": "ability",
+     "what": "Archer Queen",
+     "equipment": "Giant Arrow",
+     "count": 1,
+     "at": "unit:Archer Queen",
+     "group": "main",
+     "when": {
+      "after": "queen",
+      "delay": 0
+     },
+     "support": 8,
+     "cite": [
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 372.8,
+       "quote": "Aim the arrow there"
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 134.2,
+       "quote": "I'm going to use the arrow from the"
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 54.2,
+       "quote": "giant arrow backpack combo."
+      },
+      {
+       "video": "dn6J46bW0ts",
+       "t": 225.6,
+       "quote": "the revenge tower and the monolith."
+      },
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1055.8,
+       "quote": "get the core out with the arrow"
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 50.5,
+       "quote": "first, look for giant arrow and backpack"
+      },
+      {
+       "video": "tFITZCY8XhU",
+       "t": 1091.7,
+       "quote": "set up an arrow off the town hall side for the revenge tower."
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 97.1,
+       "quote": "course the giant arrow with the dragon"
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 44,
+       "quote": "fire by the scatter shot."
+      }
+     ],
+     "aim": "building:cc",
+     "aim_cite": [
+      {
+       "video": "HnEtYULN4Y0",
+       "t": 127.9,
+       "quote": "I'm going to arrow through that CC",
+       "verified_t": 127.9
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 692.1,
+       "quote": "let's take down the CC and the monolith",
+       "verified_t": 692.1
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 695.6,
+       "quote": "with the rocket backpack and the giant",
+       "verified_t": 695.6
+      },
+      {
+       "video": "O8of3SqwmUo",
+       "t": 697.9,
+       "quote": "arrow. Okay,",
+       "verified_t": 697.9
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 48.4,
+       "quote": "and then I will get the clan castle",
+       "verified_t": 48.4
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 54.2,
+       "quote": "giant arrow backpack combo.",
+       "verified_t": 54.2
+      },
+      {
+       "video": "dn6J46bW0ts",
+       "t": 721.7,
+       "quote": "you angle your queen correctly, you can",
+       "verified_t": 721.7
+      },
+      {
+       "video": "dn6J46bW0ts",
+       "t": 723.6,
+       "quote": "get either the CC or the lava launcher.",
+       "verified_t": 723.6
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 789.4,
+       "quote": "revenge tower and clan castle even",
+       "verified_t": 789.4
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 808.1,
+       "quote": "the giant arrow gets everything down",
+       "verified_t": 808.1
+      },
+      {
+       "video": "tFITZCY8XhU",
+       "t": 385.2,
+       "quote": "CC with the jetack and arrow as well.",
+       "verified_t": 385.2
+      }
+     ],
+     "packet": "warden-to-entry",
+     "objective": "arrow-core",
+     "objective_at": "building:cc",
+     "target_note": "Controller assigns the source's combined objectives to these individual shots; exact player aim tiles are not recovered."
+    },
+    {
+     "id": "duke_backpack",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "equipment": "Rocket Backpack",
+     "count": 1,
+     "at": "unit:Dragon Duke",
+     "group": "duke",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "support": 6,
+     "cite": [
+      {
+       "video": "O8of3SqwmUo",
+       "t": 127.8,
+       "quote": "backpack on the revenge tower."
+      },
+      {
+       "video": "dn6J46bW0ts",
+       "t": 199.5,
+       "quote": "you have the backpack and you have the arrows."
+      },
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 369,
+       "quote": "Perfect. And now we can set up the rocket backpack here."
+      },
+      {
+       "video": "qlLv2Bvu4ig",
+       "t": 1034.5,
+       "quote": "castle with my dragon duke ability."
+      },
+      {
+       "video": "tFITZCY8XhU",
+       "t": 382.8,
+       "quote": "just to clip the CC with the jetack and arrow as well."
+      },
+      {
+       "video": "x5AiCcU008Y",
+       "t": 128.1,
+       "quote": "the dragon duke ability a little bit."
+      },
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 44,
+       "quote": "fire by the scatter shot."
+      }
+     ],
+     "packet": "warden-to-entry",
+     "objective": "backpack-core",
+     "objective_at": "building:swt",
+     "aim": "building:swt",
+     "target_note": "Controller assigns the source's combined objectives to these individual shots; exact player aim tiles are not recovered."
+    },
+    {
+     "id": "objective_quake_1",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:scatter",
+     "group": "charge",
+     "when": {
+      "all": [
+       {
+        "after": "fireball",
+        "delay": 0
+       },
+       {
+        "objective": "fireball-core",
+        "state": "damaged"
+       }
+      ]
+     },
+     "objective": "fireball-core",
+     "after_success": "fireball",
+     "packet": "warden-to-entry",
+     "cite": [
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 44,
+       "quote": "fire by the scatter shot."
+      }
+     ]
+    },
+    {
+     "id": "objective_quake_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "at": "building:scatter",
+     "group": "charge",
+     "when": {
+      "all": [
+       {
+        "after": "objective_quake_1",
+        "delay": 0
+       },
+       {
+        "objective": "fireball-core",
+        "state": "damaged"
+       }
+      ]
+     },
+     "objective": "fireball-core",
+     "after_success": "fireball",
+     "packet": "warden-to-entry",
+     "cite": [
+      {
+       "video": "b_kCBBnsuvo",
+       "t": 44,
+       "quote": "fire by the scatter shot."
+      }
+     ]
+    }
+   ],
+   "required_loadouts": {
+    "Grand Warden": [
+     "Fireball"
+    ],
+    "Archer Queen": [
+     "Giant Arrow"
+    ],
+    "Dragon Duke": [
+     "Rocket Backpack"
+    ]
+   }
   }
  ],
  "notes": [
@@ -2290,12 +3335,73 @@
   "O8of3SqwmUo, b_kCBBnsuvo and x5AiCcU008Y provide partial inventories with unknown totals, so they do not supply another complete composition. x5AiCcU008Y explicitly has three Headhunters and three Invisibility Spells. O8of3SqwmUo favors Troop Launcher in several examples, while other sources also discuss Log Launcher or omitting Flame Flinger when X-Bows or defending heroes restrict it.",
   "Revive is contested and absent from the selected army. qlLv2Bvu4ig, b_kCBBnsuvo and x5AiCcU008Y describe reviving Dragon Duke; O8of3SqwmUo discusses reserving it. pTmX2vmv4sc argues against it without follow-up spells, and tFITZCY8XhU revives Warden instead. No revival target or corpse-position anchor has been invented.",
   "The '1 minute 30-ish' hero timing in dn6J46bW0ts does not identify elapsed versus remaining time and is not converted into a numeric trigger. Unresolved names such as cake, candle, logger and long shot remain unresolved. Failed or criticized placements, including unsuccessful Warden pulls, are not promoted to default rules.",
-  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py)."
+  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py).",
+  "PB1b: recipe selects an explicit named source/variant; an ambiguous inventory retains repair-only selection. packet preserves the input action clock, primary marks the main cohort, objective binds one building, and effect prerequisites use actual cast expiry. Source inventory/loadout and frame-verification holds remain in force. These are controller policies and synthetic regression evidence, not real-game calibration."
  ],
  "check": {
   "steps_kept": 16,
   "steps_dropped": 0,
   "reasons": {},
   "dangling_after": []
+ },
+ "recipes": {
+  "default": [],
+  "variant-1": [
+   "Log Launcher hero dive"
+  ],
+  "variant-2": [
+   "Troop Launcher from the Town Hall side"
+  ],
+  "variant-3": [
+   "Battle Drill siege choice"
+  ],
+  "variant-4": [
+   "Warden and Flame Flinger on the same side"
+  ],
+  "variant-5": [
+   "Continue the Warden walk until dangerous defensive fire"
+  ],
+  "variant-6": [
+   "Finish Giant Arrow before redeploying the Warden"
+  ],
+  "variant-7": [
+   "Early Spiky Ball through a Rage compartment"
+  ],
+  "variant-8": [
+   "Ice Block-assisted Fireball"
+  ],
+  "variant-9": [
+   "Royal Champion follow-up with raged Rocket Spear"
+  ],
+  "variant-10": [
+   "Three Earthquakes before Rocket Backpack"
+  ],
+  "variant-11": [
+   "Two simultaneous split Earthquakes on the Revenge Tower and Monolith"
+  ],
+  "variant-12": [
+   "One Super Minion to accelerate a lengthy Warden charge"
+  ],
+  "variant-13": [
+   "Two Super Minions to snipe a remaining Super Wizard Tower"
+  ],
+  "variant-14": [
+   "Open the Flame Flinger to tank for the Queen"
+  ],
+  "variant-15": [
+   "Ricochet Fireball with complementary hero objectives"
+  ],
+  "variant-16": [
+   "Scatter Fireball with Clan Castle and Super Wizard Tower shots"
+  ],
+  "12Z_sTAEOHw": [
+   "Ice Block-assisted Fireball"
+  ],
+  "HnEtYULN4Y0": [
+   "Ricochet Fireball with complementary hero objectives"
+  ],
+  "b_kCBBnsuvo": [
+   "Scatter Fireball with Clan Castle and Super Wizard Tower shots"
+  ]
  }
 }

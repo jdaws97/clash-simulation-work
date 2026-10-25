@@ -703,3 +703,333 @@ Every accepted changed case and its independently verified reason follows.
 | stage-9-case-111 | D2 |
 | stage-9-case-112 | D2 |
 | stage-9-case-113 | D2 |
+
+## PB1b: intentional recipe/controller and plan-oracle changes
+
+PB1b preserves the battle fixture inputs and the v29 combat rules. It adds
+explicit recipe selection, all-required variant loadouts, siege-role repair,
+connected-packet pacing, primary deployment/cohort and reserve roles, cited-role
+normalization, named Recall lifecycle handling, and the narrowly cited objective
+and effect dependencies. See [PB1B.md](PB1B.md) for source citations, paired replay
+witnesses, section C holds and TH18 measurements. No Python was run or edited.
+
+The unchanged binary first passed **868/868 battle cases** and **1,196/1,196 plan
+cases** against the saved PB1a recordings. The intended runtime changes alter
+**two battle cases**, leaving **866 byte-identical**. These original prepared
+plans do not carry PB1b packet/cohort/objective annotations; their changes come
+from A10's stored-hero charge closure and bound named-return lifecycle. No army,
+spell stock, level, combat constant or fixture result was adjusted to target a
+score. Both accepted cases and the intended reason are listed here:
+
+| Case | Intended reason |
+| --- | --- |
+| stage-5-case-27 | A10: Recall storage closes charge support; named returns bind to their opening task and hero |
+| stage-5-case-56 | A10: Recall storage closes charge support; named returns bind to their opening task and hero |
+
+The compiled-plan oracle contains **1,354 declared synthetic cases**: 667 with
+playbooks disabled and 687 with playbooks enabled. It retains every old case and
+adds 158 explicit-recipe cases, including generic-mode compatibility controls.
+Of the old cases, **522 change and 674 remain identical**. Each changed or added
+case is enumerated below, grouped only when its case ID, mode and change reasons
+match. Angle/seed pairs uniquely identify each fixture within that group.
+
+Reason keys describe the changed executable fields:
+
+- **C5:** explicit recipe dispatch, composition/resource or all-required-loadout
+  validation (A5). New fixtures exercise that public input path.
+- **C6:** replacement siege ID/role and preserved cited prerequisites (A6).
+- **P:** connected packets and wait fitting (A7).
+- **M:** explicit primary/cohort allocations, sorted inventory/remainders and
+  reserve/scout/breach roles (A8).
+- **D:** cited role preservation and inherited dependency normalization (A9).
+- **R:** charge package/closure, named Recall return and post-Recall metadata (A10).
+- **O:** bound objective, prior-success, named threat, effect/renewal, wave and
+  recipient prerequisites (A15).
+- **B:** dependent cited playbook corrections, including added/removed source
+  steps and quantities. Their per-book citations and limitations are in PB1B.
+
+Slash-separated keys identify fields shared by those semantics; keys are not
+mutually exclusive. Error-outcome changes marked C5/O are intentional recipe or
+final-graph compatibility checks. An unchanged generic plan with a new recipe
+input is a new C5 fixture, not an altered generic battle.
+
+Angle labels `0.000000`, `1.570796`, `3.141593` and `4.712389` stand for the
+fixture generator's exact `0`, `pi/2`, `pi` and `3*pi/2` values; `0.370000` is its
+literal 0.37 variant/override probe. No fixture angle was rounded for execution.
+
+| Status; mode; case ID | Exact fixture angle label/seed pairs | Intended reason keys |
+| --- | --- | --- |
+| changed; playbook; custom-armies.json:custom:decoy-super-yeti | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O |
+| changed; playbook; custom-armies.json:custom:druid-titan-rr | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:flinger-throwers | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; custom-armies.json:custom:lavaloon-queen-dragons | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O |
+| changed; playbook; custom-armies.json:custom:portal-relay-rr | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:puppet-queen-throwers | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O |
+| changed; playbook; custom-armies.json:custom:user-air | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | B, C5/C6, C6, D/M, M, O, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-druid-ruin | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, O, P, P/D/O |
+| changed; playbook; custom-armies.json:custom:user-fireball-warden | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-rr | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-rr-h-AQ-GW-MP-DD | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O |
+| changed; playbook; custom-armies.json:custom:user-rr-h-AQ-GW-RC-DD | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-rr-h-AQ-GW-RC-MP | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-rr-h-AQ-RC-MP-DD | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-rr-h-BK-AQ-GW-DD | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O |
+| changed; playbook; custom-armies.json:custom:user-rr-h-BK-AQ-GW-MP | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | C5/C6, D/M, M, P, P/D/O |
+| changed; playbook; custom-armies.json:custom:user-rr-h-BK-AQ-GW-RC | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | C5/C6, M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-rr-h-BK-AQ-MP-DD | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O |
+| changed; playbook; custom-armies.json:custom:user-rr-h-BK-AQ-RC-DD | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-rr-h-BK-AQ-RC-MP | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | B, D/M, M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-rr-h-BK-GW-MP-DD | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O |
+| changed; playbook; custom-armies.json:custom:user-rr-h-BK-GW-RC-DD | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-rr-h-BK-GW-RC-MP | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | C5/C6, M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-rr-h-BK-RC-MP-DD | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-rr-h-GW-RC-MP-DD | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | M, P, P/D/O, R |
+| changed; playbook; custom-armies.json:custom:user-rr-oct25 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O, R |
+| changed; playbook; donation-level-cap | 0.000000/0 | M, P, P/D/O |
+| changed; playbook; dragon:variant:Flame Blower Duke opening | 0.370000/1 | C5/O |
+| changed; playbook; dragon:variant:Mass Dragons | 0.370000/1 | D/M, M, P, P/D/O |
+| changed; playbook; equipment-owner-duplicate-pet | 0.000000/0 | M, P, P/D/O |
+| changed; playbook; fireball-warden:variant:Early Spiky Ball to establish the hero funnel | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; fireball-warden:variant:Giant Arrow through the opened core | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; fireball-warden:variant:Quick Fireball before Healers and Furnaces | 0.370000/1 | D/M, M, O, P, P/D/O, R |
+| changed; playbook; fireball-warden:variant:Three-Invisibility Fireball redirect | 0.370000/1 | D/M, M, O, P, P/D/O, R |
+| changed; playbook; fireball-warden:variant:Wall Breaker entry with Headhunters and Druid | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; five-hero-slots | 0.000000/0 | M, P, P/D/O |
+| changed; playbook; meta-armies-2026-10-15.json:e-drag-spam-18-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; meta-armies-2026-10-15.json:e-drag-spam-18-2 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; meta-armies-2026-10-15.json:mass-dragons-16-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | M, P, P/D/O |
+| changed; playbook; meta-armies-2026-10-15.json:mass-dragons-17-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | M, P, P/D/O |
+| changed; playbook; meta-armies-2026-10-15.json:mass-dragons-17-2 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; meta-armies-2026-10-15.json:mass-dragons-18-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | M, P, P/D/O |
+| changed; playbook; meta-armies-2026-10-15.json:mass-dragons-18-2 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | M |
+| changed; playbook; meta-armies-2026-10-15.json:mass-meteor-golem-18-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O |
+| changed; playbook; meta-armies-2026-10-15.json:mass-super-yeti-18-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O |
+| changed; playbook; meta-armies-2026-10-15.json:mass-super-yeti-18-4 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O |
+| changed; playbook; meta-armies-2026-10-15.json:mass-thrower-16-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; meta-armies-2026-10-15.json:mass-thrower-16-2 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; meta-armies-2026-10-15.json:mass-thrower-17-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | M |
+| changed; playbook; meta-armies-2026-10-15.json:mass-thrower-17-2 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | M |
+| changed; playbook; meta-armies-2026-10-15.json:mass-thrower-18-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P/D/O |
+| changed; playbook; meta-armies-2026-10-15.json:mass-thrower-18-2 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | M |
+| changed; playbook; meta-armies-2026-10-15.json:root-rider-16-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | C5/C6, D/M, M, P, P/D/O, R |
+| changed; playbook; meta-armies-2026-10-15.json:root-rider-16-2 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | C5/C6, D/M, M, P, P/D/O, R |
+| changed; playbook; meta-armies-2026-10-15.json:root-rider-18-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, R |
+| changed; playbook; meta-armies-2026-10-15.json:root-rider-18-2 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | C5/C6, D/M, M, P, P/D/O, R |
+| changed; playbook; meta-armies-2026-10-15.json:super-bowler-smash-18-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O |
+| changed; playbook; meta-armies-2026-10-15.json:super-bowler-smash-18-3 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O, R |
+| changed; playbook; observed-armies.json:e-drag-spam-17-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; observed-armies.json:e-drag-spam-17-2 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; observed-armies.json:e-drag-spam-17-3 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; observed-armies.json:e-drag-spam-17-4 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; observed-armies.json:e-drag-spam-17-5 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; observed-armies.json:e-drag-spam-17-6 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; observed-armies.json:e-drag-spam-17-7 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M |
+| changed; playbook; observed-armies.json:root-rider-17-1 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | C5/C6, D/M, M, P, P/D/O, R |
+| changed; playbook; observed-armies.json:root-rider-17-2 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | D/M, M, P, P/D/O |
+| changed; playbook; observed-armies.json:root-rider-17-3 | 0.000000/0, 0.000000/1, 1.570796/0, 1.570796/1, 3.141593/0, 3.141593/1, 4.712389/0, 4.712389/1 | C5/C6, D/M, M, P, P/D/O, R |
+| changed; playbook; overrides-dragon | 0.370000/1 | M, P, P/D/O |
+| changed; playbook; overrides-druid-ruin-witch | 0.370000/1 | D/M, M, O, P, P/D/O |
+| changed; playbook; overrides-electro-dragon | 0.370000/1 | D/M, M |
+| changed; playbook; overrides-fireball-warden | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; overrides-meteor-golem | 0.370000/1 | D/M, M, P, P/D/O |
+| changed; playbook; overrides-root-rider | 0.370000/1 | D/M, M, P, R |
+| changed; playbook; overrides-super-bowler | 0.370000/1 | D/M, M, P, P/D/O |
+| changed; playbook; overrides-super-minion-air | 0.370000/1 | B, C5/C6, C6, D/M, M, O, P, P/D/O, R |
+| changed; playbook; overrides-thrower | 0.370000/1 | D/M, M, P/D/O |
+| changed; playbook; overrides-yeti | 0.370000/1 | D/M, M, P, P/D/O |
+| changed; playbook; root-rider:variant:Barbarian King with the main army | 0.370000/1 | C5/C6, D/M, M, P, P/D/O, R |
+| changed; playbook; root-rider:variant:Dragon Duke opening with Flame Blower, Earthquake and Angry Spell | 0.370000/1 | C5/O |
+| changed; playbook; root-rider:variant:Root Rider and Thrower main army | 0.370000/1 | D/M, M, P, R |
+| changed; playbook; roster-dragon | 0.370000/1 | M, P, P/D/O |
+| changed; playbook; roster-druid-ruin-witch | 0.370000/1 | D/M, M, O, P, P/D/O |
+| changed; playbook; roster-electro-dragon | 0.370000/1 | D/M, M |
+| changed; playbook; roster-fireball-warden | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; roster-meteor-golem | 0.370000/1 | D/M, M, P, P/D/O |
+| changed; playbook; roster-root-rider | 0.370000/1 | D/M, M, P, R |
+| changed; playbook; roster-super-bowler | 0.370000/1 | D/M, M, P, P/D/O |
+| changed; playbook; roster-super-minion-air | 0.370000/1 | B, C5/C6, C6, D/M, M, O, P, P/D/O, R |
+| changed; playbook; roster-thrower | 0.370000/1 | D/M, M, P/D/O |
+| changed; playbook; roster-yeti | 0.370000/1 | D/M, M, P, P/D/O |
+| changed; playbook; super-bowler:variant:Dragon Duke charge with King and Queen support | 0.370000/1 | D/M, M, P, P/D/O |
+| changed; playbook; super-bowler:variant:Protect the Queen with Totem and reserve Rage for Bowlers | 0.370000/1 | D/M, M, P, P/D/O, R |
+| changed; playbook; super-bowler:variant:Rocket Backpack and Flame Blower funnel | 0.370000/1 | C5/O |
+| changed; playbook; super-minion-air:variant:Continue the Warden walk until dangerous defensive fire | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; super-minion-air:variant:Early Spiky Ball through a Rage compartment | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; super-minion-air:variant:Finish Giant Arrow before redeploying the Warden | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; super-minion-air:variant:Ice Block-assisted Fireball | 0.370000/1 | B, C5/C6, D/M, M, O, P, P/D/O, R |
+| changed; playbook; super-minion-air:variant:Log Launcher hero dive | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; super-minion-air:variant:One Super Minion to accelerate a lengthy Warden charge | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; super-minion-air:variant:Three Earthquakes before Rocket Backpack | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; super-minion-air:variant:Two Super Minions to snipe a remaining Super Wizard Tower | 0.370000/1 | C5/O |
+| changed; playbook; super-minion-air:variant:Two simultaneous split Earthquakes on the Revenge Tower and Monolith | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; tactics-dragon | 0.370000/1 | M, P, P/D/O |
+| changed; playbook; tactics-druid-ruin-witch | 0.370000/1 | D/M, M, O, P, P/D/O |
+| changed; playbook; tactics-electro-dragon | 0.370000/1 | D/M, M |
+| changed; playbook; tactics-fireball-warden | 0.370000/1 | B, D/M, M, O, P, P/D/O, R |
+| changed; playbook; tactics-meteor-golem | 0.370000/1 | D/M, M, P, P/D/O |
+| changed; playbook; tactics-root-rider | 0.370000/1 | D/M, M, P, R |
+| changed; playbook; tactics-super-bowler | 0.370000/1 | D/M, M, P, P/D/O |
+| changed; playbook; tactics-super-minion-air | 0.370000/1 | B, C5/C6, C6, D/M, M, O, P, P/D/O, R |
+| changed; playbook; tactics-thrower | 0.370000/1 | D/M, M, P/D/O |
+| changed; playbook; tactics-yeti | 0.370000/1 | D/M, M, P, P/D/O |
+| changed; playbook; three-super-boosts | 0.000000/0 | D/M, M, P, P/D/O |
+| changed; playbook; thrower:variant:Queen counterfunnel with King saved for the back end | 0.370000/1 | D/M, M, P/D/O |
+| changed; playbook; unknown-spell-event | 0.000000/0 | M, P, P/D/O |
+| new; generic; dragon:recipe:Dragon Riders with Inferno Dragons | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; dragon:recipe:Flame Blower Duke opening | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; dragon:recipe:Flame Flinger opening with a sixty-second lead | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; dragon:recipe:Giant Arrow and Rocket Backpack followed by zapquake | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; dragon:recipe:Ice Hound leads the Dragons and Dragon Riders | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; dragon:recipe:Mass Dragons | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; dragon:recipe:Repeat Overgrowth on the Monolith compartment | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; dragon:recipe:Revenge Deck Duke charge with Ice Block | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; dragon:recipe:Rocket Spear Royal Champion charge before the Duke funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; dragon:recipe:Siege Barracks with the Queen on the opposite flank | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; dragon:recipe:Spirit Fox Duke Invisibility charge and Royal Champion funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; dragon:recipe:Super Dragons after a Revenge Deck Duke funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; dragon:recipe:Three-Earthquake opening and opposite Sky Wagon funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; druid-ruin-witch:recipe:Electro Titans ahead of four Ruin Witches | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; druid-ruin-witch:recipe:Four Ruin Witches with staggered Druids | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; druid-ruin-witch:recipe:Life Gem Warden walk | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; druid-ruin-witch:recipe:Super Witch hybrid with Royal Champion funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; electro-dragon:recipe:Four Electro Dragons funnel a Ruin Witch and hero push | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; electro-dragon:recipe:Rage-assisted flank and Skeleton distraction | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; electro-dragon:recipe:Revenge Tower compartment Zapquake with Siege Barracks | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; electro-dragon:recipe:Rocket Backpack Zapquake with a secondary Spell Tower | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; fireball-warden:recipe:Early Spiky Ball to establish the hero funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; fireball-warden:recipe:Giant Arrow through the opened core | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; fireball-warden:recipe:Quick Fireball before Healers and Furnaces | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; fireball-warden:recipe:Three-Invisibility Fireball redirect | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; fireball-warden:recipe:Wall Breaker entry with Headhunters and Druid | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; meteor-golem:recipe:Fireball opening instead of the Dragon Duke and two-Golem funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; meteor-golem:recipe:Natural funnel: send all Meteor Golems together | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; meteor-golem:recipe:Queen opposite the Meteor Golem push; delay her ability | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; meteor-golem:recipe:Six Meteor Golems with seven Super Archers | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; meteor-golem:recipe:Warden walk opening with test Balloons and five Healers | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; root-rider:recipe:Barbarian King with the main army | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; root-rider:recipe:Dragon Duke charge with Ice Block and delayed revival | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; root-rider:recipe:Dragon Duke opening with Flame Blower, Earthquake and Angry Spell | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; root-rider:recipe:Isolate the Town Hall with Overgrowth and save Rocket Spear for it | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; root-rider:recipe:Recall early rather than risk the Royal Champion or Spirit Fox | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; root-rider:recipe:Rocket Backpack and Giant Arrow setup before the main army | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; root-rider:recipe:Root Rider and Thrower main army | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; root-rider:recipe:Royal Champion and Grand Warden charge with four-second Invisibility and a Siege Barracks funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; root-rider:recipe:Super Archers protected by an entry Totem | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-bowler:recipe:Dragon Duke charge with King and Queen support | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-bowler:recipe:Log Launcher entry for Invisibility Towers or failed wall access | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-bowler:recipe:Protect the Queen with Totem and reserve Rage for Bowlers | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-bowler:recipe:Rocket Backpack and Flame Blower funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-bowler:recipe:Royal Champion charge with Queen and Duke counter funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-bowler:recipe:Troop Launcher for gradual wall access | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Battle Drill siege choice | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Continue the Warden walk until dangerous defensive fire | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Early Spiky Ball through a Rage compartment | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Finish Giant Arrow before redeploying the Warden | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Ice Block-assisted Fireball | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Log Launcher hero dive | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:One Super Minion to accelerate a lengthy Warden charge | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Open the Flame Flinger to tank for the Queen | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Ricochet Fireball with complementary hero objectives | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Royal Champion follow-up with raged Rocket Spear | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Scatter Fireball with Clan Castle and Super Wizard Tower shots | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Three Earthquakes before Rocket Backpack | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Troop Launcher from the Town Hall side | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Two Super Minions to snipe a remaining Super Wizard Tower | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Two simultaneous split Earthquakes on the Revenge Tower and Monolith | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:recipe:Warden and Flame Flinger on the same side | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:variant:Ricochet Fireball with complementary hero objectives | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; super-minion-air:variant:Scatter Fireball with Clan Castle and Super Wizard Tower shots | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; thrower:recipe:Earthquakes with Giant Arrow and Rocket Backpack | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; thrower:recipe:Firemite Clone opening; only the first Clone cast is specified | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; thrower:recipe:Queen counterfunnel with King saved for the back end | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; thrower:recipe:Rocket Backpack with a two-Earthquake three-Lightning finish | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; thrower:recipe:Skeleton distractions instead of the Totem package | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; thrower:recipe:Spirit Fox and Invisibility Duke charge with an early Warden ability | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; thrower:recipe:Troop Launcher for an open or short Town Hall route | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; thrower:recipe:Two Earthquakes and six Lightnings before the Duke funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; thrower:recipe:Warden walk before the Thrower push | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; thrower:recipe:Yeti frontline for the Town Hall and defending heroes | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; yeti:recipe:Log Launcher through the main entry | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; yeti:recipe:One Super Yeti on each flank before the rest | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; yeti:recipe:Protect the charging Dragon Duke with Invisibility | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; yeti:recipe:Siege Barracks counter-funnel with a later Queen ability | 0.370000/1 | C5 (new recipe fixture) |
+| new; generic; yeti:recipe:Wait for the last friendly Ice Golem before Torch and Rage | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Dragon Riders with Inferno Dragons | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Flame Blower Duke opening | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Flame Flinger opening with a sixty-second lead | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Giant Arrow and Rocket Backpack followed by zapquake | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Ice Hound leads the Dragons and Dragon Riders | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Mass Dragons | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Repeat Overgrowth on the Monolith compartment | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Revenge Deck Duke charge with Ice Block | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Rocket Spear Royal Champion charge before the Duke funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Siege Barracks with the Queen on the opposite flank | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Spirit Fox Duke Invisibility charge and Royal Champion funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Super Dragons after a Revenge Deck Duke funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; dragon:recipe:Three-Earthquake opening and opposite Sky Wagon funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; druid-ruin-witch:recipe:Electro Titans ahead of four Ruin Witches | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; druid-ruin-witch:recipe:Four Ruin Witches with staggered Druids | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; druid-ruin-witch:recipe:Life Gem Warden walk | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; druid-ruin-witch:recipe:Super Witch hybrid with Royal Champion funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; electro-dragon:recipe:Four Electro Dragons funnel a Ruin Witch and hero push | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; electro-dragon:recipe:Rage-assisted flank and Skeleton distraction | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; electro-dragon:recipe:Revenge Tower compartment Zapquake with Siege Barracks | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; electro-dragon:recipe:Rocket Backpack Zapquake with a secondary Spell Tower | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; fireball-warden:recipe:Early Spiky Ball to establish the hero funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; fireball-warden:recipe:Giant Arrow through the opened core | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; fireball-warden:recipe:Quick Fireball before Healers and Furnaces | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; fireball-warden:recipe:Three-Invisibility Fireball redirect | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; fireball-warden:recipe:Wall Breaker entry with Headhunters and Druid | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; meteor-golem:recipe:Fireball opening instead of the Dragon Duke and two-Golem funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; meteor-golem:recipe:Natural funnel: send all Meteor Golems together | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; meteor-golem:recipe:Queen opposite the Meteor Golem push; delay her ability | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; meteor-golem:recipe:Six Meteor Golems with seven Super Archers | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; meteor-golem:recipe:Warden walk opening with test Balloons and five Healers | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; root-rider:recipe:Barbarian King with the main army | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; root-rider:recipe:Dragon Duke charge with Ice Block and delayed revival | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; root-rider:recipe:Dragon Duke opening with Flame Blower, Earthquake and Angry Spell | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; root-rider:recipe:Isolate the Town Hall with Overgrowth and save Rocket Spear for it | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; root-rider:recipe:Recall early rather than risk the Royal Champion or Spirit Fox | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; root-rider:recipe:Rocket Backpack and Giant Arrow setup before the main army | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; root-rider:recipe:Root Rider and Thrower main army | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; root-rider:recipe:Royal Champion and Grand Warden charge with four-second Invisibility and a Siege Barracks funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; root-rider:recipe:Super Archers protected by an entry Totem | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-bowler:recipe:Dragon Duke charge with King and Queen support | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-bowler:recipe:Log Launcher entry for Invisibility Towers or failed wall access | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-bowler:recipe:Protect the Queen with Totem and reserve Rage for Bowlers | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-bowler:recipe:Rocket Backpack and Flame Blower funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-bowler:recipe:Royal Champion charge with Queen and Duke counter funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-bowler:recipe:Troop Launcher for gradual wall access | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Battle Drill siege choice | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Continue the Warden walk until dangerous defensive fire | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Early Spiky Ball through a Rage compartment | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Finish Giant Arrow before redeploying the Warden | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Ice Block-assisted Fireball | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Log Launcher hero dive | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:One Super Minion to accelerate a lengthy Warden charge | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Open the Flame Flinger to tank for the Queen | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Ricochet Fireball with complementary hero objectives | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Royal Champion follow-up with raged Rocket Spear | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Scatter Fireball with Clan Castle and Super Wizard Tower shots | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Three Earthquakes before Rocket Backpack | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Troop Launcher from the Town Hall side | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Two Super Minions to snipe a remaining Super Wizard Tower | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Two simultaneous split Earthquakes on the Revenge Tower and Monolith | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:recipe:Warden and Flame Flinger on the same side | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:variant:Ricochet Fireball with complementary hero objectives | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; super-minion-air:variant:Scatter Fireball with Clan Castle and Super Wizard Tower shots | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; thrower:recipe:Earthquakes with Giant Arrow and Rocket Backpack | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; thrower:recipe:Firemite Clone opening; only the first Clone cast is specified | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; thrower:recipe:Queen counterfunnel with King saved for the back end | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; thrower:recipe:Rocket Backpack with a two-Earthquake three-Lightning finish | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; thrower:recipe:Skeleton distractions instead of the Totem package | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; thrower:recipe:Spirit Fox and Invisibility Duke charge with an early Warden ability | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; thrower:recipe:Troop Launcher for an open or short Town Hall route | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; thrower:recipe:Two Earthquakes and six Lightnings before the Duke funnel | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; thrower:recipe:Warden walk before the Thrower push | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; thrower:recipe:Yeti frontline for the Town Hall and defending heroes | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; yeti:recipe:Log Launcher through the main entry | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; yeti:recipe:One Super Yeti on each flank before the rest | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; yeti:recipe:Protect the charging Dragon Duke with Invisibility | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; yeti:recipe:Siege Barracks counter-funnel with a later Queen ability | 0.370000/1 | C5 (new recipe fixture) |
+| new; playbook; yeti:recipe:Wait for the last friendly Ice Golem before Torch and Rage | 0.370000/1 | C5 (new recipe fixture) |

@@ -91,7 +91,7 @@
    "cite": [
     {
      "video": "-jNbwwWqnOE",
-     "t": 61.0,
+     "t": 61,
      "quote": "couple meteor golems over here with a"
     },
     {
@@ -122,7 +122,7 @@
     },
     {
      "video": "yBFCuLpbDbU",
-     "t": 422.0,
+     "t": 422,
      "quote": "the bottom here and go through the revenge tower first."
     }
    ]
@@ -133,7 +133,7 @@
    "cite": [
     {
      "video": "-jNbwwWqnOE",
-     "t": 122.0,
+     "t": 122,
      "quote": "sprinkle in on the heavy hitting defenses."
     },
     {
@@ -245,7 +245,8 @@
      "t": 39.4,
      "quote": "placing the Duke on one side of the base."
     }
-   ]
+   ],
+   "packet": "meteor-entry"
   },
   {
    "id": "funnel_golems",
@@ -267,10 +268,11 @@
     },
     {
      "video": "-jNbwwWqnOE",
-     "t": 61.0,
+     "t": 61,
      "quote": "couple meteor golems over here with a"
     }
-   ]
+   ],
+   "packet": "meteor-entry"
   },
   {
    "id": "main_golems",
@@ -320,7 +322,9 @@
      "t": 176.5,
      "quote": "So we're going to use our meteor golems"
     }
-   ]
+   ],
+   "primary": true,
+   "packet": "meteor-entry"
   },
   {
    "id": "apprentice",
@@ -350,7 +354,8 @@
      "t": 542.3,
      "quote": "Four burger golems and one apprentice warden."
     }
-   ]
+   ],
+   "packet": "meteor-entry"
   },
   {
    "id": "king",
@@ -372,7 +377,7 @@
     },
     {
      "video": "UqzQGpGU0FI",
-     "t": 76.0,
+     "t": 76,
      "quote": "all of your heroes and then your troop"
     },
     {
@@ -380,7 +385,8 @@
      "t": 109.5,
      "quote": "Let's get the king in there."
     }
-   ]
+   ],
+   "packet": "meteor-entry"
   },
   {
    "id": "queen",
@@ -402,7 +408,7 @@
     },
     {
      "video": "UqzQGpGU0FI",
-     "t": 76.0,
+     "t": 76,
      "quote": "all of your heroes and then your troop"
     },
     {
@@ -415,7 +421,8 @@
      "t": 312.6,
      "quote": "Queen in there as well."
     }
-   ]
+   ],
+   "packet": "meteor-entry"
   },
   {
    "id": "warden",
@@ -437,7 +444,7 @@
     },
     {
      "video": "UqzQGpGU0FI",
-     "t": 76.0,
+     "t": 76,
      "quote": "all of your heroes and then your troop"
     },
     {
@@ -445,7 +452,8 @@
      "t": 810.8,
      "quote": "Warden to get through kind of all the way towards the town hall area,"
     }
-   ]
+   ],
+   "packet": "meteor-entry"
   },
   {
    "id": "launcher",
@@ -462,7 +470,7 @@
    "cite": [
     {
      "video": "UqzQGpGU0FI",
-     "t": 76.0,
+     "t": 76,
      "quote": "your troop launcher obviously."
     },
     {
@@ -485,7 +493,8 @@
      "t": 179.7,
      "quote": "our troop launcher down."
     }
-   ]
+   ],
+   "siege_role": "siege"
   },
   {
    "id": "queen_ability",
@@ -515,7 +524,8 @@
      "t": 183.5,
      "quote": "pop her ability."
     }
-   ]
+   ],
+   "packet": "meteor-entry"
   },
   {
    "id": "rage_entry",
@@ -545,7 +555,8 @@
      "t": 495.3,
      "quote": "the rage on the warden so we used the rage on our entry here"
     }
-   ]
+   ],
+   "packet": "meteor-entry"
   },
   {
    "id": "totem_main",
@@ -567,7 +578,7 @@
     },
     {
      "video": "-jNbwwWqnOE",
-     "t": 122.0,
+     "t": 122,
      "quote": "sprinkle in on the heavy hitting defenses."
     },
     {
@@ -628,7 +639,7 @@
     },
     {
      "video": "MUssbWM-qpk",
-     "t": 105.0,
+     "t": 105,
      "quote": "my Warden's Eternal Tome pretty early."
     },
     {
@@ -636,7 +647,8 @@
      "t": 449.4,
      "quote": "Let's go warden ability through this damage"
     }
-   ]
+   ],
+   "packet": "meteor-entry"
   },
   {
    "id": "rage_core",
@@ -652,7 +664,7 @@
    "cite": [
     {
      "video": "UqzQGpGU0FI",
-     "t": 100.0,
+     "t": 100,
      "quote": "and then one rage kind of in the core of"
     }
    ]
@@ -708,7 +720,7 @@
     },
     {
      "video": "y7npC3rCP3g",
-     "t": 375.0,
+     "t": 375,
      "quote": "actually revive the dragon duke."
     }
    ]
@@ -740,7 +752,9 @@
        "t": 261.2,
        "quote": "natural funnel that way anyway."
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "meteor-entry"
     }
    ],
    "support": 1,
@@ -798,7 +812,9 @@
        "t": 82.9,
        "quote": "meteor golems followed by your"
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "meteor-entry"
     },
     {
      "id": "wall_breakers",
@@ -862,7 +878,7 @@
      "cite": [
       {
        "video": "-jNbwwWqnOE",
-       "t": 185.0,
+       "t": 185,
        "quote": "You have a poison spell to use on the clan castle."
       }
      ]
@@ -915,7 +931,8 @@
        "t": 43.2,
        "quote": "start off with your grand warden and on"
       }
-     ]
+     ],
+     "packet": "meteor-entry"
     },
     {
      "id": "test_balloons",
@@ -932,7 +949,7 @@
      "cite": [
       {
        "video": "MUssbWM-qpk",
-       "t": 36.0,
+       "t": 36,
        "quote": "two test balloons down just to test for"
       },
       {
@@ -962,7 +979,7 @@
       },
       {
        "video": "yBFCuLpbDbU",
-       "t": 49.0,
+       "t": 49,
        "quote": "then your five healers and"
       }
      ]
@@ -985,7 +1002,8 @@
        "t": 44.5,
        "quote": "Duke on the other corner."
       }
-     ]
+     ],
+     "packet": "meteor-entry"
     },
     {
      "id": "main_golems",
@@ -1010,7 +1028,9 @@
        "t": 176.5,
        "quote": "So we're going to use our meteor golems"
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "meteor-entry"
     },
     {
      "id": "warden_ability",
@@ -1037,7 +1057,8 @@
        "quote": "all at the same time to gut all this"
       }
      ],
-     "note": "Entry activation follows the source's single Rage; emergency hero activation remains available. Exact same-packet synchronization needs the engine timing repair."
+     "note": "Entry activation follows the source's single Rage; emergency hero activation remains available. Exact same-packet synchronization needs the engine timing repair.",
+     "packet": "meteor-entry"
     }
    ],
    "support": 2,
@@ -1081,7 +1102,8 @@
        "t": 70.2,
        "quote": "Let's just start the one right here."
       }
-     ]
+     ],
+     "packet": "prepared-fireball"
     },
     {
      "id": "fireball",
@@ -1092,8 +1114,24 @@
      "at": "unit:Grand Warden",
      "group": "charge",
      "when": {
-      "after": "warden",
-      "delay": 0
+      "all": [
+       {
+        "after": "fireball_mask_4",
+        "delay": 0
+       },
+       {
+        "effect_active": "fireball_mask_1"
+       },
+       {
+        "effect_active": "fireball_mask_2"
+       },
+       {
+        "effect_active": "fireball_mask_3"
+       },
+       {
+        "effect_active": "fireball_mask_4"
+       }
+      ]
      },
      "support": 3,
      "cite": [
@@ -1112,7 +1150,17 @@
        "t": 64.5,
        "quote": "we have now one invis, second invis, fireball, one, two."
       }
-     ]
+     ],
+     "packet": "prepared-fireball",
+     "objective": "prepared-core",
+     "objective_at": "threat:charge",
+     "target_keys": [
+      "revenge",
+      "mono",
+      "crafting"
+     ],
+     "target_note": "Existing weighted cluster selection is an explicit controller policy; the source's exact Fireball tile is unspecified.",
+     "required": true
     },
     {
      "id": "main_golems",
@@ -1122,7 +1170,7 @@
      "at": "edge:main",
      "group": "main",
      "when": {
-      "after": "fireball",
+      "after": "prepared_quake_2",
       "delay": 0
      },
      "support": 1,
@@ -1132,7 +1180,9 @@
        "t": 132.7,
        "quote": "start your meteor golems and your two"
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "prepared-fireball"
     },
     {
      "id": "ruin_witches",
@@ -1151,6 +1201,193 @@
        "video": "lHLHvW8vFTg",
        "t": 134.5,
        "quote": "rune witches going one direction."
+      }
+     ],
+     "packet": "prepared-fireball"
+    },
+    {
+     "id": "fireball_clear",
+     "action": "deploy",
+     "what": "Balloon",
+     "count": 3,
+     "group": "charge",
+     "at": "edge:charge",
+     "when": {
+      "after": "warden",
+      "delay": 0
+     },
+     "objective": "fireball-obstruction",
+     "objective_at": "building:mortar",
+     "packet": "prepared-fireball",
+     "cite": [
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 124.5,
+       "quote": "three balloons to take out defenses on"
+      },
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 127.3,
+       "quote": "couple for like mortars and stuff."
+      }
+     ],
+     "target_note": "The nearest mortar is an explicit controller approximation for the narrated outside-defense clear; exact placements are unspecified."
+    },
+    {
+     "id": "fireball_mask_1",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "all": [
+       {
+        "after": "fireball_clear",
+        "delay": 0
+       },
+       {
+        "objective": "fireball-obstruction",
+        "state": "destroyed"
+       }
+      ]
+     },
+     "objective": "mask-fireball_mask_1",
+     "mask_for": "prepared-core",
+     "mask_hero": "Grand Warden",
+     "packet": "prepared-fireball",
+     "cite": [
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 128.4,
+       "quote": "You're going to use those four invis,"
+      }
+     ],
+     "target_note": "Distinct nearest-defense concealment is a controller approximation; exact source mask circles are unspecified."
+    },
+    {
+     "id": "fireball_mask_2",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "after": "fireball_mask_1",
+      "delay": 0
+     },
+     "objective": "mask-fireball_mask_2",
+     "mask_for": "prepared-core",
+     "mask_hero": "Grand Warden",
+     "packet": "prepared-fireball",
+     "cite": [
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 128.4,
+       "quote": "You're going to use those four invis,"
+      }
+     ],
+     "target_note": "Distinct nearest-defense concealment is a controller approximation; exact source mask circles are unspecified."
+    },
+    {
+     "id": "fireball_mask_3",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "after": "fireball_mask_2",
+      "delay": 0
+     },
+     "objective": "mask-fireball_mask_3",
+     "mask_for": "prepared-core",
+     "mask_hero": "Grand Warden",
+     "packet": "prepared-fireball",
+     "cite": [
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 128.4,
+       "quote": "You're going to use those four invis,"
+      }
+     ],
+     "target_note": "Distinct nearest-defense concealment is a controller approximation; exact source mask circles are unspecified."
+    },
+    {
+     "id": "fireball_mask_4",
+     "action": "spell",
+     "what": "Invisibility Spell",
+     "count": 1,
+     "at": "threat:charge",
+     "group": "charge",
+     "when": {
+      "after": "fireball_mask_3",
+      "delay": 0
+     },
+     "objective": "mask-fireball_mask_4",
+     "mask_for": "prepared-core",
+     "mask_hero": "Grand Warden",
+     "packet": "prepared-fireball",
+     "cite": [
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 128.4,
+       "quote": "You're going to use those four invis,"
+      }
+     ],
+     "target_note": "Distinct nearest-defense concealment is a controller approximation; exact source mask circles are unspecified."
+    },
+    {
+     "id": "prepared_quake_1",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "group": "charge",
+     "at": "threat:charge",
+     "objective": "prepared-core",
+     "after_success": "fireball",
+     "when": {
+      "after": "fireball",
+      "delay": 0
+     },
+     "packet": "prepared-fireball",
+     "cite": [
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 129.8,
+       "quote": "drop your fireball, drop your"
+      },
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 130.8,
+       "quote": "earthquakes. You're going to get a part"
+      }
+     ]
+    },
+    {
+     "id": "prepared_quake_2",
+     "action": "spell",
+     "what": "Earthquake Spell",
+     "count": 1,
+     "group": "charge",
+     "at": "threat:charge",
+     "objective": "prepared-core",
+     "after_success": "fireball",
+     "when": {
+      "after": "prepared_quake_1",
+      "delay": 0
+     },
+     "packet": "prepared-fireball",
+     "cite": [
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 129.8,
+       "quote": "drop your fireball, drop your"
+      },
+      {
+       "video": "lHLHvW8vFTg",
+       "t": 130.8,
+       "quote": "earthquakes. You're going to get a part"
       }
      ]
     }
@@ -1204,10 +1441,11 @@
      "cite": [
       {
        "video": "uRJw__PO-Iw",
-       "t": 97.0,
+       "t": 97,
        "quote": "the archer queen on the opposite side."
       }
-     ]
+     ],
+     "packet": "meteor-entry"
     },
     {
      "id": "warden",
@@ -1234,22 +1472,23 @@
       },
       {
        "video": "uRJw__PO-Iw",
-       "t": 97.0,
+       "t": 97,
        "quote": "the archer queen on the opposite side."
       }
-     ]
+     ],
+     "packet": "meteor-entry"
     }
    ],
    "support": 1,
    "cite": [
     {
      "video": "uRJw__PO-Iw",
-     "t": 97.0,
+     "t": 97,
      "quote": "the archer queen on the opposite side."
     },
     {
      "video": "uRJw__PO-Iw",
-     "t": 119.0,
+     "t": 119,
      "quote": "Don't activate your hero's abilities immediately."
     }
    ]
@@ -1337,12 +1576,40 @@
   "Alternative composition uRJw__PO-Iw: 7 Meteor Golems and 1 each of Headhunter, Wizard, Archer, Miner, Minion, Ice Golem, Apprentice Warden and Furnace; 5 Invisibility, 1 Revive, 1 Poison, 1 Totem and 1 Rage Spell. Clan Castle lists 2 Archers, 1 Yeti, 1 Super Yeti, 1 Rage, 1 Totem and 1 Angry Spell. Listed siege choices include Battle Blimp, Troop Launcher, Sky Wagon and Siege Barracks, but the deployed siege is not narrated. Heroes are Archer Queen, Dragon Duke, Grand Warden and Royal Champion. Supporting troops and spell-specific actions are not individually narrated.",
   "Alternative composition y7npC3rCP3g: 5 Healers, 2 Balloons, 4 Meteor Golems, 2 Throwers, 1 Apprentice Warden, 2 Super Wall Breakers, 4 Rocket Balloons, 2 Archers, 1 Wizard and 1 Headhunter; 3 Invisibility, 3 Earthquake, 3 Totem and 1 Revive Spell. Clan Castle lists 2 Balloons, 1 Minion, 1 Rocket Balloon, 1 Ice Golem, 1 Root Rider, 1 Poison, 2 Lightning and 1 Freeze Spell. Siege choices include Log Launcher, Flame Flinger and Troop Launcher; Troop Launcher is identified in the first attack. Heroes are Barbarian King, Archer Queen, Grand Warden and Dragon Duke, with Fireball on the Warden. Meteor Golem, Healer and Thrower deployment order is not narrated.",
   "Alternative composition yBFCuLpbDbU: 5 Healers, 3 Furnaces, 5 Meteor Golems, 3 Balloons and 1 Archer; 8 Totem, 1 Rage and 1 Invisibility Spell. Clan Castle lists 1 Balloon, 1 Super Yeti, 1 Ice Golem, 1 Poison, 1 Invisibility and 1 Revive Spell. Siege choices are Troop Launcher, Log Launcher and Siege Barracks, with Troop Launcher deployment narrated. Heroes are Barbarian King, Archer Queen, Grand Warden and Royal Champion. The Warden has Rage Gem/Life Gem, so no Eternal Tome activation belongs to that composition. Royal Champion is the usual Revive target, with an early fallen Warden as an exception.",
-  "Army-changing variants require the corresponding source inventory and loadouts. Available siege options in army links do not establish multiple siege deployments. Unnamed troop IDs, unspecified cleanup actions, undefined equipment combinations and garbled targets have not been converted into additional steps."
+  "Army-changing variants require the corresponding source inventory and loadouts. Available siege options in army links do not establish multiple siege deployments. Unnamed troop IDs, unspecified cleanup actions, undefined equipment combinations and garbled targets have not been converted into additional steps.",
+  "PB1b: recipe selects an explicit named source/variant; an ambiguous inventory retains repair-only selection. packet preserves the input action clock, primary marks the main cohort, objective binds one building, and effect prerequisites use actual cast expiry. Source inventory/loadout and frame-verification holds remain in force. These are controller policies and synthetic regression evidence, not real-game calibration."
  ],
  "check": {
   "steps_kept": 14,
   "steps_dropped": 0,
   "reasons": {},
   "dangling_after": []
+ },
+ "recipes": {
+  "default": [],
+  "variant-1": [
+   "Natural funnel: send all Meteor Golems together"
+  ],
+  "variant-2": [
+   "Six Meteor Golems with seven Super Archers"
+  ],
+  "variant-3": [
+   "Warden walk opening with test Balloons and five Healers"
+  ],
+  "variant-4": [
+   "Fireball opening instead of the Dragon Duke and two-Golem funnel"
+  ],
+  "variant-5": [
+   "Queen opposite the Meteor Golem push; delay her ability"
+  ],
+  "-jNbwwWqnOE": [
+   "Six Meteor Golems with seven Super Archers"
+  ],
+  "MUssbWM-qpk": [
+   "Warden walk opening with test Balloons and five Healers"
+  ],
+  "lHLHvW8vFTg": [
+   "Fireball opening instead of the Dragon Duke and two-Golem funnel"
+  ]
  }
 }

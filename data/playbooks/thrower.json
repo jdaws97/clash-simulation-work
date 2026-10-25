@@ -428,7 +428,8 @@
      "t": 186.6,
      "quote": "directly start the throwers."
     }
-   ]
+   ],
+   "primary": true
   },
   {
    "id": "balloon",
@@ -666,7 +667,8 @@
      "t": 331.3,
      "quote": "So, definitely we will use a log"
     }
-   ]
+   ],
+   "siege_role": "siege"
   },
   {
    "id": "poison",
@@ -941,7 +943,8 @@
        "t": 284.6,
        "quote": "didn't need to break any walls early."
       }
-     ]
+     ],
+     "siege_role": "siege"
     }
    ],
    "support": 4,
@@ -1093,8 +1096,20 @@
        "video": "0h7c4WKuPB8",
        "t": 33,
        "quote": "Ricochet Cannon and Monolith on the"
+      },
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 211.4,
+       "quote": "say is look at those three defenses,"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "target_keys": [
+      "crafting",
+      "revenge",
+      "mono"
+     ],
+     "objective": "zap-core"
     },
     {
      "id": "zap_2",
@@ -1113,8 +1128,20 @@
        "video": "0h7c4WKuPB8",
        "t": 29.5,
        "quote": "base for two earthquake, six lightnings."
+      },
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 211.4,
+       "quote": "say is look at those three defenses,"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "target_keys": [
+      "crafting",
+      "revenge",
+      "mono"
+     ],
+     "objective": "zap-core"
     },
     {
      "id": "zap_3",
@@ -1133,8 +1160,20 @@
        "video": "0h7c4WKuPB8",
        "t": 29.5,
        "quote": "base for two earthquake, six lightnings."
+      },
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 211.4,
+       "quote": "say is look at those three defenses,"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "target_keys": [
+      "crafting",
+      "revenge",
+      "mono"
+     ],
+     "objective": "zap-core"
     },
     {
      "id": "zap_4",
@@ -1153,8 +1192,20 @@
        "video": "0h7c4WKuPB8",
        "t": 29.5,
        "quote": "base for two earthquake, six lightnings."
+      },
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 211.4,
+       "quote": "say is look at those three defenses,"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "target_keys": [
+      "crafting",
+      "revenge",
+      "mono"
+     ],
+     "objective": "zap-core"
     },
     {
      "id": "zap_5",
@@ -1173,8 +1224,20 @@
        "video": "0h7c4WKuPB8",
        "t": 29.5,
        "quote": "base for two earthquake, six lightnings."
+      },
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 211.4,
+       "quote": "say is look at those three defenses,"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "target_keys": [
+      "crafting",
+      "revenge",
+      "mono"
+     ],
+     "objective": "zap-core"
     },
     {
      "id": "zap_6",
@@ -1193,8 +1256,20 @@
        "video": "0h7c4WKuPB8",
        "t": 29.5,
        "quote": "base for two earthquake, six lightnings."
+      },
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 211.4,
+       "quote": "say is look at those three defenses,"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "target_keys": [
+      "crafting",
+      "revenge",
+      "mono"
+     ],
+     "objective": "zap-core"
     },
     {
      "id": "zap_7",
@@ -1213,8 +1288,20 @@
        "video": "0h7c4WKuPB8",
        "t": 29.5,
        "quote": "base for two earthquake, six lightnings."
+      },
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 211.4,
+       "quote": "say is look at those three defenses,"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "target_keys": [
+      "crafting",
+      "revenge",
+      "mono"
+     ],
+     "objective": "zap-core"
     },
     {
      "id": "zap_8",
@@ -1233,8 +1320,20 @@
        "video": "0h7c4WKuPB8",
        "t": 29.5,
        "quote": "base for two earthquake, six lightnings."
+      },
+      {
+       "video": "0h7c4WKuPB8",
+       "t": 211.4,
+       "quote": "say is look at those three defenses,"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "target_keys": [
+      "crafting",
+      "revenge",
+      "mono"
+     ],
+     "objective": "zap-core"
     },
     {
      "id": "duke",
@@ -1259,7 +1358,8 @@
        "t": 56.4,
        "quote": "Duke on one corner of the base."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     }
    ],
    "support": 2,
@@ -1303,7 +1403,8 @@
        "t": 124.4,
        "quote": "You want to drop your earthquakes first."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "arrow_quake_2",
@@ -1323,7 +1424,9 @@
        "t": 124.4,
        "quote": "You want to drop your earthquakes first."
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "arrow-core"
     },
     {
      "id": "arrow_quake_3",
@@ -1343,7 +1446,9 @@
        "t": 124.4,
        "quote": "You want to drop your earthquakes first."
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "arrow-core"
     },
     {
      "id": "queen",
@@ -1363,7 +1468,8 @@
        "t": 381.1,
        "quote": "And then here comes the queen just so"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "giant_arrow",
@@ -1389,7 +1495,8 @@
        "t": 383.7,
        "quote": "There goes the queen shot."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "duke",
@@ -1409,7 +1516,8 @@
        "t": 147.2,
        "quote": "so you can place the Dragon Duke on the opposite side"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "rocket_backpack",
@@ -1435,7 +1543,8 @@
        "t": 376.9,
        "quote": "Going to get the dragon duke to fire."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "throwers",
@@ -1460,7 +1569,9 @@
        "t": 719.2,
        "quote": "throwers in, warden in,"
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "opening-combination"
     }
    ],
    "support": 2,
@@ -1502,7 +1613,8 @@
        "t": 63.7,
        "quote": "dragon duke's going to normally go left to right through the center of the base"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "mini_rocket",
@@ -1510,7 +1622,7 @@
      "what": "Dragon Duke",
      "equipment": "Rocket Backpack",
      "count": 1,
-     "at": "unit:Dragon Duke",
+     "at": "building:bh",
      "group": "duke",
      "when": {
       "after": "duke",
@@ -1528,14 +1640,16 @@
        "t": 23.9,
        "quote": "backpack straight down the middle of the"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "builder-repair-core"
     },
     {
      "id": "mini_spell_1",
      "action": "spell",
      "what": "Earthquake Spell",
      "count": 1,
-     "at": "building:mono",
+     "at": "building:bh",
      "group": "charge",
      "when": {
       "after": "mini_rocket",
@@ -1548,14 +1662,16 @@
        "t": 69.2,
        "quote": "Two earthquakes and three lightnings will take out that"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "builder-repair-core"
     },
     {
      "id": "mini_spell_2",
      "action": "spell",
      "what": "Earthquake Spell",
      "count": 1,
-     "at": "building:mono",
+     "at": "building:bh",
      "group": "charge",
      "when": {
       "after": "mini_spell_1",
@@ -1568,14 +1684,16 @@
        "t": 69.2,
        "quote": "Two earthquakes and three lightnings will take out that"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "builder-repair-core"
     },
     {
      "id": "mini_spell_3",
      "action": "spell",
      "what": "Lightning Spell",
      "count": 1,
-     "at": "building:mono",
+     "at": "building:bh",
      "group": "charge",
      "when": {
       "after": "mini_spell_2",
@@ -1588,14 +1706,16 @@
        "t": 69.2,
        "quote": "Two earthquakes and three lightnings will take out that"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "builder-repair-core"
     },
     {
      "id": "mini_spell_4",
      "action": "spell",
      "what": "Lightning Spell",
      "count": 1,
-     "at": "building:mono",
+     "at": "building:bh",
      "group": "charge",
      "when": {
       "after": "mini_spell_3",
@@ -1608,14 +1728,16 @@
        "t": 69.2,
        "quote": "Two earthquakes and three lightnings will take out that"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "builder-repair-core"
     },
     {
      "id": "mini_spell_5",
      "action": "spell",
      "what": "Lightning Spell",
      "count": 1,
-     "at": "building:mono",
+     "at": "building:bh",
      "group": "charge",
      "when": {
       "after": "mini_spell_4",
@@ -1628,7 +1750,9 @@
        "t": 69.2,
        "quote": "Two earthquakes and three lightnings will take out that"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "objective": "builder-repair-core"
     },
     {
      "id": "throwers",
@@ -1648,7 +1772,9 @@
        "t": 106.6,
        "quote": "send in the main army."
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "opening-combination"
     }
    ],
    "support": 1,
@@ -1783,7 +1909,7 @@
       },
       {
        "video": "XTTBlGH4zXE",
-       "t": 107.0,
+       "t": 107,
        "quote": "baby dragon and a thrower to clear the"
       },
       {
@@ -1818,7 +1944,7 @@
       },
       {
        "video": "XTTBlGH4zXE",
-       "t": 107.0,
+       "t": 107,
        "quote": "baby dragon and a thrower to clear the"
       },
       {
@@ -1853,7 +1979,7 @@
       },
       {
        "video": "XTTBlGH4zXE",
-       "t": 107.0,
+       "t": 107,
        "quote": "baby dragon and a thrower to clear the"
       },
       {
@@ -1912,7 +2038,8 @@
        "t": 98.6,
        "quote": "furnace, healers and a coco loon to keep"
       }
-     ]
+     ],
+     "primary": true
     },
     {
      "id": "entry_wall",
@@ -2049,7 +2176,12 @@
        "t": 139,
        "quote": "drop your clone spells, making sure to overlap each spell"
       }
-     ]
+     ],
+     "every": 0.1,
+     "repeat_effect_remaining": 0.25,
+     "recheck_when": true,
+     "spell_budget": "firemite-clones",
+     "timing_note": "Next overlap waits for the last quarter of the actual Clone field. The fraction is a controller policy, not a video-measured delay."
     },
     {
      "id": "throwers",
@@ -2069,7 +2201,8 @@
        "t": 163.6,
        "quote": "lure over the warden with the throwers,"
       }
-     ]
+     ],
+     "primary": true
     },
     {
      "id": "entry_wall",
@@ -2165,7 +2298,13 @@
        "t": 86.9,
        "quote": "on the spirit box. You don't even have"
       }
-     ]
+     ],
+     "every": 4,
+     "recheck_when": true,
+     "spell_budget": "fox-charge",
+     "until": {
+      "dead": "Dragon Duke"
+     }
     },
     {
      "id": "throwers",
@@ -2185,7 +2324,8 @@
        "t": 260,
        "quote": "throwers from this corner."
       }
-     ]
+     ],
+     "primary": true
     },
     {
      "id": "early_warden_ability",
@@ -2285,7 +2425,8 @@
        "t": 127.6,
        "quote": "Then you can get your throwers."
       }
-     ]
+     ],
+     "primary": true
     },
     {
      "id": "yetis",
@@ -2409,7 +2550,7 @@
      "action": "spell",
      "what": "Skeleton Spell",
      "count": 1,
-     "at": "building:mono",
+     "at": "unit_ahead:Thrower",
      "group": "main",
      "when": {
       "all": [
@@ -2418,7 +2559,10 @@
         "delay": 0
        },
        {
-        "heavy_fire": "Dragon Duke"
+        "group_inside": "main"
+       },
+       {
+        "heavy_fire": "Thrower"
        }
       ]
      },
@@ -2429,7 +2573,11 @@
        "t": 331.7,
        "quote": "we can put down a skeleton spell there or two."
       }
-     ]
+     ],
+     "every": 0.1,
+     "repeat_units_absent": "Spell Skeleton",
+     "recheck_when": true,
+     "spell_budget": "continuing-skeletons"
     }
    ],
    "support": 1,
@@ -2517,12 +2665,67 @@
   "Other Clan Castle payloads include three Ice Golems and two Balloons with donated Revive 2 in FfvfHeRMDZs, aLOitRlGp8g and dxLogWcc0VU; NrogBoJyRVI uses the same payload and Revive count. 5InNp3cBzCA instead lists Ice Golem 1/Balloon 1/Super Valkyrie 1/Giant 2; AZTUaqyRtew lists Yeti 1/Root Rider 1/Rocket Balloon 1/Minion 2; XTTBlGH4zXE and gVNS9seD83w list Super Valkyrie 1/Super Yeti 1. These are alternative payloads, not combined donations.",
   "eeDapoJl4d8's further Recall branch picks up Queen after her initial funnel and redeploys her to create a second funnel; one replay recalls Duke too. Its Giant Arrow/Healer Puppet Queen, Rocket Backpack/Fire Heart Duke and donated Recall 1 belong to that source's army. No numerical recall trigger, exact redeployment location, or complete initial deployment is stated, so the branch is recorded without invented executable placements.",
   "Town Hall entry preferences conflict: 3KPlpZZeWsg generally favors the far side and dHij_8HI47w accepts leaving Town Hall late; 15TbHFSYt84, 0h7c4WKuPB8 and aLOitRlGp8g favor earlier Town Hall access when practical. Spring Trap bait and Firespitter/Sweeper orientation can reverse a nominal Monolith or Town Hall preference.",
-  "Retain ambiguous labels such as logger, candle, cake, long shot and hero hunter where the extraction does not establish their in-game identity. The defensive logger is not the attacking Log Launcher. Do not convert unclear Recall/Revive captions in 0h7c4WKuPB8 into an extra recall sequence. Defensive-base Clan Castle descriptions in 15TbHFSYt84, XibexH-PFis and zSh-YQVhKT8 are not attacking reinforcement evidence."
+  "Retain ambiguous labels such as logger, candle, cake, long shot and hero hunter where the extraction does not establish their in-game identity. The defensive logger is not the attacking Log Launcher. Do not convert unclear Recall/Revive captions in 0h7c4WKuPB8 into an extra recall sequence. Defensive-base Clan Castle descriptions in 15TbHFSYt84, XibexH-PFis and zSh-YQVhKT8 are not attacking reinforcement evidence.",
+  "PB1b: recipe selects an explicit named source/variant; an ambiguous inventory retains repair-only selection. packet preserves the input action clock, primary marks the main cohort, objective binds one building, and effect prerequisites use actual cast expiry. Source inventory/loadout and frame-verification holds remain in force. These are controller policies and synthetic regression evidence, not real-game calibration."
  ],
  "check": {
   "steps_kept": 19,
   "steps_dropped": 0,
   "reasons": {},
   "dangling_after": []
+ },
+ "recipes": {
+  "default": [],
+  "variant-1": [
+   "Troop Launcher for an open or short Town Hall route"
+  ],
+  "variant-2": [
+   "Queen counterfunnel with King saved for the back end"
+  ],
+  "variant-3": [
+   "Two Earthquakes and six Lightnings before the Duke funnel"
+  ],
+  "variant-4": [
+   "Earthquakes with Giant Arrow and Rocket Backpack"
+  ],
+  "variant-5": [
+   "Rocket Backpack with a two-Earthquake three-Lightning finish"
+  ],
+  "variant-6": [
+   "Warden walk before the Thrower push"
+  ],
+  "variant-7": [
+   "Firemite Clone opening; only the first Clone cast is specified"
+  ],
+  "variant-8": [
+   "Spirit Fox and Invisibility Duke charge with an early Warden ability"
+  ],
+  "variant-9": [
+   "Yeti frontline for the Town Hall and defending heroes"
+  ],
+  "variant-10": [
+   "Skeleton distractions instead of the Totem package"
+  ],
+  "0h7c4WKuPB8": [
+   "Two Earthquakes and six Lightnings before the Duke funnel"
+  ],
+  "AZTUaqyRtew": [
+   "Earthquakes with Giant Arrow and Rocket Backpack"
+  ],
+  "Xk6Q2cZqvHM": [
+   "Rocket Backpack with a two-Earthquake three-Lightning finish"
+  ],
+  "XTTBlGH4zXE": [
+   "Warden walk before the Thrower push"
+  ],
+  "HJfCl7Ycf6E": [
+   "Firemite Clone opening; only the first Clone cast is specified"
+  ],
+  "gVNS9seD83w": [
+   "Spirit Fox and Invisibility Duke charge with an early Warden ability"
+  ],
+  "dxLogWcc0VU": [
+   "Skeleton distractions instead of the Totem package"
+  ]
  }
 }

@@ -309,7 +309,8 @@
      "t": 31.4,
      "quote": "So this PEKKA's going to come out, tank,"
     }
-   ]
+   ],
+   "siege_role": "siege"
   },
   {
    "id": "skeleton_monolith",
@@ -359,7 +360,8 @@
      "t": 40,
      "quote": "a totem spell, ice golems, super yetis."
     }
-   ]
+   ],
+   "packet": "yeti-entry"
   },
   {
    "id": "yetis",
@@ -384,7 +386,9 @@
      "t": 40,
      "quote": "a totem spell, ice golems, super yetis."
     }
-   ]
+   ],
+   "primary": true,
+   "packet": "yeti-entry"
   },
   {
    "id": "apprentice",
@@ -404,7 +408,8 @@
      "t": 348.6,
      "quote": "Apprentice warden."
     }
-   ]
+   ],
+   "packet": "yeti-entry"
   },
   {
    "id": "wall_breaker",
@@ -424,7 +429,8 @@
      "t": 350.6,
      "quote": "Super wall breaker. Let's go."
     }
-   ]
+   ],
+   "packet": "yeti-entry"
   },
   {
    "id": "druids",
@@ -449,7 +455,8 @@
      "t": 50.2,
      "quote": "get a totem down here, druid."
     }
-   ]
+   ],
+   "packet": "yeti-entry"
   },
   {
    "id": "king",
@@ -474,7 +481,8 @@
      "t": 37,
      "quote": "in here as well to lead."
     }
-   ]
+   ],
+   "packet": "yeti-entry"
   },
   {
    "id": "warden",
@@ -499,7 +507,8 @@
      "t": 180.8,
      "quote": "super yetis, sky wagon, warden."
     }
-   ]
+   ],
+   "packet": "yeti-entry"
   },
   {
    "id": "warden_ability",
@@ -524,7 +533,8 @@
      "t": 191.2,
      "quote": "warden ability, combine that all up,"
     }
-   ]
+   ],
+   "packet": "yeti-entry"
   },
   {
    "id": "rage_main",
@@ -549,7 +559,8 @@
      "t": 66.4,
      "quote": "and then I like to combine them with a rage."
     }
-   ]
+   ],
+   "packet": "yeti-entry"
   },
   {
    "id": "king_ability",
@@ -595,7 +606,15 @@
    "at": "threat:main",
    "group": "main",
    "when": {
-    "group_inside": "main"
+    "all": [
+     {
+      "after": "yetis",
+      "delay": 0
+     },
+     {
+      "group_inside": "main"
+     }
+    ]
    },
    "support": 5,
    "cite": [
@@ -619,7 +638,15 @@
    "at": "threat:main",
    "group": "main",
    "when": {
-    "heavy_fire": "Super Yeti"
+    "all": [
+     {
+      "after": "yetis",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Super Yeti"
+     }
+    ]
    },
    "support": 7,
    "cite": [
@@ -795,7 +822,8 @@
        "t": 17.2,
        "quote": "to use the queen and a siege barracks"
       }
-     ]
+     ],
+     "siege_role": "siege"
     },
     {
      "id": "queen_ability",
@@ -866,7 +894,8 @@
        "t": 275.6,
        "quote": "Some of you might want a log launcher in here."
       }
-     ]
+     ],
+     "siege_role": "siege"
     }
    ],
    "support": 2,
@@ -907,7 +936,8 @@
        "t": 695.1,
        "quote": "I'm going to go one super yeti here, one over here, and now the rest,"
       }
-     ]
+     ],
+     "packet": "yeti-entry"
     },
     {
      "id": "yeti_right",
@@ -927,7 +957,8 @@
        "t": 695.1,
        "quote": "I'm going to go one super yeti here, one over here, and now the rest,"
       }
-     ]
+     ],
+     "packet": "yeti-entry"
     },
     {
      "id": "yetis",
@@ -947,7 +978,9 @@
        "t": 695.1,
        "quote": "I'm going to go one super yeti here, one over here, and now the rest,"
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "yeti-entry"
     }
    ],
    "support": 1,
@@ -991,7 +1024,8 @@
        "t": 469.3,
        "quote": "right when this last ice golem dies."
       }
-     ]
+     ],
+     "packet": "yeti-entry"
     },
     {
      "id": "rage_main",
@@ -1011,7 +1045,8 @@
        "t": 469.3,
        "quote": "right when this last ice golem dies."
       }
-     ]
+     ],
+     "packet": "yeti-entry"
     }
    ],
    "support": 1,
@@ -1092,12 +1127,34 @@
   "g36z6N8CfTc alternative: 8 Super Yetis, 2 Ice Golems, 1 Apprentice Warden, 1 Druid and 3 Minions; 2 Revives, 2 Invisibilities, 2 Rages and 1 Poison; CC 1 Super Yeti, 1 Super Valkyrie, 3 Totems and 1 Freeze, with Sky Wagon and Troop Launcher inventory. It deploys an opening Totem before Ice Golems and Yetis, and also describes Sky Wagon with the main army rather than exclusively with Queen.",
   "3O9g9-Gujcw supplies only a partial seven-Yeti roster; dMcpXZ_wc8Q gives two Revives but leaves most quantities unstated. Z9mIhJiByqE combines TH15-18 variations with unstated troop totals, Log Launcher, changing CC troops, five or six Revives in some versions and Invisibility in later versions. These incomplete inventories are not filled with invented counts.",
   "Loadouts differ: KDalGKrAyL0 and RPYN96e1hvE use Magic Mirror/Action Figure on Queen; g36z6N8CfTc uses Magic Mirror/Giant Arrow, Electro Fangs/Fire Heart on Duke and Snake Bracelet on King; Z9mIhJiByqE names Volcanic Heart in its initial setup and later describes Queen-spawned Healers. The selected army retains AAawYGfV-AE's complete loadouts.",
-  "Source actions wait and Main army in Z9mIhJiByqE have no literal executable action/unit in the permitted vocabulary, so they are not emitted as steps. Town Hall-side and opposite-Town-Hall entries both occur; no universal compass direction or fixed Town Hall distance is inferred."
+  "Source actions wait and Main army in Z9mIhJiByqE have no literal executable action/unit in the permitted vocabulary, so they are not emitted as steps. Town Hall-side and opposite-Town-Hall entries both occur; no universal compass direction or fixed Town Hall distance is inferred.",
+  "PB1b: recipe selects an explicit named source/variant; an ambiguous inventory retains repair-only selection. packet preserves the input action clock, primary marks the main cohort, objective binds one building, and effect prerequisites use actual cast expiry. Source inventory/loadout and frame-verification holds remain in force. These are controller policies and synthetic regression evidence, not real-game calibration."
  ],
  "check": {
   "steps_kept": 23,
   "steps_dropped": 0,
   "reasons": {},
   "dangling_after": []
+ },
+ "recipes": {
+  "default": [],
+  "variant-1": [
+   "Siege Barracks counter-funnel with a later Queen ability"
+  ],
+  "variant-2": [
+   "Log Launcher through the main entry"
+  ],
+  "variant-3": [
+   "One Super Yeti on each flank before the rest"
+  ],
+  "variant-4": [
+   "Wait for the last friendly Ice Golem before Torch and Rage"
+  ],
+  "variant-5": [
+   "Protect the charging Dragon Duke with Invisibility"
+  ],
+  "3O9g9-Gujcw": [
+   "One Super Yeti on each flank before the rest"
+  ]
  }
 }
