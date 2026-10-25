@@ -1,8 +1,14 @@
 mod audit;
 mod extract;
+mod icons;
 mod image;
+mod json;
 mod ocr;
+mod positions;
 mod probe;
+mod replay;
+mod review;
+mod timing;
 mod video;
 
 use image::{Image, Mask, Rect};
@@ -25,13 +31,18 @@ fn timestamp(text: &str) -> io::Result<f64> {
         .ok_or_else(|| io::Error::other("time must be a finite, nonnegative number of seconds"))
 }
 
-fn bootstrap(video_path: &Path, times: &[f64], kind: &str) -> io::Result<()> {
-    let region = match kind {
+fn bootstrap(
+    video_path: &Path,
+    times: &[f64],
+    kind: &str,
+    supplied: Option<Rect>,
+) -> io::Result<()> {
+    let region = supplied.unwrap_or_else(|| match kind {
         "clock" => Rect::new(576, 32, 128, 25),
         "damage" => Rect::new(1063, 480, 80, 21),
         "counts" => Rect::new(150, 533, 900, 16),
         _ => Rect::new(200, 534, 28, 17),
-    };
+    });
     let mut clusters: Vec<(Mask, usize)> = Vec::new();
     let mut sheet = Image::blank(900, times.len() * 80);
     let out = Path::new("/tmp/vidmine-work/bootstrap");
@@ -75,6 +86,74 @@ fn run() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let input = || argument(&args, 2, "video or directory").map(Path::new);
     match args.get(1).map(String::as_str) {
+        Some("label-crop") => {
+            let name = argument(&args, 3, "template name")?;
+            if !name.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'-') {
+                return Err(io::Error::other("invalid template name"));
+            }
+            let t = timestamp(argument(&args, 4, "time")?)?;
+            let n = (5..9)
+                .map(|i| {
+                    argument(&args, i, "rectangle")?
+                        .parse::<usize>()
+                        .map_err(|_| io::Error::other("invalid rectangle"))
+                })
+                .collect::<io::Result<Vec<_>>>()?;
+            let crop = video::frame(input()?, t)?.crop(Rect::new(n[0], n[1], n[2], n[3]));
+            Mask::white(&crop, 145).save_text(&Path::new(TEMPLATE_DIR).join(format!("{name}.txt")))
+        }
+        Some("bootstrap-box") => {
+            let kind = argument(&args, 3, "kind")?;
+            if !kind
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_')
+            {
+                return Err(io::Error::other("invalid bootstrap kind"));
+            }
+            let n = (4..8)
+                .map(|i| {
+                    argument(&args, i, "rectangle")?
+                        .parse::<usize>()
+                        .map_err(|_| io::Error::other("invalid rectangle"))
+                })
+                .collect::<io::Result<Vec<_>>>()?;
+            let times = args
+                .get(8..)
+                .unwrap_or_default()
+                .iter()
+                .map(|s| timestamp(s))
+                .collect::<io::Result<Vec<_>>>()?;
+            if times.is_empty() || n[2] == 0 || n[3] == 0 {
+                return Err(io::Error::other(
+                    "bootstrap-box needs a nonempty rectangle and timestamps",
+                ));
+            }
+            bootstrap(
+                input()?,
+                &times,
+                kind,
+                Some(Rect::new(n[0], n[1], n[2], n[3])),
+            )
+        }
+        Some("label-hud") => review::labels(input()?, "hud"),
+        Some("label-icons") => review::labels(input()?, "icons"),
+        Some("label-positions") => review::labels(input()?, "positions"),
+        Some("icon-audit") => review::icon_audit(input()?),
+        Some("score-positions") => review::score_positions(input()?),
+        Some("verify") => review::verify(input()?),
+        Some("positions") => {
+            let out = args
+                .iter()
+                .position(|v| v == "--out")
+                .and_then(|i| args.get(i + 1))
+                .ok_or_else(|| io::Error::other("positions requires --out DIR"))?;
+            positions::run(input()?, Path::new(out))
+        }
+        Some("resegment") => extract::resegment(input()?),
+        Some("timing") => timing::update(input()?),
+        Some("icon-cluster") => icons::cluster(input()?),
+        Some("icon-learn") => icons::learn(input()?, Path::new(TEMPLATE_DIR)),
+        Some("icons") => icons::update(input()?, Path::new(TEMPLATE_DIR)),
         Some("cleanup") => match fs::remove_dir_all("/tmp/vidmine-work") {
             Ok(()) => Ok(()),
             Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
@@ -130,7 +209,7 @@ fn run() -> io::Result<()> {
             if times.is_empty() {
                 return Err(io::Error::other("bootstrap needs at least one timestamp"));
             }
-            bootstrap(input()?, &times, kind)
+            bootstrap(input()?, &times, kind, None)
         }
         Some("learn-labels") => {
             if input()?.file_stem().and_then(|s| s.to_str()) != Some("mnJOtLowhqs") {
@@ -235,7 +314,7 @@ fn run() -> io::Result<()> {
             ))
         }
         Some("--help" | "-h") => {
-            println!("vidmine probe VIDEO [--out DIR]\nvidmine extract VIDEO --out DIR\nvidmine summary DIR\nvidmine audit VIDEO --out DIR\nvidmine score DIR\nvidmine cleanup\nvidmine bootstrap VIDEO clock|damage|count|counts TIME...\nvidmine sample VIDEO TIME /tmp/vidmine-work/frame.ppm");
+            println!("vidmine probe VIDEO [--out DIR]\nvidmine extract VIDEO --out DIR\nvidmine positions VIDEO --out DIR\nvidmine resegment DIR\nvidmine icons DIR\nvidmine timing DIR\nvidmine verify DIR\nvidmine summary DIR\nvidmine audit VIDEO --out DIR\nvidmine score DIR\nvidmine icon-cluster DIR\nvidmine icon-learn DIR\nvidmine icon-audit DIR\nvidmine label-hud|label-icons|label-positions DIR\nvidmine score-positions DIR\nvidmine cleanup\nvidmine bootstrap VIDEO clock|damage|count|counts TIME...\nvidmine bootstrap-box VIDEO KIND X Y W H TIME...\nvidmine label-crop VIDEO NAME TIME X Y W H\nvidmine sample VIDEO TIME /tmp/vidmine-work/frame.ppm");
             Ok(())
         }
         _ => Err(io::Error::other(

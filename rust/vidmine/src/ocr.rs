@@ -78,7 +78,24 @@ impl Reader {
     }
 
     pub fn clock(&self, image: &Image) -> Reading {
-        let mask = Mask::white(image, 175).keep_components(
+        let primary = self.clock_at(image, 175);
+        if primary.value.is_some() {
+            return primary;
+        }
+        let mut best = primary;
+        for threshold in [195, 215] {
+            let reading = self.clock_at(image, threshold);
+            if reading.value.is_some()
+                && (best.value.is_none() || reading.confidence > best.confidence)
+            {
+                best = reading;
+            }
+        }
+        best
+    }
+
+    fn clock_at(&self, image: &Image, threshold: u8) -> Reading {
+        let mask = Mask::white(image, threshold).keep_components(
             (image.h as f64 * 0.40) as usize,
             image.h + 3,
             12,

@@ -152,8 +152,11 @@ fn find_slots(image: &Image, regions: &Regions, reader: &Reader) -> Vec<Slot> {
     let bar = image.crop(regions.bar);
     let mut candidates: Vec<(Rect, f64)> = Vec::new();
     let text_h = (17.0 * scale).round() as usize;
-    for row_offset in [8.0, 104.0] {
-        let y = (row_offset * scale).round() as usize;
+    for row_offset in (0..=24).step_by(2).chain((96..=120).step_by(2)) {
+        if regions.layout == "phone_single_row" && row_offset >= 96 {
+            continue;
+        }
+        let y = (row_offset as f64 * scale).round() as usize;
         if y + text_h >= bar.h {
             continue;
         }
@@ -185,7 +188,12 @@ fn find_slots(image: &Image, regions: &Regions, reader: &Reader) -> Vec<Slot> {
                 }
                 // The count window includes the four-pixel lift of a selected
                 // card; the reader chooses the best complete text row inside it.
-                let count = Rect::new(x + regions.bar.x, y + regions.bar.y - 5, w, 24);
+                let count = Rect::new(
+                    x + regions.bar.x,
+                    y.saturating_sub(5) + regions.bar.y,
+                    w,
+                    24,
+                );
                 candidates.push((
                     Rect { ..count },
                     reading.confidence + if a.y >= 2 { 0.02 } else { 0.0 },
@@ -237,9 +245,13 @@ pub fn read_full(
     packed.paste(&image.crop(panels.clock), 0, 0, 1);
     packed.paste(&image.crop(panels.damage), panels.clock.w, 0, 1);
     packed.paste(&image.crop(regions.bar), 0, panels.top_h, 1);
-    let battle = Mask::load_text(&templates.join("battle-label.txt"))?;
-    let prep = Mask::load_text(&templates.join("prep-label.txt"))?;
-    let damage = Mask::load_text(&templates.join("damage-label.txt"))?;
+    let battle = Mask::load_text(&templates.join(&regions.battle_template))?;
+    let prep = Mask::load_text(&templates.join(if regions.layout == "phone_single_row" {
+        "prep-phone-label.txt"
+    } else {
+        "prep-label.txt"
+    }))?;
+    let damage = Mask::load_text(&templates.join(&regions.damage_template))?;
     Ok(read_packed(
         &packed,
         regions,
@@ -272,7 +284,8 @@ fn read_packed(
     let prep_w = (labels.1.w as f64 * regions.clock.h as f64 / 25.0).round() as usize;
     let prep = scaled_mask(labels.1, prep_w, b_rect.h);
     let prep_x = (b_rect.x + b_rect.w / 2).saturating_sub(prep_w / 2);
-    let prep_score = match_score(&mask, &prep, prep_x, 0, 1);
+    let prep_score =
+        crate::probe::search(&mask, &prep, Rect::new(prep_x.saturating_sub(3), 0, 6, 2)).1;
     let damage = scaled_mask(labels.2, regions.damage_label.w, regions.damage_label.h);
     let damage_score = match_score(
         &mask,
@@ -281,7 +294,13 @@ fn read_packed(
         0,
         1,
     );
-    let phase = if battle_score > 0.68 && damage_score > 0.60 {
+    let candidate_clock = reader.clock(&image.crop(Rect::new(
+        0,
+        regions.clock.y - panels.clock.y,
+        regions.clock.w,
+        regions.clock.h,
+    )));
+    let phase = if battle_score > 0.62 && (candidate_clock.value.is_some() || damage_score > 0.60) {
         "attack"
     } else if prep_score > 0.67 {
         "preparation"
@@ -289,12 +308,7 @@ fn read_packed(
         "other"
     };
     let clock = if phase != "other" {
-        reader.clock(&image.crop(Rect::new(
-            0,
-            regions.clock.y - panels.clock.y,
-            regions.clock.w,
-            regions.clock.h,
-        )))
+        candidate_clock
     } else {
         Reading::missing()
     };
@@ -368,7 +382,13 @@ fn segment(frames: &[Frame]) -> Vec<Attack> {
     let mut prep_start = None;
     let mut previous: Option<usize> = None;
     for (i, frame) in frames.iter().enumerate() {
-        if frame.phase == "preparation" {
+        if frame.phase == "preparation"
+            && frames[i..frames.len().min(i + 3)]
+                .iter()
+                .filter(|f| f.phase == "preparation")
+                .count()
+                >= 3
+        {
             if prep_start.is_none() {
                 prep_start = Some(i);
             }
@@ -380,7 +400,7 @@ fn segment(frames: &[Frame]) -> Vec<Attack> {
         }
         if frame.phase != "attack" {
             if let Some(attack) = &active {
-                if frame.t - frames[attack.end].t > 2.0 {
+                if frame.t - frames[attack.end].t > 60.0 {
                     attacks.push(active.take().unwrap());
                     previous = None;
                 }
@@ -395,8 +415,22 @@ fn segment(frames: &[Frame]) -> Vec<Attack> {
         }
         let clock = frame.clock.value.unwrap();
         if let Some(p) = previous {
-            let old = frames[p].clock.value.unwrap();
-            if clock > old + 15 && clock >= 175 && old < 150 {
+            let mut history: Vec<_> = frames[i.saturating_sub(15)..i]
+                .iter()
+                .filter_map(|f| f.clock.value.map(|v| v as f64))
+                .collect();
+            let old = if history.len() >= 5 {
+                median(&mut history) as u32
+            } else {
+                frames[p].clock.value.unwrap()
+            };
+            let confirmed_reset = frames[i..frames.len().min(i + 10)]
+                .iter()
+                .filter_map(|f| f.clock.value)
+                .filter(|c| *c > old + 20)
+                .count()
+                >= 4;
+            if clock > old + 30 && clock >= 110 && old < 150 && confirmed_reset {
                 if let Some(attack) = active.take() {
                     attacks.push(attack);
                 }
@@ -431,16 +465,28 @@ fn median(values: &mut [f64]) -> f64 {
 
 fn detect_cuts(frames: &[Frame], attack: &Attack) -> Vec<Cut> {
     let mut cuts: Vec<Cut> = Vec::new();
-    let window = 10;
+    let window = 20;
     if attack.end - attack.start < window * 2 {
         return cuts;
     }
     for i in attack.start + window..=attack.end - window {
-        let intercept = |range: std::ops::Range<usize>| -> Option<f64> {
-            let mut values: Vec<f64> = frames[range]
+        let side = |range: std::ops::Range<usize>| -> Vec<(f64, f64)> {
+            frames[range]
                 .iter()
-                .filter_map(|f| f.clock.value.map(|clock| clock as f64 + f.t))
-                .collect();
+                .filter_map(|f| f.clock.value.map(|c| (f.t, c as f64)))
+                .collect()
+        };
+        let before_points = side(i - window..i);
+        let after_points = side(i..i + window);
+        let Some((before_speed, _)) = crate::timing::rate(&before_points) else {
+            continue;
+        };
+        let Some((after_speed, _)) = crate::timing::rate(&after_points) else {
+            continue;
+        };
+        let speed = (before_speed + after_speed) / 2.0;
+        let intercept = |points: &[(f64, f64)]| -> Option<f64> {
+            let mut values: Vec<f64> = points.iter().map(|(t, c)| c + speed * t).collect();
             if values.len() < 6 {
                 return None;
             }
@@ -451,10 +497,10 @@ fn detect_cuts(frames: &[Frame], attack: &Attack) -> Vec<Cut> {
             }
             Some(center)
         };
-        let Some(before) = intercept(i - window..i) else {
+        let Some(before) = intercept(&before_points) else {
             continue;
         };
-        let Some(after) = intercept(i..i + window) else {
+        let Some(after) = intercept(&after_points) else {
             continue;
         };
         if (after - before).abs() <= 3.0 {
@@ -468,8 +514,8 @@ fn detect_cuts(frames: &[Frame], attack: &Attack) -> Vec<Cut> {
         }
         cuts.push(Cut {
             t: frames[i].t,
-            before: Some((before - frames[i].t).max(0.0).round() as u32),
-            after: Some((after - frames[i].t).max(0.0).round() as u32),
+            before: Some((before - speed * frames[i].t).max(0.0).round() as u32),
+            after: Some((after - speed * frames[i].t).max(0.0).round() as u32),
             kind: "clock_discontinuity",
         });
     }
@@ -621,6 +667,11 @@ fn result_screen(
 pub fn extract(video_path: &Path, out: &Path, templates: &Path) -> io::Result<()> {
     let started = Instant::now();
     let regions = crate::probe::locate(video_path, templates)?;
+    if regions.layout == "cropped_replay" {
+        crate::replay::extract(video_path, out, templates, &regions)?;
+        crate::icons::update(out, templates)?;
+        return crate::timing::update(out);
+    }
     fs::create_dir_all(out)?;
     fs::write(out.join("regions.json"), regions.json())?;
     let reader = Reader::load(templates)?;
@@ -646,9 +697,13 @@ pub fn extract(video_path: &Path, out: &Path, templates: &Path) -> io::Result<()
         slots.iter().map(|s| (s.index, s.count)).collect::<Vec<_>>()
     );
     let panels = Panels::new(&regions);
-    let battle = Mask::load_text(&templates.join("battle-label.txt"))?;
-    let prep = Mask::load_text(&templates.join("prep-label.txt"))?;
-    let damage = Mask::load_text(&templates.join("damage-label.txt"))?;
+    let battle = Mask::load_text(&templates.join(&regions.battle_template))?;
+    let prep = Mask::load_text(&templates.join(if regions.layout == "phone_single_row" {
+        "prep-phone-label.txt"
+    } else {
+        "prep-label.txt"
+    }))?;
+    let damage = Mask::load_text(&templates.join(&regions.damage_template))?;
     let mut stream = video::Stream::new(video_path, &panels.filter(&regions))?;
     let mut readings = BufWriter::new(fs::File::create(out.join("readings.jsonl"))?);
     let mut tsv = BufWriter::new(fs::File::create(out.join("readings.tsv"))?);
@@ -732,7 +787,28 @@ pub fn extract(video_path: &Path, out: &Path, templates: &Path) -> io::Result<()
             .iter()
             .filter(|s| s.count.y < regions.bar.y + 50)
             .collect();
-        if let Some(pair) = first_row
+        if regions.layout == "phone_single_row" {
+            let card_w = (61.0 * scale).round() as usize;
+            for pair in first_row.windows(2) {
+                let gap = pair[1].rect.x.saturating_sub(pair[0].rect.x);
+                if gap < card_w * 3 / 2 || gap > card_w * 8 {
+                    continue;
+                }
+                let missing = (gap as f64 / (card_w as f64 + 3.0)).round() as usize;
+                for n in 1..missing {
+                    icon_slots.push(Slot {
+                        index: icon_slots.len(),
+                        rect: Rect::new(
+                            pair[0].rect.x + gap * n / missing,
+                            pair[0].rect.y,
+                            card_w,
+                            pair[0].rect.h,
+                        ),
+                        count: Rect::default(),
+                    });
+                }
+            }
+        } else if let Some(pair) = first_row
             .windows(2)
             .find(|pair| pair[1].rect.x - pair[0].rect.x > (220.0 * scale) as usize)
         {
@@ -924,6 +1000,8 @@ pub fn extract(video_path: &Path, out: &Path, templates: &Path) -> io::Result<()
         attacks.len(),
         started.elapsed().as_secs_f64()
     );
+    crate::icons::update(out, templates)?;
+    crate::timing::update(out)?;
     Ok(())
 }
 
@@ -978,6 +1056,21 @@ mod tests {
     }
 
     #[test]
+    fn obscured_hud_keeps_one_battle_and_speed_is_separate_from_cuts() {
+        // Declared synthetic 2x battle with an eight-second commentary overlay.
+        let mut frames: Vec<_> = (0..250)
+            .map(|i| frame(i as f64 / 5.0, 180 - i * 2 / 5))
+            .collect();
+        for f in &mut frames[70..110] {
+            f.phase = "other";
+            f.clock = Reading::missing();
+        }
+        let attacks = segment(&frames);
+        assert_eq!(attacks.len(), 1);
+        assert!(attacks[0].cuts.is_empty());
+    }
+
+    #[test]
     fn count_decrease_requires_agreement_and_never_crosses_a_cut() {
         let mut frames: Vec<Frame> = (0..60)
             .map(|i| frame(i as f64 / 5.0, 180 - i / 5))
@@ -1019,4 +1112,182 @@ mod tests {
     fn json_escaping() {
         assert_eq!(quoted("a\"b\n\\c"), "\"a\\\"b\\n\\\\c\"");
     }
+}
+
+/// Rebuild intervals and events from saved observations; no replay decoding.
+pub fn resegment(root: &Path) -> io::Result<()> {
+    use crate::json::Value;
+    let mut changes = String::from("video\tinput_attacks\tm2_attacks\n");
+    for dir in crate::icons::directories(root)? {
+        if fs::read_to_string(dir.join("regions.json"))?.contains("cropped_replay") {
+            continue;
+        }
+        let paths = crate::icons::attack_paths(&dir)?;
+        let old = paths
+            .iter()
+            .map(|p| Value::parse(&fs::read_to_string(p)?))
+            .collect::<io::Result<Vec<_>>>()?;
+        let mut frames = Vec::new();
+        for line in fs::read_to_string(dir.join("readings.jsonl"))?.lines() {
+            let f = Value::parse(line)?;
+            let reading = |v: &Value| Reading {
+                value: v.get("value").number().map(|v| v as u32),
+                confidence: v.get("confidence").number().unwrap_or(0.0),
+                raw: v.get("raw").string().unwrap_or("").into(),
+            };
+            let phase = match f.get("phase").string() {
+                Some("attack") => "attack",
+                Some("preparation") => "preparation",
+                _ => "other",
+            };
+            frames.push(Frame {
+                t: f.get("video_t").number().unwrap_or(0.0),
+                phase,
+                clock: reading(f.get("clock")),
+                damage: reading(f.get("damage")),
+                stars: f.get("stars").get("value").number().map(|v| v as u32),
+                star_confidence: f.get("stars").get("confidence").number().unwrap_or(0.0),
+                slots: f.get("slots").array().iter().map(reading).collect(),
+                label_score: f.get("hud_confidence").number().unwrap_or(0.0),
+            });
+        }
+        let attacks = segment(&frames);
+        if old.is_empty() {
+            continue;
+        }
+        changes.push_str(&format!(
+            "{}\t{}\t{}\n",
+            dir.file_name().unwrap().to_string_lossy(),
+            old.len(),
+            attacks.len()
+        ));
+        let mut index=String::from("video_id\tattack\tvideo_t_start\tvideo_t_end\tduration\tfinal_damage\tfinal_stars\tdeployments\tclock_coverage\tdamage_coverage\tmean_clock_confidence\tmean_damage_confidence\tedited\n");
+        for (n, a) in attacks.iter().enumerate() {
+            let start = frames[a.start].t;
+            let end = frames[a.end].t;
+            let sources: Vec<_> = old
+                .iter()
+                .filter(|v| {
+                    v.get("video_t_start").number().unwrap_or(f64::MAX) <= end
+                        && v.get("video_t_end").number().unwrap_or(0.0) >= start
+                })
+                .collect();
+            let Some(first) = sources.first() else {
+                continue;
+            };
+            let mut value = (*first).clone();
+            value.set("attack", Value::from((n + 1) as f64));
+            value.set("schema_version", Value::from(2.0));
+            value.set("video_t_start", Value::from(start));
+            value.set("video_t_end", Value::from(end));
+            value.set(
+                "preparation_t_start",
+                a.prep_start
+                    .map(|i| Value::from(frames[i].t))
+                    .unwrap_or(Value::Null),
+            );
+            let provenance = sources.iter().map(|s| s.get("attack").clone()).collect();
+            value.set("source_attack_fragments", Value::Array(provenance));
+            let samples = &frames[a.start..=a.end];
+            for (field, key, clock) in [
+                ("clock_series", "clock_t", true),
+                ("damage_series", "percent", false),
+            ] {
+                let series = samples
+                    .iter()
+                    .map(|f| {
+                        let r = if clock { &f.clock } else { &f.damage };
+                        Value::parse(&format!(
+                            "{{\"video_t\":{:.1},\"{key}\":{},\"confidence\":{:.4}}}",
+                            f.t,
+                            optional(r.value),
+                            r.confidence
+                        ))
+                    })
+                    .collect::<io::Result<Vec<_>>>()?;
+                value.set(field, Value::Array(series));
+            }
+            let events = deployments(&frames, a);
+            value.set("deployments",Value::Array(events.iter().map(|e|Value::parse(&format!("{{\"clock_t\":{},\"video_t\":{:.1},\"slot\":{},\"count_before\":{},\"count_after\":{},\"delta\":{},\"confidence\":{:.4}}}",optional(e.clock),e.t,e.slot,e.before,e.after,e.before-e.after,e.confidence))).collect::<io::Result<_>>()?));
+            let stars=samples.windows(2).scan(0,|old,w| {
+                let mut earned=Vec::new();
+                if let Some(next)=w[0].stars.filter(|s|*s>*old && w[1].stars.is_some_and(|v|v>=*s)) {
+                    for star in *old+1..=next {earned.push(Value::parse(&format!("{{\"video_t\":{:.1},\"clock_t\":{},\"star\":{star},\"confidence\":{:.4}}}",w[0].t,optional(w[0].clock.value),w[0].star_confidence)));}
+                    *old=next;
+                }
+                Some(earned)
+            }).flatten().collect::<io::Result<Vec<_>>>()?;
+            value.set("stars", Value::Array(stars));
+            value.set("cuts",Value::Array(a.cuts.iter().map(|c|Value::parse(&format!("{{\"video_t\":{:.1},\"clock_before\":{},\"clock_after\":{},\"kind\":{}}}",c.t,optional(c.before),optional(c.after),quoted(c.kind)))).collect::<io::Result<_>>()?));
+            if let Some(slots) = value.object_array_mut("slots") {
+                for slot in slots {
+                    if slot.get("count_box") != &Value::Null {
+                        let id = slot.get("slot").number().unwrap_or(0.0) as usize;
+                        slot.set(
+                            "initial_count",
+                            initial_count(&frames, a, id)
+                                .map(|r| Value::from(r.0 as f64))
+                                .unwrap_or(Value::Null),
+                        );
+                    }
+                }
+            }
+            let final_damage = samples.iter().rev().find_map(|f| f.damage.value);
+            let final_stars = samples.iter().rev().find_map(|f| f.stars);
+            value.set(
+                "final_percent",
+                final_damage
+                    .map(|v| Value::from(v as f64))
+                    .unwrap_or(Value::Null),
+            );
+            value.set(
+                "final_stars",
+                final_stars
+                    .map(|v| Value::from(v as f64))
+                    .unwrap_or(Value::Null),
+            );
+            if let Some(last) = sources.last() {
+                value.set("result_screen", last.get("result_screen").clone());
+            }
+            crate::timing::annotate(&mut value)?;
+            let coverage = |clock: bool| {
+                let readings: Vec<_> = samples
+                    .iter()
+                    .map(|f| if clock { &f.clock } else { &f.damage })
+                    .filter(|r| r.value.is_some())
+                    .collect();
+                (
+                    readings.len() as f64 / samples.len() as f64,
+                    readings.iter().map(|r| r.confidence).sum::<f64>()
+                        / readings.len().max(1) as f64,
+                )
+            };
+            let (cc, cm) = coverage(true);
+            let (dc, dm) = coverage(false);
+            value.set("confidence",Value::parse(&format!("{{\"clock_coverage\":{cc:.4},\"damage_coverage\":{dc:.4},\"mean_clock\":{cm:.4},\"mean_damage\":{dm:.4}}}"))?);
+            index.push_str(&format!("{}\t{}\t{start:.1}\t{end:.1}\t{:.1}\t{}\t{}\t{}\t{cc:.4}\t{dc:.4}\t{cm:.4}\t{dm:.4}\t{}\n",dir.file_name().unwrap().to_string_lossy(),n+1,end-start,optional(final_damage),optional(final_stars),events.len(),value.get("edited").encode()));
+            fs::write(
+                dir.join(format!("attack-{:02}.json", n + 1)),
+                value.encode() + "\n",
+            )?;
+        }
+        for path in paths {
+            let n = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .and_then(|s| s.strip_prefix("attack-"))
+                .and_then(|s| s.parse::<usize>().ok())
+                .unwrap_or(0);
+            if n > attacks.len() {
+                fs::remove_file(path)?;
+            }
+        }
+        fs::write(dir.join("attacks.tsv"), index)?;
+        let run_path = dir.join("run.json");
+        let mut run = Value::parse(&fs::read_to_string(&run_path)?)?;
+        run.set("attacks", Value::from(attacks.len() as f64));
+        run.set("segmentation_version", Value::from("m2"));
+        fs::write(run_path, run.encode() + "\n")?;
+    }
+    fs::write(root.join("resegmentation.tsv"), changes)
 }

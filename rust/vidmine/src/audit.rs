@@ -10,6 +10,15 @@ use std::process::Command;
 pub fn audit(video_path: &Path, out: &Path, templates: &Path) -> io::Result<()> {
     let regions = probe::locate(video_path, templates)?;
     let reader = Reader::load(templates)?;
+    let replay = regions.layout == "cropped_replay";
+    let replay_readings = if replay {
+        fs::read_to_string(out.join("readings.jsonl"))?
+            .lines()
+            .map(crate::json::Value::parse)
+            .collect::<io::Result<Vec<_>>>()?
+    } else {
+        Vec::new()
+    };
     let slot_text = fs::read_to_string(out.join("slots.tsv"))?;
     let mut slots = Vec::new();
     for line in slot_text.lines().skip(1) {
@@ -36,8 +45,11 @@ pub fn audit(video_path: &Path, out: &Path, templates: &Path) -> io::Result<()> 
         seed = seed
             .wrapping_mul(6364136223846793005)
             .wrapping_add(1442695040888963407);
-        let t =
+        let mut t =
             ((seed >> 32) as f64 / u32::MAX as f64 * (regions.duration - 1.0) * 5.0).floor() / 5.0;
+        if replay {
+            t = t.floor();
+        }
         let slot = (seed as usize >> 16) % slots.len().max(1);
         samples.push((t, slot));
     }
@@ -46,7 +58,37 @@ pub fn audit(video_path: &Path, out: &Path, templates: &Path) -> io::Result<()> 
     let mut text = String::from("sample\tvideo_t\tphase_pred\tclock_pred\tdamage_pred\tstars_pred\tslot\tcount_pred\tphase_truth\tclock_truth\tdamage_truth\tstars_truth\tcount_truth\n");
     for (i, (t, slot)) in samples.iter().enumerate() {
         let image = video::frame(video_path, *t)?;
-        let reading = read_full(&image, &regions, &reader, templates, &slots, *t)?;
+        let replay_sample = replay_readings.get(*t as usize);
+        let dynamic = replay_sample.map(|v| {
+            v.get("clock_box")
+                .array()
+                .iter()
+                .filter_map(crate::json::Value::number)
+                .map(|v| v as usize)
+                .collect::<Vec<_>>()
+        });
+        let dynamic = dynamic
+            .filter(|v| v.len() == 4 && v[2] > 0)
+            .map(|v| Rect::new(v[0], v[1], v[2], v[3]));
+        let reading = if replay {
+            crate::extract::Frame {
+                t: *t,
+                phase: replay_sample
+                    .and_then(|v| v.get("phase").string())
+                    .map(|v| if v == "attack" { "attack" } else { "other" })
+                    .unwrap_or("other"),
+                clock: dynamic
+                    .map(|r| reader.clock(&image.crop(r)))
+                    .unwrap_or_else(crate::ocr::Reading::missing),
+                damage: crate::ocr::Reading::missing(),
+                stars: None,
+                star_confidence: 0.0,
+                slots: vec![],
+                label_score: 0.0,
+            }
+        } else {
+            read_full(&image, &regions, &reader, templates, &slots, *t)?
+        };
         let mut thumb = Image::blank(image.w / 3, image.h / 3);
         for y in 0..thumb.h {
             for x in 0..thumb.w {
@@ -56,17 +98,28 @@ pub fn audit(video_path: &Path, out: &Path, templates: &Path) -> io::Result<()> 
         }
         let y = i * 240;
         sheet.paste(&thumb, 0, y, 1);
-        sheet.paste(
-            &image.crop(Rect::new(
-                regions.clock.x,
-                regions.battle_label.y,
-                regions.clock.w,
-                47,
-            )),
-            440,
-            y + 5,
-            2,
-        );
+        if replay {
+            let r = dynamic.unwrap_or(Rect::new(
+                0,
+                image.h.saturating_sub(110),
+                image.w.min(360),
+                110,
+            ));
+            let crop = image.crop(r);
+            sheet.paste(&crop, 440, y + 5, 1);
+        } else {
+            sheet.paste(
+                &image.crop(Rect::new(
+                    regions.clock.x,
+                    regions.battle_label.y,
+                    regions.clock.w,
+                    47,
+                )),
+                440,
+                y + 5,
+                2,
+            );
+        }
         sheet.paste(
             &image.crop(Rect::new(
                 regions.stars.x,
