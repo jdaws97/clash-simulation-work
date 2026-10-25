@@ -299,6 +299,10 @@ PLAYBOOK_FAMILY = {
 
 @lru_cache(maxsize=None)
 def _playbook(family: str):
+    # output/research/usage/super-dragon.md: hero funnel -> mass Super Dragons.
+    # https://clashofclans.fandom.com/wiki/Super_Dragon
+    # Keep separate family weights; its cited variant lives in dragon.json.
+    family = {"super-dragon": "dragon"}.get(family, family)
     p = Path(__file__).resolve().parents[2] / "data" / "playbooks" / f"{family}.json"
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
@@ -318,7 +322,9 @@ TROOP_FAMILY = (
     ("Super Bowler", "super-bowler"),
     ("Meteor Golem", "meteor-golem"),
     ("Super Yeti", "yeti"),
-    ("Yeti", "yeti"),
+    # output/research/usage/yeti.md: ordinary and Super Yetis are distinct troops.
+    # https://clashofclans.fandom.com/wiki/Yeti
+    ("Yeti", "ordinary-yeti"),
     ("Ruin Witch", "druid-ruin-witch"),
     ("Super Minion", "super-minion-air"),
     ("Lava Hound", "lavaloon"),

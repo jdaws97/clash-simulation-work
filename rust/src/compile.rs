@@ -109,7 +109,17 @@ impl<'a> Compiler<'a> {
         }
         let base = armies::compose(&self.library, self.stats, &build, angle, seed)?;
         let book = if options.playbooks {
+            // output/research/usage/super-dragon.md: use dragon.json's variant;
+            // ordinary Yeti has no cited book and keeps the generic plan.
+            // https://clashofclans.fandom.com/wiki/Super_Dragon
             armies::family_of(&build)
+                .map(|family| {
+                    if family == "super-dragon" {
+                        "dragon"
+                    } else {
+                        family
+                    }
+                })
                 .and_then(|family| self.playbooks.iter().find(|(name, _)| name == family))
         } else {
             None
@@ -1723,10 +1733,22 @@ impl Compiler<'_> {
         ]))
     }
 
-    // plans.py:674-839: retain report order, including errors accumulated before
-    // an invalid level/count ends the try block.
+    // plans.py:legal: inspect camp kinds first, then retain validation order,
+    // including errors accumulated before an invalid level/count ends the try block.
     pub fn legal(&self, plan: &Json) -> Vec<String> {
         let mut problems = Vec::new();
+        // output/research/usage/lavaloon.md: summons cannot occupy camps.
+        // https://clashofclans.fandom.com/wiki/Lavaloon_Puppet
+        // Inspect every kind independently of waivable level/count errors.
+        for (name, count) in quantities(plan) {
+            if let Ok(record) = self.record(&name) {
+                if truth(&count)
+                    && !matches!(text(record, "kind", ""), "troop" | "super_troop" | "hero")
+                {
+                    problems.push(format!("{name} is not a camp troop"));
+                }
+            }
+        }
         if let Err(error) = self.legal_inner(plan, &mut problems) {
             problems.push(error);
         }
@@ -2083,7 +2105,9 @@ impl Compiler<'_> {
             && (text(plan, "build_id", "").starts_with("log-") || flag(plan, "real_battle"));
         let mut problems = Vec::new();
         for problem in self.legal(plan) {
-            if battle_log || self.logged_exception(plan, &problem) {
+            if !problem.ends_with(" is not a camp troop")
+                && (battle_log || self.logged_exception(plan, &problem))
+            {
                 eprintln!(
                     "Logged army {}: {problem}; using documented replay handling",
                     text(plan, "build_id", "(replay)")

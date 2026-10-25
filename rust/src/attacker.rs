@@ -126,6 +126,24 @@ fn storage(key: &str) -> bool {
     matches!(key, "gs" | "es" | "ds")
 }
 
+fn damage_spell_targetable(battle: &Battle, building: &Building, kind: &str) -> bool {
+    // output/research/usage/lightning-spell.md: Invisibility allows spell damage;
+    // Overgrowth and unrevealed Teslas do not. Mirror spells tick/quake_hit.
+    // https://clashofclans.fandom.com/wiki/Lightning_Spell
+    if !building.alive
+        || battle.t < building.overgrown_until
+        || building.key == "tesla" && !building.revealed
+        || storage(&building.key)
+    {
+        return false;
+    }
+    match kind {
+        "lightning" => !matches!(building.key.as_str(), "th" | "cc"),
+        "quake" => building.counted,
+        _ => false,
+    }
+}
+
 impl AttackPlan {
     pub fn defense_cluster(
         &self,
@@ -144,7 +162,10 @@ impl AttackPlan {
             .iter()
             .filter(|b| {
                 b.is_defense
-                    && battle.building_targetable(b.id)
+                    && (battle.building_targetable(b.id)
+                        || effects
+                            .iter()
+                            .any(|effect| damage_spell_targetable(battle, b, &effect.kind)))
                     && !self.snipe_claimed.contains(&b.id)
                     && hp.is_none_or(|hp| lookup(hp, b.id, b.hp) > 1e-9)
             })
@@ -649,6 +670,9 @@ impl AttackPlan {
         if available == 0 {
             return false;
         }
+        if self.finish_damage_spell(battle, "lightning", available) {
+            return true;
+        }
         let (hp, eq_hits) = self.cluster_state(battle);
         if battle
             .buildings
@@ -712,6 +736,9 @@ impl AttackPlan {
         if available <= i64::from(self.hold_line_quake(battle)) {
             return false;
         }
+        if self.finish_damage_spell(battle, "eq", available) {
+            return true;
+        }
         let (hp, hits) = self.cluster_state(battle);
         let effects = self.cluster_effects(battle, "eq", available);
         let Some(cluster) = self.defense_cluster(
@@ -728,6 +755,55 @@ impl AttackPlan {
             return false;
         };
         self.use_spell(battle, "eq", cluster.0, cluster.1);
+        true
+    }
+
+    fn finish_damage_spell(&mut self, battle: &mut Battle, key: &str, available: i64) -> bool {
+        // output/research/usage/cleanup-troops-and-end-of-attack-play.md:
+        // https://clashofclans.fandom.com/wiki/Lightning_Spell
+        // Policy: the existing late phase, spare stock and actual kill breakpoints.
+        if battle.t < 150.0 {
+            return false;
+        }
+        let (hp, eq_hits) = self.cluster_state(battle);
+        let effects = self.cluster_effects(battle, key, available);
+        let mut best: Option<(usize, BuildingId)> = None;
+        for building in &battle.buildings {
+            if !building.alive || !building.counted || self.snipe_claimed.contains(&building.id) {
+                continue;
+            }
+            // Only living buildings represented in the forecast can need a finish.
+            let remaining = lookup(&hp, building.id, 0.0);
+            if remaining <= 1e-9 {
+                continue;
+            }
+            let mut damage = 0.0;
+            let mut quakes = lookup(&eq_hits, building.id, building.eq_hits);
+            for (index, effect) in effects.iter().enumerate() {
+                if !damage_spell_targetable(battle, building, &effect.kind) {
+                    break;
+                }
+                if effect.kind == "quake" {
+                    damage += building.max_hp * effect.damage / (2 * quakes + 1) as f64;
+                    quakes += 1;
+                } else {
+                    damage += effect.damage;
+                }
+                if damage >= remaining - 1e-9 {
+                    let count = index + 1;
+                    if best.is_none_or(|(previous, _)| count < previous) {
+                        best = Some((count, building.id));
+                    }
+                    break;
+                }
+            }
+        }
+        let Some((_, target)) = best else {
+            return false;
+        };
+        let building = battle.building(target);
+        let (x, y) = (building.x, building.y);
+        self.use_spell(battle, key, x, y);
         true
     }
 
@@ -951,13 +1027,15 @@ impl AttackPlan {
                     ) * battle.atk_hero_mult;
             }
             if kit.has("Seeking Shield") {
+                // output/research/usage/seeking-shield.md: fixed ability damage.
+                // https://clashofclans.fandom.com/wiki/Seeking_Shield
                 damage += heroes::col(
                     battle,
                     "Seeking Shield",
                     kit.lv("Seeking Shield"),
                     &["projectile damage"],
                     0.0,
-                ) * battle.atk_hero_mult;
+                );
             }
             (
                 6.0,
@@ -1156,7 +1234,9 @@ impl AttackPlan {
                 } else if b.key == "ad" {
                     weight *= if healers != 0 { 0.5 } else { 0.0 };
                 } else if b.key == "sweeper" {
-                    weight = 0.0;
+                    // output/research/usage/air-sweeper.md: Sweepers displace Healers.
+                    // https://clashofclans.fandom.com/wiki/Air_Sweeper
+                    weight *= if healers != 0 { 0.5 } else { 0.0 };
                 }
                 if healers >= 4 || self.charge_hero.is_some() {
                     if b.key == "mono" {
@@ -1390,12 +1470,25 @@ impl AttackPlan {
             {
                 continue;
             }
+            if weapon.kind == Tag::Firespitter
+                && !crate::defense::firespitter_in_sector(battle, defense.id, x, y)
+            {
+                continue;
+            }
             let separation = py_hypot(defense.x - x, defense.y - y);
             if weapon.min_range <= separation && separation <= weapon.range {
-                incoming += weapon.damage / 0.1_f64.max(weapon.interval);
+                incoming += crate::defense::opening_damage(
+                    battle,
+                    defense.id,
+                    numbers.hp,
+                    is_hero(name),
+                    seconds,
+                    name == "Flame Flinger",
+                    flying,
+                );
             }
         }
-        let loss = 1.0_f64.min(incoming * seconds / 1.0_f64.max(numbers.hp));
+        let loss = 1.0_f64.min(incoming / 1.0_f64.max(numbers.hp));
         (damage, seconds, loss)
     }
 
@@ -1510,10 +1603,15 @@ impl AttackPlan {
             .copied()
             .filter(|id| battle.is_defense_target(*id))
             .collect();
+        let spell_defenses: Vec<_> = battle
+            .buildings
+            .iter()
+            .filter(|b| {
+                battle.is_defense_target(b.id) && damage_spell_targetable(battle, b, "lightning")
+            })
+            .map(|b| b.id)
+            .collect();
         let weights = self.snipe_weights(battle);
-        let mut targets = defenses.clone();
-        targets.sort_by(|a, b| lookup(&weights, *b, 0.0).total_cmp(&lookup(&weights, *a, 0.0)));
-        targets.truncate(24);
         let main_point = edge_point(battle, self.angle, 0.0);
         let tiles = battle.deploy_tiles().to_vec();
         let reached = self.opening_reachable(battle, &tiles);
@@ -1526,6 +1624,14 @@ impl AttackPlan {
         self.fallback = fallback;
         let mut out = Vec::new();
         for (name, (kind, reach, mut radius, damage)) in tools {
+            let tool_defenses = if kind == "lightning" {
+                &spell_defenses
+            } else {
+                &defenses
+            };
+            let mut targets = tool_defenses.to_vec();
+            targets.sort_by(|a, b| lookup(&weights, *b, 0.0).total_cmp(&lookup(&weights, *a, 0.0)));
+            targets.truncate(24);
             let (approach, base_cost) = if kind == "lightning" {
                 (0.5, 0.0)
             } else {
@@ -1556,15 +1662,18 @@ impl AttackPlan {
                 let end = |value: f64| {
                     (((value * RES as f64) as isize) + 1).min(n as isize).max(0) as usize
                 };
-                let accessible = (start(target.x - extent)..end(target.x + extent)).any(|i| {
-                    (start(target.y - extent)..end(target.y + extent)).any(|j| {
-                        reached[i * n + j]
-                            && target.edge_distance(
-                                (i as f64 + 0.5) / RES as f64,
-                                (j as f64 + 0.5) / RES as f64,
-                            ) <= approach
-                    })
-                });
+                // output/research/usage/lightning-spell.md: spells need no approach.
+                // https://clashofclans.fandom.com/wiki/Lightning_Spell
+                let accessible = kind == "lightning"
+                    || (start(target.x - extent)..end(target.x + extent)).any(|i| {
+                        (start(target.y - extent)..end(target.y + extent)).any(|j| {
+                            reached[i * n + j]
+                                && target.edge_distance(
+                                    (i as f64 + 0.5) / RES as f64,
+                                    (j as f64 + 0.5) / RES as f64,
+                                ) <= approach
+                        })
+                    });
                 if !accessible {
                     continue;
                 }
@@ -1703,7 +1812,7 @@ impl AttackPlan {
                     cost += 0.25 * seconds + 4.0 * loss;
                     let mut hits = Vec::new();
                     let mut value = -cost;
-                    for &id in &defenses {
+                    for &id in tool_defenses {
                         let defense = battle.building(id);
                         let mut hit = band.map_or_else(
                             || defense.edge_distance(center.0, center.1) <= radius,
@@ -1918,10 +2027,12 @@ impl AttackPlan {
         {
             return false;
         }
+        // output/research/usage/lightning-spell.md: concealed buildings take spells.
+        // https://clashofclans.fandom.com/wiki/Lightning_Spell
         if let Some(chosen) = self.snipe_lightning.clone().filter(|chosen| {
             self.snipe_lightning_left > 0
                 && battle.t >= self.snipe_lightning_at
-                && battle.building_targetable(chosen.target)
+                && damage_spell_targetable(battle, battle.building(chosen.target), "lightning")
                 && !self.snipe_claimed.contains(&chosen.target)
         }) {
             let available = self.snipe_lightning_count().min(self.snipe_lightning_left);

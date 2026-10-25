@@ -429,6 +429,140 @@ pub fn slow(battle: &Battle, owner: BuildingId) -> f64 {
     effects::building_slow_mult(battle.building(owner), battle.t)
 }
 
+fn hit_damage(
+    battle: &Battle,
+    owner: BuildingId,
+    max_hp: f64,
+    is_hero: bool,
+    damage_rage: f64,
+    held: Option<f64>,
+) -> f64 {
+    let w = weapon(battle, owner);
+    let mut damage = w.damage;
+    if w.kind == Tag::InfernoSingle {
+        damage = 0.0;
+        for &(start, value) in &w.extra.ramp {
+            if held.unwrap_or(w.lock_time) >= start {
+                damage = value;
+            }
+        }
+    }
+    damage *= damage_rage;
+    if w.kind == Tag::Monolith {
+        damage += w.extra.pct * max_hp / battle.def_mult;
+    } else if w.kind == Tag::Hunter && is_hero {
+        damage *= 2.0;
+    }
+    damage
+}
+
+fn candle_targets(battle: &Battle, owner: BuildingId) -> usize {
+    let w = weapon(battle, owner);
+    let Some(first) = battle.first_deploy_t else {
+        return w.extra.targets;
+    };
+    let active = battle.t - first;
+    if active < w.extra.melt1 {
+        6
+    } else if active < w.extra.melt2 {
+        4
+    } else {
+        3
+    }
+}
+
+// output/research/usage/dealing-with-monolith-and-inferno-towers.md:
+// https://clashofclans.fandom.com/wiki/Monolith
+// Policy estimate: uninterrupted lock, concentrated shots and sustained bursts.
+// Reuse combat hit damage without changing weapon or battle state.
+pub fn opening_damage(
+    battle: &Battle,
+    owner: BuildingId,
+    max_hp: f64,
+    is_hero: bool,
+    seconds: f64,
+    is_siege: bool,
+    flying: bool,
+) -> f64 {
+    let w = weapon(battle, owner);
+    if seconds <= 0.0 || w.ammunition == Some(0) || battle.building(owner).disabled(battle.t) {
+        return 0.0;
+    }
+    // output/research/usage/hero-sniping-of-exposed-defenses.md: TH16 must wake.
+    // https://clashofclans.fandom.com/wiki/Town_Hall/Giga_Inferno
+    if w.kind == Tag::GigaInferno && !battle.th_active() {
+        return 0.0;
+    }
+    if w.kind == Tag::SpellTower {
+        // game data v18.200.9 spells.csv: Spell Tower Poison has 60 DPS,
+        // HeroDamageMultiplier=20; Earthquake has five 6% hits 400 ms apart.
+        // Neither sets AffectsSiegeMachines. Mirror tower_cast, including the
+        // continuous 1.2 s trigger, cooldown and Earthquake's 0.3 s landing.
+        if is_siege {
+            return 0.0;
+        }
+        let exposure = 0.0_f64.max(seconds - 0.0_f64.max(w.cooldown) - 1.2);
+        if w.mode.as_deref() == Some("poison") {
+            let hero_mult = if is_hero { 0.2 } else { 1.0 };
+            return 60.0 * hero_mult * 12.0_f64.min(exposure);
+        }
+        if matches!(w.mode.as_deref(), Some("eq" | "quake" | "earthquake")) && !flying {
+            let hits = 5.0_f64.min(0.0_f64.max(((exposure - 0.3) / 0.4).ceil()));
+            return max_hp * 0.06 * hits;
+        }
+        return 0.0;
+    }
+    let damage_rage = rage(battle, owner);
+    let mut interval = 0.1_f64.max(w.interval);
+    if w.kind == Tag::InfernoSingle {
+        let mut total = 0.0;
+        for (index, &(start, _)) in w.extra.ramp.iter().enumerate() {
+            let end = w.extra.ramp.get(index + 1).map_or(seconds, |entry| entry.0);
+            let duration = 0.0_f64.max(seconds.min(end) - start);
+            total +=
+                hit_damage(battle, owner, max_hp, is_hero, damage_rage, Some(start)) * duration;
+        }
+        return total / interval * battle.def_mult;
+    }
+    let mut damage = hit_damage(battle, owner, max_hp, is_hero, damage_rage, None);
+    let mut extra_damage = 0.0;
+    match w.kind {
+        Tag::MultiArcher => damage *= 3.0,
+        // output/research/usage/crafting-station.md: unused flames concentrate.
+        // https://clashofclans.fandom.com/wiki/Hot_Candle
+        Tag::Candle => damage *= candle_targets(battle, owner) as f64,
+        Tag::Cake => damage += w.extra.bomb * damage_rage,
+        Tag::InfernoArtillery => {
+            damage *= w.extra.targets as f64;
+            // Existing pools do not stack or receive Rage/difficulty scaling.
+            extra_damage = w.extra.pool_dps * seconds;
+        }
+        Tag::Burst | Tag::MortarBurst | Tag::Firespitter => {
+            let shots = w.extra.shots as f64;
+            damage *= shots;
+            interval = 0.1_f64.max(w.interval + (shots - 1.0) * w.extra.gap);
+        }
+        Tag::Eagle => {
+            let shots = w.extra.shells as f64;
+            damage = (w.damage + w.extra.shock) * damage_rage * shots;
+            interval = 0.1_f64.max(w.interval + (shots - 1.0) * w.extra.gap);
+        }
+        Tag::Revenge => {
+            let Some((_, amount, cadence)) = revenge_profile(battle, owner, damage_rage) else {
+                return 0.0;
+            };
+            damage = amount;
+            interval = cadence;
+        }
+        Tag::Hook => damage = w.damage,
+        Tag::Sweeper | Tag::BhRepairOnly => return 0.0,
+        _ => {}
+    }
+    // Mirror hit_unit: scale weapon hits, cancelling Monolith's percent
+    // compensation in hit_damage; spell/poison pools remain unscaled.
+    damage * seconds / interval * battle.def_mult + extra_damage
+}
+
 // defense.py:601-633: carry cooldown remainders through up to twelve cycles.
 pub fn act(battle: &mut Battle, owner: BuildingId) {
     let t = battle.t;
@@ -518,18 +652,8 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
     let damage_rage = rage(battle, owner);
     match kind {
         Tag::Candle => {
-            let w = weapon(battle, owner);
-            if let Some(first) = battle.first_deploy_t {
-                let active = battle.t - first;
-                let targets = if active < w.extra.melt1 {
-                    6
-                } else if active < w.extra.melt2 {
-                    4
-                } else {
-                    3
-                };
-                weapon_mut(battle, owner).extra.targets = targets;
-            }
+            let targets = candle_targets(battle, owner);
+            weapon_mut(battle, owner).extra.targets = targets;
             return multi(battle, owner, damage_rage);
         }
         Tag::Cake => return cake(battle, owner, damage_rage),
@@ -578,14 +702,10 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
         if w.cooldown > 0.0 {
             return;
         }
-        let mut damage = 0.0;
-        for &(start, value) in &w.extra.ramp {
-            if w.lock_time >= start {
-                damage = value;
-            }
-        }
         // defense.py:767-780: ramp entries are full per-hit damage, at 128 ms.
-        battle.hit_unit(target, damage * damage_rage, None, "normal", None);
+        let unit = battle.unit(target);
+        let damage = hit_damage(battle, owner, unit.max_hp, unit.is_hero, damage_rage, None);
+        battle.hit_unit(target, damage, None, "normal", None);
         let actual = weapon_mut(battle, owner);
         actual.cooldown += actual.interval;
         if let Some(ammunition) = &mut actual.ammunition {
@@ -676,7 +796,8 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
             }
         },
         Tag::Monolith => {
-            let amount = damage + w.extra.pct * battle.unit(target).max_hp / battle.def_mult;
+            let unit = battle.unit(target);
+            let amount = hit_damage(battle, owner, unit.max_hp, unit.is_hero, damage_rage, None);
             battle.hit_unit(target, amount, None, "normal", None);
         }
         Tag::Ricochet => {
@@ -1018,8 +1139,12 @@ pub fn cake(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
     let (bx, by) = battle.entity_position(EntityRef::Building(owner));
     let pool = visible(battle, owner, w.range);
     let Some(target) = nearest(battle, &pool, bx, by) else {
+        weapon_mut(battle, owner).target = None;
         return;
     };
+    // output/research/usage/crafting-station.md: Cake exposes its firing target.
+    // https://clashofclans.fandom.com/wiki/Cake-A-Pult
+    weapon_mut(battle, owner).target = Some(target);
     let unit = battle.unit(target);
     let (x, y, flying) = (unit.x, unit.y, unit.flying);
     battle.splash_units(
@@ -1049,18 +1174,9 @@ pub fn cake(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
 // defense.py:910-919.
 pub fn hunter_hit(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage: f64) {
     let w = weapon(battle, owner).clone();
-    let multiplier = if battle.unit(target).is_hero {
-        2.0
-    } else {
-        1.0
-    };
-    battle.hit_unit(
-        target,
-        w.damage * damage_rage * multiplier,
-        None,
-        "normal",
-        None,
-    );
+    let unit = battle.unit(target);
+    let damage = hit_damage(battle, owner, unit.max_hp, unit.is_hero, damage_rage, None);
+    battle.hit_unit(target, damage, None, "normal", None);
     let level = Level::Int(w.extra.poison_level as i64);
     let movement = battle
         .catalog
@@ -1624,6 +1740,15 @@ fn super_wizard(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
     weapon_mut(battle, owner).cooldown += w.interval;
 }
 
+pub fn firespitter_in_sector(battle: &Battle, owner: BuildingId, x: f64, y: f64) -> bool {
+    // output/research/usage/firespitter.md: acquisition stays inside its sector.
+    // https://supercell.com/en/games/clashofclans/blog/game-updates/the-town-hall-17-update-is-here-2/
+    let building = battle.building(owner);
+    let w = weapon(battle, owner);
+    let angle = geom::py_atan2(y - building.y, x - building.x);
+    ((angle - w.facing + PI).rem_euclid(2.0 * PI) - PI).abs() <= w.extra.arc
+}
+
 // defense.py:1273-1334: native atan2 and Python modulo for sector tests.
 fn firespitter(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
     let w = weapon(battle, owner).clone();
@@ -1634,8 +1759,7 @@ fn firespitter(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
     let mut target = w.target;
     let in_sector = target.is_some_and(|target| {
         let unit = battle.unit(target);
-        ((geom::py_atan2(unit.y - by, unit.x - bx) - w.facing + PI).rem_euclid(2.0 * PI) - PI).abs()
-            <= w.extra.arc
+        firespitter_in_sector(battle, owner, unit.x, unit.y)
     });
     if target.map_or(true, |target| {
         let unit = battle.unit(target);
@@ -1646,8 +1770,7 @@ fn firespitter(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
         let mut candidates = Vec::new();
         for reference in visible(battle, owner, w.range) {
             let unit = battle.unit(reference);
-            let angle = geom::py_atan2(unit.y - by, unit.x - bx);
-            if ((angle - w.facing + PI).rem_euclid(2.0 * PI) - PI).abs() <= w.extra.arc {
+            if firespitter_in_sector(battle, owner, unit.x, unit.y) {
                 candidates.push(reference);
             }
         }
@@ -1795,10 +1918,14 @@ pub fn revenge_impact(battle: &mut Battle, pending: Pending) {
 }
 
 // defense.py:_revenge: stage and damage are fixed when each shot launches.
-fn revenge(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage: f64) {
+fn revenge_profile(
+    battle: &Battle,
+    owner: BuildingId,
+    damage_rage: f64,
+) -> Option<(usize, f64, f64)> {
     let destroyed = battle.destroyed_counted;
     if destroyed < 5 {
-        return;
+        return None;
     }
     let stage = if destroyed >= 50 {
         3
@@ -1808,7 +1935,6 @@ fn revenge(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage:
         1
     };
     let building = battle.building(owner);
-    let (x, y) = (building.x, building.y);
     let damage = if stage == 1 {
         weapon(battle, owner).damage
     } else {
@@ -1823,6 +1949,22 @@ fn revenge(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage:
             )
             .expect("Revenge Tower primary damage")
     } * damage_rage;
+    let interval = if stage == 1 {
+        1.2
+    } else if stage == 2 {
+        0.6
+    } else {
+        0.35
+    };
+    Some((stage, damage, interval))
+}
+
+fn revenge(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage: f64) {
+    let Some((stage, damage, interval)) = revenge_profile(battle, owner, damage_rage) else {
+        return;
+    };
+    let building = battle.building(owner);
+    let (x, y) = (building.x, building.y);
     let shot = RevengeShot {
         owner,
         stage,
@@ -1830,13 +1972,7 @@ fn revenge(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage:
     };
     let at = battle.t;
     revenge_projectile(battle, shot, target, damage, damage_rage, x, y, at, 1.35);
-    weapon_mut(battle, owner).cooldown += if stage == 1 {
-        1.2
-    } else if stage == 2 {
-        0.6
-    } else {
-        0.35
-    };
+    weapon_mut(battle, owner).cooldown += interval;
 }
 
 // defense.py:1373-1409: health rescales immediately; damage lingers one second.

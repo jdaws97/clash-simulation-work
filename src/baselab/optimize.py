@@ -591,7 +591,9 @@ def mutate(lay: Layout, rng: random.Random, diag=None) -> tuple[Layout, str]:
             "sweeper": dirs,
             "mgt": ["fast", "long"],
             "crafting": ["cake", "candle", "hunter"],
-            "firespitter": dirs,
+            # output/research/usage/firespitter.md: facing changes in 90-degree steps.
+            # https://clash-of-clans.1337wiki.com/firespitter/
+            "firespitter": ["N", "E", "S", "W"],
         }
         if new.town_hall >= 18 and rng.random() < 0.15:
             new.guardian = rng.choice(

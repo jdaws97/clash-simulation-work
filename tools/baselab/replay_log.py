@@ -23,6 +23,7 @@ Usage: python tools/baselab/replay_log.py BATTLELOG.json [--base data/reference-
 from __future__ import annotations
 
 import argparse
+import hashlib
 import itertools
 import json
 import math
@@ -46,7 +47,7 @@ from baselab.evaluate import (
     techniques,
 )  # noqa: E402
 from baselab.layout import Layout  # noqa: E402
-from baselab.meta_armies import SPELL_KEYS  # noqa: E402
+from baselab.meta_armies import SPELL_KEYS, _share_troops, data, family_of  # noqa: E402
 from decode_battlelog import decode  # noqa: E402
 from snapshot import (
     load_snapshot,
@@ -69,6 +70,9 @@ def to_build(army: dict, th: int, n: int) -> tuple[dict, list]:
             unknown.append(s)
     cc = {}
     for c, t in army.get("cc_troops", []) + army.get("cc_spells", []):
+        if "#" in t:
+            unknown.append(t)
+            continue
         if t.endswith("Spell") and t not in SPELL_KEYS:
             unknown.append(t)
             continue
@@ -122,27 +126,53 @@ def _run(args):
     return r.stars, r.destruction, r.time
 
 
+def current_strength(th, family):
+    """Shared fitter/replay lookup: share-weighted geometric family strength."""
+    for level in dict.fromkeys((th, 16)):
+        values = [
+            (
+                STRENGTH[f"meta:{b['archetype']}-{b['th']}-{b['build']}"],
+                b.get("share", 1.0),
+            )
+            for b in data()["builds"]
+            if b["th"] == level
+            and family_of(b) == family
+            and f"meta:{b['archetype']}-{b['th']}-{b['build']}" in STRENGTH
+        ]
+        if values:
+            total = sum(w for _, w in values)
+            return math.exp(sum(w * math.log(v) for v, w in values) / total)
+    fallback = {
+        "dragon": "hydra",
+        "thrower": "throwers",
+        "electro-dragon": "edrag",
+        "root-rider": "rootrider",
+    }
+    return STRENGTH.get(fallback.get(family), 1.0)
+
+
 def family_strength(build) -> float:
-    """Calibrated strength of the closest meta archetype (by main troop)."""
-    t = build["troops"]
-    key = None
-    if "Root Rider" in t:
-        key = "root-rider"
-    elif "Thrower" in t:
-        key = "mass-thrower"
-    elif "Electro Dragon" in t:
-        key = "e-drag-spam"
-    elif "Dragon" in t:
-        key = "mass-dragons"
-    if key is None:
-        return 1.0
-    # The attacker's own Town Hall first (TH17 attackers were scored with TH16
-    # strengths before 2026-10-24), then TH16 as before.
-    for th in (build.get("th"), 16):
-        vals = [v for k, v in STRENGTH.items() if k.startswith(f"meta:{key}-{th}-")]
-        if vals:
-            return sum(vals) / len(vals)
-    return 1.0
+    return current_strength(build.get("th"), family_of(build))
+
+
+def battle_identity(battle):
+    """Hash the fitter's deduplication identity, without exposing share codes."""
+    identity = (
+        battle["battleTimestamp"],
+        battle["opponentTownHallLevel"],
+        battle.get("armyShareCode") or "",
+    )
+    return hashlib.sha256(
+        json.dumps(identity, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def replay_seed(identity, seed_index, side, angles):
+    """All sides share skill; five consecutive seeds cover all five quantiles."""
+    offset = int(identity[:8], 16)
+    return 5 * offset * angles + group_seed(
+        offset + seed_index, seed_index, side, angles
+    )
 
 
 HISTORY = ROOT / "data" / "live" / "base-history.json"
@@ -164,14 +194,31 @@ def defensive_setup(
     battle_time: str,
     own: dict | None = None,
     base_override: str | None = None,
+    *,
+    historical_only: bool = False,
 ) -> tuple[dict, str, dict | None]:
-    """Load a frozen defense, or the explicitly identified current-level fallback."""
+    """Load a frozen defense, or a historical/current fallback as requested."""
     if base_override is None:
         entry = snapshot_for_battle(history, battle_time)
         if entry is not None:
             # docs/GAP_ANALYSIS.md:45-47: today's upgrades are not historical defense.
             frozen = load_snapshot(entry)
             return Layout.from_json(frozen).to_json(), entry["layout"], entry
+    if historical_only:
+        # docs/GAP_ANALYSIS.md:45-48: fitting must never borrow today's levels.
+        day = timestamp(battle_time).date().isoformat()
+        periods = [
+            p
+            for p in history.get("periods", [])
+            if p["from"] <= day and (p.get("to") is None or day <= p["to"])
+        ]
+        if len(periods) != 1 or not periods[0].get("layout"):
+            raise ValueError("missing_or_ambiguous_history")
+        base = periods[0]["layout"]
+        layout = Layout.load(ROOT / base)
+        if not layout.levels or not layout.hero_levels or not layout.wall_level:
+            raise ValueError("missing_historical_levels")
+        return layout.to_json(), base, None
     if own is None:
         own = json.loads((ROOT / "data/your-levels.json").read_text(encoding="utf-8"))
     day = timestamp(battle_time).strftime("%Y%m%d")
@@ -209,6 +256,10 @@ def main():
     ap.add_argument("--techniques", action="store_true")
     ap.add_argument("--strength", choices=["calibrated", "raw"], default="calibrated")
     ap.add_argument("--out")
+    ap.add_argument("--exclude-unknown", action="store_true")
+    ap.add_argument(
+        "--report", action="store_true", help="include exclusion counts in JSON output"
+    )
     args = ap.parse_args()
     if args.angles < SCOUT:
         ap.error(
@@ -220,11 +271,23 @@ def main():
     # a battle log file from the API, or the growing archive (snapshot_log.py)
     items = read_battles(Path(args.log))
     rows = []
+    excluded_unknown = 0
     for n, b in enumerate(items):
         if b.get("battleType") != "ranked" or b["attack"]:
             continue
         day = b["battleTimestamp"][:8]
         if not args.since <= day <= args.until:
+            continue
+        identity = battle_identity(b)
+        try:
+            code = b.get("armyShareCode") or ""
+            _share_troops(code)  # Like the fitter, reject missing/undecodable camps.
+            build, unknown = to_build(decode(code), b["opponentTownHallLevel"], n)
+        except (KeyError, TypeError, ValueError):
+            excluded_unknown += 1
+            continue
+        if args.exclude_unknown and unknown:
+            excluded_unknown += 1
             continue
         battle_time = b["battleTimestamp"]
         entry = None if args.base else snapshot_for_battle(history, battle_time)
@@ -249,9 +312,6 @@ def main():
                 "Historical CC troops and hero assignments are unverified.",
                 flush=True,
             )
-        build, unknown = to_build(
-            decode(b.get("armyShareCode", "")), b["opponentTownHallLevel"], n
-        )
         st = family_strength(build) if args.strength == "calibrated" else 1.0
         techs = techniques(build) if args.techniques else [None]
         jobs, keys = [], []
@@ -263,7 +323,7 @@ def main():
                             lj,
                             build,
                             2 * math.pi * k / args.angles + 0.21,
-                            5000 * (n + 1) + group_seed(n + s, s, k, args.angles),
+                            replay_seed(identity, s, k, args.angles),
                             st,
                             tech,
                         )
@@ -296,6 +356,7 @@ def main():
         )
         row = dict(
             n=n,
+            battle_id=identity,
             day=day,
             th=b["opponentTownHallLevel"],
             army=main_troop,
@@ -348,8 +409,17 @@ def main():
                 f"== time to 3-star on {len(tt)} real 3-star defenses: sim/real {ratio:.2f} (1.00 = same speed; check 6 target 0.85-1.15)",
                 flush=True,
             )
+    print(
+        f"== engine: python; excluded unknown/undecodable armies: {excluded_unknown}",
+        flush=True,
+    )
     if args.out:
-        Path(args.out).write_text(json.dumps(rows, indent=1))
+        report = {
+            "rows": rows,
+            "excluded_unknown": excluded_unknown,
+            "engine": "python",
+        }
+        Path(args.out).write_text(json.dumps(report if args.report else rows, indent=1))
 
 
 if __name__ == "__main__":

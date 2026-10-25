@@ -2731,6 +2731,10 @@ def _heal_eligible(battle, healer, ally, *, primary=False):
         return False
     if ally.flying and not healer.spec.heal_air:
         return False
+    # output/research/usage/unicorn.md: Healers cannot heal Unicorns.
+    # https://clashofclans.fandom.com/wiki/Unicorn
+    if healer.name == "Healer" and ally.name == "Unicorn":
+        return False
     if primary and (
         ally.name == "Unicorn" or ally.spec.attack in ("heal", "heal_chain")
     ):

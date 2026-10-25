@@ -24,6 +24,7 @@ from heapq import nlargest
 
 from ..loadouts import HeroLoadout as L
 from ..mechanics import WORLD
+from . import defense as defense_combat
 from . import heroes, spells, stats
 from .entities import Building
 
@@ -52,6 +53,9 @@ THREAT = {
     "bh": 1,
     "mortar": 1,
     "sweeper": 1,
+    # output/research/usage/crafting-station.md: crafted weapons need counterplay.
+    # https://clashofclans.fandom.com/wiki/Crafting_Station
+    "crafting": 5,
 }
 
 # Learnable attacker policy: every decision threshold of the brain below.
@@ -300,6 +304,22 @@ def _cheb(x, y):
     return max(abs(x - CENTER), abs(y - CENTER))
 
 
+def damage_spell_targetable(battle, building, kind):
+    # output/research/usage/lightning-spell.md: Invisibility allows spell damage;
+    # Overgrowth and unrevealed Teslas do not. Mirror spells.tick/quake_hit.
+    # https://clashofclans.fandom.com/wiki/Lightning_Spell
+    if (
+        not building.alive
+        or battle.t < building.overgrown_until
+        or (building.key == "tesla" and not building.revealed)
+        or building.key in spells.STORAGES
+    ):
+        return False
+    if kind == "lightning":
+        return building.key not in ("th", "cc")
+    return kind == "quake" and building.counted
+
+
 def defense_cluster(
     battle,
     effects,
@@ -323,7 +343,10 @@ def defense_cluster(
         b
         for b in battle.buildings
         if b.is_defense
-        and battle.building_targetable(b)
+        and (
+            battle.building_targetable(b)
+            or any(damage_spell_targetable(battle, b, kind) for kind, _, _ in effects)
+        )
         and b.id not in claimed
         and (hp is None or hp.get(b.id, b.hp) > 1e-9)
     ]
@@ -692,6 +715,17 @@ class AttackPlan:
                 for name, count in wave.units
             )
             quantities.extend(self.cleanup + self.breakers)
+            # output/research/usage/lavaloon.md: summons cannot occupy camps.
+            # https://clashofclans.fandom.com/wiki/Lavaloon_Puppet
+            # Check every kind before a waivable level/count error can stop
+            # validation. Unknown names still fail the normal validation below.
+            for name, count in quantities:
+                try:
+                    kind = stats.record(name)["kind"]
+                except (KeyError, ValueError, TypeError):
+                    continue
+                if count and kind not in ("troop", "super_troop", "hero"):
+                    out.append(f"{name} is not a camp troop")
             roster = [name for name, _ in self.funnel_heroes] + list(self.push_heroes)
             if self.charge_hero:
                 roster.append(self.charge_hero)
@@ -965,7 +999,9 @@ class AttackPlan:
             or getattr(self, "real_battle", False)  # replay_observed.py
         )
         for problem in self.legal():
-            if battle_log or self._logged_exception(problem):
+            if not problem.endswith(" is not a camp troop") and (
+                battle_log or self._logged_exception(problem)
+            ):
                 warnings.warn(
                     f"Logged army {getattr(self, 'build_id', '(replay)')}: {problem}; using documented replay handling",
                     RuntimeWarning,
@@ -1305,7 +1341,9 @@ class AttackPlan:
             elif building.key == "ad":
                 weight *= 0.5 if healers else 0.0
             elif building.key == "sweeper":
-                weight = 0.0
+                # output/research/usage/air-sweeper.md: Sweepers displace Healers.
+                # https://clashofclans.fandom.com/wiki/Air_Sweeper
+                weight *= 0.5 if healers else 0.0
             if healers >= 4 or self.charge_hero:
                 if building.key == "mono":
                     weight *= 1.6
@@ -1415,12 +1453,25 @@ class AttackPlan:
                 and battle.deployed_housing < weapon.extra["activation"]
             ):
                 continue
+            if (
+                weapon.kind == "firespitter"
+                and not defense_combat.firespitter_in_sector(weapon, x, y)
+            ):
+                continue
             separation = math.hypot(defense.x - x, defense.y - y)
             if weapon.min_range <= separation <= weapon.range:
-                incoming += weapon.damage / max(0.1, weapon.interval)
+                incoming += defense_combat.opening_damage(
+                    battle,
+                    weapon,
+                    numbers["hp"],
+                    name in heroes.HEROES,
+                    seconds,
+                    is_siege=name == "Flame Flinger",
+                    flying=flying,
+                )
         # Wiki: Rocket Spear, X-Bows can retaliate; high damage can waste the volley.
         # Policy: HP loss lowers kill confidence and costs up to 4 THREAT units.
-        loss = min(1.0, incoming * seconds / max(1.0, numbers["hp"]))
+        loss = min(1.0, incoming / max(1.0, numbers["hp"]))
         return damage, seconds, loss
 
     def _snipe_tools(self):
@@ -1505,8 +1556,13 @@ class AttackPlan:
         # Policy: cap scouting at 24 valuable defenses and eight drops per tool/target.
         visible = [b for b in battle.buildings if battle.building_targetable(b)]
         defenses = [b for b in visible if battle.is_defense_target(b)]
+        spell_defenses = [
+            b
+            for b in battle.buildings
+            if battle.is_defense_target(b)
+            and damage_spell_targetable(battle, b, "lightning")
+        ]
         weights = self._snipe_weights(battle)
-        targets = nlargest(24, defenses, key=lambda b: weights[b.id])
         main_point = edge_point(battle, self.angle)
         tiles = battle.deploy_tiles()
         reached = self._opening_reachable(battle, tiles)
@@ -1523,6 +1579,8 @@ class AttackPlan:
             self._fallback = fallback
         out = []
         for name, (kind, reach, radius, damage) in tools:
+            tool_defenses = spell_defenses if kind == "lightning" else defenses
+            targets = nlargest(24, tool_defenses, key=lambda b: weights[b.id])
             # Wiki: Giant Arrow/Fireball, the caster's ordinary range controls approach.
             if kind == "lightning":
                 approach = 0.5
@@ -1541,7 +1599,9 @@ class AttackPlan:
                     continue
                 extent = target.half_hit + approach
                 n = battle.grid.n
-                accessible = any(
+                # output/research/usage/lightning-spell.md: spells need no approach.
+                # https://clashofclans.fandom.com/wiki/Lightning_Spell
+                accessible = kind == "lightning" or any(
                     reached[i][j]
                     and target.edge_distance((i + 0.5) / RES, (j + 0.5) / RES)
                     <= approach
@@ -1645,7 +1705,7 @@ class AttackPlan:
                     cost += 0.25 * seconds + 4.0 * loss
                     hits = {}
                     value = -cost
-                    for defense in defenses:
+                    for defense in tool_defenses:
                         if band is not None:
                             hit = _band_hit(defense, band, effect_kind, radius)
                         else:
@@ -1833,11 +1893,13 @@ class AttackPlan:
         # Wiki: Lightning Spell, pace the selected stack in its reserved action slots.
         # Deployments and casts keep the value ordering, before hero activation.
         chosen = self._snipe_lightning
+        # output/research/usage/lightning-spell.md: concealed buildings take spells.
+        # https://clashofclans.fandom.com/wiki/Lightning_Spell
         if (
             chosen is not None
             and self._snipe_lightning_left > 0
             and battle.t >= self._snipe_lightning_at
-            and battle.building_targetable(chosen.target)
+            and damage_spell_targetable(battle, chosen.target, "lightning")
             # Wiki: Rocket Spear, retain spells while a lethal opening is claimed.
             and chosen.target.id not in self._snipe_claimed
         ):
@@ -2546,13 +2608,12 @@ class AttackPlan:
                 )
             if u.kit.has("Seeking Shield"):
                 # Wiki: Seeking Shield, four defense-prioritized hits, unlimited travel.
-                damage += (
-                    heroes._col(
-                        "Seeking Shield",
-                        u.kit.lv("Seeking Shield"),
-                        "projectile damage",
-                    )
-                    * battle.atk_hero_mult
+                # output/research/usage/seeking-shield.md: fixed ability damage.
+                # https://clashofclans.fandom.com/wiki/Seeking_Shield
+                damage += heroes._col(
+                    "Seeking Shield",
+                    u.kit.lv("Seeking Shield"),
+                    "projectile damage",
                 )
             # Policy: value successive targets in the next 6-tile neighborhood.
             radius = 6.0
@@ -2959,6 +3020,8 @@ class AttackPlan:
         available = self._unreserved_spells("lightning")
         if not available:
             return False
+        if self._finish_damage_spell(battle, "lightning", available):
+            return True
         hp, eq_hits = self._cluster_state(battle)
         if any(b.alive and b.key == "ad" and hp[b.id] > 1e-9 for b in battle.buildings):
             return False
@@ -3001,6 +3064,8 @@ class AttackPlan:
         available = self._spare_quakes(battle)
         if available <= int(self._hold_line_quake(battle)):
             return False
+        if self._finish_damage_spell(battle, "eq", available):
+            return True
         hp, eq_hits = self._cluster_state(battle)
         cluster = defense_cluster(
             battle, self._cluster_effects("eq", available), hp=hp, eq_hits=eq_hits
@@ -3008,6 +3073,47 @@ class AttackPlan:
         if cluster is None:
             return False
         self._use(battle, "eq", cluster[0], cluster[1])
+        return True
+
+    def _finish_damage_spell(self, battle, key, available):
+        # output/research/usage/cleanup-troops-and-end-of-attack-play.md:
+        # https://clashofclans.fandom.com/wiki/Lightning_Spell
+        # Policy: use the existing 150-second late phase, spare stock only, and
+        # actual kill breakpoints. Counted buildings matter even without weapons.
+        if battle.t < 150.0:
+            return False
+        hp, eq_hits = self._cluster_state(battle)
+        effects = self._cluster_effects(key, available)
+        best = None
+        for building in battle.buildings:
+            if (
+                not building.alive
+                or not building.counted
+                or building.id in getattr(self, "_snipe_claimed", ())
+            ):
+                continue
+            # Only living buildings represented in the forecast can need a finish.
+            remaining = hp.get(building.id, 0.0)
+            if remaining <= 1e-9:
+                continue
+            damage = 0.0
+            quakes = eq_hits[building.id]
+            for count, (kind, _, value) in enumerate(effects, 1):
+                if not damage_spell_targetable(battle, building, kind):
+                    break
+                if kind == "quake":
+                    damage += building.max_hp * value / (2 * quakes + 1)
+                    quakes += 1
+                else:
+                    damage += value
+                if damage >= remaining - 1e-9:
+                    if best is None or count < best[0]:
+                        best = (count, building)
+                    break
+        if best is None:
+            return False
+        target = best[1]
+        self._use(battle, key, target.x, target.y)
         return True
 
     def _cargo_support(self, battle):
@@ -3019,7 +3125,9 @@ class AttackPlan:
             entry if isinstance(entry, str) else entry.get("name") or entry["type"]
             for entry in self.cc_troops
         }
-        supported = names & {"Super Archer", "Super Wizard"}
+        # output/research/usage/super-minion.md: Blimp cargo needs reserved support.
+        # https://clashofclans.fandom.com/wiki/Super_Minion
+        supported = names & {"Super Archer", "Super Wizard", "Super Minion"}
         if self.siege == "Battle Blimp" and (
             self._spells0.get("clone", 0) or self._cc_spells0.get("clone", 0)
         ):

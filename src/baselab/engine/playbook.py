@@ -480,7 +480,29 @@ class PlaybookPlan(AttackPlan):
             return any(self._impossible(battle, x) for x in w["all"])
         if "any" in w:
             return all(self._impossible(battle, x) for x in w["any"])
-        return any(k in w and self._down(battle, w[k]) for k in UNIT_TRIGGERS)
+        return any(
+            k in w and self._down(battle, w[k]) and not self._recoverable(battle, w[k])
+            for k in UNIT_TRIGGERS
+        )
+
+    def _recoverable(self, battle, name):
+        # output/research/usage/revive-spell.md: unused abilities survive KO.
+        # https://clashofclans.fandom.com/wiki/Revive_Spell
+        return self._fallen(battle, (name,)) is not None and (
+            self.spells.get("revive", 0) > 0
+            or any(f.kind in ("revive_cast", "revive_due") for f in battle.fields)
+        )
+
+    def _awaiting_revive(self, battle, st):
+        at = str(st.get("at", ""))
+        target = None
+        if at.startswith(("unit:", "unit_ahead:")) and st.get("what") != "Revive Spell":
+            target = at.split(":", 1)[1]
+        elif st["action"] == "ability":
+            target = st.get("what")
+        return bool(
+            target and self._down(battle, target) and self._recoverable(battle, target)
+        )
 
     def _fallen(self, battle, names=()):
         """The most recently knocked-out hero a Revive Spell can bring back
@@ -930,6 +952,8 @@ class PlaybookPlan(AttackPlan):
 
     def _cannot(self, battle, st):
         """Why step st can no longer happen (None while it still can)."""
+        if self._awaiting_revive(battle, st):
+            return None
         act, what = st["action"], st.get("what")
         at = str(st.get("at", ""))
         target = None
@@ -996,6 +1020,36 @@ class PlaybookPlan(AttackPlan):
                 return "no siege left"
         return None
 
+    def _release_siege(self, battle, st):
+        if not st.get("at"):
+            return battle.release_siege(st.get("what"))
+        unit = next(
+            (
+                u
+                for u in battle.attackers
+                if u.alive
+                and u.kind == "siege"
+                and (not st.get("what") or u.name == st["what"])
+            ),
+            None,
+        )
+        if unit is None:
+            return False
+        # output/research/usage/super-minion.md: release Blimp at the chosen cluster.
+        # https://clashofclans.fandom.com/wiki/Battle_Blimp
+        # Policy: bind the anchor once; half a tile is the arrival tolerance.
+        if not hasattr(self, "_siege_landings"):
+            self._siege_landings = {}
+        if st["id"] not in self._siege_landings:
+            position = self.anchor(battle, st["at"])
+            if position is None:
+                return False
+            self._siege_landings[st["id"]] = position
+        x, y = self._siege_landings[st["id"]]
+        if math.hypot(unit.x - x, unit.y - y) > 0.5:
+            return False
+        return battle.release_siege(st.get("what"))
+
     def on_tick(self, battle):
         if not hasattr(self, "_deployed"):
             self._deployed = set()
@@ -1057,6 +1111,9 @@ class PlaybookPlan(AttackPlan):
             rep = s.get("every")
             if sid in self._cancelled or (sid in self._done and not rep):
                 continue
+            # Do not start no-target expiry clocks while revival is still possible.
+            if self._awaiting_revive(battle, s):
+                continue
             act = s["action"]
             forced = False
             if rep and sid in self._done:
@@ -1094,7 +1151,7 @@ class PlaybookPlan(AttackPlan):
             ok = False
             before = self.inventory.get(s.get("what"), 0)
             if act == "release_siege":
-                ok = battle.release_siege(s.get("what"))
+                ok = self._release_siege(battle, s)
             elif act == "ability":
                 ok = self._ability(battle, s)
             else:

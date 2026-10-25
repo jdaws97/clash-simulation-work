@@ -173,6 +173,21 @@ def _eligible(tr: Trap, u, t=0.0) -> bool:
 
 def tick(battle):
     t = battle.t
+    # output/research/usage/bomb.md: Bombs deal damage and knock back small troops.
+    # https://clashofclans.fandom.com/wiki/Bomb
+    # Canonical order also makes damage callbacks independent of serialization.
+    due_bombs = sorted(
+        (
+            tr
+            for tr in battle.traps
+            if tr.armed and tr.key in ("bomb", "giant") and 0 <= tr.fuse_at <= t
+        ),
+        key=lambda tr: (tr.fuse_at, tr.x, tr.y, tr.key, tr.damage, tr.radius),
+    )
+    pushes = []
+    for tr in due_bombs:
+        _fire(battle, tr, pushes)
+    _apply_bomb_pushes(battle, pushes)
     for tr in battle.traps:
         if tr.extra.get("state") == "flight":
             _seeking_step(battle, tr)
@@ -198,18 +213,31 @@ def tick(battle):
             _fire(battle, tr)
 
 
-def _fire(battle, tr: Trap):
+def _fire(battle, tr: Trap, pushes=None):
     # Restore the damage label afterwards: later untagged hits in the same
     # tick (Clan Castle, Guardians, attackers) must not be credited to traps.
 
     prev = battle._src
     try:
-        _fire_effect(battle, tr)
+        _fire_effect(battle, tr, pushes)
     finally:
         battle._src = prev
 
 
-def _fire_effect(battle, tr: Trap):
+def _apply_bomb_pushes(battle, pushes):
+    totals = {}
+    for unit, dx, dy in pushes:
+        old_x, old_y = totals.get(unit, (0.0, 0.0))
+        totals[unit] = (old_x + dx, old_y + dy)
+    for unit in sorted(totals, key=lambda u: u.id):
+        if unit.alive:
+            dx, dy = totals[unit]
+            if dx or dy:
+                battle._nudge(unit, dx, dy)
+            unit.target = unit.wall_target = None
+
+
+def _fire_effect(battle, tr: Trap, pushes=None):
     tr.armed = False
     t = battle.t
     battle._src = "trap:" + tr.key
@@ -218,6 +246,9 @@ def _fire_effect(battle, tr: Trap):
         battle.log.append((round(t, 1), "trap", tr.key))
     k = tr.key
     if k in ("bomb", "giant"):
+        deferred = pushes is not None
+        if pushes is None:
+            pushes = []
         battle.splash_units(
             tr.x,
             tr.y,
@@ -246,8 +277,11 @@ def _fire_effect(battle, tr: Trap):
                 d = dist(u.x, u.y, tr.x, tr.y)
                 if d > 0:
                     push = TRAP_PUSH / u.housing
-                    battle._nudge(u, push * (u.x - tr.x) / d, push * (u.y - tr.y) / d)
-                u.target = u.wall_target = None
+                    pushes.append((u, push * (u.x - tr.x) / d, push * (u.y - tr.y) / d))
+                else:
+                    pushes.append((u, 0.0, 0.0))
+        if not deferred:
+            _apply_bomb_pushes(battle, pushes)
     elif k == "airbomb":
         # Opening time: FUSE (ActionFrame=7).
 

@@ -606,6 +606,9 @@ impl Battle {
             for reference in self.attackers_near(x, y, p.radius) {
                 let u = self.unit(reference);
                 if u.alive
+                    // output/research/usage/totem-spell.md: Totems stay fixed.
+                    // https://clashofclans.fandom.com/wiki/Totem_Spell
+                    && u.name_id != Name::Totem
                     && !u.is_hero
                     && !matches!(u.kind, Tag::Pet | Tag::Siege | Tag::SiegeIdle)
                     && 0 < u.housing
@@ -636,6 +639,7 @@ impl Battle {
             for reference in self.attackers_near(x, y, p.radius) {
                 let u = self.unit(reference);
                 if u.alive
+                    && u.name_id != Name::Totem
                     && !u.flying
                     && !u.is_hero
                     && !matches!(u.kind, Tag::Pet | Tag::Siege | Tag::SiegeIdle)

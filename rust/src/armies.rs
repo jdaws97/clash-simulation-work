@@ -141,7 +141,9 @@ pub fn family_of(build: &Json) -> Option<&'static str> {
             ("Super Bowler", "super-bowler"),
             ("Meteor Golem", "meteor-golem"),
             ("Super Yeti", "yeti"),
-            ("Yeti", "yeti"),
+            // output/research/usage/yeti.md: no cited ordinary-Yeti book exists.
+            // https://clashofclans.fandom.com/wiki/Yeti
+            ("Yeti", "ordinary-yeti"),
             ("Ruin Witch", "druid-ruin-witch"),
             ("Super Minion", "super-minion-air"),
             ("Lava Hound", "lavaloon"),

@@ -997,6 +997,106 @@ def _slow(battle, b):
     return effects.slow_mult(b, battle.t)
 
 
+def _hit_damage(battle, w, max_hp, is_hero, rage, *, held=None):
+    """Damage of one executed weapon hit, before the recipient's reductions."""
+    damage = w.damage
+    if w.kind == "inferno_single":
+        damage = 0.0
+        for start, value in w.extra["ramp"]:
+            if (w.lock_time if held is None else held) >= start:
+                damage = value
+    damage *= rage
+    if w.kind == "monolith":
+        damage += w.extra["pct"] * max_hp / battle.def_mult
+    elif w.kind == "hunter" and is_hero:
+        damage *= 2.0
+    return damage
+
+
+def _candle_targets(battle, w):
+    first = battle.first_deploy_t
+    if first is None:
+        return w.extra["targets"]
+    active = battle.t - first
+    return 6 if active < w.extra["melt1"] else 4 if active < w.extra["melt2"] else 3
+
+
+def opening_damage(
+    battle, w, max_hp, is_hero, seconds, *, is_siege=False, flying=False
+):
+    """Estimate lone-target exposure using combat hit damage and firing cadence."""
+    # output/research/usage/dealing-with-monolith-and-inferno-towers.md:
+    # https://clashofclans.fandom.com/wiki/Monolith
+    # Policy estimate: uninterrupted lock, concentrated shots and sustained bursts.
+    # It predicts exposure; it does not execute attacks or change weapon state.
+    if seconds <= 0 or w.ammunition == 0 or w.owner.disabled(battle.t):
+        return 0.0
+    # output/research/usage/hero-sniping-of-exposed-defenses.md: TH16 must wake.
+    # https://clashofclans.fandom.com/wiki/Town_Hall/Giga_Inferno
+    if w.kind == "giga_inferno" and not battle.th_active:
+        return 0.0
+    if w.kind == "spell_tower":
+        # game data v18.200.9 spells.csv: Spell Tower Poison has 60 DPS,
+        # HeroDamageMultiplier=20; Earthquake has five 6% hits 400 ms apart.
+        # Neither sets AffectsSiegeMachines. Mirror tower_cast, including the
+        # continuous 1.2 s trigger, cooldown and Earthquake's 0.3 s landing.
+        if is_siege:
+            return 0.0
+        exposure = max(0.0, seconds - max(0.0, w.cooldown) - 1.2)
+        if w.mode == "poison":
+            return 60.0 * (0.2 if is_hero else 1.0) * min(12.0, exposure)
+        if w.mode in ("eq", "quake", "earthquake") and not flying:
+            hits = min(5, max(0, math.ceil((exposure - 0.3) / 0.4)))
+            return max_hp * 0.06 * hits
+        return 0.0
+    rage = _rage(battle, w.owner)
+    interval = max(0.1, w.interval)
+    if w.kind == "inferno_single":
+        total = 0.0
+        ramp = w.extra["ramp"]
+        for index, (start, _) in enumerate(ramp):
+            end = ramp[index + 1][0] if index + 1 < len(ramp) else seconds
+            duration = max(0.0, min(seconds, end) - start)
+            total += (
+                _hit_damage(battle, w, max_hp, is_hero, rage, held=start) * duration
+            )
+        return total / interval * battle.def_mult
+    damage = _hit_damage(battle, w, max_hp, is_hero, rage)
+    extra_damage = 0.0
+    if w.kind == "multi_archer":
+        damage *= 3
+    elif w.kind == "candle":
+        # output/research/usage/crafting-station.md: unused flames concentrate.
+        # https://clashofclans.fandom.com/wiki/Hot_Candle
+        damage *= _candle_targets(battle, w)
+    elif w.kind == "cake":
+        damage += w.extra["bomb"] * rage
+    elif w.kind == "inferno_artillery":
+        damage *= w.extra["targets"]
+        # Existing burn pools do not stack or receive Rage/difficulty scaling.
+        extra_damage = w.extra["pool_dps"] * seconds
+    elif w.kind in ("burst", "mortar_burst", "firespitter"):
+        shots = w.extra["shots"]
+        damage *= shots
+        interval = max(0.1, w.interval + (shots - 1) * w.extra["gap"])
+    elif w.kind == "eagle":
+        shots = w.extra["shells"]
+        damage = (w.damage + w.extra["shock"]) * rage * shots
+        interval = max(0.1, w.interval + (shots - 1) * w.extra["gap"])
+    elif w.kind == "revenge":
+        profile = _revenge_profile(battle, w, rage)
+        if profile is None:
+            return 0.0
+        _, damage, interval = profile
+    elif w.kind == "hook":
+        damage = w.damage  # Hook's executed hit does not apply Rage.
+    elif w.kind in ("sweeper", "bh_repair_only"):
+        return 0.0
+    # Mirror hit_unit: scale weapon hits, cancelling Monolith's percent
+    # compensation in _hit_damage; spell/poison pools remain unscaled.
+    return damage * seconds / interval * battle.def_mult + extra_damage
+
+
 def act(battle, w: Weapon):
     b = w.owner
     t = battle.t
@@ -1062,14 +1162,7 @@ def _act_once(battle, w: Weapon):
     rage = _rage(battle, b)
     if k == "candle":
         # Wiki: Hot Candle, August 31 history uses deployment; summary conflicts.
-        first = battle.first_deploy_t
-        if first is not None:
-            active = battle.t - first
-            w.extra["targets"] = (
-                6
-                if active < w.extra["melt1"]
-                else 4 if active < w.extra["melt2"] else 3
-            )
+        w.extra["targets"] = _candle_targets(battle, w)
         return _multi(battle, w, rage)
     if k == "cake":
         return _cake(battle, w, rage)
@@ -1106,12 +1199,8 @@ def _act_once(battle, w: Weapon):
     if k == "inferno_single":
         if w.cooldown > 0:
             return
-        damage = 0.0
-        for start, value in w.extra["ramp"]:
-            if w.lock_time >= start:
-                damage = value
         # game data v18.200.9: Inferno Tower.AttackSpeed=128 -> one full hit per packet.
-        battle.hit_unit(tgt, damage * rage)
+        battle.hit_unit(tgt, _hit_damage(battle, w, tgt.max_hp, tgt.is_hero, rage))
         w.cooldown += w.interval
         # Wiki: Inferno Tower, one round per 0.128 seconds at every charge stage.
         if w.ammunition is not None:
@@ -1192,7 +1281,7 @@ def _act_once(battle, w: Weapon):
     elif k == "monolith":
         # rage tower boosts only the base damage (wiki)
         # league modifiers do not boost the percentage bonus (wiki)
-        battle.hit_unit(tgt, dmg + w.extra["pct"] * tgt.max_hp / battle.def_mult)
+        battle.hit_unit(tgt, _hit_damage(battle, w, tgt.max_hp, tgt.is_hero, rage))
     elif k == "ricochet":
         battle.hit_unit(tgt, dmg)
         best, bd = None, w.extra["bounce_range"]
@@ -1412,8 +1501,12 @@ def _cake(battle, w, rage):
     b = w.owner
     pool = _visible(battle, w, w.range)
     if not pool:
+        w.target = None
         return
     tgt = min(pool, key=lambda a: dist(a.x, a.y, b.x, b.y))
+    # output/research/usage/crafting-station.md: Cake exposes its firing target.
+    # https://clashofclans.fandom.com/wiki/Cake-A-Pult
+    w.target = tgt
     battle.splash_units(
         tgt.x, tgt.y, w.extra["splash"], w.damage * rage, tgt.flying, not tgt.flying
     )
@@ -1435,7 +1528,7 @@ def _cake(battle, w, rage):
 def _hunter_hit(battle, w, tgt, rage):
     """Cards deal double damage to heroes and poison the target: Poison
     Spell slows at the module's spell level, damage wears off fast (wiki)."""
-    battle.hit_unit(tgt, w.damage * rage * (2.0 if tgt.is_hero else 1.0))
+    battle.hit_unit(tgt, _hit_damage(battle, w, tgt.max_hp, tgt.is_hero, rage))
     lvl = w.extra["poison_level"]
     slow = stats.get("Poison Spell", lvl, "Speed Decrease", default=50.0) / 100.0
     atk = stats.get("Poison Spell", lvl, "Attack Rate Decrease", default=70.0) / 100.0
@@ -1846,21 +1939,20 @@ def _super_wizard(battle, w, rage):
     w.cooldown += w.interval
 
 
+def firespitter_in_sector(w, x, y):
+    # output/research/usage/firespitter.md: acquisition stays inside its sector.
+    # https://supercell.com/en/games/clashofclans/blog/game-updates/the-town-hall-17-update-is-here-2/
+    angle = math.atan2(y - w.owner.y, x - w.owner.x)
+    return abs((angle - w.facing + math.pi) % (2 * math.pi) - math.pi) <= w.extra["arc"]
+
+
 def _firespitter(battle, w, rage):
     b = w.owner
     t = battle.t
     if w.cooldown > 0:
         return
     tgt = w.target
-    arc = w.extra["arc"]
-    in_sector = (
-        tgt is not None
-        and abs(
-            (math.atan2(tgt.y - b.y, tgt.x - b.x) - w.facing + math.pi) % (2 * math.pi)
-            - math.pi
-        )
-        <= arc
-    )
+    in_sector = tgt is not None and firespitter_in_sector(w, tgt.x, tgt.y)
     if (
         tgt is None
         or not tgt.alive
@@ -1871,8 +1963,7 @@ def _firespitter(battle, w, rage):
         w.burst_left = 0
         cands = []
         for a in _visible(battle, w, w.range):
-            ang = math.atan2(a.y - b.y, a.x - b.x)
-            if abs((ang - w.facing + math.pi) % (2 * math.pi) - math.pi) <= arc:
+            if firespitter_in_sector(w, a.x, a.y):
                 cands.append((dist(a.x, a.y, b.x, b.y), a))
         if not cands:
             return
@@ -1964,24 +2055,33 @@ def _revenge_impact(battle, shot, target, damage, rage, *, at=None):
     )
 
 
-def _revenge(battle, w, tgt, rage):
+def _revenge_profile(battle, w, rage):
     # Wiki: Revenge Tower, stages after 5, 25 and 50 destroyed buildings.
     destroyed = battle.destroyed_counted
     if destroyed < 5:
-        return
+        return None
     stage = 3 if destroyed >= 50 else 2 if destroyed >= 25 else 1
     damage = (
         w.damage
         if stage == 1
         else stats.get(w.owner.name, w.owner.level, "Damage per Shot (Primary)")
     ) * rage
+    interval = 1.2 if stage == 1 else 0.6 if stage == 2 else 0.35
+    return stage, damage, interval
+
+
+def _revenge(battle, w, tgt, rage):
+    profile = _revenge_profile(battle, w, rage)
+    if profile is None:
+        return
+    stage, damage, interval = profile
     # A per-shot weapon carries the chain through Battle's defense-impact hook.
     # Existing Pending hit/remaining fields also preserve exported battle states.
     shot = Weapon(w.owner, "revenge", extra={"remaining": stage, "hit": (tgt,)})
     _revenge_projectile(
         battle, shot, tgt, damage, rage, w.owner.x, w.owner.y, offset=1.35
     )
-    w.cooldown += 1.2 if stage == 1 else 0.6 if stage == 2 else 0.35
+    w.cooldown += interval
 
 
 def bell_tick(battle):

@@ -96,6 +96,37 @@ pub fn eligible(battle: &Battle, trap: TrapId, unit: &Unit, t: f64) -> bool {
 // traps.py:149-173: trap Vec order and first-minimum ties are significant.
 pub fn tick(battle: &mut Battle) {
     let t = battle.t;
+    // output/research/usage/bomb.md: Bombs damage and knock back small troops.
+    // https://clashofclans.fandom.com/wiki/Bomb
+    // Canonical order also stabilizes damage callbacks across serialization.
+    let mut due_bombs: Vec<_> = battle
+        .traps
+        .iter()
+        .enumerate()
+        .filter(|(_, tr)| {
+            tr.armed
+                && matches!(tr.key.as_str(), "bomb" | "giant")
+                && 0.0 <= tr.fuse_at
+                && tr.fuse_at <= t
+        })
+        .map(|(index, _)| TrapId(index))
+        .collect();
+    due_bombs.sort_by(|a, b| {
+        let a = &battle.traps[a.0];
+        let b = &battle.traps[b.0];
+        a.fuse_at
+            .total_cmp(&b.fuse_at)
+            .then_with(|| a.x.total_cmp(&b.x))
+            .then_with(|| a.y.total_cmp(&b.y))
+            .then_with(|| a.key.cmp(&b.key))
+            .then_with(|| a.damage.total_cmp(&b.damage))
+            .then_with(|| a.radius.total_cmp(&b.radius))
+    });
+    let mut pushes = Vec::new();
+    for trap in due_bombs {
+        fire_deferred(battle, trap, Some(&mut pushes));
+    }
+    apply_bomb_pushes(battle, pushes);
     for index in 0..battle.traps.len() {
         let id = TrapId(index);
         let trap = &battle.traps[index];
@@ -159,13 +190,48 @@ pub fn tick(battle: &mut Battle) {
 
 // traps.py:176-183: only _src is restored; actor/effect remain as in Python.
 pub fn fire(battle: &mut Battle, trap: TrapId) {
+    fire_deferred(battle, trap, None);
+}
+
+fn fire_deferred(battle: &mut Battle, trap: TrapId, pushes: Option<&mut Vec<(UnitRef, f64, f64)>>) {
     let previous = battle.src.clone();
-    fire_effect(battle, trap);
+    fire_effect_with_pushes(battle, trap, pushes);
     battle.src = previous;
+}
+
+fn apply_bomb_pushes(battle: &mut Battle, pushes: Vec<(UnitRef, f64, f64)>) {
+    let mut totals: Vec<(UnitRef, f64, f64)> = Vec::new();
+    for (unit, dx, dy) in pushes {
+        if let Some((_, old_x, old_y)) = totals.iter_mut().find(|(other, _, _)| *other == unit) {
+            *old_x += dx;
+            *old_y += dy;
+        } else {
+            totals.push((unit, dx, dy));
+        }
+    }
+    totals.sort_by_key(|(unit, _, _)| battle.unit(*unit).id.0);
+    for (unit, dx, dy) in totals {
+        if battle.unit(unit).alive {
+            if dx != 0.0 || dy != 0.0 {
+                battle.nudge(unit, dx, dy);
+            }
+            let unit = battle.unit_mut(unit);
+            unit.target = None;
+            unit.wall_target = None;
+        }
+    }
 }
 
 // traps.py:186-324.
 pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
+    fire_effect_with_pushes(battle, trap, None);
+}
+
+fn fire_effect_with_pushes(
+    battle: &mut Battle,
+    trap: TrapId,
+    pushes: Option<&mut Vec<(UnitRef, f64, f64)>>,
+) {
     battle.traps[trap.0].armed = false;
     let t = battle.t;
     let tr = battle.traps[trap.0].clone();
@@ -178,6 +244,9 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
     ]);
     match tr.key.as_str() {
         "bomb" | "giant" => {
+            let deferred = pushes.is_some();
+            let mut immediate = Vec::new();
+            let pushes = pushes.unwrap_or(&mut immediate);
             battle.splash_units(
                 tr.x,
                 tr.y,
@@ -204,16 +273,18 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
                     let distance = unit.dist(tr.x, tr.y);
                     if distance > 0.0 {
                         let push = 1.0 / unit.housing as f64;
-                        battle.nudge(
+                        pushes.push((
                             reference,
                             push * (unit.x - tr.x) / distance,
                             push * (unit.y - tr.y) / distance,
-                        );
+                        ));
+                    } else {
+                        pushes.push((reference, 0.0, 0.0));
                     }
-                    let unit = battle.unit_mut(reference);
-                    unit.target = None;
-                    unit.wall_target = None;
                 }
+            }
+            if !deferred {
+                apply_bomb_pushes(battle, immediate);
             }
         }
         "airbomb" => {

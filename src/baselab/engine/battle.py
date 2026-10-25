@@ -1306,6 +1306,9 @@ class Battle:
                     for unit in self.attackers_near(x, y, pending.radius):
                         if (
                             unit.alive
+                            # output/research/usage/totem-spell.md: Totems stay fixed.
+                            # https://clashofclans.fandom.com/wiki/Totem_Spell
+                            and unit.name != "Totem"
                             and not unit.is_hero
                             and unit.kind not in ("pet", "siege", "siege_idle")
                             and 0 < unit.housing <= pending.extra["push_housing"]
@@ -1329,6 +1332,7 @@ class Battle:
                     for unit in self.attackers_near(x, y, pending.radius):
                         if (
                             unit.alive
+                            and unit.name != "Totem"
                             and not unit.flying
                             and not unit.is_hero
                             and unit.kind not in ("pet", "siege", "siege_idle")

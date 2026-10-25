@@ -701,6 +701,8 @@ def build_report(args):
                     army,
                     budget,
                     parallel=True,
+                    # evaluate.py:STRENGTH: match the ordinary scoring arm.
+                    strength=scoring.STRENGTH,
                     search_seeds=search_seeds,
                     fresh_seeds=fresh_seeds,
                 )

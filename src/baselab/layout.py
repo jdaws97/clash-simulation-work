@@ -12,7 +12,15 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .mechanics import BUILDING_TYPES, INVENTORY, OPTIONAL_KEYS, TRAP_INVENTORY, TRAP_SIZES, VILLAGE, WALL_COUNT
+from .mechanics import (
+    BUILDING_TYPES,
+    INVENTORY,
+    OPTIONAL_KEYS,
+    TRAP_INVENTORY,
+    TRAP_SIZES,
+    VILLAGE,
+    WALL_COUNT,
+)
 
 
 @dataclass
@@ -20,7 +28,9 @@ class Placement:
     key: str
     x: int
     y: int
-    mode: str | None = None  # inferno single/multi, xbow ground/both, spell tower, sweeper dir
+    mode: str | None = (
+        None  # inferno single/multi, xbow ground/both, spell tower, sweeper dir
+    )
 
     @property
     def size(self) -> int:
@@ -173,6 +183,10 @@ class Layout:
         for b in self.buildings:
             for t in b.tiles():
                 claim(t, f"{b.key}@{b.x},{b.y}")
+            # output/research/usage/firespitter.md: facing changes in 90-degree steps.
+            # https://clash-of-clans.1337wiki.com/firespitter/
+            if b.key == "firespitter" and (b.mode or "E") not in ("N", "E", "S", "W"):
+                issues.append("Firespitter facing must be N, E, S or W")
         for w in self.walls:
             claim(w, "wall")
         for position in self.wall_levels:
@@ -209,6 +223,10 @@ class Layout:
         for key, n in geared.items():
             if n > 1:
                 issues.append(f"too many geared {key}: {n} > 1")
+        # output/research/usage/archer-tower.md: the geared tower is merged.
+        # https://clashofclans.fandom.com/wiki/Multi-Gear_Tower
+        if self.town_hall >= 17 and counts["mgt"] and geared["at"]:
+            issues.append("geared Archer Tower is merged into Multi-Gear Tower")
         return issues
 
 
@@ -218,4 +236,9 @@ DEFAULT_CC = ["Dragon", "Dragon", "Headhunter", "Archer", "Archer", "Archer", "A
 
 # Defending heroes sit on the four hero banners. Queen, King, Warden and
 # Minion Prince are the usual TH16 defensive picks. (assumed)
-DEFAULT_DEFENDING_HEROES = ["Archer Queen", "Barbarian King", "Grand Warden", "Minion Prince"]
+DEFAULT_DEFENDING_HEROES = [
+    "Archer Queen",
+    "Barbarian King",
+    "Grand Warden",
+    "Minion Prince",
+]

@@ -3642,6 +3642,11 @@ fn heal_eligible(battle: &Battle, healer: UnitRef, ally: UnitRef, primary: bool)
     if a.flying && !u.spec.heal_air {
         return false;
     }
+    // output/research/usage/unicorn.md: Healers cannot heal Unicorns.
+    // https://clashofclans.fandom.com/wiki/Unicorn
+    if u.name_id == Name::Healer && a.name_id == Name::Unicorn {
+        return false;
+    }
     let healing = matches!(a.spec.attack, Tag::Heal | Tag::HealChain);
     if primary && (a.name_id == Name::Unicorn || healing) {
         return false;

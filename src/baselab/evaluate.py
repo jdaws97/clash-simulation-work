@@ -477,7 +477,7 @@ def meta_scenarios(
         libraries[th] = library(th, ranked=mode == "ranked")
         if not libraries[th]:
             raise ValueError(f"no saved meta builds for attacker TH{th}")
-    from .meta_armies import PLAYBOOK_FAMILY, _playbook, playbooks_on
+    from .meta_armies import _playbook, family_of, playbooks_on
 
     if playbooks_on():
         # Cited playbooks only (the Rust engine runs PlaybookPlan, not the
@@ -487,8 +487,7 @@ def meta_scenarios(
             kept = [
                 (b, w)
                 for b, w in builds
-                if PLAYBOOK_FAMILY.get(b["archetype"])
-                and _playbook(PLAYBOOK_FAMILY[b["archetype"]]) is not None
+                if family_of(b) and _playbook(family_of(b)) is not None
             ]
             dropped = sorted(
                 {b["archetype"] for b, _ in builds} - {b["archetype"] for b, _ in kept}
@@ -499,9 +498,10 @@ def meta_scenarios(
                     f"meta_scenarios: TH{th} without a cited playbook, left out: {', '.join(dropped)}",
                     file=sys.stderr,
                 )
-            if kept:
-                total = sum(w for _, w in kept)
-                libraries[th] = [(b, w / total) for b, w in kept]
+            if not kept:
+                raise ValueError(f"no cited playbooks for attacker TH{th}")
+            total = sum(w for _, w in kept)
+            libraries[th] = [(b, w / total) for b, w in kept]
     out = []
     stride = n_angles
     if budget is not None:

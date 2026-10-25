@@ -94,6 +94,9 @@ pub fn threat(key: &str, default: f64) -> f64 {
         "scatter" => 8.0,
         "eagle" => 7.0,
         "xbow" | "mono" | "mgt" | "swt" => 5.0,
+        // output/research/usage/crafting-station.md: crafted weapons need counterplay.
+        // https://clashofclans.fandom.com/wiki/Crafting_Station
+        "crafting" => 5.0,
         "firespitter" | "revenge" | "ad" | "ric" => 4.0,
         "mat" | "wt" | "st" => 3.0,
         "bt" | "at" | "tesla" => 2.0,
@@ -251,7 +254,9 @@ fn supported_cargo(plan: &Json) -> SharedVec<String> {
                     .or_else(|| at.strip_prefix("unit_ahead:"))
                     == Some(name)
         });
-        if matches!(name, "Super Archer" | "Super Wizard")
+        // output/research/usage/super-minion.md: Blimp cargo needs reserved support.
+        // https://clashofclans.fandom.com/wiki/Super_Minion
+        if matches!(name, "Super Archer" | "Super Wizard" | "Super Minion")
             || siege == "Battle Blimp" && initial_clone && name == "Balloon"
             || explicit
         {

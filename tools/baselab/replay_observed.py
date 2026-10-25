@@ -59,16 +59,29 @@ class ObservedPlan(AttackPlan):
         for d in self.drops:
             for _ in range(d.get("count", 1)):
                 cc = d["unit"] in SIEGES or "clan castle" in d.get("source", "")
-                out.append(Deployment(d["t"], d["unit"], d["x"] + MARGIN, d["y"] + MARGIN, group="main",
-                                      level=self.unit_levels.get(d["unit"]), town_hall=self.town_hall,
-                                      source="cc" if cc else "army"))
+                out.append(
+                    Deployment(
+                        d["t"],
+                        d["unit"],
+                        d["x"] + MARGIN,
+                        d["y"] + MARGIN,
+                        group="main",
+                        level=self.unit_levels.get(d["unit"]),
+                        town_hall=self.town_hall,
+                        source="cc" if cc else "army",
+                    )
+                )
         return out
 
     def has_pending(self):
-        return False
+        return bool(self.casts or self.abilities)
 
     def has_offensive_pending(self, battle):
-        return False
+        # output/research/usage/revive-spell.md: a knocked-out hero can return.
+        # https://clashofclans.fandom.com/wiki/Revive_Spell
+        # Observed actions own their schedule, including a post-wipe Revive.
+        # Battle.offense_finished separately checks scheduled troop deployments.
+        return self.has_pending()
 
     def on_tick(self, battle):
         t = battle.t
@@ -76,14 +89,20 @@ class ObservedPlan(AttackPlan):
             s = self.casts.pop(0)
             origin = "donated" if "clan" in s["origin"] else "brewed"
             try:
-                self.cast_spell(battle, s["spell"], s["x"] + MARGIN, s["y"] + MARGIN, origin=origin)
+                self.cast_spell(
+                    battle, s["spell"], s["x"] + MARGIN, s["y"] + MARGIN, origin=origin
+                )
             except ValueError as e:
                 self.missed.append(f"{s['spell']} at {s['t']}: {e}")
         while self.abilities and self.abilities[0]["t"] <= t + 1e-9:
             a = self.abilities.pop(0)
-            u = next((h for h in battle.attackers if h.name == a["hero"] and h.is_hero), None)
+            u = next(
+                (h for h in battle.attackers if h.name == a["hero"] and h.is_hero), None
+            )
             if u is None or not u.alive or u.ability_used:
-                self.missed.append(f"{a['hero']} ability at {a['t']}: hero {'dead' if u is not None and not u.alive else 'used/absent'}")
+                self.missed.append(
+                    f"{a['hero']} ability at {a['t']}: hero {'dead' if u is not None and not u.alive else 'used/absent'}"
+                )
             else:
                 heroes.activate(battle, u)
         self._track(battle)
@@ -101,7 +120,14 @@ class ObservedPlan(AttackPlan):
             self.star_t.setdefault(k, round(t, 1))
 
 
-def make_plan(replay: dict, key_index: dict, *, levels: str = "engine", jitter: float = 0.0, seed: int = 0) -> ObservedPlan:
+def make_plan(
+    replay: dict,
+    key_index: dict,
+    *,
+    levels: str = "engine",
+    jitter: float = 0.0,
+    seed: int = 0,
+) -> ObservedPlan:
     """levels "engine": the attacker Town Hall's maximum levels (as in
     replay_log.py); "observed": the level badges read off the video
     (replay["observed_levels"]). jitter > 0 moves every drop and spell by up
@@ -118,23 +144,46 @@ def make_plan(replay: dict, key_index: dict, *, levels: str = "engine", jitter: 
             cc_spells[SPELL_KEYS[n]] = cc_spells.get(SPELL_KEYS[n], 0) + c
         else:
             cc_troops += [n] * c
-    plan = ObservedPlan(town_hall=th, label="observed replay", spells=spells, cc_spells=cc_spells, cc_troops=cc_troops,
-                        siege=siege, siege_donated=siege is not None, ground=False,
-                        loadouts=_loadouts(build, build["heroes"]))
+    plan = ObservedPlan(
+        town_hall=th,
+        label="observed replay",
+        spells=spells,
+        cc_spells=cc_spells,
+        cc_troops=cc_troops,
+        siege=siege,
+        siege_donated=siege is not None,
+        ground=False,
+        loadouts=_loadouts(build, build["heroes"]),
+    )
     plan.observed = True  # a real army from the battle log: legal by definition
     plan.real_battle = True  # plans.py require_legal: warn, do not fail
     if jitter > 0:
         rng = random.Random(seed)
         replay = dict(replay)
         for k in ("deployments", "spells"):
-            replay[k] = [dict(e, x=e["x"] + rng.uniform(-jitter, jitter), y=e["y"] + rng.uniform(-jitter, jitter)) for e in replay[k]]
+            replay[k] = [
+                dict(
+                    e,
+                    x=e["x"] + rng.uniform(-jitter, jitter),
+                    y=e["y"] + rng.uniform(-jitter, jitter),
+                )
+                for e in replay[k]
+            ]
     plan.unit_levels = {}
     if levels == "observed":
-        obs = {k: v for k, v in replay.get("observed_levels", {}).items() if isinstance(v, int)}
+        obs = {
+            k: v
+            for k, v in replay.get("observed_levels", {}).items()
+            if isinstance(v, int)
+        }
         plan.unit_levels = obs
         plan.spell_levels = {n: v for n, v in obs.items() if n.endswith("Spell")}
         plan.cc_spell_levels = dict(plan.spell_levels)
-        plan.pet_levels = {n: v for n, v in obs.items() if n in ("Phoenix", "Unicorn", "L.A.S.S.I", "Poison Lizard")}
+        plan.pet_levels = {
+            n: v
+            for n, v in obs.items()
+            if n in ("Phoenix", "Unicorn", "L.A.S.S.I", "Poison Lizard")
+        }
     plan.setup(replay, key_index)
     plan.build = build
     plan.unknown = unknown
@@ -144,12 +193,20 @@ def make_plan(replay: dict, key_index: dict, *, levels: str = "engine", jitter: 
 def layout_json(path: str) -> dict:
     own = json.loads((ROOT / "data" / "your-levels.json").read_text())
     lay = Layout.load(ROOT / path)
-    lay.levels, lay.wall_level, lay.hero_levels = dict(own["levels"]), own["wall_level"], dict(own["hero_levels"])
+    lay.levels, lay.wall_level, lay.hero_levels = (
+        dict(own["levels"]),
+        own["wall_level"],
+        dict(own["hero_levels"]),
+    )
     return lay.to_json()
 
 
 def key_labels(lj: dict) -> dict:
-    return {i: f"{b['key']}({b['x']},{b['y']})" for i, b in enumerate(lj["buildings"]) if b["key"] in KEY_KINDS}
+    return {
+        i: f"{b['key']}({b['x']},{b['y']})"
+        for i, b in enumerate(lj["buildings"])
+        if b["key"] in KEY_KINDS
+    }
 
 
 def run_one(args):
@@ -163,10 +220,22 @@ def run_one(args):
     r = battle.run()
     plan._track(battle)
     plan.curve.append((round(battle.t, 1), battle.destruction()))
-    out = dict(seed=seed, strength=strength, levels=levels, cfg=f"{levels} lv, str {strength:.2f}", stars=r.stars, pct=r.destruction, time=r.time, curve=plan.curve,
-               falls={keys[i]: t for i, t in plan.falls.items()}, stars_t=plan.star_t, missed=plan.missed,
-               units_left=r.units_left, damage_by_source={k: round(v) for k, v in battle.damage_by_source.items()},
-               kills_by_source=dict(battle.kills_by_source))
+    out = dict(
+        seed=seed,
+        strength=strength,
+        levels=levels,
+        cfg=f"{levels} lv, str {strength:.2f}",
+        stars=r.stars,
+        pct=r.destruction,
+        time=r.time,
+        curve=plan.curve,
+        falls={keys[i]: t for i, t in plan.falls.items()},
+        stars_t=plan.star_t,
+        missed=plan.missed,
+        units_left=r.units_left,
+        damage_by_source={k: round(v) for k, v in battle.damage_by_source.items()},
+        kills_by_source=dict(battle.kills_by_source),
+    )
     if record:
         out["log"] = [list(x) if isinstance(x, tuple) else x for x in battle.log]
     return out
@@ -186,8 +255,17 @@ def main():
     ap.add_argument("--seeds", type=int, default=6)
     ap.add_argument("--strength", choices=["calibrated", "raw", "both"], default="both")
     ap.add_argument("--levels", choices=["engine", "observed", "both"], default="both")
-    ap.add_argument("--jitter", type=float, default=1.5, help="tiles of random position error per seed (seed 0 offset: none)")
-    ap.add_argument("--trace", type=int, help="also run this seed (observed levels, raw strength, no jitter) with record=True")
+    ap.add_argument(
+        "--jitter",
+        type=float,
+        default=1.5,
+        help="tiles of random position error per seed (seed 0 offset: none)",
+    )
+    ap.add_argument(
+        "--trace",
+        type=int,
+        help="also run this seed (observed levels, raw strength, no jitter) with record=True",
+    )
     ap.add_argument("--out")
     args = ap.parse_args()
     replay = json.loads(Path(args.replay).read_text(encoding="utf-8"))
@@ -195,10 +273,22 @@ def main():
     probe = make_plan(replay, {})
     cal = family_strength(probe.build)
     strengths = {"calibrated": [cal], "raw": [1.0], "both": [cal, 1.0]}[args.strength]
-    levels = {"engine": ["engine"], "observed": ["observed"], "both": ["engine", "observed"]}[args.levels]
-    print(f"army: {probe.build['troops']} spells {probe.build['spells']} cc {probe.build['cc']} heroes {probe.build['heroes']}"
-          f"{' unknown: ' + ','.join(probe.unknown) if probe.unknown else ''}; calibrated strength {cal:.2f}", flush=True)
-    jobs = [(replay, lj, 1000 + s, st, False, lv, args.jitter if s else 0.0) for lv in levels for st in strengths for s in range(args.seeds)]
+    levels = {
+        "engine": ["engine"],
+        "observed": ["observed"],
+        "both": ["engine", "observed"],
+    }[args.levels]
+    print(
+        f"army: {probe.build['troops']} spells {probe.build['spells']} cc {probe.build['cc']} heroes {probe.build['heroes']}"
+        f"{' unknown: ' + ','.join(probe.unknown) if probe.unknown else ''}; calibrated strength {cal:.2f}",
+        flush=True,
+    )
+    jobs = [
+        (replay, lj, 1000 + s, st, False, lv, args.jitter if s else 0.0)
+        for lv in levels
+        for st in strengths
+        for s in range(args.seeds)
+    ]
     from baselab.evaluate import pool
 
     res = list(pool().map(run_one, jobs))
@@ -226,18 +316,30 @@ def main():
         for c in cfgs:
             ts = sorted(r["falls"].get(lab, 999) for r in groups[c])
             med = ts[len(ts) // 2]
-            cells.append(f"{'-' if med == 999 else med:>6} ({sum(1 for x in ts if x < 999)}/{len(ts)})           ")
-        print(f"  {lab:16s} {f['t']:6.1f} +-{f['plus_minus_s']:<3} | " + " | ".join(cells))
+            cells.append(
+                f"{'-' if med == 999 else med:>6} ({sum(1 for x in ts if x < 999)}/{len(ts)})           "
+            )
+        print(
+            f"  {lab:16s} {f['t']:6.1f} +-{f['plus_minus_s']:<3} | " + " | ".join(cells)
+        )
     print()
     print("== stars")
     for s in real["stars"]:
         cells = []
         for c in cfgs:
-            ts = sorted(r["stars_t"].get(s["star"], r["stars_t"].get(str(s["star"]), 999)) for r in groups[c])
-            cells.append(f"median {'-' if ts[len(ts) // 2] == 999 else ts[len(ts) // 2]} ({sum(1 for x in ts if x < 999)}/{len(ts)})")
+            ts = sorted(
+                r["stars_t"].get(s["star"], r["stars_t"].get(str(s["star"]), 999))
+                for r in groups[c]
+            )
+            cells.append(
+                f"median {'-' if ts[len(ts) // 2] == 999 else ts[len(ts) // 2]} ({sum(1 for x in ts if x < 999)}/{len(ts)})"
+            )
         print(f"  star {s['star']}: real {s['t']:5.1f} | " + " | ".join(cells))
     for c in cfgs:
-        print(f"  {c}: " + ", ".join(f"{r['stars']}* {r['pct']}% {r['time']}s" for r in groups[c]))
+        print(
+            f"  {c}: "
+            + ", ".join(f"{r['stars']}* {r['pct']}% {r['time']}s" for r in groups[c])
+        )
     missed = sorted({m for r in res for m in r["missed"]})
     if missed:
         print("  not executed:", "; ".join(missed))

@@ -213,6 +213,7 @@ pub struct PlaybookPlan {
     pub step_spells: Option<Rc<Vec<String>>>,
     pub equipment_steps: SharedVec<(String, Option<String>)>,
     pub ad_reservations: SharedVec<(String, Vec<BuildingId>)>,
+    siege_landings: SharedVec<(String, (f64, f64))>,
     // Immutable construction inputs remain available for export inspection.
     // Runtime fields have typed storage above and do not belong in this snapshot.
     pub constructed: Rc<Json>,
@@ -266,6 +267,14 @@ impl PlaybookPlan {
                 v.arr().iter().map(|v| v.str().to_owned()).collect()
             }),
             aim_since: plans::times(p, "_aim_t").into(),
+            siege_landings: p
+                .get("_siege_landings")
+                .map_or_else(SharedVec::default, |v| {
+                    v.obj()
+                        .iter()
+                        .map(|(id, pos)| (id.clone(), (pos.arr()[0].f64(), pos.arr()[1].f64())))
+                        .collect()
+                }),
             last_alive: number(p, "_last_alive", 0.0),
             charge_edge: Cell::new(
                 p.get("_charge_edge")
@@ -834,8 +843,36 @@ impl PlaybookPlan {
             Trigger::Any(parts) => parts.iter().all(|part| self.impossible(battle, part)),
             _ => trigger
                 .unit_condition()
-                .is_some_and(|name| self.down(battle, name)),
+                .is_some_and(|name| self.down(battle, name) && !self.recoverable(battle, name)),
         }
+    }
+
+    fn recoverable(&self, battle: &Battle, name: &str) -> bool {
+        // output/research/usage/revive-spell.md: unused abilities survive KO.
+        // https://clashofclans.fandom.com/wiki/Revive_Spell
+        battle
+            .attackers_pool()
+            .any(|u| u.name == name && u.is_hero && !u.alive && u.extra.revivable)
+            && (count(&self.attack.spells, "revive") > 0
+                || battle
+                    .fields
+                    .iter()
+                    .any(|f| matches!(f.kind, Tag::ReviveCast | Tag::ReviveDue)))
+    }
+
+    fn awaiting_revive(&self, battle: &Battle, step: &Step) -> bool {
+        let what = step.what.as_deref().unwrap_or("");
+        let target = if what != "Revive Spell" {
+            step.at
+                .strip_prefix("unit:")
+                .or_else(|| step.at.strip_prefix("unit_ahead:"))
+        } else {
+            None
+        };
+        let target = target.or_else(|| (step.action == Action::Ability).then_some(what));
+        target.is_some_and(|name| {
+            !name.is_empty() && self.down(battle, name) && self.recoverable(battle, name)
+        })
     }
 
     // playbook.py:262-283.
@@ -1436,6 +1473,9 @@ impl PlaybookPlan {
 
     // playbook.py:471-501.
     fn cannot(&mut self, battle: &Battle, step: &Step) -> Option<String> {
+        if self.awaiting_revive(battle, step) {
+            return None;
+        }
         let what = step.what.as_deref().unwrap_or("");
         let target = if what != "Revive Spell" {
             step.at
@@ -1528,6 +1568,48 @@ impl PlaybookPlan {
         None
     }
 
+    fn release_siege(&mut self, battle: &mut Battle, step: &Step) -> bool {
+        if !step.source.get("at").is_some_and(truth) {
+            return crate::units::release_siege(battle, step.what.as_deref());
+        }
+        let unit = battle
+            .attackers_pool()
+            .find(|u| {
+                u.alive
+                    && u.kind == Tag::Siege
+                    && step
+                        .what
+                        .as_deref()
+                        .filter(|name| !name.is_empty())
+                        .is_none_or(|name| u.name == name)
+            })
+            .map(Unit::reference);
+        let Some(unit) = unit else {
+            return false;
+        };
+        // output/research/usage/super-minion.md: release Blimp at the chosen cluster.
+        // https://clashofclans.fandom.com/wiki/Battle_Blimp
+        // Policy: bind once; half a tile is the arrival tolerance.
+        let position = self
+            .siege_landings
+            .iter()
+            .find(|(id, _)| id == &step.id)
+            .map(|(_, pos)| *pos);
+        let (x, y) = if let Some(position) = position {
+            position
+        } else {
+            let Some(position) = self.anchor(battle, &step.at, false) else {
+                return false;
+            };
+            self.siege_landings.push((step.id.clone(), position));
+            position
+        };
+        if battle.unit(unit).dist(x, y) > 0.5 {
+            return false;
+        }
+        crate::units::release_siege(battle, step.what.as_deref())
+    }
+
     // playbook.py:527-661: skip pass, cited steps, completion steps, rescue drops.
     pub fn on_tick(&mut self, battle: &mut Battle) {
         // output/hunt/r9/s2.out #4: pets, summons and cargo also arrive in battle.
@@ -1617,6 +1699,10 @@ impl PlaybookPlan {
             if self.cancelled(&step.id) || done && step.every.is_none() {
                 continue;
             }
+            // Do not start no-target expiry clocks while revival is possible.
+            if self.awaiting_revive(battle, step) {
+                continue;
+            }
             let mut forced = false;
             if step.every.is_some() && done {
                 let next = self
@@ -1662,7 +1748,7 @@ impl PlaybookPlan {
             }
             let before = count(&self.inventory, what);
             let ok = match step.action {
-                Action::ReleaseSiege => crate::units::release_siege(battle, step.what.as_deref()),
+                Action::ReleaseSiege => self.release_siege(battle, step),
                 Action::Ability => self.ability(battle, step),
                 _ => {
                     let mut position = if step.what.as_deref() == Some("Revive Spell") {

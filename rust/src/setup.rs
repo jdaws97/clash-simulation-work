@@ -342,6 +342,18 @@ fn unavailable(battle: &Battle, key: &str, id: usize) -> bool {
 }
 
 fn setup_layout(battle: &mut Battle, layout: &Json, options: &Json) {
+    // output/research/usage/archer-tower.md: the geared tower is merged.
+    // https://clashofclans.fandom.com/wiki/Multi-Gear_Tower
+    let placements = layout.at("buildings").arr();
+    assert!(
+        !(battle.town_hall >= 17
+            && placements.iter().any(|p| text(p, "key", "") == "mgt")
+            && placements.iter().any(|p| {
+                text(p, "key", "") == "at"
+                    && matches!(text(p, "mode", ""), "geared" | "fast" | "burst")
+            })),
+        "geared Archer Tower is merged into Multi-Gear Tower"
+    );
     let catalog = Arc::clone(&battle.catalog);
     for (index, placement) in layout.at("buildings").arr().iter().enumerate() {
         let key = placement.at("key").str();

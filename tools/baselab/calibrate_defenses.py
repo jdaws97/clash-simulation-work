@@ -43,7 +43,12 @@ from baselab.meta_armies import (  # noqa: E402
 )
 from calibrate_meta import calibration_provenance  # noqa: E402
 from decode_battlelog import decode  # noqa: E402
-from replay_log import to_build  # noqa: E402
+from replay_log import (  # noqa: E402
+    battle_identity,
+    current_strength,
+    defensive_setup,
+    to_build,
+)
 
 
 def file_hash(path):
@@ -54,31 +59,9 @@ def build_id(build):
     return f"{build['archetype']}-{build['th']}-{build['build']}"
 
 
-def current_strength(th, family):
-    """Use this TH's current family calibration, then TH16, then raw stats."""
-    for level in dict.fromkeys((th, 16)):
-        values = [
-            (STRENGTH["meta:" + build_id(b)], b.get("share", 1.0))
-            for b in data()["builds"]
-            if b["th"] == level
-            and family_of(b) == family
-            and "meta:" + build_id(b) in STRENGTH
-        ]
-        if values:
-            total = sum(w for _, w in values)
-            return math.exp(sum(w * math.log(v) for v, w in values) / total)
-    fallback = {
-        "dragon": "hydra",
-        "thrower": "throwers",
-        "electro-dragon": "edrag",
-        "root-rider": "rootrider",
-    }
-    return STRENGTH.get(fallback.get(family), 1.0)
-
-
 def observations(log, history, town_halls=None):
     """Read only ranked defenses; retain no player identifiers in the report."""
-    periods = json.loads(history.read_text(encoding="utf-8"))["periods"]
+    history_data = json.loads(history.read_text(encoding="utf-8"))
     skipped = Counter()
     rows = []
     layouts = {}
@@ -128,31 +111,27 @@ def observations(log, history, town_halls=None):
             skipped["duplicate"] += 1
             continue
         seen.add(identity)
-        matches = [
-            p
-            for p in periods
-            if p["from"] <= day.date().isoformat()
-            and (p.get("to") is None or day.date().isoformat() <= p["to"])
-        ]
-        if len(matches) != 1 or not matches[0].get("layout"):
-            skipped["missing_or_ambiguous_history"] += 1
-            continue
-        period = matches[0]
-        path = ROOT / period["layout"]
-        if not path.is_file():
+        try:
+            layout, base, entry = defensive_setup(
+                history_data, timestamp, historical_only=True
+            )
+        except FileNotFoundError:
             skipped["missing_layout_file"] += 1
             continue
-        if str(path) not in layouts:
-            layout = Layout.load(path)
-            # docs/GAP_ANALYSIS.md:45-48: never replace old levels with today's.
-            if not layout.levels or not layout.hero_levels or not layout.wall_level:
-                skipped["missing_historical_levels"] += 1
-                continue
-            layouts[str(path)] = layout.to_json()
+        except ValueError as error:
+            skipped[str(error)] += 1
+            continue
+        path = ROOT / base
+        layouts[str(path)] = layout
+        source = entry or next(
+            p
+            for p in history_data.get("periods", [])
+            if p["from"] <= day.date().isoformat()
+            and (p.get("to") is None or day.date().isoformat() <= p["to"])
+        )
         try:
             troops = _share_troops(code)
             build, unknown = to_build(decode(code), th, len(rows))
-            unknown += [name for name in build.get("cc", {}) if "#" in name]
             if unknown:
                 skipped["unknown_share_content:" + ",".join(sorted(unknown))] += 1
                 continue
@@ -170,13 +149,14 @@ def observations(log, history, town_halls=None):
                 continue
         rows.append(
             {
+                "battle_id": battle_identity(battle),
                 "th": th,
                 "family": family or "unclassified",
                 "build": build,
                 "layout": layouts[str(path)],
-                "layout_path": period["layout"],
+                "layout_path": base,
                 "layout_sha256": file_hash(path),
-                "history_confidence": str(period.get("confidence", "unspecified"))
+                "history_confidence": str(source.get("confidence", "unspecified"))
                 .split(":")[0]
                 .split(" (")[0],
                 "modifier": modifier,
@@ -623,6 +603,7 @@ def main():
         "scouting": "evaluate.scouted and summarise; no technique search",
         "skipped": skipped,
         "n": len(rows),
+        "battle_ids": [row["battle_id"] for row in rows],
         "inputs": input_hashes,
         "provenance": provenance,
         "final_provenance": final_provenance,

@@ -720,7 +720,20 @@ pub fn compatible(compiler: &Compiler<'_>, genome: &ArmyGenome) -> Result<(), St
     if family == "generic" {
         return Ok(());
     }
-    if family.starts_with("test-") || !compiler.playbooks.iter().any(|(name, _)| name == family) {
+    // output/research/usage/super-dragon.md: the cited variant lives in dragon.json.
+    // https://clashofclans.fandom.com/wiki/Super_Dragon
+    // Resolve the compiler's alias without changing the genome's family.
+    let playbook_family = if family == "super-dragon" {
+        "dragon"
+    } else {
+        family
+    };
+    if family.starts_with("test-")
+        || !compiler
+            .playbooks
+            .iter()
+            .any(|(name, _)| name == playbook_family)
+    {
         return Err(format!("unknown production family: {family}"));
     }
     if crate::armies::family_of(&genome.to_build()) != Some(family) {
@@ -732,6 +745,7 @@ pub fn compatible(compiler: &Compiler<'_>, genome: &ArmyGenome) -> Result<(), St
         "root-rider" => &["Root Rider"],
         "thrower" => &["Thrower"],
         "dragon" => &["Dragon"],
+        "super-dragon" => &["Super Dragon"],
         "electro-dragon" => &["Electro Dragon"],
         "super-bowler" => &["Super Bowler"],
         "yeti" => &["Yeti", "Super Yeti"],
@@ -750,7 +764,7 @@ pub fn compatible(compiler: &Compiler<'_>, genome: &ArmyGenome) -> Result<(), St
     if count < 2 {
         return Err(format!("missing essential troops for {family}"));
     }
-    let essential_spells: &[&str] = match family {
+    let essential_spells: &[&str] = match playbook_family {
         "root-rider" | "super-minion-air" | "druid-ruin-witch" => &["Invisibility Spell"],
         "fireball-warden" => &["Earthquake Spell", "Invisibility Spell"],
         "super-bowler" => &["Rage Spell"],
