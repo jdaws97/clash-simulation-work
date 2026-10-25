@@ -38,6 +38,11 @@ fn run() -> Result<(), String> {
     let command = args.next().ok_or(usage)?;
     let paths: Vec<PathBuf> = args.map(PathBuf::from).collect();
     let command = command.to_str().ok_or(usage)?;
+    if command == "basesearch-proof" {
+        let catalog_path = catalog_path()?;
+        let catalog = Arc::new(Catalog::load(&catalog_path)?);
+        return baselab_engine::basesearch::proof::command(&paths, catalog, &catalog_path);
+    }
     if command == "layout" {
         let catalog_path = catalog_path()?;
         let catalog = Arc::new(Catalog::load(&catalog_path)?);
