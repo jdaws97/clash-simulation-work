@@ -71,9 +71,9 @@ impl Panels {
     fn new(regions: &Regions) -> Self {
         let clock = Rect::new(
             regions.clock.x,
-            regions.battle_label.y,
+            regions.battle_label.y.saturating_sub(4),
             regions.clock.w,
-            regions.clock.y + regions.clock.h - regions.battle_label.y,
+            regions.clock.y + regions.clock.h - regions.battle_label.y.saturating_sub(4),
         );
         let damage = Rect::new(
             regions.stars.x,
@@ -246,11 +246,15 @@ pub fn read_full(
     packed.paste(&image.crop(panels.damage), panels.clock.w, 0, 1);
     packed.paste(&image.crop(regions.bar), 0, panels.top_h, 1);
     let battle = Mask::load_text(&templates.join(&regions.battle_template))?;
-    let prep = Mask::load_text(&templates.join(if regions.layout == "phone_single_row" {
-        "prep-phone-label.txt"
-    } else {
-        "prep-label.txt"
-    }))?;
+    let prep = Mask::load_text(&templates.join(
+        if regions.battle_template == "battle-q-label.txt" {
+            "prep-q-label.txt"
+        } else if regions.layout == "phone_single_row" {
+            "prep-phone-label.txt"
+        } else {
+            "prep-label.txt"
+        },
+    ))?;
     let damage = Mask::load_text(&templates.join(&regions.damage_template))?;
     Ok(read_packed(
         &packed,
@@ -275,17 +279,28 @@ fn read_packed(
     let mask = Mask::white(image, 145);
     let b_rect = Rect::new(
         regions.battle_label.x - panels.clock.x,
-        0,
+        regions.battle_label.y - panels.clock.y,
         regions.battle_label.w,
         regions.battle_label.h,
     );
     let battle = scaled_mask(labels.0, b_rect.w, b_rect.h);
-    let battle_score = match_score(&mask, &battle, b_rect.x, 0, 1);
+    // Edited recordings can translate/resize the centered timer a few pixels
+    // between battles. Keep the same acceptance threshold while searching only
+    // the already-probed label panel; a fixed x otherwise loses entire attacks.
+    let mut battle_score = match_score(&mask, &battle, b_rect.x, b_rect.y, 1);
+    for factor in [0.95, 1.0, 1.05, 1.10] {
+        let label = crate::probe::resize(&battle, factor);
+        let area = Rect::new(0, 0, panels.clock.w.saturating_sub(label.w), 8);
+        battle_score = battle_score.max(crate::probe::search(&mask, &label, area).1);
+    }
     let prep_w = (labels.1.w as f64 * regions.clock.h as f64 / 25.0).round() as usize;
     let prep = scaled_mask(labels.1, prep_w, b_rect.h);
-    let prep_x = (b_rect.x + b_rect.w / 2).saturating_sub(prep_w / 2);
-    let prep_score =
-        crate::probe::search(&mask, &prep, Rect::new(prep_x.saturating_sub(3), 0, 6, 2)).1;
+    let prep_score = crate::probe::search(
+        &mask,
+        &prep,
+        Rect::new(0, 0, panels.clock.w.saturating_sub(prep.w), 8),
+    )
+    .1;
     let damage = scaled_mask(labels.2, regions.damage_label.w, regions.damage_label.h);
     let damage_score = match_score(
         &mask,
@@ -300,7 +315,9 @@ fn read_packed(
         regions.clock.w,
         regions.clock.h,
     )));
-    let phase = if battle_score > 0.62 && (candidate_clock.value.is_some() || damage_score > 0.60) {
+    let phase = if prep_score > 0.67 && prep_score >= battle_score {
+        "preparation"
+    } else if battle_score > 0.62 && (candidate_clock.value.is_some() || damage_score > 0.60) {
         "attack"
     } else if prep_score > 0.67 {
         "preparation"
@@ -670,7 +687,8 @@ pub fn extract(video_path: &Path, out: &Path, templates: &Path) -> io::Result<()
     if regions.layout == "cropped_replay" {
         crate::replay::extract(video_path, out, templates, &regions)?;
         crate::icons::update(out, templates)?;
-        return crate::timing::update(out);
+        crate::timing::update(out)?;
+        return crate::identity::update(out, templates);
     }
     fs::create_dir_all(out)?;
     fs::write(out.join("regions.json"), regions.json())?;
@@ -698,11 +716,15 @@ pub fn extract(video_path: &Path, out: &Path, templates: &Path) -> io::Result<()
     );
     let panels = Panels::new(&regions);
     let battle = Mask::load_text(&templates.join(&regions.battle_template))?;
-    let prep = Mask::load_text(&templates.join(if regions.layout == "phone_single_row" {
-        "prep-phone-label.txt"
-    } else {
-        "prep-label.txt"
-    }))?;
+    let prep = Mask::load_text(&templates.join(
+        if regions.battle_template == "battle-q-label.txt" {
+            "prep-q-label.txt"
+        } else if regions.layout == "phone_single_row" {
+            "prep-phone-label.txt"
+        } else {
+            "prep-label.txt"
+        },
+    ))?;
     let damage = Mask::load_text(&templates.join(&regions.damage_template))?;
     let mut stream = video::Stream::new(video_path, &panels.filter(&regions))?;
     let mut readings = BufWriter::new(fs::File::create(out.join("readings.jsonl"))?);
@@ -1002,7 +1024,7 @@ pub fn extract(video_path: &Path, out: &Path, templates: &Path) -> io::Result<()
     );
     crate::icons::update(out, templates)?;
     crate::timing::update(out)?;
-    Ok(())
+    crate::identity::video(video_path, out, templates)
 }
 
 #[cfg(test)]

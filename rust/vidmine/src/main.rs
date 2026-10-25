@@ -1,8 +1,11 @@
 mod audit;
 mod extract;
 mod icons;
+mod identity;
+mod identity_review;
 mod image;
 mod json;
+mod league;
 mod ocr;
 mod positions;
 mod probe;
@@ -86,6 +89,51 @@ fn run() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let input = || argument(&args, 2, "video or directory").map(Path::new);
     match args.get(1).map(String::as_str) {
+        Some("identity-data") => identity::inspect_data(),
+        Some("identity-caps") => identity::caps(input()?),
+        Some("league-audit") => league::audit(input()?),
+        Some("league-learn") => {
+            let label = argument(&args, 3, "league label")?;
+            let n = (4..8)
+                .map(|i| {
+                    argument(&args, i, "rectangle")?
+                        .parse::<usize>()
+                        .map_err(io::Error::other)
+                })
+                .collect::<io::Result<Vec<_>>>()?;
+            league::learn(
+                input()?,
+                label,
+                Rect::new(n[0], n[1], n[2], n[3]),
+                Path::new(TEMPLATE_DIR),
+            )
+        }
+        Some("level-sheet") => identity::sheet(input()?, false),
+        Some("army-sheet") => identity::sheet(input()?, true),
+        Some("identity-learn") => identity::learn(input()?, Path::new(TEMPLATE_DIR)),
+        Some("card-learn") => icons::learn_cards(input()?, Path::new(TEMPLATE_DIR)),
+        Some("identity") => identity::update(input()?, Path::new(TEMPLATE_DIR)),
+        Some("identity-audit") => identity_review::audit(input()?),
+        Some("identity-score") => identity_review::score(input()?),
+        Some("identity-label-audit") => {
+            identity_review::label(input()?, Path::new(argument(&args, 3, "sample truth TSV")?))
+        }
+        Some("identity-learn-audit") => {
+            identity_review::learn_names(input()?, Path::new(TEMPLATE_DIR))
+        }
+        Some("identity-refresh-audit") => identity_review::refresh(input()?),
+        Some("identity-freeze-audit") => identity_review::freeze(input()?),
+        Some("identity-read-crops") => {
+            identity_review::read_crops(input()?, Path::new(TEMPLATE_DIR))
+        }
+        Some("identity-video") => {
+            let out = args
+                .iter()
+                .position(|v| v == "--out")
+                .and_then(|i| args.get(i + 1))
+                .ok_or_else(|| io::Error::other("identity-video requires --out DIR"))?;
+            identity::video(input()?, Path::new(out), Path::new(TEMPLATE_DIR))
+        }
         Some("label-crop") => {
             let name = argument(&args, 3, "template name")?;
             if !name.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'-') {
@@ -140,7 +188,10 @@ fn run() -> io::Result<()> {
         Some("label-positions") => review::labels(input()?, "positions"),
         Some("icon-audit") => review::icon_audit(input()?),
         Some("score-positions") => review::score_positions(input()?),
-        Some("verify") => review::verify(input()?),
+        Some("verify") => {
+            review::verify(input()?)?;
+            identity_review::validate(input()?)
+        }
         Some("positions") => {
             let out = args
                 .iter()
@@ -292,7 +343,35 @@ fn run() -> io::Result<()> {
                 if path.join("attacks.tsv").exists() {
                     let text = fs::read_to_string(path.join("attacks.tsv"))?;
                     for line in text.lines().skip(1) {
-                        println!("{line}");
+                        let fields: Vec<_> = line.split('\t').collect();
+                        let id = fields
+                            .get(1)
+                            .and_then(|v| v.parse::<usize>().ok())
+                            .ok_or_else(|| io::Error::other("invalid attack index"))?;
+                        let attack = json::Value::parse(&fs::read_to_string(
+                            path.join(format!("attack-{id:02}.json")),
+                        )?)?;
+                        let th = attack.get("attacker_th");
+                        let league = attack.get("league");
+                        let label = league.get("label").string().unwrap_or_else(|| {
+                            if league
+                                .get("status")
+                                .string()
+                                .is_some_and(|s| s.starts_with("no_label_visible"))
+                            {
+                                "none"
+                            } else {
+                                "unknown"
+                            }
+                        });
+                        println!(
+                            "{line}\t{}\t{}\t{}\t{label}\t{}\t{}",
+                            th.get("min").encode(),
+                            th.get("max").encode(),
+                            th.get("best").encode(),
+                            league.get("confidence").encode(),
+                            attack.get("defender_th").encode()
+                        );
                     }
                 } else {
                     let mut paths: Vec<_> = fs::read_dir(path)?
@@ -307,7 +386,7 @@ fn run() -> io::Result<()> {
                 }
                 Ok(())
             }
-            println!("video_id\tattack\tstart\tend\tduration\tfinal_%\tstars\tdeployments\tclock_coverage\tdamage_coverage\tclock_confidence\tdamage_confidence\tedited");
+            println!("video_id\tattack\tstart\tend\tduration\tfinal_%\tstars\tdeployments\tclock_coverage\tdamage_coverage\tclock_confidence\tdamage_confidence\tedited\tattacker_th_min\tattacker_th_max\tattacker_th_best\tleague\tleague_confidence\tdefender_th");
             visit(Path::new(
                 args.get(2)
                     .ok_or_else(|| io::Error::other("summary requires DIR"))?,
@@ -315,6 +394,21 @@ fn run() -> io::Result<()> {
         }
         Some("--help" | "-h") => {
             println!("vidmine probe VIDEO [--out DIR]\nvidmine extract VIDEO --out DIR\nvidmine positions VIDEO --out DIR\nvidmine resegment DIR\nvidmine icons DIR\nvidmine timing DIR\nvidmine verify DIR\nvidmine summary DIR\nvidmine audit VIDEO --out DIR\nvidmine score DIR\nvidmine icon-cluster DIR\nvidmine icon-learn DIR\nvidmine icon-audit DIR\nvidmine label-hud|label-icons|label-positions DIR\nvidmine score-positions DIR\nvidmine cleanup\nvidmine bootstrap VIDEO clock|damage|count|counts TIME...\nvidmine bootstrap-box VIDEO KIND X Y W H TIME...\nvidmine label-crop VIDEO NAME TIME X Y W H\nvidmine sample VIDEO TIME /tmp/vidmine-work/frame.ppm");
+            println!(concat!(
+                "vidmine identity DIR\n",
+                "vidmine identity-video VIDEO --out DIR\n",
+                "vidmine identity-caps DIR\n",
+                "vidmine level-sheet|army-sheet|league-audit DIR\n",
+                "vidmine identity-audit DIR\n",
+                "vidmine identity-label-audit DIR SAMPLE_TRUTH_TSV\n",
+                "vidmine identity-freeze-audit DIR\n",
+                "vidmine identity-read-crops DIR\n",
+                "vidmine identity-score DIR\n",
+                "vidmine identity-learn LABEL_TSV\n",
+                "vidmine card-learn CARD_LABEL_TSV\n",
+                "vidmine identity-learn-audit DIR\n",
+                "vidmine league-learn PPM LABEL X Y W H"
+            ));
             Ok(())
         }
         _ => Err(io::Error::other(

@@ -76,3 +76,34 @@ uses 175, with 195 and 215 as abstention fallbacks. The source videos are read
 only. No replay frames or unnormalized card crops are embedded in the crate.
 The separately labeled small RGB portrait features are documented in
 [icons/README.md](icons/README.md).
+
+## M3 level badges and QLeqlJlkJw8 clock
+
+M3 adds 152 normalized level glyph variants, explicitly labeled from visible
+card digits. Coordinates and literal strings are in
+`output/web-videos/m3-template-labels.tsv`. Sources include the three supplied
+M3 videos at 30s, preserved mnJOtLowhqs first-attack crops, and frozen reviewed
+badge crops. A row with unsuitable segmentation at a particular threshold is
+skipped; no generated font or inferred level cap supplies a glyph label.
+Thresholds are 150, 180 and 210. Only tiny normalized masks enter this directory.
+Full bootstrap frames and enlarged training sheets remain temporary.
+
+For QLeqlJlkJw8 the native clock bootstrap box was `[574,96,139,27]`, viewed at
+30, 100, 180, 330 and 500s. The reviewed clusters were `0=2, 1=M, 2=5, 3=8,
+5=1, 6=4, 7=3`; unit S clusters were excluded. These become `clock-*-q-m3.txt`.
+The uppercase M variant is recognized by template shape as well as the existing
+wide-m grammar. `battle-q-label.txt` is 30s `[600,78,104,12]`;
+`prep-q-label.txt` is 15s `[593,76,122,13]`.
+
+Whole league-label masks are in `league/`. The inspected native sources are:
+
+| Label | Existing output keyframe | Source rectangle |
+| --- | --- | --- |
+| Legend I | mnJOtLowhqs/attack-01-keyframe.jpg | `[603,71,73,19]` |
+| Legend II | A6iUvh2FMGY/attack-01-keyframe.jpg | `[602,134,76,17]` |
+| Legend III | aaZbYKIG0jQ/attack-01-keyframe.jpg | `[600,142,80,17]` |
+
+Gold text uses a color mask; white text is supported as another template style.
+These labels and glyphs are development observations, not synthetic fixtures,
+held-out validation, or real-game engine calibration. The M3 report includes
+visible-field errors and abstentions, including a missed soft Legend II label.

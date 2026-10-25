@@ -65,7 +65,7 @@ pub fn attack_paths(dir: &Path) -> io::Result<Vec<PathBuf>> {
     Ok(paths)
 }
 
-fn digits(image: &mut Image, text: &str, x: usize, y: usize) {
+pub(crate) fn digits(image: &mut Image, text: &str, x: usize, y: usize) {
     const FONT: [[u8; 5]; 10] = [
         [7, 5, 5, 5, 7],
         [2, 6, 2, 2, 7],
@@ -170,7 +170,82 @@ pub fn cluster(root: &Path) -> io::Result<()> {
 pub struct Library {
     templates: Vec<(String, Vec<u8>)>,
 }
+
+pub fn learn_cards(manifest: &Path, templates: &Path) -> io::Result<()> {
+    let text = fs::read_to_string(manifest)?;
+    for (i, line) in text.lines().skip(1).enumerate() {
+        let c: Vec<_> = line.split('\t').collect();
+        if c.len() != 6 || !c[5].bytes().all(|b| b.is_ascii_alphanumeric() || b == b' ') {
+            return Err(io::Error::other(
+                "card labels require path, x, y, w, h, name",
+            ));
+        }
+        let n = c[1..5]
+            .iter()
+            .map(|s| s.parse::<usize>().map_err(io::Error::other))
+            .collect::<io::Result<Vec<_>>>()?;
+        let image = read(Path::new(c[0]))?;
+        let r = Rect::new(n[0], n[1], n[2], n[3]);
+        if r.x + r.w > image.w || r.y + r.h > image.h {
+            return Err(io::Error::other("card label outside image"));
+        }
+        let f = feature(&image.crop(r));
+        fs::write(
+            templates.join(format!(
+                "icons/{}--m3-reviewed-{i}.txt",
+                c[5].replace(' ', "_")
+            )),
+            f.iter().map(u8::to_string).collect::<Vec<_>>().join(" ") + "\n",
+        )?;
+    }
+    Ok(())
+}
 impl Library {
+    pub fn identify_card(&self, image: &Image) -> (Option<String>, f64) {
+        let portrait = feature(image);
+        let chroma: usize = portrait
+            .chunks_exact(3)
+            .map(|p| (*p.iter().max().unwrap() - *p.iter().min().unwrap()) as usize)
+            .sum();
+        if chroma < WIDTH * HEIGHT * 14 {
+            return (None, 0.0);
+        }
+        // The original library includes right-anchored 61px windows as well as
+        // complete portraits. Compare both geometries on a newly saved card.
+        let mut candidates = Vec::new();
+        for (left, width, height) in [
+            (0.0, 1.0, 1.0),
+            (0.15, 0.80, 0.88),
+            (0.10, 0.85, 0.92),
+            (0.0, 0.85, 0.92),
+        ] {
+            let crop = image.crop(Rect::new(
+                (image.w as f64 * left) as usize,
+                0,
+                (image.w as f64 * width) as usize,
+                (image.h as f64 * height) as usize,
+            ));
+            let (name, confidence) = self.identify(&crop);
+            if let Some(name) = name {
+                candidates.push((name, confidence));
+            }
+        }
+        candidates.sort_by(|a, b| b.1.total_cmp(&a.1));
+        let Some((name, confidence)) = candidates.first() else {
+            return (None, 0.0);
+        };
+        if candidates
+            .iter()
+            .any(|(n, c)| n != name && confidence - c < 0.03)
+        {
+            return (None, *confidence);
+        }
+        if *confidence < 0.70 {
+            return (None, *confidence);
+        }
+        (Some(name.clone()), *confidence)
+    }
+
     pub fn load(root: &Path) -> io::Result<Self> {
         let mut templates = Vec::new();
         let dir = root.join("icons");
@@ -337,7 +412,12 @@ pub fn update(root: &Path, templates: &Path) -> io::Result<()> {
                 }
             }
             attack.set("icon_library_version", Value::from("m2-v1"));
-            attack.set("schema_version", Value::from(2.0));
+            let schema = attack
+                .get("schema_version")
+                .number()
+                .unwrap_or(2.0)
+                .max(2.0);
+            attack.set("schema_version", Value::from(schema));
             fs::write(path, attack.encode() + "\n")?;
         }
     }

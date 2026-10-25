@@ -35,3 +35,18 @@ Supercell's [Apprentice Warden announcement](https://supercell.com/en/games/clas
 [Super Bowler announcement](https://supercell.com/en/games/clashofclans/blog/news/superbowler-qols/),
 and [June 2026 release notes](https://supercell.com/en/games/clashofclans/blog/release-notes/the-anime-fury-update-is-here/),
 plus the supplied video pixels and queued-video titles.
+
+## M3 additions
+
+The active library has 341 feature files after M3. The added small RGB variants
+come from manually inspected full-card geometry in the three M3 dev videos and
+frozen review crops. `output/web-videos/m3-icon-labels.tsv` records native-source
+rectangles; `m3-reviewed-icon-templates.tsv` records frozen source crops and
+literal names. Native bootstrap frames are at 30s for each video and 48.2s for
+n5-W8hHrRYs, stored temporarily under `/tmp/vidmine-work/m3` during learning.
+
+Card matching also compares the old right-anchored geometry against complete
+cards and abstains for gray portraits, weak similarity or conflicting alignment
+results. The M3 name audit was used to add these variants, so its 55/55 named
+identifiable crops is a development result, not held-out accuracy. Five sampled
+portraits were left unidentifiable. The original M2 templates remain present.

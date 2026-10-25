@@ -41,6 +41,12 @@ pub fn metadata(video: &Path) -> io::Result<Metadata> {
 }
 
 pub fn frame(video: &Path, t: f64) -> io::Result<Image> {
+    if video
+        .extension()
+        .is_some_and(|s| s == "jpg" || s == "png" || s == "ppm")
+    {
+        return still(video);
+    }
     let result = Command::new("ffmpeg")
         .args([
             "-v",
@@ -58,6 +64,19 @@ pub fn frame(video: &Path, t: f64) -> io::Result<Image> {
         return Err(io::Error::other(String::from_utf8_lossy(&result.stderr)));
     }
     Image::read(&mut io::Cursor::new(result.stdout))?.ok_or_else(|| io::Error::other("no frame"))
+}
+
+pub fn still(path: &Path) -> io::Result<Image> {
+    let result = Command::new("ffmpeg")
+        .args(["-v", "error", "-threads", "2", "-i"])
+        .arg(path)
+        .args(["-frames:v", "1", "-f", "image2pipe", "-vcodec", "ppm", "-"])
+        .output()?;
+    if !result.status.success() {
+        return Err(io::Error::other(String::from_utf8_lossy(&result.stderr)));
+    }
+    Image::read(&mut io::Cursor::new(result.stdout))?
+        .ok_or_else(|| io::Error::other(format!("no image in {}", path.display())))
 }
 
 pub fn jpeg(video: &Path, t: f64, out: &Path) -> io::Result<()> {

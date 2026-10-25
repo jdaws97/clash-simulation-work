@@ -170,7 +170,11 @@ pub fn locate(video_path: &Path, templates: &Path) -> io::Result<Regions> {
         let (b_box, b_score, b_name) = best_label(
             &mask,
             templates,
-            &["battle-label.txt", "battle-phone-label.txt"],
+            &[
+                "battle-label.txt",
+                "battle-phone-label.txt",
+                "battle-q-label.txt",
+            ],
             Rect::new(image.w / 4, 0, image.w / 2, image.h / 4),
             nominal,
         )?;

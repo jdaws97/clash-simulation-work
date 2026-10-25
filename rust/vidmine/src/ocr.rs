@@ -106,7 +106,13 @@ impl Reader {
         }
         let mut digits = String::new();
         let mut confidence: f64 = 1.0;
-        let has_minutes = glyphs.len() >= 4 && glyphs[1].1.w as f64 / glyphs[1].1.h as f64 > 1.05;
+        let has_minutes = glyphs.len() >= 4
+            && (glyphs[1].1.w as f64 / glyphs[1].1.h as f64 > 1.05
+                || self.templates.iter().any(|(family, label, template)| {
+                    family == "clock"
+                        && *label == 'm'
+                        && template.distance(&glyphs[1].1.normalized()) <= 0.20
+                }));
         if glyphs.len() >= 4 && !has_minutes {
             return Reading::missing();
         }
