@@ -14,11 +14,49 @@ pub const MAX_STEPS: usize = 256;
 // mechanics.py:67-138, mirrored by the frozen native catalog. An
 // absent building on a particular target is allowed; unknown keys are not.
 const BUILDING_KEYS: &[&str] = &[
-    "th", "cc", "ad", "sweeper", "at", "mat", "cannon", "ric", "bt", "bh",
-    "eagle", "tesla", "inferno", "mono", "mortar", "scatter", "st", "wt", "xbow",
-    "gm", "ec", "dd", "gs", "es", "ds", "camp", "barracks", "dbarracks", "sf",
-    "dsf", "lab", "workshop", "pethouse", "smith", "herohall", "helper", "bob",
-    "banner", "mgt", "firespitter", "swt", "revenge", "crafting",
+    "th",
+    "cc",
+    "ad",
+    "sweeper",
+    "at",
+    "mat",
+    "cannon",
+    "ric",
+    "bt",
+    "bh",
+    "eagle",
+    "tesla",
+    "inferno",
+    "mono",
+    "mortar",
+    "scatter",
+    "st",
+    "wt",
+    "xbow",
+    "gm",
+    "ec",
+    "dd",
+    "gs",
+    "es",
+    "ds",
+    "camp",
+    "barracks",
+    "dbarracks",
+    "sf",
+    "dsf",
+    "lab",
+    "workshop",
+    "pethouse",
+    "smith",
+    "herohall",
+    "helper",
+    "bob",
+    "banner",
+    "mgt",
+    "firespitter",
+    "swt",
+    "revenge",
+    "crafting",
 ];
 
 pub fn finite(value: &Json, depth: usize) -> Result<(), String> {
@@ -65,7 +103,9 @@ pub fn amount(step: &Json, left: usize, default: usize) -> Result<usize, String>
     let count = match step.get("count") {
         None | Some(Json::Null) => default,
         Some(Json::Str(value)) if value == "all" => left,
-        Some(Json::Str(value)) => value.parse::<usize>().map_err(|_| "invalid integer count")?,
+        Some(Json::Str(value)) => value
+            .parse::<usize>()
+            .map_err(|_| "invalid integer count")?,
         Some(value) => {
             let value = scalar(value, 1.0, 10000.0)?;
             if value.fract() != 0.0 {
@@ -75,7 +115,9 @@ pub fn amount(step: &Json, left: usize, default: usize) -> Result<usize, String>
         }
     };
     if count == 0 || count > left {
-        return Err(format!("inventory exceeded: requested {count}, remaining {left}"));
+        return Err(format!(
+            "inventory exceeded: requested {count}, remaining {left}"
+        ));
     }
     Ok(count)
 }
@@ -121,9 +163,26 @@ fn trigger(value: &Json, refs: &References, edges: &mut Vec<String>) -> Result<(
     if fields.is_empty() {
         return Ok(());
     }
-    let operations = ["t", "after", "inside", "group_inside", "near_th", "heavy_fire",
-        "hp_below", "spells_left", "dead", "defenders_near", "destruction", "all", "any"];
-    let selected: Vec<_> = operations.iter().copied().filter(|key| value.get(key).is_some()).collect();
+    let operations = [
+        "t",
+        "after",
+        "inside",
+        "group_inside",
+        "near_th",
+        "heavy_fire",
+        "hp_below",
+        "spells_left",
+        "dead",
+        "defenders_near",
+        "destruction",
+        "all",
+        "any",
+    ];
+    let selected: Vec<_> = operations
+        .iter()
+        .copied()
+        .filter(|key| value.get(key).is_some())
+        .collect();
     if selected.len() != 1 {
         return Err("trigger requires exactly one operation (combine with all/any)".to_owned());
     }
@@ -135,7 +194,10 @@ fn trigger(value: &Json, refs: &References, edges: &mut Vec<String>) -> Result<(
         "spells_left" => "n",
         _ => "",
     };
-    if fields.iter().any(|(field, _)| field != key && field != parameter) {
+    if fields
+        .iter()
+        .any(|(field, _)| field != key && field != parameter)
+    {
         return Err(format!("unsupported parameter for {key}"));
     }
     match key {
@@ -169,7 +231,9 @@ fn trigger(value: &Json, refs: &References, edges: &mut Vec<String>) -> Result<(
         }
         "spells_left" => {
             let spell = name(value, key)?;
-            let spell = crate::plans::spell_key(spell).map(crate::plans::spell_name).unwrap_or(spell);
+            let spell = crate::plans::spell_key(spell)
+                .map(crate::plans::spell_name)
+                .unwrap_or(spell);
             if !refs.spells.contains_key(spell) {
                 return Err(format!("spell condition absent from army: {spell}"));
             }
@@ -214,9 +278,14 @@ fn acyclic(
 
 pub fn equipment(step: &Json, genome: &ArmyGenome) -> Result<(), String> {
     let hero = name(step, "what")?;
-    let choice = genome.heroes.iter().find(|choice| choice.hero == hero)
+    let choice = genome
+        .heroes
+        .iter()
+        .find(|choice| choice.hero == hero)
         .ok_or_else(|| format!("ability requires selected hero: {hero}"))?;
-    let description = text(step, "ability", text(step, "id", "")).replace('_', " ").to_lowercase();
+    let description = text(step, "ability", text(step, "id", ""))
+        .replace('_', " ")
+        .to_lowercase();
     let aim = text(step, "aim", "");
     let inferred = if aim == "arrow" || hero == "Archer Queen" && aim.starts_with("building:") {
         Some("Giant Arrow")
@@ -234,32 +303,66 @@ pub fn equipment(step: &Json, genome: &ArmyGenome) -> Result<(), String> {
     // Preserve registry order in playbook.py:683-694's full-name inference.
     let names: &[&str] = match hero {
         "Archer Queen" => &[
-            "Archer Puppet", "Invisibility Vial", "Frozen Arrow", "Monolith Arrow",
-            "Giant Arrow", "Healer Puppet", "Magic Mirror", "Action Figure",
+            "Archer Puppet",
+            "Invisibility Vial",
+            "Frozen Arrow",
+            "Monolith Arrow",
+            "Giant Arrow",
+            "Healer Puppet",
+            "Magic Mirror",
+            "Action Figure",
         ],
         "Barbarian King" => &[
-            "Barbarian Puppet", "Rage Vial", "Earthquake Boots", "Giant Gauntlet",
-            "Vampstache", "Spiky Ball", "Snake Bracelet", "Stick Horse",
+            "Barbarian Puppet",
+            "Rage Vial",
+            "Earthquake Boots",
+            "Giant Gauntlet",
+            "Vampstache",
+            "Spiky Ball",
+            "Snake Bracelet",
+            "Stick Horse",
         ],
         "Grand Warden" => &[
-            "Eternal Tome", "Life Gem", "Heroic Torch", "Fireball", "Rage Gem",
-            "Healing Tome", "Lavaloon Puppet",
+            "Eternal Tome",
+            "Life Gem",
+            "Heroic Torch",
+            "Fireball",
+            "Rage Gem",
+            "Healing Tome",
+            "Lavaloon Puppet",
         ],
         "Royal Champion" => &[
-            "Seeking Shield", "Royal Gem", "Hog Rider Puppet", "Haste Vial",
-            "Rocket Spear", "Electro Boots", "Frost Flake",
+            "Seeking Shield",
+            "Royal Gem",
+            "Hog Rider Puppet",
+            "Haste Vial",
+            "Rocket Spear",
+            "Electro Boots",
+            "Frost Flake",
         ],
         "Minion Prince" => &[
-            "Dark Crown", "Henchmen Puppet", "Dark Orb", "Metal Pants", "Noble Iron",
-            "Meteor Staff", "Portal Pendant",
+            "Dark Crown",
+            "Henchmen Puppet",
+            "Dark Orb",
+            "Metal Pants",
+            "Noble Iron",
+            "Meteor Staff",
+            "Portal Pendant",
         ],
         "Dragon Duke" => &[
-            "Fire Heart", "Rocket Backpack", "Stun Blaster", "Flame Blower",
-            "Electro Fangs", "Revenge Deck",
+            "Fire Heart",
+            "Rocket Backpack",
+            "Stun Blaster",
+            "Flame Blower",
+            "Electro Fangs",
+            "Revenge Deck",
         ],
         _ => &[],
     };
-    let full_name = names.iter().copied().find(|item| description.contains(item.to_lowercase().as_str()));
+    let full_name = names
+        .iter()
+        .copied()
+        .find(|item| description.contains(item.to_lowercase().as_str()));
     let mut required = explicit.or(full_name);
     // playbook.py:677-739 also infers equipment from the ability/id text.
     let aliases: &[(&str, &str)] = match hero {
@@ -309,8 +412,21 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
         if !matches!(step, Json::Obj(_)) {
             return Err("program step must be an object".to_owned());
         }
-        for key in ["id", "action", "what", "group", "at", "aim", "origin", "equipment", "ability"] {
-            if step.get(key).is_some_and(|value| !matches!(value, Json::Str(_))) {
+        for key in [
+            "id",
+            "action",
+            "what",
+            "group",
+            "at",
+            "aim",
+            "origin",
+            "equipment",
+            "ability",
+        ] {
+            if step
+                .get(key)
+                .is_some_and(|value| !matches!(value, Json::Str(_)))
+            {
                 return Err(format!("step {key} must be a string"));
             }
         }
@@ -338,18 +454,63 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
     let mut releases = 0;
     let mut redeploys = 0;
     let recalls = refs.spells.get("Recall Spell").copied().unwrap_or(0)
-        + genome.heroes.iter().filter(|hero| hero.equipment.iter().any(|item| item == "Portal Pendant")).count();
+        + genome
+            .heroes
+            .iter()
+            .filter(|hero| hero.equipment.iter().any(|item| item == "Portal Pendant"))
+            .count();
     for (index, step) in program.steps.iter().enumerate() {
         let check = || -> Result<Vec<String>, String> {
-            let allowed = ["id", "action", "what", "count", "group", "at", "when", "every", "until",
-                "aim", "spread", "level", "origin", "completion", "uncited", "learned", "skip_if_impossible",
-                "ability", "equipment", "cite", "aim_cite", "at_cite", "support", "variant", "note", "notes"];
-            if step.obj().iter().any(|(key, _)| !allowed.contains(&key.as_str())) {
+            let allowed = [
+                "id",
+                "action",
+                "what",
+                "count",
+                "group",
+                "at",
+                "when",
+                "every",
+                "until",
+                "aim",
+                "spread",
+                "level",
+                "origin",
+                "completion",
+                "uncited",
+                "learned",
+                "skip_if_impossible",
+                "ability",
+                "equipment",
+                "cite",
+                "aim_cite",
+                "at_cite",
+                "support",
+                "variant",
+                "note",
+                "notes",
+            ];
+            if step
+                .obj()
+                .iter()
+                .any(|(key, _)| !allowed.contains(&key.as_str()))
+            {
                 return Err("unknown step field".to_owned());
             }
-            for key in ["id", "action", "what", "group", "at", "aim", "origin", "equipment", "ability"] {
+            for key in [
+                "id",
+                "action",
+                "what",
+                "group",
+                "at",
+                "aim",
+                "origin",
+                "equipment",
+                "ability",
+            ] {
                 if let Some(value) = step.get(key) {
-                    if !matches!(value, Json::Str(_)) && !(key == "what" && matches!(value, Json::Null)) {
+                    if !matches!(value, Json::Str(_))
+                        && !(key == "what" && matches!(value, Json::Null))
+                    {
                         return Err(format!("{key} must be a string"));
                     }
                 }
@@ -359,11 +520,17 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                 return Err("invalid group label".to_owned());
             }
             for key in ["completion", "uncited", "learned", "skip_if_impossible"] {
-                if step.get(key).is_some_and(|value| !matches!(value, Json::Bool(_))) {
+                if step
+                    .get(key)
+                    .is_some_and(|value| !matches!(value, Json::Bool(_)))
+                {
                     return Err(format!("{key} must be boolean"));
                 }
             }
-            if step.get("origin").is_some_and(|value| !matches!(value.str(), "brewed" | "donated")) {
+            if step
+                .get("origin")
+                .is_some_and(|value| !matches!(value.str(), "brewed" | "donated"))
+            {
                 return Err("unknown spell origin".to_owned());
             }
             for key in ["cite", "aim_cite", "at_cite"] {
@@ -372,7 +539,8 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                         return Err(format!("{key} must be an array"));
                     }
                     for citation in value.arr() {
-                        let invalid_quote = citation.get("quote")
+                        let invalid_quote = citation
+                            .get("quote")
                             .is_some_and(|value| !matches!(value, Json::Str(_)));
                         if !matches!(citation, Json::Obj(_)) || invalid_quote {
                             return Err("invalid citation record".to_owned());
@@ -418,7 +586,11 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                     stock.insert(what.to_owned(), left - count);
                 }
                 "spell" | "recall" => {
-                    if action == "recall" && !what.is_empty() && what != "Recall Spell" && !refs.units.contains(what) {
+                    if action == "recall"
+                        && !what.is_empty()
+                        && what != "Recall Spell"
+                        && !refs.units.contains(what)
+                    {
                         return Err("recall what must name Recall Spell or an army unit".to_owned());
                     }
                     let spell = if action == "recall" {
@@ -431,7 +603,9 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                     // A repeat conservatively reserves its entire stock.
                     let count = amount(step, left, 1)?;
                     if count != 1 {
-                        return Err("a cast step consumes one spell; split steps or use every".to_owned());
+                        return Err(
+                            "a cast step consumes one spell; split steps or use every".to_owned()
+                        );
                     }
                     let origin = step.get("origin").map(Json::str);
                     let home = brewed.get(spell).copied().unwrap_or(0);
@@ -447,15 +621,17 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                     // playbook.py:964-1007 only checks total remaining stock.
                     // A restricted repeat cannot stop at its origin boundary.
                     if repeated && origin.is_some() && available != left {
-                        return Err("origin-restricted repeat requires a single-origin stock".to_owned());
+                        return Err(
+                            "origin-restricted repeat requires a single-origin stock".to_owned()
+                        );
                     }
                     let compartment = match origin {
                         Some("brewed") => 0,
                         Some("donated") => 1,
                         _ => 2,
                     };
-                    spell_demand.entry(spell.to_owned()).or_default()[compartment]
-                        += if repeated { available } else { 1 };
+                    spell_demand.entry(spell.to_owned()).or_default()[compartment] +=
+                        if repeated { available } else { 1 };
                 }
                 "ability" => {
                     equipment(step, genome)?;
@@ -466,7 +642,9 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                 }
                 "release_siege" => {
                     amount(step, 1, 1)?;
-                    if genome.siege.is_none() || !what.is_empty() && genome.siege.as_deref() != Some(what) {
+                    if genome.siege.is_none()
+                        || !what.is_empty() && genome.siege.as_deref() != Some(what)
+                    {
                         return Err("release requires selected siege".to_owned());
                     }
                     releases += 1;
@@ -477,8 +655,13 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                 "redeploy" => {
                     amount(step, 1, 1)?;
                     redeploys += 1;
-                    if recalls == 0 || redeploys > recalls || !what.is_empty() && !refs.units.contains(what) {
-                        return Err("redeploy requires Recall or Portal Pendant inventory".to_owned());
+                    if recalls == 0
+                        || redeploys > recalls
+                        || !what.is_empty() && !refs.units.contains(what)
+                    {
+                        return Err(
+                            "redeploy requires Recall or Portal Pendant inventory".to_owned()
+                        );
                     }
                 }
                 _ => return Err(format!("unknown action: {action}")),
@@ -502,7 +685,9 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
         // Donated-only finite casts are safe: the kind reservation and brewed
         // first selection leave their required donated copies until they fire.
         if home_demand > 0 && cc > 0 {
-            return Err(format!("brewed-only cast can be starved by unrestricted casts: {spell}"));
+            return Err(format!(
+                "brewed-only cast can be starved by unrestricted casts: {spell}"
+            ));
         }
     }
     for hero in &genome.heroes {

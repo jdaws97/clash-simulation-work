@@ -16,8 +16,8 @@ pub mod eval;
 pub mod genome;
 pub mod novelty;
 pub mod operators;
-pub mod proof;
 pub mod program;
+pub mod proof;
 pub mod report;
 pub mod score;
 pub mod search;
@@ -81,13 +81,17 @@ pub struct Config {
 fn find_root() -> Result<PathBuf, String> {
     let current = std::env::current_dir().map_err(|error| error.to_string())?;
     for directory in current.ancestors() {
-        if directory.join("data/your-levels.json").exists() && directory.join("rust/Cargo.toml").exists() {
+        if directory.join("data/your-levels.json").exists()
+            && directory.join("rust/Cargo.toml").exists()
+        {
             return Ok(directory.to_owned());
         }
     }
     let executable = std::env::current_exe().map_err(|error| error.to_string())?;
     for directory in executable.ancestors().skip(1) {
-        if directory.join("data/your-levels.json").exists() && directory.join("rust/Cargo.toml").exists() {
+        if directory.join("data/your-levels.json").exists()
+            && directory.join("rust/Cargo.toml").exists()
+        {
             return Ok(directory.to_owned());
         }
     }
@@ -97,13 +101,23 @@ fn find_root() -> Result<PathBuf, String> {
 impl Config {
     pub fn parse(args: &[PathBuf]) -> Result<Self, String> {
         let argument = |name: &str| -> Option<&PathBuf> {
-            args.windows(2).find(|pair| pair[0] == Path::new(name)).map(|pair| &pair[1])
+            args.windows(2)
+                .find(|pair| pair[0] == Path::new(name))
+                .map(|pair| &pair[1])
         };
-        let root = argument("--root").cloned().map(Ok).unwrap_or_else(find_root)?;
+        let root = argument("--root")
+            .cloned()
+            .map(Ok)
+            .unwrap_or_else(find_root)?;
         let root = root.canonicalize().map_err(|error| error.to_string())?;
         let parse = |name: &str, default: usize| -> Result<usize, String> {
-            argument(name).map_or(Ok(default), |value| value.to_str().ok_or("non-UTF8 number")?
-                .parse::<usize>().map_err(|_| format!("invalid {name}")))
+            argument(name).map_or(Ok(default), |value| {
+                value
+                    .to_str()
+                    .ok_or("non-UTF8 number")?
+                    .parse::<usize>()
+                    .map_err(|_| format!("invalid {name}"))
+            })
         };
         let mut index = 0;
         while index < args.len() {
@@ -141,10 +155,18 @@ impl Config {
             }
             index += 2;
         }
-        let seed = argument("--seed").map_or(Ok(20261024), |value| value.to_str().ok_or("non-UTF8 seed")?
-            .parse::<u64>().map_err(|_| "invalid --seed"))?;
-        let objective = Objective::parse(argument("--objective").and_then(|value| value.to_str())
-            .unwrap_or("ranked"))?;
+        let seed = argument("--seed").map_or(Ok(20261024), |value| {
+            value
+                .to_str()
+                .ok_or("non-UTF8 seed")?
+                .parse::<u64>()
+                .map_err(|_| "invalid --seed")
+        })?;
+        let objective = Objective::parse(
+            argument("--objective")
+                .and_then(|value| value.to_str())
+                .unwrap_or("ranked"),
+        )?;
         let fraction = |name: &str, default: f64| -> Result<f64, String> {
             argument(name).map_or(Ok(default), |value| {
                 value
@@ -176,16 +198,25 @@ impl Config {
         };
         proposals.validate()?;
         let config = Self {
-            catalog: argument("--catalog").cloned().unwrap_or_else(|| root.join("rust/data/catalog.json")),
+            catalog: argument("--catalog")
+                .cloned()
+                .unwrap_or_else(|| root.join("rust/data/catalog.json")),
             manifest: argument("--manifest").cloned(),
-            out: argument("--out").cloned().unwrap_or_else(|| root.join("rust/output/armysearch")),
+            out: argument("--out")
+                .cloned()
+                .unwrap_or_else(|| root.join("rust/output/armysearch")),
             batches: parse("--batches", 16)?,
             batch: parse("--batch", 32)?,
             seed,
-            threads: parse("--threads", std::thread::available_parallelism().map_or(1, |count| count.get()))?,
+            threads: parse(
+                "--threads",
+                std::thread::available_parallelism().map_or(1, |count| count.get()),
+            )?,
             quick_budget: parse("--quick-budget", 96)?,
             confirm_budget: parse("--confirm-budget", 384)?,
-            holdout_budget: argument("--holdout-budget").map(|_| parse("--holdout-budget", 0)).transpose()?,
+            holdout_budget: argument("--holdout-budget")
+                .map(|_| parse("--holdout-budget", 0))
+                .transpose()?,
             top: parse("--top", 8)?,
             objective,
             resume: argument("--resume").cloned(),
@@ -210,7 +241,10 @@ impl Config {
             ("random_fraction", Json::Num(self.proposals.random_fraction)),
             ("families", string(self.proposals.families.name())),
             ("programs", Json::Bool(self.proposals.programs)),
-            ("program_mutation_rate", Json::Num(self.proposals.program_mutation_rate)),
+            (
+                "program_mutation_rate",
+                Json::Num(self.proposals.program_mutation_rate),
+            ),
             ("strength", Json::Num(1.0)),
         ])
     }
@@ -225,18 +259,28 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
         Some("armysearch") => (false, &args[1..]),
         _ => (false, args),
     };
-    if args.iter().any(|arg| arg == Path::new("--help") || arg == Path::new("-h")) {
+    if args
+        .iter()
+        .any(|arg| arg == Path::new("--help") || arg == Path::new("-h"))
+    {
         println!("{USAGE}");
         return Ok(());
     }
     let config = Config::parse(args)?;
     let catalog = Arc::new(Catalog::load(&config.catalog)?);
     let mut compiler = Compiler::load(&config.root, &catalog.stats)?;
-    compiler.playbooks.retain(|(family, _)| !family.starts_with("test-"));
+    compiler
+        .playbooks
+        .retain(|(family, _)| !family.starts_with("test-"));
     let account = AccountRules::load(&catalog, &compiler)?;
     let manifest = TargetManifest::load(&config.root, config.manifest.as_deref())?;
-    let (mut templates, seed_rejections) = operators::seeds(&config.root, &account, &compiler, &catalog)?;
-    eprintln!("armysearch: {} legal seeds, {} rejected recipes", templates.len(), seed_rejections.len());
+    let (mut templates, seed_rejections) =
+        operators::seeds(&config.root, &account, &compiler, &catalog)?;
+    eprintln!(
+        "armysearch: {} legal seeds, {} rejected recipes",
+        templates.len(),
+        seed_rejections.len()
+    );
     if proof {
         let result = proof::run(
             &account,
@@ -259,7 +303,15 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
         }
         templates.sort_by_key(genome::ArmyGenome::identity);
     }
-    run(&config, &account, &compiler, Arc::clone(&catalog), &manifest, &templates, &seed_rejections)
+    run(
+        &config,
+        &account,
+        &compiler,
+        Arc::clone(&catalog),
+        &manifest,
+        &templates,
+        &seed_rejections,
+    )
 }
 
 pub fn run(
@@ -284,21 +336,38 @@ pub fn run(
     }
     score::allocate(manifest, Stage::Quick, config.quick_budget, config.seed)?;
     score::allocate(manifest, Stage::Confirm, config.confirm_budget, config.seed)?;
-    let holdout_count = manifest.targets.iter().filter(|target| target.split == score::Split::Holdout).count();
+    let holdout_count = manifest
+        .targets
+        .iter()
+        .filter(|target| target.split == score::Split::Holdout)
+        .count();
     let holdout_budget = config.holdout_budget.unwrap_or(holdout_count * 8 * 16);
     score::allocate(manifest, Stage::Holdout, holdout_budget, config.seed)?;
-    let identity = report::input_identity(&config.root, &config.catalog, &config
-        .identity_settings(), manifest)?;
+    let identity = report::input_identity(
+        &config.root,
+        &config.catalog,
+        &config.identity_settings(),
+        manifest,
+    )?;
     let checkpoint = config.out.join("checkpoint.json");
-    if config.resume.is_none() && (checkpoint.exists() || checkpoint.with_extension("json.bak").exists()) {
-        return Err(format!("output already contains a checkpoint; use --resume {}", checkpoint.display()));
+    if config.resume.is_none()
+        && (checkpoint.exists() || checkpoint.with_extension("json.bak").exists())
+    {
+        return Err(format!(
+            "output already contains a checkpoint; use --resume {}",
+            checkpoint.display()
+        ));
     }
     let mut state = if let Some(path) = &config.resume {
         report::resume(path, &identity, config.objective, account)?
     } else {
         SearchState::new(config.seed)
     };
-    report::validate_resumed(&state, |genome| account.compile(compiler, &catalog, genome, genome.plan.angle_offset, 0).map(|_| ()))?;
+    report::validate_resumed(&state, |genome| {
+        account
+            .compile(compiler, &catalog, genome, genome.plan.angle_offset, 0)
+            .map(|_| ())
+    })?;
     if state
         .archive
         .values()
@@ -326,15 +395,27 @@ pub fn run(
         ("known_limits", string("frozen exported catalog; visible-layout assumptions; seed/base uncertainty cannot establish real-game calibration; Python parity gates external")),
     ]))?;
     let raw_path = config.out.join("battles.jsonl");
-    let raw = std::fs::OpenOptions::new().create(true).write(true).open(&raw_path)
+    let raw = std::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .open(&raw_path)
         .map_err(|error| error.to_string())?;
     if raw.metadata().map_err(|error| error.to_string())?.len() < state.raw_bytes {
         return Err("raw battle output is shorter than the checkpoint; resume in the original output directory".to_owned());
     }
     // Discard an interrupted wave, or the previous final holdout, before replay.
-    raw.set_len(state.raw_bytes).map_err(|error| error.to_string())?;
+    raw.set_len(state.raw_bytes)
+        .map_err(|error| error.to_string())?;
     drop(raw);
-    let mut evaluator = NativeEvaluator::new(account, compiler, Arc::clone(&catalog), manifest, config.seed, config.threads, Some(&raw_path))?;
+    let mut evaluator = NativeEvaluator::new(
+        account,
+        compiler,
+        Arc::clone(&catalog),
+        manifest,
+        config.seed,
+        config.threads,
+        Some(&raw_path),
+    )?;
     while state.completed_batches < config.batches {
         let candidates = search::proposals(
             &mut state,
@@ -360,32 +441,67 @@ pub fn run(
         );
         state.raw_bytes = evaluator.raw_len()?;
         report::checkpoint(&checkpoint, &identity, &state)?;
-        write(&config.out.join("archive.json"), &report::archive_json(&state))?;
-        eprintln!("armysearch batch {}/{}: {} cells, {} assessments, {} logical battles", state.completed_batches, config.batches, state.archive.len(), state.assessments, state.logical_battles);
+        write(
+            &config.out.join("archive.json"),
+            &report::archive_json(&state),
+        )?;
+        eprintln!(
+            "armysearch batch {}/{}: {} cells, {} assessments, {} logical battles",
+            state.completed_batches,
+            config.batches,
+            state.archive.len(),
+            state.assessments,
+            state.logical_battles
+        );
     }
     let elites = state.elites(config.objective);
     if elites.is_empty() {
-        return Err(format!("no confirmed legal armies; {}", encode(&state.to_json().at("rejected").clone())));
+        return Err(format!(
+            "no confirmed legal armies; {}",
+            encode(&state.to_json().at("rejected").clone())
+        ));
     }
     let mut finalists = elites.clone();
     finalists.truncate(config.top);
-    write(&config.out.join("pareto.json"), &Json::Arr(search::pareto(&elites).iter()
-        .map(search::Elite::to_json).collect()))?;
+    write(
+        &config.out.join("pareto.json"),
+        &Json::Arr(
+            search::pareto(&elites)
+                .iter()
+                .map(search::Elite::to_json)
+                .collect(),
+        ),
+    )?;
     report::frozen_selection(&config.out.join("holdout-frozen.json"), &finalists)?;
     let frozen = encode(&report::archive_json(&state));
     let mut index = Vec::new();
     for (position, elite) in finalists.iter().enumerate() {
         eprintln!("armysearch holdout {}/{}", position + 1, finalists.len());
-        let (keys, outcomes) = evaluator.evaluate_rows(&elite.genome, Stage::Holdout, holdout_budget)?;
+        let (keys, outcomes) =
+            evaluator.evaluate_rows(&elite.genome, Stage::Holdout, holdout_budget)?;
         let holdout = score::summarise(manifest, Stage::Holdout, &keys, &outcomes, holdout_budget)?;
         let replay = evaluator.median_replay(&elite.genome, &keys, &outcomes)?;
-        let plan = account.compile(compiler, &catalog, &elite.genome, elite.genome.plan.angle_offset, 0)?;
+        let plan = account.compile(
+            compiler,
+            &catalog,
+            &elite.genome,
+            elite.genome.plan.angle_offset,
+            0,
+        )?;
         let mut housing = compiler.housing(&plan)?;
-        for (field, cap) in [("camp_cap", 320), ("spell_cap", 11), ("cc_cap", 50), ("cc_spell_cap", 3)] {
+        for (field, cap) in [
+            ("camp_cap", 320),
+            ("spell_cap", 11),
+            ("cc_cap", 50),
+            ("cc_spell_cap", 3),
+        ] {
             crate::armies::put(&mut housing, field, number(cap));
         }
-        let filename = format!("army-{:03}-{:016x}.json", position + 1, hash(elite.genome.identity()
-            .as_bytes()));
+        let filename = format!(
+            "army-{:03}-{:016x}.json",
+            position + 1,
+            hash(elite.genome.identity().as_bytes())
+        );
         report::army_report(
             &config.out.join(&filename),
             position + 1,

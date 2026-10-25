@@ -76,8 +76,8 @@ fn run() -> Result<(), String> {
     let catalog = Arc::new(Catalog::load(&catalog_path()?)?);
     if command == "trace" {
         let mut battle = load::load(&paths[0], catalog)?;
-        let file = File::create(&paths[1])
-            .map_err(|error| format!("{}: {error}", paths[1].display()))?;
+        let file =
+            File::create(&paths[1]).map_err(|error| format!("{}: {error}", paths[1].display()))?;
         let mut out = BufWriter::new(file);
         trace::write_trace(&mut battle, &mut out)
             .map_err(|error| format!("{}: {error}", paths[1].display()))?;

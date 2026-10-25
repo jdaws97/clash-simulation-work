@@ -17,13 +17,26 @@ pub fn seeds(
     compiler: &Compiler<'_>,
     catalog: &Catalog,
 ) -> Result<(Vec<ArmyGenome>, Vec<String>), String> {
-    let mut builds: Vec<Json> = compiler.library.builds.iter().map(|build| build.value.clone()).collect();
-    let mut paths = std::fs::read_dir(root.join("data")).map_err(|error| error.to_string())?
-        .map(|entry| entry.map(|entry| entry.path()).map_err(|error| error.to_string()))
+    let mut builds: Vec<Json> = compiler
+        .library
+        .builds
+        .iter()
+        .map(|build| build.value.clone())
+        .collect();
+    let mut paths = std::fs::read_dir(root.join("data"))
+        .map_err(|error| error.to_string())?
+        .map(|entry| {
+            entry
+                .map(|entry| entry.path())
+                .map_err(|error| error.to_string())
+        })
         .collect::<Result<Vec<_>, _>>()?;
     paths.sort();
     for path in paths {
-        let name = path.file_name().and_then(|name| name.to_str()).unwrap_or("");
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("");
         if name.starts_with("meta-armies-") && name.ends_with(".json") {
             builds.extend_from_slice(array(&read(&path)?, "builds"));
         }
@@ -46,7 +59,11 @@ pub fn seeds(
         // Filename is authoritative for template seeds, including families
         // whose signature overlaps another family (e.g. Warden air charges).
         let archetype = text(build, "archetype", "");
-        if compiler.playbooks.iter().any(|(name, _)| name == archetype && !name.starts_with("test-")) {
+        if compiler
+            .playbooks
+            .iter()
+            .any(|(name, _)| name == archetype && !name.starts_with("test-"))
+        {
             genome.plan.family = archetype.to_owned();
         }
         // meta_armies.py:282-343 recognizes Lava Hound as the Lalo signature.
@@ -83,13 +100,18 @@ pub fn seeds(
                             found.push(genome);
                         }
                     }
-                    Err(generic) => rejected.push(format!("seed {index}: {reason}; generic: {generic}")),
+                    Err(generic) => {
+                        rejected.push(format!("seed {index}: {reason}; generic: {generic}"))
+                    }
                 }
             }
         }
     }
     if found.is_empty() {
-        return Err(format!("no legal executable seeds: {}", rejected.join("; ")));
+        return Err(format!(
+            "no legal executable seeds: {}",
+            rejected.join("; ")
+        ));
     }
     found.sort_by_key(ArmyGenome::identity);
     Ok((found, rejected))
@@ -107,7 +129,10 @@ pub fn applicability(plan: &Json) -> [bool; 19] {
     // playbook.py:148-154: these anchors actually execute flank_offset.
     mask[1] = steps.iter().any(|step| {
         ["at", "aim"].iter().any(|field| {
-            matches!(text(step, field, ""), "edge:charge" | "edge:funnel" | "edge:left" | "edge:right")
+            matches!(
+                text(step, field, ""),
+                "edge:charge" | "edge:funnel" | "edge:left" | "edge:right"
+            )
         })
     });
     mask[4] = steps.iter().any(|step| {
@@ -115,9 +140,9 @@ pub fn applicability(plan: &Json) -> [bool; 19] {
             && !crate::plans::is_hero(text(step, "what", ""))
             && text(step, "what", "") != "Healer"
     });
-    mask[5] = steps.iter().any(|step| {
-        text(step, "action", "") == "deploy" && text(step, "what", "") == "Healer"
-    });
+    mask[5] = steps
+        .iter()
+        .any(|step| text(step, "action", "") == "deploy" && text(step, "what", "") == "Healer");
     let spare = |name: &str, key: &str| {
         let mut reserved = 0.0;
         for step in steps {
@@ -157,9 +182,9 @@ pub fn admit(
     }
     if genome.plan.family != "generic" {
         let uses_charge_side = array(&plan, "steps").iter().any(|step| {
-            ["at", "aim"].iter().any(|field| {
-                matches!(text(step, field, ""), "edge:charge" | "edge:funnel")
-            })
+            ["at", "aim"]
+                .iter()
+                .any(|field| matches!(text(step, field, ""), "edge:charge" | "edge:funnel"))
         });
         if !uses_charge_side {
             genome.plan.charge_side = "left".to_owned();
@@ -169,7 +194,10 @@ pub fn admit(
         }
     }
     let valid_steps: BTreeSet<String> = timing_steps(&plan).into_iter().collect();
-    genome.plan.step_timing.retain(|id, _| valid_steps.contains(id));
+    genome
+        .plan
+        .step_timing
+        .retain(|id, _| valid_steps.contains(id));
     genome.normalize();
     account.compile(compiler, catalog, genome, genome.plan.angle_offset, 0)?;
     Ok(())
@@ -180,11 +208,15 @@ pub(super) fn timing_steps(plan: &Json) -> Vec<String> {
         when.get("after").is_some() && numeric(when, "delay", 0.0) > 0.0
             || array(when, "all").iter().any(delayed)
     }
-    array(plan, "steps").iter().filter(|step| {
-        !step.get("uncited").is_some_and(Json::bool)
-            && !array(step, "cite").is_empty()
-            && step.get("when").is_some_and(delayed)
-    }).map(|step| text(step, "id", "").to_owned()).collect()
+    array(plan, "steps")
+        .iter()
+        .filter(|step| {
+            !step.get("uncited").is_some_and(Json::bool)
+                && !array(step, "cite").is_empty()
+                && step.get("when").is_some_and(delayed)
+        })
+        .map(|step| text(step, "id", "").to_owned())
+        .collect()
 }
 
 fn exchange(values: &mut Vec<UnitCount>, roster: &[EligibleUnit], rng: &mut Random, large: bool) {
@@ -200,11 +232,7 @@ fn exchange(values: &mut Vec<UnitCount>, roster: &[EligibleUnit], rng: &mut Rand
     let selected = &roster[rng.index(roster.len())];
     values.push(UnitCount {
         name: selected.name.clone(),
-        count: 1 + rng.index(if large {
-            12
-        } else {
-            3
-        })
+        count: 1 + rng.index(if large { 12 } else { 3 }),
     });
 }
 
@@ -219,22 +247,30 @@ pub(super) fn empty_immigrant(account: &AccountRules, rng: &mut Random) -> ArmyG
         let other = rng.index(index + 1);
         pets.swap(index, other);
     }
-    let choices = heroes.into_iter().take(4).enumerate().map(|(index, hero)| {
-        let inventory = &account.roster.equipment[&hero];
-        let first = rng.index(inventory.len());
-        let second = (first + 1 + rng.index(inventory.len() - 1)) % inventory.len();
-        HeroChoice {
-            hero,
-            equipment: [inventory[first].clone(), inventory[second].clone()],
-            pet: pets[index].clone()
-        }
-    }).collect();
+    let choices = heroes
+        .into_iter()
+        .take(4)
+        .enumerate()
+        .map(|(index, hero)| {
+            let inventory = &account.roster.equipment[&hero];
+            let first = rng.index(inventory.len());
+            let second = (first + 1 + rng.index(inventory.len() - 1)) % inventory.len();
+            HeroChoice {
+                hero,
+                equipment: [inventory[first].clone(), inventory[second].clone()],
+                pet: pets[index].clone(),
+            }
+        })
+        .collect();
     ArmyGenome {
         troops: Vec::new(),
         spells: Vec::new(),
         cc_troops: Vec::new(),
         cc_spells: Vec::new(),
-        siege: account.roster.sieges.get(rng.index(account.roster.sieges.len().max(1)))
+        siege: account
+            .roster
+            .sieges
+            .get(rng.index(account.roster.sieges.len().max(1)))
             .map(|unit| unit.name.clone()),
         heroes: choices,
         plan: PlanGenes {
@@ -273,13 +309,20 @@ pub fn mutate(
         3 => exchange(&mut child.cc_troops, &account.roster.troops, rng, false),
         4 => exchange(&mut child.cc_spells, &account.roster.spells, rng, false),
         5 => {
-            child.siege = account.roster.sieges.get(rng.index(account.roster.sieges.len().max(1)))
+            child.siege = account
+                .roster
+                .sieges
+                .get(rng.index(account.roster.sieges.len().max(1)))
                 .map(|unit| unit.name.clone());
         }
         6 => {
             let index = rng.index(4);
-            let available: Vec<_> = account.roster.heroes.iter().filter(|hero| !child.heroes.iter()
-                .any(|choice| &choice.hero == *hero)).collect();
+            let available: Vec<_> = account
+                .roster
+                .heroes
+                .iter()
+                .filter(|hero| !child.heroes.iter().any(|choice| &choice.hero == *hero))
+                .collect();
             if !available.is_empty() {
                 child.heroes[index].hero = available[rng.index(available.len())].clone();
             }
@@ -298,7 +341,8 @@ pub fn mutate(
                 child.heroes[first].pet = child.heroes[second].pet.clone();
                 child.heroes[second].pet = pet;
             } else {
-                child.heroes[first].pet = account.roster.pets[rng.index(account.roster.pets.len())].clone();
+                child.heroes[first].pet =
+                    account.roster.pets[rng.index(account.roster.pets.len())].clone();
             }
         }
         9 => {
@@ -309,19 +353,28 @@ pub fn mutate(
         }
         10 => {
             let tau = 2.0 * std::f64::consts::PI;
-            child.plan.angle_offset = (child.plan.angle_offset + (rng.unit() - 0.5) * 0.8).rem_euclid(tau);
+            child.plan.angle_offset =
+                (child.plan.angle_offset + (rng.unit() - 0.5) * 0.8).rem_euclid(tau);
         }
         11 => {
             if child.plan.family != "generic" || child.plan.program.is_some() {
                 match rng.index(3) {
-                    0 => child.plan.charge_side = if child.plan.charge_side == "left" {
-                        "right"
-                    } else {
-                        "left"
-                    }.to_owned(),
-                    1 => child.plan.flank_offset = (child.plan.flank_offset + (rng
-                        .unit() - 0.5) * 0.4).clamp(0.3, 1.6),
-                    _ => child.plan.snipe_mode = ["off", "value", "aggressive"][rng.index(3)].to_owned(),
+                    0 => {
+                        child.plan.charge_side = if child.plan.charge_side == "left" {
+                            "right"
+                        } else {
+                            "left"
+                        }
+                        .to_owned()
+                    }
+                    1 => {
+                        child.plan.flank_offset =
+                            (child.plan.flank_offset + (rng.unit() - 0.5) * 0.4).clamp(0.3, 1.6)
+                    }
+                    _ => {
+                        child.plan.snipe_mode =
+                            ["off", "value", "aggressive"][rng.index(3)].to_owned()
+                    }
                 }
             }
         }
@@ -329,8 +382,10 @@ pub fn mutate(
             let plan = account.compile(compiler, catalog, parent, parent.plan.angle_offset, 0)?;
             let steps = timing_steps(&plan);
             if !steps.is_empty() {
-                child.plan.step_timing.insert(steps[rng.index(steps.len())].clone(), (rng
-                    .unit() - 0.5) * 8.0);
+                child.plan.step_timing.insert(
+                    steps[rng.index(steps.len())].clone(),
+                    (rng.unit() - 0.5) * 8.0,
+                );
             }
             let mask = applicability(&plan);
             let active: Vec<_> = (0..19).filter(|index| mask[*index]).collect();

@@ -28,7 +28,10 @@ fn can_add(values: &[UnitCount], roster: &[EligibleUnit], unit: &EligibleUnit) -
         if value.name == unit.name {
             return true;
         }
-        if roster.iter().any(|item| item.name == value.name && item.boosted) {
+        if roster
+            .iter()
+            .any(|item| item.name == value.name && item.boosted)
+        {
             boosted_types += 1;
         }
     }
@@ -106,10 +109,7 @@ fn spells(
     let mut values = Vec::new();
     let mut free = cap;
     loop {
-        let eligible: Vec<_> = roster
-            .iter()
-            .filter(|unit| unit.housing <= free)
-            .collect();
+        let eligible: Vec<_> = roster.iter().filter(|unit| unit.housing <= free).collect();
         if eligible.is_empty() {
             break;
         }

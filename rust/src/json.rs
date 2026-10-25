@@ -27,7 +27,10 @@ impl fmt::Display for JsonError {
 }
 
 pub fn parse(text: &str) -> Result<Json, JsonError> {
-    let mut p = Parser { s: text.as_bytes(), i: 0 };
+    let mut p = Parser {
+        s: text.as_bytes(),
+        i: 0,
+    };
     let value = p.value()?;
     p.ws();
     if p.i != p.s.len() {
@@ -45,7 +48,8 @@ impl Json {
     }
     /// Field that must exist (panics with the key name: inputs come from our own exporter).
     pub fn at(&self, key: &str) -> &Json {
-        self.get(key).unwrap_or_else(|| panic!("missing JSON field {key:?}"))
+        self.get(key)
+            .unwrap_or_else(|| panic!("missing JSON field {key:?}"))
     }
     pub fn f64(&self) -> f64 {
         match self {
@@ -114,7 +118,10 @@ struct Parser<'a> {
 
 impl Parser<'_> {
     fn err(&self, message: &str) -> JsonError {
-        JsonError { at: self.i, message: message.to_owned() }
+        JsonError {
+            at: self.i,
+            message: message.to_owned(),
+        }
     }
 
     fn ws(&mut self) {
@@ -196,11 +203,19 @@ impl Parser<'_> {
 
     fn number(&mut self) -> Result<Json, JsonError> {
         let start = self.i;
-        while self.i < self.s.len() && matches!(self.s[self.i], b'-' | b'+' | b'.' | b'e' | b'E' | b'0'..=b'9') {
+        while self.i < self.s.len()
+            && matches!(
+                self.s[self.i],
+                b'-' | b'+' | b'.' | b'e' | b'E' | b'0'..=b'9'
+            )
+        {
             self.i += 1;
         }
-        let text = std::str::from_utf8(&self.s[start..self.i]).map_err(|_| self.err("bad number"))?;
-        text.parse::<f64>().map(Json::Num).map_err(|_| self.err("bad number"))
+        let text =
+            std::str::from_utf8(&self.s[start..self.i]).map_err(|_| self.err("bad number"))?;
+        text.parse::<f64>()
+            .map(Json::Num)
+            .map_err(|_| self.err("bad number"))
     }
 
     fn string(&mut self) -> Result<String, JsonError> {
@@ -250,14 +265,20 @@ impl Parser<'_> {
                         _ => 4,
                     };
                     self.i = start + len;
-                    out.push_str(std::str::from_utf8(&self.s[start..self.i]).map_err(|_| self.err("bad UTF-8"))?);
+                    out.push_str(
+                        std::str::from_utf8(&self.s[start..self.i])
+                            .map_err(|_| self.err("bad UTF-8"))?,
+                    );
                 }
             }
         }
     }
 
     fn hex4(&mut self) -> Result<u32, JsonError> {
-        let text = self.s.get(self.i..self.i + 4).ok_or_else(|| self.err("bad \\u escape"))?;
+        let text = self
+            .s
+            .get(self.i..self.i + 4)
+            .ok_or_else(|| self.err("bad \\u escape"))?;
         let code = u32::from_str_radix(std::str::from_utf8(text).unwrap_or("x"), 16)
             .map_err(|_| self.err("bad \\u escape"))?;
         self.i += 4;

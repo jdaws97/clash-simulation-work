@@ -109,7 +109,7 @@ impl ProposalSettings {
 pub enum Objective {
     Ranked,
     Stars,
-    Destruction
+    Destruction,
 }
 
 impl Objective {
@@ -126,7 +126,7 @@ impl Objective {
         match self {
             Self::Ranked => "ranked",
             Self::Stars => "stars",
-            Self::Destruction => "destruction"
+            Self::Destruction => "destruction",
         }
     }
 }
@@ -140,14 +140,18 @@ pub struct Elite {
 
 impl Elite {
     pub fn to_json(&self) -> Json {
-        object([("genome", self.genome.to_json()), ("quick", self.quick.to_json()), ("confirm", self.confirm.to_json())])
+        object([
+            ("genome", self.genome.to_json()),
+            ("quick", self.quick.to_json()),
+            ("confirm", self.confirm.to_json()),
+        ])
     }
 
     pub fn from_json(value: &Json) -> Result<Self, String> {
         Ok(Self {
             genome: ArmyGenome::from_json(value.at("genome"))?,
             quick: CandidateEstimate::from_json(value.at("quick"))?,
-            confirm: CandidateEstimate::from_json(value.at("confirm"))?
+            confirm: CandidateEstimate::from_json(value.at("confirm"))?,
         })
     }
 }
@@ -206,10 +210,26 @@ impl SearchState {
             ("completed_batches", number(self.completed_batches)),
             ("seed_cursor", number(self.seed_cursor)),
             ("rng", string(self.rng.0.to_string())),
-            ("archive", Json::Arr(self.archive.values().flatten().map(Elite::to_json).collect())),
+            (
+                "archive",
+                Json::Arr(
+                    self.archive
+                        .values()
+                        .flatten()
+                        .map(Elite::to_json)
+                        .collect(),
+                ),
+            ),
             ("seen", Json::Arr(self.seen.iter().map(string).collect())),
-            ("rejected", Json::Obj(self.rejected.iter().map(|(key, count)| (key
-                .clone(), number(*count))).collect())),
+            (
+                "rejected",
+                Json::Obj(
+                    self.rejected
+                        .iter()
+                        .map(|(key, count)| (key.clone(), number(*count)))
+                        .collect(),
+                ),
+            ),
             ("assessments", number(self.assessments)),
             ("logical_battles", number(self.logical_battles)),
             ("raced_out", number(self.raced_out)),
@@ -222,18 +242,30 @@ impl SearchState {
         objective: Objective,
         account: &AccountRules,
     ) -> Result<Self, String> {
-        let rng = text(value, "rng", "").parse::<u64>().map_err(|_| "bad checkpoint RNG state")?;
+        let rng = text(value, "rng", "")
+            .parse::<u64>()
+            .map_err(|_| "bad checkpoint RNG state")?;
         let mut result = Self::new(rng);
         result.completed_batches = value.at("completed_batches").usize();
         result.seed_cursor = value.at("seed_cursor").usize();
         result.assessments = value.at("assessments").usize();
         result.logical_battles = value.at("logical_battles").usize();
         result.raced_out = value.at("raced_out").usize();
-        result.raw_bytes = value.at("raw_bytes").str().parse::<u64>()
+        result.raw_bytes = value
+            .at("raw_bytes")
+            .str()
+            .parse::<u64>()
             .map_err(|_| "bad checkpoint raw output offset")?;
-        result.seen = array(value, "seen").iter().map(|value| value.str().to_owned()).collect();
-        result.rejected = value.at("rejected").obj().iter().map(|(key, value)| (key.clone(), value
-            .usize())).collect();
+        result.seen = array(value, "seen")
+            .iter()
+            .map(|value| value.str().to_owned())
+            .collect();
+        result.rejected = value
+            .at("rejected")
+            .obj()
+            .iter()
+            .map(|(key, value)| (key.clone(), value.usize()))
+            .collect();
         for elite in array(value, "archive") {
             result.insert(Elite::from_json(elite)?, objective, account);
         }
@@ -258,7 +290,8 @@ fn compare_estimates(
         Objective::Stars => b.stars.total_cmp(&a.stars),
         Objective::Destruction => b.destruction.total_cmp(&a.destruction),
     };
-    primary.then_with(|| b.stars.total_cmp(&a.stars))
+    primary
+        .then_with(|| b.stars.total_cmp(&a.stars))
         .then_with(|| b.destruction.total_cmp(&a.destruction))
         .then_with(|| b.trophies.total_cmp(&a.trophies))
 }
@@ -321,18 +354,28 @@ pub fn proposals(
                 let mut parent = parent.clone();
                 let enabled = program::enable(account, compiler, catalog, &mut parent);
                 enabled.and_then(|()| {
-                    let compatible: Vec<_> = pool.iter().filter(|other| {
-                        other.plan.program.is_some()
-                            && program::army_identity(other) == program::army_identity(&parent)
-                    }).collect();
+                    let compatible: Vec<_> = pool
+                        .iter()
+                        .filter(|other| {
+                            other.plan.program.is_some()
+                                && program::army_identity(other) == program::army_identity(&parent)
+                        })
+                        .collect();
                     if !compatible.is_empty() && state.rng.index(5) == 0 {
-                        program::mutate::crossover(&parent, compatible[state.rng.index(compatible.len())], &mut state.rng)
+                        program::mutate::crossover(
+                            &parent,
+                            compatible[state.rng.index(compatible.len())],
+                            &mut state.rng,
+                        )
                     } else {
                         program::mutate::random(&parent, &mut state.rng)
                     }
                 })
             } else if state.rng.index(5) == 0 {
-                let compatible: Vec<&ArmyGenome> = pool.iter().filter(|other| other.plan.family == parent.plan.family).collect();
+                let compatible: Vec<&ArmyGenome> = pool
+                    .iter()
+                    .filter(|other| other.plan.family == parent.plan.family)
+                    .collect();
                 let other = compatible[state.rng.index(compatible.len())];
                 operators::crossover(parent, other, account, compiler, catalog, &mut state.rng)
             } else {
@@ -396,8 +439,9 @@ pub fn assess_wave(
             Err(reason) => state.rejection(format!("quick: {reason}")),
         }
     }
-    quick.sort_by(|(a, ae), (b, be)| compare_estimates(ae, be, objective).then_with(|| a.identity()
-        .cmp(&b.identity())));
+    quick.sort_by(|(a, ae), (b, be)| {
+        compare_estimates(ae, be, objective).then_with(|| a.identity().cmp(&b.identity()))
+    });
     let mut promotions = Vec::new();
     let mut promoted_per_cell = BTreeMap::<String, usize>::new();
     for (candidate, estimate) in quick {
@@ -408,8 +452,11 @@ pub fn assess_wave(
             continue;
         }
         if objective == Objective::Ranked {
-            if let Some(incumbents) = state.archive.get(&cell).filter(|entries| entries
-                .len() == CELL_CAPACITY) {
+            if let Some(incumbents) = state
+                .archive
+                .get(&cell)
+                .filter(|entries| entries.len() == CELL_CAPACITY)
+            {
                 let incumbent = incumbents.last().expect("full cell");
                 let enough_groups = estimate.bases.iter().all(|base| base.groups.len() >= 2);
                 let (_, upper) = paired_interval(manifest, &estimate, &incumbent.quick);
@@ -431,7 +478,7 @@ pub fn assess_wave(
                 confirmed.push(Elite {
                     genome: candidate,
                     quick,
-                    confirm
+                    confirm,
                 });
             }
             Err(reason) => state.rejection(format!("confirm: {reason}")),
@@ -444,12 +491,20 @@ pub fn assess_wave(
 }
 
 pub fn pareto(elites: &[Elite]) -> Vec<Elite> {
-    elites.iter().filter(|elite| {
-        let a = elite.confirm.metrics;
-        !elites.iter().any(|other| {
-            let b = other.confirm.metrics;
-            b.trophies >= a.trophies && b.three_star_rate >= a.three_star_rate && b.destruction >= a.destruction
-                && (b.trophies > a.trophies || b.three_star_rate > a.three_star_rate || b.destruction > a.destruction)
+    elites
+        .iter()
+        .filter(|elite| {
+            let a = elite.confirm.metrics;
+            !elites.iter().any(|other| {
+                let b = other.confirm.metrics;
+                b.trophies >= a.trophies
+                    && b.three_star_rate >= a.three_star_rate
+                    && b.destruction >= a.destruction
+                    && (b.trophies > a.trophies
+                        || b.three_star_rate > a.three_star_rate
+                        || b.destruction > a.destruction)
+            })
         })
-    }).cloned().collect()
+        .cloned()
+        .collect()
 }

@@ -42,9 +42,7 @@ pub fn maybe_revive(battle: &mut Battle, hero: UnitRef) {
 
 // spells.py:42-43.
 fn affected(unit: &Unit) -> bool {
-    unit.alive
-        && !matches!(unit.kind, Tag::Siege | Tag::SiegeIdle)
-        && unit.name_id != Name::Totem
+    unit.alive && !matches!(unit.kind, Tag::Siege | Tag::SiegeIdle) && unit.name_id != Name::Totem
 }
 
 // spells.py:258-280: snapshot original fields, preserve fields appended mid-tick.
@@ -80,9 +78,12 @@ pub fn tick(battle: &mut Battle) {
         }
         battle.fields[index] = field;
     }
-    battle.fields = std::mem::take(&mut battle.fields).into_iter().enumerate()
+    battle.fields = std::mem::take(&mut battle.fields)
+        .into_iter()
+        .enumerate()
         .filter(|(index, _)| *index >= count || keep[*index])
-        .map(|(_, field)| field).collect();
+        .map(|(_, field)| field)
+        .collect();
     poison_states(battle);
     clone_expiry(battle);
 }
@@ -108,8 +109,8 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
         return false;
     }
     if matches!(kind, Tag::Lightning | Tag::Freeze | Tag::Poison)
-        || kind == Tag::Rage
-        && f.team == Team::Def {
+        || kind == Tag::Rage && f.team == Team::Def
+    {
         defense::builder_spell(battle, f);
     }
     match kind {
@@ -122,7 +123,8 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
                 if building.alive
                     && building.key == "tesla"
                     && building.revealed
-                    && building.edge_distance(f.x, f.y) <= f.radius {
+                    && building.edge_distance(f.x, f.y) <= f.radius
+                {
                     if kind == Tag::TeslaFreeze {
                         building.frozen_until = building.frozen_until.max(f.until);
                     } else {
@@ -143,7 +145,8 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
         // spells.py:465-494: pool damage does not stack or gain defense difficulty.
         Tag::DefBurn => {
             if !f.extra.has_pulses || !pulses(f, t).is_empty() {
-                f.extra.victims = battle.attackers_near_iter(f.x, f.y, f.radius)
+                f.extra.victims = battle
+                    .attackers_near_iter(f.x, f.y, f.radius)
                     .map(|unit| unit.id)
                     .collect();
             }
@@ -152,7 +155,8 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
                 if !u.alive
                     || u.underground
                     || u.extra.burn_tick == Some(t)
-                    || !f.extra.victims.contains(&u.id) {
+                    || !f.extra.victims.contains(&u.id)
+                {
                     continue;
                 }
                 let mut damage = None;
@@ -160,12 +164,21 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
                     if field.kind == Tag::DefBurn
                         && field.started <= t
                         && t < field.until
-                        && u.dist(field.x, field.y) <= field.radius {
-                        damage = Some(damage.map_or(field.value, |previous: f64| previous.max(field.value)));
+                        && u.dist(field.x, field.y) <= field.radius
+                    {
+                        damage = Some(
+                            damage.map_or(field.value, |previous: f64| previous.max(field.value)),
+                        );
                     }
                 }
                 battle.unit_mut(reference).extra.burn_tick = Some(t);
-                battle.hit_unit(reference, damage.unwrap_or(f.value) * dt, Some("th"), "normal", None);
+                battle.hit_unit(
+                    reference,
+                    damage.unwrap_or(f.value) * dt,
+                    Some("th"),
+                    "normal",
+                    None,
+                );
             }
             true
         }
@@ -185,7 +198,9 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             let until = crate::geom::round6(pulse + boost_time);
             for index in 0..battle.builders.len() {
                 let builder = &battle.builders[index];
-                if battle.building(builder.owner).alive && crate::geom::dist(builder.x, builder.y, f.x, f.y) <= f.radius {
+                if battle.building(builder.owner).alive
+                    && crate::geom::dist(builder.x, builder.y, f.x, f.y) <= f.radius
+                {
                     let builder = &mut battle.builders[index];
                     builder.repair_boost = 2.0;
                     builder.rage_speed = f.extra.speed.unwrap_or(30.0 / 8.0);
@@ -195,7 +210,8 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             for building in &mut battle.buildings {
                 if building.alive
                     && building.weapon.is_some()
-                    && building.edge_distance(f.x, f.y) <= f.radius {
+                    && building.edge_distance(f.x, f.y) <= f.radius
+                {
                     building.rage_mult = f.value;
                     building.rage_until = until;
                 }
@@ -207,7 +223,13 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
                     1.0
                 };
                 let status_source = source(battle, f);
-                units::add_rage(battle.unit_mut(reference), status_source, 1.0 + (f.value - 1.0) * factor, 30.0 / 8.0 * factor, until);
+                units::add_rage(
+                    battle.unit_mut(reference),
+                    status_source,
+                    1.0 + (f.value - 1.0) * factor,
+                    30.0 / 8.0 * factor,
+                    until,
+                );
             }
             true
         }
@@ -227,21 +249,26 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
                 // to TH14-16 poison, superseding the older game-data exception.
                 // https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/
                 if affected(u) || u.name_id == Name::Totem {
-                    let multiplier = if u.is_hero {
-                        f.extra.hero_mult
-                    } else {
-                        1.0
-                    };
+                    let multiplier = if u.is_hero { f.extra.hero_mult } else { 1.0 };
                     let field_source = source(battle, f);
                     let StatusSource::Field(serial) = field_source else {
                         unreachable!()
                     };
-                    poison(battle, reference, f.value, f.extra.slow, f.extra.atk, multiplier, PoisonOptions {
-                        ramp: f.extra.ramp,
-                        origin: f.extra.origin.as_deref().unwrap_or("tower"),
-                        source: Some(("field".to_owned(), serial)),
-                        source_until: Some(f.until), refresh: f.extra.gap.unwrap_or(0.2),
-                    });
+                    poison(
+                        battle,
+                        reference,
+                        f.value,
+                        f.extra.slow,
+                        f.extra.atk,
+                        multiplier,
+                        PoisonOptions {
+                            ramp: f.extra.ramp,
+                            origin: f.extra.origin.as_deref().unwrap_or("tower"),
+                            source: Some(("field".to_owned(), serial)),
+                            source_until: Some(f.until),
+                            refresh: f.extra.gap.unwrap_or(0.2),
+                        },
+                    );
                 }
             }
             true
@@ -258,8 +285,7 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             // output/research/usage/invisibility-spell.md: towers also use centres.
             // https://www.reddit.com/r/ClashOfClans/comments/1l4z2tu/guide_to_attacking_invisibility_spell_tower_bases/
             for building in &mut battle.buildings {
-                if building.alive
-                    && crate::geom::dist(building.x, building.y, f.x, f.y) <= f.radius
+                if building.alive && crate::geom::dist(building.x, building.y, f.x, f.y) <= f.radius
                 {
                     building.invisible_until = building.invisible_until.max(until);
                 }
@@ -289,7 +315,7 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
                 revive(battle, hero, f.value);
             }
             false
-        },
+        }
         _ => false,
     }
 }
@@ -326,17 +352,20 @@ fn burn(battle: &mut Battle, current: &mut Field) -> bool {
         let mut targets = Vec::new();
         if field.extra.buildings {
             targets.extend(
-                battle.buildings.iter()
+                battle
+                    .buildings
+                    .iter()
                     .filter(|building| {
-                        building.alive
-                            && building.edge_distance(field.x, field.y) <= field.radius
+                        building.alive && building.edge_distance(field.x, field.y) <= field.radius
                     })
                     .map(|building| EntityRef::Building(building.id)),
             );
         }
         if field.extra.walls {
             targets.extend(
-                battle.walls.iter()
+                battle
+                    .walls
+                    .iter()
                     .filter(|wall| {
                         wall.alive && wall.edge_distance(field.x, field.y) <= field.radius
                     })
@@ -344,7 +373,8 @@ fn burn(battle: &mut Battle, current: &mut Field) -> bool {
             );
         }
         targets.extend(
-            battle.defenders_near(field.x, field.y, field.radius)
+            battle
+                .defenders_near(field.x, field.y, field.radius)
                 .into_iter()
                 .map(|unit| battle.unit(unit))
                 .filter(|unit| {
@@ -397,12 +427,8 @@ fn burn(battle: &mut Battle, current: &mut Field) -> bool {
                         Some(EntityRef::Unit(actor)),
                     );
                 } else {
-                    let dealt = battle.hit_building(
-                        target,
-                        damage * battle.dt,
-                        Some(&src),
-                        "normal",
-                    );
+                    let dealt =
+                        battle.hit_building(target, damage * battle.dt, Some(&src), "normal");
                     battle.unit_mut(actor).damage_dealt += dealt;
                 }
             },
@@ -426,9 +452,8 @@ fn source(battle: &mut Battle, field: &mut Field) -> StatusSource {
 fn close(a: f64, b: f64) -> bool {
     a == b
         || (a.is_finite()
-        && b.is_finite()
-        && ((a - b).abs() <= (1e-9 * b).abs()
-        || (a - b).abs() <= (1e-9 * a).abs()))
+            && b.is_finite()
+            && ((a - b).abs() <= (1e-9 * b).abs() || (a - b).abs() <= (1e-9 * a).abs()))
 }
 
 pub fn application(field: &mut Field, t: f64, gap: f64) -> Option<f64> {
@@ -465,17 +490,17 @@ pub fn invisibility_until(field: &mut Field, t: f64) -> Option<f64> {
 }
 
 // spells.py:837-838 is deliberately empty in Python too.
-pub fn expire(_battle: &mut Battle, _field: &Field) {
-}
+pub fn expire(_battle: &mut Battle, _field: &Field) {}
 
 // spells.py:841-847.
 pub fn wall_jumped(battle: &Battle, wall: WallId) -> bool {
     let w = &battle.walls[wall.0];
-    battle.fields.iter()
-        .any(|field| field.kind == Tag::Jump
-        && field.started <= battle.t
-        && battle.t < field.until
-        && py_hypot(w.x - field.x, w.y - field.y) <= field.radius)
+    battle.fields.iter().any(|field| {
+        field.kind == Tag::Jump
+            && field.started <= battle.t
+            && battle.t < field.until
+            && py_hypot(w.x - field.x, w.y - field.y) <= field.radius
+    })
 }
 
 // spells.py:873-879.
@@ -506,29 +531,25 @@ pub fn poison(
     attack: f64,
     multiplier: f64,
     options: PoisonOptions<'_>,
-    ) {
+) {
     let u = battle.unit(reference);
     if u.kind == Tag::Guardian && u.extra.waiting {
         return;
     }
     let (damage, slow, attack) = poison_factors(u, max_dps * multiplier, slow, attack);
-    let linger = if u.team == Team::Def {
-        6.0
-    } else {
-        0.0
-    };
-    let mut until = battle.t + if u.team == Team::Def {
-        6.0
-    } else {
-        options.refresh
-    };
+    let linger = if u.team == Team::Def { 6.0 } else { 0.0 };
+    let mut until = battle.t
+        + if u.team == Team::Def {
+            6.0
+        } else {
+            options.refresh
+        };
     if let Some(source_until) = options.source_until {
         until = until.min(source_until + linger);
     }
-    let index = battle.poison.iter()
-        .position(|state| state.unit == reference
-        && state.origin == options.origin
-        && state.source == options.source);
+    let index = battle.poison.iter().position(|state| {
+        state.unit == reference && state.origin == options.origin && state.source == options.source
+    });
     let index = match index {
         Some(index) => index,
         None => {
@@ -586,7 +607,14 @@ pub fn poison_states(battle: &mut Battle) {
     let mut active: Vec<(UnitRef, f64, String, f64, f64)> = Vec::new();
     for state in live {
         let fraction = if state.ramp {
-            1.0_f64.min(exposure.iter().find(|(id, _)| *id == state.unit.id).expect("poison exposure").1 / battle.catalog.poison_ramp)
+            1.0_f64.min(
+                exposure
+                    .iter()
+                    .find(|(id, _)| *id == state.unit.id)
+                    .expect("poison exposure")
+                    .1
+                    / battle.catalog.poison_ramp,
+            )
         } else {
             1.0
         };
@@ -616,7 +644,13 @@ pub fn poison_states(battle: &mut Battle) {
         let label = battle.src.clone();
         battle.hit_unit(unit, damage * battle.dt, Some(&label), kind, None);
         let until = t + 2.0 * battle.dt;
-        effects::add_slow(battle.unit_mut(unit), StatusSource::Name("poison".to_owned()), 1.0 - movement, 1.0 - attack, until);
+        effects::add_slow(
+            battle.unit_mut(unit),
+            StatusSource::Name("poison".to_owned()),
+            1.0 - movement,
+            1.0 - attack,
+            until,
+        );
     }
     let mut index = 0;
     battle.poison.retain(|_| {
@@ -633,7 +667,7 @@ pub fn add_defensive_poison(
     y: f64,
     mut config: PoisonConfig,
     origin: &str,
-    ) {
+) {
     if origin == "town_hall" && battle.town_hall == 16 {
         config.atk = Some(0.5);
     }
@@ -643,7 +677,7 @@ pub fn add_defensive_poison(
         ramp: config.ramp,
         origin: Some(origin.to_owned()),
         hero_mult: config.hero_mult,
-            ..Default::default()
+        ..Default::default()
     };
     if origin == "tower" {
         extra.gap = Some(0.4);
@@ -665,7 +699,11 @@ pub fn add_defensive_poison(
 // spells.py:991-1039: log precedes candidate selection, even for empty pools.
 pub fn tower_cast(battle: &mut Battle, owner: BuildingId, mode: &str, near: Option<&[UnitRef]>) {
     let t = battle.t;
-    battle.log_event(vec![round_decimal(t, 1).into(), "spell_tower".into(), mode.into()]);
+    battle.log_event(vec![
+        round_decimal(t, 1).into(),
+        "spell_tower".into(),
+        mode.into(),
+    ]);
     let b = battle.building(owner);
     let (bx, by) = (b.x, b.y);
     let mut target = None;
@@ -673,8 +711,7 @@ pub fn tower_cast(battle: &mut Battle, owner: BuildingId, mode: &str, near: Opti
     if let Some(near) = near {
         for &reference in near {
             let unit = battle.unit(reference);
-            if matches!(mode, "eq" | "quake" | "earthquake")
-                && unit.flying {
+            if matches!(mode, "eq" | "quake" | "earthquake") && unit.flying {
                 continue;
             }
             let d = unit.dist(bx, by);
@@ -689,29 +726,39 @@ pub fn tower_cast(battle: &mut Battle, owner: BuildingId, mode: &str, near: Opti
             }
         }
     }
-    let (x, y) = target.map_or((bx, by), |unit| battle.entity_position(EntityRef::Unit(unit)));
+    let (x, y) = target.map_or((bx, by), |unit| {
+        battle.entity_position(EntityRef::Unit(unit))
+    });
     let (kind, x, y, radius, until, value, started) = match mode {
         "rage" => ("def_rage", bx, by, 5.0, t + 18.0, 1.6, t),
         "poison" => {
-            add_defensive_poison(battle, x, y, PoisonConfig {
-                dps: 60.0,
-                time: Some(12.0),
-                slow: Some(0.35),
-                radius: Some(5.0),
-                atk: Some(0.25),
-                ramp: false,
-                hero_mult: 0.2,
-                unknown: Vec::new(),
-            }, "tower");
+            add_defensive_poison(
+                battle,
+                x,
+                y,
+                PoisonConfig {
+                    dps: 60.0,
+                    time: Some(12.0),
+                    slow: Some(0.35),
+                    radius: Some(5.0),
+                    atk: Some(0.25),
+                    ramp: false,
+                    hero_mult: 0.2,
+                    unknown: Vec::new(),
+                },
+                "tower",
+            );
             return;
         }
         "invis" => ("def_invis", bx, by, 4.5, t + 4.5, 0.0, t),
         "eq" | "quake" | "earthquake" => {
             // spells.py:1121-1126: the tower's value is per hit, rather than per cast.
-            let row = battle.catalog.game_data("spells", "Spell Tower Earthquake", None);
+            let row = battle
+                .catalog
+                .game_data("spells", "Spell Tower Earthquake", None);
             let percentage = game_int(row, "TroopDamagePermil", 0) as f64 / 1000.0;
             ("def_quake", x, y, 4.7, t + 0.3, percentage, t + 0.3)
-        },
+        }
         _ => return,
     };
     battle.fields.push(Field {
@@ -732,25 +779,30 @@ pub fn tower_cast(battle: &mut Battle, owner: BuildingId, mode: &str, near: Opti
 pub fn escape_poison(battle: &mut Battle, reference: UnitRef) -> bool {
     use crate::grid::{INF, RES};
     let u = battle.unit(reference);
-    if u.is_hero
-        || matches!(u.name_id, Name::Healer | Name::Druid)
-        || u.speed <= 0.0 {
+    if u.is_hero || matches!(u.name_id, Name::Healer | Name::Druid) || u.speed <= 0.0 {
         return false;
     }
     let (ux, uy, flying) = (u.x, u.y, u.flying);
     let saved = u.extra.poison_exit.clone();
-    let clouds: Vec<_> = battle.fields.iter().filter(|f| {
-        f.kind == Tag::Poison && f.started <= battle.t && battle.t < f.until
-    }).map(|f| (f.identity as u64, f.x, f.y, f.radius)).collect();
-    if !clouds.iter().any(|(_, x, y, radius)| py_hypot(ux - x, uy - y) <= *radius) {
+    let clouds: Vec<_> = battle
+        .fields
+        .iter()
+        .filter(|f| f.kind == Tag::Poison && f.started <= battle.t && battle.t < f.until)
+        .map(|f| (f.identity as u64, f.x, f.y, f.radius))
+        .collect();
+    if !clouds
+        .iter()
+        .any(|(_, x, y, radius)| py_hypot(ux - x, uy - y) <= *radius)
+    {
         battle.unit_mut(reference).extra.poison_exit = None;
         return false;
     }
     let identities: Vec<_> = clouds.iter().map(|(id, _, _, _)| *id).collect();
     let grid = battle.navigation_grid(reference);
     let version = grid.version;
-    let destination = if let Some((_, _, point)) = saved.filter(|(v, ids, _)| *v == version
-        && *ids == identities) {
+    let destination = if let Some((_, _, point)) =
+        saved.filter(|(v, ids, _)| *v == version && *ids == identities)
+    {
         point
     } else {
         let costs = (!flying).then(|| grid.source_field(ux, uy, 0.0));
@@ -771,7 +823,10 @@ pub fn escape_poison(battle: &mut Battle, reference: UnitRef) -> bool {
                     None
                 };
                 let (x, y) = ((i as f64 + 0.5) / RES as f64, (j as f64 + 0.5) / RES as f64);
-                if clouds.iter().all(|(_, cx, cy, radius)| py_hypot(x - cx, y - cy) > *radius) {
+                if clouds
+                    .iter()
+                    .all(|(_, cx, cy, radius)| py_hypot(x - cx, y - cy) > *radius)
+                {
                     let candidate = (cost.unwrap_or_else(|| py_hypot(ux - x, uy - y)), x, y);
                     if best.is_none_or(|previous| candidate < previous) {
                         best = Some(candidate);
@@ -801,8 +856,11 @@ pub fn clone_expiry(battle: &mut Battle) {
             keep.push(reference);
         } else if u.alive && battle.t >= u.extra.expire_at {
             battle.unit_mut(reference).alive = false;
-        } else if u.alive || battle.portal_stash.iter()
-            .any(|value| matches!(value, Value::Ref(EntityRef::Unit(unit)) if *unit == reference)) {
+        } else if u.alive
+            || battle.portal_stash.iter().any(
+                |value| matches!(value, Value::Ref(EntityRef::Unit(unit)) if *unit == reference),
+            )
+        {
             keep.push(reference);
         }
     }
@@ -818,15 +876,27 @@ pub fn cast_effect(
     level: Option<crate::stats::Level>,
 ) -> usize {
     use crate::stats::{self, Level};
-    let level = level.filter(|lv| *lv != Level::Int(0)).or_else(|| {
-        if let Some(p) = battle.plan.attack() {
-            p.spell_levels.iter()
-                .find(|(key, _)| key == name)
-                .and_then(|(_, lv)| lv.clone())
-        } else {
-            None
-        }
-    }).unwrap_or_else(|| Level::Int(battle.catalog.stats.max_level(name, battle.plan.town_hall()).expect("spell max level")));
+    let level = level
+        .filter(|lv| *lv != Level::Int(0))
+        .or_else(|| {
+            if let Some(p) = battle.plan.attack() {
+                p.spell_levels
+                    .iter()
+                    .find(|(key, _)| key == name)
+                    .and_then(|(_, lv)| lv.clone())
+            } else {
+                None
+            }
+        })
+        .unwrap_or_else(|| {
+            Level::Int(
+                battle
+                    .catalog
+                    .stats
+                    .max_level(name, battle.plan.town_hall())
+                    .expect("spell max level"),
+            )
+        });
     battle.start_battle();
     if battle.first_deploy_t.is_none() {
         battle.first_deploy_t = Some(battle.t);
@@ -836,14 +906,26 @@ pub fn cast_effect(
     } else {
         battle.t + 0.5
     };
-    battle.log_event(vec![round_decimal(battle.t, 1).into(), "spell".into(), name.into(), round_decimal(x, 1).into(), round_decimal(y, 1).into()]);
+    battle.log_event(vec![
+        round_decimal(battle.t, 1).into(),
+        "spell".into(),
+        name.into(),
+        round_decimal(x, 1).into(),
+        round_decimal(y, 1).into(),
+    ]);
     let stats = &battle.catalog.stats;
-    let get = |keys: &[&str], default: f64| stats.get(name, &level, keys, Some(default))
-        .expect("spell number");
-    let raw = |key: &str, default: f64| stats.attrs(name)
-        .get("raw")
-        .and_then(|r| r.get(key))
-        .map_or(default, |v| stats::num(v, Some(default)).unwrap_or(default));
+    let get = |keys: &[&str], default: f64| {
+        stats
+            .get(name, &level, keys, Some(default))
+            .expect("spell number")
+    };
+    let raw = |key: &str, default: f64| {
+        stats
+            .attrs(name)
+            .get("raw")
+            .and_then(|r| r.get(key))
+            .map_or(default, |v| stats::num(v, Some(default)).unwrap_or(default))
+    };
     let radius = || {
         battle
             .catalog
@@ -896,7 +978,9 @@ pub fn cast_effect(
         "Earthquake Spell" => {
             let mut f = Field::new("quake", x, y, radius(), t);
             // spells.py:150-164: registry percentages describe all five impacts.
-            let row = battle.catalog.game_data("spells", "Earthquake", Some(&level));
+            let row = battle
+                .catalog
+                .game_data("spells", "Earthquake", Some(&level));
             let denominator = 100.0 * game_int(row, "NumberOfHits", 0) as f64;
             f.value = get(&["Building Damage %"], 29.0) / denominator;
             f.extra.troop = get(&["Troop Damage %"], 0.0) / denominator;
@@ -914,7 +998,12 @@ pub fn cast_effect(
         }
         "Skeleton Spell" | "Bat Spell" => {
             let (unit, n, first, gap) = if name == "Skeleton Spell" {
-                ("Spell Skeleton", get(&["Skeletons generated"], 19.0), 3, 1.0)
+                (
+                    "Spell Skeleton",
+                    get(&["Skeletons generated"], 19.0),
+                    3,
+                    1.0,
+                )
             } else {
                 ("Bat", get(&["Bats generated"], 22.0), 1, 0.6)
             };
@@ -1023,7 +1112,10 @@ fn damaging_field(battle: &mut Battle, f: &Field, birthday: bool) -> bool {
     let stun = if birthday {
         0.0
     } else {
-        let raw = battle.catalog.stats.attrs("Lightning Spell")
+        let raw = battle
+            .catalog
+            .stats
+            .attrs("Lightning Spell")
             .at("raw")
             .at("Stun Time");
         crate::stats::num(raw, None).expect("Lightning stun time")
@@ -1031,13 +1123,10 @@ fn damaging_field(battle: &mut Battle, f: &Field, birthday: bool) -> bool {
     for index in 0..battle.buildings.len() {
         let b = &battle.buildings[index];
         if !b.alive
-            || b.key == "tesla"
-            && !b.revealed
+            || b.key == "tesla" && !b.revealed
             || b.edge_distance(f.x, f.y) > f.radius
-
-            || !birthday
-
-            && matches!(b.key.as_str(), "gs" | "es" | "ds" | "th" | "cc") {
+            || !birthday && matches!(b.key.as_str(), "gs" | "es" | "ds" | "th" | "cc")
+        {
             continue;
         }
         let id = b.id;
@@ -1049,7 +1138,9 @@ fn damaging_field(battle: &mut Battle, f: &Field, birthday: bool) -> bool {
         battle.hit_building(EntityRef::Building(id), damage, None, "normal");
         let b = battle.building_mut(id);
         if birthday {
-            b.frozen_until = b.frozen_until.max(t + f.extra.freeze.expect("Birthday freeze"));
+            b.frozen_until = b
+                .frozen_until
+                .max(t + f.extra.freeze.expect("Birthday freeze"));
             retarget(battle, EntityRef::Building(id));
         } else if b.weapon.is_some() {
             b.stun_until = b.stun_until.max(t + stun);
@@ -1066,7 +1157,9 @@ fn damaging_field(battle: &mut Battle, f: &Field, birthday: bool) -> bool {
         battle.hit_unit(reference, f.value, None, "normal", None);
         let u = battle.unit_mut(reference);
         if birthday {
-            u.frozen_until = u.frozen_until.max(t + f.extra.freeze.expect("Birthday freeze"));
+            u.frozen_until = u
+                .frozen_until
+                .max(t + f.extra.freeze.expect("Birthday freeze"));
         } else {
             u.stun_until = u.stun_until.max(t + stun);
         }
@@ -1077,12 +1170,28 @@ fn damaging_field(battle: &mut Battle, f: &Field, birthday: bool) -> bool {
 
 // spells.py:372-400: building candidates precede defending heroes.
 fn yellow(battle: &mut Battle, f: &Field) -> bool {
-    let mut candidates: Vec<_> = battle.buildings.iter().filter(|b| {
-        b.alive && b.weapon.as_ref().is_some_and(|w| w.kind != Tag::BhRepairOnly)
-            && !b.extra.unavailable && (b.key != "tesla" || b.revealed)
-            && (b.is_defense || b.key == "th") && b.edge_distance(f.x, f.y) <= f.radius
-    }).map(|b| EntityRef::Building(b.id)).collect();
-    candidates.extend(battle.defenders_near(f.x, f.y, f.radius).into_iter().filter(|r| battle.unit(*r).is_hero).map(EntityRef::Unit));
+    let mut candidates: Vec<_> = battle
+        .buildings
+        .iter()
+        .filter(|b| {
+            b.alive
+                && b.weapon
+                    .as_ref()
+                    .is_some_and(|w| w.kind != Tag::BhRepairOnly)
+                && !b.extra.unavailable
+                && (b.key != "tesla" || b.revealed)
+                && (b.is_defense || b.key == "th")
+                && b.edge_distance(f.x, f.y) <= f.radius
+        })
+        .map(|b| EntityRef::Building(b.id))
+        .collect();
+    candidates.extend(
+        battle
+            .defenders_near(f.x, f.y, f.radius)
+            .into_iter()
+            .filter(|r| battle.unit(*r).is_hero)
+            .map(EntityRef::Unit),
+    );
     let mut best = None;
     let mut closest = f64::INFINITY;
     for target in candidates {
@@ -1110,11 +1219,12 @@ fn yellow(battle: &mut Battle, f: &Field) -> bool {
 // spells.py:401-414.
 fn santa(battle: &mut Battle, f: &mut Field) -> bool {
     for _ in pulses(f, battle.t) {
-        let angle = battle.rng.as_mut()
-            .expect("battle rng")
-            .random() * 2.0 * std::f64::consts::PI;
+        let angle = battle.rng.as_mut().expect("battle rng").random() * 2.0 * std::f64::consts::PI;
         let radius = battle.rng.as_mut().expect("battle rng").random() * f.radius;
-        let (x, y) = (f.x + radius * crate::geom::py_cos(angle), f.y + radius * crate::geom::py_sin(angle));
+        let (x, y) = (
+            f.x + radius * crate::geom::py_cos(angle),
+            f.y + radius * crate::geom::py_sin(angle),
+        );
         for index in 0..battle.buildings.len() {
             let b = &battle.buildings[index];
             if b.alive && b.edge_distance(x, y) <= 1.5 {
@@ -1134,11 +1244,7 @@ fn heal(battle: &mut Battle, f: &mut Field) -> bool {
         for unit in battle.attackers_near(f.x, f.y, f.radius) {
             let u = battle.unit_mut(unit);
             if u.alive && !matches!(u.kind, Tag::Siege | Tag::SiegeIdle) {
-                u.heal(f.value * if u.is_hero {
-                    0.55
-                } else {
-                    1.0
-                });
+                u.heal(f.value * if u.is_hero { 0.55 } else { 1.0 });
             }
         }
     }
@@ -1172,7 +1278,13 @@ fn rage(battle: &mut Battle, f: &mut Field) -> bool {
             speed *= 0.5;
         }
         let key = source(battle, f);
-        units::add_rage(battle.unit_mut(reference), key, 1.0 + inc, speed, last + f.extra.boost_time);
+        units::add_rage(
+            battle.unit_mut(reference),
+            key,
+            1.0 + inc,
+            speed,
+            last + f.extra.boost_time,
+        );
     }
     if f.team == Team::Def {
         if let Some(damage) = f.extra.defense_damage {
@@ -1182,7 +1294,8 @@ fn rage(battle: &mut Battle, f: &mut Field) -> bool {
                         b.rage_mult
                     } else {
                         1.0
-                    }).max(damage);
+                    })
+                    .max(damage);
                     b.rage_until = b.rage_until.max(last + f.extra.boost_time);
                 }
             }
@@ -1202,13 +1315,13 @@ fn haste(battle: &mut Battle, f: &mut Field) -> bool {
     for reference in battle.attackers_near(f.x, f.y, f.radius) {
         let u = battle.unit(reference);
         if affected(u) {
-            let speed = f.extra.speed.expect("Haste speed") * if u.is_hero {
-                0.5
-            } else {
-                1.0
-            };
+            let speed = f.extra.speed.expect("Haste speed") * if u.is_hero { 0.5 } else { 1.0 };
             let key = source(battle, f);
-            crate::plans::set(&mut battle.unit_mut(reference).extra.haste_effects, key, (speed, pulse + 1.0));
+            crate::plans::set(
+                &mut battle.unit_mut(reference).extra.haste_effects,
+                key,
+                (speed, pulse + 1.0),
+            );
         }
     }
     true
@@ -1243,8 +1356,8 @@ fn freeze(battle: &mut Battle, f: &mut Field) -> bool {
         if b.alive
             && b.weapon.is_some()
             && b.edge_distance(f.x, f.y) <= f.radius
-            && !(b.key == "tesla"
-            && !b.revealed) {
+            && !(b.key == "tesla" && !b.revealed)
+        {
             b.frozen_until = b.frozen_until.max(until);
         }
     }
@@ -1268,13 +1381,21 @@ fn attacker_poison(battle: &mut Battle, f: &mut Field) -> bool {
         let StatusSource::Field(serial) = source(battle, f) else {
             unreachable!()
         };
-        poison(battle, reference, f.value, f.extra.slow, f.extra.atk, multiplier, PoisonOptions {
-            ramp: true,
-            origin: "spell",
-            source: Some(("field".to_owned(), serial)),
-            source_until: Some(f.until),
-            refresh: 0.2,
-        });
+        poison(
+            battle,
+            reference,
+            f.value,
+            f.extra.slow,
+            f.extra.atk,
+            multiplier,
+            PoisonOptions {
+                ramp: true,
+                origin: "spell",
+                source: Some(("field".to_owned(), serial)),
+                source_until: Some(f.until),
+                refresh: 0.2,
+            },
+        );
     }
     true
 }
@@ -1292,18 +1413,17 @@ fn quake(battle: &mut Battle, field: &Field) -> bool {
     let gap = game_int(row, "TimeBetweenHitsMS", 0) as f64 / 1000.0;
     let shared = Rc::new(RefCell::new(field.clone()));
     for index in 0..count {
-        let mut pending = Pending::new(crate::geom::round6(field.started + index as f64 * gap),
-            field.x, field.y, field.radius, 0.0, false, true,
-            if defensive {
-            "spell_tower"
-        } else {
-            "spell"
-        });
-        pending.team = if defensive {
-            Team::Atk
-        } else {
-            Team::Def
-        };
+        let mut pending = Pending::new(
+            crate::geom::round6(field.started + index as f64 * gap),
+            field.x,
+            field.y,
+            field.radius,
+            0.0,
+            false,
+            true,
+            if defensive { "spell_tower" } else { "spell" },
+        );
+        pending.team = if defensive { Team::Atk } else { Team::Def };
         pending.extra.quake = Some(Rc::clone(&shared));
         pending.effect = Some(Tag::Spell);
         battle.add_pending(pending);
@@ -1316,10 +1436,19 @@ pub fn quake_hit(battle: &mut Battle, field: &mut Field) {
     if field.kind == Tag::Quake {
         for index in 0..battle.buildings.len() {
             let b = &mut battle.buildings[index];
-            if b.alive && b.counted && !matches!(b.key.as_str(), "gs" | "es" | "ds")
-                && !(b.key == "tesla" && !b.revealed) && b.edge_distance(field.x, field.y) <= field.radius {
+            if b.alive
+                && b.counted
+                && !matches!(b.key.as_str(), "gs" | "es" | "ds")
+                && !(b.key == "tesla" && !b.revealed)
+                && b.edge_distance(field.x, field.y) <= field.radius
+            {
                 let target = EntityRef::Building(b.id);
-                let count = match field.extra.quake_hits.iter().find(|(key, _)| *key == target) {
+                let count = match field
+                    .extra
+                    .quake_hits
+                    .iter()
+                    .find(|(key, _)| *key == target)
+                {
                     Some((_, count)) => *count,
                     None => {
                         b.eq_hits += 1;
@@ -1335,7 +1464,12 @@ pub fn quake_hit(battle: &mut Battle, field: &mut Field) {
             let wall = &mut battle.walls[index];
             if wall.alive && wall.edge_distance(field.x, field.y) <= field.radius {
                 let target = EntityRef::Wall(wall.id);
-                let count = match field.extra.quake_hits.iter().find(|(key, _)| *key == target) {
+                let count = match field
+                    .extra
+                    .quake_hits
+                    .iter()
+                    .find(|(key, _)| *key == target)
+                {
                     Some((_, count)) => *count,
                     None => {
                         wall.eq_hits += 1;
@@ -1345,7 +1479,8 @@ pub fn quake_hit(battle: &mut Battle, field: &mut Field) {
                 };
                 let n = count as f64;
                 // Keep Python's pow and multiplication order for the wall bonus.
-                let damage = wall.max_hp * (field.value / n + 0.01 * crate::geom::py_pow(n - 1.0, 2.0));
+                let damage =
+                    wall.max_hp * (field.value / n + 0.01 * crate::geom::py_pow(n - 1.0, 2.0));
                 battle.hit_building(target, damage, None, "normal");
             }
         }
@@ -1369,7 +1504,12 @@ pub fn quake_hit(battle: &mut Battle, field: &mut Field) {
             continue;
         }
         let target = EntityRef::Unit(reference);
-        let count = match field.extra.quake_hits.iter().find(|(key, _)| *key == target) {
+        let count = match field
+            .extra
+            .quake_hits
+            .iter()
+            .find(|(key, _)| *key == target)
+        {
             Some((_, count)) => *count,
             None => {
                 u.extra.eq_n += 1;
@@ -1409,8 +1549,11 @@ fn spawn_spots(battle: &Battle, x: f64, y: f64, radius: f64, flying: bool) -> Ve
                 spots.push((cx, cy));
                 continue;
             }
-            if battle.wall_indices.get(&(tx, ty))
-                .is_some_and(|id| battle.walls[id.0].alive) {
+            if battle
+                .wall_indices
+                .get(&(tx, ty))
+                .is_some_and(|id| battle.walls[id.0].alive)
+            {
                 continue;
             }
             let (i, j) = battle.grid.cell(cx, cy);
@@ -1437,7 +1580,9 @@ fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
         let a = battle.unit(*a);
         let b = battle.unit(*b);
         a.spawned_at.total_cmp(&b.spawned_at).then_with(|| {
-            a.extra.spawn_sequence.unwrap_or(a.id.0)
+            a.extra
+                .spawn_sequence
+                .unwrap_or(a.id.0)
                 .cmp(&b.extra.spawn_sequence.unwrap_or(b.id.0))
         })
     });
@@ -1455,7 +1600,13 @@ fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
             continue;
         }
         let housing = interaction_housing(u) as f64;
-        let (name, level, group, flying, casts) = (u.name.clone(), u.level.clone(), u.group.clone(), u.flying, u.extra.clone_casts.clone());
+        let (name, level, group, flying, casts) = (
+            u.name.clone(),
+            u.level.clone(),
+            u.group.clone(),
+            u.flying,
+            u.extra.clone_casts.clone(),
+        );
         while housing <= capacity {
             capacity -= housing;
             let spots = spawn_spots(battle, f.x, f.y, f.radius, flying);
@@ -1464,12 +1615,18 @@ fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
             }
             let index = battle.rng.as_mut().expect("battle rng").below(spots.len());
             let (x, y) = spots[index];
-            let child = battle.spawn(&name, Team::Atk, x, y, crate::battle::SpawnOptions {
-                level: level.clone(),
-                kind: Tag::Summon,
-                group: group.clone(),
-                ..Default::default()
-            });
+            let child = battle.spawn(
+                &name,
+                Team::Atk,
+                x,
+                y,
+                crate::battle::SpawnOptions {
+                    level: level.clone(),
+                    kind: Tag::Summon,
+                    group: group.clone(),
+                    ..Default::default()
+                },
+            );
             let t = battle.t;
             let strength = battle.unit(reference).extra.strength;
             let u = battle.unit_mut(child);
@@ -1488,7 +1645,9 @@ fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
             u.extra.clone = true;
             u.extra.expire_at = t + 30.0;
             if u.spec.has_special(Special::StartRage) {
-                u.extra.rage_effects.retain(|(source, _)| *source != StatusSource::Name("innate".to_owned()));
+                u.extra
+                    .rage_effects
+                    .retain(|(source, _)| *source != StatusSource::Name("innate".to_owned()));
             }
             battle.clones.push(child);
         }
@@ -1500,7 +1659,12 @@ fn clone_field(battle: &mut Battle, f: &mut Field) -> bool {
 // spells.py:664-698.
 fn summon(battle: &mut Battle, f: &mut Field) -> bool {
     let n = f.value as usize;
-    let name = f.extra.unit.as_deref().expect("spell summon name").to_owned();
+    let name = f
+        .extra
+        .unit
+        .as_deref()
+        .expect("spell summon name")
+        .to_owned();
     if f.extra.spots.is_none() {
         if let Some(duration) = f.extra.freeze {
             let mut freeze = Field::new("freeze", f.x, f.y, f.radius, battle.t);
@@ -1526,11 +1690,17 @@ fn summon(battle: &mut Battle, f: &mut Field) -> bool {
         let (x, y) = spots[j % spots.len()];
         j += 1;
         f.extra.delivered = j;
-        let child = battle.spawn(&name, Team::Atk, x, y, crate::battle::SpawnOptions {
-            kind: Tag::Summon,
-            group: "spell".to_owned(),
+        let child = battle.spawn(
+            &name,
+            Team::Atk,
+            x,
+            y,
+            crate::battle::SpawnOptions {
+                kind: Tag::Summon,
+                group: "spell".to_owned(),
                 ..Default::default()
-        });
+            },
+        );
         // spells.py:708-717: only future spawns inside each retained cast area freeze.
         for (source, (reduction, until, cx, cy, radius)) in &f.extra.iceblocks {
             if battle.t < *until && crate::geom::dist(x, y, *cx, *cy) <= *radius {
@@ -1538,7 +1708,7 @@ fn summon(battle: &mut Battle, f: &mut Field) -> bool {
                 crate::plans::set(
                     &mut child.extra.iceblocks,
                     source.clone(),
-                    (*reduction, *until)
+                    (*reduction, *until),
                 );
                 child.frozen_until = child.frozen_until.max(*until);
             }
@@ -1603,9 +1773,12 @@ fn recall(battle: &mut Battle, f: &Field) -> bool {
     for reference in battle.attackers_near(f.x, f.y, f.radius) {
         let u = battle.unit(reference);
         if affected(u)
-
-            && matches!(u.kind, Tag::Troop | Tag::Hero | Tag::HeroClone | Tag::Pet | Tag::Summon)
-            && !candidates.contains(&reference) {
+            && matches!(
+                u.kind,
+                Tag::Troop | Tag::Hero | Tag::HeroClone | Tag::Pet | Tag::Summon
+            )
+            && !candidates.contains(&reference)
+        {
             candidates.push(reference);
         }
     }
@@ -1616,7 +1789,9 @@ fn recall(battle: &mut Battle, f: &Field) -> bool {
             .cmp(&(!b.is_hero, -interaction_housing(b)))
             .then_with(|| a.spawned_at.total_cmp(&b.spawned_at))
             .then_with(|| {
-                a.extra.spawn_sequence.unwrap_or(a.id.0)
+                a.extra
+                    .spawn_sequence
+                    .unwrap_or(a.id.0)
                     .cmp(&b.extra.spawn_sequence.unwrap_or(b.id.0))
             })
     });
@@ -1626,7 +1801,8 @@ fn recall(battle: &mut Battle, f: &Field) -> bool {
         let housing = interaction_housing(u) as f64;
         if crate::heroes::free_pet(battle, reference)
             || taken.contains(&reference)
-            || housing > capacity {
+            || housing > capacity
+        {
             continue;
         }
         capacity -= housing;
@@ -1648,10 +1824,7 @@ fn recall(battle: &mut Battle, f: &Field) -> bool {
 fn overgrowth(battle: &mut Battle, f: &mut Field) -> bool {
     let until = battle.t + f.value;
     for b in &mut battle.buildings {
-        if b.alive
-            && !(b.key == "tesla"
-            && !b.revealed)
-            && b.edge_distance(f.x, f.y) <= f.radius {
+        if b.alive && !(b.key == "tesla" && !b.revealed) && b.edge_distance(f.x, f.y) <= f.radius {
             b.overgrown_until = b.overgrown_until.max(until);
         }
     }
@@ -1668,9 +1841,11 @@ fn iceblock(battle: &mut Battle, f: &mut Field) -> bool {
         let summon = &battle.fields[index];
         if summon.kind == Tag::Summon
             && matches!(summon.extra.unit.as_deref(), Some("Spell Skeleton" | "Bat"))
-            && summon.started <= battle.t && battle.t <= summon.until
+            && summon.started <= battle.t
+            && battle.t <= summon.until
             && (summon.extra.delivered as f64) < summon.value
-            && crate::geom::dist(summon.x, summon.y, f.x, f.y) <= summon.radius + f.radius {
+            && crate::geom::dist(summon.x, summon.y, f.x, f.y) <= summon.radius + f.radius
+        {
             let key = source(battle, f);
             let coverage = (f.value, until, f.x, f.y, f.radius);
             crate::plans::set(&mut battle.fields[index].extra.iceblocks, key, coverage);
@@ -1698,18 +1873,19 @@ fn angry(battle: &mut Battle, f: &Field) -> bool {
     for reference in battle.attackers_near(f.x, f.y, f.radius) {
         let u = battle.unit(reference);
         let sp = &u.spec;
-        if !u.alive || matches!(sp.attack, Tag::Heal | Tag::HealChain)
-
+        if !u.alive
+            || matches!(sp.attack, Tag::Heal | Tag::HealChain)
             || matches!(sp.prefer, Tag::Defense | Tag::AirDefense)
-            && !matches!(u.name_id, Name::LavaHound | Name::IceHound)
-
+                && !matches!(u.name_id, Name::LavaHound | Name::IceHound)
             || matches!(u.name_id, Name::RuinWitch | Name::Totem)
-            || matches!(u.kind, Tag::Siege | Tag::SiegeIdle) {
+            || matches!(u.kind, Tag::Siege | Tag::SiegeIdle)
+        {
             continue;
         }
         if !u.extra.paused_timers.angry_until || u.extra.angry_until < t + f.value - 0.5 {
             let defense = u.target_kind.as_ref() == Some(&Tag::Building)
-                && u.target.is_some_and(|r| crate::plans::entity_is_defense(battle, r));
+                && u.target
+                    .is_some_and(|r| crate::plans::entity_is_defense(battle, r));
             let u = battle.unit_mut(reference);
             u.extra.angry_until = t + f.value;
             u.extra.paused_timers.angry_until = true;
@@ -1757,7 +1933,11 @@ fn revive(battle: &mut Battle, hero: UnitRef, percentage: f64) {
     u.frozen_until = 0.0;
     u.stun_until = 0.0;
     let name = u.name.clone();
-    battle.log_event(vec![round_decimal(battle.t, 1).into(), "revive".into(), name.into()]);
+    battle.log_event(vec![
+        round_decimal(battle.t, 1).into(),
+        "revive".into(),
+        name.into(),
+    ]);
 }
 
 // spells.py:1154-1196: Totem bypasses ordinary spawn/equipment hooks.
@@ -1778,7 +1958,13 @@ fn totem(battle: &mut Battle, f: &Field) -> bool {
     defense::builder_spell(battle, f);
     battle.uid += 1;
     let spec = crate::catalog::UnitSpec::totem();
-    let decay = crate::traps::raw(battle, "Totem Spell", "Hitpoint Decay per Second", Some(334.0)).expect("Totem decay");
+    let decay = crate::traps::raw(
+        battle,
+        "Totem Spell",
+        "Hitpoint Decay per Second",
+        Some(334.0),
+    )
+    .expect("Totem decay");
     // output/research/usage/archer-queen.md and dark-crown.md: each Totem now
     // counts as one housing, including Monolith Arrow's deployment counter.
     // https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/

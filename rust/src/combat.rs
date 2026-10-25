@@ -20,7 +20,7 @@ impl Default for SplashBuildingsOptions<'_> {
             walls: true,
             exclude: None,
             kind: "normal",
-            wall_mult: 1.0
+            wall_mult: 1.0,
         }
     }
 }
@@ -40,7 +40,7 @@ impl Default for SplashUnitsOptions<'_> {
             falloff: false,
             src: None,
             kind: "normal",
-            exclude: None
+            exclude: None,
         }
     }
 }
@@ -101,7 +101,9 @@ impl Battle {
             }
         }
         amount *= red;
-        if self.def_mult != 1.0 && u.team == Team::Atk && matches!(source, Some(EntityRef::Building(_)))
+        if self.def_mult != 1.0
+            && u.team == Team::Atk
+            && matches!(source, Some(EntityRef::Building(_)))
             && !matches!(effect.as_str(), "death" | "counter" | "spell" | "poison")
         {
             amount *= self.def_mult;
@@ -114,7 +116,11 @@ impl Battle {
         if victim.team == Team::Atk {
             let label = src.filter(|s| !s.is_empty()).unwrap_or(self.src.as_str());
             let dealt = amount.min(self.unit(victim).hp);
-            if let Some((_, total)) = self.damage_by_source.iter_mut().find(|(key, _)| key.as_str() == label) {
+            if let Some((_, total)) = self
+                .damage_by_source
+                .iter_mut()
+                .find(|(key, _)| key.as_str() == label)
+            {
                 *total += dealt;
             } else {
                 self.damage_by_source.push((label.into(), dealt));
@@ -122,7 +128,8 @@ impl Battle {
         }
         // Preserve the effect captured before on_damaged changes provenance.
         let aware = matches!(source, Some(EntityRef::Unit(v)) if v.team != victim.team)
-            && victim.team == Team::Atk && matches!(effect.as_str(), "attack" | "secondary" | "chain");
+            && victim.team == Team::Atk
+            && matches!(effect.as_str(), "attack" | "secondary" | "chain");
         let u = self.unit_mut(victim);
         if armor <= 0.0 {
             u.extra.aura_hp = 0.0_f64.max(u.extra.aura_hp - amount);
@@ -140,17 +147,32 @@ impl Battle {
             heroes::on_damaged(self, victim, amount, source, &effect);
         }
         let u = self.unit(victim);
-        if u.hp <= 0.0 && victim.team == Team::Atk && u.is_hero && u.kit.is_some()
-            && !u.ability_used && u.alive && self.plan.auto_ability_on_ko() {
+        if u.hp <= 0.0
+            && victim.team == Team::Atk
+            && u.is_hero
+            && u.kit.is_some()
+            && !u.ability_used
+            && u.alive
+            && self.plan.auto_ability_on_ko()
+        {
             heroes::activate(self, victim, true);
             let name = self.unit(victim).name.clone();
-            self.log_event(vec![round_decimal(self.t, 1).into(), "ability".into(), name.into(), "on KO".into()]);
+            self.log_event(vec![
+                round_decimal(self.t, 1).into(),
+                "ability".into(),
+                name.into(),
+                "on KO".into(),
+            ]);
         }
         if self.unit(victim).hp <= 0.0 {
             if victim.team == Team::Atk {
                 let label = src.filter(|s| !s.is_empty()).unwrap_or(self.src.as_str());
                 let housing = 1.max(self.unit(victim).housing);
-                if let Some((_, total)) = self.kills_by_source.iter_mut().find(|(key, _)| key.as_str() == label) {
+                if let Some((_, total)) = self
+                    .kills_by_source
+                    .iter_mut()
+                    .find(|(key, _)| key.as_str() == label)
+                {
                     *total += housing;
                 } else {
                     self.kills_by_source.push((label.into(), housing));
@@ -186,7 +208,12 @@ impl Battle {
             spells::maybe_revive(self, victim);
         }
         let name = self.unit(victim).name.clone();
-        self.log_event(vec![round_decimal(self.t, 1).into(), "dies".into(), name.into(), victim.team.as_str().into()]);
+        self.log_event(vec![
+            round_decimal(self.t, 1).into(),
+            "dies".into(),
+            name.into(),
+            victim.team.as_str().into(),
+        ]);
     }
 
     // battle.py:693-728: src/kind currently do not alter a building hit.
@@ -210,7 +237,8 @@ impl Battle {
             }
             if let Some(EntityRef::Unit(source)) = self.src_obj {
                 if source.team == Team::Atk
-                    && !matches!(self.effect, Tag::Meteor | Tag::Spell | Tag::Poison) {
+                    && !matches!(self.effect, Tag::Meteor | Tag::Spell | Tag::Poison)
+                {
                     let (x, y) = self.entity_position(target);
                     let hp = self.building(id).hp;
                     let half_hit = self.building(id).half_hit;
@@ -286,7 +314,12 @@ impl Battle {
                 }
             }
         }
-        self.log_event(vec![round_decimal(self.t, 1).into(), "destroyed".into(), self.building(id).key.clone().into(), LogValue::Int(self.destruction() as i64)]);
+        self.log_event(vec![
+            round_decimal(self.t, 1).into(),
+            "destroyed".into(),
+            self.building(id).key.clone().into(),
+            LogValue::Int(self.destruction() as i64),
+        ]);
     }
 
     // battle.py:752-762: wall collateral uses coordinate-loop order, not dict order.
@@ -312,7 +345,12 @@ impl Battle {
                     if let Some(&id) = self.wall_indices.get(&(tx, ty)) {
                         let wall = &self.walls[id.0];
                         if wall.alive && wall.edge_distance(x, y) <= radius {
-                            self.hit_building(EntityRef::Wall(id), damage * options.wall_mult, None, options.kind);
+                            self.hit_building(
+                                EntityRef::Wall(id),
+                                damage * options.wall_mult,
+                                None,
+                                options.kind,
+                            );
                         }
                     }
                 }
@@ -411,7 +449,9 @@ impl Battle {
                 continue;
             }
             let effect = p.effect.clone().expect("pending effect");
-            let revenge = p.extra.scatter
+            let revenge = p
+                .extra
+                .scatter
                 .is_some_and(|owner| self.building(owner).key == "revenge");
             effects::damage_source(self, p.actor, effect, |battle| {
                 battle.src = p.src.clone();
@@ -423,7 +463,9 @@ impl Battle {
                 let pending = std::mem::take(&mut self.pending);
                 for next in pending {
                     if next.at <= self.t
-                        && next.extra.scatter
+                        && next
+                            .extra
+                            .scatter
                             .is_some_and(|owner| self.building(owner).key == "revenge")
                     {
                         due.push(next);
@@ -448,10 +490,7 @@ impl Battle {
                 panic!("Sweeper unit target");
             };
             let unit = self.unit(target);
-            if !unit.alive
-                || !unit.flying
-                || geom::dist(unit.x, unit.y, p.x, p.y) > p.radius
-            {
+            if !unit.alive || !unit.flying || geom::dist(unit.x, unit.y, p.x, p.y) > p.radius {
                 return;
             }
             let angle = geom::py_atan2(unit.y - p.y, unit.x - p.x);
@@ -501,8 +540,7 @@ impl Battle {
                 _ if self.entity_alive(target) => {
                     self.hit_building(target, p.damage, None, "normal");
                 }
-                _ => {
-                }
+                _ => {}
             }
             return;
         }
@@ -517,7 +555,9 @@ impl Battle {
             self.unit_mut(unit).heal(healing);
             return;
         }
-        let (mut x, mut y) = p.target.map_or((p.x, p.y), |target| self.entity_position(target));
+        let (mut x, mut y) = p
+            .target
+            .map_or((p.x, p.y), |target| self.entity_position(target));
         if p.src == "eagle" {
             let (ox, oy) = p.extra.origin.expect("eagle origin");
             let (mut dx, mut dy) = (x - ox, y - oy);
@@ -543,19 +583,34 @@ impl Battle {
             self.add_pending(delayed);
             return;
         }
-        self.splash_units(x, y, p.radius, p.damage, p.hits_air, p.hits_ground, SplashUnitsOptions {
-            team: p.team, falloff: p.falloff, src: Some(&p.src),
-            kind: if p.src.starts_with("trap:") {
-                "trap"
-            } else {
-                "normal"
-            }, ..Default::default()
-        });
+        self.splash_units(
+            x,
+            y,
+            p.radius,
+            p.damage,
+            p.hits_air,
+            p.hits_ground,
+            SplashUnitsOptions {
+                team: p.team,
+                falloff: p.falloff,
+                src: Some(&p.src),
+                kind: if p.src.starts_with("trap:") {
+                    "trap"
+                } else {
+                    "normal"
+                },
+                ..Default::default()
+            },
+        );
         if p.extra.push != 0.0 {
             for reference in self.attackers_near(x, y, p.radius) {
                 let u = self.unit(reference);
-                if u.alive && !u.is_hero && !matches!(u.kind, Tag::Pet | Tag::Siege | Tag::SiegeIdle)
-                    && 0 < u.housing && u.housing as f64 <= p.extra.push_housing && !u.underground
+                if u.alive
+                    && !u.is_hero
+                    && !matches!(u.kind, Tag::Pet | Tag::Siege | Tag::SiegeIdle)
+                    && 0 < u.housing
+                    && u.housing as f64 <= p.extra.push_housing
+                    && !u.underground
                 {
                     let (mut dx, mut dy) = (u.x - x, u.y - y);
                     let mut distance = py_hypot(dx, dy);
@@ -566,7 +621,11 @@ impl Battle {
                         distance = py_hypot(dx, dy);
                     }
                     if distance != 0.0 {
-                        self.nudge(reference, p.extra.push * dx / distance, p.extra.push * dy / distance);
+                        self.nudge(
+                            reference,
+                            p.extra.push * dx / distance,
+                            p.extra.push * dy / distance,
+                        );
                         self.unit_mut(reference).target = None;
                         self.unit_mut(reference).wall_target = None;
                     }
@@ -580,7 +639,9 @@ impl Battle {
                     && !u.flying
                     && !u.is_hero
                     && !matches!(u.kind, Tag::Pet | Tag::Siege | Tag::SiegeIdle)
-                    && 0 < u.housing && u.housing <= 3 && !u.underground
+                    && 0 < u.housing
+                    && u.housing <= 3
+                    && !u.underground
                 {
                     let (ox, oy) = p.extra.origin.unwrap_or((x, y));
                     let (dx, dy) = (u.x - ox, u.y - oy);

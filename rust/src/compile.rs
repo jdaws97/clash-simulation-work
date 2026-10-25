@@ -48,13 +48,19 @@ impl<'a> Compiler<'a> {
         let library = ArmyLibrary::load(root, stats)?;
         let mut paths = std::fs::read_dir(root.join("data/playbooks"))
             .map_err(|error| error.to_string())?
-            .map(|entry| entry.map(|value| value.path()).map_err(|error| error.to_string()))
+            .map(|entry| {
+                entry
+                    .map(|value| value.path())
+                    .map_err(|error| error.to_string())
+            })
             .collect::<Result<Vec<_>, _>>()?;
         paths.sort();
         let mut playbooks = Vec::new();
         for path in paths {
             if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
-                let name = path.file_stem().and_then(|name| name.to_str())
+                let name = path
+                    .file_stem()
+                    .and_then(|name| name.to_str())
                     .ok_or("Invalid playbook filename")?;
                 let book = armies::read_json(&path)?;
                 if book.get("steps").is_some() {
@@ -65,12 +71,17 @@ impl<'a> Compiler<'a> {
         let gap_path = root.join("data/playbook-gaps.json");
         let gaps = if std::env::var("BASELAB_GAPS").as_deref() != Ok("0") && gap_path.exists() {
             let value = armies::read_json(&gap_path)?;
-            Some((value.at("same_group").at("median").f64(), value.at("group_change").at("median").f64()))
+            Some((
+                value.at("same_group").at("median").f64(),
+                value.at("group_change").at("median").f64(),
+            ))
         } else {
             None
         };
-        let pace = std::env::var("BASELAB_PACE").unwrap_or_else(|_| "1.0".to_owned())
-            .parse::<f64>().map_err(|_| "Invalid BASELAB_PACE")?;
+        let pace = std::env::var("BASELAB_PACE")
+            .unwrap_or_else(|_| "1.0".to_owned())
+            .parse::<f64>()
+            .map_err(|_| "Invalid BASELAB_PACE")?;
         if !pace.is_finite() {
             return Err("BASELAB_PACE must be finite".to_owned());
         }
@@ -98,7 +109,8 @@ impl<'a> Compiler<'a> {
         }
         let base = armies::compose(&self.library, self.stats, &build, angle, seed)?;
         let book = if options.playbooks {
-            armies::family_of(&build).and_then(|family| self.playbooks.iter().find(|(name, _)| name == family))
+            armies::family_of(&build)
+                .and_then(|family| self.playbooks.iter().find(|(name, _)| name == family))
         } else {
             None
         };
@@ -143,18 +155,32 @@ impl<'a> Compiler<'a> {
     ) -> Result<Json, String> {
         put(&mut plan, "$type", string("PlaybookPlan"));
         put(&mut plan, "auto_revive", Json::Bool(false));
-        let event_ruleset = pb.get("event_ruleset").cloned().unwrap_or_else(|| field(&plan, "event_ruleset"));
+        let event_ruleset = pb
+            .get("event_ruleset")
+            .cloned()
+            .unwrap_or_else(|| field(&plan, "event_ruleset"));
         put(&mut plan, "event_ruleset", event_ruleset);
-        let opening = options.overrides.get("__opening__").cloned().unwrap_or_else(object);
+        let opening = options
+            .overrides
+            .get("__opening__")
+            .cloned()
+            .unwrap_or_else(object);
         if let Some(mode) = opening.get("snipe_mode") {
-            if !matches!(mode, Json::Str(value) if matches!(value.as_str(), "off" | "value" | "aggressive")) {
-                return Err(format!("Unknown snipe mode {}", text(&opening, "snipe_mode", "")));
+            if !matches!(mode, Json::Str(value) if matches!(value.as_str(), "off" | "value" | "aggressive"))
+            {
+                return Err(format!(
+                    "Unknown snipe mode {}",
+                    text(&opening, "snipe_mode", "")
+                ));
             }
             if mode.str() != "value" {
                 put(&mut plan, "snipe_mode", mode.clone());
             }
         }
-        if opening.get("snipe_exposed").is_some_and(|value| !truth(value)) {
+        if opening
+            .get("snipe_exposed")
+            .is_some_and(|value| !truth(value))
+        {
             put(&mut plan, "snipe_exposed", Json::Bool(false));
         }
         let mut inventory = Json::Obj(items(build, "troops"));
@@ -163,11 +189,20 @@ impl<'a> Compiler<'a> {
             put(&mut inventory, siege, Json::Num(1.0));
         }
         let heroes = list(build, "heroes");
-        let selected = options.overrides.get("__variants__").and_then(|value| value.get("names"))
+        let selected = options
+            .overrides
+            .get("__variants__")
+            .and_then(|value| value.get("names"))
             .filter(|value| !value.is_null());
-        let variants = self.pick_variants(pb, &inventory, heroes, plan.at("spells"), &plan, selected)?;
-        let mut steps = fit_steps(&variants, &inventory, heroes, plan.at("spells"), list(&plan,
-            "cc_troops"))?;
+        let variants =
+            self.pick_variants(pb, &inventory, heroes, plan.at("spells"), &plan, selected)?;
+        let mut steps = fit_steps(
+            &variants,
+            &inventory,
+            heroes,
+            plan.at("spells"),
+            list(&plan, "cc_troops"),
+        )?;
         apply_roles(&mut steps, build, &options.overrides);
         if let Some(gaps) = self.gaps {
             add_waits(&mut steps, gaps, self.pace);
@@ -179,15 +214,20 @@ impl<'a> Compiler<'a> {
             }
             let at = text(step, "at", "");
             if let Some((_, hero)) = at.split_once(':') {
-                let fox = plan.at("loadouts").get(hero).is_some_and(|loadout| text(loadout, "pet",
-                    "") == "Spirit Fox");
+                let fox = plan
+                    .at("loadouts")
+                    .get(hero)
+                    .is_some_and(|loadout| text(loadout, "pet", "") == "Spirit Fox");
                 if is_hero(hero) && !fox {
                     put(step, "every", Json::Num(4.0));
                     let mut citations = list(step, "cite").to_vec();
                     citations.push(Json::Obj(vec![
                         ("video".to_owned(), string("L_LKqcL56NE")),
                         ("t".to_owned(), Json::Num(63.8)),
-                        ("quote".to_owned(), string("invisibility spells every 4 seconds to")),
+                        (
+                            "quote".to_owned(),
+                            string("invisibility spells every 4 seconds to"),
+                        ),
                     ]));
                     put(step, "cite", Json::Arr(citations));
                 }
@@ -200,11 +240,14 @@ impl<'a> Compiler<'a> {
         put(&mut plan, "inventory", inventory);
         put(&mut plan, "steps", Json::Arr(steps));
         put(&mut plan, "flank_offset", Json::Num(options.flank_offset));
-        let side = options.charge_side.as_deref().unwrap_or(if seed.rem_euclid(2) == 0 {
-            "left"
-        } else {
-            "right"
-        });
+        let side = options
+            .charge_side
+            .as_deref()
+            .unwrap_or(if seed.rem_euclid(2) == 0 {
+                "left"
+            } else {
+                "right"
+            });
         if !matches!(side, "left" | "right") {
             return Err("charge side must be left or right".to_owned());
         }
@@ -221,23 +264,45 @@ impl<'a> Compiler<'a> {
     // citations. Registry order decides ambiguous full-name matches.
     fn missing_equipment(&self, step: &Json, plan: &Json) -> bool {
         let hero = text(step, "what", "");
-        let description = step.get("ability").filter(|value| truth(value)).unwrap_or(step.at("id"));
+        let description = step
+            .get("ability")
+            .filter(|value| truth(value))
+            .unwrap_or(step.at("id"));
         let description = description.str().replace('_', " ").to_lowercase();
-        let mut required = step.get("equipment").filter(|value| truth(value)).map(|value| value
-            .str().to_owned());
+        let mut required = step
+            .get("equipment")
+            .filter(|value| truth(value))
+            .map(|value| value.str().to_owned());
         if required.is_none() {
-            required = self.stats.registry.obj().iter().find(|(name, record)| {
-                text(record, "kind", "") == "equipment"
-                    && record.get("attrs").and_then(|attrs| attrs.get("raw"))
-                    .is_some_and(|raw| text(raw, "User", "") == hero)
-                    && description.contains(name.to_lowercase().as_str())
-            }).map(|(name, _)| name.clone());
+            required = self
+                .stats
+                .registry
+                .obj()
+                .iter()
+                .find(|(name, record)| {
+                    text(record, "kind", "") == "equipment"
+                        && record
+                            .get("attrs")
+                            .and_then(|attrs| attrs.get("raw"))
+                            .is_some_and(|raw| text(raw, "User", "") == hero)
+                        && description.contains(name.to_lowercase().as_str())
+                })
+                .map(|(name, _)| name.clone());
         }
         let aliases: &[(&str, &str)] = match hero {
-            "Archer Queen" => &[("arrow", "Giant Arrow"), ("queen shot", "Giant Arrow"), ("healers out", "Healer Puppet")],
+            "Archer Queen" => &[
+                ("arrow", "Giant Arrow"),
+                ("queen shot", "Giant Arrow"),
+                ("healers out", "Healer Puppet"),
+            ],
             "Grand Warden" => &[("tome", "Eternal Tome"), ("torch", "Heroic Torch")],
             "Royal Champion" => &[("spear", "Rocket Spear")],
-            "Dragon Duke" => &[("backpack", "Rocket Backpack"), ("jetpack", "Rocket Backpack"), ("blaster", "Stun Blaster"), ("stun", "Stun Blaster")],
+            "Dragon Duke" => &[
+                ("backpack", "Rocket Backpack"),
+                ("jetpack", "Rocket Backpack"),
+                ("blaster", "Stun Blaster"),
+                ("stun", "Stun Blaster"),
+            ],
             _ => &[],
         };
         for (word, equipment) in aliases {
@@ -257,8 +322,11 @@ impl<'a> Compiler<'a> {
         }
         let fallback = armies::default_loadout(hero).unwrap_or_else(object);
         let loadout = plan.at("loadouts").get(hero).unwrap_or(&fallback);
-        required.is_some_and(|item| !list(loadout, "equipment").contains(&string(&item))
-            || flag(plan, "account_equipment") && plan.at("equipment_levels").get(&item).is_none())
+        required.is_some_and(|item| {
+            !list(loadout, "equipment").contains(&string(&item))
+                || flag(plan, "account_equipment")
+                    && plan.at("equipment_levels").get(&item).is_none()
+        })
     }
 
     fn usable(
@@ -268,28 +336,39 @@ impl<'a> Compiler<'a> {
         heroes: &[Json],
         spells: &Json,
         plan: &Json,
-        steps: &[Json]
+        steps: &[Json],
     ) -> bool {
         let at = text(step, "at", "");
         if let Some((kind, name)) = at.split_once(':') {
-            if matches!(kind, "unit" | "unit_ahead") && self.stats.registry.get(name)
-                .is_some_and(|record| text(record, "kind", "") == "pet") {
+            if matches!(kind, "unit" | "unit_ahead")
+                && self
+                    .stats
+                    .registry
+                    .get(name)
+                    .is_some_and(|record| text(record, "kind", "") == "pet")
+            {
                 let mut named = Vec::new();
                 named_heroes(&field(step, "when"), &mut named);
                 if named.is_empty() {
-                    named.extend(steps.iter().filter(|other| text(other, "action", "") == "deploy"
-                        && is_hero(text(other, "what", "")) && text(other, "group",
-                        "main") == text(step, "group", "main"))
-                        .map(|other| field(other, "what")));
+                    named.extend(
+                        steps
+                            .iter()
+                            .filter(|other| {
+                                text(other, "action", "") == "deploy"
+                                    && is_hero(text(other, "what", ""))
+                                    && text(other, "group", "main") == text(step, "group", "main")
+                            })
+                            .map(|other| field(other, "what")),
+                    );
                 }
-                let named = if named.is_empty() {
-                    heroes
-                } else {
-                    &named
-                };
+                let named = if named.is_empty() { heroes } else { &named };
                 if !named.iter().any(|hero| {
                     let fallback = armies::default_loadout(hero.str()).unwrap_or_else(object);
-                    text(plan.at("loadouts").get(hero.str()).unwrap_or(&fallback), "pet", "") == name
+                    text(
+                        plan.at("loadouts").get(hero.str()).unwrap_or(&fallback),
+                        "pet",
+                        "",
+                    ) == name
                 }) {
                     return false;
                 }
@@ -305,7 +384,7 @@ impl<'a> Compiler<'a> {
         inventory: &Json,
         heroes: &[Json],
         spells: &Json,
-        plan: &Json
+        plan: &Json,
     ) -> Result<bool, String> {
         let mut stock = inventory.clone();
         for hero in heroes {
@@ -352,52 +431,88 @@ impl<'a> Compiler<'a> {
         variants.sort_by(|a, b| number(b, "support", 0.0).total_cmp(&number(a, "support", 0.0)));
         let mut used = Vec::new();
         for variant in variants {
-            let replaces = variant.get("replaces").filter(|value| truth(value)).map_or(&[][..], Json::arr);
-            let current: Vec<Json> = steps.iter().filter(|step| replaces.contains(step.at("id")))
-                .cloned().collect();
+            let replaces = variant
+                .get("replaces")
+                .filter(|value| truth(value))
+                .map_or(&[][..], Json::arr);
+            let current: Vec<Json> = steps
+                .iter()
+                .filter(|step| replaces.contains(step.at("id")))
+                .cloned()
+                .collect();
             let requested = selected.is_some_and(|names| names.arr().contains(variant.at("name")));
             if selected.is_some() && !requested {
                 continue;
             }
-            if replaces.iter().any(|id| used.contains(id)) || !replaces.is_empty() && current.is_empty() {
+            if replaces.iter().any(|id| used.contains(id))
+                || !replaces.is_empty() && current.is_empty()
+            {
                 continue;
             }
             let mut new = list(&variant, "steps").to_vec();
             for step in &mut new {
                 put(step, "variant", field(&variant, "name"));
             }
-            if new.is_empty() || !new.iter().all(|step| self.usable(step, inventory, heroes, spells,
-                plan, &new)) {
+            if new.is_empty()
+                || !new
+                    .iter()
+                    .all(|step| self.usable(step, inventory, heroes, spells, plan, &new))
+            {
                 continue;
             }
-            let index = steps.iter().position(|step| replaces.contains(step.at("id"))).unwrap_or(steps.len());
-            let mut candidate: Vec<Json> = steps.iter().filter(|step| !replaces.contains(step
-                .at("id"))).cloned().collect();
+            let index = steps
+                .iter()
+                .position(|step| replaces.contains(step.at("id")))
+                .unwrap_or(steps.len());
+            let mut candidate: Vec<Json> = steps
+                .iter()
+                .filter(|step| !replaces.contains(step.at("id")))
+                .cloned()
+                .collect();
             candidate.splice(index..index, new.iter().cloned());
-            let ids: Vec<String> = new.iter().map(|step| text(step, "id", "").to_owned()).collect();
+            let ids: Vec<String> = new
+                .iter()
+                .map(|step| text(step, "id", "").to_owned())
+                .collect();
             if !self.feasible(&candidate, &ids, inventory, heroes, spells, plan)? {
                 if requested {
-                    return Err(format!("Infeasible playbook variant: {}", variant.at("name").str()));
+                    return Err(format!(
+                        "Infeasible playbook variant: {}",
+                        variant.at("name").str()
+                    ));
                 }
                 continue;
             }
-            let current_ids: Vec<String> = current.iter().map(|step| text(step, "id", "")
-                .to_owned()).collect();
-            if !requested && (replaces.is_empty() || current.iter().all(|step| self.usable(step,
-                inventory, heroes, spells, plan, &steps))
-                && self.feasible(&steps, &current_ids, inventory, heroes, spells, plan)?) {
+            let current_ids: Vec<String> = current
+                .iter()
+                .map(|step| text(step, "id", "").to_owned())
+                .collect();
+            if !requested
+                && (replaces.is_empty()
+                    || current
+                        .iter()
+                        .all(|step| self.usable(step, inventory, heroes, spells, plan, &steps))
+                        && self.feasible(&steps, &current_ids, inventory, heroes, spells, plan)?)
+            {
                 continue;
             }
             steps = candidate;
             used.extend_from_slice(replaces);
         }
         if let Some(names) = selected {
-            let mut missing: Vec<&str> = names.arr().iter().map(Json::str)
-                .filter(|name| !steps.iter().any(|step| text(step, "variant", "") == *name)).collect();
+            let mut missing: Vec<&str> = names
+                .arr()
+                .iter()
+                .map(Json::str)
+                .filter(|name| !steps.iter().any(|step| text(step, "variant", "") == *name))
+                .collect();
             missing.sort_unstable();
             missing.dedup();
             if !missing.is_empty() {
-                return Err(format!("Unavailable playbook variants: {}", missing.join(", ")));
+                return Err(format!(
+                    "Unavailable playbook variants: {}",
+                    missing.join(", ")
+                ));
             }
         }
         Ok(steps)
@@ -409,7 +524,9 @@ fn step_amount(step: &Json, left: i64, default: i64) -> Result<i64, String> {
         None => Ok(default),
         Some(Json::Null) => Ok(left),
         Some(Json::Str(value)) if value == "all" => Ok(left),
-        Some(Json::Str(value)) => value.parse::<i64>().map_err(|_| format!("Invalid step count {value}")),
+        Some(Json::Str(value)) => value
+            .parse::<i64>()
+            .map_err(|_| format!("Invalid step count {value}")),
         Some(Json::Num(value)) if value.is_finite() => Ok(*value as i64),
         _ => Err("Invalid step count".to_owned()),
     }
@@ -424,7 +541,8 @@ fn caster_name(step: &Json) -> &str {
 }
 
 fn have(name: &str, inventory: &Json, heroes: &[Json], spells: &Json) -> bool {
-    inventory.get(name).is_some() || heroes.contains(&string(name))
+    inventory.get(name).is_some()
+        || heroes.contains(&string(name))
         || spell_key(name).is_some_and(|key| number(spells, key, 0.0) != 0.0)
 }
 
@@ -435,7 +553,10 @@ fn basic_usable(step: &Json, inventory: &Json, heroes: &[Json], spells: &Json, f
         "release_siege" if !fit => have(what, inventory, heroes, spells),
         "recall" => have("Recall Spell", inventory, heroes, spells),
         "ability" => heroes.contains(&string(what)),
-        "redeploy" => (what.is_empty() || heroes.contains(&string(what))) && (!fit || have("Recall Spell", inventory, heroes, spells)),
+        "redeploy" => {
+            (what.is_empty() || heroes.contains(&string(what)))
+                && (!fit || have("Recall Spell", inventory, heroes, spells))
+        }
         _ => true,
     }
 }
@@ -464,9 +585,17 @@ fn assault(hero: &str) -> bool {
 
 fn substitute(value: &Json, old: &Json, replacement: &Json) -> Json {
     match value {
-        Json::Obj(entries) => Json::Obj(entries.iter().map(|(key, value)| (key.clone(),
-            substitute(value, old, replacement))).collect()),
-        Json::Arr(entries) => array(entries.iter().map(|value| substitute(value, old, replacement))),
+        Json::Obj(entries) => Json::Obj(
+            entries
+                .iter()
+                .map(|(key, value)| (key.clone(), substitute(value, old, replacement)))
+                .collect(),
+        ),
+        Json::Arr(entries) => array(
+            entries
+                .iter()
+                .map(|value| substitute(value, old, replacement)),
+        ),
         _ if value == old => replacement.clone(),
         _ => value.clone(),
     }
@@ -486,8 +615,9 @@ impl Relinker<'_> {
     }
 
     fn absent_cond(&self, trigger: &Json) -> bool {
-        ["inside", "hp_below", "heavy_fire", "dead"].iter().any(|key| trigger.get(key)
-            .is_some_and(|value| self.absent(value)))
+        ["inside", "hp_below", "heavy_fire", "dead"]
+            .iter()
+            .any(|key| trigger.get(key).is_some_and(|value| self.absent(value)))
     }
 
     // playbook.py:1653-1698. A cycle is malformed input, never an infinite walk.
@@ -499,14 +629,21 @@ impl Relinker<'_> {
             return Ok(Json::Null);
         }
         if let Some(after) = trigger.get("after") {
-            if let Some(dropped) = self.dropped.iter().find(|step| step.get("id") == Some(after)) {
+            if let Some(dropped) = self
+                .dropped
+                .iter()
+                .find(|step| step.get("id") == Some(after))
+            {
                 let id = after.str();
                 if seen.iter().any(|value| value == id) {
                     return Err(format!("Cyclic dropped trigger: {id}"));
                 }
                 let mut seen = seen.to_vec();
                 seen.push(id.to_owned());
-                let parent = dropped.get("when").filter(|value| truth(value)).cloned()
+                let parent = dropped
+                    .get("when")
+                    .filter(|value| truth(value))
+                    .cloned()
                     .unwrap_or_else(|| time(0.0));
                 let mut up = self.relink(&parent, &seen)?;
                 if up.is_null() {
@@ -524,22 +661,33 @@ impl Relinker<'_> {
         }
         if let Some(name) = trigger.get("spells_left") {
             let name = name.str();
-            let name = if crate::plans::SPELL_NAMES.iter().any(|(key, _)| *key == name) {
+            let name = if crate::plans::SPELL_NAMES
+                .iter()
+                .any(|(key, _)| *key == name)
+            {
                 spell_name(name)
             } else {
                 name
             };
             if !self.casters.iter().any(|caster| caster == name)
-                && spell_key(name).is_some_and(|key| number(self.spells, key, 0.0) > number(trigger,
-                "n", 0.0)) {
+                && spell_key(name)
+                    .is_some_and(|key| number(self.spells, key, 0.0) > number(trigger, "n", 0.0))
+            {
                 if seen.iter().any(|value| value == name) {
                     return Err(format!("Cyclic spell trigger: {name}"));
                 }
                 let mut seen = seen.to_vec();
                 seen.push(name.to_owned());
-                let parent = self.dropped.iter().find(|step| matches!(text(step, "action", ""),
-                    "spell" | "recall") && caster_name(step) == name)
-                    .and_then(|step| step.get("when")).filter(|value| truth(value)).cloned()
+                let parent = self
+                    .dropped
+                    .iter()
+                    .find(|step| {
+                        matches!(text(step, "action", ""), "spell" | "recall")
+                            && caster_name(step) == name
+                    })
+                    .and_then(|step| step.get("when"))
+                    .filter(|value| truth(value))
+                    .cloned()
                     .unwrap_or_else(|| time(0.0));
                 return self.relink(&parent, &seen);
             }
@@ -547,7 +695,10 @@ impl Relinker<'_> {
         let mut out = trigger.clone();
         for key in ["all", "any"] {
             if let Some(parts) = trigger.get(key) {
-                let parts = parts.arr().iter().map(|part| self.relink(part, seen))
+                let parts = parts
+                    .arr()
+                    .iter()
+                    .map(|part| self.relink(part, seen))
                     .collect::<Result<Vec<_>, _>>()?;
                 let parts: Vec<Json> = parts.into_iter().filter(|part| !part.is_null()).collect();
                 if parts.is_empty() {
@@ -564,15 +715,29 @@ fn time(t: f64) -> Json {
     Json::Obj(vec![("t".to_owned(), Json::Num(t))])
 }
 fn after(id: &str, delay: f64) -> Json {
-    Json::Obj(vec![("after".to_owned(), string(id)), ("delay".to_owned(), Json::Num(delay))])
+    Json::Obj(vec![
+        ("after".to_owned(), string(id)),
+        ("delay".to_owned(), Json::Num(delay)),
+    ])
 }
 
-fn rest_step(id: &str, what: &Json, count: Json, at: &str, group: Option<&str>, when: Json) -> Json {
+fn rest_step(
+    id: &str,
+    what: &Json,
+    count: Json,
+    at: &str,
+    group: Option<&str>,
+    when: Json,
+) -> Json {
     let mut out = Json::Obj(vec![
-        ("id".to_owned(), string(id)), ("action".to_owned(), string("deploy")),
-        ("what".to_owned(), what.clone()), ("count".to_owned(), count),
-        ("at".to_owned(), string(at)), ("when".to_owned(), when),
-        ("uncited".to_owned(), Json::Bool(true)), ("cite".to_owned(), array([])),
+        ("id".to_owned(), string(id)),
+        ("action".to_owned(), string("deploy")),
+        ("what".to_owned(), what.clone()),
+        ("count".to_owned(), count),
+        ("at".to_owned(), string(at)),
+        ("when".to_owned(), when),
+        ("uncited".to_owned(), Json::Bool(true)),
+        ("cite".to_owned(), array([])),
     ]);
     if let Some(group) = group {
         put(&mut out, "group", string(group));
@@ -588,25 +753,34 @@ pub fn fit_steps(
     spells: &Json,
     cc: &[Json],
 ) -> Result<Vec<Json>, String> {
-    let templates: Vec<&Json> = source.iter().filter(|step| text(step, "action", "") == "deploy"
-        && is_hero(text(step, "what", ""))).collect();
+    let templates: Vec<&Json> = source
+        .iter()
+        .filter(|step| text(step, "action", "") == "deploy" && is_hero(text(step, "what", "")))
+        .collect();
     let mut replacements = Vec::new();
     let mut steps = source.to_vec();
     for hero in heroes {
         if templates.iter().any(|step| step.get("what") == Some(hero)) {
             continue;
         }
-        let comparable: Vec<&Json> = templates.iter().copied().filter(|step| assault(text(step,
-            "what", "")) == assault(hero.str())).collect();
+        let comparable: Vec<&Json> = templates
+            .iter()
+            .copied()
+            .filter(|step| assault(text(step, "what", "")) == assault(hero.str()))
+            .collect();
         let choices = if comparable.is_empty() {
             &templates
         } else {
             &comparable
         };
-        let template = choices.iter().min_by_key(|step| (
-            heroes.contains(step.at("what")), replacements.contains(step.at("what")),
-            text(step, "group", "main") == "charge", text(step, "what", "") == "Grand Warden",
-        ));
+        let template = choices.iter().min_by_key(|step| {
+            (
+                heroes.contains(step.at("what")),
+                replacements.contains(step.at("what")),
+                text(step, "group", "main") == "charge",
+                text(step, "what", "") == "Grand Warden",
+            )
+        });
         let Some(template) = template else {
             continue;
         };
@@ -616,37 +790,88 @@ pub fn fit_steps(
         if at == format!("unit:{}", old.str()) || at == format!("unit_ahead:{}", old.str()) {
             at = "edge:main";
         }
-        steps.push(rest_step(&format!("rest-{}", hero.str()), hero, Json::Num(1.0), at,
-            Some(text(template, "group", "main")), substitute(&field(template, "when"), old, hero)));
+        steps.push(rest_step(
+            &format!("rest-{}", hero.str()),
+            hero,
+            Json::Num(1.0),
+            at,
+            Some(text(template, "group", "main")),
+            substitute(&field(template, "when"), old, hero),
+        ));
     }
-    let mut bring: Vec<Json> = inventory.obj().iter().map(|(name, _)| string(name)).chain(heroes
-        .iter().cloned()).collect();
-    bring.extend(cc.iter().map(|entry| if matches!(entry, Json::Str(_)) {
-        entry.clone()
-    } else {
-        entry.get("name").filter(|value| truth(value)).cloned().unwrap_or_else(|| field(entry, "type"))
+    let mut bring: Vec<Json> = inventory
+        .obj()
+        .iter()
+        .map(|(name, _)| string(name))
+        .chain(heroes.iter().cloned())
+        .collect();
+    bring.extend(cc.iter().map(|entry| {
+        if matches!(entry, Json::Str(_)) {
+            entry.clone()
+        } else {
+            entry
+                .get("name")
+                .filter(|value| truth(value))
+                .cloned()
+                .unwrap_or_else(|| field(entry, "type"))
+        }
     }));
-    let mut army_units: Vec<Json> = steps.iter().filter(|step| text(step, "action", "") == "deploy")
-        .map(|step| field(step, "what")).collect();
-    army_units.extend(["Barbarian King", "Archer Queen", "Grand Warden", "Royal Champion",
-        "Minion Prince", "Dragon Duke"].into_iter().map(string));
+    let mut army_units: Vec<Json> = steps
+        .iter()
+        .filter(|step| text(step, "action", "") == "deploy")
+        .map(|step| field(step, "what"))
+        .collect();
+    army_units.extend(
+        [
+            "Barbarian King",
+            "Archer Queen",
+            "Grand Warden",
+            "Royal Champion",
+            "Minion Prince",
+            "Dragon Duke",
+        ]
+        .into_iter()
+        .map(string),
+    );
     let mut relinker = Relinker {
-        army_units, bring, dropped: Vec::new(), casters: Vec::new(), spells
+        army_units,
+        bring,
+        dropped: Vec::new(),
+        casters: Vec::new(),
+        spells,
     };
     for step in &steps {
-        let missing_at = text(step, "at", "").split_once(':').is_some_and(|(kind, name)| matches!(kind, "unit" | "unit_ahead") && relinker.absent(&string(name)));
-        if missing_at || (text(step, "action", "") != "deploy" && relinker.absent_cond(&field(step,
-            "when"))) || !basic_usable(step, inventory, heroes, spells, true) {
+        let missing_at = text(step, "at", "")
+            .split_once(':')
+            .is_some_and(|(kind, name)| {
+                matches!(kind, "unit" | "unit_ahead") && relinker.absent(&string(name))
+            });
+        if missing_at
+            || (text(step, "action", "") != "deploy" && relinker.absent_cond(&field(step, "when")))
+            || !basic_usable(step, inventory, heroes, spells, true)
+        {
             relinker.dropped.push(step.clone());
         }
     }
-    relinker.casters = steps.iter().filter(|step| !relinker.dropped.iter().any(|dropped| dropped
-        .get("id") == step.get("id")) && matches!(text(step, "action", ""), "spell" | "recall"))
-        .map(|step| caster_name(step).to_owned()).collect();
+    relinker.casters = steps
+        .iter()
+        .filter(|step| {
+            !relinker
+                .dropped
+                .iter()
+                .any(|dropped| dropped.get("id") == step.get("id"))
+                && matches!(text(step, "action", ""), "spell" | "recall")
+        })
+        .map(|step| caster_name(step).to_owned())
+        .collect();
     let mut kept = Vec::new();
     let mut orphans = Vec::new();
     for mut step in steps {
-        if relinker.dropped.iter().any(|dropped| dropped.get("id") == step.get("id")) {
+        if relinker
+            .dropped
+            .iter()
+            .any(|dropped| dropped.get("id") == step.get("id"))
+        {
             continue;
         }
         let when = relinker.relink(&field(&step, "when"), &[])?;
@@ -660,10 +885,18 @@ pub fn fit_steps(
         }
         kept.push(step);
     }
-    let mentioned: Vec<Json> = kept.iter().filter(|step| text(step, "action", "") == "deploy")
-        .map(|step| field(step, "what")).collect();
-    let anchor = kept.iter().find(|step| text(step, "action", "") == "deploy" && text(step, "at",
-        "edge:main") == "edge:main" && !is_hero(text(step, "what", "")))
+    let mentioned: Vec<Json> = kept
+        .iter()
+        .filter(|step| text(step, "action", "") == "deploy")
+        .map(|step| field(step, "what"))
+        .collect();
+    let anchor = kept
+        .iter()
+        .find(|step| {
+            text(step, "action", "") == "deploy"
+                && text(step, "at", "edge:main") == "edge:main"
+                && !is_hero(text(step, "what", ""))
+        })
         .map_or_else(|| time(15.0), |step| after(text(step, "id", ""), 1.0));
     for step in &mut kept {
         if orphans.contains(step.at("id")) {
@@ -677,31 +910,71 @@ pub fn fit_steps(
     }
     for (name, count) in inventory.obj() {
         if truth(count) && !mentioned.contains(&string(name)) {
-            kept.push(rest_step(&format!("rest-{name}"), &string(name), string("all"), "edge:main",
-                None, anchor.clone()));
+            kept.push(rest_step(
+                &format!("rest-{name}"),
+                &string(name),
+                string("all"),
+                "edge:main",
+                None,
+                anchor.clone(),
+            ));
         }
     }
     for hero in heroes {
         if !mentioned.contains(hero) {
-            kept.push(rest_step(&format!("rest-{}", hero.str()), hero, Json::Num(1.0), "edge:main",
-                Some("main"), anchor.clone()));
+            kept.push(rest_step(
+                &format!("rest-{}", hero.str()),
+                hero,
+                Json::Num(1.0),
+                "edge:main",
+                Some("main"),
+                anchor.clone(),
+            ));
         }
     }
     for (name, count) in inventory.obj() {
-        let mine: Vec<&Json> = kept.iter().filter(|step| text(step, "action", "") == "deploy"
-            && text(step, "what", "") == name && !flag(step, "uncited")).collect();
-        if !truth(count) || is_hero(name) || mine.is_empty() || mine.iter().any(|step| step
-            .get("count").is_none_or(|count| count.is_null() || count == &string("all"))) {
+        let mine: Vec<&Json> = kept
+            .iter()
+            .filter(|step| {
+                text(step, "action", "") == "deploy"
+                    && text(step, "what", "") == name
+                    && !flag(step, "uncited")
+            })
+            .collect();
+        if !truth(count)
+            || is_hero(name)
+            || mine.is_empty()
+            || mine.iter().any(|step| {
+                step.get("count")
+                    .is_none_or(|count| count.is_null() || count == &string("all"))
+            })
+        {
             continue;
         }
-        let used = mine.iter().map(|step| step_amount(step, 0, 0)).collect::<Result<Vec<_>, _>>()?
-            .iter().sum::<i64>();
+        let used = mine
+            .iter()
+            .map(|step| step_amount(step, 0, 0))
+            .collect::<Result<Vec<_>, _>>()?
+            .iter()
+            .sum::<i64>();
         if used >= count.i64() {
             continue;
         }
-        let when = Json::Obj(vec![("any".to_owned(), array([after(text(mine[mine.len() - 1], "id",
-            ""), 4.5), time(150.0)]))]);
-        kept.push(rest_step(&format!("rest2-{name}"), &string(name), string("all"), "edge:main", None, when));
+        let when = Json::Obj(vec![(
+            "any".to_owned(),
+            array([
+                after(text(mine[mine.len() - 1], "id", ""), 4.5),
+                time(150.0),
+            ]),
+        )]);
+        kept.push(rest_step(
+            &format!("rest2-{name}"),
+            &string(name),
+            string("all"),
+            "edge:main",
+            None,
+            when,
+        ));
     }
     Ok(kept)
 }
@@ -724,15 +997,13 @@ fn apply_roles(steps: &mut [Json], build: &Json, overrides: &Json) {
     for step in steps.iter() {
         let choices = overrides.get(text(step, "id", ""));
         for key in ["at", "aim"] {
-            let anchor = choices.and_then(|choices| choices.get(key)).or_else(|| step.get(key));
+            let anchor = choices
+                .and_then(|choices| choices.get(key))
+                .or_else(|| step.get(key));
             if let Some(Json::Str(anchor)) = anchor {
                 if let Some((kind, group)) = anchor.split_once(':') {
                     if matches!(kind, "group" | "threat" | "defenders") {
-                        referenced.push(if group.is_empty() {
-                            "main"
-                        } else {
-                            group
-                        }.to_owned());
+                        referenced.push(if group.is_empty() { "main" } else { group }.to_owned());
                     }
                 }
             }
@@ -741,8 +1012,12 @@ fn apply_roles(steps: &mut [Json], build: &Json, overrides: &Json) {
         collect_groups(&field(step, "until"), &mut referenced);
     }
     for step in steps {
-        if text(step, "action", "") != "deploy" || !list(build, "heroes").contains(&field(step,
-            "what")) || referenced.iter().any(|group| group == text(step, "group", "main")) {
+        if text(step, "action", "") != "deploy"
+            || !list(build, "heroes").contains(&field(step, "what"))
+            || referenced
+                .iter()
+                .any(|group| group == text(step, "group", "main"))
+        {
             continue;
         }
         let role = if list(build, "funnel").contains(&field(step, "what")) {
@@ -760,13 +1035,26 @@ fn apply_roles(steps: &mut [Json], build: &Json, overrides: &Json) {
 }
 
 fn quotes(step: &Json) -> String {
-    list(step, "cite").iter().map(|cite| text(cite, "quote", "")).collect::<Vec<_>>().join(" ").to_lowercase()
+    list(step, "cite")
+        .iter()
+        .map(|cite| text(cite, "quote", ""))
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
 }
 
 fn immediate(step: &Json, previous: &Json) -> bool {
     let words = quotes(step);
-    if ["immediately", "right away", "straight away", "instantly", "quick succession"].iter()
-        .any(|word| words.contains(*word)) {
+    if [
+        "immediately",
+        "right away",
+        "straight away",
+        "instantly",
+        "quick succession",
+    ]
+    .iter()
+    .any(|word| words.contains(*word))
+    {
         return true;
     }
     if text(previous, "what", "") != "Invisibility Spell" {
@@ -776,8 +1064,10 @@ fn immediate(step: &Json, previous: &Json) -> bool {
         return true;
     }
     let before = quotes(previous);
-    text(step, "action", "") == "ability" && text(step, "what", "") == "Grand Warden" && words
-        .contains("fireball") && (before.contains("invis invis") || before.contains("quick succession"))
+    text(step, "action", "") == "ability"
+        && text(step, "what", "") == "Grand Warden"
+        && words.contains("fireball")
+        && (before.contains("invis invis") || before.contains("quick succession"))
 }
 
 fn fix_wait(
@@ -786,31 +1076,45 @@ fn fix_wait(
     source: &[Json],
     walk: &[String],
     gaps: (f64, f64),
-    pace: f64
+    pace: f64,
 ) -> Json {
     if !matches!(trigger, Json::Obj(_)) {
         return trigger.clone();
     }
     let mut out = trigger.clone();
-    if let Some(previous) = trigger.get("after").and_then(|id| source.iter().find(|step| step
-        .get("id") == Some(id))) {
-        if !flag(trigger, "delay") && !walk.iter().any(|id| id == text(step, "id", ""))
-            && !immediate(step, previous) {
+    if let Some(previous) = trigger
+        .get("after")
+        .and_then(|id| source.iter().find(|step| step.get("id") == Some(id)))
+    {
+        if !flag(trigger, "delay")
+            && !walk.iter().any(|id| id == text(step, "id", ""))
+            && !immediate(step, previous)
+        {
             let gap = if text(previous, "group", "main") == text(step, "group", "main") {
                 gaps.0
             } else {
                 gaps.1
             };
             let action_time = match text(previous, "action", "") {
-                "deploy" => pace * (0.6 + 0.133 * 1.0), "ability" => pace * 0.3, _ => pace * 0.6
+                "deploy" => pace * (0.6 + 0.133 * 1.0),
+                "ability" => pace * 0.3,
+                _ => pace * 0.6,
             };
             put(&mut out, "delay", Json::Num((gap - action_time).max(0.0)));
         }
     }
     for key in ["all", "any"] {
         if let Some(parts) = trigger.get(key) {
-            put(&mut out, key, array(parts.arr().iter().map(|part| fix_wait(part, step, source,
-                walk, gaps, pace))));
+            put(
+                &mut out,
+                key,
+                array(
+                    parts
+                        .arr()
+                        .iter()
+                        .map(|part| fix_wait(part, step, source, walk, gaps, pace)),
+                ),
+            );
         }
     }
     out
@@ -836,7 +1140,9 @@ pub fn add_waits(steps: &mut [Json], gaps: (f64, f64), pace: f64) {
                 break;
             };
             current = parent;
-            if text(current, "action", "") == "deploy" && text(current, "what", "") == "Grand Warden" {
+            if text(current, "action", "") == "deploy"
+                && text(current, "what", "") == "Grand Warden"
+            {
                 if text(current, "group", "main") == "charge" {
                     walk.extend(chain);
                 }
@@ -845,7 +1151,9 @@ pub fn add_waits(steps: &mut [Json], gaps: (f64, f64), pace: f64) {
         }
     }
     for step in steps {
-        if !flag(step, "uncited") || text(step, "action", "") == "deploy" && is_hero(text(step, "what", "")) {
+        if !flag(step, "uncited")
+            || text(step, "action", "") == "deploy" && is_hero(text(step, "what", ""))
+        {
             let when = fix_wait(&field(step, "when"), step, &source, &walk, gaps, pace);
             put(step, "when", when);
         }
@@ -862,8 +1170,10 @@ pub fn apply_overrides(steps: &mut [Json], overrides: &Json) -> Result<(), Strin
             match key.as_str() {
                 "delay" => {
                     let delay = match value {
-                        Json::Str(value) => value.parse::<f64>()
-                            .map_err(|_| "Invalid delay override")?, _ => value.f64()
+                        Json::Str(value) => {
+                            value.parse::<f64>().map_err(|_| "Invalid delay override")?
+                        }
+                        _ => value.f64(),
                     };
                     let mut when = field(step, "when");
                     if when.get("after").is_some() {
@@ -908,20 +1218,19 @@ pub fn warden_walk(steps: &[Json], has_healers: bool) -> bool {
                         && text(warden, "group", "main") == text(healer, "group", "main")
                         && warden.get("at") == healer.get("at")
                         && text(warden, "at", "").starts_with("edge:")
-                        && follows(
-                            &field(healer, "when"),
-                            text(warden, "id", ""),
-                            steps,
-                            &[],
-                        )
+                        && follows(&field(healer, "when"), text(warden, "id", ""), steps, &[])
                 }))
         })
 }
 
 fn follows(trigger: &Json, previous: &str, steps: &[Json], seen: &[String]) -> bool {
     if let Some(t) = trigger.get("t") {
-        return steps.iter().find(|step| text(step, "id", "") == previous).and_then(|step| step
-            .get("when")).and_then(|when| when.get("t")).is_some_and(|start| t.f64() >= start.f64());
+        return steps
+            .iter()
+            .find(|step| text(step, "id", "") == previous)
+            .and_then(|step| step.get("when"))
+            .and_then(|when| when.get("t"))
+            .is_some_and(|start| t.f64() >= start.f64());
     }
     if let Some(reference) = trigger.get("after") {
         if reference.str() == previous {
@@ -938,18 +1247,46 @@ fn follows(trigger: &Json, previous: &str, steps: &[Json], seen: &[String]) -> b
         return follows(&field(step, "when"), previous, steps, &seen);
     }
     if let Some(parts) = trigger.get("all") {
-        return parts.arr().iter().any(|part| follows(part, previous, steps, seen));
+        return parts
+            .arr()
+            .iter()
+            .any(|part| follows(part, previous, steps, seen));
     }
     if let Some(parts) = trigger.get("any") {
-        return !parts.arr().is_empty() && parts.arr().iter().all(|part| follows(part, previous, steps, seen));
+        return !parts.arr().is_empty()
+            && parts
+                .arr()
+                .iter()
+                .all(|part| follows(part, previous, steps, seen));
     }
     false
 }
 
-pub const TACTIC_DEFAULTS: [f64; 19] = [0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 8.0, 10.0, 0.0, 0.0, 1.5,
-    0.0, 0.0, 0.0, 0.0, 0.35, 25.0, 0.0, 0.0];
-pub const TACTIC_NAMES: [&str; 19] = ["angle", "funnel_scale", "funnel_shift", "flank_lat",
-    "spread", "support_spread", "main_min", "main_gap", "heroes_push", "freeze_pick", "revive_delay", "charge_pick", "charge_healers", "charge_lat", "charge_at", "charge_recall_hp", "charge_len", "recall_funnel", "split_main"];
+pub const TACTIC_DEFAULTS: [f64; 19] = [
+    0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 8.0, 10.0, 0.0, 0.0, 1.5, 0.0, 0.0, 0.0, 0.0, 0.35, 25.0, 0.0,
+    0.0,
+];
+pub const TACTIC_NAMES: [&str; 19] = [
+    "angle",
+    "funnel_scale",
+    "funnel_shift",
+    "flank_lat",
+    "spread",
+    "support_spread",
+    "main_min",
+    "main_gap",
+    "heroes_push",
+    "freeze_pick",
+    "revive_delay",
+    "charge_pick",
+    "charge_healers",
+    "charge_lat",
+    "charge_at",
+    "charge_recall_hp",
+    "charge_len",
+    "recall_funnel",
+    "split_main",
+];
 
 // tactics.py:135-164: generic knobs are explicitly rejected for playbooks.
 pub fn apply_tactics(plan: &mut Json, values: &[f64]) -> Result<(), String> {
@@ -960,10 +1297,17 @@ pub fn apply_tactics(plan: &mut Json, values: &[f64]) -> Result<(), String> {
         return Err("Native tactic compilation currently requires a PlaybookPlan".to_owned());
     }
     let supported = [0, 1, 4, 5, 9, 10];
-    let unsupported: Vec<&str> = values.iter().enumerate().filter(|(index, value)| !supported
-        .contains(index) && **value != TACTIC_DEFAULTS[*index]).map(|(index, _)| TACTIC_NAMES[index]).collect();
+    let unsupported: Vec<&str> = values
+        .iter()
+        .enumerate()
+        .filter(|(index, value)| !supported.contains(index) && **value != TACTIC_DEFAULTS[*index])
+        .map(|(index, _)| TACTIC_NAMES[index])
+        .collect();
     if !unsupported.is_empty() {
-        return Err(format!("Playbook does not execute generic tactic knobs: {}", unsupported.join(", ")));
+        return Err(format!(
+            "Playbook does not execute generic tactic knobs: {}",
+            unsupported.join(", ")
+        ));
     }
     let tau = 2.0 * std::f64::consts::PI;
     // CPython float modulo first uses fmod, then adjusts the sign, preserving
@@ -978,20 +1322,36 @@ pub fn apply_tactics(plan: &mut Json, values: &[f64]) -> Result<(), String> {
     put(plan, "angle", Json::Num(angle));
     let offset = plan.at("flank_offset").f64() * values[1];
     put(plan, "flank_offset", Json::Num(offset));
-    let freeze_options: &[&[&str]] = &[&[], &["inferno"], &["mono"], &["scatter"], &["eagle"],
-        &["xbow"], &["inferno", "mono"], &["scatter", "inferno"]];
+    let freeze_options: &[&[&str]] = &[
+        &[],
+        &["inferno"],
+        &["mono"],
+        &["scatter"],
+        &["eagle"],
+        &["xbow"],
+        &["inferno", "mono"],
+        &["scatter", "inferno"],
+    ];
     let pick = values[9] as i64;
     let pick = if pick < 0 {
         freeze_options.len() as i64 + pick
     } else {
         pick
     };
-    let choice = freeze_options.get(pick as usize).ok_or("freeze_pick is out of range")?;
-    put(plan, "freeze_first", array(choice.iter().map(|name| string(name))));
+    let choice = freeze_options
+        .get(pick as usize)
+        .ok_or("freeze_pick is out of range")?;
+    put(
+        plan,
+        "freeze_first",
+        array(choice.iter().map(|name| string(name))),
+    );
     put(plan, "revive_delay", Json::Num(values[10]));
     let mut steps = list(plan, "steps").to_vec();
     for step in &mut steps {
-        if text(step, "action", "") != "deploy" || plan.at("loadouts").get(text(step, "what", "")).is_some() {
+        if text(step, "action", "") != "deploy"
+            || plan.at("loadouts").get(text(step, "what", "")).is_some()
+        {
             continue;
         }
         let scale = if text(step, "what", "") == "Healer" {
@@ -1010,8 +1370,11 @@ pub fn apply_tactics(plan: &mut Json, values: &[f64]) -> Result<(), String> {
 
 fn integer(value: &Json, name: &str, minimum: i64) -> Result<i64, String> {
     if let Json::Num(number) = value {
-        if number.is_finite() && number.fract() == 0.0 && *number >= minimum as f64
-            && *number <= i32::MAX as f64 {
+        if number.is_finite()
+            && number.fract() == 0.0
+            && *number >= minimum as f64
+            && *number <= i32::MAX as f64
+        {
             return Ok(*number as i64);
         }
     }
@@ -1019,22 +1382,37 @@ fn integer(value: &Json, name: &str, minimum: i64) -> Result<i64, String> {
 }
 
 fn quantities(plan: &Json) -> Vec<(String, Json)> {
-    let mut out: Vec<(String, Json)> = list(plan, "flank").iter().map(|entry| (entry.arr()[0].str()
-        .to_owned(), entry.arr()[1].clone())).collect();
+    let mut out: Vec<(String, Json)> = list(plan, "flank")
+        .iter()
+        .map(|entry| (entry.arr()[0].str().to_owned(), entry.arr()[1].clone()))
+        .collect();
     for wave in list(plan, "main").iter().chain(list(plan, "support")) {
-        out.extend(list(wave, "units").iter().map(|entry| (entry.arr()[0].str().to_owned(), entry
-            .arr()[1].clone())));
+        out.extend(
+            list(wave, "units")
+                .iter()
+                .map(|entry| (entry.arr()[0].str().to_owned(), entry.arr()[1].clone())),
+        );
     }
     for key in ["cleanup", "breakers"] {
-        out.extend(list(plan, key).iter().map(|entry| (entry.arr()[0].str().to_owned(), entry
-            .arr()[1].clone())));
+        out.extend(
+            list(plan, key)
+                .iter()
+                .map(|entry| (entry.arr()[0].str().to_owned(), entry.arr()[1].clone())),
+        );
     }
     out
 }
 
 fn roster(plan: &Json) -> Vec<String> {
-    let mut out: Vec<String> = list(plan, "funnel_heroes").iter().map(|entry| entry.arr()[0].str()
-        .to_owned()).chain(list(plan, "push_heroes").iter().map(|hero| hero.str().to_owned())).collect();
+    let mut out: Vec<String> = list(plan, "funnel_heroes")
+        .iter()
+        .map(|entry| entry.arr()[0].str().to_owned())
+        .chain(
+            list(plan, "push_heroes")
+                .iter()
+                .map(|hero| hero.str().to_owned()),
+        )
+        .collect();
     if let Some(hero) = plan.get("charge_hero").filter(|value| truth(value)) {
         out.push(hero.str().to_owned());
     }
@@ -1048,12 +1426,17 @@ fn roster(plan: &Json) -> Vec<String> {
 
 impl Compiler<'_> {
     fn record(&self, name: &str) -> Result<&Json, String> {
-        self.stats.registry.get(name).ok_or_else(|| format!("'{name}'"))
+        self.stats
+            .registry
+            .get(name)
+            .ok_or_else(|| format!("'{name}'"))
     }
 
     fn row_exists(&self, name: &str, level: i64) -> Result<(), String> {
-        if !list(self.record(name)?, "levels").iter().any(|row| row
-            .get("level") == Some(&Json::Num(level as f64))) {
+        if !list(self.record(name)?, "levels")
+            .iter()
+            .any(|row| row.get("level") == Some(&Json::Num(level as f64)))
+        {
             return Err(format!("'{name} has no level {level}'"));
         }
         Ok(())
@@ -1072,7 +1455,9 @@ impl Compiler<'_> {
     }
 
     fn get(&self, name: &str, level: i64, key: &str) -> f64 {
-        self.stats.get(name, &Level::Int(level), &[key], Some(0.0)).unwrap_or(0.0)
+        self.stats
+            .get(name, &Level::Int(level), &[key], Some(0.0))
+            .unwrap_or(0.0)
     }
 
     fn building_level(&self, plan: &Json, name: &str, key: &str) -> i64 {
@@ -1091,22 +1476,36 @@ impl Compiler<'_> {
                 .max_level(name, plan.at("town_hall").i64())
                 .unwrap_or(0);
         }
-        plan.get(key).filter(|value| !value.is_null()).map_or_else(|| self.stats.max_level(name,
-            plan.at("town_hall").i64()).unwrap_or(0), Json::i64)
+        plan.get(key).filter(|value| !value.is_null()).map_or_else(
+            || {
+                self.stats
+                    .max_level(name, plan.at("town_hall").i64())
+                    .unwrap_or(0)
+            },
+            Json::i64,
+        )
     }
 
     fn siege_cap(&self, plan: &Json) -> i64 {
         let siege = text(plan, "siege", "");
-        let castle = self.building_level(plan, "Clan Castle", "clan_castle_level").min(13);
+        let castle = self
+            .building_level(plan, "Clan Castle", "clan_castle_level")
+            .min(13);
         if castle < 6 {
             return 0;
         }
-        let table = list(&self.siege_caps, "tables").iter().find(|table| text(table, "heading",
-            "") == "Siege Machine Level Cap");
-        table.and_then(|table| list(table, "rows").iter().find(|row| row.arr().first()
-            .is_some_and(|name| name == &string(siege))))
-            .and_then(|row| row.arr().get((castle - 5) as usize)).and_then(|value| stats::num(value,
-            Some(0.0))).unwrap_or(0.0) as i64
+        let table = list(&self.siege_caps, "tables")
+            .iter()
+            .find(|table| text(table, "heading", "") == "Siege Machine Level Cap");
+        table
+            .and_then(|table| {
+                list(table, "rows")
+                    .iter()
+                    .find(|row| row.arr().first().is_some_and(|name| name == &string(siege)))
+            })
+            .and_then(|row| row.arr().get((castle - 5) as usize))
+            .and_then(|value| stats::num(value, Some(0.0)))
+            .unwrap_or(0.0) as i64
     }
 
     // plans.py:574-612: donated research uses the Castle's Laboratory cap;
@@ -1137,18 +1536,23 @@ impl Compiler<'_> {
         };
         let th = if donated {
             self.row_exists("Laboratory", lab)?;
-            self.stats.required_town_hall("Laboratory", &Level::Int(lab))
+            self.stats
+                .required_town_hall("Laboratory", &Level::Int(lab))
         } else {
             plan.at("town_hall").f64()
         };
-        Ok(list(self.record(name)?, "levels").iter().filter_map(|row| {
-            let Json::Num(level) = row.get("level")? else {
-                return None;
-            };
-            let level = *level as i64;
-            (self.get(name, level, "Laboratory Level Required") <= lab as f64 && self.stats
-                .required_town_hall(name, &Level::Int(level)) <= th).then_some(level)
-        }).max())
+        Ok(list(self.record(name)?, "levels")
+            .iter()
+            .filter_map(|row| {
+                let Json::Num(level) = row.get("level")? else {
+                    return None;
+                };
+                let level = *level as i64;
+                (self.get(name, level, "Laboratory Level Required") <= lab as f64
+                    && self.stats.required_town_hall(name, &Level::Int(level)) <= th)
+                    .then_some(level)
+            })
+            .max())
     }
 
     // spells.py:60-108, including the event-only spell declarations.
@@ -1157,7 +1561,7 @@ impl Compiler<'_> {
         plan: &Json,
         name: &str,
         level: Option<i64>,
-        donated: bool
+        donated: bool,
     ) -> Result<(), String> {
         let level = level.ok_or_else(|| format!("Invalid {name} level None"))?;
         if level <= 0 {
@@ -1165,7 +1569,10 @@ impl Compiler<'_> {
         }
         self.row_exists(name, level)?;
         let event = plan.at("event_ruleset");
-        if matches!(name, "Santa's Surprise" | "Bag of Frostmites" | "Birthday Boom" | "Yellow Card") {
+        if matches!(
+            name,
+            "Santa's Surprise" | "Bag of Frostmites" | "Birthday Boom" | "Yellow Card"
+        ) {
             if !flag(event, "version") || !list(event, "spells").contains(&string(name)) {
                 return Err(format!("{name} requires an explicit event version"));
             }
@@ -1192,23 +1599,36 @@ impl Compiler<'_> {
             if lab == 0 {
                 return Err("Donated spells require a Clan Castle".to_owned());
             }
-            (self.stats.required_town_hall("Laboratory", &Level::Int(lab)) as i64, lab)
+            (
+                self.stats
+                    .required_town_hall("Laboratory", &Level::Int(lab)) as i64,
+                lab,
+            )
         } else {
             let raw = self.stats.attrs(name).get("raw");
-            for (factory, supplied) in [("Spell Factory", "spell_factory_level"),
-                ("Dark Spell Factory", "dark_spell_factory_level")] {
-                if let Some(required) = raw.and_then(|raw| raw
-                    .get(&format!("{factory} Level Required"))).and_then(|value| stats::num(value, None)) {
+            for (factory, supplied) in [
+                ("Spell Factory", "spell_factory_level"),
+                ("Dark Spell Factory", "dark_spell_factory_level"),
+            ] {
+                if let Some(required) = raw
+                    .and_then(|raw| raw.get(&format!("{factory} Level Required")))
+                    .and_then(|value| stats::num(value, None))
+                {
                     if (self.building_level(plan, factory, supplied) as f64) < required {
                         return Err(format!("{name} requires {factory} level {required}"));
                     }
                 }
             }
-            (plan.at("town_hall").i64(), self.building_level(plan, "Laboratory", "laboratory_level"))
+            (
+                plan.at("town_hall").i64(),
+                self.building_level(plan, "Laboratory", "laboratory_level"),
+            )
         };
         self.validate_level(name, level, th)?;
         if self.get(name, level, "Laboratory Level Required") > lab as f64 {
-            return Err(format!("{name} level {level} exceeds Laboratory level {lab}"));
+            return Err(format!(
+                "{name} level {level} exceeds Laboratory level {lab}"
+            ));
         }
         Ok(())
     }
@@ -1219,7 +1639,10 @@ impl Compiler<'_> {
                 return Ok(0);
             }
             let attrs = self.record(name)?.at("attrs");
-            Ok(attrs.get("housing_ck").filter(|value| truth(value)).or_else(|| attrs.get("housing"))
+            Ok(attrs
+                .get("housing_ck")
+                .filter(|value| truth(value))
+                .or_else(|| attrs.get("housing"))
                 .map_or(0, |value| value.f64() as i64))
         };
         let mut camp = 0;
@@ -1230,15 +1653,23 @@ impl Compiler<'_> {
         let mut cc = 0;
         for entry in list(plan, "cc_troops") {
             let (name, count) = match entry {
-                Json::Str(name) => (name.as_str(), 1), _ => (text(entry, "name", text(entry, "type",
-                    "")), number(entry, "count", 1.0) as i64)
+                Json::Str(name) => (name.as_str(), 1),
+                _ => (
+                    text(entry, "name", text(entry, "type", "")),
+                    number(entry, "count", 1.0) as i64,
+                ),
             };
             cc += h(name)? * count;
         }
         let spell_space = |key: &str| -> Result<i64, String> {
             let mut total = 0;
             for (key, count) in items(plan, key) {
-                total += self.record(spell_name(&key))?.at("attrs").at("housing").i64() * count.i64();
+                total += self
+                    .record(spell_name(&key))?
+                    .at("attrs")
+                    .at("housing")
+                    .i64()
+                    * count.i64();
             }
             Ok(total)
         };
@@ -1249,8 +1680,7 @@ impl Compiler<'_> {
             self.get("Spell Factory", factory, "Spell Storage Capacity")
         } else {
             0.0
-        })
-        + if dark > 0 {
+        }) + if dark > 0 {
             self.get("Dark Spell Factory", dark, "Spell Storage Capacity")
         } else {
             0.0
@@ -1268,16 +1698,27 @@ impl Compiler<'_> {
             352
         };
         Ok(Json::Obj(vec![
-            ("camp".to_owned(), Json::Num(camp as f64)), ("camp_cap".to_owned(), Json::Num(camp_cap as f64)),
-            ("cc".to_owned(), Json::Num(cc as f64)), ("cc_cap".to_owned(), Json::Num(cc_capacity as f64)),
-            ("spells".to_owned(), Json::Num(spell_space("_spells0")? as f64)), ("spell_cap"
-            .to_owned(), Json::Num(capacity)),
-            ("cc_spells".to_owned(), Json::Num(spell_space("_cc_spells0")? as f64)),
-            ("cc_spell_cap".to_owned(), Json::Num(if castle > 0 {
-            self.get("Clan Castle", castle, "Spell Capacity")
-        } else {
-            0.0
-        })),
+            ("camp".to_owned(), Json::Num(camp as f64)),
+            ("camp_cap".to_owned(), Json::Num(camp_cap as f64)),
+            ("cc".to_owned(), Json::Num(cc as f64)),
+            ("cc_cap".to_owned(), Json::Num(cc_capacity as f64)),
+            (
+                "spells".to_owned(),
+                Json::Num(spell_space("_spells0")? as f64),
+            ),
+            ("spell_cap".to_owned(), Json::Num(capacity)),
+            (
+                "cc_spells".to_owned(),
+                Json::Num(spell_space("_cc_spells0")? as f64),
+            ),
+            (
+                "cc_spell_cap".to_owned(),
+                Json::Num(if castle > 0 {
+                    self.get("Clan Castle", castle, "Spell Capacity")
+                } else {
+                    0.0
+                }),
+            ),
             ("siege".to_owned(), field(plan, "siege")),
         ]))
     }
@@ -1317,16 +1758,26 @@ impl Compiler<'_> {
                 problems.push(format!("{hero} is unavailable at Town Hall {th}"));
             }
             let fallback = armies::default_loadout(&hero).expect("known hero");
-            let loadout = plan.at("loadouts").get(&hero).filter(|value| truth(value)).unwrap_or(&fallback);
+            let loadout = plan
+                .at("loadouts")
+                .get(&hero)
+                .filter(|value| truth(value))
+                .unwrap_or(&fallback);
             if text(loadout, "hero", "") != hero {
-                problems.push(format!("Loadout for {} cannot be applied to {hero}", text(loadout,
-                    "hero", "")));
+                problems.push(format!(
+                    "Loadout for {} cannot be applied to {hero}",
+                    text(loadout, "hero", "")
+                ));
             }
             let equipment = list(loadout, "equipment");
             if equipment.len() > 2 {
                 problems.push(format!("{hero} can equip at most 2 equipment items"));
             }
-            if equipment.iter().enumerate().any(|(index, item)| equipment[..index].contains(item)) {
+            if equipment
+                .iter()
+                .enumerate()
+                .any(|(index, item)| equipment[..index].contains(item))
+            {
                 problems.push(format!("Duplicate equipment for {hero}"));
             }
             for item in equipment {
@@ -1335,7 +1786,11 @@ impl Compiler<'_> {
                     problems.push(format!("{item} is not hero equipment"));
                     continue;
                 }
-                let owner = self.stats.attrs(item).get("raw").map_or("None", |raw| text(raw, "User", "None"));
+                let owner = self
+                    .stats
+                    .attrs(item)
+                    .get("raw")
+                    .map_or("None", |raw| text(raw, "User", "None"));
                 if owner != hero {
                     problems.push(format!("{item} belongs to {owner}, not {hero}"));
                 }
@@ -1371,12 +1826,20 @@ impl Compiler<'_> {
         }
         for (name, count) in &quantities {
             if !matches!(count, Json::Num(value) if value.is_finite() && *value >= 0.0 && value
-                .fract() == 0.0) {
-                return Err(format!("Invalid troop count for {name}: {}", python_value(count)));
+                .fract() == 0.0)
+            {
+                return Err(format!(
+                    "Invalid troop count for {name}: {}",
+                    python_value(count)
+                ));
             }
         }
-        for (name, key) in [("Spell Factory", "spell_factory_level"), ("Dark Spell Factory",
-            "dark_spell_factory_level"), ("Laboratory", "laboratory_level"), ("Clan Castle", "clan_castle_level")] {
+        for (name, key) in [
+            ("Spell Factory", "spell_factory_level"),
+            ("Dark Spell Factory", "dark_spell_factory_level"),
+            ("Laboratory", "laboratory_level"),
+            ("Clan Castle", "clan_castle_level"),
+        ] {
             if let Some(value) = plan.get(key).filter(|value| !value.is_null()) {
                 let level = integer(value, name, 0)?;
                 if level > 0 {
@@ -1413,7 +1876,9 @@ impl Compiler<'_> {
                     .unwrap_or(0.0);
                 let available = self.building_level(plan, building, key);
                 if (available as f64) < required {
-                    return Err(format!("{name} requires {building} level {required} (available {available})"));
+                    return Err(format!(
+                        "{name} requires {building} level {required} (available {available})"
+                    ));
                 }
             }
         }
@@ -1422,7 +1887,11 @@ impl Compiler<'_> {
         if flag(plan, "siege_donated") && flag(plan, "siege") {
             let siege = plan.at("siege").str();
             if troop_levels.get(siege).is_none() {
-                put(&mut troop_levels, siege, Json::Num(self.siege_cap(plan) as f64));
+                put(
+                    &mut troop_levels,
+                    siege,
+                    Json::Num(self.siege_cap(plan) as f64),
+                );
             }
         }
         for levels in [&troop_levels, plan.at("hero_levels")] {
@@ -1432,7 +1901,9 @@ impl Compiler<'_> {
                     self.row_exists(name, level)?;
                     let cap = self.siege_cap(plan);
                     if level > cap {
-                        return Err(format!("{name} level {level} exceeds Clan Castle donation cap {cap}"));
+                        return Err(format!(
+                            "{name} level {level} exceeds Clan Castle donation cap {cap}"
+                        ));
                     }
                     continue;
                 }
@@ -1441,17 +1912,31 @@ impl Compiler<'_> {
                 if flag(self.record(name)?, "super") {
                     for (column, _) in items(self.stats.attrs(name), "raw") {
                         if let Some(base) = column.strip_suffix(" Level Required") {
-                            if self.stats.registry.get(base).is_some_and(|record| text(record,
-                                "kind", "") == "troop") {
+                            if self
+                                .stats
+                                .registry
+                                .get(base)
+                                .is_some_and(|record| text(record, "kind", "") == "troop")
+                            {
                                 // Keep the base string alive outside this temporary column.
-                                research = self.stats.registry.obj().iter().find(|(key, _)| key == base).expect("known base").0.as_str();
+                                research = self
+                                    .stats
+                                    .registry
+                                    .obj()
+                                    .iter()
+                                    .find(|(key, _)| key == base)
+                                    .expect("known base")
+                                    .0
+                                    .as_str();
                                 break;
                             }
                         }
                     }
                 }
                 if self.get(research, level, "Laboratory Level Required") > lab as f64 {
-                    return Err(format!("{name} level {level} exceeds Laboratory level {lab}"));
+                    return Err(format!(
+                        "{name} level {level} exceeds Laboratory level {lab}"
+                    ));
                 }
             }
         }
@@ -1464,19 +1949,30 @@ impl Compiler<'_> {
             if !flag(stock, "remaining") && stock.at("level").is_null() {
                 continue;
             }
-            self.validate_spell(plan, stock.at("name").str(), self.spell_level(plan, stock)?,
-                text(stock, "origin", "") == "donated")?;
+            self.validate_spell(
+                plan,
+                stock.at("name").str(),
+                self.spell_level(plan, stock)?,
+                text(stock, "origin", "") == "donated",
+            )?;
         }
         let housing = self.housing(plan)?;
-        for (key, cap) in [("camp", "camp_cap"), ("cc", "cc_cap"), ("spells", "spell_cap"),
-            ("cc_spells", "cc_spell_cap")] {
+        for (key, cap) in [
+            ("camp", "camp_cap"),
+            ("cc", "cc_cap"),
+            ("spells", "spell_cap"),
+            ("cc_spells", "cc_spell_cap"),
+        ] {
             if housing.at(key).f64() > housing.at(cap).f64() {
                 let capacity = if matches!(key, "spells" | "cc_spells") {
                     crate::trace::py_float_repr(housing.at(cap).f64())
                 } else {
                     python_value(housing.at(cap))
                 };
-                problems.push(format!("{key} {} > {capacity}", python_value(housing.at(key))));
+                problems.push(format!(
+                    "{key} {} > {capacity}",
+                    python_value(housing.at(key))
+                ));
             }
         }
         Ok(())
@@ -1485,35 +1981,46 @@ impl Compiler<'_> {
     // plans.py:841-928: an observed flag cannot grant a replay exception. Require
     // the logged recipe and its loadouts/stock to match the constructed plan.
     fn logged_exception(&self, plan: &Json, problem: &str) -> bool {
-        if !matches!(problem, "cc_spells 4 > 3.0" | "Greedy Raven is unavailable at Town Hall 17")
-            || !flag(plan, "observed") {
+        if !matches!(
+            problem,
+            "cc_spells 4 > 3.0" | "Greedy Raven is unavailable at Town Hall 17"
+        ) || !flag(plan, "observed")
+        {
             return false;
         }
         for build in &self.library.builds {
             let source = &build.value;
-            if build.library != "observed-armies.json" || !flag(source, "observed") || !flag(source,
-                "source_battle_timestamps")
-                || text(plan, "build_id", "") != armies::build_id(source) || plan
-                .get("town_hall") != source.get("th") {
+            if build.library != "observed-armies.json"
+                || !flag(source, "observed")
+                || !flag(source, "source_battle_timestamps")
+                || text(plan, "build_id", "") != armies::build_id(source)
+                || plan.get("town_hall") != source.get("th")
+            {
                 continue;
             }
             let expected = match armies::compose(&self.library, self.stats, source, 0.0, 0) {
-                Ok(expected) => expected, Err(_) => return false
+                Ok(expected) => expected,
+                Err(_) => return false,
             };
             let mut actual_roster = roster(plan);
             let mut expected_roster = roster(&expected);
             actual_roster.sort_unstable();
             expected_roster.sort_unstable();
-            if actual_roster != expected_roster || !same_mapping(plan.at("loadouts"), expected
-                .at("loadouts")) || plan.get("siege") != expected.get("siege") {
+            if actual_roster != expected_roster
+                || !same_mapping(plan.at("loadouts"), expected.at("loadouts"))
+                || plan.get("siege") != expected.get("siege")
+            {
                 return false;
             }
             if !same_positive_counts(plan.at("_spells0"), expected.at("_spells0"))
-                || !same_positive_counts(plan.at("_cc_spells0"), expected.at("_cc_spells0")) {
+                || !same_positive_counts(plan.at("_cc_spells0"), expected.at("_cc_spells0"))
+            {
                 return false;
             }
-            if !same_positive_counts(&cargo_counts(list(plan, "cc_troops")),
-                &cargo_counts(list(&expected, "cc_troops"))) {
+            if !same_positive_counts(
+                &cargo_counts(list(plan, "cc_troops")),
+                &cargo_counts(list(&expected, "cc_troops")),
+            ) {
                 return false;
             }
             let mut fixed = object();
@@ -1532,14 +2039,32 @@ impl Compiler<'_> {
                     add_count(&mut reserves, entry.arr()[0].str(), entry.arr()[1].f64());
                 }
             }
-            let mut names: Vec<String> = items(source, "troops").into_iter().filter(|(name, _)| !armies::is_siege(name)).map(|(name, _)| name).collect();
-            names.extend(fixed.obj().iter().chain(reserves.obj()).map(|(name, _)| name.clone()));
+            let mut names: Vec<String> = items(source, "troops")
+                .into_iter()
+                .filter(|(name, _)| !armies::is_siege(name))
+                .map(|(name, _)| name)
+                .collect();
+            names.extend(
+                fixed
+                    .obj()
+                    .iter()
+                    .chain(reserves.obj())
+                    .map(|(name, _)| name.clone()),
+            );
             let matches = names.iter().all(|name| {
                 let actual = number(&fixed, name, 0.0) + number(&reserves, name, 0.0);
                 let expected = number(source.at("troops"), name, 0.0);
-                let reserve = reserves.get(name).is_some() || text(plan, "_phase", "") == "done"
-                    && matches!(name.as_str(),
-                    "Archer" | "Minion" | "Barbarian" | "Goblin" | "Wall Breaker" | "Super Wall Breaker");
+                let reserve = reserves.get(name).is_some()
+                    || text(plan, "_phase", "") == "done"
+                        && matches!(
+                            name.as_str(),
+                            "Archer"
+                                | "Minion"
+                                | "Barbarian"
+                                | "Goblin"
+                                | "Wall Breaker"
+                                | "Super Wall Breaker"
+                        );
                 if reserve {
                     actual <= expected
                 } else {
@@ -1555,8 +2080,7 @@ impl Compiler<'_> {
         // plans.py:require_legal / tools/baselab/replay_log.py: decoded armies
         // and real_battle replays retain their documented inventories.
         let battle_log = flag(plan, "observed")
-            && (text(plan, "build_id", "").starts_with("log-")
-                || flag(plan, "real_battle"));
+            && (text(plan, "build_id", "").starts_with("log-") || flag(plan, "real_battle"));
         let mut problems = Vec::new();
         for problem in self.legal(plan) {
             if battle_log || self.logged_exception(plan, &problem) {
@@ -1574,8 +2098,9 @@ impl Compiler<'_> {
         let mut stocks = list(plan, "_spell_stock").to_vec();
         for stock in &mut stocks {
             if flag(stock, "remaining") {
-                let level = self.spell_level(plan, stock)?.map_or(Json::Null,
-                    |level| Json::Num(level as f64));
+                let level = self
+                    .spell_level(plan, stock)?
+                    .map_or(Json::Null, |level| Json::Num(level as f64));
                 put(stock, "level", level);
             }
         }
@@ -1589,9 +2114,17 @@ impl Compiler<'_> {
     pub fn account_legal(&self, build: &Json, plan: &Json) -> Vec<String> {
         let mut out = self.legal(plan);
         if let Ok(housing) = self.housing(plan) {
-            for (key, cap) in [("camp", 320.0), ("spells", 11.0), ("cc", 50.0), ("cc_spells", 3.0)] {
+            for (key, cap) in [
+                ("camp", 320.0),
+                ("spells", 11.0),
+                ("cc", 50.0),
+                ("cc_spells", 3.0),
+            ] {
                 if housing.at(key).f64() > cap {
-                    out.push(format!("account {key} {} > {cap}", python_value(housing.at(key))));
+                    out.push(format!(
+                        "account {key} {} > {cap}",
+                        python_value(housing.at(key))
+                    ));
                 }
             }
         }
@@ -1599,7 +2132,10 @@ impl Compiler<'_> {
             out.push("Army Town Hall differs from account Town Hall".to_owned());
         }
         let levels = self.library.user.at("levels");
-        for (name, count) in items(build, "troops").into_iter().chain(items(build, "spells")) {
+        for (name, count) in items(build, "troops")
+            .into_iter()
+            .chain(items(build, "spells"))
+        {
             if !truth(&count) {
                 continue;
             }
@@ -1607,21 +2143,37 @@ impl Compiler<'_> {
                 out.push(format!("Unknown troop: {name}"));
                 continue;
             };
-            let raw = record.at("attrs").get("raw").cloned().unwrap_or_else(object);
-            for (building, key) in [("Barracks", "barracks"), ("Dark Barracks", "dbarracks"),
-                ("Workshop", "workshop"), ("Spell Factory", "sf"), ("Dark Spell Factory", "dsf")] {
-                if let Some(required) = raw.get(&format!("{building} Level Required"))
-                    .and_then(|value| stats::num(value, None)) {
-                    let available = levels.get(key).and_then(|value| stats::num(value, None))
+            let raw = record
+                .at("attrs")
+                .get("raw")
+                .cloned()
+                .unwrap_or_else(object);
+            for (building, key) in [
+                ("Barracks", "barracks"),
+                ("Dark Barracks", "dbarracks"),
+                ("Workshop", "workshop"),
+                ("Spell Factory", "sf"),
+                ("Dark Spell Factory", "dsf"),
+            ] {
+                if let Some(required) = raw
+                    .get(&format!("{building} Level Required"))
+                    .and_then(|value| stats::num(value, None))
+                {
+                    let available = levels
+                        .get(key)
+                        .and_then(|value| stats::num(value, None))
                         .unwrap_or_else(|| {
-                        if key == "sf" {
-                            self.building_level(plan, "Spell Factory", "spell_factory_level") as f64
-                        } else {
-                            0.0
-                        }
-                    });
+                            if key == "sf" {
+                                self.building_level(plan, "Spell Factory", "spell_factory_level")
+                                    as f64
+                            } else {
+                                0.0
+                            }
+                        });
                     if available < required {
-                        out.push(format!("{name} requires {building} level {required} (account {available})"));
+                        out.push(format!(
+                            "{name} requires {building} level {required} (account {available})"
+                        ));
                     }
                 }
             }
@@ -1630,13 +2182,24 @@ impl Compiler<'_> {
                     let Some(base) = column.strip_suffix(" Level Required") else {
                         continue;
                     };
-                    if self.stats.registry.get(base).is_some_and(|record| text(record, "kind",
-                        "") == "troop") {
-                        let owned = self.library.user.at("attack_levels").get(base)
-                            .and_then(|value| stats::num(value, None)).unwrap_or(0.0);
+                    if self
+                        .stats
+                        .registry
+                        .get(base)
+                        .is_some_and(|record| text(record, "kind", "") == "troop")
+                    {
+                        let owned = self
+                            .library
+                            .user
+                            .at("attack_levels")
+                            .get(base)
+                            .and_then(|value| stats::num(value, None))
+                            .unwrap_or(0.0);
                         if owned < stats::num(required, Some(0.0)).unwrap_or(0.0) {
-                            out.push(format!("{name} requires owned {base} level {}",
-                                python_value(required)));
+                            out.push(format!(
+                                "{name} requires owned {base} level {}",
+                                python_value(required)
+                            ));
                         }
                     }
                 }
@@ -1660,12 +2223,24 @@ impl Compiler<'_> {
             let fallback = armies::default_loadout(&hero).unwrap_or_else(object);
             let loadout = plan.at("loadouts").get(&hero).unwrap_or(&fallback);
             for item in list(loadout, "equipment") {
-                if !self.library.user.at("equipment_levels").get(item.str()).is_some_and(truth) {
+                if !self
+                    .library
+                    .user
+                    .at("equipment_levels")
+                    .get(item.str())
+                    .is_some_and(truth)
+                {
                     out.push(format!("Account does not own {}", item.str()));
                 }
             }
             if let Some(pet) = loadout.get("pet").filter(|value| truth(value)) {
-                if !self.library.user.at("pet_levels").get(pet.str()).is_some_and(truth) {
+                if !self
+                    .library
+                    .user
+                    .at("pet_levels")
+                    .get(pet.str())
+                    .is_some_and(truth)
+                {
                     out.push(format!("Account does not own {}", pet.str()));
                 }
             }
@@ -1684,22 +2259,41 @@ fn cargo_counts(entries: &[Json]) -> Json {
     for entry in entries {
         match entry {
             Json::Str(name) => add_count(&mut out, name, 1.0),
-            _ => add_count(&mut out, text(entry, "name", text(entry, "type", "")), number(entry,
-                "count", 1.0)),
+            _ => add_count(
+                &mut out,
+                text(entry, "name", text(entry, "type", "")),
+                number(entry, "count", 1.0),
+            ),
         }
     }
     out
 }
 
 fn same_positive_counts(left: &Json, right: &Json) -> bool {
-    left.obj().iter().chain(right.obj()).all(|(key, _)| number(left, key, 0.0) == number(right, key, 0.0))
+    left.obj()
+        .iter()
+        .chain(right.obj())
+        .all(|(key, _)| number(left, key, 0.0) == number(right, key, 0.0))
 }
 
 fn same_mapping(left: &Json, right: &Json) -> bool {
     match (left, right) {
-        (Json::Obj(left), Json::Obj(right)) => left.len() == right.len() && left.iter().all(|(key, value)| right.iter().find(|(name, _)| name == key).is_some_and(|(_, other)| same_mapping(value, other))),
-        (Json::Arr(left), Json::Arr(right)) => left.len() == right.len() && left.iter().zip(right)
-            .all(|(left, right)| same_mapping(left, right)),
+        (Json::Obj(left), Json::Obj(right)) => {
+            left.len() == right.len()
+                && left.iter().all(|(key, value)| {
+                    right
+                        .iter()
+                        .find(|(name, _)| name == key)
+                        .is_some_and(|(_, other)| same_mapping(value, other))
+                })
+        }
+        (Json::Arr(left), Json::Arr(right)) => {
+            left.len() == right.len()
+                && left
+                    .iter()
+                    .zip(right)
+                    .all(|(left, right)| same_mapping(left, right))
+        }
         _ => left == right,
     }
 }

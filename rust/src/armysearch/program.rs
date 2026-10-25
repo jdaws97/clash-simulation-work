@@ -2,12 +2,12 @@
 //! Seed fitting mirrors playbook.py:1529-1700,1921-2100; learned changes are
 //! deliberately outside the source-only consolidation policy.
 
+#[path = "fix_proof.rs"]
+mod fixes;
 #[path = "program_mutate.rs"]
 pub mod mutate;
 #[path = "program_proof.rs"]
 pub mod proof;
-#[path = "fix_proof.rs"]
-mod fixes;
 #[path = "program_validate.rs"]
 mod validate;
 
@@ -37,7 +37,10 @@ pub struct AttackProgram {
 pub fn canonical(value: &Json) -> Json {
     match value {
         Json::Obj(fields) => {
-            let mut fields: Vec<_> = fields.iter().map(|(key, value)| (key.clone(), canonical(value))).collect();
+            let mut fields: Vec<_> = fields
+                .iter()
+                .map(|(key, value)| (key.clone(), canonical(value)))
+                .collect();
             fields.sort_by(|a, b| a.0.cmp(&b.0));
             Json::Obj(fields)
         }
@@ -216,26 +219,67 @@ fn generic_steps(genome: &ArmyGenome) -> Vec<Json> {
     let mut steps = Vec::new();
     for (index, unit) in genome.troops.iter().enumerate() {
         let (group, at, at_time) = match unit.name.as_str() {
-            "Sneaky Goblin" | "Super Barbarian" | "Baby Dragon" | "Wizard" => ("funnel", "edge:funnel", 0.0),
-            "Golem" | "Ice Golem" | "Giant" | "Lava Hound" | "Ice Hound" | "Root Rider" => ("main", "edge:main", 5.0),
+            "Sneaky Goblin" | "Super Barbarian" | "Baby Dragon" | "Wizard" => {
+                ("funnel", "edge:funnel", 0.0)
+            }
+            "Golem" | "Ice Golem" | "Giant" | "Lava Hound" | "Ice Hound" | "Root Rider" => {
+                ("main", "edge:main", 5.0)
+            }
             "Healer" | "Druid" | "Apprentice Warden" => ("main", "edge:main", 9.0),
             _ => ("main", "edge:main", 8.0),
         };
-        steps.push(step(&format!("troop-{index}"), "deploy", &unit.name, unit.count, at, group, time(at_time)));
+        steps.push(step(
+            &format!("troop-{index}"),
+            "deploy",
+            &unit.name,
+            unit.count,
+            at,
+            group,
+            time(at_time),
+        ));
     }
     for (index, hero) in genome.heroes.iter().enumerate() {
-        steps.push(step(&format!("hero-{index}"), "deploy", &hero.hero, 1, "edge:main", "main", time(7.0)));
-        steps.push(step(&format!("ability-{index}"), "ability", &hero.hero, 1, "edge:main", "main",
-            object([("hp_below", string(&hero.hero)),
-            ("frac", Json::Num(0.45))])));
+        steps.push(step(
+            &format!("hero-{index}"),
+            "deploy",
+            &hero.hero,
+            1,
+            "edge:main",
+            "main",
+            time(7.0),
+        ));
+        steps.push(step(
+            &format!("ability-{index}"),
+            "ability",
+            &hero.hero,
+            1,
+            "edge:main",
+            "main",
+            object([("hp_below", string(&hero.hero)), ("frac", Json::Num(0.45))]),
+        ));
     }
     if let Some(siege) = &genome.siege {
-        steps.push(step("siege", "deploy", siege, 1, "edge:main", "main", time(6.0)));
+        steps.push(step(
+            "siege",
+            "deploy",
+            siege,
+            1,
+            "edge:main",
+            "main",
+            time(6.0),
+        ));
     }
     for (index, (name, count)) in spell_stock(genome).into_iter().enumerate() {
         for copy in 0..count {
-            steps.push(step(&format!("spell-{index}-{copy}"), "spell", &name, 1,
-                "group:main", "main", time(16.0 + copy as f64 * 6.0)));
+            steps.push(step(
+                &format!("spell-{index}-{copy}"),
+                "spell",
+                &name,
+                1,
+                "group:main",
+                "main",
+                time(16.0 + copy as f64 * 6.0),
+            ));
         }
     }
     steps
@@ -245,16 +289,21 @@ fn generic_steps(genome: &ArmyGenome) -> Vec<Json> {
 /// Learned programs need the same guarantee after a hero is replaced.
 fn complete_hero_roles(steps: &mut Vec<Json>, genome: &ArmyGenome) {
     let defaults = generic_steps(genome);
-    let mut ids: BTreeSet<_> = steps.iter()
+    let mut ids: BTreeSet<_> = steps
+        .iter()
         .map(|step| text(step, "id", "").to_owned())
         .collect();
     for hero in &genome.heroes {
-        if steps.iter().any(|step| {
-            text(step, "action", "") == "deploy" && text(step, "what", "") == hero.hero
-        }) {
+        if steps
+            .iter()
+            .any(|step| text(step, "action", "") == "deploy" && text(step, "what", "") == hero.hero)
+        {
             continue;
         }
-        for role in defaults.iter().filter(|step| text(step, "what", "") == hero.hero) {
+        for role in defaults
+            .iter()
+            .filter(|step| text(step, "what", "") == hero.hero)
+        {
             let action = text(role, "action", "");
             if steps.iter().any(|step| {
                 text(step, "action", "") == action && text(step, "what", "") == hero.hero
@@ -290,10 +339,16 @@ fn fit_counts(steps: &mut Vec<Json>, genome: &ArmyGenome) {
         let pool = match action {
             "deploy" => &mut stock,
             "spell" | "recall" => &mut spells,
-            "ability" => return abilities.insert(what) && validate::equipment(step, genome).is_ok(),
+            "ability" => {
+                return abilities.insert(what) && validate::equipment(step, genome).is_ok()
+            }
             _ => return true,
         };
-        let name = if action == "recall" { "Recall Spell" } else { &what };
+        let name = if action == "recall" {
+            "Recall Spell"
+        } else {
+            &what
+        };
         let left = pool.get(name).copied().unwrap_or(0);
         if left == 0 {
             return false;
@@ -303,7 +358,11 @@ fn fit_counts(steps: &mut Vec<Json>, genome: &ArmyGenome) {
         } else {
             1
         };
-        let reserve = if step.get("every").is_some() { left } else { amount };
+        let reserve = if step.get("every").is_some() {
+            left
+        } else {
+            amount
+        };
         pool.insert(name.to_owned(), left - reserve);
         put(step, "count", number(amount));
         remove(step, "level");
@@ -318,22 +377,33 @@ fn repair_trigger(
     groups: &BTreeSet<String>,
     spells: &BTreeMap<String, usize>,
 ) -> Json {
-    if value.get("after").is_some_and(|value| !ids.contains(value.str())) {
+    if value
+        .get("after")
+        .is_some_and(|value| !ids.contains(value.str()))
+    {
         return time(12.0);
     }
     for key in ["inside", "dead", "hp_below", "heavy_fire"] {
-        if value.get(key).is_some_and(|value| !units.contains(value.str())) {
+        if value
+            .get(key)
+            .is_some_and(|value| !units.contains(value.str()))
+        {
             return time(12.0);
         }
     }
     for key in ["group_inside", "near_th", "defenders_near"] {
-        if value.get(key).is_some_and(|value| !groups.contains(value.str())) {
+        if value
+            .get(key)
+            .is_some_and(|value| !groups.contains(value.str()))
+        {
             return time(12.0);
         }
     }
     if value.get("spells_left").is_some_and(|value| {
         let name = value.str();
-        let name = crate::plans::spell_key(name).map(crate::plans::spell_name).unwrap_or(name);
+        let name = crate::plans::spell_key(name)
+            .map(crate::plans::spell_name)
+            .unwrap_or(name);
         !spells.contains_key(name)
     }) {
         return time(12.0);
@@ -341,7 +411,11 @@ fn repair_trigger(
     let mut value = value.clone();
     for key in ["all", "any"] {
         if let Some(parts) = value.get(key) {
-            let parts = parts.arr().iter().map(|part| repair_trigger(part, ids, units, groups, spells)).collect();
+            let parts = parts
+                .arr()
+                .iter()
+                .map(|part| repair_trigger(part, ids, units, groups, spells))
+                .collect();
             put(&mut value, key, Json::Arr(parts));
         }
     }
@@ -349,9 +423,15 @@ fn repair_trigger(
 }
 
 pub(super) fn repair_references(steps: &mut [Json], genome: &ArmyGenome) {
-    let ids: BTreeSet<_> = steps.iter().map(|step| text(step, "id", "").to_owned()).collect();
-    let groups: BTreeSet<_> = steps.iter().filter(|step| matches!(text(step, "action", ""), "deploy" | "redeploy"))
-        .map(|step| text(step, "group", "main").to_owned()).collect();
+    let ids: BTreeSet<_> = steps
+        .iter()
+        .map(|step| text(step, "id", "").to_owned())
+        .collect();
+    let groups: BTreeSet<_> = steps
+        .iter()
+        .filter(|step| matches!(text(step, "action", ""), "deploy" | "redeploy"))
+        .map(|step| text(step, "group", "main").to_owned())
+        .collect();
     let units = unit_names(genome);
     let spells = spell_stock(genome);
     for step in steps {
@@ -478,7 +558,8 @@ pub fn install(plan: &mut Json, genome: &ArmyGenome) -> Result<(), String> {
     put(plan, "steps", program.identity_json());
     // playbook.py:2055-2099: the final learned opening, rather than the
     // replaced source steps, decides whether Healers require a ground Warden.
-    let has_healers = genome.troops
+    let has_healers = genome
+        .troops
         .iter()
         .any(|unit| unit.name == "Healer" && unit.count > 0);
     if crate::compile::warden_walk(&program.steps, has_healers) {
@@ -486,9 +567,11 @@ pub fn install(plan: &mut Json, genome: &ArmyGenome) -> Result<(), String> {
     }
     // playbook.py:1977-1981 retains build order and appends the siege last.
     // Inventory order determines the executor's unmentioned-unit rescue drops.
-    let mut inventory: Vec<_> = genome.troops.iter().map(|unit| {
-        (unit.name.clone(), number(unit.count))
-    }).collect();
+    let mut inventory: Vec<_> = genome
+        .troops
+        .iter()
+        .map(|unit| (unit.name.clone(), number(unit.count)))
+        .collect();
     if let Some(siege) = &genome.siege {
         inventory.push((siege.clone(), number(1)));
     }
@@ -508,11 +591,16 @@ pub fn install(plan: &mut Json, genome: &ArmyGenome) -> Result<(), String> {
 }
 
 fn readable(step: &Json) -> String {
-    let mut line = format!("{}: {} {} x{} at {} group={} when={}", text(step, "id", ""),
-        text(step, "action", ""), text(step, "what", ""),
+    let mut line = format!(
+        "{}: {} {} x{} at {} group={} when={}",
+        text(step, "id", ""),
+        text(step, "action", ""),
+        text(step, "what", ""),
         step.get("count").map_or_else(|| "all".to_owned(), encode),
-        text(step, "at", "edge:main"), text(step, "group", "main"),
-        step.get("when").map_or_else(|| "always".to_owned(), encode));
+        text(step, "at", "edge:main"),
+        text(step, "group", "main"),
+        step.get("when").map_or_else(|| "always".to_owned(), encode)
+    );
     for key in ["aim", "every", "until", "origin", "equipment"] {
         if let Some(value) = step.get(key) {
             line.push_str(&format!(" {key}={}", encode(value)));
@@ -528,7 +616,12 @@ pub fn report(genome: &ArmyGenome, compiler: &Compiler<'_>) -> Json {
     let mut diff = Vec::new();
     for (index, old) in program.seed_steps.iter().enumerate() {
         let id = text(old, "id", "");
-        match program.steps.iter().enumerate().find(|(_, step)| text(step, "id", "") == id) {
+        match program
+            .steps
+            .iter()
+            .enumerate()
+            .find(|(_, step)| text(step, "id", "") == id)
+        {
             None => diff.push(string(format!("- {}", readable(old)))),
             Some((position, step)) => {
                 if canonical(old) != canonical(step) {
@@ -542,7 +635,11 @@ pub fn report(genome: &ArmyGenome, compiler: &Compiler<'_>) -> Json {
         }
     }
     for step in &program.steps {
-        if !program.seed_steps.iter().any(|old| old.get("id") == step.get("id")) {
+        if !program
+            .seed_steps
+            .iter()
+            .any(|old| old.get("id") == step.get("id"))
+        {
             diff.push(string(format!("+ {}", readable(step))));
         }
     }
@@ -550,13 +647,16 @@ pub fn report(genome: &ArmyGenome, compiler: &Compiler<'_>) -> Json {
     // source and its explicit variants. Inventory/timing adaptations count as
     // learned unless exactly represented in a cited playbook.
     let executable = |steps: &[Json]| {
-        let steps = steps.iter().map(|step| {
-            let mut step = step.clone();
-            for key in ["support", "note", "notes", "variant"] {
-                remove(&mut step, key);
-            }
-            canonical(&step)
-        }).collect();
+        let steps = steps
+            .iter()
+            .map(|step| {
+                let mut step = step.clone();
+                for key in ["support", "note", "notes", "variant"] {
+                    remove(&mut step, key);
+                }
+                canonical(&step)
+            })
+            .collect();
         encode(&Json::Arr(steps))
     };
     let current = executable(&program.steps);
@@ -571,7 +671,8 @@ pub fn report(genome: &ArmyGenome, compiler: &Compiler<'_>) -> Json {
         for variant in array(book, "variants") {
             let mut steps = array(book, "steps").to_vec();
             let replaces = array(variant, "replaces");
-            let position = steps.iter()
+            let position = steps
+                .iter()
                 .position(|step| step.get("id").is_some_and(|id| replaces.contains(id)))
                 .unwrap_or(steps.len());
             steps.retain(|step| !step.get("id").is_some_and(|id| replaces.contains(id)));
@@ -593,7 +694,16 @@ pub fn report(genome: &ArmyGenome, compiler: &Compiler<'_>) -> Json {
         ("matching_cited_playbooks", Json::Arr(matches)),
         ("seed_family", string(&program.seed_family)),
         ("steps", program.identity_json()),
-        ("readable_steps", Json::Arr(program.steps.iter().map(|step| string(readable(step))).collect())),
+        (
+            "readable_steps",
+            Json::Arr(
+                program
+                    .steps
+                    .iter()
+                    .map(|step| string(readable(step)))
+                    .collect(),
+            ),
+        ),
         ("seed_steps", Json::Arr(program.seed_steps.clone())),
         ("diff_vs_seed", Json::Arr(diff)),
     ])

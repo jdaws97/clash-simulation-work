@@ -177,13 +177,7 @@ impl CacheKey {
         }
     }
 
-    fn target(
-        identity: TargetIdentity,
-        cx: f64,
-        cy: f64,
-        reach: f64,
-        wall_extra: f64,
-    ) -> Self {
+    fn target(identity: TargetIdentity, cx: f64, cy: f64, reach: f64, wall_extra: f64) -> Self {
         // These callers pass their complete Python key, unlike movement's
         // (identity, x, y, reach, mode).
         match identity {
@@ -443,7 +437,9 @@ impl Grid {
         // covers every move mask whose corner test reads a rewritten flag. Use
         // the rectangles when the log holds every version since the last pass.
         if let Some(done) = self.topology_version {
-            let first = self.changes.partition_point(|change| change.version <= done);
+            let first = self
+                .changes
+                .partition_point(|change| change.version <= done);
             let complete = self.changes.get(first).map(|change| change.version) == Some(done + 1)
                 && self.changes.last().map(|change| change.version) == Some(self.version);
             if complete {
@@ -1067,9 +1063,13 @@ impl Grid {
         };
         let version = self.cache[field.0].version;
         debug_assert!(version < self.version);
-        let first = self.changes.partition_point(|change| change.version <= version);
+        let first = self
+            .changes
+            .partition_point(|change| change.version <= version);
         if self.changes.get(first).map(|change| change.version) != Some(version + 1)
-            || self.changes[first..].iter().any(|change| !change.decrease_only)
+            || self.changes[first..]
+                .iter()
+                .any(|change| !change.decrease_only)
         {
             return false;
         }
@@ -1150,12 +1150,8 @@ impl Grid {
         // Drain equal keys too: afterwards this cell and all lower values are
         // final, even if the cell started with an INF upper bound.
         if self.profile_enabled {
-            let pops = entry.expand_to::<true>(
-                cell,
-                &self.cell_flags,
-                &self.move_masks,
-                &self.neighbors,
-            );
+            let pops =
+                entry.expand_to::<true>(cell, &self.cell_flags, &self.move_masks, &self.neighbors);
             field_profile::work(
                 self.profile_row(self.cache[field.0].key.profile_kind()),
                 pops,
@@ -1376,22 +1372,10 @@ fn goal_bounds(n: usize, center: f64, half: f64, reach: f64) -> (isize, isize) {
     (low, high)
 }
 
-fn is_goal_cell(
-    n: usize,
-    i: usize,
-    j: usize,
-    cx: f64,
-    cy: f64,
-    half: f64,
-    reach: f64,
-) -> bool {
+fn is_goal_cell(n: usize, i: usize, j: usize, cx: f64, cy: f64, half: f64, reach: f64) -> bool {
     let (lo_i, hi_i) = goal_bounds(n, cx, half, reach);
     let (lo_j, hi_j) = goal_bounds(n, cy, half, reach);
-    if (i as isize) < lo_i
-        || (i as isize) > hi_i
-        || (j as isize) < lo_j
-        || (j as isize) > hi_j
-    {
+    if (i as isize) < lo_i || (i as isize) > hi_i || (j as isize) < lo_j || (j as isize) > hi_j {
         return false;
     }
     // Match for_each_goal_cell's bounds, cell centers and f64 operation order.

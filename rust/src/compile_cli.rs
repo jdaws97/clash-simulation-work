@@ -53,7 +53,11 @@ fn json_argument(value: &Path) -> Result<Json, String> {
 }
 
 fn arguments(args: &[PathBuf]) -> Result<Arguments, String> {
-    let command = args.first().and_then(|value| value.to_str()).ok_or(USAGE)?.to_owned();
+    let command = args
+        .first()
+        .and_then(|value| value.to_str())
+        .ok_or(USAGE)?
+        .to_owned();
     let mut options = CompileOptions::default();
     if let Ok(value) = std::env::var("BASELAB_PLAYBOOKS") {
         options.playbooks = value == "1";
@@ -84,7 +88,9 @@ fn arguments(args: &[PathBuf]) -> Result<Arguments, String> {
             index += 1;
             continue;
         }
-        let value = args.get(index + 1).ok_or_else(|| format!("Missing value for {argument}"))?;
+        let value = args
+            .get(index + 1)
+            .ok_or_else(|| format!("Missing value for {argument}"))?;
         let value_text = value.to_str().ok_or("Argument is not valid UTF-8")?;
         match argument {
             "--root" => out.root = Some(value.clone()),
@@ -96,12 +102,19 @@ fn arguments(args: &[PathBuf]) -> Result<Arguments, String> {
             "--angle" => out.angle = Some(value_text.parse().map_err(|_| "Invalid angle")?),
             "--seed" => out.seed = Some(value_text.parse().map_err(|_| "Invalid seed")?),
             "--playbooks" => match value_text {
-                "0" => out.options.playbooks = false, "1" => out.options.playbooks = true, _ => return Err("--playbooks requires 0 or 1".to_owned())
+                "0" => out.options.playbooks = false,
+                "1" => out.options.playbooks = true,
+                _ => return Err("--playbooks requires 0 or 1".to_owned()),
             },
-            "--flank-offset" => out.options.flank_offset = value_text.parse().map_err(|_| "Invalid flank offset")?,
+            "--flank-offset" => {
+                out.options.flank_offset = value_text.parse().map_err(|_| "Invalid flank offset")?
+            }
             "--charge-side" => out.options.charge_side = Some(value_text.to_owned()),
             "--overrides" => out.options.overrides = json_argument(value)?,
-            "--tactics" => out.options.tactics = Some(json_argument(value)?.arr().iter().map(Json::f64).collect()),
+            "--tactics" => {
+                out.options.tactics =
+                    Some(json_argument(value)?.arr().iter().map(Json::f64).collect())
+            }
             _ => return Err(format!("Unknown option {argument}; {USAGE}")),
         }
         index += 2;
@@ -138,12 +151,16 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
         return Err(USAGE.to_owned());
     }
     if let Some(path) = &args.exporter {
-        std::fs::write(path, REFERENCE_EXPORTER).map_err(|error| format!("{}: {error}", path.display()))?;
+        std::fs::write(path, REFERENCE_EXPORTER)
+            .map_err(|error| format!("{}: {error}", path.display()))?;
         return Ok(());
     }
     let root = repo_root(args.root.as_deref())?;
-    let catalog = args.catalog.clone().or_else(|| std::env::var_os("BASELAB_CATALOG")
-        .map(PathBuf::from)).unwrap_or_else(|| root.join("rust/data/catalog.json"));
+    let catalog = args
+        .catalog
+        .clone()
+        .or_else(|| std::env::var_os("BASELAB_CATALOG").map(PathBuf::from))
+        .unwrap_or_else(|| root.join("rust/data/catalog.json"));
     // Only the processed registry is needed: avoid loading all runtime tables.
     let catalog = armies::read_json(&catalog)?;
     let stats = Stats::new(field(&catalog, "registry"));
@@ -158,19 +175,37 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
     } else {
         compiler.library.build_by_id(input_text)?.clone()
     };
-    let angle = args.angle.or_else(|| args.positional.get(1).and_then(|value| value.to_str())
-        .and_then(|value| value.parse().ok())).unwrap_or(0.0);
-    let seed = args.seed.or_else(|| args.positional.get(2).and_then(|value| value.to_str())
-        .and_then(|value| value.parse().ok())).unwrap_or(0);
+    let angle = args
+        .angle
+        .or_else(|| {
+            args.positional
+                .get(1)
+                .and_then(|value| value.to_str())
+                .and_then(|value| value.parse().ok())
+        })
+        .unwrap_or(0.0);
+    let seed = args
+        .seed
+        .or_else(|| {
+            args.positional
+                .get(2)
+                .and_then(|value| value.to_str())
+                .and_then(|value| value.parse().ok())
+        })
+        .unwrap_or(0);
     if args.positional.len() > 4 {
         return Err(USAGE.to_owned());
     }
     for (index, kind) in [(1, "angle"), (2, "seed")] {
         if let Some(value) = args.positional.get(index) {
             let valid = if index == 1 {
-                value.to_str().is_some_and(|value| value.parse::<f64>().is_ok())
+                value
+                    .to_str()
+                    .is_some_and(|value| value.parse::<f64>().is_ok())
             } else {
-                value.to_str().is_some_and(|value| value.parse::<i64>().is_ok())
+                value
+                    .to_str()
+                    .is_some_and(|value| value.parse::<i64>().is_ok())
             };
             if !valid {
                 return Err(format!("Invalid positional {kind}"));
@@ -184,7 +219,10 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
     if let Some(path) = output {
         std::fs::write(path, serialized).map_err(|error| format!("{}: {error}", path.display()))?;
     } else {
-        io::stdout().lock().write_all(serialized.as_bytes()).map_err(|error| error.to_string())?;
+        io::stdout()
+            .lock()
+            .write_all(serialized.as_bytes())
+            .map_err(|error| error.to_string())?;
     }
     Ok(())
 }
@@ -196,8 +234,11 @@ pub fn to_json(value: &Json) -> String {
         out.push('"');
         for character in value.chars() {
             match character {
-                '"' => out.push_str("\\\""), '\\' => out.push_str("\\\\"),
-                '\n' => out.push_str("\\n"), '\r' => out.push_str("\\r"), '\t' => out.push_str("\\t"),
+                '"' => out.push_str("\\\""),
+                '\\' => out.push_str("\\\\"),
+                '\n' => out.push_str("\\n"),
+                '\r' => out.push_str("\\r"),
+                '\t' => out.push_str("\\t"),
                 character if character < '\u{20}' => {
                     write!(out, "\\u{:04x}", character as u32).expect("string write");
                 }
@@ -208,11 +249,8 @@ pub fn to_json(value: &Json) -> String {
     }
     fn write_value(out: &mut String, value: &Json) {
         match value {
-            Json::Null => out.push_str("null"), Json::Bool(value) => out.push_str(if *value {
-                "true"
-            } else {
-                "false"
-            }),
+            Json::Null => out.push_str("null"),
+            Json::Bool(value) => out.push_str(if *value { "true" } else { "false" }),
             Json::Num(value) => out.push_str(&crate::trace::py_float_repr(*value)),
             Json::Str(value) => write_string(out, value),
             Json::Arr(values) => {
@@ -251,7 +289,11 @@ pub fn first_difference(native: &Json, reference: &Json, path: &str) -> Option<S
         (Json::Obj(left), Json::Obj(right)) => {
             for (key, value) in right {
                 let next = format!("{path}[{}]", to_json(&string(key)));
-                let Some(other) = left.iter().find(|(name, _)| name == key).map(|(_, value)| value) else {
+                let Some(other) = left
+                    .iter()
+                    .find(|(name, _)| name == key)
+                    .map(|(_, value)| value)
+                else {
                     return Some(format!("{next}: missing native field"));
                 };
                 if let Some(difference) = first_difference(other, value, &next) {
@@ -260,26 +302,41 @@ pub fn first_difference(native: &Json, reference: &Json, path: &str) -> Option<S
             }
             for (key, _) in left {
                 if !right.iter().any(|(name, _)| name == key) {
-                    return Some(format!("{path}[{}]: unexpected native field", to_json(&string(key))));
+                    return Some(format!(
+                        "{path}[{}]: unexpected native field",
+                        to_json(&string(key))
+                    ));
                 }
             }
             None
         }
         (Json::Arr(left), Json::Arr(right)) => {
             for (index, (left, right)) in left.iter().zip(right).enumerate() {
-                if let Some(difference) = first_difference(left, right, &format!("{path}[{index}]")) {
+                if let Some(difference) = first_difference(left, right, &format!("{path}[{index}]"))
+                {
                     return Some(difference);
                 }
             }
-            (left.len() != right.len()).then(|| format!("{path}.length: native={} reference={}",
-                left.len(), right.len()))
+            (left.len() != right.len()).then(|| {
+                format!(
+                    "{path}.length: native={} reference={}",
+                    left.len(),
+                    right.len()
+                )
+            })
         }
-        (Json::Num(left), Json::Num(right)) if left.to_bits() != right.to_bits() =>
-        Some(format!("{path}: native={} ({:016x}) reference={} ({:016x})",
-            crate::trace::py_float_repr(*left), left.to_bits(), crate::trace::py_float_repr(*right),
-            right.to_bits())),
-        _ if native != reference => Some(format!("{path}: native={} reference={}", to_json(native),
-            to_json(reference))),
+        (Json::Num(left), Json::Num(right)) if left.to_bits() != right.to_bits() => Some(format!(
+            "{path}: native={} ({:016x}) reference={} ({:016x})",
+            crate::trace::py_float_repr(*left),
+            left.to_bits(),
+            crate::trace::py_float_repr(*right),
+            right.to_bits()
+        )),
+        _ if native != reference => Some(format!(
+            "{path}: native={} reference={}",
+            to_json(native),
+            to_json(reference)
+        )),
         _ => None,
     }
 }
@@ -288,13 +345,15 @@ fn reference(args: &Arguments, compiler: &Compiler<'_>) -> Result<Json, String> 
     if let Some(path) = &args.reference {
         return armies::read_json(path);
     }
-    let python = args.python.clone().or_else(|| std::env::var_os("BASELAB_PYTHON")
-        .map(PathBuf::from)).unwrap_or_else(|| PathBuf::from(if cfg!(windows) {
-        "python"
-    } else {
-        "python3"
-    }));
-    let exporter = compiler.library.root.join("tools/baselab/plan_reference.py");
+    let python = args
+        .python
+        .clone()
+        .or_else(|| std::env::var_os("BASELAB_PYTHON").map(PathBuf::from))
+        .unwrap_or_else(|| PathBuf::from(if cfg!(windows) { "python" } else { "python3" }));
+    let exporter = compiler
+        .library
+        .root
+        .join("tools/baselab/plan_reference.py");
     let mut command = Command::new(python);
     command.arg("-B");
     if exporter.exists() {
@@ -302,16 +361,21 @@ fn reference(args: &Arguments, compiler: &Compiler<'_>) -> Result<Json, String> 
     } else {
         command.arg("-c").arg(REFERENCE_EXPORTER);
     }
-    let output = command.arg("--root").arg(&compiler.library.root).arg("--playbooks").arg(if args
-        .options.playbooks {
-        "1"
-    } else {
-        "0"
-    })
-        .env("PYTHONDONTWRITEBYTECODE", "1").output()
-        .map_err(|error| format!("Reference exporter: {error}; use --python PYTHON or --reference FILE"))?;
+    let output = command
+        .arg("--root")
+        .arg(&compiler.library.root)
+        .arg("--playbooks")
+        .arg(if args.options.playbooks { "1" } else { "0" })
+        .env("PYTHONDONTWRITEBYTECODE", "1")
+        .output()
+        .map_err(|error| {
+            format!("Reference exporter: {error}; use --python PYTHON or --reference FILE")
+        })?;
     if !output.status.success() {
-        return Err(format!("Reference exporter failed: {}", String::from_utf8_lossy(&output.stderr)));
+        return Err(format!(
+            "Reference exporter failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
     }
     let output = std::str::from_utf8(&output.stdout).map_err(|error| error.to_string())?;
     json::parse(output.trim_start_matches('\u{feff}')).map_err(|error| error.to_string())
@@ -319,20 +383,31 @@ fn reference(args: &Arguments, compiler: &Compiler<'_>) -> Result<Json, String> 
 
 fn case_options(case: &Json, playbooks: bool) -> CompileOptions {
     let mut options = CompileOptions {
-        playbooks, ..CompileOptions::default()
+        playbooks,
+        ..CompileOptions::default()
     };
     if let Some(value) = case.get("options") {
         options.overrides = value.get("overrides").cloned().unwrap_or_else(object);
-        options.tactics = value.get("tactics").map(|values| values.arr().iter().map(Json::f64).collect());
+        options.tactics = value
+            .get("tactics")
+            .map(|values| values.arr().iter().map(Json::f64).collect());
         options.flank_offset = number(value, "flank_offset", 0.9);
-        options.charge_side = value.get("charge_side").and_then(Json::opt_str).map(str::to_owned);
+        options.charge_side = value
+            .get("charge_side")
+            .and_then(Json::opt_str)
+            .map(str::to_owned);
     }
     options
 }
 
 fn outcome(compiler: &Compiler<'_>, build: &Json, case: &Json, options: &CompileOptions) -> Json {
     let mut out = object();
-    match compiler.plan_for_build(build, case.at("angle").f64(), case.at("seed").i64(), options) {
+    match compiler.plan_for_build(
+        build,
+        case.at("angle").f64(),
+        case.at("seed").i64(),
+        options,
+    ) {
         Err(error) => {
             put(&mut out, "error", string(&error));
         }
@@ -345,8 +420,16 @@ fn outcome(compiler: &Compiler<'_>, build: &Json, case: &Json, options: &Compile
             let problems = compiler.legal(&plan);
             let error = compiler.require_legal(&mut plan).err();
             put(&mut out, "plan", plan);
-            put(&mut out, "legal", array(problems.iter().map(|problem| string(problem))));
-            put(&mut out, "error", error.as_deref().map_or(Json::Null, string));
+            put(
+                &mut out,
+                "legal",
+                array(problems.iter().map(|problem| string(problem))),
+            );
+            put(
+                &mut out,
+                "error",
+                error.as_deref().map_or(Json::Null, string),
+            );
         }
     }
     out
@@ -362,15 +445,25 @@ fn compile_check(args: &Arguments, compiler: &Compiler<'_>) -> Result<(), String
         return Err("Reference playbook mode differs; pass matching --playbooks 0|1".to_owned());
     }
     let cases = reference.at("cases").arr();
-    let angles = [0.0, std::f64::consts::PI / 2.0, std::f64::consts::PI, 3.0 * std::f64::consts::PI / 2.0];
+    let angles = [
+        0.0,
+        std::f64::consts::PI / 2.0,
+        std::f64::consts::PI,
+        3.0 * std::f64::consts::PI / 2.0,
+    ];
     // Require complete coverage even when supplied a hand-edited reference.
     for build in &compiler.library.builds {
         for angle in angles {
             for seed in [0, 1] {
-                let matches = cases.iter().filter(|case| text(case, "library", "") == build.library
-                    && text(case, "id", "") == build.id
-                    && case.at("angle").f64().to_bits() == angle.to_bits() && case.at("seed")
-                    .i64() == seed).count();
+                let matches = cases
+                    .iter()
+                    .filter(|case| {
+                        text(case, "library", "") == build.library
+                            && text(case, "id", "") == build.id
+                            && case.at("angle").f64().to_bits() == angle.to_bits()
+                            && case.at("seed").i64() == seed
+                    })
+                    .count();
                 if matches != 1 {
                     return Err(format!("Reference must contain exactly one case for {} angle={angle} seed={seed} (found {matches})", build.id));
                 }
@@ -381,15 +474,25 @@ fn compile_check(args: &Arguments, compiler: &Compiler<'_>) -> Result<(), String
     let mut illegal = 0;
     for case in cases {
         let id = case.at("id").str();
-        let entry = compiler.library.builds.iter().find(|build| build.id == id && build
-            .library == text(case, "library", ""));
+        let entry = compiler
+            .library
+            .builds
+            .iter()
+            .find(|build| build.id == id && build.library == text(case, "library", ""));
         let build = if text(case, "library", "") == "fixtures" {
             case.at("build")
         } else {
-            &entry.ok_or_else(|| format!("Unknown reference build {id}"))?.value
+            &entry
+                .ok_or_else(|| format!("Unknown reference build {id}"))?
+                .value
         };
         let mut difference = first_difference(build, case.at("build"), "build");
-        let native = outcome(compiler, build, case, &case_options(case, args.options.playbooks));
+        let native = outcome(
+            compiler,
+            build,
+            case,
+            &case_options(case, args.options.playbooks),
+        );
         if difference.is_none() {
             difference = first_difference(&native, case.at("outcome"), "outcome");
         }
@@ -398,8 +501,11 @@ fn compile_check(args: &Arguments, compiler: &Compiler<'_>) -> Result<(), String
         }
         if let Some(difference) = difference {
             failures += 1;
-            println!("FAIL {id} angle={} seed={}: {difference}", crate::trace::py_float_repr(case
-                .at("angle").f64()), case.at("seed").i64());
+            println!(
+                "FAIL {id} angle={} seed={}: {difference}",
+                crate::trace::py_float_repr(case.at("angle").f64()),
+                case.at("seed").i64()
+            );
         }
     }
     println!("compile-check: cases={} matched={} differing={} rejected={} libraries={} builds={} angles=4 seeds=2 account_fixtures={account_fixtures}", cases.len(), cases.len() - failures, failures, illegal, 3, compiler.library.builds.len());
@@ -413,7 +519,9 @@ fn compile_check(args: &Arguments, compiler: &Compiler<'_>) -> Result<(), String
 // Account admission has stricter requirements than the replay oracle. Exercise
 // them here, alongside reference parity, without creating separate test files.
 fn account_fixtures(compiler: &Compiler<'_>) -> Result<usize, String> {
-    let source = compiler.library.build_by_id("custom:user-fireball-warden")?;
+    let source = compiler
+        .library
+        .build_by_id("custom:user-fireball-warden")?;
     let options = CompileOptions {
         account: true,
         ..CompileOptions::default()
@@ -427,7 +535,12 @@ fn account_fixtures(compiler: &Compiler<'_>) -> Result<usize, String> {
         ("troops", "Archer", 1.0, "account camp 321 > 320"),
         ("cc", "Archer", 1.0, "account cc 51 > 50"),
         ("spells", "Freeze Spell", 1.0, "account spells 12 > 11"),
-        ("troops", "Meteor Golem", 1.0, "Meteor Golem requires Barracks level 19"),
+        (
+            "troops",
+            "Meteor Golem",
+            1.0,
+            "Meteor Golem requires Barracks level 19",
+        ),
         ("cc", "Battle Blimp", 1.0, "account siege 2 > 1"),
     ];
     for (stock, name, amount, expected) in cases {
@@ -439,17 +552,28 @@ fn account_fixtures(compiler: &Compiler<'_>) -> Result<usize, String> {
         let plan = compiler.plan_for_build(&build, 0.0, 0, &options)?;
         let problems = compiler.account_legal(&build, &plan);
         if !problems.iter().any(|problem| problem.starts_with(expected)) {
-            return Err(format!("Account fixture {name}: expected {expected}; got {}", problems.join("; ")));
+            return Err(format!(
+                "Account fixture {name}: expected {expected}; got {}",
+                problems.join("; ")
+            ));
         }
     }
     for (key, name, expected) in [
-        ("equipment", "Meteor Staff", "Account does not own Meteor Staff"),
+        (
+            "equipment",
+            "Meteor Staff",
+            "Account does not own Meteor Staff",
+        ),
         ("pet", "Greedy Raven", "Account does not own Greedy Raven"),
     ] {
         let mut plan = baseline.clone();
         let mut loadouts = field(&plan, "loadouts");
         let mut queen = field(&loadouts, "Archer Queen");
-        let value = if key == "equipment" { array([string(name)]) } else { string(name) };
+        let value = if key == "equipment" {
+            array([string(name)])
+        } else {
+            string(name)
+        };
         put(&mut queen, key, value);
         put(&mut loadouts, "Archer Queen", queen);
         put(&mut plan, "loadouts", loadouts);

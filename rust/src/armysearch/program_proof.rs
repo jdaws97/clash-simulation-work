@@ -27,7 +27,11 @@ fn require(condition: bool, message: &str) -> Result<(), String> {
 fn reverse_keys(value: &Json) -> Json {
     match value {
         Json::Obj(fields) => Json::Obj(
-            fields.iter().rev().map(|(key, value)| (key.clone(), reverse_keys(value))).collect(),
+            fields
+                .iter()
+                .rev()
+                .map(|(key, value)| (key.clone(), reverse_keys(value)))
+                .collect(),
         ),
         Json::Arr(values) => Json::Arr(values.iter().map(reverse_keys).collect()),
         _ => value.clone(),
@@ -40,20 +44,44 @@ fn identity_proof(
     compiler: &Compiler<'_>,
     catalog: &Catalog,
 ) -> Result<(), String> {
-    let program = genome.plan.program.as_ref().ok_or("missing proof program")?;
+    let program = genome
+        .plan
+        .program
+        .as_ref()
+        .ok_or("missing proof program")?;
     let mut reordered = genome.clone();
-    reordered.plan.program.as_mut().unwrap().steps = program.steps.iter().map(reverse_keys).collect();
-    require(reordered.identity() == genome.identity(), "identity depends on JSON key order")?;
+    reordered.plan.program.as_mut().unwrap().steps =
+        program.steps.iter().map(reverse_keys).collect();
+    require(
+        reordered.identity() == genome.identity(),
+        "identity depends on JSON key order",
+    )?;
     let first = account.compile(compiler, catalog, genome, 0.0, 7)?;
     let second = account.compile(compiler, catalog, &reordered, 0.0, 7)?;
-    require(encode(&first) == encode(&second), "canonical programs compile differently")?;
+    require(
+        encode(&first) == encode(&second),
+        "canonical programs compile differently",
+    )?;
     let roundtrip = ArmyGenome::from_json(&genome.to_json())?;
-    require(roundtrip.identity() == genome.identity(), "checkpoint changed program identity")?;
+    require(
+        roundtrip.identity() == genome.identity(),
+        "checkpoint changed program identity",
+    )?;
     reordered.plan.program.as_mut().unwrap().seed_family = "other provenance".to_owned();
-    require(reordered.identity() == genome.identity(), "cache identity includes seed provenance")?;
+    require(
+        reordered.identity() == genome.identity(),
+        "cache identity includes seed provenance",
+    )?;
     let mut changed = genome.clone();
-    put(&mut changed.plan.program.as_mut().unwrap().steps[0], "when", time(37.123456));
-    require(changed.identity() != genome.identity(), "program timing missing from genome identity")?;
+    put(
+        &mut changed.plan.program.as_mut().unwrap().steps[0],
+        "when",
+        time(37.123456),
+    );
+    require(
+        changed.identity() != genome.identity(),
+        "program timing missing from genome identity",
+    )?;
     require(
         encode(&canonical(&Json::Num(-0.0))) == encode(&canonical(&Json::Num(0.0))),
         "signed zero identity differs",
@@ -62,7 +90,11 @@ fn identity_proof(
 }
 
 fn invalid_proof(genome: &ArmyGenome) -> Result<(), String> {
-    let original = genome.plan.program.as_ref().ok_or("missing invalid proof program")?;
+    let original = genome
+        .plan
+        .program
+        .as_ref()
+        .ok_or("missing invalid proof program")?;
     let mut invalids = Vec::new();
     for (key, value) in [
         ("action", string("invented")),
@@ -72,11 +104,18 @@ fn invalid_proof(genome: &ArmyGenome) -> Result<(), String> {
         ("count", Json::Num(0.5)),
         ("count", number(10000)),
         ("when", object([("after", string("missing-step"))])),
-        ("when", object([("hp_below", string("Missing Hero")),
-        ("frac", Json::Num(0.5))])),
+        (
+            "when",
+            object([
+                ("hp_below", string("Missing Hero")),
+                ("frac", Json::Num(0.5)),
+            ]),
+        ),
         ("when", object([("t", Json::Num(f64::NAN))])),
-        ("when", object([("t", Json::Num(0.0)),
-        ("inside", string("Missing Hero"))])),
+        (
+            "when",
+            object([("t", Json::Num(0.0)), ("inside", string("Missing Hero"))]),
+        ),
         ("when", object([("all", Json::Arr(Vec::new()))])),
         ("when", object([("all", Json::Bool(true))])),
         ("when", object([("nonsense", Json::Num(1.0))])),
@@ -90,8 +129,15 @@ fn invalid_proof(genome: &ArmyGenome) -> Result<(), String> {
         invalids.push(invalid);
     }
     let mut absent_spell = original.clone();
-    absent_spell.steps.push(step("unowned-spell", "spell", "Invented Spell", 1,
-        "edge:main", "main", time(0.0)));
+    absent_spell.steps.push(step(
+        "unowned-spell",
+        "spell",
+        "Invented Spell",
+        1,
+        "edge:main",
+        "main",
+        time(0.0),
+    ));
     invalids.push(absent_spell);
     let mut cycle = original.clone();
     let id = text(&cycle.steps[0], "id", "").to_owned();
@@ -104,7 +150,10 @@ fn invalid_proof(genome: &ArmyGenome) -> Result<(), String> {
     malformed.steps[0] = Json::Null;
     invalids.push(malformed);
     for invalid in invalids {
-        require(invalid.validate(genome).is_err(), "malformed/overspent program admitted")?;
+        require(
+            invalid.validate(genome).is_err(),
+            "malformed/overspent program admitted",
+        )?;
     }
     Ok(())
 }
@@ -143,20 +192,50 @@ fn timing_fixture(
     early.normalize();
     account.check(&early)?;
     let mut steps = vec![
-        step("reserve", "deploy", "Healer", 1, "edge:right", "support", time(0.0)),
-        step("main", "deploy", "Barbarian", 1, "edge:main", "main", time(30.0)),
-        step("rage", "spell", "Rage Spell", 1, "edge:main", "main", time(0.0)),
+        step(
+            "reserve",
+            "deploy",
+            "Healer",
+            1,
+            "edge:right",
+            "support",
+            time(0.0),
+        ),
+        step(
+            "main",
+            "deploy",
+            "Barbarian",
+            1,
+            "edge:main",
+            "main",
+            time(30.0),
+        ),
+        step(
+            "rage",
+            "spell",
+            "Rage Spell",
+            1,
+            "edge:main",
+            "main",
+            time(0.0),
+        ),
     ];
     // Selected heroes must have deployment roles, even in this troop-only
     // engagement. Their t=180 roles stay beyond the fixture's 90-second limit.
-    steps.extend(super::generic_steps(&early).into_iter().filter_map(|mut role| {
-        if text(&role, "action", "") == "deploy" && crate::plans::is_hero(text(&role, "what", "")) {
-            put(&mut role, "when", time(180.0));
-            Some(role)
-        } else {
-            None
-        }
-    }));
+    steps.extend(
+        super::generic_steps(&early)
+            .into_iter()
+            .filter_map(|mut role| {
+                if text(&role, "action", "") == "deploy"
+                    && crate::plans::is_hero(text(&role, "what", ""))
+                {
+                    put(&mut role, "when", time(180.0));
+                    Some(role)
+                } else {
+                    None
+                }
+            }),
+    );
     early.plan.program = Some(AttackProgram {
         steps: steps.clone(),
         seed_steps: steps,
@@ -173,13 +252,18 @@ fn timing_fixture(
         attempts = attempt;
         if let Ok(candidate) = mutate::apply(&early, Mutation::Trigger, &mut rng) {
             let program = candidate.plan.program.as_ref().unwrap();
-            if program.steps[2].get("when").and_then(|when| when.get("group_inside")) == Some(&string("main")) {
+            if program.steps[2]
+                .get("when")
+                .and_then(|when| when.get("group_inside"))
+                == Some(&string("main"))
+            {
                 discovered = Some(candidate);
                 break;
             }
         }
     }
-    let mut discovered = discovered.ok_or("program mutation did not discover group_inside in 8192 tries")?;
+    let mut discovered =
+        discovered.ok_or("program mutation did not discover group_inside in 8192 tries")?;
     // Anchor is a separate production mutation. Find its group-centre change
     // without changing the discovered trigger or composing a handcrafted step.
     let trigger_parent = discovered.clone();
@@ -193,9 +277,14 @@ fn timing_fixture(
             }
         }
     }
-    require(anchor_found, "anchor mutation did not discover group centre")?;
+    require(
+        anchor_found,
+        "anchor mutation did not discover group centre",
+    )?;
     let candidates = [&early, &discovered];
-    let plans = candidates.iter().map(|genome| account.compile(compiler, &catalog, genome, 0.0, 123))
+    let plans = candidates
+        .iter()
+        .map(|genome| account.compile(compiler, &catalog, genome, 0.0, 123))
         .collect::<Result<Vec<_>, _>>()?;
     let mut buildings = Vec::new();
     for x in [12, 20, 28] {
@@ -208,7 +297,10 @@ fn timing_fixture(
         }
     }
     let layout = object([
-        ("name", string("SYNTHETIC program timing proof; nine undefended storages")),
+        (
+            "name",
+            string("SYNTHETIC program timing proof; nine undefended storages"),
+        ),
         ("buildings", Json::Arr(buildings)),
         ("walls", Json::Arr(Vec::new())),
         ("traps", Json::Arr(Vec::new())),
@@ -217,53 +309,86 @@ fn timing_fixture(
     ]);
     let runner = Runner::new(catalog, PreparedInputs::new(vec![layout], plans));
     // Sixteen jobs ensure the 16-thread comparison actually has sixteen jobs.
-    let jobs: Vec<_> = (0..16).map(|index| Job::from_json(&object([
-        ("layout", number(0)),
-        ("plan", number(index % 2)),
-        ("seed", number(123)),
-        ("town_hall", number(16)),
-        ("max_time", Json::Num(90.0)),
-        ("record", Json::Bool(true)),
-    ]))).collect();
+    let jobs: Vec<_> = (0..16)
+        .map(|index| {
+            Job::from_json(&object([
+                ("layout", number(0)),
+                ("plan", number(index % 2)),
+                ("seed", number(123)),
+                ("town_hall", number(16)),
+                ("max_time", Json::Num(90.0)),
+                ("record", Json::Bool(true)),
+            ]))
+        })
+        .collect();
     let mut expected = None;
     let mut timing = None;
     for threads in [1, 4, 16] {
         let rows = Mutex::new(vec![None; jobs.len()]);
-        let hook = |index: usize, _: &Job, battle: &crate::state::Battle, _: &crate::state::BattleResult| {
-            let damage = battle.buildings.iter().map(|building| {
-                building.max_hp - building.hp.max(0.0)
-            }).sum::<f64>();
+        let hook = |index: usize,
+                    _: &Job,
+                    battle: &crate::state::Battle,
+                    _: &crate::state::BattleResult| {
+            let damage = battle
+                .buildings
+                .iter()
+                .map(|building| building.max_hp - building.hp.max(0.0))
+                .sum::<f64>();
             let Plan::Playbook(plan) = &battle.plan else {
                 panic!("timing proof bypassed playbook compiler");
             };
-            let at = |id: &str| plan.log_steps.iter().find(|(_, name)| name == id).map(|(time, _)| *time);
+            let at = |id: &str| {
+                plan.log_steps
+                    .iter()
+                    .find(|(_, name)| name == id)
+                    .map(|(time, _)| *time)
+            };
             rows.lock().unwrap()[index] = Some((
                 damage.to_bits(),
                 at("main").map(f64::to_bits),
                 at("rage").map(f64::to_bits),
             ));
         };
-        let results = runner.run_with_summary(&jobs, threads, Some(&hook)).map_err(|error| error.to_string())?;
-        require(results[1].destruction > results[0].destruction,
-            "inside Rage did not improve native destruction")?;
+        let results = runner
+            .run_with_summary(&jobs, threads, Some(&hook))
+            .map_err(|error| error.to_string())?;
+        require(
+            results[1].destruction > results[0].destruction,
+            "inside Rage did not improve native destruction",
+        )?;
         let early_destruction = results[0].destruction;
         let learned_destruction = results[1].destruction;
-        let rows = rows.into_inner().map_err(|_| "timing proof mutex poisoned")?;
+        let rows = rows
+            .into_inner()
+            .map_err(|_| "timing proof mutex poisoned")?;
         let current = (results, rows.clone());
         if let Some(expected) = &expected {
-            require(&current == expected, "program native results differ at 1/4/16 threads")?;
+            require(
+                &current == expected,
+                "program native results differ at 1/4/16 threads",
+            )?;
         } else {
             expected = Some(current);
         }
         let (early_damage, main_at, early_at) = rows[0].ok_or("missing early Rage proof row")?;
         let (inside_damage, _, inside_at) = rows[1].ok_or("missing inside Rage proof row")?;
-        let main_at = main_at.map(f64::from_bits).ok_or("main deployment did not execute")?;
-        let early_at = early_at.map(f64::from_bits).ok_or("early Rage did not execute")?;
-        let inside_at = inside_at.map(f64::from_bits).ok_or("inside Rage did not execute")?;
-        require(main_at >= 30.0 && early_at < 1.0 && inside_at > main_at,
-            "native fixture did not exercise the intended timing window")?;
-        require(f64::from_bits(inside_damage) > f64::from_bits(early_damage),
-            "inside Rage did not improve native damage over the wasted t=0 Rage")?;
+        let main_at = main_at
+            .map(f64::from_bits)
+            .ok_or("main deployment did not execute")?;
+        let early_at = early_at
+            .map(f64::from_bits)
+            .ok_or("early Rage did not execute")?;
+        let inside_at = inside_at
+            .map(f64::from_bits)
+            .ok_or("inside Rage did not execute")?;
+        require(
+            main_at >= 30.0 && early_at < 1.0 && inside_at > main_at,
+            "native fixture did not exercise the intended timing window",
+        )?;
+        require(
+            f64::from_bits(inside_damage) > f64::from_bits(early_damage),
+            "inside Rage did not improve native damage over the wasted t=0 Rage",
+        )?;
         timing = Some(object([
             ("early_damage", Json::Num(f64::from_bits(early_damage))),
             ("learned_damage", Json::Num(f64::from_bits(inside_damage))),
@@ -275,12 +400,27 @@ fn timing_fixture(
         ]));
     }
     Ok(object([
-        ("scope", string("synthetic native battle; measured damage, not calibrated attack strength")),
+        (
+            "scope",
+            string("synthetic native battle; measured damage, not calibrated attack strength"),
+        ),
         ("mutation_attempts", number(attempts)),
-        ("results", timing.ok_or("timing fixture produced no results")?),
-        ("program", discovered.plan.program.as_ref().unwrap().to_json()),
-        ("selected_by", string("greater native damage and destruction on the same synthetic battle")),
-        ("native_threads", Json::Arr([1, 4, 16].into_iter().map(number).collect())),
+        (
+            "results",
+            timing.ok_or("timing fixture produced no results")?,
+        ),
+        (
+            "program",
+            discovered.plan.program.as_ref().unwrap().to_json(),
+        ),
+        (
+            "selected_by",
+            string("greater native damage and destruction on the same synthetic battle"),
+        ),
+        (
+            "native_threads",
+            Json::Arr([1, 4, 16].into_iter().map(number).collect()),
+        ),
     ]))
 }
 
@@ -304,8 +444,13 @@ pub fn run(
     let fixes = super::fixes::run(account, compiler, Arc::clone(&catalog), templates)?;
     let mut crossover_seed = seed.clone();
     let mut crossover_steps = vec![step(
-        "crossover-fixture", "deploy", &seed.troops[0].name, 1,
-        "edge:main", "main", time(0.0),
+        "crossover-fixture",
+        "deploy",
+        &seed.troops[0].name,
+        1,
+        "edge:main",
+        "main",
+        time(0.0),
     )];
     crossover_steps.extend(super::generic_steps(seed).into_iter().filter(|role| {
         text(role, "action", "") == "deploy" && crate::plans::is_hero(text(role, "what", ""))
@@ -336,9 +481,14 @@ pub fn run(
         };
         match proposal {
             Ok(genome) => {
-                let program = genome.plan.program.as_ref().ok_or("program mutation lost program")?;
+                let program = genome
+                    .plan
+                    .program
+                    .as_ref()
+                    .ok_or("program mutation lost program")?;
                 program.validate(&genome)?;
-                let plan = account.compile(compiler, &catalog, &genome, genome.plan.angle_offset, 0)?;
+                let plan =
+                    account.compile(compiler, &catalog, &genome, genome.plan.angle_offset, 0)?;
                 require(
                     text(&plan, "$type", "") == "PlaybookPlan"
                         && plan.at("strength").f64().to_bits() == 1.0_f64.to_bits(),
@@ -360,14 +510,25 @@ pub fn run(
             eprintln!("armysearch-proof programs {}/{}", index + 1, iterations);
         }
     }
-    require(accepted > 100 && !rejected.is_empty(), "program fuzz lacked accepted/rejected coverage")?;
+    require(
+        accepted > 100 && !rejected.is_empty(),
+        "program fuzz lacked accepted/rejected coverage",
+    )?;
     let timing = timing_fixture(account, compiler, catalog, seed)?;
     Ok(object([
         ("status", string("passed")),
         ("iterations", number(iterations)),
         ("accepted", number(accepted)),
         ("rejected_with_reason", number(rejected.values().sum())),
-        ("rejection_reasons", Json::Obj(rejected.into_iter().map(|(reason, count)| (reason, number(count))).collect())),
+        (
+            "rejection_reasons",
+            Json::Obj(
+                rejected
+                    .into_iter()
+                    .map(|(reason, count)| (reason, number(count)))
+                    .collect(),
+            ),
+        ),
         ("canonical_identity", Json::Bool(true)),
         ("round9_fixes", fixes),
         ("timing_discovery", timing),

@@ -148,8 +148,14 @@ fn bench(runner: &Runner, threads: usize) -> Result<(), String> {
     let started = Instant::now();
     let second = runner.run(jobs, threads).map_err(report_error)?;
     let second_elapsed = started.elapsed().as_secs_f64();
-    println!("run=1 battles={} wall_seconds={first_elapsed:.6}", jobs.len());
-    println!("run=2 battles={} wall_seconds={second_elapsed:.6}", jobs.len());
+    println!(
+        "run=1 battles={} wall_seconds={first_elapsed:.6}",
+        jobs.len()
+    );
+    println!(
+        "run=2 battles={} wall_seconds={second_elapsed:.6}",
+        jobs.len()
+    );
     println!("identical={}", first == second);
     Ok(())
 }
@@ -175,7 +181,10 @@ fn difference<T: Debug>(path: &str, expected: &T, actual: &T) -> usize {
         let left = expected.get(index).copied().unwrap_or("<missing>");
         let right = actual.get(index).copied().unwrap_or("<missing>");
         if left != right {
-            println!("  line {} Python: {left}\n           Rust: {right}", index + 1);
+            println!(
+                "  line {} Python: {left}\n           Rust: {right}",
+                index + 1
+            );
         }
     }
     1
@@ -205,19 +214,89 @@ fn compare(expected: &Battle, actual: &Battle) -> usize {
             $(differences += entities(stringify!($field), &expected.$field, &actual.$field);)*
         };
     }
-    pools!(buildings, walls, traps, attackers, defenders, fields, pending, builders, deployments);
-    fields!(rng, dt, pace, pace_tap, pace_switch, pace_ability, windup, fast_end, flyer_range,
-        modifier, def_mult, def_hero_mult, guardian_mult, atk_hero_mult, portal_stash,
-        first_destroy_t, first_deploy_t, defense_ammo, allow_synthetic_cc, battle_mode,
-        upgrading, crafting_phase, crafting_date, builder_starts, portal_ready_at, t,
-        scouting, scout_time, ended, town_hall, record, max_time, log, frames,
-        deployed_housing, monolith_housing, uid, cc_building, cc_queue, cc_released,
-        th, th_on_at, defense_levels, hero_levels, wall_level, cc_level,
-        damage_by_source, kills_by_source, src, src_obj, effect, poison, clones,
-        total_counted, destroyed_counted, nd_version, dt_version, dt_cache,
-        onboard_cargo, next_deploy, next_cc_exit, field_serial, field_identity,
-        plan, guardian, unknown_scalars, attacker_order, wall_tiles_standard,
-        building_indices, unit_indices);
+    pools!(
+        buildings,
+        walls,
+        traps,
+        attackers,
+        defenders,
+        fields,
+        pending,
+        builders,
+        deployments
+    );
+    fields!(
+        rng,
+        dt,
+        pace,
+        pace_tap,
+        pace_switch,
+        pace_ability,
+        windup,
+        fast_end,
+        flyer_range,
+        modifier,
+        def_mult,
+        def_hero_mult,
+        guardian_mult,
+        atk_hero_mult,
+        portal_stash,
+        first_destroy_t,
+        first_deploy_t,
+        defense_ammo,
+        allow_synthetic_cc,
+        battle_mode,
+        upgrading,
+        crafting_phase,
+        crafting_date,
+        builder_starts,
+        portal_ready_at,
+        t,
+        scouting,
+        scout_time,
+        ended,
+        town_hall,
+        record,
+        max_time,
+        log,
+        frames,
+        deployed_housing,
+        monolith_housing,
+        uid,
+        cc_building,
+        cc_queue,
+        cc_released,
+        th,
+        th_on_at,
+        defense_levels,
+        hero_levels,
+        wall_level,
+        cc_level,
+        damage_by_source,
+        kills_by_source,
+        src,
+        src_obj,
+        effect,
+        poison,
+        clones,
+        total_counted,
+        destroyed_counted,
+        nd_version,
+        dt_version,
+        dt_cache,
+        onboard_cargo,
+        next_deploy,
+        next_cc_exit,
+        field_serial,
+        field_identity,
+        plan,
+        guardian,
+        unknown_scalars,
+        attacker_order,
+        wall_tiles_standard,
+        building_indices,
+        unit_indices
+    );
     for (name, left, right) in [
         ("banner_tiles", &expected.banner_tiles, &actual.banner_tiles),
         ("no_deploy", &expected.no_deploy, &actual.no_deploy),

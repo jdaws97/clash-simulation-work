@@ -11,14 +11,14 @@ use super::util::{array, encode, hash, number, numeric, object, read, string, te
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Split {
     Search,
-    Holdout
+    Holdout,
 }
 
 impl Split {
     pub fn name(self) -> &'static str {
         match self {
             Self::Search => "search",
-            Self::Holdout => "holdout"
+            Self::Holdout => "holdout",
         }
     }
 }
@@ -37,7 +37,7 @@ pub struct Target {
 
 #[derive(Clone, Debug)]
 pub struct TargetManifest {
-    pub targets: Vec<Target>
+    pub targets: Vec<Target>,
 }
 
 impl TargetManifest {
@@ -49,8 +49,11 @@ impl TargetManifest {
         };
         let entries = match &source {
             Json::Arr(entries) => entries.as_slice(),
-            _ => source.get("targets").or_else(|| source.get("bases"))
-                .ok_or("manifest requires targets")?.arr(),
+            _ => source
+                .get("targets")
+                .or_else(|| source.get("bases"))
+                .ok_or("manifest requires targets")?
+                .arr(),
         };
         let mut targets = Vec::new();
         let mut ids = BTreeSet::new();
@@ -72,8 +75,13 @@ impl TargetManifest {
                     manifest.and_then(Path::parent).unwrap_or(root).join(path)
                 }
             };
-            let path = path.canonicalize().map_err(|error| format!("{}: {error}", path.display()))?;
-            let fallback = path.file_stem().and_then(|name| name.to_str()).unwrap_or("base");
+            let path = path
+                .canonicalize()
+                .map_err(|error| format!("{}: {error}", path.display()))?;
+            let fallback = path
+                .file_stem()
+                .and_then(|name| name.to_str())
+                .unwrap_or("base");
             let id = text(entry, "id", fallback).to_owned();
             if !ids.insert(id.clone()) || !paths.insert(path.clone()) {
                 return Err(format!("duplicate target id or path: {id}"));
@@ -88,7 +96,10 @@ impl TargetManifest {
                 return Err(format!("{id}: weight must be finite and positive"));
             }
             let lineage = text(entry, "lineage", &id).to_owned();
-            if lineages.insert(lineage.clone(), split).is_some_and(|old| old != split) {
+            if lineages
+                .insert(lineage.clone(), split)
+                .is_some_and(|old| old != split)
+            {
                 return Err(format!("lineage crosses search/holdout: {lineage}"));
             }
             let layout = read(&path)?;
@@ -97,10 +108,18 @@ impl TargetManifest {
                 return Err(format!("{id}: defender TH must be 16..18"));
             }
             let geometry = layout_identity(&layout);
-            if layouts.insert(geometry, split).is_some_and(|old| old != split) {
+            if layouts
+                .insert(geometry, split)
+                .is_some_and(|old| old != split)
+            {
                 return Err(format!("duplicate layout crosses search/holdout: {id}"));
             }
-            let provenance = text(entry, "provenance", text(entry, "label", "unspecified layout provenance")).to_owned();
+            let provenance = text(
+                entry,
+                "provenance",
+                text(entry, "label", "unspecified layout provenance"),
+            )
+            .to_owned();
             targets.push(Target {
                 id,
                 path,
@@ -109,22 +128,25 @@ impl TargetManifest {
                 lineage,
                 provenance,
                 layout,
-                town_hall
+                town_hall,
             });
         }
-        if !targets.iter().any(|target| target.split == Split::Search) || !targets.iter()
-            .any(|target| target.split == Split::Holdout) {
+        if !targets.iter().any(|target| target.split == Split::Search)
+            || !targets.iter().any(|target| target.split == Split::Holdout)
+        {
             return Err("manifest needs independent search and holdout targets".to_owned());
         }
         for split in [Split::Search, Split::Holdout] {
-            let weight: f64 = targets.iter().filter(|target| target.split == split).map(|target| target.weight).sum();
+            let weight: f64 = targets
+                .iter()
+                .filter(|target| target.split == split)
+                .map(|target| target.weight)
+                .sum();
             if !weight.is_finite() || weight <= 0.0 {
                 return Err(format!("{} weights cannot be normalized", split.name()));
             }
         }
-        Ok(Self {
-            targets
-        })
+        Ok(Self { targets })
     }
 
     pub fn default_json() -> Json {
@@ -143,9 +165,24 @@ impl TargetManifest {
             ]));
         }
         for (id, path, weight, provenance) in [
-            ("your-base", "data/reference-bases/your-base.json", 1.0, "account layout"),
-            ("target17", "output/bases/target17-winner.json", 0.25, "generated TH17 target; synthetic"),
-            ("target18", "output/bases/target18-winner.json", 0.25, "generated TH18 target; synthetic"),
+            (
+                "your-base",
+                "data/reference-bases/your-base.json",
+                1.0,
+                "account layout",
+            ),
+            (
+                "target17",
+                "output/bases/target17-winner.json",
+                0.25,
+                "generated TH17 target; synthetic",
+            ),
+            (
+                "target18",
+                "output/bases/target18-winner.json",
+                0.25,
+                "generated TH18 target; synthetic",
+            ),
         ] {
             targets.push(object([
                 ("id", string(id)),
@@ -159,22 +196,33 @@ impl TargetManifest {
     }
 
     pub fn to_json(&self) -> Json {
-        object([("targets", Json::Arr(self.targets.iter().map(|target| object([
-            ("id", string(&target.id)),
-            ("path", string(target.path.to_string_lossy())),
-            ("weight", Json::Num(target.weight)),
-            ("split", string(target.split.name())),
-            ("lineage", string(&target.lineage)),
-            ("provenance", string(&target.provenance)),
-            ("town_hall", Json::Num(target.town_hall as f64)),
-        ])).collect()))])
+        object([(
+            "targets",
+            Json::Arr(
+                self.targets
+                    .iter()
+                    .map(|target| {
+                        object([
+                            ("id", string(&target.id)),
+                            ("path", string(target.path.to_string_lossy())),
+                            ("weight", Json::Num(target.weight)),
+                            ("split", string(target.split.name())),
+                            ("lineage", string(&target.lineage)),
+                            ("provenance", string(&target.provenance)),
+                            ("town_hall", Json::Num(target.town_hall as f64)),
+                        ])
+                    })
+                    .collect(),
+            ),
+        )])
     }
 }
 
 pub(super) fn layout_identity(layout: &Json) -> String {
     let mut geometry = layout.clone();
     if let Json::Obj(items) = &mut geometry {
-        items.retain(|(key, _)| !matches!(key.as_str(), "name" | "notes" | "source" | "provenance"));
+        items
+            .retain(|(key, _)| !matches!(key.as_str(), "name" | "notes" | "source" | "provenance"));
     }
     // evaluate.py:467 groups the same battlefield independently of labels.
     // Sort object keys recursively; arrays still retain their execution order.
@@ -185,7 +233,7 @@ pub(super) fn layout_identity(layout: &Json) -> String {
 pub enum Stage {
     Quick,
     Confirm,
-    Holdout
+    Holdout,
 }
 
 impl Stage {
@@ -193,7 +241,7 @@ impl Stage {
         match self {
             Self::Quick => "quick",
             Self::Confirm => "confirm",
-            Self::Holdout => "holdout"
+            Self::Holdout => "holdout",
         }
     }
 
@@ -225,27 +273,45 @@ pub fn allocate(
     budget: usize,
     seed: u64,
 ) -> Result<Vec<ScenarioKey>, String> {
-    let bases: Vec<usize> = manifest.targets.iter().enumerate().filter(|(_, target)| target.split == stage.split()).map(|(index, _)| index).collect();
+    let bases: Vec<usize> = manifest
+        .targets
+        .iter()
+        .enumerate()
+        .filter(|(_, target)| target.split == stage.split())
+        .map(|(index, _)| index)
+        .collect();
     if bases.is_empty() || budget < bases.len() * scoring::SCOUT {
-        return Err(format!("{} budget requires at least {} battles", stage.name(), bases
-            .len() * scoring::SCOUT));
+        return Err(format!(
+            "{} budget requires at least {} battles",
+            stage.name(),
+            bases.len() * scoring::SCOUT
+        ));
     }
-    let max_weight = bases.iter().map(|index| manifest.targets[*index].weight).fold(0.0_f64, f64::max);
-    let limits: Vec<usize> = bases.iter().map(|index| {
-        if stage == Stage::Quick {
-            ((4.0 * manifest.targets[*index].weight / max_weight).ceil() as usize).clamp(scoring::SCOUT, 4)
-        } else {
-            8
-        }
-    }).collect();
+    let max_weight = bases
+        .iter()
+        .map(|index| manifest.targets[*index].weight)
+        .fold(0.0_f64, f64::max);
+    let limits: Vec<usize> = bases
+        .iter()
+        .map(|index| {
+            if stage == Stage::Quick {
+                ((4.0 * manifest.targets[*index].weight / max_weight).ceil() as usize)
+                    .clamp(scoring::SCOUT, 4)
+            } else {
+                8
+            }
+        })
+        .collect();
     let mut sides = vec![scoring::SCOUT; bases.len()];
     let mut used = sides.iter().sum::<usize>();
     while used < budget {
-        let choice = (0..bases.len()).filter(|index| sides[*index] < limits[*index]).max_by(|a, b| {
-            let left = manifest.targets[bases[*a]].weight / sides[*a] as f64;
-            let right = manifest.targets[bases[*b]].weight / sides[*b] as f64;
-            left.total_cmp(&right).then_with(|| b.cmp(a))
-        });
+        let choice = (0..bases.len())
+            .filter(|index| sides[*index] < limits[*index])
+            .max_by(|a, b| {
+                let left = manifest.targets[bases[*a]].weight / sides[*a] as f64;
+                let right = manifest.targets[bases[*b]].weight / sides[*b] as f64;
+                left.total_cmp(&right).then_with(|| b.cmp(a))
+            });
         let Some(index) = choice else {
             break;
         };
@@ -260,11 +326,13 @@ pub fn allocate(
         used *= 2;
     }
     while used < budget {
-        let choice = (0..bases.len()).filter(|index| used + sides[*index] <= budget).max_by(|a, b| {
-            let left = manifest.targets[bases[*a]].weight / replicates[*a] as f64;
-            let right = manifest.targets[bases[*b]].weight / replicates[*b] as f64;
-            left.total_cmp(&right).then_with(|| b.cmp(a))
-        });
+        let choice = (0..bases.len())
+            .filter(|index| used + sides[*index] <= budget)
+            .max_by(|a, b| {
+                let left = manifest.targets[bases[*a]].weight / replicates[*a] as f64;
+                let right = manifest.targets[bases[*b]].weight / replicates[*b] as f64;
+                left.total_cmp(&right).then_with(|| b.cmp(a))
+            });
         let Some(index) = choice else {
             break;
         };
@@ -274,27 +342,35 @@ pub fn allocate(
     let mut result = Vec::new();
     for (position, target) in bases.into_iter().enumerate() {
         for replicate in 0..replicates[position] {
-            let seed_key = format!("armysearch-v1|{seed}|{}|{}|{replicate}", stage.name(), manifest.targets[target].id);
+            let seed_key = format!(
+                "armysearch-v1|{seed}|{}|{}|{replicate}",
+                stage.name(),
+                manifest.targets[target].id
+            );
             // Exactly representable in Json's f64 and disjoint stage domains.
             let domain = match stage {
                 Stage::Quick => 0,
                 Stage::Confirm => 1,
-                Stage::Holdout => 2
+                Stage::Holdout => 2,
             };
-            let battle_seed = ((hash(seed_key.as_bytes()) & ((1_u64 << 48) - 1)) | (domain << 48)) as i64;
+            let battle_seed =
+                ((hash(seed_key.as_bytes()) & ((1_u64 << 48) - 1)) | (domain << 48)) as i64;
             let offset = if stage == Stage::Holdout {
                 std::f64::consts::PI / sides[position] as f64
             } else {
                 0.0
             };
-            for (side, angle) in scoring::angles(sides[position], offset).into_iter().enumerate() {
+            for (side, angle) in scoring::angles(sides[position], offset)
+                .into_iter()
+                .enumerate()
+            {
                 result.push(ScenarioKey {
                     target,
                     replicate,
                     side,
                     sides: sides[position],
                     seed: battle_seed,
-                    angle
+                    angle,
                 });
             }
         }
@@ -387,37 +463,57 @@ pub fn summarise(
         return Err("scenario/result count differs".to_owned());
     }
     let mut bases = Vec::new();
-    for (target, base) in manifest.targets.iter().enumerate().filter(|(_, base)| base.split == stage
-        .split()) {
-        let indices: Vec<usize> = keys.iter().enumerate().filter(|(_, key)| key.target == target)
-            .map(|(index, _)| index).collect();
-        let max_group = indices.iter().map(|index| keys[*index].replicate).max()
+    for (target, base) in manifest
+        .targets
+        .iter()
+        .enumerate()
+        .filter(|(_, base)| base.split == stage.split())
+    {
+        let indices: Vec<usize> = keys
+            .iter()
+            .enumerate()
+            .filter(|(_, key)| key.target == target)
+            .map(|(index, _)| index)
+            .collect();
+        let max_group = indices
+            .iter()
+            .map(|index| keys[*index].replicate)
+            .max()
             .ok_or("missing base coverage")?;
         let mut groups = Vec::new();
         for replicate in 0..=max_group {
-            let group: Vec<usize> = indices.iter().copied().filter(|index| keys[*index].replicate == replicate).collect();
+            let group: Vec<usize> = indices
+                .iter()
+                .copied()
+                .filter(|index| keys[*index].replicate == replicate)
+                .collect();
             if group.is_empty() {
                 return Err("missing replicate".to_owned());
             }
-            let scenarios: Vec<Scenario> = group.iter().map(|index| Scenario {
-                army: base.id.clone(),
-                town_hall: base.town_hall,
-                angle: keys[*index].angle,
-                seed: keys[*index].seed,
-                weight: 1.0 / group.len() as f64,
-                modifier: None,
-                group: replicate as i64,
-                tactic: Json::Null,
-                charge: None,
-                full_scout: false,
-            }).collect();
+            let scenarios: Vec<Scenario> = group
+                .iter()
+                .map(|index| Scenario {
+                    army: base.id.clone(),
+                    town_hall: base.town_hall,
+                    angle: keys[*index].angle,
+                    seed: keys[*index].seed,
+                    weight: 1.0 / group.len() as f64,
+                    modifier: None,
+                    group: replicate as i64,
+                    tactic: Json::Null,
+                    charge: None,
+                    full_scout: false,
+                })
+                .collect();
             let outcomes: Vec<Outcome> = group.iter().map(|index| outcomes[*index]).collect();
             let selected = scoring::scouted(&scenarios, &outcomes, Some(scoring::SCOUT));
             let mut metrics = BattleMetrics::default();
             for selection in selected {
                 let outcome = outcomes[selection.scenario];
-                metrics.trophies += selection.weight * scoring::attacker_trophies(outcome.stars, outcome.destruction) as f64;
-                metrics.three_star_rate += selection.weight * f64::from(u8::from(outcome.stars == 3));
+                metrics.trophies += selection.weight
+                    * scoring::attacker_trophies(outcome.stars, outcome.destruction) as f64;
+                metrics.three_star_rate +=
+                    selection.weight * f64::from(u8::from(outcome.stars == 3));
                 metrics.destruction += selection.weight * outcome.destruction;
                 metrics.stars += selection.weight * outcome.stars as f64;
             }
@@ -427,7 +523,7 @@ pub fn summarise(
             target,
             metrics: average(&groups),
             standard_error: standard_error(&groups),
-            groups
+            groups,
         });
     }
     let mut weight = 0.0;
@@ -452,7 +548,7 @@ pub fn summarise(
         bases,
         battles: keys.len(),
         unused_budget: budget - keys.len(),
-        standard_error: variance.sqrt() / weight
+        standard_error: variance.sqrt() / weight,
     })
 }
 
@@ -464,12 +560,27 @@ impl CandidateEstimate {
             ("battles", number(self.battles)),
             ("unused_budget", number(self.unused_budget)),
             ("standard_error", Json::Num(self.standard_error)),
-            ("bases", Json::Arr(self.bases.iter().map(|base| object([
-                ("target", number(base.target)),
-                ("metrics", base.metrics.to_json()),
-                ("standard_error", Json::Num(base.standard_error)),
-                ("groups", Json::Arr(base.groups.iter().map(|group| group.to_json()).collect())),
-            ])).collect())),
+            (
+                "bases",
+                Json::Arr(
+                    self.bases
+                        .iter()
+                        .map(|base| {
+                            object([
+                                ("target", number(base.target)),
+                                ("metrics", base.metrics.to_json()),
+                                ("standard_error", Json::Num(base.standard_error)),
+                                (
+                                    "groups",
+                                    Json::Arr(
+                                        base.groups.iter().map(|group| group.to_json()).collect(),
+                                    ),
+                                ),
+                            ])
+                        })
+                        .collect(),
+                ),
+            ),
         ])
     }
 
@@ -486,12 +597,18 @@ impl CandidateEstimate {
             battles: value.at("battles").usize(),
             unused_budget: value.at("unused_budget").usize(),
             standard_error: value.at("standard_error").f64(),
-            bases: array(value, "bases").iter().map(|base| BaseEstimate {
-                target: base.at("target").usize(),
-                metrics: BattleMetrics::from_json(base.at("metrics")),
-                standard_error: base.at("standard_error").f64(),
-                groups: array(base, "groups").iter().map(BattleMetrics::from_json).collect(),
-            }).collect(),
+            bases: array(value, "bases")
+                .iter()
+                .map(|base| BaseEstimate {
+                    target: base.at("target").usize(),
+                    metrics: BattleMetrics::from_json(base.at("metrics")),
+                    standard_error: base.at("standard_error").f64(),
+                    groups: array(base, "groups")
+                        .iter()
+                        .map(BattleMetrics::from_json)
+                        .collect(),
+                })
+                .collect(),
         })
     }
 }
@@ -507,17 +624,25 @@ pub fn paired_interval(
     let mut variance = 0.0;
     let mut weight = 0.0;
     for base in &first.bases {
-        let Some(other) = second.bases.iter().find(|other| other.target == base.target) else {
+        let Some(other) = second
+            .bases
+            .iter()
+            .find(|other| other.target == base.target)
+        else {
             continue;
         };
         if base.groups.len() != other.groups.len() {
             continue;
         }
-        let differences: Vec<BattleMetrics> = base.groups.iter().zip(&other.groups)
+        let differences: Vec<BattleMetrics> = base
+            .groups
+            .iter()
+            .zip(&other.groups)
             .map(|(a, b)| BattleMetrics {
-            trophies: a.trophies - b.trophies,
-            ..BattleMetrics::default()
-        }).collect();
+                trophies: a.trophies - b.trophies,
+                ..BattleMetrics::default()
+            })
+            .collect();
         let w = manifest.targets[base.target].weight;
         let error = standard_error(&differences);
         mean += w * average(&differences).trophies;

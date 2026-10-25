@@ -1,7 +1,7 @@
 //! Ports stats.py:20-31,129-153,165-233 over rust_export.py's processed registry.
 
-use std::fmt::Write;
 use std::fmt;
+use std::fmt::Write;
 use std::sync::{Arc, RwLock};
 
 use crate::fast_hash::FastMap as HashMap;
@@ -74,23 +74,32 @@ impl Stats {
     }
 
     pub fn record(&self, name: &str) -> &Json {
-        self.registry.get(name)
+        self.registry
+            .get(name)
             .unwrap_or_else(|| panic!("catalog.registry[{name:?}]: missing record"))
     }
 
     pub fn attrs(&self, name: &str) -> &Json {
-        self.record(name).get("attrs")
+        self.record(name)
+            .get("attrs")
             .unwrap_or_else(|| panic!("catalog.registry[{name:?}].attrs: missing field"))
     }
 
     fn entry(&self, name: &str, level: &Level) -> &Json {
-        self.record(name).at("levels").arr().iter().find(|entry| {
-            entry.get("level").is_some_and(|value| match (level, value) {
-                (Level::Int(a), Json::Num(b)) => *a as f64 == *b,
-                (Level::Text(a), Json::Str(b)) => a == b,
-                _ => false,
+        self.record(name)
+            .at("levels")
+            .arr()
+            .iter()
+            .find(|entry| {
+                entry
+                    .get("level")
+                    .is_some_and(|value| match (level, value) {
+                        (Level::Int(a), Json::Num(b)) => *a as f64 == *b,
+                        (Level::Text(a), Json::Str(b)) => a == b,
+                        _ => false,
+                    })
             })
-        }).unwrap_or_else(|| panic!("catalog.registry[{name:?}].levels: no level {level}"))
+            .unwrap_or_else(|| panic!("catalog.registry[{name:?}].levels: no level {level}"))
     }
 
     fn ensure_row(&self, name: &str, level: &Level) {
@@ -104,8 +113,12 @@ impl Stats {
             return;
         }
         let entry = self.entry(name, level);
-        let mut merged: Row = entry.obj().iter()
-            .filter(|(key, _)| key != "wiki").cloned().collect();
+        let mut merged: Row = entry
+            .obj()
+            .iter()
+            .filter(|(key, _)| key != "wiki")
+            .cloned()
+            .collect();
         let wiki = entry.get("wiki").map(Json::obj).unwrap_or(&[]);
         for (key, value) in wiki {
             set(&mut merged, key.clone(), value.clone());
@@ -115,7 +128,14 @@ impl Stats {
         // stats.py:192-210: only get(), never text() or row(), uses these aliases.
         for (alias, columns) in [
             ("hitpoints", &["hitpoints"][..]),
-            ("dps", &["damage per second", "damage per second*", "base damage per second"][..]),
+            (
+                "dps",
+                &[
+                    "damage per second",
+                    "damage per second*",
+                    "base damage per second",
+                ][..],
+            ),
         ] {
             if let Some(game) = entry.get(alias).filter(|value| num(value, None).is_some()) {
                 set(&mut numeric, alias.to_owned(), game.clone());
@@ -160,7 +180,13 @@ impl Stats {
         Arc::clone(&self.cache.read().expect("stats cache lock")[name][level].merged)
     }
 
-    pub fn get(&self, name: &str, level: &Level, keys: &[&str], default: Option<f64>) -> Option<f64> {
+    pub fn get(
+        &self,
+        name: &str,
+        level: &Level,
+        keys: &[&str],
+        default: Option<f64>,
+    ) -> Option<f64> {
         self.ensure_row(name, level);
         let cache = self.cache.read().expect("stats cache lock");
         let row = &cache[name][level].numeric;
@@ -186,7 +212,13 @@ impl Stats {
         default
     }
 
-    pub fn text(&self, name: &str, level: &Level, keys: &[&str], default: Option<Json>) -> Option<Json> {
+    pub fn text(
+        &self,
+        name: &str,
+        level: &Level,
+        keys: &[&str],
+        default: Option<Json>,
+    ) -> Option<Json> {
         self.ensure_row(name, level);
         let cache = self.cache.read().expect("stats cache lock");
         let row = &cache[name][level].text;
@@ -200,27 +232,39 @@ impl Stats {
     }
 
     pub fn required_town_hall(&self, name: &str, level: &Level) -> f64 {
-        self.get(name, level, &["Town Hall Level Required", "required_townhall"], Some(0.0))
-            .expect("numeric default")
+        self.get(
+            name,
+            level,
+            &["Town Hall Level Required", "required_townhall"],
+            Some(0.0),
+        )
+        .expect("numeric default")
     }
 
     pub fn max_level(&self, name: &str, town_hall: i64) -> Option<i64> {
         let rec = self.record(name);
-        if let Some(value) = rec.get("max_level").and_then(|map| map.get(&town_hall.to_string())) {
+        if let Some(value) = rec
+            .get("max_level")
+            .and_then(|map| map.get(&town_hall.to_string()))
+        {
             return if value.is_null() {
                 None
             } else {
                 Some(value.i64())
             };
         }
-        rec.at("levels").arr().iter().filter_map(|entry| {
-            let Json::Num(level) = entry.get("level")? else {
-                return None;
-            };
-            let level = *level as i64;
-            (self.required_town_hall(name, &Level::Int(level)) <= town_hall as f64)
-                .then_some(level)
-        }).max()
+        rec.at("levels")
+            .arr()
+            .iter()
+            .filter_map(|entry| {
+                let Json::Num(level) = entry.get("level")? else {
+                    return None;
+                };
+                let level = *level as i64;
+                (self.required_town_hall(name, &Level::Int(level)) <= town_hall as f64)
+                    .then_some(level)
+            })
+            .max()
     }
 
     // stats.py:156-163: supercharge string levels are checked through row().
@@ -241,20 +285,17 @@ impl Stats {
 // before float(), which accepts these digits too (stats.py:17,25-29).
 fn decimal(c: char) -> Option<u32> {
     const ZEROES: &[u32] = &[
-        0x30, 0x660, 0x6f0, 0x7c0, 0x966, 0x9e6, 0xa66, 0xae6, 0xb66,
-        0xbe6, 0xc66, 0xce6, 0xd66, 0xde6, 0xe50, 0xed0, 0xf20, 0x1040,
-        0x1090, 0x17e0, 0x1810, 0x1946, 0x19d0, 0x1a80, 0x1a90, 0x1b50,
-        0x1bb0, 0x1c40, 0x1c50, 0xa620, 0xa8d0, 0xa900, 0xa9d0, 0xa9f0,
-        0xaa50, 0xabf0, 0xff10, 0x104a0, 0x10d30, 0x11066, 0x110f0,
-        0x11136, 0x111d0, 0x112f0, 0x11450, 0x114d0, 0x11650, 0x116c0,
-        0x11730, 0x118e0, 0x11950, 0x11c50, 0x11d50, 0x11da0, 0x16a60,
-        0x16ac0, 0x16b50, 0x1d7ce, 0x1d7d8, 0x1d7e2, 0x1d7ec, 0x1d7f6,
-        0x1e140, 0x1e2f0, 0x1e950, 0x1fbf0,
+        0x30, 0x660, 0x6f0, 0x7c0, 0x966, 0x9e6, 0xa66, 0xae6, 0xb66, 0xbe6, 0xc66, 0xce6, 0xd66,
+        0xde6, 0xe50, 0xed0, 0xf20, 0x1040, 0x1090, 0x17e0, 0x1810, 0x1946, 0x19d0, 0x1a80, 0x1a90,
+        0x1b50, 0x1bb0, 0x1c40, 0x1c50, 0xa620, 0xa8d0, 0xa900, 0xa9d0, 0xa9f0, 0xaa50, 0xabf0,
+        0xff10, 0x104a0, 0x10d30, 0x11066, 0x110f0, 0x11136, 0x111d0, 0x112f0, 0x11450, 0x114d0,
+        0x11650, 0x116c0, 0x11730, 0x118e0, 0x11950, 0x11c50, 0x11d50, 0x11da0, 0x16a60, 0x16ac0,
+        0x16b50, 0x1d7ce, 0x1d7d8, 0x1d7e2, 0x1d7ec, 0x1d7f6, 0x1e140, 0x1e2f0, 0x1e950, 0x1fbf0,
     ];
     let code = c as u32;
-    ZEROES.iter().find_map(|zero| {
-        (code >= *zero && code < *zero + 10).then(|| code - *zero)
-    })
+    ZEROES
+        .iter()
+        .find_map(|zero| (code >= *zero && code < *zero + 10).then(|| code - *zero))
 }
 
 pub fn num(value: &Json, default: Option<f64>) -> Option<f64> {
@@ -311,10 +352,20 @@ fn python_text(value: &Json) -> String {
         Json::Bool(value) => if *value { "True" } else { "False" }.to_owned(),
         Json::Num(value) => crate::trace::py_float_repr(*value),
         Json::Str(value) => python_string_repr(value),
-        Json::Arr(items) => format!("[{}]", items.iter().map(python_text).collect::<Vec<_>>().join(", ")),
-        Json::Obj(items) => format!("{{{}}}", items.iter().map(|(key, value)| {
-            format!("{}: {}", python_string_repr(key), python_text(value))
-        }).collect::<Vec<_>>().join(", ")),
+        Json::Arr(items) => format!(
+            "[{}]",
+            items.iter().map(python_text).collect::<Vec<_>>().join(", ")
+        ),
+        Json::Obj(items) => format!(
+            "{{{}}}",
+            items
+                .iter()
+                .map(|(key, value)| {
+                    format!("{}: {}", python_string_repr(key), python_text(value))
+                })
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
     }
 }
 

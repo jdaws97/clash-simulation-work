@@ -25,9 +25,9 @@ pub mod plans;
 pub mod playbook;
 pub mod pyrandom;
 pub mod runner;
-pub mod scoring;
 #[path = "scoring_cli.rs"]
 pub mod score_cli;
+pub mod scoring;
 pub mod setup;
 pub mod shared;
 pub mod source;

@@ -1108,7 +1108,9 @@ impl Building {
     }
 
     pub fn disabled(&self, t: f64) -> bool {
-        t < self.frozen_until || t < self.stun_until || t < self.overgrown_until
+        t < self.frozen_until
+            || t < self.stun_until
+            || t < self.overgrown_until
             || t < self.extra.yellow_until
     }
 }
@@ -1157,26 +1159,36 @@ impl Unit {
     // entities.py:199-237: targetability is distinct from the ability to act.
     #[inline]
     pub fn attached(&self, battle: &Battle) -> bool {
-        self.name_id == Name::AngryJelly && self.owner.is_some_and(|owner| battle.unit(owner).alive)
+        self.name_id == Name::AngryJelly
+            && self.owner.is_some_and(|owner| battle.unit(owner).alive)
             && battle.t < self.extra.brainwash_until
     }
 
     #[inline]
     pub fn can_act(&self, t: f64) -> bool {
-        !self.extra.suspended && t >= self.extra.yellow_until && t >= self.frozen_until
-            && t >= self.stun_until && t >= self.active_at
+        !self.extra.suspended
+            && t >= self.extra.yellow_until
+            && t >= self.frozen_until
+            && t >= self.stun_until
+            && t >= self.active_at
     }
 
     #[inline]
     pub fn indirect_targetable(&self, battle: &Battle) -> bool {
-        self.alive && !self.extra.suspended && !self.underground && !self.extra.leaping
-            && !self.attached(battle) && battle.t >= self.active_at
+        self.alive
+            && !self.extra.suspended
+            && !self.underground
+            && !self.extra.leaping
+            && !self.attached(battle)
+            && battle.t >= self.active_at
     }
 
     #[inline]
     pub fn targetable(&self, battle: &Battle) -> bool {
-        self.indirect_targetable(battle) && self.dash.is_none()
-            && battle.t >= self.extra.yellow_until && battle.t >= self.invisible_until
+        self.indirect_targetable(battle)
+            && self.dash.is_none()
+            && battle.t >= self.extra.yellow_until
+            && battle.t >= self.invisible_until
     }
 }
 
@@ -1238,11 +1250,17 @@ impl Plan {
 
     pub fn loadout(&self, name: &str) -> Option<&crate::heroes::HeroLoadout> {
         match self {
-            Self::Attack(p) => p.loadouts
+            Self::Attack(p) => p
+                .loadouts
                 .iter()
                 .find(|(hero, _)| hero == name)
                 .map(|(_, loadout)| loadout),
-            Self::Playbook(p) => p.attack.loadouts.iter().find(|(hero, _)| hero == name).map(|(_, loadout)| loadout),
+            Self::Playbook(p) => p
+                .attack
+                .loadouts
+                .iter()
+                .find(|(hero, _)| hero == name)
+                .map(|(_, loadout)| loadout),
             Self::Stage { loadouts, .. } => loadouts
                 .iter()
                 .find(|(hero, _)| hero == name)
@@ -1252,12 +1270,20 @@ impl Plan {
 
     pub fn equipment_level(&self, name: &str) -> Option<&Level> {
         match self {
-            Self::Attack(p) => p.equipment_levels
+            Self::Attack(p) => p
+                .equipment_levels
                 .iter()
                 .find(|(key, _)| key == name)
                 .and_then(|(_, level)| level.as_ref()),
-            Self::Playbook(p) => p.attack.equipment_levels.iter().find(|(key, _)| key == name).and_then(|(_, lv)| lv.as_ref()),
-            Self::Stage { equipment_levels, .. } => equipment_levels
+            Self::Playbook(p) => p
+                .attack
+                .equipment_levels
+                .iter()
+                .find(|(key, _)| key == name)
+                .and_then(|(_, lv)| lv.as_ref()),
+            Self::Stage {
+                equipment_levels, ..
+            } => equipment_levels
                 .iter()
                 .find(|(key, _)| key == name)
                 .and_then(|(_, level)| level.as_ref()),
@@ -1266,11 +1292,17 @@ impl Plan {
 
     pub fn pet_level(&self, name: &str) -> Option<&Level> {
         match self {
-            Self::Attack(p) => p.pet_levels
+            Self::Attack(p) => p
+                .pet_levels
                 .iter()
                 .find(|(key, _)| key == name)
                 .and_then(|(_, level)| level.as_ref()),
-            Self::Playbook(p) => p.attack.pet_levels.iter().find(|(key, _)| key == name).and_then(|(_, lv)| lv.as_ref()),
+            Self::Playbook(p) => p
+                .attack
+                .pet_levels
+                .iter()
+                .find(|(key, _)| key == name)
+                .and_then(|(_, lv)| lv.as_ref()),
             Self::Stage { pet_levels, .. } => pet_levels
                 .iter()
                 .find(|(key, _)| key == name)
@@ -1282,7 +1314,9 @@ impl Plan {
         match self {
             Self::Attack(p) => p.auto_ability_on_ko,
             Self::Playbook(p) => p.attack.auto_ability_on_ko,
-            Self::Stage { auto_ability_on_ko, .. } => *auto_ability_on_ko,
+            Self::Stage {
+                auto_ability_on_ko, ..
+            } => *auto_ability_on_ko,
         }
     }
 
@@ -1304,11 +1338,17 @@ impl Plan {
 
     pub fn researched_level(&self, name: &str) -> Option<&Option<Level>> {
         match self {
-            Self::Attack(p) => p.troop_levels
+            Self::Attack(p) => p
+                .troop_levels
                 .iter()
                 .find(|(key, _)| key == name)
                 .map(|(_, level)| level),
-            Self::Playbook(p) => p.attack.troop_levels.iter().find(|(key, _)| key == name).map(|(_, lv)| lv),
+            Self::Playbook(p) => p
+                .attack
+                .troop_levels
+                .iter()
+                .find(|(key, _)| key == name)
+                .map(|(_, lv)| lv),
             Self::Stage { troop_levels, .. } => troop_levels
                 .iter()
                 .find(|(key, _)| key == name)
@@ -1336,11 +1376,7 @@ impl Plan {
         match self {
             Self::Attack(p) => p.strength,
             Self::Playbook(p) => p.attack.strength,
-            Self::Stage {
-                strength,
-                ..
-            }
-            => *strength,
+            Self::Stage { strength, .. } => *strength,
         }
     }
 
@@ -1349,10 +1385,7 @@ impl Plan {
         match self {
             Self::Attack(p) => p.has_pending(),
             Self::Playbook(p) => p.has_pending(),
-            Self::Stage {
-                ..
-            }
-            => false,
+            Self::Stage { .. } => false,
         }
     }
 }
@@ -1608,8 +1641,8 @@ impl Battle {
     }
 
     pub fn rng_mut(&mut self) -> &mut PyRandom {
-        self.rng.as_mut().expect(
-            "battle export lacks rng seed/state; export it before porting random mechanics",
-        )
+        self.rng
+            .as_mut()
+            .expect("battle export lacks rng seed/state; export it before porting random mechanics")
     }
 }

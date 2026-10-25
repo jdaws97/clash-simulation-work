@@ -91,9 +91,7 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
     }
     if command == "score" {
         if options.files.len() != 1 {
-            return Err(
-                "usage: score BUNDLE [--threads N] [--replay] [--root REPO]".to_owned(),
-            );
+            return Err("usage: score BUNDLE [--threads N] [--replay] [--root REPO]".to_owned());
         }
         let bundle = scoring::read(&options.files[0])?;
         let result = score_bundle(&bundle, &options, options.replay)?;
@@ -196,9 +194,7 @@ fn score_bundle(bundle: &Json, options: &Options, replay: bool) -> Result<Json, 
         let selections = scoring::scouted(&scenarios, &rows, scout);
         let selections = selections
             .iter()
-            .map(|row| {
-                Json::Arr(vec![Json::Num(row.scenario as f64), Json::Num(row.weight)])
-            })
+            .map(|row| Json::Arr(vec![Json::Num(row.scenario as f64), Json::Num(row.weight)]))
             .collect();
         output.push(scoring::object(vec![
             (
@@ -211,7 +207,10 @@ fn score_bundle(bundle: &Json, options: &Options, replay: bool) -> Result<Json, 
             ),
             ("summary", summary.to_json()),
             ("scouting", Json::Arr(selections)),
-            ("results", Json::Arr(rows.iter().map(Outcome::to_json).collect())),
+            (
+                "results",
+                Json::Arr(rows.iter().map(Outcome::to_json).collect()),
+            ),
             ("holes", Json::Num(holes as f64)),
         ]));
     }
@@ -246,7 +245,10 @@ fn score_bundle(bundle: &Json, options: &Options, replay: bool) -> Result<Json, 
         (
             "skills",
             Json::Arr(
-                scenarios.iter().map(|sc| Json::Num(scoring::skill(sc.seed))).collect(),
+                scenarios
+                    .iter()
+                    .map(|sc| Json::Num(scoring::skill(sc.seed)))
+                    .collect(),
             ),
         ),
         ("strength", data.strength.to_json()),
@@ -301,7 +303,9 @@ fn run_bundle(
     // rust_bridge.py:129-149: prepared plans include this exact product.
     // Reject stale calibration/skill rather than silently running old plans.
     for (scenario, index) in scenarios.iter().zip(&indices) {
-        let plan = plans.get(*index).ok_or("prepared plan index out of range")?;
+        let plan = plans
+            .get(*index)
+            .ok_or("prepared plan index out of range")?;
         let expected = data.strength.get(&scenario.army) * scoring::skill(scenario.seed);
         if plan.at("strength").f64().to_bits() != expected.to_bits() {
             return Err(format!(
@@ -402,7 +406,9 @@ fn compare(actual: &Json, expected: &Json, path: &str, compared: &mut usize) -> 
             }
             for ((key, actual), (expected_key, expected)) in actual.iter().zip(expected) {
                 if key != expected_key {
-                    return Err(format!("{path}: key order {key:?} != Python {expected_key:?}"));
+                    return Err(format!(
+                        "{path}: key order {key:?} != Python {expected_key:?}"
+                    ));
                 }
                 compare(actual, expected, &format!("{path}.{key}"), compared)?;
             }

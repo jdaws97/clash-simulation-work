@@ -17,7 +17,9 @@ use crate::state::*;
 use crate::stats::{self, Level};
 
 fn integer(value: &Json, key: &str, default: i64) -> i64 {
-    value.get(key).map_or(default, |v| Node::new(v, key).integer())
+    value
+        .get(key)
+        .map_or(default, |v| Node::new(v, key).integer())
 }
 
 fn boolean(value: &Json, key: &str, default: bool) -> bool {
@@ -39,9 +41,7 @@ fn generic(value: &Json) -> Value {
         Json::Num(v) => Value::Number(*v),
         Json::Str(v) => Value::String(v.clone()),
         Json::Arr(v) => Value::List(v.iter().map(generic).collect()),
-        Json::Obj(v) => Value::Map(
-            v.iter().map(|(key, v)| (key.clone(), generic(v))).collect(),
-        ),
+        Json::Obj(v) => Value::Map(v.iter().map(|(key, v)| (key.clone(), generic(v))).collect()),
     }
 }
 
@@ -72,7 +72,11 @@ fn upgrades(value: &Json) -> Vec<Value> {
 
 fn merge_levels(first: Option<&Json>, second: Option<&Json>) -> Vec<(String, Level)> {
     let mut levels = Vec::new();
-    for map in [first, second].into_iter().flatten().filter(|v| !v.is_null()) {
+    for map in [first, second]
+        .into_iter()
+        .flatten()
+        .filter(|v| !v.is_null())
+    {
         for (key, value) in map.obj() {
             set(&mut levels, key.clone(), Level::from_json(value));
         }
@@ -99,38 +103,57 @@ fn deployments(plan: &Json, margin: f64) -> Vec<Deployment> {
     match plan.at("$type").str() {
         "AttackPlan" | "PlaybookPlan" => Vec::new(),
         "Stage" => {
-            let mut result: Vec<_> = plan.at("drops").arr().iter().map(|drop| {
-                let values = Node::new(drop, "plan.drops").tuple(5);
-                Deployment {
-                    time: values[0].number(),
-                    name: values[1].string(),
-                    x: values[2].number() + margin,
-                    y: values[3].number() + margin,
-                    group: "main".to_owned(),
-                    level: values[4].optional_level(),
-                    town_hall: Some(plan.at("town_hall").i64()),
-                    source: "army".to_owned(),
-                    mode: None,
-                }
-            }).collect();
-            result.sort_by(|a, b| a.time.partial_cmp(&b.time).expect("finite deployment times"));
+            let mut result: Vec<_> = plan
+                .at("drops")
+                .arr()
+                .iter()
+                .map(|drop| {
+                    let values = Node::new(drop, "plan.drops").tuple(5);
+                    Deployment {
+                        time: values[0].number(),
+                        name: values[1].string(),
+                        x: values[2].number() + margin,
+                        y: values[3].number() + margin,
+                        group: "main".to_owned(),
+                        level: values[4].optional_level(),
+                        town_hall: Some(plan.at("town_hall").i64()),
+                        source: "army".to_owned(),
+                        mode: None,
+                    }
+                })
+                .collect();
+            result.sort_by(|a, b| {
+                a.time
+                    .partial_cmp(&b.time)
+                    .expect("finite deployment times")
+            });
             result
         }
         other => panic!("unsupported plan {other}"),
     }
 }
 
-pub fn build(
-    layout: &Json,
-    plan_json: &Json,
-    options: &Json,
-    catalog: Arc<Catalog>,
-) -> Battle {
+pub fn build(layout: &Json, plan_json: &Json, options: &Json, catalog: Arc<Catalog>) -> Battle {
     Node::new(options, "job").keys(&[
-        "layout", "plan", "seed", "town_hall", "record", "modifier", "defense_levels",
-        "hero_levels", "cc_troops", "cc_level", "max_time", "defense_ammo",
-        "allow_synthetic_cc", "builder_starts", "battle_mode", "upgrading",
-        "crafting_phase", "crafting_date", "scouting",
+        "layout",
+        "plan",
+        "seed",
+        "town_hall",
+        "record",
+        "modifier",
+        "defense_levels",
+        "hero_levels",
+        "cc_troops",
+        "cc_level",
+        "max_time",
+        "defense_ammo",
+        "allow_synthetic_cc",
+        "builder_starts",
+        "battle_mode",
+        "upgrading",
+        "crafting_phase",
+        "crafting_date",
+        "scouting",
     ]);
     assert!(
         !catalog.setup.is_null(),
@@ -139,7 +162,11 @@ pub fn build(
     let empty_object = Json::Obj(Vec::new());
     let empty_array = Json::Arr(Vec::new());
     let env = catalog.setup.at("env");
-    let modifiers = catalog.setup.at("modifiers").at(text(options, "modifier", "null")).arr();
+    let modifiers = catalog
+        .setup
+        .at("modifiers")
+        .at(text(options, "modifier", "null"))
+        .arr();
     let deployments = deployments(plan_json, catalog.margin);
     let plan = load::plan(Node::new(plan_json, "plan"), &deployments);
     let mut battle = Battle {
@@ -183,8 +210,11 @@ pub fn build(
         crafting_phase: integer(options, "crafting_phase", 4),
         crafting_date: text(options, "crafting_date", "2026-10-15").to_owned(),
         builders: Vec::new(),
-        builder_starts: value_or(options, "builder_starts", &empty_object).obj().iter()
-            .map(|(key, v)| (key.clone(), Node::new(v, "builder_starts").pair())).collect(),
+        builder_starts: value_or(options, "builder_starts", &empty_object)
+            .obj()
+            .iter()
+            .map(|(key, v)| (key.clone(), Node::new(v, "builder_starts").pair()))
+            .collect(),
         portal_ready_at: 0.0,
         t: 0.0,
         scouting: boolean(options, "scouting", false),
@@ -216,7 +246,10 @@ pub fn build(
         th_on_at: None,
         defense_levels: merge_levels(layout.get("levels"), options.get("defense_levels")),
         hero_levels: merge_levels(layout.get("hero_levels"), options.get("hero_levels")),
-        wall_level: layout.get("wall_level").filter(|v| !v.is_null()).map(Level::from_json),
+        wall_level: layout
+            .get("wall_level")
+            .filter(|v| !v.is_null())
+            .map(Level::from_json),
         cc_level: merge_levels(options.get("cc_level"), None),
         damage_by_source: Vec::new(),
         kills_by_source: Vec::new(),
@@ -250,7 +283,10 @@ pub fn build(
         guardian: None,
         unknown_scalars: Vec::new(),
     };
-    assert!(battle.dt.is_finite() && battle.dt > 0.0, "env.dt must be positive");
+    assert!(
+        battle.dt.is_finite() && battle.dt > 0.0,
+        "env.dt must be positive"
+    );
     setup_layout(&mut battle, layout, options);
     battle.grid.profile_initial_state();
     battle.total_counted = battle.buildings.iter().filter(|b| b.counted).count();
@@ -270,20 +306,34 @@ pub fn build(
 
 fn level_of(battle: &Battle, key: &str, name: &str) -> Level {
     let level = selected(&battle.defense_levels, key).unwrap_or_else(|| {
-        Level::Int(battle.catalog.stats.max_level(name, battle.town_hall)
-            .unwrap_or_else(|| panic!("{name} is unavailable at Town Hall {}", battle.town_hall)))
+        Level::Int(
+            battle
+                .catalog
+                .stats
+                .max_level(name, battle.town_hall)
+                .unwrap_or_else(|| {
+                    panic!("{name} is unavailable at Town Hall {}", battle.town_hall)
+                }),
+        )
     });
-    battle.catalog.stats.validate_level(name, &level, battle.town_hall);
+    battle
+        .catalog
+        .stats
+        .validate_level(name, &level, battle.town_hall);
     level
 }
 
 fn get(battle: &Battle, name: &str, level: &Level, keys: &[&str], default: Option<f64>) -> f64 {
-    battle.catalog.stats.get(name, level, keys, default)
+    battle
+        .catalog
+        .stats
+        .get(name, level, keys, default)
         .unwrap_or_else(|| panic!("missing numeric {name} level {level} {keys:?}"))
 }
 
 fn unavailable(battle: &Battle, key: &str, id: usize) -> bool {
-    battle.battle_mode == "multiplayer" && key != "crafting"
+    battle.battle_mode == "multiplayer"
+        && key != "crafting"
         && battle.upgrading.iter().any(|value| match value {
             Value::String(value) => value == key,
             Value::Number(value) => *value == id as f64,
@@ -308,19 +358,30 @@ fn setup_layout(battle: &mut Battle, layout: &Json, options: &Json) {
             let level = Level::Int(battle.town_hall);
             let hp = get(battle, "Town Hall", &level, &["hitpoints"], Some(10000.0));
             (Some(level), hp)
-        } else if key == "crafting" || !bt.counted && catalog.stats.registry.get(&bt.name).is_none() {
+        } else if key == "crafting" || !bt.counted && catalog.stats.registry.get(&bt.name).is_none()
+        {
             (Some(Level::Int(1)), 1000.0)
         } else {
             let level = level_of(battle, key, &bt.name);
-            let hp = get(battle, &bt.name, &level, &["hitpoints", "Hitpoints"], Some(1000.0));
+            let hp = get(
+                battle,
+                &bt.name,
+                &level,
+                &["hitpoints", "Hitpoints"],
+                Some(1000.0),
+            );
             (Some(level), hp)
         };
         let hitbox = if banner {
             1.0
         } else {
-            catalog.stats.registry.get(&bt.name)
+            catalog
+                .stats
+                .registry
+                .get(&bt.name)
                 .and_then(|_| catalog.stats.attrs(&bt.name).get("hitbox"))
-                .filter(|v| truth(v)).map_or(bt.size.saturating_sub(1).max(1) as f64, Json::f64)
+                .filter(|v| truth(v))
+                .map_or(bt.size.saturating_sub(1).max(1) as f64, Json::f64)
         };
         let mut building = Building {
             town_hall_target: key == "th",
@@ -389,25 +450,42 @@ fn setup_layout(battle: &mut Battle, layout: &Json, options: &Json) {
             if key == "cc" {
                 battle.cc_building = Some(building.id);
             }
-            battle.grid.block_square(building.x, building.y, building.half_hit, true);
+            battle
+                .grid
+                .block_square(building.x, building.y, building.half_hit, true);
         }
         battle.building_indices.push(Some(index));
         battle.buildings.push(building);
     }
-    let mut walls: Vec<_> = layout.at("walls").arr().iter().map(|value| {
-        let pair = Node::new(value, "layout.walls").tuple(2);
-        (pair[0].i32(), pair[1].i32())
-    }).collect();
+    let mut walls: Vec<_> = layout
+        .at("walls")
+        .arr()
+        .iter()
+        .map(|value| {
+            let pair = Node::new(value, "layout.walls").tuple(2);
+            (pair[0].i32(), pair[1].i32())
+        })
+        .collect();
     walls.sort();
     walls.dedup();
     for (tx, ty) in walls {
         let fallback = nonzero(battle.wall_level.clone()).or_else(|| {
-            catalog.stats.max_level("Wall", battle.town_hall).map(Level::Int)
+            catalog
+                .stats
+                .max_level("Wall", battle.town_hall)
+                .map(Level::Int)
         });
-        let level = layout.get("wall_levels").into_iter().flat_map(Json::arr)
+        let level = layout
+            .get("wall_levels")
+            .into_iter()
+            .flat_map(Json::arr)
             .find(|entry| entry.at("x").i64() == tx as i64 && entry.at("y").i64() == ty as i64)
-            .map(|entry| Level::from_json(entry.at("level"))).or(fallback).expect("wall level");
-        catalog.stats.validate_level("Wall", &level, battle.town_hall);
+            .map(|entry| Level::from_json(entry.at("level")))
+            .or(fallback)
+            .expect("wall level");
+        catalog
+            .stats
+            .validate_level("Wall", &level, battle.town_hall);
         let hp = get(battle, "Wall", &level, &["Hitpoints"], None);
         let tx = tx + catalog.margin as i32;
         let ty = ty + catalog.margin as i32;
@@ -444,7 +522,9 @@ fn setup_layout(battle: &mut Battle, layout: &Json, options: &Json) {
     if battle.town_hall >= 18 {
         if let Some(th) = battle.th {
             if let Some(name) = layout.get("guardian").filter(|v| truth(v)) {
-                let guardian_upgrading = battle.upgrading.iter()
+                let guardian_upgrading = battle
+                    .upgrading
+                    .iter()
                     .any(|value| matches!(value, Value::String(key) if key == "guardian"));
                 let blocked = battle.battle_mode == "multiplayer"
                     && (battle.building(th).extra.unavailable || guardian_upgrading);
@@ -459,19 +539,57 @@ fn setup_layout(battle: &mut Battle, layout: &Json, options: &Json) {
     for entry in entries.arr() {
         let name = cargo_name(entry);
         if selected(&levels, name).is_none() {
-            levels.push((name.to_owned(), Level::Int(catalog.stats.max_level(name, 18).expect("donated unit maximum"))));
+            levels.push((
+                name.to_owned(),
+                Level::Int(
+                    catalog
+                        .stats
+                        .max_level(name, 18)
+                        .expect("donated unit maximum"),
+                ),
+            ));
         }
     }
     battle.cc_queue = cargo_entries(battle, entries.arr(), &levels);
     if let Some(cc) = battle.cc_building.filter(|_| !battle.allow_synthetic_cc) {
-        let castle_level = battle.building(cc).level.as_ref().expect("castle level").clone();
-        let capacity = get(battle, "Clan Castle", &castle_level, &["Troop Capacity"], None);
-        let housing: i64 = battle.cc_queue.iter().map(|e| catalog.numbers(&e.name, &e.level).housing).sum();
-        assert!(housing as f64 <= capacity, "Defending Clan Castle housing {housing} exceeds {capacity}");
+        let castle_level = battle
+            .building(cc)
+            .level
+            .as_ref()
+            .expect("castle level")
+            .clone();
+        let capacity = get(
+            battle,
+            "Clan Castle",
+            &castle_level,
+            &["Troop Capacity"],
+            None,
+        );
+        let housing: i64 = battle
+            .cc_queue
+            .iter()
+            .map(|e| catalog.numbers(&e.name, &e.level).housing)
+            .sum();
+        assert!(
+            housing as f64 <= capacity,
+            "Defending Clan Castle housing {housing} exceeds {capacity}"
+        );
         for entry in &mut battle.cc_queue {
-            assert!(matches!(catalog.stats.record(&entry.name).at("kind").str(), "troop" | "super_troop"), "{} cannot be donated to a Clan Castle", entry.name);
+            assert!(
+                matches!(
+                    catalog.stats.record(&entry.name).at("kind").str(),
+                    "troop" | "super_troop"
+                ),
+                "{} cannot be donated to a Clan Castle",
+                entry.name
+            );
             let _ = catalog.stats.row(&entry.name, &entry.level);
-            entry.level = donated_level(&catalog, &entry.name, Some(entry.level.clone()), Some(castle_level.clone()));
+            entry.level = donated_level(
+                &catalog,
+                &entry.name,
+                Some(entry.level.clone()),
+                Some(castle_level.clone()),
+            );
         }
     }
 }
@@ -480,7 +598,11 @@ fn cargo_name(entry: &Json) -> &str {
     if let Json::Str(name) = entry {
         name
     } else {
-        entry.get("name").filter(|v| truth(v)).unwrap_or_else(|| entry.at("type")).str()
+        entry
+            .get("name")
+            .filter(|v| truth(v))
+            .unwrap_or_else(|| entry.at("type"))
+            .str()
     }
 }
 
@@ -493,12 +615,21 @@ fn donated_level(
     castle: Option<Level>,
 ) -> Level {
     let level = level.unwrap_or_else(|| {
-        Level::Int(catalog.stats.max_level(name, 18).filter(|v| *v != 0).unwrap_or(1))
+        Level::Int(
+            catalog
+                .stats
+                .max_level(name, 18)
+                .filter(|v| *v != 0)
+                .unwrap_or(1),
+        )
     });
     let Some(castle) = nonzero(castle) else {
         return level;
     };
-    let Some(cap) = catalog.stats.get("Clan Castle", &castle, &["~Laboratory Level Cap"], None) else {
+    let Some(cap) = catalog
+        .stats
+        .get("Clan Castle", &castle, &["~Laboratory Level Cap"], None)
+    else {
         return level;
     };
     let required = catalog.setup.at("donated_laboratory").at(name);
@@ -523,9 +654,18 @@ fn cargo_entries(battle: &Battle, entries: &[Json], levels: &[(String, Level)]) 
     let mut result = Vec::new();
     for entry in entries {
         let name = cargo_name(entry);
-        let level = entry.get("level").filter(|v| truth(v)).map(Level::from_json)
+        let level = entry
+            .get("level")
+            .filter(|v| truth(v))
+            .map(Level::from_json)
             .or_else(|| nonzero(selected(levels, name)))
-            .or_else(|| battle.catalog.stats.max_level(name, battle.town_hall).map(Level::Int))
+            .or_else(|| {
+                battle
+                    .catalog
+                    .stats
+                    .max_level(name, battle.town_hall)
+                    .map(Level::Int)
+            })
             .expect("cargo level");
         // Python int(count) truncates; a negative count produces no entries.
         let count = entry.get("count").map_or(1, |v| v.f64() as i64);
@@ -539,9 +679,17 @@ fn cargo_entries(battle: &Battle, entries: &[Json], levels: &[(String, Level)]) 
         }
     }
     let order = battle.catalog.setup.at("cargo_order").arr();
-    let rank = |name: &str| order.iter().position(|v| v.str() == name).unwrap_or(order.len());
+    let rank = |name: &str| {
+        order
+            .iter()
+            .position(|v| v.str() == name)
+            .unwrap_or(order.len())
+    };
     result.sort_by(|a, b| {
-        battle.catalog.numbers(&a.name, &a.level).housing
+        battle
+            .catalog
+            .numbers(&a.name, &a.level)
+            .housing
             .cmp(&battle.catalog.numbers(&b.name, &b.level).housing)
             .then_with(|| rank(&a.name).cmp(&rank(&b.name)))
             .then_with(|| match (&a.level, &b.level) {
@@ -554,16 +702,36 @@ fn cargo_entries(battle: &Battle, entries: &[Json], levels: &[(String, Level)]) 
 }
 
 fn attack_cargo(battle: &Battle, plan: &Json) -> Vec<CargoEntry> {
-    let attack_town_hall = plan.get("town_hall").filter(|value| truth(value))
+    let attack_town_hall = plan
+        .get("town_hall")
+        .filter(|value| truth(value))
         .map_or(battle.town_hall, Json::i64);
-    let castle = plan.get("clan_castle_level").filter(|v| !v.is_null()).map(Level::from_json)
-        .or_else(|| battle.catalog.stats.max_level("Clan Castle", attack_town_hall).map(Level::Int));
+    let castle = plan
+        .get("clan_castle_level")
+        .filter(|v| !v.is_null())
+        .map(Level::from_json)
+        .or_else(|| {
+            battle
+                .catalog
+                .stats
+                .max_level("Clan Castle", attack_town_hall)
+                .map(Level::Int)
+        });
     let given = plan.get("cc_levels").filter(|v| truth(v));
     let mut entries = Vec::new();
-    for entry in plan.get("cc_troops").filter(|v| truth(v)).into_iter().flat_map(Json::arr) {
+    for entry in plan
+        .get("cc_troops")
+        .filter(|v| truth(v))
+        .into_iter()
+        .flat_map(Json::arr)
+    {
         let name = cargo_name(entry);
-        let level = entry.get("level").filter(|v| truth(v))
-            .or_else(|| given.and_then(|v| v.get(name))).filter(|v| !v.is_null()).map(Level::from_json);
+        let level = entry
+            .get("level")
+            .filter(|v| truth(v))
+            .or_else(|| given.and_then(|v| v.get(name)))
+            .filter(|v| !v.is_null())
+            .map(Level::from_json);
         let level = donated_level(&battle.catalog, name, level, castle.clone());
         let mut item = if matches!(entry, Json::Str(_)) {
             vec![("name".to_owned(), Json::Str(name.to_owned()))]
@@ -581,8 +749,13 @@ fn attack_cargo(battle: &Battle, plan: &Json) -> Vec<CargoEntry> {
 }
 
 fn spawn_defending_hero(battle: &mut Battle, name: &str, banner: BuildingId) {
-    let level = nonzero(selected(&battle.hero_levels, name))
-        .or_else(|| battle.catalog.stats.max_level(name, battle.town_hall).map(Level::Int));
+    let level = nonzero(selected(&battle.hero_levels, name)).or_else(|| {
+        battle
+            .catalog
+            .stats
+            .max_level(name, battle.town_hall)
+            .map(Level::Int)
+    });
     let (x, y) = (battle.building(banner).x, battle.building(banner).y);
     let unit = battle.spawn(
         name,
@@ -598,7 +771,13 @@ fn spawn_defending_hero(battle: &mut Battle, name: &str, banner: BuildingId) {
     let leash = if name == "Barbarian King" {
         7.0
     } else {
-        battle.catalog.stats.attrs(name).get("search_radius").filter(|v| truth(v)).map_or(9.0, Json::f64)
+        battle
+            .catalog
+            .stats
+            .attrs(name)
+            .get("search_radius")
+            .filter(|v| truth(v))
+            .map_or(9.0, Json::f64)
     };
     let multiplier = battle.def_hero_mult;
     let unit = battle.unit_mut(unit);
@@ -619,7 +798,14 @@ fn spawn_defending_hero(battle: &mut Battle, name: &str, banner: BuildingId) {
 // heroes.py:1806-1823: catalog levels/radii, rooftop wait and league scaling.
 fn spawn_guardian(battle: &mut Battle, name: &str, th: BuildingId) {
     let level = nonzero(selected(&battle.defense_levels, "guardian"))
-        .or_else(|| battle.catalog.stats.max_level(name, 18).filter(|v| *v != 0).map(Level::Int))
+        .or_else(|| {
+            battle
+                .catalog
+                .stats
+                .max_level(name, 18)
+                .filter(|v| *v != 0)
+                .map(Level::Int)
+        })
         .unwrap_or(Level::Int(1));
     let (x, y) = (battle.building(th).x, battle.building(th).y);
     let unit = battle.spawn(
@@ -635,9 +821,16 @@ fn spawn_guardian(battle: &mut Battle, name: &str, th: BuildingId) {
     );
     let empty = Json::Obj(Vec::new());
     let raw = value_or(battle.catalog.stats.attrs(name), "raw", &empty);
-    let leash = raw.get("Patrol Radius").filter(|v| truth(v)).or_else(|| raw.get("Search Radius"))
-        .and_then(|v| stats::num(v, Some(12.0))).unwrap_or(12.0);
-    let trigger = raw.get("Trigger Radius").and_then(|v| stats::num(v, Some(14.0))).unwrap_or(14.0);
+    let leash = raw
+        .get("Patrol Radius")
+        .filter(|v| truth(v))
+        .or_else(|| raw.get("Search Radius"))
+        .and_then(|v| stats::num(v, Some(12.0)))
+        .unwrap_or(12.0);
+    let trigger = raw
+        .get("Trigger Radius")
+        .and_then(|v| stats::num(v, Some(14.0)))
+        .unwrap_or(14.0);
     let multiplier = battle.guardian_mult;
     let guardian = battle.unit_mut(unit);
     guardian.home = Some((x, y));
@@ -656,21 +849,48 @@ fn spawn_guardian(battle: &mut Battle, name: &str, th: BuildingId) {
 
 fn make_trap(battle: &Battle, placement: &Json) -> Trap {
     let key = placement.at("key").str();
-    let name = &battle.catalog.trap_names.iter().find(|(k, _)| k == key).expect("trap name").1;
+    let name = &battle
+        .catalog
+        .trap_names
+        .iter()
+        .find(|(k, _)| k == key)
+        .expect("trap name")
+        .1;
     let level = nonzero(selected(&battle.defense_levels, &format!("trap:{key}")))
-        .or_else(|| battle.catalog.stats.max_level(name, battle.town_hall).filter(|v| *v != 0).map(Level::Int))
+        .or_else(|| {
+            battle
+                .catalog
+                .stats
+                .max_level(name, battle.town_hall)
+                .filter(|v| *v != 0)
+                .map(Level::Int)
+        })
         .unwrap_or(Level::Int(1));
-    let size = battle.catalog.trap_sizes.iter().find(|(k, _)| k == key).map_or(1, |(_, size)| *size);
+    let size = battle
+        .catalog
+        .trap_sizes
+        .iter()
+        .find(|(k, _)| k == key)
+        .map_or(1, |(_, size)| *size);
     let empty = Json::Obj(Vec::new());
     let raw = value_or(battle.catalog.stats.attrs(name), "raw", &empty);
     let raw_number = |key, default| {
-        raw.get(key).and_then(|v| stats::num(v, Some(default))).unwrap_or(default)
+        raw.get(key)
+            .and_then(|v| stats::num(v, Some(default)))
+            .unwrap_or(default)
     };
     let trigger = raw_number("Trigger Radius", 1.5);
-    let radius = battle.catalog.stats.get(name, &level, &["Damage Radius"], None)
-        .filter(|v| *v != 0.0).unwrap_or_else(|| raw_number("Damage Radius", 0.0));
-    let targets = raw.get("Unit Type Targeted").filter(|v| truth(v))
-        .map_or("Ground", Json::str).to_lowercase();
+    let radius = battle
+        .catalog
+        .stats
+        .get(name, &level, &["Damage Radius"], None)
+        .filter(|v| *v != 0.0)
+        .unwrap_or_else(|| raw_number("Damage Radius", 0.0));
+    let targets = raw
+        .get("Unit Type Targeted")
+        .filter(|v| truth(v))
+        .map_or("Ground", Json::str)
+        .to_lowercase();
     let mut trap = Trap {
         id: TrapId(battle.traps.len()),
         key: key.to_owned(),
@@ -693,9 +913,12 @@ fn make_trap(battle: &Battle, placement: &Json) -> Trap {
             trap.air = trap.mode.as_deref() == Some("air");
             trap.ground = !trap.air;
             trap.extra.count = get(battle, name, &level, &["Spawned Units"], Some(4.0)) as usize;
-            trap.extra.skel_level = get(battle, name, &level, &["Skeleton Level"], Some(1.0)) as i64;
+            trap.extra.skel_level =
+                get(battle, name, &level, &["Skeleton Level"], Some(1.0)) as i64;
         }
-        "spring" => trap.extra.capacity = get(battle, name, &level, &["Spring Capacity"], Some(18.0)),
+        "spring" => {
+            trap.extra.capacity = get(battle, name, &level, &["Spring Capacity"], Some(18.0))
+        }
         "tornado" => {
             trap.air = true;
             trap.ground = true;
@@ -751,11 +974,20 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
     let name = building.name.clone();
     let level = building.level.clone().expect("weapon level");
     let s = |keys: &[&str], default: Option<f64>| {
-        catalog.stats.get(&name, &level, keys, default)
+        catalog
+            .stats
+            .get(&name, &level, keys, default)
             .unwrap_or_else(|| panic!("missing numeric {name} level {level} {keys:?}"))
     };
     let damage = |interval| {
-        catalog.stats.get(&name, &level, &["Damage per Shot", "Damage per Hit", "Damage per Attack"], None)
+        catalog
+            .stats
+            .get(
+                &name,
+                &level,
+                &["Damage per Shot", "Damage per Hit", "Damage per Attack"],
+                None,
+            )
             .unwrap_or_else(|| s(&["dps", "Damage per Second"], Some(0.0)) * interval)
     };
     let mode = building.mode.as_deref();
@@ -771,7 +1003,10 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
                 panic!("Inferno Artillery level must be between 1 and 5");
             };
             let shots = catalog.setup.at("artillery_damage").arr();
-            assert!(selected >= 1 && selected as usize <= shots.len(), "Inferno Artillery level must be between 1 and 5");
+            assert!(
+                selected >= 1 && selected as usize <= shots.len(),
+                "Inferno Artillery level must be between 1 and 5"
+            );
             let mut w = weapon(
                 building,
                 "inferno_artillery",
@@ -916,7 +1151,8 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
                 (0.0, s(&["Damage per Hit / Initial"], None)),
                 (1.5, s(&["Damage per Hit / After 1.5s"], None)),
                 (5.25, s(&["Damage per Hit / After 5.25s"], None)),
-            ].into();
+            ]
+            .into();
             w
         }
         "eagle" => {
@@ -943,7 +1179,9 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
             let cadence_level = match &level {
                 Level::Int(_) => level.clone(),
                 Level::Text(_) => Level::Int(
-                    catalog.stats.record(&name)
+                    catalog
+                        .stats
+                        .record(&name)
                         .at("levels")
                         .arr()
                         .iter()
@@ -961,7 +1199,8 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
                 "both",
                 10.0,
                 3.0,
-                catalog.resolved
+                catalog
+                    .resolved
                     .at("scatter_intervals")
                     .at(&cadence_level.to_string())
                     .f64(),
@@ -972,16 +1211,25 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
             // defense.py:620-633: acquisition overlaps cooldown; repeat cadence is unchanged.
             w.extra.new_target_delay = 2.2;
             let range = |key: &str| {
-                catalog.stats.text(&name, &level, &[key], None).and_then(|v| {
-                    if let Json::Str(v) = v {
-                        if v.contains('-') {
-                            let parts: Vec<_> = v.split('-').map(|part| stats::num(&Json::Str(part.to_owned()), None).expect("scatter range")).collect();
-                            assert_eq!(parts.len(), 2, "scatter range");
-                            return Some((parts[0], parts[1]));
+                catalog
+                    .stats
+                    .text(&name, &level, &[key], None)
+                    .and_then(|v| {
+                        if let Json::Str(v) = v {
+                            if v.contains('-') {
+                                let parts: Vec<_> = v
+                                    .split('-')
+                                    .map(|part| {
+                                        stats::num(&Json::Str(part.to_owned()), None)
+                                            .expect("scatter range")
+                                    })
+                                    .collect();
+                                assert_eq!(parts.len(), 2, "scatter range");
+                                return Some((parts[0], parts[1]));
+                            }
                         }
-                    }
-                    None
-                })
+                        None
+                    })
             };
             if let Some((low, high)) = range("Damage per Shot*") {
                 w.damage = high;
@@ -1009,7 +1257,11 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
         "sweeper" => {
             let mut w = weapon(building, "sweeper", "air", 15.0, 1.0, 5.0, 0.0);
             w.extra.push = s(&["Push Strength"], Some(4.0));
-            w.facing = catalog.setup.at("facings").get(mode.unwrap_or("E")).map_or(0.0, Json::f64);
+            w.facing = catalog
+                .setup
+                .at("facings")
+                .get(mode.unwrap_or("E"))
+                .map_or(0.0, Json::f64);
             w
         }
         "bh" => {
@@ -1022,7 +1274,11 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
             w.extra.repair_range = 7.0;
             building.is_defense = true;
             let (x, y) = if battle.battle_mode == "multiplayer" {
-                battle.builder_starts.iter().find(|(key, _)| key == &building.id.0.to_string()).map_or((building.x, building.y), |(_, position)| *position)
+                battle
+                    .builder_starts
+                    .iter()
+                    .find(|(key, _)| key == &building.id.0.to_string())
+                    .map_or((building.x, building.y), |(_, position)| *position)
             } else {
                 (building.x, building.y)
             };
@@ -1046,9 +1302,18 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
             let mut w = weapon(building, "spell_tower", "both", 9.0, 0.0, 70.0, 0.0);
             let mode = mode.filter(|s| !s.is_empty()).unwrap_or("rage");
             let unlocks = catalog.setup.at("spell_tower_unlocks");
-            let required = unlocks.get(mode).unwrap_or_else(|| panic!("Spell Tower mode is not unlocked")).i64();
-            assert!(matches!(level, Level::Int(lv) if lv >= required), "Spell Tower mode is not unlocked");
-            assert!(required != 4 || battle.town_hall >= 17, "Earthquake Spell Towers require Town Hall 17");
+            let required = unlocks
+                .get(mode)
+                .unwrap_or_else(|| panic!("Spell Tower mode is not unlocked"))
+                .i64();
+            assert!(
+                matches!(level, Level::Int(lv) if lv >= required),
+                "Spell Tower mode is not unlocked"
+            );
+            assert!(
+                required != 4 || battle.town_hall >= 17,
+                "Earthquake Spell Towers require Town Hall 17"
+            );
             let profile = catalog
                 .resolved
                 .at("spell_tower_profiles")
@@ -1082,7 +1347,10 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
             w
         }
         "firespitter" => {
-            assert!(matches!(mode, None | Some("N" | "E" | "S" | "W")), "Firespitter facing must be N, E, S or W");
+            assert!(
+                matches!(mode, None | Some("N" | "E" | "S" | "W")),
+                "Firespitter facing must be N, E, S or W"
+            );
             let mut w = weapon(
                 building,
                 "firespitter",
@@ -1132,15 +1400,25 @@ fn attach_weapon(battle: &mut Battle, building: &mut Building) {
     }
     if let Some(capacity) = catalog.setup.at("ammunition").get(&key) {
         let capacity = capacity.i64();
-        let value = battle.defense_ammo.iter().find(|(key, _)| key == &building.id.0.to_string())
-            .or_else(|| battle.defense_ammo.iter().find(|(name, _)| name == &key)).map(|(_, v)| v);
+        let value = battle
+            .defense_ammo
+            .iter()
+            .find(|(key, _)| key == &building.id.0.to_string())
+            .or_else(|| battle.defense_ammo.iter().find(|(name, _)| name == &key))
+            .map(|(_, v)| v);
         let rounds = match value {
             None => capacity,
-            Some(Value::Number(value)) if value.is_finite() && value.fract() == 0.0 => *value as i64,
+            Some(Value::Number(value)) if value.is_finite() && value.fract() == 0.0 => {
+                *value as i64
+            }
             Some(Value::Bool(value)) => i64::from(u8::from(*value)),
             _ => panic!("Illegal {} ammunition", building.name),
         };
-        assert!(0 <= rounds && rounds <= capacity, "Illegal {} ammunition: {rounds}", building.name);
+        assert!(
+            0 <= rounds && rounds <= capacity,
+            "Illegal {} ammunition: {rounds}",
+            building.name
+        );
         w.ammunition = Some(rounds);
     }
     building.weapon = Some(w);
@@ -1150,34 +1428,54 @@ fn gear_up(battle: &Battle, building: &Building, weapon: &mut Weapon) {
     if matches!(building.mode.as_deref(), None | Some("normal")) {
         return;
     }
-    assert!(matches!(building.mode.as_deref(), Some("geared" | "burst" | "fast")), "Unknown {} mode", building.name);
+    assert!(
+        matches!(building.mode.as_deref(), Some("geared" | "burst" | "fast")),
+        "Unknown {} mode",
+        building.name
+    );
     let Level::Int(level) = building.level.as_ref().expect("gear-up level") else {
         panic!("Geared Mortar supercharge eligibility is unresolved");
     };
-    let minimum = battle.catalog.setup.at("gear_minimum").at(&building.key).i64();
-    assert!(*level >= minimum, "{} is below its gear-up level", building.name);
+    let minimum = battle
+        .catalog
+        .setup
+        .at("gear_minimum")
+        .at(&building.key)
+        .i64();
+    assert!(
+        *level >= minimum,
+        "{} is below its gear-up level",
+        building.name
+    );
     match building.key.as_str() {
         "at" => {
             weapon.range = 8.0;
             weapon.interval = 0.25;
-            weapon.damage = battle.catalog.setup.at("gear_archer_shots").arr()[(*level - minimum) as usize].f64();
+            weapon.damage = battle.catalog.setup.at("gear_archer_shots").arr()
+                [(*level - minimum) as usize]
+                .f64();
         }
         "cannon" => {
             weapon.kind = Tag::Burst;
             weapon.range = 7.0;
             weapon.interval = 1.6;
-            weapon.damage = get(battle, &building.name, &Level::Int(*level), &["Damage per Hit**"], None);
+            weapon.damage = get(
+                battle,
+                &building.name,
+                &Level::Int(*level),
+                &["Damage per Hit**"],
+                None,
+            );
             weapon.extra.shots = 4;
             weapon.extra.gap = 0.192;
         }
         _ => {
             weapon.kind = Tag::from("mortar_burst");
             // defense.py:_gear_up: resolved ClashKing/CSV interval and DPS.
-            let row = battle.catalog.game_data(
-                "buildings",
-                &building.name,
-                Some(&Level::Int(*level)),
-            );
+            let row =
+                battle
+                    .catalog
+                    .game_data("buildings", &building.name, Some(&Level::Int(*level)));
             let alternate = battle
                 .catalog
                 .resolved
@@ -1189,8 +1487,7 @@ fn gear_up(battle: &Battle, building: &Building, weapon: &mut Weapon) {
             weapon.extra.gap =
                 crate::catalog::game_required_int(row, "AltBurstDelay") as f64 / 1000.0;
             let cycle = weapon.interval + (weapon.extra.shots - 1) as f64 * weapon.extra.gap;
-            weapon.damage = alternate.at("dps").f64() * cycle
-                / weapon.extra.shots as f64;
+            weapon.damage = alternate.at("dps").f64() * cycle / weapon.extra.shots as f64;
         }
     }
 }
@@ -1198,9 +1495,12 @@ fn gear_up(battle: &Battle, building: &Building, weapon: &mut Weapon) {
 fn attach_crafted(battle: &Battle, building: &mut Building) {
     let catalog = &battle.catalog;
     let crafting = catalog.setup.at("crafting");
-    assert!(battle.crafting_phase == crafting.at("phase").i64()
-        && crafting.at("start").str() <= battle.crafting_date.as_str()
-        && battle.crafting_date.as_str() <= crafting.at("end").str(), "Only crafting phase 4 is supported");
+    assert!(
+        battle.crafting_phase == crafting.at("phase").i64()
+            && crafting.at("start").str() <= battle.crafting_date.as_str()
+            && battle.crafting_date.as_str() <= crafting.at("end").str(),
+        "Only crafting phase 4 is supported"
+    );
     let mode = building.mode.as_deref();
     if matches!(mode, None | Some("none")) {
         building.hp = 1000.0;
@@ -1208,14 +1508,20 @@ fn attach_crafted(battle: &Battle, building: &mut Building) {
         return;
     }
     let mode = mode.expect("crafted mode");
-    assert!(crafting.at("modes").arr().iter().any(|v| v.str() == mode), "Crafted defense is unavailable in phase 4");
+    assert!(
+        crafting.at("modes").arr().iter().any(|v| v.str() == mode),
+        "Crafted defense is unavailable in phase 4"
+    );
     let name = catalog.setup.at("crafted").at(mode).str();
     let mut cap = 1;
     for entry in catalog.stats.record(name).at("levels").arr() {
         if let Json::Num(level) = entry.at("level") {
             let row = catalog.stats.row(name, &Level::Int(*level as i64));
-            let required = row.iter().find(|(key, _)| key == "Town Hall Level Required")
-                .and_then(|(_, v)| stats::num(v, Some(99.0))).unwrap_or(99.0);
+            let required = row
+                .iter()
+                .find(|(key, _)| key == "Town Hall Level Required")
+                .and_then(|(_, v)| stats::num(v, Some(99.0)))
+                .unwrap_or(99.0);
             if required <= battle.town_hall as f64 {
                 cap = cap.max(*level as i64);
             }
@@ -1226,7 +1532,10 @@ fn attach_crafted(battle: &Battle, building: &mut Building) {
     let damage = selected(&battle.defense_levels, "crafting:damage").unwrap_or(level.clone());
     let effect = selected(&battle.defense_levels, "crafting:effect").unwrap_or(level);
     for selected in [&hp, &damage, &effect] {
-        assert!(matches!(selected, Level::Int(level) if 1 <= *level && *level <= cap), "Illegal {name} module level: {selected}");
+        assert!(
+            matches!(selected, Level::Int(level) if 1 <= *level && *level <= cap),
+            "Illegal {name} module level: {selected}"
+        );
     }
     building.name = name.to_owned();
     building.level = Some(damage.clone());
@@ -1236,7 +1545,15 @@ fn attach_crafted(battle: &Battle, building: &mut Building) {
     let e = |keys: &[&str]| get(battle, name, &effect, keys, None);
     let w = match mode {
         "cake" => {
-            let mut w = weapon(building, "cake", "both", 12.0, 3.0, 3.0, s(&["Damage per Hit"]));
+            let mut w = weapon(
+                building,
+                "cake",
+                "both",
+                12.0,
+                3.0,
+                3.0,
+                s(&["Damage per Hit"]),
+            );
             w.extra.splash = 2.5;
             w.extra.bomb = e(&["Explosion Damage"]);
             w.extra.bomb_radius = 2.5;
@@ -1253,7 +1570,15 @@ fn attach_crafted(battle: &Battle, building: &mut Building) {
             w
         }
         _ => {
-            let mut w = weapon(building, "hunter", "both", 9.5, 0.0, 0.6, s(&["Damage per Hit"]));
+            let mut w = weapon(
+                building,
+                "hunter",
+                "both",
+                9.5,
+                0.0,
+                0.6,
+                s(&["Damage per Hit"]),
+            );
             w.extra.poison_level = e(&["Poison Spell Level"]) as usize;
             w.extra.poison_time = 3.0;
             w

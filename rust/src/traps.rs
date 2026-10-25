@@ -369,12 +369,7 @@ pub fn fire_effect(battle: &mut Battle, trap: TrapId) {
                 battle.kill(target);
                 return;
             }
-            let damage = tr.damage
-                * if special {
-                    0.5
-                } else {
-                    1.0
-                };
+            let damage = tr.damage * if special { 0.5 } else { 1.0 };
             battle.hit_unit(target, damage, Some(&src), "trap", None);
             let unit = battle.unit_mut(target);
             if unit.alive && !matches!(unit.kind, Tag::Siege | Tag::SiegeIdle) {
@@ -459,11 +454,7 @@ pub fn spawn_skeleton(battle: &mut Battle, trap: TrapId, x: f64, y: f64) {
     unit.flying = tr.mode.as_deref() == Some("air");
     unit.hits_air = unit.flying;
     unit.hits_ground = !unit.flying;
-    unit.speed = if unit.flying {
-        2.2
-    } else {
-        3.0
-    };
+    unit.speed = if unit.flying { 2.2 } else { 3.0 };
 }
 
 // traps.py:327-345.
@@ -535,7 +526,9 @@ pub fn tornado_tick(battle: &mut Battle, field: &mut Field) {
         if unit.name_id == Name::Totem {
             continue;
         }
-        if matches!(unit.name_id, Name::Miner | Name::SuperMiner | Name::Diggy | Name::BattleDrill
+        if matches!(
+            unit.name_id,
+            Name::Miner | Name::SuperMiner | Name::Diggy | Name::BattleDrill
         ) {
             continue;
         }

@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use crate::fast_hash::FastMap as HashMap;
 use crate::json::{self, Json};
-use crate::labels::{Tag, Special, Specials};
+use crate::labels::{Special, Specials, Tag};
 use crate::load::Node;
 use crate::stats::{Level, Stats};
 
@@ -145,7 +145,12 @@ impl UnitSpec {
             death_delay: n.field("death_delay").number(),
             death_freeze: n.field("death_freeze").optional_string(),
             death_freeze_radius: n.field("death_freeze_radius").number(),
-            death_spawn: n.field("death_spawn").array().iter().map(|v| v.value.clone()).collect(),
+            death_spawn: n
+                .field("death_spawn")
+                .array()
+                .iter()
+                .map(|v| v.value.clone())
+                .collect(),
             special: {
                 let mut specials = Specials::default();
                 for value in n.field("special").array() {
@@ -252,10 +257,9 @@ pub struct Catalog {
 
 impl Catalog {
     pub fn load(path: &Path) -> Result<Self, String> {
-        let text = fs::read_to_string(path)
-            .map_err(|error| format!("{}: {error}", path.display()))?;
-        let value = json::parse(&text)
-            .map_err(|error| format!("{}: {error}", path.display()))?;
+        let text =
+            fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
+        let value = json::parse(&text).map_err(|error| format!("{}: {error}", path.display()))?;
         Ok(Self::from_json(&value, &path.display().to_string()))
     }
 
@@ -282,31 +286,55 @@ impl Catalog {
         ]);
         n.field("note").string();
         let stats = Stats::new(n.field("registry").value.clone());
-        let units = n.field("units").object().into_iter().map(|(name, node)| {
-            node.keys(&["spec", "summon_spec"]);
-            let unit = CatalogUnit {
-                spec: Arc::new(UnitSpec::load(node.field("spec"))),
-                summon_spec: Arc::new(UnitSpec::load(node.field("summon_spec"))),
-            };
-            (name, unit)
-        }).collect();
-        let unit_numbers: HashMap<String, UnitNumbers> = n.field("unit_numbers").object().into_iter()
-            .map(|(name, node)| (name, UnitNumbers::load(node))).collect();
-        let mut integer_unit_numbers: HashMap<String, HashMap<i64, UnitNumbers>> = HashMap::default();
+        let units = n
+            .field("units")
+            .object()
+            .into_iter()
+            .map(|(name, node)| {
+                node.keys(&["spec", "summon_spec"]);
+                let unit = CatalogUnit {
+                    spec: Arc::new(UnitSpec::load(node.field("spec"))),
+                    summon_spec: Arc::new(UnitSpec::load(node.field("summon_spec"))),
+                };
+                (name, unit)
+            })
+            .collect();
+        let unit_numbers: HashMap<String, UnitNumbers> = n
+            .field("unit_numbers")
+            .object()
+            .into_iter()
+            .map(|(name, node)| (name, UnitNumbers::load(node)))
+            .collect();
+        let mut integer_unit_numbers: HashMap<String, HashMap<i64, UnitNumbers>> =
+            HashMap::default();
         for (key, &numbers) in &unit_numbers {
             let Some((name, text)) = key.rsplit_once('|') else {
                 continue;
             };
             if let Ok(level) = text.parse::<i64>() {
                 if level.to_string() == text {
-                    integer_unit_numbers.entry(name.to_owned()).or_default().insert(level, numbers);
+                    integer_unit_numbers
+                        .entry(name.to_owned())
+                        .or_default()
+                        .insert(level, numbers);
                 }
             }
         }
-        let building_types = n.field("building_types").object().into_iter()
+        let building_types = n
+            .field("building_types")
+            .object()
+            .into_iter()
             .map(|(key, node)| {
                 node.require_type("BuildingType");
-                node.keys(&["key", "name", "size", "count", "kind", "counted", "weapon_key"]);
+                node.keys(&[
+                    "key",
+                    "name",
+                    "size",
+                    "count",
+                    "kind",
+                    "counted",
+                    "weapon_key",
+                ]);
                 let item = BuildingType {
                     key: node.field("key").string(),
                     name: node.field("name").string(),
@@ -317,13 +345,26 @@ impl Catalog {
                     weapon_key: node.field("weapon_key").optional_string(),
                 };
                 (key, item)
-            }).collect();
-        let trap_names = n.field("trap_names").object().into_iter()
-            .map(|(key, node)| (key, node.string())).collect();
-        let trap_sizes = n.field("trap_sizes").object().into_iter()
-            .map(|(key, node)| (key, node.usize())).collect();
+            })
+            .collect();
+        let trap_names = n
+            .field("trap_names")
+            .object()
+            .into_iter()
+            .map(|(key, node)| (key, node.string()))
+            .collect();
+        let trap_sizes = n
+            .field("trap_sizes")
+            .object()
+            .into_iter()
+            .map(|(key, node)| (key, node.usize()))
+            .collect();
         let number_map = |field: &str| -> HashMap<String, f64> {
-            n.field(field).object().into_iter().map(|(k, v)| (k, v.number())).collect()
+            n.field(field)
+                .object()
+                .into_iter()
+                .map(|(k, v)| (k, v.number()))
+                .collect()
         };
         Self {
             stats,
@@ -368,7 +409,11 @@ impl Catalog {
     // specs.py:352-386: absent entries are empty; requested levels clamp to rows.
     pub fn game_data(&self, table: &str, name: &str, level: Option<&Level>) -> &Json {
         static EMPTY: Json = Json::Null;
-        let Some(rows) = self.game_data.get(table).and_then(|entries| entries.get(name)) else {
+        let Some(rows) = self
+            .game_data
+            .get(table)
+            .and_then(|entries| entries.get(name))
+        else {
             return &EMPTY;
         };
         if rows.is_empty() {
@@ -410,12 +455,17 @@ impl Catalog {
     // stats.py:192,230-231: rust_export.py exports balance-adjusted unit totals.
     pub fn numbers(&self, name: &str, level: &Level) -> &UnitNumbers {
         if let Level::Int(level) = level {
-            if let Some(numbers) = self.integer_unit_numbers.get(name).and_then(|levels| levels.get(level)) {
+            if let Some(numbers) = self
+                .integer_unit_numbers
+                .get(name)
+                .and_then(|levels| levels.get(level))
+            {
                 return numbers;
             }
         }
         let key = format!("{name}|{level}");
-        self.unit_numbers.get(&key)
+        self.unit_numbers
+            .get(&key)
             .unwrap_or_else(|| panic!("catalog.unit_numbers[{key:?}]: missing unit numbers"))
     }
 
@@ -427,7 +477,8 @@ impl Catalog {
     }
 
     pub fn unit(&self, name: &str) -> &CatalogUnit {
-        self.units.get(name)
+        self.units
+            .get(name)
             .unwrap_or_else(|| panic!("catalog.units[{name:?}]: missing unit spec"))
     }
 }

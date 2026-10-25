@@ -5,12 +5,17 @@ use std::path::Path;
 use crate::json::{self, Json};
 
 pub fn object(entries: impl IntoIterator<Item = (&'static str, Json)>) -> Json {
-    Json::Obj(entries.into_iter().map(|(k, v)| (k.to_owned(), v)).collect())
+    Json::Obj(
+        entries
+            .into_iter()
+            .map(|(k, v)| (k.to_owned(), v))
+            .collect(),
+    )
 }
 
 pub fn read(path: &Path) -> Result<Json, String> {
-    let source = std::fs::read_to_string(path)
-        .map_err(|error| format!("{}: {error}", path.display()))?;
+    let source =
+        std::fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
     json::parse(source.trim_start_matches('\u{feff}')).map_err(|error| error.to_string())
 }
 
@@ -38,11 +43,21 @@ pub fn encode(value: &Json) -> String {
             out.push('"');
             out
         }
-        Json::Arr(values) => format!("[{}]", values.iter().map(encode).collect::<Vec<_>>().join(",")),
+        Json::Arr(values) => format!(
+            "[{}]",
+            values.iter().map(encode).collect::<Vec<_>>().join(",")
+        ),
         Json::Obj(values) => format!(
             "{{{}}}",
-            values.iter().map(|(key, value)| format!("{}:{}", encode(&Json::Str(key.clone())), encode(value)))
-                .collect::<Vec<_>>().join(",")
+            values
+                .iter()
+                .map(|(key, value)| format!(
+                    "{}:{}",
+                    encode(&Json::Str(key.clone())),
+                    encode(value)
+                ))
+                .collect::<Vec<_>>()
+                .join(",")
         ),
     }
 }

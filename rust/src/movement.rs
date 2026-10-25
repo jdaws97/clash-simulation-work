@@ -19,7 +19,13 @@ impl Battle {
             }
             // battle.py:_separate radius(): flyers use the measured base radius
             // (output/dragon-spacing/measure.md); ground keeps the housing term.
-            let radius = |u: &Unit| if u.flying { 0.35 } else { 0.35 + 0.015 * 30.min(u.housing) as f64 };
+            let radius = |u: &Unit| {
+                if u.flying {
+                    0.35
+                } else {
+                    0.35 + 0.015 * 30.min(u.housing) as f64
+                }
+            };
             let ra = radius(ua);
             let mut neighbors = self.attackers_near(ua.x, ua.y, ra + 0.8);
             neighbors.sort_by_key(|unit| unit.id.0);
@@ -160,15 +166,29 @@ impl Battle {
         if matches!(self.unit(reference).kind, Tag::Siege | Tag::SiegeIdle) {
             return &mut self.grid;
         }
-        let active = || self.fields.iter()
-            .filter(|f| f.kind == Tag::Jump && f.started <= self.t && self.t < f.until)
-            .map(|f| (f.identity, f.x.to_bits(), f.y.to_bits(), f.radius.to_bits(), f.started.to_bits()));
+        let active = || {
+            self.fields
+                .iter()
+                .filter(|f| f.kind == Tag::Jump && f.started <= self.t && self.t < f.until)
+                .map(|f| {
+                    (
+                        f.identity,
+                        f.x.to_bits(),
+                        f.y.to_bits(),
+                        f.radius.to_bits(),
+                        f.started.to_bits(),
+                    )
+                })
+        };
         if active().next().is_none() {
             return &mut self.grid;
         }
-        let unchanged = self.jump_grid_key.as_ref().is_some_and(|(version, fields)| {
-            *version == self.grid.version && fields.iter().copied().eq(active())
-        });
+        let unchanged = self
+            .jump_grid_key
+            .as_ref()
+            .is_some_and(|(version, fields)| {
+                *version == self.grid.version && fields.iter().copied().eq(active())
+            });
         if !unchanged {
             let key = (self.grid.version, active().collect());
             let mut grid = Grid::new(self.catalog.world);
@@ -195,7 +215,10 @@ impl Battle {
         } else {
             0.0
         };
-        speed += rage_speed.max(units::haste_speed(u, self.t)).max(horse_speed).max(effects::torch_stats(u, self.t).0);
+        speed += rage_speed
+            .max(units::haste_speed(u, self.t))
+            .max(horse_speed)
+            .max(effects::torch_stats(u, self.t).0);
         speed *= effects::slow_mult(u, self.t, true);
         speed
     }
@@ -268,7 +291,9 @@ impl Battle {
         if next.is_wall {
             if let Some(&wall) = self.wall_indices.get(&(next.x as i32, next.y as i32)) {
                 if self.walls[wall.0].alive {
-                    if self.unit(reference).name_id == Name::RuinWitch && reference.team == Team::Atk {
+                    if self.unit(reference).name_id == Name::RuinWitch
+                        && reference.team == Team::Atk
+                    {
                         self.unit_mut(reference).target = None;
                         return;
                     }

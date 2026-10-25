@@ -28,8 +28,8 @@ pub struct ArmyLibrary {
 }
 
 pub(crate) fn read_json(path: &Path) -> Result<Json, String> {
-    let source = fs::read_to_string(path)
-        .map_err(|error| format!("{}: {error}", path.display()))?;
+    let source =
+        fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
     json::parse(source.trim_start_matches('\u{feff}'))
         .map_err(|error| format!("{}: {error}", path.display()))
 }
@@ -65,7 +65,10 @@ pub(crate) fn remove(value: &mut Json, key: &str) {
 }
 
 pub(crate) fn items(value: &Json, key: &str) -> Vec<(String, Json)> {
-    value.get(key).filter(|v| !v.is_null()).map_or_else(Vec::new, |v| v.obj().to_vec())
+    value
+        .get(key)
+        .filter(|v| !v.is_null())
+        .map_or_else(Vec::new, |v| v.obj().to_vec())
 }
 
 pub(crate) fn list<'a>(value: &'a Json, key: &str) -> &'a [Json] {
@@ -89,12 +92,27 @@ pub(crate) fn python_value(value: &Json) -> String {
 }
 
 pub fn build_id(build: &Json) -> String {
-    format!("{}-{}-{}", build.at("archetype").str(), build.at("th").i64(), build.at("build").i64())
+    format!(
+        "{}-{}-{}",
+        build.at("archetype").str(),
+        build.at("th").i64(),
+        build.at("build").i64()
+    )
 }
 
 pub fn is_siege(name: &str) -> bool {
-    matches!(name, "Log Launcher" | "Sky Wagon" | "Siege Barracks" | "Troop Launcher"
-        | "Stone Slammer" | "Battle Blimp" | "Wall Wrecker" | "Battle Drill" | "Flame Flinger")
+    matches!(
+        name,
+        "Log Launcher"
+            | "Sky Wagon"
+            | "Siege Barracks"
+            | "Troop Launcher"
+            | "Stone Slammer"
+            | "Battle Blimp"
+            | "Wall Wrecker"
+            | "Battle Drill"
+            | "Flame Flinger"
+    )
 }
 
 // meta_armies.py:282-343: explicit archetypes precede signature troop order.
@@ -117,14 +135,26 @@ pub fn family_of(build: &Json) -> Option<&'static str> {
     explicit.or_else(|| {
         let troops = build.get("troops")?;
         [
-            ("Root Rider", "root-rider"), ("Thrower", "thrower"),
-            ("Electro Dragon", "electro-dragon"), ("Super Bowler", "super-bowler"),
-            ("Meteor Golem", "meteor-golem"), ("Super Yeti", "yeti"), ("Yeti", "yeti"),
-            ("Ruin Witch", "druid-ruin-witch"), ("Super Minion", "super-minion-air"),
-            ("Lava Hound", "lavaloon"), ("Dragon", "dragon"), ("Witch", "witch"),
-            ("Electro Titan", "electro-titan"), ("P.E.K.K.A", "pekka"),
-            ("Super Dragon", "super-dragon"), ("Dragon Rider", "dragon-rider"),
-        ].into_iter().find(|(name, _)| number(troops, name, 0.0) >= 2.0).map(|(_, family)| family)
+            ("Root Rider", "root-rider"),
+            ("Thrower", "thrower"),
+            ("Electro Dragon", "electro-dragon"),
+            ("Super Bowler", "super-bowler"),
+            ("Meteor Golem", "meteor-golem"),
+            ("Super Yeti", "yeti"),
+            ("Yeti", "yeti"),
+            ("Ruin Witch", "druid-ruin-witch"),
+            ("Super Minion", "super-minion-air"),
+            ("Lava Hound", "lavaloon"),
+            ("Dragon", "dragon"),
+            ("Witch", "witch"),
+            ("Electro Titan", "electro-titan"),
+            ("P.E.K.K.A", "pekka"),
+            ("Super Dragon", "super-dragon"),
+            ("Dragon Rider", "dragon-rider"),
+        ]
+        .into_iter()
+        .find(|(name, _)| number(troops, name, 0.0) >= 2.0)
+        .map(|(_, family)| family)
     })
 }
 
@@ -148,7 +178,8 @@ impl ArmyLibrary {
                     META_FILE
                 } else {
                     "observed-armies.json"
-                }.to_owned(),
+                }
+                .to_owned(),
                 id: build_id(&value),
                 value,
             });
@@ -178,15 +209,21 @@ impl ArmyLibrary {
 
     pub fn build_by_id(&self, id: &str) -> Result<&Json, String> {
         let id = id.strip_prefix("meta:").unwrap_or(id);
-        self.builds.iter().find(|build| build.id == id).map(|build| &build.value)
+        self.builds
+            .iter()
+            .find(|build| build.id == id)
+            .map(|build| &build.value)
             .ok_or_else(|| format!("Unknown army build {id}"))
     }
 
     // policy.py:45-47: empty per-army entries fall back to '*'.
     pub fn policy_for(&self, archetype: &str) -> Json {
-        self.policy.get(archetype).filter(|value| !archetype.starts_with('_') && truth(value))
+        self.policy
+            .get(archetype)
+            .filter(|value| !archetype.starts_with('_') && truth(value))
             .or_else(|| self.policy.get("*").filter(|value| truth(value)))
-            .cloned().unwrap_or_else(object)
+            .cloned()
+            .unwrap_or_else(object)
     }
 }
 
@@ -198,21 +235,27 @@ pub fn fill_missing_cc(builds: &mut [Json], stats: &Stats) -> Result<(), String>
             continue;
         }
         let build = &builds[index];
-        let donor = builds.iter().enumerate()
-            .filter(|(other, value)| *other != index && value.get("archetype") == build
-            .get("archetype") && flag(value, "cc"))
-            .min_by_key(|(_, value)| ((value.at("th").i64() - build.at("th").i64()).abs(), -value
-            .at("th").i64(), value.at("build").i64()))
+        let donor = builds
+            .iter()
+            .enumerate()
+            .filter(|(other, value)| {
+                *other != index
+                    && value.get("archetype") == build.get("archetype")
+                    && flag(value, "cc")
+            })
+            .min_by_key(|(_, value)| {
+                (
+                    (value.at("th").i64() - build.at("th").i64()).abs(),
+                    -value.at("th").i64(),
+                    value.at("build").i64(),
+                )
+            })
             .map(|(_, value)| value.clone());
         let Some(donor) = donor else {
             continue;
         };
         let mut cc = object();
-        let mut room = if build.at("th").i64() == 18 {
-            4
-        } else {
-            3
-        };
+        let mut room = if build.at("th").i64() == 18 { 4 } else { 3 };
         for (name, amount) in donor.at("cc").obj() {
             let mut count = amount.i64();
             if spell_key(name).is_some() {
@@ -229,7 +272,11 @@ pub fn fill_missing_cc(builds: &mut [Json], stats: &Stats) -> Result<(), String>
             put(&mut cc, name, Json::Num(count as f64));
         }
         put(&mut builds[index], "cc", cc);
-        put(&mut builds[index], "cc_assumed_from", string(&build_id(&donor)));
+        put(
+            &mut builds[index],
+            "cc_assumed_from",
+            string(&build_id(&donor)),
+        );
     }
     Ok(())
 }
@@ -247,7 +294,10 @@ pub fn default_loadout(hero: &str) -> Option<Json> {
     Some(Json::Obj(vec![
         ("$type".to_owned(), string("HeroLoadout")),
         ("hero".to_owned(), string(hero)),
-        ("equipment".to_owned(), array(equipment.into_iter().map(string))),
+        (
+            "equipment".to_owned(),
+            array(equipment.into_iter().map(string)),
+        ),
         ("pet".to_owned(), string(pet)),
     ]))
 }
@@ -263,22 +313,34 @@ pub fn loadouts(build: &Json, heroes: &[Json]) -> Result<Json, String> {
     for (hero, spec) in items(build, "loadouts") {
         let spec = spec.arr();
         if spec.len() > 3 {
-            return Err(format!("Too many loadout entries for {hero}: {}", spec.len()));
+            return Err(format!(
+                "Too many loadout entries for {hero}: {}",
+                spec.len()
+            ));
         }
-        put(&mut out, &hero, Json::Obj(vec![
-            ("$type".to_owned(), string("HeroLoadout")),
-            ("hero".to_owned(), string(&hero)),
-            ("equipment".to_owned(), array(spec.iter().take(2).filter(|value| truth(value)).cloned())),
-            ("pet".to_owned(), spec.get(2).cloned().unwrap_or(Json::Null)),
-        ]));
+        put(
+            &mut out,
+            &hero,
+            Json::Obj(vec![
+                ("$type".to_owned(), string("HeroLoadout")),
+                ("hero".to_owned(), string(&hero)),
+                (
+                    "equipment".to_owned(),
+                    array(spec.iter().take(2).filter(|value| truth(value)).cloned()),
+                ),
+                ("pet".to_owned(), spec.get(2).cloned().unwrap_or(Json::Null)),
+            ]),
+        );
     }
     Ok(out)
 }
 
 fn wave(units: Vec<Json>, spread: f64) -> Json {
     Json::Obj(vec![
-        ("$type".to_owned(), string("Wave")), ("group".to_owned(), string("main")),
-        ("units".to_owned(), Json::Arr(units)), ("spread".to_owned(), Json::Num(spread)),
+        ("$type".to_owned(), string("Wave")),
+        ("group".to_owned(), string("main")),
+        ("units".to_owned(), Json::Arr(units)),
+        ("spread".to_owned(), Json::Num(spread)),
     ])
 }
 
@@ -287,31 +349,82 @@ pub(crate) fn empty_plan() -> Json {
     let mut plan = object();
     put(&mut plan, "$type", string("AttackPlan"));
     for (key, value) in [
-        ("angle", 0.0), ("town_hall", 18.0), ("seed", 0.0), ("main_min", 8.0),
-        ("main_max", 22.0), ("strength", 1.0), ("revive_delay", 1.5),
-        ("charge_lat", 0.0), ("charge_at", 0.0), ("charge_recall_hp", 0.35),
-        ("charge_len", 25.0), ("split_main", 0.0), ("_next_brain", 0.0),
-        ("_main_at", 0.0), ("_charge_n", 0.0), ("_distracts", 0.0),
+        ("angle", 0.0),
+        ("town_hall", 18.0),
+        ("seed", 0.0),
+        ("main_min", 8.0),
+        ("main_max", 22.0),
+        ("strength", 1.0),
+        ("revive_delay", 1.5),
+        ("charge_lat", 0.0),
+        ("charge_at", 0.0),
+        ("charge_recall_hp", 0.35),
+        ("charge_len", 25.0),
+        ("split_main", 0.0),
+        ("_next_brain", 0.0),
+        ("_main_at", 0.0),
+        ("_charge_n", 0.0),
+        ("_distracts", 0.0),
     ] {
         put(&mut plan, key, Json::Num(value));
     }
-    for key in ["funnel_heroes", "flank", "main", "support", "push_heroes", "cleanup", "breakers",
-        "cc_troops", "freeze_first", "recalled", "_cast_log", "_totem_casts", "_later", "_spell_stock"] {
+    for key in [
+        "funnel_heroes",
+        "flank",
+        "main",
+        "support",
+        "push_heroes",
+        "cleanup",
+        "breakers",
+        "cc_troops",
+        "freeze_first",
+        "recalled",
+        "_cast_log",
+        "_totem_casts",
+        "_later",
+        "_spell_stock",
+    ] {
         put(&mut plan, key, Json::Arr(Vec::new()));
     }
-    for key in ["cc_spells", "spells", "loadouts", "troop_levels", "spell_levels",
-        "cc_spell_levels", "event_ruleset", "equipment_levels", "pet_levels", "hero_levels", "pol", "_spells0", "_cc_spells0"] {
+    for key in [
+        "cc_spells",
+        "spells",
+        "loadouts",
+        "troop_levels",
+        "spell_levels",
+        "cc_spell_levels",
+        "event_ruleset",
+        "equipment_levels",
+        "pet_levels",
+        "hero_levels",
+        "pol",
+        "_spells0",
+        "_cc_spells0",
+    ] {
         put(&mut plan, key, object());
     }
-    for key in ["siege", "spell_factory_level", "dark_spell_factory_level", "laboratory_level",
-        "clan_castle_level", "charge_hero", "_entry"] {
+    for key in [
+        "siege",
+        "spell_factory_level",
+        "dark_spell_factory_level",
+        "laboratory_level",
+        "clan_castle_level",
+        "charge_hero",
+        "_entry",
+    ] {
         put(&mut plan, key, Json::Null);
     }
     for key in ["ground", "auto_ability_on_ko", "auto_revive"] {
         put(&mut plan, key, Json::Bool(true));
     }
-    for key in ["siege_donated", "account_equipment", "recall_funnel", "_zap_done", "_cc_released",
-        "_lured"] {
+    for key in [
+        "siege_donated",
+        "account_equipment",
+        "recall_funnel",
+        "_zap_done",
+        "_cc_released",
+        "_lured",
+    ] {
         put(&mut plan, key, Json::Bool(false));
     }
     put(&mut plan, "label", string("attack"));
@@ -329,7 +442,8 @@ pub(crate) fn init_spells(plan: &mut Json, brewed: Json, donated: Json) {
                 ("$type".to_owned(), string("SpellStock")),
                 ("name".to_owned(), string(spell_name(key))),
                 ("origin".to_owned(), string(origin)),
-                ("remaining".to_owned(), count.clone()), ("level".to_owned(), Json::Null),
+                ("remaining".to_owned(), count.clone()),
+                ("level".to_owned(), Json::Null),
             ]));
         }
     }
@@ -357,8 +471,12 @@ pub fn compose(
     for key in ["troops", "cc", "spells"] {
         for (name, count) in items(build, key) {
             if !matches!(count, Json::Num(value) if value.is_finite() && value >= 0.0 && value
-                .fract() == 0.0 && value <= i32::MAX as f64) {
-                return Err(format!("Invalid count for {name}: {}", python_value(&count)));
+                .fract() == 0.0 && value <= i32::MAX as f64)
+            {
+                return Err(format!(
+                    "Invalid count for {name}: {}",
+                    python_value(&count)
+                ));
             }
             if stats.registry.get(&name).is_none() {
                 return Err(format!("Unknown unit or spell: {name}"));
@@ -379,8 +497,12 @@ pub fn compose(
     }
     let mut troops = Json::Obj(items(build, "troops"));
     let cc = Json::Obj(items(build, "cc"));
-    let siege = troops.obj().iter().chain(cc.obj())
-        .find(|(name, count)| is_siege(name) && truth(count)).map(|(name, _)| name.clone());
+    let siege = troops
+        .obj()
+        .iter()
+        .chain(cc.obj())
+        .find(|(name, count)| is_siege(name) && truth(count))
+        .map(|(name, _)| name.clone());
     if let Some(name) = &siege {
         remove(&mut troops, name);
     }
@@ -398,12 +520,26 @@ pub fn compose(
     }
     let mut spells = object();
     for (name, count) in build.at("spells").obj() {
-        put(&mut spells, spell_key(name).expect("validated spell name"), count.clone());
+        put(
+            &mut spells,
+            spell_key(name).expect("validated spell name"),
+            count.clone(),
+        );
     }
-    let default_funnel: Vec<Json> = ["Barbarian King", "Dragon Duke", "Royal Champion"].into_iter()
-        .filter(|name| heroes.contains(&string(name))).take(2).map(string).collect();
-    let funnel = build.get("funnel").map_or(default_funnel.as_slice(), Json::arr);
-    let default_push: Vec<Json> = heroes.iter().filter(|hero| !funnel.contains(hero)).cloned().collect();
+    let default_funnel: Vec<Json> = ["Barbarian King", "Dragon Duke", "Royal Champion"]
+        .into_iter()
+        .filter(|name| heroes.contains(&string(name)))
+        .take(2)
+        .map(string)
+        .collect();
+    let funnel = build
+        .get("funnel")
+        .map_or(default_funnel.as_slice(), Json::arr);
+    let default_push: Vec<Json> = heroes
+        .iter()
+        .filter(|hero| !funnel.contains(hero))
+        .cloned()
+        .collect();
     let push = build.get("push").map_or(default_push.as_slice(), Json::arr);
     let mut assigned: Vec<&str> = funnel.iter().chain(push).map(Json::str).collect();
     let mut roster: Vec<&str> = heroes.iter().map(Json::str).collect();
@@ -413,10 +549,16 @@ pub fn compose(
         return Err("Hero roles must assign each build hero exactly once".to_owned());
     }
     let housing = |name: &str| number(stats.attrs(name), "housing", 1.0).max(1.0) as i64;
-    let bulk = troops.obj().iter().enumerate().max_by_key(|(index, (name, count))| (count
-        .i64() * housing(name), std::cmp::Reverse(*index))).map(|(_, (name, _))| name.as_str());
-    let (mut flank, mut main, mut support, mut cleanup, mut breakers) = (Vec::new(), Vec::new(),
-        Vec::new(), Vec::new(), Vec::new());
+    let bulk = troops
+        .obj()
+        .iter()
+        .enumerate()
+        .max_by_key(|(index, (name, count))| {
+            (count.i64() * housing(name), std::cmp::Reverse(*index))
+        })
+        .map(|(_, (name, _))| name.as_str());
+    let (mut flank, mut main, mut support, mut cleanup, mut breakers) =
+        (Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new());
     let mut lateral = -4.0;
     let (mut air_space, mut main_space) = (0_i64, 0_i64);
     for (name, count) in troops.obj() {
@@ -425,11 +567,14 @@ pub fn compose(
             support.push(pair);
         } else if matches!(name.as_str(), "Wall Breaker" | "Super Wall Breaker") {
             breakers.push(pair);
-        } else if matches!(name.as_str(), "Archer" | "Minion" | "Barbarian" | "Goblin") && Some(name
-            .as_str()) != bulk {
+        } else if matches!(name.as_str(), "Archer" | "Minion" | "Barbarian" | "Goblin")
+            && Some(name.as_str()) != bulk
+        {
             cleanup.push(pair);
-        } else if matches!(name.as_str(), "Balloon" | "Baby Dragon" | "Rocket Balloon") && Some(name
-            .as_str()) != bulk && count.i64() <= 6 {
+        } else if matches!(name.as_str(), "Balloon" | "Baby Dragon" | "Rocket Balloon")
+            && Some(name.as_str()) != bulk
+            && count.i64() <= 6
+        {
             flank.push(array([string(name), count.clone(), Json::Num(lateral)]));
             lateral = -lateral;
         } else {
@@ -449,61 +594,91 @@ pub fn compose(
     }
     let evidence = match build.get("three_star") {
         None | Some(Json::Null) => "observed, uncalibrated".to_owned(),
-        Some(rate) => format!("real 3* {:.0}%", crate::geom::round_half_even(rate.f64() * 100.0)),
+        Some(rate) => format!(
+            "real 3* {:.0}%",
+            crate::geom::round_half_even(rate.f64() * 100.0)
+        ),
     };
-    for (key, value) in [("angle", angle), ("town_hall", th as f64), ("seed", seed as f64),
-        ("main_min", if air {
-        10.0
-    } else {
-        8.0
-    }), ("main_max", if air {
-        20.0
-    } else {
-        18.0
-    })] {
+    for (key, value) in [
+        ("angle", angle),
+        ("town_hall", th as f64),
+        ("seed", seed as f64),
+        ("main_min", if air { 10.0 } else { 8.0 }),
+        ("main_max", if air { 20.0 } else { 18.0 }),
+    ] {
         put(&mut plan, key, Json::Num(value));
     }
-    put(&mut plan, "label", string(&format!("{} #{} (TH{th}, {evidence})", build.at("archetype")
-        .str(), build.at("build").i64())));
-    put(&mut plan, "funnel_heroes", array(funnel.iter().enumerate().map(|(index, hero)| array([hero
-        .clone(), Json::Num(if index == 0 {
-        -6.0
-    } else {
-        6.0
-    })]))));
+    put(
+        &mut plan,
+        "label",
+        string(&format!(
+            "{} #{} (TH{th}, {evidence})",
+            build.at("archetype").str(),
+            build.at("build").i64()
+        )),
+    );
+    put(
+        &mut plan,
+        "funnel_heroes",
+        array(funnel.iter().enumerate().map(|(index, hero)| {
+            array([hero.clone(), Json::Num(if index == 0 { -6.0 } else { 6.0 })])
+        })),
+    );
     put(&mut plan, "push_heroes", array(push.iter().cloned()));
     put(&mut plan, "flank", Json::Arr(flank));
-    put(&mut plan, "main", array([wave(main, if air {
-        3.0
-    } else {
-        2.5
-    })]));
-    put(&mut plan, "support", if support.is_empty() {
-        array([])
-    } else {
-        array([wave(support, 1.0)])
-    });
+    put(
+        &mut plan,
+        "main",
+        array([wave(main, if air { 3.0 } else { 2.5 })]),
+    );
+    put(
+        &mut plan,
+        "support",
+        if support.is_empty() {
+            array([])
+        } else {
+            array([wave(support, 1.0)])
+        },
+    );
     put(&mut plan, "cleanup", Json::Arr(cleanup));
     put(&mut plan, "breakers", Json::Arr(breakers));
     put(&mut plan, "ground", Json::Bool(!air));
-    put(&mut plan, "siege", siege.as_deref().map_or(Json::Null, string));
-    put(&mut plan, "siege_donated", Json::Bool(siege.as_ref().is_some_and(|name| build.at("troops")
-        .get(name).is_none())));
+    put(
+        &mut plan,
+        "siege",
+        siege.as_deref().map_or(Json::Null, string),
+    );
+    put(
+        &mut plan,
+        "siege_donated",
+        Json::Bool(
+            siege
+                .as_ref()
+                .is_some_and(|name| build.at("troops").get(name).is_none()),
+        ),
+    );
     put(&mut plan, "cc_troops", Json::Arr(cc_troops));
     put(&mut plan, "loadouts", loadouts(build, heroes)?);
     let lightning = number(&spells, "lightning", 0.0) + number(&cc_spells, "lightning", 0.0);
-    put(&mut plan, "zap_ad", array([Json::Num(if lightning >= 3.0 {
-        lightning
-    } else {
-        0.0
-    }), Json::Num(0.0)]));
+    put(
+        &mut plan,
+        "zap_ad",
+        array([
+            Json::Num(if lightning >= 3.0 { lightning } else { 0.0 }),
+            Json::Num(0.0),
+        ]),
+    );
     init_spells(&mut plan, spells, cc_spells);
     put(&mut plan, "observed", Json::Bool(flag(build, "observed")));
     put(&mut plan, "build_id", string(&build_id(build)));
     if flag(build, "own_levels") || text(build, "archetype", "").starts_with("user-") {
         put(&mut plan, "account_equipment", Json::Bool(true));
         for key in ["hero_levels", "equipment_levels", "pet_levels"] {
-            put(&mut plan, key, library.user.get(key).cloned().unwrap_or_else(object));
+            put(
+                &mut plan,
+                key,
+                library.user.get(key).cloned().unwrap_or_else(object),
+            );
         }
         let mut troop_levels = object();
         let mut spell_levels = object();
@@ -529,10 +704,17 @@ pub fn compose(
         }
         put(&mut plan, "troop_levels", troop_levels);
         put(&mut plan, "spell_levels", spell_levels);
-        for (attribute, key) in [("clan_castle_level", "cc"), ("laboratory_level", "lab"),
-            ("dark_spell_factory_level", "dsf"), ("spell_factory_level", "sf")] {
-            if let Some(value @ Json::Num(_)) = library.user.get("levels").and_then(|levels| levels
-                .get(key)) {
+        for (attribute, key) in [
+            ("clan_castle_level", "cc"),
+            ("laboratory_level", "lab"),
+            ("dark_spell_factory_level", "dsf"),
+            ("spell_factory_level", "sf"),
+        ] {
+            if let Some(value @ Json::Num(_)) = library
+                .user
+                .get("levels")
+                .and_then(|levels| levels.get(key))
+            {
                 put(&mut plan, attribute, value.clone());
             }
         }

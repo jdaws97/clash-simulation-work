@@ -176,16 +176,15 @@ impl Session {
             return;
         };
         let job_wall = job.started.elapsed();
-        let (battle_wall, battle_fields_wall) = job.battle_started.map_or(
-            (Duration::ZERO, Duration::ZERO),
-            |(started, measured)| {
-                let finished = job.battle_finished.unwrap_or_else(Instant::now);
-                (
-                    finished.duration_since(started),
-                    job.measured.saturating_sub(measured),
-                )
-            },
-        );
+        let (battle_wall, battle_fields_wall) =
+            job.battle_started
+                .map_or((Duration::ZERO, Duration::ZERO), |(started, measured)| {
+                    let finished = job.battle_finished.unwrap_or_else(Instant::now);
+                    (
+                        finished.duration_since(started),
+                        job.measured.saturating_sub(measured),
+                    )
+                });
         // One lock per completed job, never per query or frontier pop.
         let mut summary = self
             .summary
@@ -203,7 +202,9 @@ impl Session {
             total.battle_distinct_initial += counters.battle_distinct_initial;
         }
         for (row, version, key) in job.initial_fields {
-            summary.initial_fields.insert((job.layout, row, version, key));
+            summary
+                .initial_fields
+                .insert((job.layout, row, version, key));
         }
         summary.jobs.push(JobResult {
             index: job.index,
@@ -266,11 +267,7 @@ impl Session {
             );
         }
         let battle_wall: Duration = summary.jobs.iter().map(|job| job.battle_wall).sum();
-        let battle_fields: Duration = summary
-            .jobs
-            .iter()
-            .map(|job| job.battle_fields_wall)
-            .sum();
+        let battle_fields: Duration = summary.jobs.iter().map(|job| job.battle_fields_wall).sum();
         let initial_wall: Duration = summary
             .rows
             .iter()

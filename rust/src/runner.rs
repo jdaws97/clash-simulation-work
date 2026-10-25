@@ -33,7 +33,10 @@ impl Job {
             options: Json::Obj(vec![
                 ("seed".to_owned(), Json::Num(seed as f64)),
                 ("town_hall".to_owned(), Json::Num(town_hall as f64)),
-                ("modifier".to_owned(), modifier.map_or(Json::Null, Json::Str)),
+                (
+                    "modifier".to_owned(),
+                    modifier.map_or(Json::Null, Json::Str),
+                ),
             ]),
         }
     }

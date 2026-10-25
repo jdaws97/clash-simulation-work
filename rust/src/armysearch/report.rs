@@ -24,7 +24,10 @@ pub fn checkpoint(path: &Path, identity: &str, state: &SearchState) -> Result<()
     let pending = path.with_extension("json.pending");
     let backup = path.with_extension("json.bak");
     write(&pending, &value)?;
-    std::fs::OpenOptions::new().write(true).open(&pending).and_then(|file| file.sync_all())
+    std::fs::OpenOptions::new()
+        .write(true)
+        .open(&pending)
+        .and_then(|file| file.sync_all())
         .map_err(|error| error.to_string())?;
     if path.exists() {
         if backup.exists() {
@@ -42,13 +45,11 @@ pub fn resume(
     account: &AccountRules,
 ) -> Result<SearchState, String> {
     let backup = path.with_extension("json.bak");
-    let path = if path.exists() {
-        path
-    } else {
-        &backup
-    };
+    let path = if path.exists() { path } else { &backup };
     let value = read(path)?;
-    if value.at("version").usize() != CHECKPOINT_VERSION || text(&value, "input_identity", "") != identity {
+    if value.at("version").usize() != CHECKPOINT_VERSION
+        || text(&value, "input_identity", "") != identity
+    {
         return Err("checkpoint version or inputs differ (account, catalog, targets, compiler, seed, batch, budgets, objective, immigrant fractions, families, programs)".to_owned());
     }
     SearchState::from_json(value.at("development"), objective, account)
@@ -62,7 +63,8 @@ pub fn input_identity(
 ) -> Result<String, String> {
     let mut signatures = Vec::new();
     for path in input_files(root, catalog)? {
-        let content = std::fs::read(&path).map_err(|error| format!("{}: {error}", path.display()))?;
+        let content =
+            std::fs::read(&path).map_err(|error| format!("{}: {error}", path.display()))?;
         signatures.push(file_signature(root, &path, &content));
     }
     // Include complete layouts: target paths may be outside the repository.
@@ -70,11 +72,30 @@ pub fn input_identity(
         ("settings", settings.clone()),
         ("files", Json::Arr(signatures)),
         ("manifest", manifest.to_json()),
-        ("layouts", Json::Arr(manifest.targets.iter().map(|target| target.layout.clone()).collect())),
-        ("environment", Json::Arr(["BASELAB_GAPS", "BASELAB_PACE"].iter().map(|key| object([
-            ("name", string(*key)),
-            ("value", std::env::var(key).map_or(Json::Null, string)),
-        ])).collect())),
+        (
+            "layouts",
+            Json::Arr(
+                manifest
+                    .targets
+                    .iter()
+                    .map(|target| target.layout.clone())
+                    .collect(),
+            ),
+        ),
+        (
+            "environment",
+            Json::Arr(
+                ["BASELAB_GAPS", "BASELAB_PACE"]
+                    .iter()
+                    .map(|key| {
+                        object([
+                            ("name", string(*key)),
+                            ("value", std::env::var(key).map_or(Json::Null, string)),
+                        ])
+                    })
+                    .collect(),
+            ),
+        ),
     ])))
 }
 
@@ -146,7 +167,10 @@ pub(super) fn fingerprint_proof(
                 path.display(),
             ));
         }
-        let index = paths.iter().position(|candidate| candidate == path).unwrap();
+        let index = paths
+            .iter()
+            .position(|candidate| candidate == path)
+            .unwrap();
         let mut content = std::fs::read(path).map_err(|error| error.to_string())?;
         // Exercise a legal virtual timing change for playbooks, and a valid
         // JSON whitespace edit for other files, without touching shared data.
@@ -170,7 +194,9 @@ pub(super) fn fingerprint_proof(
         files[index] = file_signature(root, path, &content);
         crate::armies::put(&mut changed, "files", Json::Arr(files));
         if encode(&changed) == identity {
-            return Err("armysearch-proof: changed compiler input retained checkpoint identity".to_owned());
+            return Err(
+                "armysearch-proof: changed compiler input retained checkpoint identity".to_owned(),
+            );
         }
     }
     Ok(object([
@@ -190,8 +216,12 @@ fn collect(
         if path.is_dir() && recursive {
             collect(&path, paths, true)?;
         }
-        if path.is_file() && matches!(path.extension().and_then(|value| value
-            .to_str()), Some("json" | "rs")) {
+        if path.is_file()
+            && matches!(
+                path.extension().and_then(|value| value.to_str()),
+                Some("json" | "rs")
+            )
+        {
             paths.push(path);
         }
     }
@@ -199,10 +229,19 @@ fn collect(
 }
 
 pub fn frozen_selection(path: &Path, elites: &[Elite]) -> Result<(), String> {
-    write(path, &object([
-        ("selection_source", string("confirmation on search split only; order frozen before holdout")),
-        ("armies", Json::Arr(elites.iter().map(|elite| elite.genome.to_json()).collect())),
-    ]))
+    write(
+        path,
+        &object([
+            (
+                "selection_source",
+                string("confirmation on search split only; order frozen before holdout"),
+            ),
+            (
+                "armies",
+                Json::Arr(elites.iter().map(|elite| elite.genome.to_json()).collect()),
+            ),
+        ]),
+    )
 }
 
 fn uncertainty(manifest: &TargetManifest, estimate: &CandidateEstimate, seed: u64) -> Json {
@@ -227,7 +266,11 @@ fn uncertainty(manifest: &TargetManifest, estimate: &CandidateEstimate, seed: u6
     let mut cluster_bootstrap = Vec::new();
     let mut sparse_strata = Vec::new();
     for th in 16..=18 {
-        let count = estimate.bases.iter().filter(|base| manifest.targets[base.target].town_hall == th).count();
+        let count = estimate
+            .bases
+            .iter()
+            .filter(|base| manifest.targets[base.target].town_hall == th)
+            .count();
         if count == 1 {
             sparse_strata.push(Json::Num(th as f64));
         }
@@ -236,11 +279,18 @@ fn uncertainty(manifest: &TargetManifest, estimate: &CandidateEstimate, seed: u6
         let mut total = 0.0;
         let mut total_weight = 0.0;
         for th in 16..=18 {
-            let stratum: Vec<_> = estimate.bases.iter().filter(|base| manifest.targets[base.target].town_hall == th).collect();
+            let stratum: Vec<_> = estimate
+                .bases
+                .iter()
+                .filter(|base| manifest.targets[base.target].town_hall == th)
+                .collect();
             if stratum.is_empty() {
                 continue;
             }
-            let stratum_weight: f64 = stratum.iter().map(|base| manifest.targets[base.target].weight).sum();
+            let stratum_weight: f64 = stratum
+                .iter()
+                .map(|base| manifest.targets[base.target].weight)
+                .sum();
             let mut sampled_weight = 0.0;
             let mut sampled_total = 0.0;
             for _ in &stratum {
@@ -283,24 +333,32 @@ fn uncertainty(manifest: &TargetManifest, estimate: &CandidateEstimate, seed: u6
 
 pub fn stage_report(manifest: &TargetManifest, estimate: &CandidateEstimate, seed: u64) -> Json {
     let mut result = estimate.to_json();
-    let per_base = estimate.bases.iter().map(|base| {
-        let target = &manifest.targets[base.target];
-        object([
-            ("base", string(&target.id)),
-            ("split", string(target.split.name())),
-            ("town_hall", Json::Num(target.town_hall as f64)),
-            ("weight", Json::Num(target.weight)),
-            ("provenance", string(&target.provenance)),
-            ("lineage", string(&target.lineage)),
-            ("metrics", base.metrics.to_json()),
-            ("groups", number(base.groups.len())),
-            ("seed_group_standard_error", Json::Num(base.standard_error)),
-        ])
-    }).collect();
+    let per_base = estimate
+        .bases
+        .iter()
+        .map(|base| {
+            let target = &manifest.targets[base.target];
+            object([
+                ("base", string(&target.id)),
+                ("split", string(target.split.name())),
+                ("town_hall", Json::Num(target.town_hall as f64)),
+                ("weight", Json::Num(target.weight)),
+                ("provenance", string(&target.provenance)),
+                ("lineage", string(&target.lineage)),
+                ("metrics", base.metrics.to_json()),
+                ("groups", number(base.groups.len())),
+                ("seed_group_standard_error", Json::Num(base.standard_error)),
+            ])
+        })
+        .collect();
     crate::armies::put(&mut result, "per_base", Json::Arr(per_base));
     let mut th_rows = Vec::new();
     for th in 16..=18 {
-        let bases: Vec<_> = estimate.bases.iter().filter(|base| manifest.targets[base.target].town_hall == th).collect();
+        let bases: Vec<_> = estimate
+            .bases
+            .iter()
+            .filter(|base| manifest.targets[base.target].town_hall == th)
+            .collect();
         if bases.is_empty() {
             continue;
         }
@@ -323,7 +381,11 @@ pub fn stage_report(manifest: &TargetManifest, estimate: &CandidateEstimate, see
         ]));
     }
     crate::armies::put(&mut result, "per_town_hall", Json::Arr(th_rows));
-    crate::armies::put(&mut result, "uncertainty", uncertainty(manifest, estimate, seed));
+    crate::armies::put(
+        &mut result,
+        "uncertainty",
+        uncertainty(manifest, estimate, seed),
+    );
     let mut tail = Vec::new();
     for base in &estimate.bases {
         let weight = manifest.targets[base.target].weight / base.groups.len() as f64;
@@ -337,7 +399,11 @@ pub fn stage_report(manifest: &TargetManifest, estimate: &CandidateEstimate, see
     for (trophies, sample_weight) in tail {
         cumulative += sample_weight;
         if cumulative >= weight * 0.1 {
-            crate::armies::put(&mut result, "weighted_seed_group_trophies_p10", Json::Num(trophies));
+            crate::armies::put(
+                &mut result,
+                "weighted_seed_group_trophies_p10",
+                Json::Num(trophies),
+            );
             break;
         }
     }
@@ -382,7 +448,9 @@ pub fn validate_resumed(
 ) -> Result<(), String> {
     for elite in state.archive.values().flatten() {
         validate(&elite.genome)?;
-        if elite.quick.stage != super::score::Stage::Quick || elite.confirm.stage != super::score::Stage::Confirm {
+        if elite.quick.stage != super::score::Stage::Quick
+            || elite.confirm.stage != super::score::Stage::Confirm
+        {
             return Err("checkpoint archive contains a nondevelopment score".to_owned());
         }
     }
@@ -392,8 +460,21 @@ pub fn validate_resumed(
 pub fn archive_json(state: &SearchState) -> Json {
     object([
         ("cell_capacity", number(super::search::CELL_CAPACITY)),
-        ("cells", Json::Obj(state.archive.iter().map(|(cell, elites)| (cell
-            .clone(), Json::Arr(elites.iter().map(Elite::to_json).collect()))).collect())),
+        (
+            "cells",
+            Json::Obj(
+                state
+                    .archive
+                    .iter()
+                    .map(|(cell, elites)| {
+                        (
+                            cell.clone(),
+                            Json::Arr(elites.iter().map(Elite::to_json).collect()),
+                        )
+                    })
+                    .collect(),
+            ),
+        ),
         ("completed_batches", number(state.completed_batches)),
         ("assessments", number(state.assessments)),
         ("logical_battles", number(state.logical_battles)),

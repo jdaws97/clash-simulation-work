@@ -8,8 +8,8 @@ use crate::combat::SplashUnitsOptions;
 use crate::geom::{dist, py_hypot};
 use crate::labels::{Name, Tag};
 use crate::state::{
-    Battle, BuildingId, EntityRef, Field, Pending, PoisonConfig, Team, Unit, UnitRef,
-    Weapon, WeaponTrigger,
+    Battle, BuildingId, EntityRef, Field, Pending, PoisonConfig, Team, Unit, UnitRef, Weapon,
+    WeaponTrigger,
 };
 use crate::stats::Level;
 use crate::{effects, geom, spells, units};
@@ -41,36 +41,90 @@ pub fn group_weight(unit: &Unit) -> i64 {
         Name::SuperYeti => 3500,
         Name::GiantGiant => 3400,
         Name::ElectroTitan | Name::Golem | Name::LavaHound | Name::MeteorGolem => 3000,
-        Name::BarbarianKing | Name::DragonDuke | Name::DragonRider | Name::MinionPrince
-        | Name::SuperBowler | Name::SuperWitch | Name::Yeeter => 2500,
+        Name::BarbarianKing
+        | Name::DragonDuke
+        | Name::DragonRider
+        | Name::MinionPrince
+        | Name::SuperBowler
+        | Name::SuperWitch
+        | Name::Yeeter => 2500,
         Name::SuperMiner => 2400,
-        Name::BroomWitch | Name::Dragon | Name::ElectroDragon | Name::GiantSkeleton
-        | Name::Pekka | Name::RootRider => 2000,
+        Name::BroomWitch
+        | Name::Dragon
+        | Name::ElectroDragon
+        | Name::GiantSkeleton
+        | Name::Pekka
+        | Name::RootRider => 2000,
         Name::Furnace | Name::IceHound | Name::Yeti => 1800,
         Name::Bear | Name::Druid => 1600,
         Name::InfernoDragon | Name::Lavaloon | Name::Meteormite | Name::SuperValkyrie => 1500,
         Name::SuperHogRider => 1200,
-        Name::BabyDragon | Name::Cookie | Name::Mecha | Name::RamRider | Name::RoyalChampion
-        | Name::SuperMinion | Name::SuperWizard => 1000,
+        Name::BabyDragon
+        | Name::Cookie
+        | Name::Mecha
+        | Name::RamRider
+        | Name::RoyalChampion
+        | Name::SuperMinion
+        | Name::SuperWizard => 1000,
         Name::BigBoy | Name::Firecracker | Name::Henchman | Name::SuperGiant => 800,
         Name::Thrower => 700,
         Name::GiantThrower | Name::Golemite | Name::HogWizard | Name::SuperArcher => 600,
-        Name::ArcherQueen | Name::Balloon | Name::BattleRam | Name::Bowler | Name::Giant | Name::GrandWarden
-        | Name::HogRider | Name::IceGolem | Name::Miner | Name::RocketBalloon | Name::SkeletonBarrel
-        | Name::SnakeBarrel | Name::SuperHog | Name::SuperRider | Name::Valkyrie => 500,
+        Name::ArcherQueen
+        | Name::Balloon
+        | Name::BattleRam
+        | Name::Bowler
+        | Name::Giant
+        | Name::GrandWarden
+        | Name::HogRider
+        | Name::IceGolem
+        | Name::Miner
+        | Name::RocketBalloon
+        | Name::SkeletonBarrel
+        | Name::SnakeBarrel
+        | Name::SuperHog
+        | Name::SuperRider
+        | Name::Valkyrie => 500,
         Name::BarbarianKicker | Name::SuperBarbarian => 400,
         Name::Booger => 300,
-        Name::Barcher | Name::IceWizard | Name::PartyWizard | Name::SneakyGoblin | Name::Witch
+        Name::Barcher
+        | Name::IceWizard
+        | Name::PartyWizard
+        | Name::SneakyGoblin
+        | Name::Witch
         | Name::Wizard => 200,
-        Name::DebtCollector | Name::Electromite | Name::Firemite | Name::Goblin | Name::SuperWallBreaker
-        | Name::WallBreaker | Name::Yetimite => 50,
+        Name::DebtCollector
+        | Name::Electromite
+        | Name::Firemite
+        | Name::Goblin
+        | Name::SuperWallBreaker
+        | Name::WallBreaker
+        | Name::Yetimite => 50,
         Name::Healer => 30,
         Name::PhoenixEgg => 0,
-        Name::ApprenticeWarden | Name::Archer | Name::Barbarian | Name::Bat | Name::BattleBlimp
-        | Name::BattleDrill | Name::FlameFlinger | Name::Frostmite | Name::Headhunter | Name::IceMinion
-        | Name::IcePup | Name::LavaPup | Name::LogLauncher | Name::Minion | Name::PumpkinBarbarian
-        | Name::RoyalGhost | Name::SiegeBarracks | Name::Skeleton | Name::Snake | Name::SpellSkeleton
-        | Name::StoneSlammer | Name::Totem | Name::TroopLauncher | Name::WallWrecker => 100,
+        Name::ApprenticeWarden
+        | Name::Archer
+        | Name::Barbarian
+        | Name::Bat
+        | Name::BattleBlimp
+        | Name::BattleDrill
+        | Name::FlameFlinger
+        | Name::Frostmite
+        | Name::Headhunter
+        | Name::IceMinion
+        | Name::IcePup
+        | Name::LavaPup
+        | Name::LogLauncher
+        | Name::Minion
+        | Name::PumpkinBarbarian
+        | Name::RoyalGhost
+        | Name::SiegeBarracks
+        | Name::Skeleton
+        | Name::Snake
+        | Name::SpellSkeleton
+        | Name::StoneSlammer
+        | Name::Totem
+        | Name::TroopLauncher
+        | Name::WallWrecker => 100,
         _ => {
             if unit.kind == Tag::Pet {
                 return 400;
@@ -97,10 +151,7 @@ pub fn eagle_pick(battle: &Battle, owner: BuildingId, pool: &[UnitRef]) -> UnitR
             })
             .sum();
         let distance = dist(unit.x, unit.y, building.x, building.y);
-        if best.is_none()
-            || score > best_score
-            || score == best_score && distance < best_distance
-        {
+        if best.is_none() || score > best_score || score == best_score && distance < best_distance {
             best = Some(reference);
             best_score = score;
             best_distance = distance;
@@ -149,16 +200,22 @@ fn tesla_keeps_target(battle: &mut Battle, reference: UnitRef) -> bool {
             return false;
         }
         let retaliation = matches!(unit.name_id, Name::RoyalChampion | Name::GiantGiant)
-            || unit.pet.is_some_and(|pet| battle.unit(pet).attached(battle));
+            || unit
+                .pet
+                .is_some_and(|pet| battle.unit(pet).attached(battle));
         let preferred = match &unit.spec.prefer {
             Tag::Wall => battle.walls.iter().any(|wall| wall.alive),
             Tag::Defense | Tag::AirDefense => battle.buildings.iter().any(|building| {
                 building.targetable(battle.t) && battle.is_defense_target(building.id)
             }),
-            Tag::Resource => battle.buildings.iter().any(|building| {
-                building.targetable(battle.t) && building.resource_target
-            }),
-            Tag::Building => battle.buildings.iter().any(|building| building.targetable(battle.t)),
+            Tag::Resource => battle
+                .buildings
+                .iter()
+                .any(|building| building.targetable(battle.t) && building.resource_target),
+            Tag::Building => battle
+                .buildings
+                .iter()
+                .any(|building| building.targetable(battle.t)),
             _ => false,
         };
         return retaliation || !preferred;
@@ -178,7 +235,9 @@ fn tesla_keeps_target(battle: &mut Battle, reference: UnitRef) -> bool {
     let unit = battle.unit(reference);
     let mut pref = unit.spec.prefer.clone();
     if battle.t < unit.extra.angry_until
-        || unit.pet.is_some_and(|pet| battle.unit(pet).attached(battle))
+        || unit
+            .pet
+            .is_some_and(|pet| battle.unit(pet).attached(battle))
     {
         pref = Tag::Defense;
     }
@@ -255,7 +314,10 @@ pub fn on_destroyed(battle: &mut Battle, owner: BuildingId) {
     }
     if weapon(battle, owner).kind == Tag::SpellTower && weapon(battle, owner).cooldown <= 0.0 {
         let near = tower_candidates(battle, owner);
-        let mode = weapon(battle, owner).mode.clone().expect("Spell Tower mode");
+        let mode = weapon(battle, owner)
+            .mode
+            .clone()
+            .expect("Spell Tower mode");
         spells::tower_cast(battle, owner, &mode, Some(&near));
         let weapon = weapon_mut(battle, owner);
         weapon.cooldown = if matches!(mode.as_str(), "rage" | "poison") {
@@ -479,11 +541,7 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
     if let Some(reference) = target {
         let unit = battle.unit(reference);
         let distance = dist(unit.x, unit.y, bx, by);
-        if !unit.alive
-            || !unit.targetable(battle)
-            || distance > range
-            || distance < min_range
-        {
+        if !unit.alive || !unit.targetable(battle) || distance > range || distance < min_range {
             target = None;
             weapon_mut(battle, owner).lock_time = 0.0;
         }
@@ -546,11 +604,14 @@ pub fn act_once(battle: &mut Battle, owner: BuildingId) {
             projectile(battle, owner, target, w.damage * damage_rage, 12.0, offset);
         } else if battle.building(owner).key == "cannon" {
             // defense.py:744-748: geared Cannon projectile offset is level-specific.
-            let Level::Int(level) = battle.building(owner).level.as_ref().expect("Cannon level") else {
+            let Level::Int(level) = battle.building(owner).level.as_ref().expect("Cannon level")
+            else {
                 panic!("integer Cannon level");
             };
             let minimum = battle.catalog.setup.at("gear_minimum").at("cannon").i64();
-            let offset = battle.catalog.setup.at("geared_cannon_offsets").arr()[(*level - minimum) as usize].f64();
+            let offset = battle.catalog.setup.at("geared_cannon_offsets").arr()
+                [(*level - minimum) as usize]
+                .f64();
             projectile(battle, owner, target, w.damage * damage_rage, 12.0, offset);
         } else {
             battle.hit_unit(target, w.damage * damage_rage, None, "normal", None);
@@ -763,7 +824,13 @@ fn projectile_data(battle: &Battle, owner: BuildingId, alternate: bool) -> &crat
     let row = battle
         .catalog
         .game_data("buildings", name, Some(&Level::Int(level)));
-    let projectile = row.at(if alternate { "AltProjectile" } else { "Projectile" }).str();
+    let projectile = row
+        .at(if alternate {
+            "AltProjectile"
+        } else {
+            "Projectile"
+        })
+        .str();
     battle.catalog.game_data("projectiles", projectile, None)
 }
 
@@ -839,9 +906,7 @@ pub fn multi(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
             .copied()
             .filter(|reference| {
                 let unit = battle.unit(*reference);
-                unit.alive
-                    && unit.targetable(battle)
-                    && dist(unit.x, unit.y, bx, by) <= w.range
+                unit.alive && unit.targetable(battle) && dist(unit.x, unit.y, bx, by) <= w.range
             })
             .collect::<Vec<_>>()
     };
@@ -897,7 +962,14 @@ pub fn multi(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
             if w.kind == Tag::MultiArcher {
                 let data = projectile_data(battle, owner, false);
                 let offset = game_required_int(data, "StartOffset") as f64 / 100.0;
-                projectile(battle, owner, reference, w.damage * damage_rage, 18.0, offset);
+                projectile(
+                    battle,
+                    owner,
+                    reference,
+                    w.damage * damage_rage,
+                    18.0,
+                    offset,
+                );
             } else {
                 battle.hit_unit(reference, w.damage * damage_rage, None, "normal", None);
             }
@@ -972,8 +1044,18 @@ pub fn cake(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
 // defense.py:910-919.
 pub fn hunter_hit(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage: f64) {
     let w = weapon(battle, owner).clone();
-    let multiplier = if battle.unit(target).is_hero { 2.0 } else { 1.0 };
-    battle.hit_unit(target, w.damage * damage_rage * multiplier, None, "normal", None);
+    let multiplier = if battle.unit(target).is_hero {
+        2.0
+    } else {
+        1.0
+    };
+    battle.hit_unit(
+        target,
+        w.damage * damage_rage * multiplier,
+        None,
+        "normal",
+        None,
+    );
     let level = Level::Int(w.extra.poison_level as i64);
     let movement = battle
         .catalog
@@ -984,7 +1066,12 @@ pub fn hunter_hit(battle: &mut Battle, owner: BuildingId, target: UnitRef, damag
     let attack = battle
         .catalog
         .stats
-        .get("Poison Spell", &level, &["Attack Rate Decrease"], Some(70.0))
+        .get(
+            "Poison Spell",
+            &level,
+            &["Attack Rate Decrease"],
+            Some(70.0),
+        )
         .expect("Poison Spell attack slow")
         / 100.0;
     let t = battle.t;
@@ -1117,11 +1204,7 @@ pub fn eagle(battle: &mut Battle, owner: BuildingId) {
         pending.extra.origin = Some((bx, by));
         pending.extra.min_range = w.min_range;
         pending.extra.max_range = w.range;
-        pending.extra.push = if shock {
-            0.5
-        } else {
-            0.0
-        };
+        pending.extra.push = if shock { 0.5 } else { 0.0 };
         pending.extra.push_housing = 3.0;
         battle.add_pending(pending);
     }
@@ -1214,9 +1297,9 @@ pub fn tower_candidates(battle: &Battle, owner: BuildingId) -> Vec<UnitRef> {
         .into_iter()
         .filter(|reference| {
             let unit = battle.unit(*reference);
-        // defense.py:1107-1115: spell Skeletons can trigger Poison Towers.
-        (!spells::NO_TRIGGER.contains(&unit.name_id)
-            || w.mode.as_deref() == Some("poison") && unit.name_id == Name::SpellSkeleton)
+            // defense.py:1107-1115: spell Skeletons can trigger Poison Towers.
+            (!spells::NO_TRIGGER.contains(&unit.name_id)
+                || w.mode.as_deref() == Some("poison") && unit.name_id == Name::SpellSkeleton)
                 && (!matches!(w.mode.as_deref(), Some("eq" | "quake" | "earthquake"))
                     || !unit.flying)
         })
@@ -1314,7 +1397,11 @@ pub fn builder_spell(battle: &mut Battle, field: &Field) {
             }
             Tag::Lightning | Tag::Totem => {
                 builder.target = None;
-                let duration = if field.kind == Tag::Lightning { 0.1 } else { 0.2 };
+                let duration = if field.kind == Tag::Lightning {
+                    0.1
+                } else {
+                    0.2
+                };
                 builder.stun_until = builder.stun_until.max(t + duration);
             }
             Tag::DefRage | Tag::Rage if field.kind == Tag::DefRage || field.team == Team::Def => {
@@ -1428,8 +1515,7 @@ pub fn builders_tick(battle: &mut Battle) {
             })
             .collect();
         // defense.py:1253-1259: marginal weights follow battle.builders order.
-        for (position, ((index, _), amount)) in builders.into_iter().zip(amounts).enumerate()
-        {
+        for (position, ((index, _), amount)) in builders.into_iter().zip(amounts).enumerate() {
             let efficiency = weights[position.min(weights.len() - 1)];
             if battle.builders[index].cooldown <= 0.0 {
                 let target = battle.building_mut(target);
@@ -1543,8 +1629,8 @@ fn firespitter(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
     let mut target = w.target;
     let in_sector = target.is_some_and(|target| {
         let unit = battle.unit(target);
-        ((geom::py_atan2(unit.y - by, unit.x - bx) - w.facing + PI).rem_euclid(2.0 * PI) - PI)
-            .abs() <= w.extra.arc
+        ((geom::py_atan2(unit.y - by, unit.x - bx) - w.facing + PI).rem_euclid(2.0 * PI) - PI).abs()
+            <= w.extra.arc
     });
     if target.map_or(true, |target| {
         let unit = battle.unit(target);
@@ -1675,10 +1761,7 @@ pub fn revenge_impact(battle: &mut Battle, pending: Pending) {
     let Some(next) = next else {
         return;
     };
-    let column = [
-        "Damage per Shot (Secondary)",
-        "Damage per Shot (Tertiary)",
-    ][shot.hit.len() - 1];
+    let column = ["Damage per Shot (Secondary)", "Damage per Shot (Tertiary)"][shot.hit.len() - 1];
     let owner = battle.building(shot.owner);
     let damage = battle
         .catalog
@@ -1694,7 +1777,15 @@ pub fn revenge_impact(battle: &mut Battle, pending: Pending) {
     let mut following = shot;
     following.hit.push(EntityRef::Unit(next));
     revenge_projectile(
-        battle, following, next, damage, pending.extra.rage, x, y, pending.at, 0.0,
+        battle,
+        following,
+        next,
+        damage,
+        pending.extra.rage,
+        x,
+        y,
+        pending.at,
+        0.0,
     );
 }
 
@@ -1745,29 +1836,54 @@ fn revenge(battle: &mut Battle, owner: BuildingId, target: UnitRef, damage_rage:
 
 // defense.py:1373-1409: health rescales immediately; damage lingers one second.
 pub fn bell_tick(battle: &mut Battle) {
-    let bells: Vec<_> = battle.buildings.iter().filter(|building| {
-        building.alive && building.name_id == Name::HeroBell && battle.t >= 2.2
-    }).map(|building| building.id).collect();
-    let heroes: Vec<_> = battle.defenders_pool().filter(|hero| hero.alive && hero.is_hero)
-        .map(Unit::reference).collect();
+    let bells: Vec<_> = battle
+        .buildings
+        .iter()
+        .filter(|building| building.alive && building.name_id == Name::HeroBell && battle.t >= 2.2)
+        .map(|building| building.id)
+        .collect();
+    let heroes: Vec<_> = battle
+        .defenders_pool()
+        .filter(|hero| hero.alive && hero.is_hero)
+        .map(Unit::reference)
+        .collect();
     for hero in heroes {
         let (mut damage_boost, mut health_boost) = (0.0_f64, 0.0_f64);
         for &bell in &bells {
             let building = battle.building(bell);
             let unit = battle.unit(hero);
             if dist(unit.x, unit.y, building.x, building.y)
-                > battle.catalog.stats.attrs("Hero Bell").at("range").f64() {
+                > battle.catalog.stats.attrs("Hero Bell").at("range").f64()
+            {
                 continue;
             }
             let level = building.level.as_ref().expect("Hero Bell level");
-            let damage_level = battle.defense_levels.iter().find(|(key, _)| key == "crafting:damage")
+            let damage_level = battle
+                .defense_levels
+                .iter()
+                .find(|(key, _)| key == "crafting:damage")
                 .map_or(level, |(_, level)| level);
-            let health_level = battle.defense_levels.iter().find(|(key, _)| key == "crafting:health")
+            let health_level = battle
+                .defense_levels
+                .iter()
+                .find(|(key, _)| key == "crafting:health")
                 .map_or(level, |(_, level)| level);
-            damage_boost = damage_boost.max(battle.catalog.stats.get("Hero Bell", damage_level,
-                &["Hero DPS Boost"], None).expect("Hero Bell damage boost") / 100.0);
-            health_boost = health_boost.max(battle.catalog.stats.get("Hero Bell", health_level,
-                &["Hero HP Boost"], None).expect("Hero Bell health boost") / 100.0);
+            damage_boost = damage_boost.max(
+                battle
+                    .catalog
+                    .stats
+                    .get("Hero Bell", damage_level, &["Hero DPS Boost"], None)
+                    .expect("Hero Bell damage boost")
+                    / 100.0,
+            );
+            health_boost = health_boost.max(
+                battle
+                    .catalog
+                    .stats
+                    .get("Hero Bell", health_level, &["Hero HP Boost"], None)
+                    .expect("Hero Bell health boost")
+                    / 100.0,
+            );
         }
         let t = battle.t;
         let unit = battle.unit_mut(hero);

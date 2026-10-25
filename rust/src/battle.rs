@@ -46,10 +46,12 @@ impl Battle {
     }
 
     pub fn trigger_th(&mut self) {
-        if self.th_on_at.is_none() && self.th.is_some_and(|id| {
-            let th = self.building(id);
-            th.weapon.is_some() && !th.extra.unavailable
-        }) {
+        if self.th_on_at.is_none()
+            && self.th.is_some_and(|id| {
+                let th = self.building(id);
+                th.weapon.is_some() && !th.extra.unavailable
+            })
+        {
             self.th_on_at = Some(self.t + TH_ACTIVATION_DELAY);
         }
     }
@@ -182,10 +184,15 @@ impl Battle {
 
     pub fn defenders_near(&self, x: f64, y: f64, radius: f64) -> Vec<UnitRef> {
         let radius_squared = radius * radius;
-        self.defenders_pool().filter(|unit| {
-            // battle.py:577 uses `** 2` (C pow), not a product
-            unit.alive && geom::py_pow(unit.x - x, 2.0) + geom::py_pow(unit.y - y, 2.0) <= radius_squared
-        }).map(Unit::reference).collect()
+        self.defenders_pool()
+            .filter(|unit| {
+                // battle.py:577 uses `** 2` (C pow), not a product
+                unit.alive
+                    && geom::py_pow(unit.x - x, 2.0) + geom::py_pow(unit.y - y, 2.0)
+                        <= radius_squared
+            })
+            .map(Unit::reference)
+            .collect()
     }
 
     // battle.py:579-584: Totems count as both heights for attack eligibility.
@@ -307,20 +314,34 @@ impl Battle {
         use std::collections::HashSet;
         self.live_no_deploy();
         let world = self.catalog.world as i32;
-        let walls: HashSet<_> = self.walls.iter().filter(|w| w.alive).map(|w| (w.tx, w.ty)).collect();
+        let walls: HashSet<_> = self
+            .walls
+            .iter()
+            .filter(|w| w.alive)
+            .map(|w| (w.tx, w.ty))
+            .collect();
         let mut queue = Vec::new();
         for i in 0..world {
-            for j in [0, world - 1] { queue.push((i, j)); }
+            for j in [0, world - 1] {
+                queue.push((i, j));
+            }
         }
         for i in 0..world {
-            for j in [0, world - 1] { queue.push((j, i)); }
+            for j in [0, world - 1] {
+                queue.push((j, i));
+            }
         }
         let mut seen: HashSet<_> = queue.iter().copied().collect();
         while let Some((x, y)) = queue.pop() {
             for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
                 let next = (x + dx, y + dy);
-                if 0 <= next.0 && next.0 < world && 0 <= next.1 && next.1 < world
-                    && !walls.contains(&next) && !seen.contains(&next) {
+                if 0 <= next.0
+                    && next.0 < world
+                    && 0 <= next.1
+                    && next.1 < world
+                    && !walls.contains(&next)
+                    && !seen.contains(&next)
+                {
                     seen.insert(next);
                     queue.push(next);
                 }
@@ -347,15 +368,26 @@ impl Battle {
         y: f64,
         options: SpawnOptions,
     ) -> UnitRef {
-        let town_hall = options.town_hall.filter(|th| *th != 0).unwrap_or(self.town_hall);
+        let town_hall = options
+            .town_hall
+            .filter(|th| *th != 0)
+            .unwrap_or(self.town_hall);
         let level = options.level.unwrap_or_else(|| {
-            Level::Int(self.catalog.stats.max_level(name, town_hall).filter(|lv| *lv != 0).unwrap_or(1))
+            Level::Int(
+                self.catalog
+                    .stats
+                    .max_level(name, town_hall)
+                    .filter(|lv| *lv != 0)
+                    .unwrap_or(1),
+            )
         });
         let nums = *self.catalog.numbers(name, &level);
         let spec = Arc::clone(&self.catalog.unit(name).summon_spec);
         self.uid += 1;
-        let mut facing = (self.catalog.world as f64 / 2.0 - x,
-            self.catalog.world as f64 / 2.0 - y);
+        let mut facing = (
+            self.catalog.world as f64 / 2.0 - x,
+            self.catalog.world as f64 / 2.0 - y,
+        );
         if facing == (0.0, 0.0) {
             facing = (1.0, 0.0);
         }
@@ -461,7 +493,8 @@ impl Battle {
             for &(x, y) in self.deploy_tiles() {
                 // Python `** 2` is the C runtime's pow, which differs from
                 // dx * dx in the last bit for some inputs (geom::py_pow).
-                let distance = geom::py_pow(x - deployment.x, 2.0) + geom::py_pow(y - deployment.y, 2.0);
+                let distance =
+                    geom::py_pow(x - deployment.x, 2.0) + geom::py_pow(y - deployment.y, 2.0);
                 if best.is_none() || distance < best_distance {
                     best = Some((x, y));
                     best_distance = distance;
@@ -475,7 +508,13 @@ impl Battle {
         if self.first_deploy_t.is_none() {
             self.first_deploy_t = Some(self.t);
         }
-        let record_kind = self.catalog.stats.record(&deployment.name).at("kind").str().to_owned();
+        let record_kind = self
+            .catalog
+            .stats
+            .record(&deployment.name)
+            .at("kind")
+            .str()
+            .to_owned();
         let kind = match record_kind.as_str() {
             "hero" => "hero",
             "siege" => "siege",
@@ -509,7 +548,10 @@ impl Battle {
         // battle.py:469-480: Stage's default Warden mode is ground.
         if unit.name_id == Name::GrandWarden {
             let mode = deployment.mode.as_deref().unwrap_or(default_mode);
-            assert!(mode == "air" || mode == "ground", "Grand Warden mode must be air or ground");
+            assert!(
+                mode == "air" || mode == "ground",
+                "Grand Warden mode must be air or ground"
+            );
             unit.flying = mode == "air";
             if unit.flying {
                 if let Some(range) = warden_air_range {
@@ -557,8 +599,8 @@ impl Battle {
         }
         // battle.py:502-518: donated sieges still count for Eagle activation,
         // but carry their own source and do not count for Monolith Arrow.
-        let donated_siege = kind == "siege"
-            && self.plan.attack().is_some_and(|plan| plan.siege_donated);
+        let donated_siege =
+            kind == "siege" && self.plan.attack().is_some_and(|plan| plan.siege_donated);
         let source = if donated_siege {
             "donated_siege"
         } else {
@@ -606,23 +648,29 @@ impl Battle {
 
     pub fn offense_finished(&self) -> bool {
         // battle.py:821-855: Stage has no spell inventory or deferred callbacks.
-        if self.attackers_pool().any(|unit| unit.alive
-            && !matches!(unit.name_id, Name::Healer | Name::Unicorn | Name::Totem)
-            && unit.kind != Tag::SiegeIdle) {
+        if self.attackers_pool().any(|unit| {
+            unit.alive
+                && !matches!(unit.name_id, Name::Healer | Name::Unicorn | Name::Totem)
+                && unit.kind != Tag::SiegeIdle
+        }) {
             return false;
         }
-        if self.deployments[self.next_deploy..].iter().any(|d| d.name != "Healer")
+        if self.deployments[self.next_deploy..]
+            .iter()
+            .any(|d| d.name != "Healer")
             || match &self.plan {
                 Plan::Attack(p) => p.has_offensive_pending(self),
                 Plan::Playbook(p) => p.has_offensive_pending(self),
                 Plan::Stage { .. } => self.plan.has_pending(),
-            } {
+            }
+        {
             return false;
         }
         if !self.fast_end {
             if let Some(p) = self.plan.attack() {
                 if crate::plans::count(&p.spells, "lightning") != 0
-                    || crate::plans::count(&p.spells, "eq") != 0 {
+                    || crate::plans::count(&p.spells, "eq") != 0
+                {
                     return false;
                 }
             }
@@ -631,7 +679,10 @@ impl Battle {
         if self.pending.iter().any(|pending| {
             matches!(
                 pending.actor,
-                Some(EntityRef::Unit(UnitRef { team: Team::Atk, .. }))
+                Some(EntityRef::Unit(UnitRef {
+                    team: Team::Atk,
+                    ..
+                }))
             ) || pending.extra.quake.is_some() && pending.team == Team::Def
         }) {
             return false;
@@ -647,35 +698,47 @@ impl Battle {
                 "santa",
                 "birthday",
             ]
-                .contains(&field.kind.as_str())
+            .contains(&field.kind.as_str())
         })
     }
 
     pub fn result(&mut self) -> BattleResult {
         // battle.py:872-890: result() itself can append the onboard cargo event.
         if self.record && !self.onboard_cargo.is_empty() {
-            let cargo = self.onboard_cargo.iter().map(|entry| {
-                let level = match &entry.level {
-                    Level::Int(level) => LogValue::Int(*level),
-                    Level::Text(level) => LogValue::from(level.clone()),
-                };
-                let mut row = vec![
-                    ("name".to_owned(), LogValue::from(entry.name.clone())),
-                    ("level".to_owned(), level),
-                    ("source".to_owned(), LogValue::from(entry.source.clone())),
-                ];
-                row.extend(entry.unknown.iter().map(|(key, value)|
-                    (key.clone(), exported_value(self, value))));
-                LogValue::Map(row)
-            }).collect();
-            self.log_event(vec![LogValue::Float(round_decimal(self.t, 1)),
-                LogValue::from("onboard_cc"), LogValue::List(cargo)]);
+            let cargo = self
+                .onboard_cargo
+                .iter()
+                .map(|entry| {
+                    let level = match &entry.level {
+                        Level::Int(level) => LogValue::Int(*level),
+                        Level::Text(level) => LogValue::from(level.clone()),
+                    };
+                    let mut row = vec![
+                        ("name".to_owned(), LogValue::from(entry.name.clone())),
+                        ("level".to_owned(), level),
+                        ("source".to_owned(), LogValue::from(entry.source.clone())),
+                    ];
+                    row.extend(
+                        entry
+                            .unknown
+                            .iter()
+                            .map(|(key, value)| (key.clone(), exported_value(self, value))),
+                    );
+                    LogValue::Map(row)
+                })
+                .collect();
+            self.log_event(vec![
+                LogValue::Float(round_decimal(self.t, 1)),
+                LogValue::from("onboard_cc"),
+                LogValue::List(cargo),
+            ]);
         }
         let mut destroyed: Vec<(String, usize)> = Vec::new();
         let mut surviving = Vec::new();
         for building in &self.buildings {
             if building.counted && !building.alive {
-                if let Some((_, count)) = destroyed.iter_mut().find(|(key, _)| *key == building.key) {
+                if let Some((_, count)) = destroyed.iter_mut().find(|(key, _)| *key == building.key)
+                {
                     *count += 1;
                 } else {
                     destroyed.push((building.key.clone(), 1));
@@ -711,7 +774,8 @@ impl Battle {
         }
         let t = self.t;
         while self.next_deploy < self.deployments.len()
-            && self.deployments[self.next_deploy].time <= t {
+            && self.deployments[self.next_deploy].time <= t
+        {
             self.deploy(self.deployments[self.next_deploy].clone());
             self.next_deploy += 1;
         }
@@ -742,9 +806,14 @@ impl Battle {
         actors.extend(self.attackers_pool().map(Unit::reference));
         for &reference in &actors {
             if self.unit(reference).alive {
-                effects::damage_source(self, Some(EntityRef::Unit(reference)), Tag::Attack, |battle| {
-                    battle.act_attacker(reference);
-                });
+                effects::damage_source(
+                    self,
+                    Some(EntityRef::Unit(reference)),
+                    Tag::Attack,
+                    |battle| {
+                        battle.act_attacker(reference);
+                    },
+                );
             }
         }
         actors.clear();
@@ -757,9 +826,14 @@ impl Battle {
             if building.alive && building.weapon.is_some() {
                 let id = building.id;
                 self.src = building.source.clone();
-                effects::damage_source(self, Some(EntityRef::Building(id)), Tag::Attack, |battle| {
-                    defense::act(battle, id);
-                });
+                effects::damage_source(
+                    self,
+                    Some(EntityRef::Building(id)),
+                    Tag::Attack,
+                    |battle| {
+                        defense::act(battle, id);
+                    },
+                );
             }
         }
         let mut actors = std::mem::take(&mut self.actor_scratch);
@@ -769,9 +843,14 @@ impl Battle {
             let unit = self.unit(reference);
             if unit.alive {
                 self.src = unit.source.clone();
-                effects::damage_source(self, Some(EntityRef::Unit(reference)), Tag::Attack, |battle| {
-                    battle.act_defender(reference);
-                });
+                effects::damage_source(
+                    self,
+                    Some(EntityRef::Unit(reference)),
+                    Tag::Attack,
+                    |battle| {
+                        battle.act_defender(reference);
+                    },
+                );
             }
         }
         actors.clear();
@@ -834,17 +913,30 @@ impl Battle {
     fn snapshot(&self) -> Snapshot {
         Snapshot {
             t: round_decimal(self.t, 1),
-            units: self.attackers_pool().chain(self.defenders_pool()).filter(|unit| unit.alive)
+            units: self
+                .attackers_pool()
+                .chain(self.defenders_pool())
+                .filter(|unit| unit.alive)
                 .map(|unit| SnapshotUnit {
                     name: unit.name.clone(),
                     x: round_decimal(unit.x, 2),
                     y: round_decimal(unit.y, 2),
                     hp_fraction: round_decimal(unit.hp / 1.0_f64.max(unit.max_hp), 2),
                     team: unit.team,
-                }).collect(),
-            dead: self.buildings.iter().filter(|b| !b.alive && b.key != "banner")
-                .map(|b| b.id).collect(),
-            walls: self.walls.iter().filter(|w| !w.alive).map(|w| (w.tx, w.ty)).collect(),
+                })
+                .collect(),
+            dead: self
+                .buildings
+                .iter()
+                .filter(|b| !b.alive && b.key != "banner")
+                .map(|b| b.id)
+                .collect(),
+            walls: self
+                .walls
+                .iter()
+                .filter(|w| !w.alive)
+                .map(|w| (w.tx, w.ty))
+                .collect(),
         }
     }
 }

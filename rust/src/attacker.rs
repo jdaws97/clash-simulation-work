@@ -2,9 +2,9 @@
 //! Scouting is deterministic; caches retain the reference's complete score keys.
 
 use super::*;
-use std::cell::Cell;
 use crate::catalog::game_float;
 use crate::grid::RES;
+use std::cell::Cell;
 
 pub type Band = (f64, f64, f64, f64, f64);
 pub type Cluster = (f64, f64, f64, usize);
@@ -112,8 +112,7 @@ pub fn band_hit(building: &Building, band: Band, kind: &str, radius: f64) -> boo
     }
     for offset_x in [-building.half_hit, building.half_hit] {
         for offset_y in [-building.half_hit, building.half_hit] {
-            let along = (building.x + offset_x - x) * dx
-                + (building.y + offset_y - y) * dy;
+            let along = (building.x + offset_x - x) * dx + (building.y + offset_y - y) * dy;
             let along = length.min(0.0_f64.max(along));
             if building.edge_distance(x + dx * along, y + dy * along) <= radius {
                 return true;
@@ -186,12 +185,7 @@ impl AttackPlan {
                 }
             }
             let key = (center, reach);
-            if let Some((_, points)) = battle
-                .cluster_cache
-                .points
-                .iter()
-                .find(|(k, _)| *k == key)
-            {
+            if let Some((_, points)) = battle.cluster_cache.points.iter().find(|(k, _)| *k == key) {
                 points.clone()
             } else {
                 let mut nearby: Vec<_> = defenses
@@ -353,7 +347,10 @@ impl AttackPlan {
             .filter(level_truth)
             .unwrap_or_else(|| {
                 Level::Int(
-                    battle.catalog.stats.max_level(name, self.town_hall)
+                    battle
+                        .catalog
+                        .stats
+                        .max_level(name, self.town_hall)
                         .expect("equipment max level"),
                 )
             })
@@ -412,7 +409,10 @@ impl AttackPlan {
 }
 
 fn lookup<T: Copy>(items: &[(BuildingId, T)], id: BuildingId, default: T) -> T {
-    items.iter().find(|(key, _)| *key == id).map_or(default, |(_, value)| *value)
+    items
+        .iter()
+        .find(|(key, _)| *key == id)
+        .map_or(default, |(_, value)| *value)
 }
 
 fn level_truth(level: &Level) -> bool {
@@ -423,23 +423,45 @@ fn level_truth(level: &Level) -> bool {
 }
 
 impl AttackPlan {
-    pub fn cluster_effects(&self, battle: &Battle, kind: &str, mut count: i64) -> Vec<ClusterEffect> {
+    pub fn cluster_effects(
+        &self,
+        battle: &Battle,
+        kind: &str,
+        mut count: i64,
+    ) -> Vec<ClusterEffect> {
         let mut effects = Vec::new();
         for stock in &self.stock {
             if stock.name != spell_name(kind) || stock.remaining <= 0 {
                 continue;
             }
             let level = stock.level.as_ref().expect("resolved spell stock level");
-            let radius = battle.catalog.resolved.at("zap_radii")
-                .at(&format!("{}|{level}", stock.name)).f64();
+            let radius = battle
+                .catalog
+                .resolved
+                .at("zap_radii")
+                .at(&format!("{}|{level}", stock.name))
+                .f64();
             let value = if kind == "eq" {
-                battle.catalog.stats.get(&stock.name, level, &["Building Damage %"], None).expect("quake damage") / 100.0
+                battle
+                    .catalog
+                    .stats
+                    .get(&stock.name, level, &["Building Damage %"], None)
+                    .expect("quake damage")
+                    / 100.0
             } else {
-                battle.catalog.stats.get(&stock.name, level, &["damage", "Damage"], None).expect("spell damage")
+                battle
+                    .catalog
+                    .stats
+                    .get(&stock.name, level, &["damage", "Damage"], None)
+                    .expect("spell damage")
             };
             let take = count.min(stock.remaining);
             for _ in 0..take {
-                effects.push(ClusterEffect::new(if kind == "eq" { "quake" } else { kind }, radius, value));
+                effects.push(ClusterEffect::new(
+                    if kind == "eq" { "quake" } else { kind },
+                    radius,
+                    value,
+                ));
             }
             count -= take;
             if count == 0 {
@@ -517,14 +539,19 @@ impl AttackPlan {
                 (target.id, hp)
             })
             .collect();
-        let hits = targets.iter().map(|target| (target.id, target.eq_hits)).collect();
+        let hits = targets
+            .iter()
+            .map(|target| (target.id, target.eq_hits))
+            .collect();
         (hp, hits)
     }
 
     fn spare_quakes(&self, battle: &Battle) -> i64 {
         let available = self.unreserved_spells("eq", self.fallback);
         let mut reserved = self.fallback_quakes.len() as i64;
-        if self.ground && !self.allowed_spell("jump") && battle.walls.iter().any(|w| w.alive)
+        if self.ground
+            && !self.allowed_spell("jump")
+            && battle.walls.iter().any(|w| w.alive)
             && count(&self.spells, "eq") >= 4
         {
             reserved = reserved.max(4);
@@ -546,27 +573,42 @@ impl AttackPlan {
     }
 
     fn hold_line_quake(&self, battle: &Battle) -> bool {
-        for (name, equipment) in [("Archer Queen", "Giant Arrow"), ("Dragon Duke", "Rocket Backpack")] {
-            let deployed: Vec<_> = battle.attackers_pool().filter(|u| u.name == name && u.kind != Tag::HeroClone).collect();
+        for (name, equipment) in [
+            ("Archer Queen", "Giant Arrow"),
+            ("Dragon Duke", "Rocket Backpack"),
+        ] {
+            let deployed: Vec<_> = battle
+                .attackers_pool()
+                .filter(|u| u.name == name && u.kind != Tag::HeroClone)
+                .collect();
             if !deployed.is_empty() {
-                if deployed.iter().any(|u| u.alive && !u.ability_used
-                    && u.kit.as_ref().is_some_and(|kit| kit.has(equipment))
-                    && u.extra.line_quake_until.is_none())
-                {
+                if deployed.iter().any(|u| {
+                    u.alive
+                        && !u.ability_used
+                        && u.kit.as_ref().is_some_and(|kit| kit.has(equipment))
+                        && u.extra.line_quake_until.is_none()
+                }) {
                     return true;
                 }
                 continue;
             }
-            if !self.snipe_loadout(battle, name).equipment.iter().any(|item| item == equipment)
+            if !self
+                .snipe_loadout(battle, name)
+                .equipment
+                .iter()
+                .any(|item| item == equipment)
                 || !self.owned(equipment)
             {
                 continue;
             }
-            let pending = self.scouting_context.as_ref().map_or_else(|| {
-                self.push_heroes.iter().any(|hero| hero == name)
-                    || self.funnel_heroes.iter().any(|(hero, _)| hero == name)
-                    || self.charge_hero.as_deref() == Some(name)
-            }, |context| context.pending_heroes.iter().any(|hero| hero == name));
+            let pending = self.scouting_context.as_ref().map_or_else(
+                || {
+                    self.push_heroes.iter().any(|hero| hero == name)
+                        || self.funnel_heroes.iter().any(|(hero, _)| hero == name)
+                        || self.charge_hero.as_deref() == Some(name)
+                },
+                |context| context.pending_heroes.iter().any(|hero| hero == name),
+            );
             if pending {
                 return true;
             }
@@ -586,7 +628,15 @@ impl AttackPlan {
                 None
             } else {
                 self.defense_cluster(
-                    battle, &effects, None, None, Some(&[(x, y)]), 0, None, None, None,
+                    battle,
+                    &effects,
+                    None,
+                    None,
+                    Some(&[(x, y)]),
+                    0,
+                    None,
+                    None,
+                    None,
                 )
             };
             if cluster.is_some() {
@@ -600,7 +650,11 @@ impl AttackPlan {
             return false;
         }
         let (hp, eq_hits) = self.cluster_state(battle);
-        if battle.buildings.iter().any(|b| b.alive && b.key == "ad" && lookup(&hp, b.id, 0.0) > 1e-9) {
+        if battle
+            .buildings
+            .iter()
+            .any(|b| b.alive && b.key == "ad" && lookup(&hp, b.id, 0.0) > 1e-9)
+        {
             return false;
         }
         let effects = self.cluster_effects(battle, "lightning", available);
@@ -614,7 +668,15 @@ impl AttackPlan {
                 let mut combined = quake.clone();
                 combined.extend_from_slice(&effects[..count.min(effects.len())]);
                 let candidate = self.defense_cluster(
-                    battle, &combined, Some(&hp), Some(&eq_hits), None, 2, None, None, None,
+                    battle,
+                    &combined,
+                    Some(&hp),
+                    Some(&eq_hits),
+                    None,
+                    2,
+                    None,
+                    None,
+                    None,
                 );
                 if let Some(candidate) = candidate {
                     if combo.is_none_or(|(cluster, _)| candidate.2 > cluster.2) {
@@ -628,7 +690,17 @@ impl AttackPlan {
             self.use_spell(battle, "eq", cluster.0, cluster.1);
             return true;
         }
-        let Some(cluster) = self.defense_cluster(battle, &effects, Some(&hp), Some(&eq_hits), None, 0, None, None, None) else {
+        let Some(cluster) = self.defense_cluster(
+            battle,
+            &effects,
+            Some(&hp),
+            Some(&eq_hits),
+            None,
+            0,
+            None,
+            None,
+            None,
+        ) else {
             return false;
         };
         self.use_spell(battle, "lightning", cluster.0, cluster.1);
@@ -642,7 +714,17 @@ impl AttackPlan {
         }
         let (hp, hits) = self.cluster_state(battle);
         let effects = self.cluster_effects(battle, "eq", available);
-        let Some(cluster) = self.defense_cluster(battle, &effects, Some(&hp), Some(&hits), None, 0, None, None, None) else {
+        let Some(cluster) = self.defense_cluster(
+            battle,
+            &effects,
+            Some(&hp),
+            Some(&hits),
+            None,
+            0,
+            None,
+            None,
+            None,
+        ) else {
             return false;
         };
         self.use_spell(battle, "eq", cluster.0, cluster.1);
@@ -656,31 +738,55 @@ impl AttackPlan {
             let target = u.target.filter(|target| battle.entity_alive(*target))?;
             match target {
                 EntityRef::Building(id) if !battle.building_targetable(id) => return None,
-                EntityRef::Unit(unit) if unit.team == Team::Def && !battle.unit(unit).targetable(battle) => return None,
+                EntityRef::Unit(unit)
+                    if unit.team == Team::Def && !battle.unit(unit).targetable(battle) =>
+                {
+                    return None
+                }
                 _ => {}
             }
             let (dx, dy, length, radius) = heroes::arrow_geometry(battle, hero, Some(target));
-            let damage = game_float(battle.catalog.equipment_ability("Giant Arrow", kit.lv("Giant Arrow")), "Damage");
+            let damage = game_float(
+                battle
+                    .catalog
+                    .equipment_ability("Giant Arrow", kit.lv("Giant Arrow")),
+                "Damage",
+            );
             ("arrow", dx, dy, length, radius, damage)
         } else if kit.has("Rocket Backpack") {
             let (dx, dy, length, radius) = heroes::dash_geometry(battle, u.x, u.y, u.extra.facing);
             let damage = game_float(
-                battle.catalog.equipment_ability("Rocket Backpack", kit.lv("Rocket Backpack")),
+                battle
+                    .catalog
+                    .equipment_ability("Rocket Backpack", kit.lv("Rocket Backpack")),
                 "ActAsPenetratingDamage",
             );
             ("dash", dx, dy, length, radius, damage)
         } else {
             return None;
         };
-        Some(((u.x, u.y, dx, dy, length), ClusterEffect::new(kind, radius, damage)))
+        Some((
+            (u.x, u.y, dx, dy, length),
+            ClusterEffect::new(kind, radius, damage),
+        ))
     }
 
     pub fn aim_cluster(&self, battle: &mut Battle, hero: UnitRef, kind: &str) -> bool {
         let Some((band, effect)) = self.ability_band(battle, hero) else {
             return false;
         };
-        self.defense_cluster(battle, &[effect], None, None, Some(&[(band.0, band.1)]), 0, Some(band), None, None)
-            .is_some_and(|current| current.2 >= self.p(&format!("{kind}_threat")))
+        self.defense_cluster(
+            battle,
+            &[effect],
+            None,
+            None,
+            Some(&[(band.0, band.1)]),
+            0,
+            Some(band),
+            None,
+            None,
+        )
+        .is_some_and(|current| current.2 >= self.p(&format!("{kind}_threat")))
     }
 
     pub fn line_ability(
@@ -691,9 +797,18 @@ impl AttackPlan {
         deadline: Option<f64>,
     ) -> bool {
         let t = battle.t;
-        let since = *battle.unit_mut(hero).extra.line_ability_since.get_or_insert(t);
+        let since = *battle
+            .unit_mut(hero)
+            .extra
+            .line_ability_since
+            .get_or_insert(t);
         let limit = deadline.map_or(since + 10.0, |deadline| (since + 10.0).min(deadline));
-        let ready = battle.unit(hero).kit.as_ref().expect("hero kit").has("Rocket Backpack")
+        let ready = battle
+            .unit(hero)
+            .kit
+            .as_ref()
+            .expect("hero kit")
+            .has("Rocket Backpack")
             || self.aim_cluster(battle, hero, "arrow");
         if force || ready || t >= limit {
             return self.fire_aimed(battle, hero, Some(limit));
@@ -701,7 +816,12 @@ impl AttackPlan {
         false
     }
 
-    pub fn fire_aimed(&mut self, battle: &mut Battle, hero: UnitRef, deadline: Option<f64>) -> bool {
+    pub fn fire_aimed(
+        &mut self,
+        battle: &mut Battle,
+        hero: UnitRef,
+        deadline: Option<f64>,
+    ) -> bool {
         if self.pair_line_quake(battle, hero, deadline) {
             return false;
         }
@@ -709,7 +829,12 @@ impl AttackPlan {
         true
     }
 
-    fn pair_line_quake(&mut self, battle: &mut Battle, hero: UnitRef, deadline: Option<f64>) -> bool {
+    fn pair_line_quake(
+        &mut self,
+        battle: &mut Battle,
+        hero: UnitRef,
+        deadline: Option<f64>,
+    ) -> bool {
         if let Some(until) = battle.unit(hero).extra.line_quake_until {
             return battle.t < until && deadline.is_none_or(|deadline| battle.t < deadline);
         }
@@ -729,13 +854,24 @@ impl AttackPlan {
             return false;
         };
         let (x, y, dx, dy, length) = band;
-        let mut targets: Vec<_> = battle.buildings.iter().filter(|b| b.is_defense
-            && battle.building_targetable(b.id) && band_hit(b, band, &effect.kind, effect.radius)).collect();
+        let mut targets: Vec<_> = battle
+            .buildings
+            .iter()
+            .filter(|b| {
+                b.is_defense
+                    && battle.building_targetable(b.id)
+                    && band_hit(b, band, &effect.kind, effect.radius)
+            })
+            .collect();
         targets.sort_by(|a, b| threat(&b.key, 1.0).total_cmp(&threat(&a.key, 1.0)));
-        let mut points: Vec<_> = targets.into_iter().take(12).map(|b| {
-            let along = length.min(0.0_f64.max((b.x - x) * dx + (b.y - y) * dy));
-            (x + dx * along, y + dy * along)
-        }).collect();
+        let mut points: Vec<_> = targets
+            .into_iter()
+            .take(12)
+            .map(|b| {
+                let along = length.min(0.0_f64.max((b.x - x) * dx + (b.y - y) * dy));
+                (x + dx * along, y + dy * along)
+            })
+            .collect();
         let centers = points.clone();
         for (index, first) in centers.iter().enumerate() {
             for second in &centers[index + 1..] {
@@ -749,7 +885,15 @@ impl AttackPlan {
         let mut effects = self.cluster_effects(battle, "eq", 1);
         effects.push(effect);
         let cluster = self.defense_cluster(
-            battle, &effects, Some(&hp), Some(&hits), Some(&points), 0, Some(band), None, None,
+            battle,
+            &effects,
+            Some(&hp),
+            Some(&hits),
+            Some(&points),
+            0,
+            Some(band),
+            None,
+            None,
         );
         let Some(cluster) = cluster else {
             return false;
@@ -762,7 +906,11 @@ impl AttackPlan {
 
     pub fn cluster_ability(&self, battle: &mut Battle, hero: UnitRef, force: bool) -> bool {
         let t = battle.t;
-        let since = *battle.unit_mut(hero).extra.cluster_ability_since.get_or_insert(t);
+        let since = *battle
+            .unit_mut(hero)
+            .extra
+            .cluster_ability_since
+            .get_or_insert(t);
         if force || t - since >= 10.0 {
             heroes::activate(battle, hero, false);
             return true;
@@ -775,8 +923,20 @@ impl AttackPlan {
         let kit = u.kit.as_ref().expect("hero kit");
         let (x, y) = (u.x, u.y);
         let (radius, damage, reach) = if kit.has("Fireball") {
-            let radius = heroes::col(battle, "Fireball", kit.lv("Fireball"), &["damage radius"], 0.0);
-            let damage = heroes::col(battle, "Fireball", kit.lv("Fireball"), &["projectile damage"], 0.0);
+            let radius = heroes::col(
+                battle,
+                "Fireball",
+                kit.lv("Fireball"),
+                &["damage radius"],
+                0.0,
+            );
+            let damage = heroes::col(
+                battle,
+                "Fireball",
+                kit.lv("Fireball"),
+                &["projectile damage"],
+                0.0,
+            );
             (radius, damage, u.range + radius)
         } else if u.name_id == Name::RoyalChampion {
             let mut damage = 0.0;
@@ -799,7 +959,15 @@ impl AttackPlan {
                     0.0,
                 ) * battle.atk_hero_mult;
             }
-            (6.0, damage, if kit.has("Rocket Spear") { heroes::spear_range(battle) } else { u.range + 6.0 })
+            (
+                6.0,
+                damage,
+                if kit.has("Rocket Spear") {
+                    heroes::spear_range(battle)
+                } else {
+                    u.range + 6.0
+                },
+            )
         } else {
             return false;
         };
@@ -813,10 +981,31 @@ impl AttackPlan {
         };
         let point = battle.entity_position(nearest);
         let effects = [ClusterEffect::new("damage", radius, damage)];
-        let best = self.defense_cluster(battle, &effects, None, None, None, 0, None, Some((x, y)), Some(reach));
-        let current = self.defense_cluster(battle, &effects, None, None, Some(&[point]), 0, None, None, None);
-        let ready = best.zip(current).is_some_and(|(best, current)| current.2 >= best.2
-            && heroes::distance(battle, nearest, x, y) <= reach);
+        let best = self.defense_cluster(
+            battle,
+            &effects,
+            None,
+            None,
+            None,
+            0,
+            None,
+            Some((x, y)),
+            Some(reach),
+        );
+        let current = self.defense_cluster(
+            battle,
+            &effects,
+            None,
+            None,
+            Some(&[point]),
+            0,
+            None,
+            None,
+            None,
+        );
+        let ready = best.zip(current).is_some_and(|(best, current)| {
+            current.2 >= best.2 && heroes::distance(battle, nearest, x, y) <= reach
+        });
         if force || ready || t - since >= 10.0 {
             heroes::activate(battle, hero, false);
             return true;
@@ -843,7 +1032,10 @@ fn account_cluster(
                 target.hp -= field.value;
             }
         } else if b.counted && !storage(&b.key) {
-            let n = if let Some((_, _, n)) = casts.iter().find(|(key, id, _)| *key == cast && *id == target.id) {
+            let n = if let Some((_, _, n)) = casts
+                .iter()
+                .find(|(key, id, _)| *key == cast && *id == target.id)
+            {
                 *n
             } else {
                 let n = field
@@ -889,13 +1081,24 @@ impl AttackPlan {
     }
 
     fn snipe_weights(&self, battle: &Battle) -> Vec<(BuildingId, f64)> {
-        let troops: Vec<_> = self.scouting_context.as_ref().map_or_else(|| {
-            let mut troops: Vec<_> = self.main.iter().chain(self.support.iter())
-                .flat_map(|wave| wave.units.iter().cloned()).collect();
-            troops.extend(self.flank.iter().map(|(name, count, _)| (name.clone(), *count)));
-            troops.extend(self.cleanup.iter().cloned());
-            troops
-        }, |context| context.inventory.clone());
+        let troops: Vec<_> = self.scouting_context.as_ref().map_or_else(
+            || {
+                let mut troops: Vec<_> = self
+                    .main
+                    .iter()
+                    .chain(self.support.iter())
+                    .flat_map(|wave| wave.units.iter().cloned())
+                    .collect();
+                troops.extend(
+                    self.flank
+                        .iter()
+                        .map(|(name, count, _)| (name.clone(), *count)),
+                );
+                troops.extend(self.cleanup.iter().cloned());
+                troops
+            },
+            |context| context.inventory.clone(),
+        );
         let mut air = 0;
         let mut ground = 0;
         for (name, count) in troops {
@@ -911,11 +1114,20 @@ impl AttackPlan {
             }
         }
         let air_army = air > ground;
-        let healers = self.scouting_context.as_ref().map_or_else(|| {
-            self.charge_n + self.main.iter().chain(self.support.iter())
-                .flat_map(|wave| wave.units.iter()).filter(|(name, _)| name == "Healer")
-                .map(|(_, count)| *count).sum::<i64>()
-        }, |context| count(&context.inventory, "Healer"));
+        let healers = self.scouting_context.as_ref().map_or_else(
+            || {
+                self.charge_n
+                    + self
+                        .main
+                        .iter()
+                        .chain(self.support.iter())
+                        .flat_map(|wave| wave.units.iter())
+                        .filter(|(name, _)| name == "Healer")
+                        .map(|(_, count)| *count)
+                        .sum::<i64>()
+            },
+            |context| count(&context.inventory, "Healer"),
+        );
         // output/research/usage/hidden-tesla.md: concealed Teslas are not scouted.
         // https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
         let others: Vec<_> = battle
@@ -923,56 +1135,70 @@ impl AttackPlan {
             .iter()
             .filter(|b| b.key != "wall" && (b.key != "tesla" || b.revealed))
             .collect();
-        battle.buildings.iter().map(|b| {
-            let mut weight = threat(&b.key, 1.0);
-            if air_army {
-                weight *= match b.key.as_str() {
-                    "ad" => 2.5,
-                    "sweeper" => 3.0,
-                    "eagle" | "scatter" => 1.25,
-                    _ => 1.0,
-                };
-                if b.weapon.as_ref().is_some_and(|weapon| weapon.targets == Tag::Ground) {
-                    weight *= 0.2;
+        battle
+            .buildings
+            .iter()
+            .map(|b| {
+                let mut weight = threat(&b.key, 1.0);
+                if air_army {
+                    weight *= match b.key.as_str() {
+                        "ad" => 2.5,
+                        "sweeper" => 3.0,
+                        "eagle" | "scatter" => 1.25,
+                        _ => 1.0,
+                    };
+                    if b.weapon
+                        .as_ref()
+                        .is_some_and(|weapon| weapon.targets == Tag::Ground)
+                    {
+                        weight *= 0.2;
+                    }
+                } else if b.key == "ad" {
+                    weight *= if healers != 0 { 0.5 } else { 0.0 };
+                } else if b.key == "sweeper" {
+                    weight = 0.0;
                 }
-            } else if b.key == "ad" {
-                weight *= if healers != 0 { 0.5 } else { 0.0 };
-            } else if b.key == "sweeper" {
-                weight = 0.0;
-            }
-            if healers >= 4 || self.charge_hero.is_some() {
-                if b.key == "mono" {
-                    weight *= 1.6;
-                } else if b.key == "inferno" && b.mode.as_deref() == Some("single") {
-                    weight *= 1.5;
+                if healers >= 4 || self.charge_hero.is_some() {
+                    if b.key == "mono" {
+                        weight *= 1.6;
+                    } else if b.key == "inferno" && b.mode.as_deref() == Some("single") {
+                        weight *= 1.5;
+                    }
                 }
-            }
-            if let Some(weapon) = &b.weapon {
-                if !others.is_empty() {
-                    let covered = others
-                        .iter()
-                        .filter(|other| {
-                            if other.id == b.id {
-                                return false;
-                            }
-                            let distance = py_hypot(other.x - b.x, other.y - b.y);
-                            weapon.min_range <= distance && distance <= weapon.range + b.half_hit
-                        })
-                        .count();
-                    weight *= 1.0 + covered as f64 / others.len() as f64;
+                if let Some(weapon) = &b.weapon {
+                    if !others.is_empty() {
+                        let covered = others
+                            .iter()
+                            .filter(|other| {
+                                if other.id == b.id {
+                                    return false;
+                                }
+                                let distance = py_hypot(other.x - b.x, other.y - b.y);
+                                weapon.min_range <= distance
+                                    && distance <= weapon.range + b.half_hit
+                            })
+                            .count();
+                        weight *= 1.0 + covered as f64 / others.len() as f64;
+                    }
                 }
-            }
-            (b.id, weight)
-        }).collect()
+                (b.id, weight)
+            })
+            .collect()
     }
 
     fn snipe_role(&self, name: &str) -> &str {
-        let role = self.scouting_context.as_ref()
+        let role = self
+            .scouting_context
+            .as_ref()
             .and_then(|context| context.roles.iter().find(|(hero, _)| hero == name));
         if let Some((_, role)) = role {
             return role;
         }
-        if self.push_heroes.iter().any(|hero| hero == name) || self.siege.as_deref() == Some(name) { "main" } else { "funnel" }
+        if self.push_heroes.iter().any(|hero| hero == name) || self.siege.as_deref() == Some(name) {
+            "main"
+        } else {
+            "funnel"
+        }
     }
 
     fn snipe_cost(&self, battle: &Battle, name: &str, kind: &str) -> f64 {
@@ -983,26 +1209,43 @@ impl AttackPlan {
             "dash" | "fireball" => 7.0,
             _ => unreachable!("snipe tool kind"),
         };
-        cost += if self.snipe_role(name) == "main" { 2.0 } else { 0.5 };
+        cost += if self.snipe_role(name) == "main" {
+            2.0
+        } else {
+            0.5
+        };
         if !matches!(kind, "queen" | "flinger") {
-            let paired = self.snipe_loadout(battle, name).equipment.iter()
-                .filter(|item| self.owned(item)).map(|item| match item.as_str() {
+            let paired = self
+                .snipe_loadout(battle, name)
+                .equipment
+                .iter()
+                .filter(|item| self.owned(item))
+                .map(|item| match item.as_str() {
                     "Eternal Tome" => 6.0,
                     "Healing Tome" => 3.0,
                     "Invisibility Vial" | "Healer Puppet" | "Haste Vial" | "Seeking Shield"
                     | "Action Figure" | "Revenge Deck" => 2.0,
                     "Royal Gem" => 1.5,
                     _ => 0.0,
-                }).sum::<f64>();
+                })
+                .sum::<f64>();
             cost += paired;
         }
         cost
     }
 
     fn snipe_level(&self, battle: &Battle, name: &str) -> Level {
-        self.level(battle, name).filter(level_truth).unwrap_or_else(|| {
-            Level::Int(battle.catalog.stats.max_level(name, self.town_hall).expect("snipe troop max level"))
-        })
+        self.level(battle, name)
+            .filter(level_truth)
+            .unwrap_or_else(|| {
+                Level::Int(
+                    battle
+                        .catalog
+                        .stats
+                        .max_level(name, self.town_hall)
+                        .expect("snipe troop max level"),
+                )
+            })
     }
 
     // heroes.py:581-651: the sustained tools' infinity is only a ranking estimate.
@@ -1010,8 +1253,12 @@ impl AttackPlan {
         let level = self.snipe_level(battle, name);
         if name == "Flame Flinger" {
             let data = battle.catalog.game_data("characters", name, Some(&level));
-            return Some(("flinger".to_owned(), battle.catalog.numbers(name, &level).range,
-                game_float(data, "DamageRadius") / 100.0, f64::INFINITY));
+            return Some((
+                "flinger".to_owned(),
+                battle.catalog.numbers(name, &level).range,
+                game_float(data, "DamageRadius") / 100.0,
+                f64::INFINITY,
+            ));
         }
         let item = match name {
             "Archer Queen" => "Giant Arrow",
@@ -1020,7 +1267,8 @@ impl AttackPlan {
             "Grand Warden" => "Fireball",
             _ => unreachable!("opening hero"),
         };
-        let equipped = self.snipe_loadout(battle, name)
+        let equipped = self
+            .snipe_loadout(battle, name)
             .equipment
             .iter()
             .any(|equipment| equipment == item && self.owned(equipment));
@@ -1038,17 +1286,31 @@ impl AttackPlan {
         let (kind, reach, radius, damage) = match item {
             "Giant Arrow" => {
                 let data = battle.catalog.equipment_ability(item, &level);
-                ("arrow", f64::INFINITY, game_float(data, "PenetratingRadius") / 100.0, game_float(data, "Damage"))
+                (
+                    "arrow",
+                    f64::INFINITY,
+                    game_float(data, "PenetratingRadius") / 100.0,
+                    game_float(data, "Damage"),
+                )
             }
             "Rocket Spear" => {
                 let damage = heroes::col(battle, item, &level, &["damage per shot increase"], 0.0)
                     * heroes::col(battle, item, &level, &["number of attacks"], 0.0);
-                ("spear", heroes::spear_range(battle), 0.0, damage * self.strength)
+                (
+                    "spear",
+                    heroes::spear_range(battle),
+                    0.0,
+                    damage * self.strength,
+                )
             }
             "Rocket Backpack" => {
                 let data = battle.catalog.equipment_ability(item, &level);
-                ("dash", game_float(data, "MovementOverrideDistance"),
-                    game_float(data, "ActAsPenetratingRadius") / 100.0, game_float(data, "ActAsPenetratingDamage"))
+                (
+                    "dash",
+                    game_float(data, "MovementOverrideDistance"),
+                    game_float(data, "ActAsPenetratingRadius") / 100.0,
+                    game_float(data, "ActAsPenetratingDamage"),
+                )
             }
             _ => (
                 "fireball",
@@ -1061,7 +1323,11 @@ impl AttackPlan {
     }
 
     fn snipe_lightning_count(&self) -> i64 {
-        if self.scouting_context.as_ref().is_some_and(|context| context.reserve_lightning) {
+        if self
+            .scouting_context
+            .as_ref()
+            .is_some_and(|context| context.reserve_lightning)
+        {
             return 0;
         }
         self.unreserved_spells("lightning", true)
@@ -1080,15 +1346,24 @@ impl AttackPlan {
         use crate::playbook::{action_time, Action};
         let target = battle.building(target);
         let distance = py_hypot(target.x - x, target.y - y);
-        let mut seconds = action_time(battle, Action::Deploy, 1) + action_time(battle, Action::Ability, 1);
-        let numbers = battle.catalog.numbers(name, &self.snipe_level(battle, name));
+        let mut seconds =
+            action_time(battle, Action::Deploy, 1) + action_time(battle, Action::Ability, 1);
+        let numbers = battle
+            .catalog
+            .numbers(name, &self.snipe_level(battle, name));
         match kind {
             "arrow" => seconds += distance / 35.0,
             "dash" => seconds += distance / 15.0,
             "fireball" => seconds += 1.5,
             "spear" => {
                 let level = self.equipment_level(battle, "Rocket Spear");
-                let bonus = heroes::col(battle, "Rocket Spear", &level, &["damage per shot increase"], 0.0);
+                let bonus = heroes::col(
+                    battle,
+                    "Rocket Spear",
+                    &level,
+                    &["damage per shot increase"],
+                    0.0,
+                );
                 let shot = (numbers.dmg + bonus) * self.strength * battle.atk_hero_mult;
                 let shots = 1.0_f64.max((target.hp / 1.0_f64.max(shot)).ceil());
                 seconds += (shots - 1.0) * numbers.interval + distance / 12.0;
@@ -1111,7 +1386,8 @@ impl AttackPlan {
             if !battle.building_targetable(defense.id) || weapon.targets == excluded_target {
                 continue;
             }
-            if weapon.kind == Tag::Eagle && battle.deployed_housing < weapon.extra.activation as i64 {
+            if weapon.kind == Tag::Eagle && battle.deployed_housing < weapon.extra.activation as i64
+            {
                 continue;
             }
             let separation = py_hypot(defense.x - x, defense.y - y);
@@ -1131,7 +1407,9 @@ impl AttackPlan {
         let mut blocked = battle.grid.blocked.clone();
         for b in &battle.buildings {
             if b.key == "tesla" && !b.revealed {
-                let bound = |value| (round_half_even(value * RES as f64) as isize).clamp(0, n as isize) as usize;
+                let bound = |value| {
+                    (round_half_even(value * RES as f64) as isize).clamp(0, n as isize) as usize
+                };
                 for i in bound(b.x - b.half_hit)..bound(b.x + b.half_hit) {
                     for j in bound(b.y - b.half_hit)..bound(b.y + b.half_hit) {
                         blocked[i * n + j] = false;
@@ -1139,7 +1417,11 @@ impl AttackPlan {
                 }
             }
         }
-        let walkable: Vec<_> = blocked.iter().zip(&battle.grid.wall).map(|(blocked, wall)| !(*blocked || *wall)).collect();
+        let walkable: Vec<_> = blocked
+            .iter()
+            .zip(&battle.grid.wall)
+            .map(|(blocked, wall)| !(*blocked || *wall))
+            .collect();
         let mut reached = vec![false; n * n];
         let mut queue = Vec::new();
         for &(x, y) in tiles {
@@ -1153,7 +1435,16 @@ impl AttackPlan {
         while head < queue.len() {
             let (i, j) = queue[head];
             head += 1;
-            for (di, dj) in [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)] {
+            for (di, dj) in [
+                (1, 0),
+                (-1, 0),
+                (0, 1),
+                (0, -1),
+                (1, 1),
+                (1, -1),
+                (-1, 1),
+                (-1, -1),
+            ] {
                 let (ni, nj) = (i as isize + di, j as isize + dj);
                 if ni < 0 || nj < 0 || ni >= n as isize || nj >= n as isize {
                     continue;
@@ -1179,7 +1470,13 @@ impl AttackPlan {
             return Vec::new();
         }
         let mut tools = Vec::new();
-        for name in ["Archer Queen", "Royal Champion", "Flame Flinger", "Dragon Duke", "Grand Warden"] {
+        for name in [
+            "Archer Queen",
+            "Royal Champion",
+            "Flame Flinger",
+            "Dragon Duke",
+            "Grand Warden",
+        ] {
             if self.snipe_available(name) {
                 if let Some(tool) = self.sniping_tool(battle, name) {
                     tools.push((name, tool));
@@ -1202,8 +1499,17 @@ impl AttackPlan {
         if tools.is_empty() {
             return Vec::new();
         }
-        let visible: Vec<_> = battle.buildings.iter().filter(|b| battle.building_targetable(b.id)).map(|b| b.id).collect();
-        let defenses: Vec<_> = visible.iter().copied().filter(|id| battle.is_defense_target(*id)).collect();
+        let visible: Vec<_> = battle
+            .buildings
+            .iter()
+            .filter(|b| battle.building_targetable(b.id))
+            .map(|b| b.id)
+            .collect();
+        let defenses: Vec<_> = visible
+            .iter()
+            .copied()
+            .filter(|id| battle.is_defense_target(*id))
+            .collect();
         let weights = self.snipe_weights(battle);
         let mut targets = defenses.clone();
         targets.sort_by(|a, b| lookup(&weights, *b, 0.0).total_cmp(&lookup(&weights, *a, 0.0)));
@@ -1212,7 +1518,8 @@ impl AttackPlan {
         let tiles = battle.deploy_tiles().to_vec();
         let reached = self.opening_reachable(battle, &tiles);
         let mut ranked_tiles: Vec<(BuildingId, Vec<(f64, f64, f64)>)> = Vec::new();
-        let lightning_effects = self.cluster_effects(battle, "lightning", self.snipe_lightning_count());
+        let lightning_effects =
+            self.cluster_effects(battle, "lightning", self.snipe_lightning_count());
         let fallback = self.fallback;
         self.fallback = true;
         let paired_quake = self.spare_quakes(battle) > 0;
@@ -1222,20 +1529,33 @@ impl AttackPlan {
             let (approach, base_cost) = if kind == "lightning" {
                 (0.5, 0.0)
             } else {
-                let range = battle.catalog.numbers(name, &self.snipe_level(battle, name)).range;
-                (if kind == "spear" { reach } else { reach.min(range) }, self.snipe_cost(battle, name, &kind))
+                let range = battle
+                    .catalog
+                    .numbers(name, &self.snipe_level(battle, name))
+                    .range;
+                (
+                    if kind == "spear" {
+                        reach
+                    } else {
+                        reach.min(range)
+                    },
+                    self.snipe_cost(battle, name, &kind),
+                )
             };
             for &target_id in &targets {
                 let target = battle.building(target_id);
                 if lookup(&weights, target_id, 0.0) < base_cost - 0.5
-                    || kind == "lightning" && (storage(&target.key) || matches!(target.key.as_str(), "th" | "cc"))
+                    || kind == "lightning"
+                        && (storage(&target.key) || matches!(target.key.as_str(), "th" | "cc"))
                 {
                     continue;
                 }
                 let extent = target.half_hit + approach;
                 let n = battle.grid.n;
                 let start = |value: f64| ((value * RES as f64) as isize).max(0) as usize;
-                let end = |value: f64| (((value * RES as f64) as isize) + 1).min(n as isize).max(0) as usize;
+                let end = |value: f64| {
+                    (((value * RES as f64) as isize) + 1).min(n as isize).max(0) as usize
+                };
                 let accessible = (start(target.x - extent)..end(target.x + extent)).any(|i| {
                     (start(target.y - extent)..end(target.y + extent)).any(|j| {
                         reached[i * n + j]
@@ -1249,7 +1569,10 @@ impl AttackPlan {
                     continue;
                 }
                 if !ranked_tiles.iter().any(|(id, _)| *id == target_id) {
-                    let mut ranked: Vec<_> = tiles.iter().map(|&(x, y)| (target.edge_distance(x, y), x, y)).collect();
+                    let mut ranked: Vec<_> = tiles
+                        .iter()
+                        .map(|&(x, y)| (target.edge_distance(x, y), x, y))
+                        .collect();
                     ranked.sort_by(|a, b| a.0.total_cmp(&b.0));
                     ranked_tiles.push((target_id, ranked));
                 }
@@ -1264,7 +1587,11 @@ impl AttackPlan {
                     .filter(|item| item.0 <= reach)
                     .collect();
                 let mut drops = Vec::new();
-                for item in legal.iter().take(4).chain(legal.iter().skip(legal.len().saturating_sub(4))) {
+                for item in legal
+                    .iter()
+                    .take(4)
+                    .chain(legal.iter().skip(legal.len().saturating_sub(4)))
+                {
                     if !drops.contains(item) {
                         drops.push(*item);
                     }
@@ -1278,7 +1605,9 @@ impl AttackPlan {
                         let nearest = *visible
                             .iter()
                             .min_by(|a, b| {
-                                battle.building(**a).edge_distance(x, y)
+                                battle
+                                    .building(**a)
+                                    .edge_distance(x, y)
                                     .total_cmp(&battle.building(**b).edge_distance(x, y))
                             })
                             .expect("visible target");
@@ -1289,7 +1618,11 @@ impl AttackPlan {
                             let nearest = battle.building(nearest);
                             let (dx, dy) = (nearest.x - x, nearest.y - y);
                             let length = py_hypot(dx, dy);
-                            let data = battle.catalog.game_data("special_abilities", "ArcherQueenPierceProjectile", None);
+                            let data = battle.catalog.game_data(
+                                "special_abilities",
+                                "ArcherQueenPierceProjectile",
+                                None,
+                            );
                             band = Some((
                                 x,
                                 y,
@@ -1300,7 +1633,8 @@ impl AttackPlan {
                             effect_kind = "arrow";
                         }
                     } else if kind == "dash" {
-                        let (dx, dy, length, dash_radius) = heroes::dash_geometry(battle, x, y, (1.0, 0.0));
+                        let (dx, dy, length, dash_radius) =
+                            heroes::dash_geometry(battle, x, y, (1.0, 0.0));
                         radius = dash_radius;
                         band = Some((x, y, dx, dy, length));
                         effect_kind = "dash";
@@ -1308,7 +1642,9 @@ impl AttackPlan {
                         let nearest = *defenses
                             .iter()
                             .min_by(|a, b| {
-                                battle.building(**a).edge_distance(x, y)
+                                battle
+                                    .building(**a)
+                                    .edge_distance(x, y)
                                     .total_cmp(&battle.building(**b).edge_distance(x, y))
                             })
                             .expect("defense target");
@@ -1342,20 +1678,24 @@ impl AttackPlan {
                         }
                         (
                             dealt,
-                            casts as f64 * action_time(battle, Action::Spell, 1) + spells::LAND_DELAY,
+                            casts as f64 * action_time(battle, Action::Spell, 1)
+                                + spells::LAND_DELAY,
                             0.0,
                             1.5 * casts as f64,
                         )
                     } else {
-                        let (dealt, seconds, loss) = self.snipe_timing(battle, name, &kind, target_id, x, y, damage);
+                        let (dealt, seconds, loss) =
+                            self.snipe_timing(battle, name, &kind, target_id, x, y, damage);
                         (dealt, seconds, loss, base_cost)
                     };
                     if kind != "lightning" {
                         if paired_quake && matches!(kind.as_str(), "arrow" | "dash") {
-                            seconds += action_time(battle, Action::Spell, 1).max(spells::LAND_DELAY + 4.0 * 0.4);
+                            seconds += action_time(battle, Action::Spell, 1)
+                                .max(spells::LAND_DELAY + 4.0 * 0.4);
                             cost += 1.5;
                         }
-                        cost += 2.0 * py_hypot(x - main_point.0, y - main_point.1) / battle.catalog.world as f64;
+                        cost += 2.0 * py_hypot(x - main_point.0, y - main_point.1)
+                            / battle.catalog.world as f64;
                     }
                     if seconds > 12.0 {
                         continue;
@@ -1365,13 +1705,17 @@ impl AttackPlan {
                     let mut value = -cost;
                     for &id in &defenses {
                         let defense = battle.building(id);
-                        let mut hit = band.map_or_else(|| defense.edge_distance(center.0, center.1) <= radius,
-                            |band| band_hit(defense, band, effect_kind, radius));
+                        let mut hit = band.map_or_else(
+                            || defense.edge_distance(center.0, center.1) <= radius,
+                            |band| band_hit(defense, band, effect_kind, radius),
+                        );
                         if matches!(kind.as_str(), "queen" | "spear") {
                             hit = id == target_id;
                         }
-                        if !hit || kind == "lightning"
-                            && (storage(&defense.key) || matches!(defense.key.as_str(), "th" | "cc"))
+                        if !hit
+                            || kind == "lightning"
+                                && (storage(&defense.key)
+                                    || matches!(defense.key.as_str(), "th" | "cc"))
                         {
                             continue;
                         }
@@ -1386,11 +1730,26 @@ impl AttackPlan {
                         }
                     }
                     let rank = (value, distance);
-                    if best.as_ref().is_none_or(|(previous, candidate)| rank > (candidate.value, previous.1)) {
-                        best = Some((rank, DefenseSnipe {
-                            target: target_id, tool: name.to_owned(), kind: kind.clone(), x, y,
-                            value, seconds, cost, damage: hits, casts, confidence: 1.0 - loss,
-                        }));
+                    if best
+                        .as_ref()
+                        .is_none_or(|(previous, candidate)| rank > (candidate.value, previous.1))
+                    {
+                        best = Some((
+                            rank,
+                            DefenseSnipe {
+                                target: target_id,
+                                tool: name.to_owned(),
+                                kind: kind.clone(),
+                                x,
+                                y,
+                                value,
+                                seconds,
+                                cost,
+                                damage: hits,
+                                casts,
+                                confidence: 1.0 - loss,
+                            },
+                        ));
                     }
                 }
                 if let Some((_, chosen)) = best {
@@ -1406,7 +1765,11 @@ impl AttackPlan {
         if !self.snipe_exposed || self.snipe_mode == "off" {
             return Vec::new();
         }
-        let threshold = if self.snipe_mode == "value" { 2.0 } else { -0.5 };
+        let threshold = if self.snipe_mode == "value" {
+            2.0
+        } else {
+            -0.5
+        };
         let mut remaining: Vec<_> = battle.buildings.iter().map(|b| (b.id, b.hp)).collect();
         let weights = self.snipe_weights(battle);
         let mut selected = Vec::new();
@@ -1419,8 +1782,12 @@ impl AttackPlan {
                 if used.contains(&candidate.tool) || hp <= 0.0 || at + candidate.seconds > 12.0 {
                     continue;
                 }
-                let probability = 1.0_f64.min(lookup(&candidate.damage, candidate.target, 0.0) / hp) * candidate.confidence;
-                let value = lookup(&weights, candidate.target, 0.0) * probability - candidate.cost - 0.25 * at;
+                let probability = 1.0_f64
+                    .min(lookup(&candidate.damage, candidate.target, 0.0) / hp)
+                    * candidate.confidence;
+                let value = lookup(&weights, candidate.target, 0.0) * probability
+                    - candidate.cost
+                    - 0.25 * at;
                 if value >= threshold && best.is_none_or(|(previous, _)| value > previous) {
                     best = Some((value, candidate));
                 }
@@ -1431,7 +1798,10 @@ impl AttackPlan {
             used.push(chosen.tool.clone());
             selected.push(chosen.clone());
             for &(id, damage) in &chosen.damage {
-                let entry = remaining.iter_mut().find(|(key, _)| *key == id).expect("remaining building HP");
+                let entry = remaining
+                    .iter_mut()
+                    .find(|(key, _)| *key == id)
+                    .expect("remaining building HP");
                 entry.1 -= damage;
             }
             at += if chosen.kind == "lightning" {
@@ -1451,7 +1821,11 @@ impl AttackPlan {
         self.snipe_lightning = None;
         self.snipe_lightning_at = 0.0;
         self.snipe_lightning_left = 0;
-        let exposed = if self.snipe_exposed { self.exposed_defenses(battle) } else { Vec::new() };
+        let exposed = if self.snipe_exposed {
+            self.exposed_defenses(battle)
+        } else {
+            Vec::new()
+        };
         let mut out = Vec::new();
         let mut at = 0.0;
         let mut remaining: Vec<_> = battle.buildings.iter().map(|b| (b.id, b.hp)).collect();
@@ -1461,19 +1835,39 @@ impl AttackPlan {
                 self.snipe_lightning_at = at;
                 self.snipe_lightning_left = chosen.casts;
             } else {
-                set(&mut self.snipe_assignments, chosen.tool.clone(), chosen.clone());
+                set(
+                    &mut self.snipe_assignments,
+                    chosen.tool.clone(),
+                    chosen.clone(),
+                );
                 self.snipe_deployed.push(chosen.tool.clone());
                 out.push(Deployment {
-                    time: at, name: chosen.tool.clone(), x: chosen.x, y: chosen.y,
-                    group: "snipe".to_owned(), level: self.level(battle, &chosen.tool),
-                    town_hall: Some(self.town_hall), source: "army".to_owned(), mode: None,
+                    time: at,
+                    name: chosen.tool.clone(),
+                    x: chosen.x,
+                    y: chosen.y,
+                    group: "snipe".to_owned(),
+                    level: self.level(battle, &chosen.tool),
+                    town_hall: Some(self.town_hall),
+                    source: "army".to_owned(),
+                    mode: None,
                 });
-                self.log_snipe(at, &format!("deploy:{}", chosen.kind), chosen.target, chosen.x, chosen.y);
+                self.log_snipe(
+                    at,
+                    &format!("deploy:{}", chosen.kind),
+                    chosen.target,
+                    chosen.x,
+                    chosen.y,
+                );
             }
             for &(id, damage) in &chosen.damage {
-                let entry = remaining.iter_mut().find(|(key, _)| *key == id).expect("remaining building HP");
+                let entry = remaining
+                    .iter_mut()
+                    .find(|(key, _)| *key == id)
+                    .expect("remaining building HP");
                 entry.1 -= damage;
-                if entry.1 <= 0.0 && chosen.kind != "lightning" && !self.snipe_claimed.contains(&id) {
+                if entry.1 <= 0.0 && chosen.kind != "lightning" && !self.snipe_claimed.contains(&id)
+                {
                     self.snipe_claimed.push(id);
                 }
             }
@@ -1517,18 +1911,29 @@ impl AttackPlan {
                 Plan::Stage { .. } => {}
             }
         }
-        if !self.snipe_exposed || self.snipe_mode == "off" || battle.t > 12.0 || battle.t < self.busy_until {
+        if !self.snipe_exposed
+            || self.snipe_mode == "off"
+            || battle.t > 12.0
+            || battle.t < self.busy_until
+        {
             return false;
         }
-        if let Some(chosen) = self.snipe_lightning.clone().filter(|chosen| self.snipe_lightning_left > 0
-            && battle.t >= self.snipe_lightning_at && battle.building_targetable(chosen.target)
-            && !self.snipe_claimed.contains(&chosen.target))
-        {
+        if let Some(chosen) = self.snipe_lightning.clone().filter(|chosen| {
+            self.snipe_lightning_left > 0
+                && battle.t >= self.snipe_lightning_at
+                && battle.building_targetable(chosen.target)
+                && !self.snipe_claimed.contains(&chosen.target)
+        }) {
             let available = self.snipe_lightning_count().min(self.snipe_lightning_left);
             let (hp, _) = self.cluster_state(battle);
             let remaining = lookup(&hp, chosen.target, 0.0);
-            let effects = if available != 0 { self.cluster_effects(battle, "lightning", available) } else { Vec::new() };
-            if remaining > 0.0 && effects.iter().map(|effect| effect.damage).sum::<f64>() >= remaining
+            let effects = if available != 0 {
+                self.cluster_effects(battle, "lightning", available)
+            } else {
+                Vec::new()
+            };
+            if remaining > 0.0
+                && effects.iter().map(|effect| effect.damage).sum::<f64>() >= remaining
                 && battle.t + spells::LAND_DELAY <= 12.0
             {
                 let target = battle.building(chosen.target);
@@ -1547,13 +1952,21 @@ impl AttackPlan {
         let units: Vec<_> = battle.attackers_pool().map(Unit::reference).collect();
         for hero in units {
             let u = battle.unit(hero);
-            let assignment = self.snipe_assignments.iter().find(|(name, _)| *name == u.name);
+            let assignment = self
+                .snipe_assignments
+                .iter()
+                .find(|(name, _)| *name == u.name);
             let Some((_, chosen)) = assignment else {
                 continue;
             };
             let chosen = chosen.clone();
-            if !u.alive || u.kind == Tag::HeroClone || u.ability_used || u.kit.is_none()
-                || battle.t + chosen.seconds > 12.0 || !battle.building_targetable(chosen.target) || chosen.kind == "queen"
+            if !u.alive
+                || u.kind == Tag::HeroClone
+                || u.ability_used
+                || u.kit.is_none()
+                || battle.t + chosen.seconds > 12.0
+                || !battle.building_targetable(chosen.target)
+                || chosen.kind == "queen"
             {
                 continue;
             }
@@ -1561,7 +1974,12 @@ impl AttackPlan {
                 let Some((band, effect)) = self.ability_band(battle, hero) else {
                     continue;
                 };
-                if !band_hit(battle.building(chosen.target), band, &effect.kind, effect.radius) {
+                if !band_hit(
+                    battle.building(chosen.target),
+                    band,
+                    &effect.kind,
+                    effect.radius,
+                ) {
                     continue;
                 }
                 if !self.fire_aimed(battle, hero, None) {
@@ -1570,7 +1988,8 @@ impl AttackPlan {
             } else {
                 let (x, y) = (u.x, u.y);
                 let nearest = heroes::targets(battle, true).into_iter().min_by(|a, b| {
-                    heroes::distance(battle, *a, x, y).total_cmp(&heroes::distance(battle, *b, x, y))
+                    heroes::distance(battle, *a, x, y)
+                        .total_cmp(&heroes::distance(battle, *b, x, y))
                 });
                 let Some(nearest) = nearest else {
                     continue;

@@ -6,17 +6,18 @@ use std::sync::Arc;
 use std::collections::HashSet;
 
 use crate::battle::SpawnOptions;
+use crate::catalog::{game_float, game_int, game_required_int};
 use crate::combat::{SplashBuildingsOptions, SplashUnitsOptions};
 use crate::effects;
 use crate::fast_hash::FastMap as HashMap;
 use crate::geom;
 use crate::grid::{TargetIdentity, RES};
-use crate::catalog::{game_float, game_int, game_required_int};
 use crate::heroes;
 use crate::labels::{Name, Special, Tag};
 use crate::spells;
 use crate::state::{
-    Battle, CargoEntry, EntityRef, Field, Pending, RollingLog, SpinPosition, StatusSource, Team, Unit, UnitRef, WallId,
+    Battle, CargoEntry, EntityRef, Field, Pending, RollingLog, SpinPosition, StatusSource, Team,
+    Unit, UnitRef, WallId,
 };
 use crate::stats::Level;
 
@@ -27,7 +28,12 @@ fn unit_stat(battle: &Battle, unit: UnitRef, keys: &[&str], default: Option<f64>
     battle
         .catalog
         .stats
-        .get(&u.name, u.level.as_ref().expect("unit level"), keys, default)
+        .get(
+            &u.name,
+            u.level.as_ref().expect("unit level"),
+            keys,
+            default,
+        )
         .expect("unit statistic")
 }
 
@@ -190,9 +196,7 @@ pub fn wall_breaker_target(battle: &mut Battle, unit: UnitRef) -> Option<WallId>
             || u.spec.walls == Tag::Ignore
             || battle.t < u.extra.horse_until
             || effects::torch_stats(u, battle.t).1 != 0.0
-            || !u.extra.torches.is_empty()
-                && !u.flying
-                && battle.grid.wall[battle.grid.index(i, j)]
+            || !u.extra.torches.is_empty() && !u.flying && battle.grid.wall[battle.grid.index(i, j)]
         {
             return None;
         }
@@ -238,7 +242,7 @@ pub fn wall_breaker_target(battle: &mut Battle, unit: UnitRef) -> Option<WallId>
     for building in &buildings {
         // units.py:125-146: partial enclosure still protects the building.
         let route = grid.field(
-            TargetIdentity::Breaker(building.0.0),
+            TargetIdentity::Breaker(building.0 .0),
             building.1,
             building.2,
             building.3,
@@ -339,9 +343,11 @@ fn follow_target_with_scores(
         }
         _ => unreachable!("Warden follows buildings or walls"),
     };
-    scores.iter()
+    scores
+        .iter()
         .min_by(|(a, a_score), (b, b_score)| {
-            b_score.total_cmp(a_score)
+            b_score
+                .total_cmp(a_score)
                 .then_with(|| target_key(*a).cmp(&target_key(*b)))
         })
         .map(|(target, _)| *target)
@@ -647,23 +653,23 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
                 }
             }
         } else {
-            contacts.extend(battle.walls.iter()
-                .filter(|wall| wall.alive && wall.edge_distance(x, y) <= 0.75)
-                .map(|wall| wall.id));
+            contacts.extend(
+                battle
+                    .walls
+                    .iter()
+                    .filter(|wall| wall.alive && wall.edge_distance(x, y) <= 0.75)
+                    .map(|wall| wall.id),
+            );
         }
         contacts.sort_unstable_by_key(|id| id.0);
         for &id in &contacts {
             smash_wall(battle, unit, id);
         }
-        battle
-            .unit_mut(unit)
-            .extra
-            .wall_pulses
-            .retain(|(id, _)| {
-                contacts
-                    .binary_search_by_key(&id.0, |contact| contact.0)
-                    .is_ok()
-            });
+        battle.unit_mut(unit).extra.wall_pulses.retain(|(id, _)| {
+            contacts
+                .binary_search_by_key(&id.0, |contact| contact.0)
+                .is_ok()
+        });
         contacts.clear();
         battle.wall_contact_scratch = contacts;
     }
@@ -712,8 +718,7 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
             row.at("SpecialAbilities").str(),
             Some(&level),
         );
-        if u.extra.rage_damage_taken
-            >= game_required_int(ability, "ActiveAfterTakingDamage") as f64
+        if u.extra.rage_damage_taken >= game_required_int(ability, "ActiveAfterTakingDamage") as f64
         {
             let u = battle.unit_mut(unit);
             u.extra.enraged = true;
@@ -739,11 +744,7 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
                 let u = battle.unit(unit);
                 let f = battle.unit(foe);
                 if f.alive && geom::dist(u.x, u.y, f.x, f.y) <= 3.5 {
-                    let amount = if f.is_hero {
-                        damage * 0.25
-                    } else {
-                        damage
-                    };
+                    let amount = if f.is_hero { damage * 0.25 } else { damage };
                     battle.hit_unit(foe, amount, None, "normal", None);
                 }
             }
@@ -768,7 +769,8 @@ fn pre_tick_effect(battle: &mut Battle, unit: UnitRef) -> bool {
             // units.py:426-435: a stale rubble claim must never deliver a Knight.
             let claim = &battle.building(rubble).extra;
             if !battle.unit(unit).extra.delivery_committed
-                && (claim.rubble_taken || claim.rubble_claim != Some(unit.id)) {
+                && (claim.rubble_taken || claim.rubble_claim != Some(unit.id))
+            {
                 battle.unit_mut(unit).extra.vacuum = None;
                 return true;
             }
@@ -1112,12 +1114,13 @@ fn roll_log(battle: &mut Battle, unit: UnitRef) {
         .catalog
         .stats
         .get(
-        &u.name,
-        level,
-        &["Damage per Hit vs. Walls"],
-        Some(base * 4.0),
-    )
-        .expect("log wall damage") * strength;
+            &u.name,
+            level,
+            &["Damage per Hit vs. Walls"],
+            Some(base * 4.0),
+        )
+        .expect("log wall damage")
+        * strength;
     let point_blank = battle
         .catalog
         .stats
@@ -1127,7 +1130,8 @@ fn roll_log(battle: &mut Battle, unit: UnitRef) {
             &["Point-Blank Damage*", "Point-Blank Damage"],
             Some(0.0),
         )
-        .expect("point blank default") * strength;
+        .expect("point blank default")
+        * strength;
     if point_blank != 0.0 {
         let (x, y) = (u.x, u.y);
         battle.splash_buildings(
@@ -1185,72 +1189,70 @@ pub fn advance_log(battle: &mut Battle, field: &mut Field) -> bool {
         Some(EntityRef::Unit(log.launcher)),
         Tag::Attack,
         |battle| {
-        while log.next as f64 * 0.5 <= reach {
-            let step = log.next;
-            log.next += 1;
-            // Match Python's left-to-right multiplication before adding the origin.
-            let (px, py) = (x + log.dx * step as f64 * 0.5, y + log.dy * step as f64 * 0.5, );
-            for key in [
-                (px as i32, py as i32),
-                ((px + 0.5) as i32, py as i32),
-                (px as i32, (py + 0.5) as i32),
-            ] {
-                if let Some(&wall) = battle.wall_indices.get(&key) {
-                    if battle.walls[wall.0].alive && log.hit_walls.insert(key) {
-                        battle.hit_building(
-                            EntityRef::Wall(wall),
-                            log.wall_damage,
+            while log.next as f64 * 0.5 <= reach {
+                let step = log.next;
+                log.next += 1;
+                // Match Python's left-to-right multiplication before adding the origin.
+                let (px, py) = (
+                    x + log.dx * step as f64 * 0.5,
+                    y + log.dy * step as f64 * 0.5,
+                );
+                for key in [
+                    (px as i32, py as i32),
+                    ((px + 0.5) as i32, py as i32),
+                    (px as i32, (py + 0.5) as i32),
+                ] {
+                    if let Some(&wall) = battle.wall_indices.get(&key) {
+                        if battle.walls[wall.0].alive && log.hit_walls.insert(key) {
+                            battle.hit_building(
+                                EntityRef::Wall(wall),
+                                log.wall_damage,
+                                None,
+                                "normal",
+                            );
+                        }
+                    }
+                }
+                for index in 0..battle.buildings.len() {
+                    let b = &battle.buildings[index];
+                    if b.alive
+                        && b.counted
+                        && !log.hit_buildings.contains(&b.id)
+                        && b.edge_distance(px, py) < 0.8
+                    {
+                        let id = b.id;
+                        log.hit_buildings.insert(id);
+                        battle.hit_building(EntityRef::Building(id), log.damage, None, "normal");
+                        if log.hit_buildings.len() >= 4 {
+                            return false;
+                        }
+                    }
+                }
+                // Death callbacks can append defenders, as Python's live list iterator does.
+                let mut index = 0;
+                while index < battle.defenders.len() {
+                    let foe = &battle.defenders[index];
+                    if foe.in_pool
+                        && foe.alive
+                        && !foe.flying
+                        && !log.hit_units.contains(&foe.reference())
+                        && geom::dist(px, py, foe.x, foe.y) < 0.8
+                    {
+                        let victim = foe.reference();
+                        log.hit_units.insert(victim);
+                        battle.hit_unit(
+                            victim,
+                            log.damage,
                             None,
                             "normal",
+                            Some(EntityRef::Unit(log.launcher)),
                         );
                     }
+                    index += 1;
                 }
             }
-            for index in 0..battle.buildings.len() {
-                let b = &battle.buildings[index];
-                if b.alive
-                    && b.counted
-                    && !log.hit_buildings.contains(&b.id)
-                    && b.edge_distance(px, py) < 0.8
-                {
-                    let id = b.id;
-                    log.hit_buildings.insert(id);
-                    battle.hit_building(
-                        EntityRef::Building(id),
-                        log.damage,
-                        None,
-                        "normal"
-                    );
-                    if log.hit_buildings.len() >= 4 {
-                        return false;
-                    }
-                }
-            }
-            // Death callbacks can append defenders, as Python's live list iterator does.
-            let mut index = 0;
-            while index < battle.defenders.len() {
-                let foe = &battle.defenders[index];
-                if foe.in_pool
-                    && foe.alive
-                    && !foe.flying
-                    && !log.hit_units.contains(&foe.reference())
-                    && geom::dist(px, py, foe.x, foe.y) < 0.8
-                {
-                    let victim = foe.reference();
-                    log.hit_units.insert(victim);
-                    battle.hit_unit(
-                        victim,
-                        log.damage,
-                        None,
-                        "normal",
-                        Some(EntityRef::Unit(log.launcher)),
-                    );
-                }
-                index += 1;
-            }
-        }
-        log.next as f64 * 0.5 <= LOG_RANGE
-    },
+            log.next as f64 * 0.5 <= LOG_RANGE
+        },
     )
 }
 
@@ -1330,11 +1332,7 @@ fn on_death_effect(battle: &mut Battle, unit: UnitRef) {
                     &u.name,
                 );
                 pending.team = opposing_team;
-                pending.extra.buildings = if unit.team == Team::Atk {
-                    damage
-                } else {
-                    0.0
-                };
+                pending.extra.buildings = if unit.team == Team::Atk { damage } else { 0.0 };
                 pending.actor = Some(EntityRef::Unit(unit));
                 pending.effect = Some(Tag::Death);
                 battle.add_pending(pending);
@@ -1478,7 +1476,9 @@ fn on_death_effect(battle: &mut Battle, unit: UnitRef) {
             } else {
                 u.name.clone()
             };
-            let row = battle.catalog.game_data("characters", &row_name, u.level.as_ref());
+            let row = battle
+                .catalog
+                .game_data("characters", &row_name, u.level.as_ref());
             spawn_distance = game_int(row, "SecondarySpawnDist", 0) as f64 / 100.0;
             spawn_offset = game_int(row, "SecondarySpawnOffset", 0) as f64 / 100.0;
             randomize_distance = row
@@ -1529,14 +1529,13 @@ fn on_death_effect(battle: &mut Battle, unit: UnitRef) {
         let ability = battle.catalog.game_data(
             "special_abilities",
             "ElectroDragonOnDeath",
-            u.level.as_ref()
+            u.level.as_ref(),
         );
         let spell_level = Level::Int(game_int(ability, "SelfSpellLevel", 1));
-        let spell = battle.catalog.game_data(
-            "spells",
-            ability.at("SelfSpell").str(),
-            Some(&spell_level)
-        );
+        let spell =
+            battle
+                .catalog
+                .game_data("spells", ability.at("SelfSpell").str(), Some(&spell_level));
         let count = game_int(spell, "NumberOfHits", 0);
         let gap = game_int(spell, "TimeBetweenHitsMS", 0) as f64 / 1000.0;
         for index in 0..count {
@@ -1548,17 +1547,22 @@ fn on_death_effect(battle: &mut Battle, unit: UnitRef) {
                 u.y + offset * geom::py_sin(angle),
             );
             // units.py:848-862: the first bolt is due now; append order is radial order.
-            let mut pending = Pending::new(t + index as f64 * gap, x, y, 2.0, damage, false, true, &u.name);
+            let mut pending = Pending::new(
+                t + index as f64 * gap,
+                x,
+                y,
+                2.0,
+                damage,
+                false,
+                true,
+                &u.name,
+            );
             pending.team = if unit.team == Team::Atk {
                 Team::Def
             } else {
                 Team::Atk
             };
-            pending.extra.buildings = if unit.team == Team::Atk {
-                damage
-            } else {
-                0.0
-            };
+            pending.extra.buildings = if unit.team == Team::Atk { damage } else { 0.0 };
             pending.actor = Some(EntityRef::Unit(unit));
             pending.effect = Some(Tag::Death);
             battle.add_pending(pending);
@@ -1729,10 +1733,14 @@ fn try_merge_meteor(battle: &mut Battle, unit: UnitRef) -> bool {
     let mut best_key = (f64::INFINITY, usize::MAX);
     for candidate in battle.attackers_pool() {
         let reference = candidate.reference();
-        if reference == unit || !candidate.alive || candidate.name_id != Name::Meteormite
+        if reference == unit
+            || !candidate.alive
+            || candidate.name_id != Name::Meteormite
             || candidate.extra.clone
-            || !candidate.can_act(battle.t) || candidate.extra.leaping
-            || geom::dist(u.x, u.y, candidate.x, candidate.y) > radius {
+            || !candidate.can_act(battle.t)
+            || candidate.extra.leaping
+            || geom::dist(u.x, u.y, candidate.x, candidate.y) > radius
+        {
             continue;
         }
         if candidate.target.is_some_and(|target| {
@@ -1741,7 +1749,10 @@ fn try_merge_meteor(battle: &mut Battle, unit: UnitRef) -> bool {
         }) {
             continue;
         }
-        let key = (geom::dist(u.x, u.y, candidate.x, candidate.y), candidate.id.0);
+        let key = (
+            geom::dist(u.x, u.y, candidate.x, candidate.y),
+            candidate.id.0,
+        );
         if other.is_none() || key < best_key {
             other = Some(reference);
             best_key = key;
@@ -1764,17 +1775,35 @@ fn try_merge_meteor(battle: &mut Battle, unit: UnitRef) -> bool {
         }
     }
     let u = battle.unit(unit);
-    let parent = battle.spawn("Meteor Golem", Team::Atk, u.x, u.y, SpawnOptions {
-        level: u.level.clone(),
-        group: u.group.clone(),
-        ..Default::default()
-    });
+    let parent = battle.spawn(
+        "Meteor Golem",
+        Team::Atk,
+        u.x,
+        u.y,
+        SpawnOptions {
+            level: u.level.clone(),
+            group: u.group.clone(),
+            ..Default::default()
+        },
+    );
     let base_max_hp = battle.unit(unit).base_max_hp + battle.unit(other).base_max_hp;
     let aura_bonus = battle.unit(unit).aura_bonus + battle.unit(other).aura_bonus;
     let hp = battle.unit(unit).hp + battle.unit(other).hp;
     let aura_hp = battle.unit(unit).extra.aura_hp + battle.unit(other).extra.aura_hp;
-    let mut components = battle.unit(unit).extra.meteor_components.clone().unwrap_or_default();
-    components.extend(battle.unit(other).extra.meteor_components.clone().unwrap_or_default());
+    let mut components = battle
+        .unit(unit)
+        .extra
+        .meteor_components
+        .clone()
+        .unwrap_or_default();
+    components.extend(
+        battle
+            .unit(other)
+            .extra
+            .meteor_components
+            .clone()
+            .unwrap_or_default(),
+    );
     let parent_unit = battle.unit_mut(parent);
     parent_unit.base_max_hp = base_max_hp;
     parent_unit.aura_bonus = aura_bonus;
@@ -1837,17 +1866,25 @@ pub fn launch_barrel(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
             ("Balloon", "Balloon"),
             ("Baby Dragon", "Baby Dragon"),
         ] {
-            let count = unit_stat(battle, unit, &[&format!("Troops Spawned / {column}")], None) as i64;
-            let level = unit_stat(battle, unit, &[&format!("Troop Levels / {column}")], None) as i64;
+            let count =
+                unit_stat(battle, unit, &[&format!("Troops Spawned / {column}")], None) as i64;
+            let level =
+                unit_stat(battle, unit, &[&format!("Troop Levels / {column}")], None) as i64;
             for _ in 0..count {
                 let u = battle.unit(unit);
-                battle.spawn(name, unit.team, x, y, SpawnOptions {
-                    level: Some(Level::Int(level)),
-                    kind: Tag::Summon,
-                    group: u.group.clone(),
-                    owner: Some(unit),
-                    ..Default::default()
-                });
+                battle.spawn(
+                    name,
+                    unit.team,
+                    x,
+                    y,
+                    SpawnOptions {
+                        level: Some(Level::Int(level)),
+                        kind: Tag::Summon,
+                        group: u.group.clone(),
+                        owner: Some(unit),
+                        ..Default::default()
+                    },
+                );
             }
         }
         let damage = unit_stat(battle, unit, &["Damage per Hit*"], None);
@@ -1908,12 +1945,8 @@ pub fn launch_barrel(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
                     &u.name,
                 );
                 pending.team = unit.team;
-                pending.extra.summon = Some((
-                    name.clone(),
-                    Level::Int(level),
-                    u.group.clone(),
-                    Some(unit),
-                ));
+                pending.extra.summon =
+                    Some((name.clone(), Level::Int(level), u.group.clone(), Some(unit)));
                 pending.actor = Some(EntityRef::Unit(unit));
                 battle.add_pending(pending);
             }
@@ -2009,8 +2042,11 @@ pub fn tantrum(battle: &Battle, unit: UnitRef) -> bool {
     }
     let u = battle.unit(unit);
     let eligible = |ally: &Unit| {
-        ally.reference() != unit && ally.alive && ally.flying
-            && battle.t >= ally.active_at && !ally.extra.suspended
+        ally.reference() != unit
+            && ally.alive
+            && ally.flying
+            && battle.t >= ally.active_at
+            && !ally.extra.suspended
             && geom::dist(u.x, u.y, ally.x, ally.y) <= 4.5
     };
     let nearby_air = if unit.team == Team::Atk {
@@ -2063,15 +2099,7 @@ pub fn valkyrie_position(
         }
         if battle.buildings.iter().any(|building| {
             building.alive
-                && segment_entry(
-                    battle,
-                    u.x,
-                    u.y,
-                    x,
-                    y,
-                    EntityRef::Building(building.id),
-                )
-                .is_some()
+                && segment_entry(battle, u.x, u.y, x, y, EntityRef::Building(building.id)).is_some()
         }) {
             continue;
         }
@@ -2117,7 +2145,10 @@ pub fn attack_ready(battle: &mut Battle, unit: UnitRef, target: EntityRef) -> bo
 pub fn effective_range(battle: &Battle, unit: &Unit) -> f64 {
     if unit.spec.has_special(Special::LongShot) && unit.extra.long_shots > 0 {
         // units.py:1333-1335: game-data Long Shot range is 9.75 tiles.
-        let row = battle.catalog.game_data("special_abilities", "SuperMinionSpecialProjectiles", None);
+        let row =
+            battle
+                .catalog
+                .game_data("special_abilities", "SuperMinionSpecialProjectiles", None);
         return game_int(row, "AttackRange", 0) as f64 / 100.0;
     }
     unit.range
@@ -2229,7 +2260,11 @@ pub fn target_killed_cooldown(battle: &mut Battle, unit: UnitRef, target: Entity
 
 // units.py:304-306,1522,2389-2391: all burst resets read the same shot count.
 fn burst_shots(battle: &Battle, unit: UnitRef) -> i64 {
-    let raw = battle.catalog.stats.attrs(&battle.unit(unit).name).at("raw");
+    let raw = battle
+        .catalog
+        .stats
+        .attrs(&battle.unit(unit).name)
+        .at("raw");
     crate::stats::num(raw.at("Shots per Burst"), None).expect("burst shot count") as i64
 }
 
@@ -2243,13 +2278,20 @@ pub fn attack_interval(battle: &mut Battle, unit: UnitRef) -> f64 {
     }
     battle.unit_mut(unit).extra.burst_left -= 1;
     if battle.unit(unit).extra.burst_left > 0 {
-        let raw = battle.catalog.stats.attrs(&battle.unit(unit).name).at("raw");
-        return crate::stats::num(raw.at("Time Between Shots"), None)
-            .expect("burst shot interval");
+        let raw = battle
+            .catalog
+            .stats
+            .attrs(&battle.unit(unit).name)
+            .at("raw");
+        return crate::stats::num(raw.at("Time Between Shots"), None).expect("burst shot interval");
     }
     let shots = burst_shots(battle, unit);
     battle.unit_mut(unit).extra.burst_left = shots;
-    let raw = battle.catalog.stats.attrs(&battle.unit(unit).name).at("raw");
+    let raw = battle
+        .catalog
+        .stats
+        .attrs(&battle.unit(unit).name)
+        .at("raw");
     crate::stats::num(raw.at("Time Between Bursts"), None).expect("burst interval")
 }
 
@@ -2331,9 +2373,12 @@ pub fn attack_targets(battle: &mut Battle, unit: UnitRef, walls: bool) -> Vec<En
     }
     let mut append = |v: &Unit| {
         let victim = v.reference();
-        if v.alive && !v.extra.suspended && battle.t >= v.active_at
+        if v.alive
+            && !v.extra.suspended
+            && battle.t >= v.active_at
             && battle.can_hit(unit, victim)
-            && !(battle.unit(unit).spec.splash_ground_only && v.flying) {
+            && !(battle.unit(unit).spec.splash_ground_only && v.flying)
+        {
             targets.push(EntityRef::Unit(victim));
         }
     };
@@ -2372,7 +2417,9 @@ pub fn chill(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     let u = battle.unit(unit);
     if u.name_id == Name::Electromite {
         // units.py:1478-1483: Electromite applies complete frost for 100 ms.
-        let row = battle.catalog.game_data("special_abilities", "ElectromiteStunAbility", None);
+        let row = battle
+            .catalog
+            .game_data("special_abilities", "ElectromiteStunAbility", None);
         let factor = 1.0 - game_int(row, "FrostOnHitPercent", 0) as f64 / 100.0;
         let duration = game_int(row, "FrostOnHitTime", 0) as f64 / 1000.0;
         frost(battle, target, factor, duration);
@@ -2407,7 +2454,7 @@ fn hit_target_bonus(
     unit: UnitRef,
     target: EntityRef,
     damage: f64,
-    bonus: f64
+    bonus: f64,
 ) {
     let damage = damage * mult_vs(battle, unit, target) + bonus;
     if let EntityRef::Unit(victim) = target {
@@ -2507,7 +2554,17 @@ pub fn spatial_strike(battle: &mut Battle, unit: UnitRef, target: EntityRef, dam
         }
         battle.kill(unit);
     } else if sp.attack == Tag::Chain {
-        chain_hit(battle, unit, target, damage, Vec::new(), target, sp.chain, damage, battle.t);
+        chain_hit(
+            battle,
+            unit,
+            target,
+            damage,
+            Vec::new(),
+            target,
+            sp.chain,
+            damage,
+            battle.t,
+        );
     } else if sp.attack == Tag::Bounce {
         let u = battle.unit(unit);
         let (tx, ty) = battle.entity_position(target);
@@ -2518,8 +2575,16 @@ pub fn spatial_strike(battle: &mut Battle, unit: UnitRef, target: EntityRef, dam
             let (tx, ty) = battle.entity_position(target);
             let x = tx + dx / length * sp.bounce_gap * k as f64;
             let y = ty + dy / length * sp.bounce_gap * k as f64;
-            area_hit(battle, unit, x, y, sp.splash, damage, true,
-                if k == 0 { Some(target) } else { None });
+            area_hit(
+                battle,
+                unit,
+                x,
+                y,
+                sp.splash,
+                damage,
+                true,
+                if k == 0 { Some(target) } else { None },
+            );
         }
     } else if sp.attack == Tag::Pierce {
         hit_target(battle, unit, target, damage);
@@ -2550,7 +2615,16 @@ pub fn spatial_strike(battle: &mut Battle, unit: UnitRef, target: EntityRef, dam
         }
     } else if sp.attack == Tag::Spin {
         let u = battle.unit(unit);
-        area_hit(battle, unit, u.x, u.y, sp.splash, damage, true, Some(target));
+        area_hit(
+            battle,
+            unit,
+            u.x,
+            u.y,
+            sp.splash,
+            damage,
+            true,
+            Some(target),
+        );
     } else {
         // units.py:1709-1726: SelfAsAoeCenter uses the attacker's position.
         let center = if self_aoe_center(battle, unit) {
@@ -2575,10 +2649,12 @@ fn chain_hit(
     base_damage: f64,
     at: f64,
 ) {
-    if battle.entity_alive(target) && match target {
-        EntityRef::Unit(victim) => battle.unit(victim).indirect_targetable(battle),
-        _ => true,
-    } {
+    if battle.entity_alive(target)
+        && match target {
+            EntityRef::Unit(victim) => battle.unit(victim).indirect_targetable(battle),
+            _ => true,
+        }
+    {
         hit_target(battle, unit, target, damage);
     }
     if !hit.contains(&target) {
@@ -2639,13 +2715,25 @@ fn chain_hit(
     }) * sp.chain_decay;
     let u = battle.unit(unit);
     let row = if u.name_id == Name::Electromite {
-        battle.catalog.game_data("special_abilities", "ElectromiteStunAbility", None)
+        battle
+            .catalog
+            .game_data("special_abilities", "ElectromiteStunAbility", None)
     } else {
         battle.catalog.game_unit_data(&u.name, u.level.as_ref())
     };
     let delay = game_int(row, "ChainAttackDelay", 0) as f64 / 1000.0;
     if delay == 0.0 {
-        chain_hit(battle, unit, next, amount, hit, primary, remaining - 1, base_damage, at);
+        chain_hit(
+            battle,
+            unit,
+            next,
+            amount,
+            hit,
+            primary,
+            remaining - 1,
+            base_damage,
+            at,
+        );
         return;
     }
     let (x, y) = battle.entity_position(next);
@@ -2657,7 +2745,7 @@ fn chain_hit(
         amount,
         u.hits_air,
         u.hits_ground,
-        u.source.clone()
+        u.source.clone(),
     );
     pending.team = if unit.team == Team::Atk {
         Team::Def
@@ -2677,7 +2765,10 @@ fn chain_hit(
 
 fn self_aoe_center(battle: &Battle, unit: UnitRef) -> bool {
     let u = battle.unit(unit);
-    battle.catalog.game_unit_data(&u.name, u.level.as_ref()).get("SelfAsAoeCenter")
+    battle
+        .catalog
+        .game_unit_data(&u.name, u.level.as_ref())
+        .get("SelfAsAoeCenter")
         .is_some_and(|value| value.str() == "TRUE")
 }
 
@@ -2698,8 +2789,7 @@ fn dragon_footprint(battle: &Battle, target: EntityRef, x: f64, y: f64) -> bool 
             if dx.abs() == 2 && dy.abs() == 2 {
                 continue;
             }
-            if (tx - x - dx as f64).abs() <= half + 0.5
-                && (ty - y - dy as f64).abs() <= half + 0.5
+            if (tx - x - dx as f64).abs() <= half + 0.5 && (ty - y - dy as f64).abs() <= half + 0.5
             {
                 return true;
             }
@@ -2745,12 +2835,10 @@ pub fn mult_vs(battle: &Battle, unit: UnitRef, target: EntityRef) -> f64 {
 }
 
 // units.py:1760-1778: resolve the per-level projectile before consuming Long Shot.
-fn projectile_data<'a>(
-    battle: &'a Battle,
-    unit: &Unit,
-    noble_iron: bool,
-) -> &'a crate::json::Json {
-    let row = battle.catalog.game_unit_data(&unit.name, unit.level.as_ref());
+fn projectile_data<'a>(battle: &'a Battle, unit: &Unit, noble_iron: bool) -> &'a crate::json::Json {
+    let row = battle
+        .catalog
+        .game_unit_data(&unit.name, unit.level.as_ref());
     let projectile = if unit.name_id == Name::SuperMinion && unit.extra.long_shots > 0 {
         Some("super_gargoyle_projectile_big")
     } else if noble_iron {
@@ -2758,7 +2846,9 @@ fn projectile_data<'a>(
     } else {
         row.get("Projectile").map(crate::json::Json::str)
     };
-    battle.catalog.game_data("projectiles", projectile.unwrap_or(""), None)
+    battle
+        .catalog
+        .game_data("projectiles", projectile.unwrap_or(""), None)
 }
 
 pub fn projectile_speed(battle: &Battle, unit: &Unit, noble_iron: bool) -> Option<f64> {
@@ -2786,7 +2876,9 @@ pub fn launch_projectile(
     let denominator = if length == 0.0 { 1.0 } else { length };
     let (dx, dy) = ((x - u.x) / denominator, (y - u.y) / denominator);
     let projectile = if rocket {
-        battle.catalog.game_data("projectiles", "RocketSpearProjectile", None)
+        battle
+            .catalog
+            .game_data("projectiles", "RocketSpearProjectile", None)
     } else {
         projectile_data(battle, u, noble_iron)
     };
@@ -2815,7 +2907,11 @@ pub fn launch_projectile(
                 hits_ground,
                 source.clone(),
             );
-            pending.team = if unit.team == Team::Atk { Team::Def } else { Team::Atk };
+            pending.team = if unit.team == Team::Atk {
+                Team::Def
+            } else {
+                Team::Atk
+            };
             pending.extra.troop_impact = Some("area".to_owned());
             pending.actor = Some(EntityRef::Unit(unit));
             battle.add_pending(pending);
@@ -2872,12 +2968,16 @@ pub fn launch_projectile(
     if mode == "single" && battle.unit(unit).kit.is_some() {
         extra.monolith_bonus = heroes::monolith_bonus(battle, unit, target);
     }
-    let mut pending = Pending::new(battle.t + if mode == "pierce" {
-        battle.dt
-    } else {
-        flight
-    },
-        x, y, sp.splash, damage, hits_air, hits_ground, source);
+    let mut pending = Pending::new(
+        battle.t + if mode == "pierce" { battle.dt } else { flight },
+        x,
+        y,
+        sp.splash,
+        damage,
+        hits_air,
+        hits_ground,
+        source,
+    );
     pending.team = if unit.team == Team::Atk {
         Team::Def
     } else {
@@ -2897,14 +2997,26 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
     let Some(EntityRef::Unit(unit)) = pending.actor else {
         panic!("troop projectile actor must be a unit");
     };
-    let mode = pending.extra.troop_impact.as_deref().expect("troop impact mode");
-    let (x, y) = pending
-        .target
-        .map_or((pending.x, pending.y), |target| battle.entity_position(target));
+    let mode = pending
+        .extra
+        .troop_impact
+        .as_deref()
+        .expect("troop impact mode");
+    let (x, y) = pending.target.map_or((pending.x, pending.y), |target| {
+        battle.entity_position(target)
+    });
     if mode == "chain" {
-        chain_hit(battle, unit, pending.target.expect("chain target"), pending.damage,
-            pending.extra.hit, pending.extra.primary.expect("chain primary"),
-            pending.extra.remaining, pending.extra.base_damage, pending.at);
+        chain_hit(
+            battle,
+            unit,
+            pending.target.expect("chain target"),
+            pending.damage,
+            pending.extra.hit,
+            pending.extra.primary.expect("chain primary"),
+            pending.extra.remaining,
+            pending.extra.base_damage,
+            pending.at,
+        );
         return;
     }
     if mode == "pierce" {
@@ -2912,7 +3024,9 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
         let (dx, dy) = pending.extra.direction.expect("piercing direction");
         let previous = pending.extra.travel;
         let range = battle.unit(unit).spec.pierce;
-        let travel = range.min((battle.t - pending.released_at.expect("projectile release")) * pending.extra.speed);
+        let travel = range.min(
+            (battle.t - pending.released_at.expect("projectile release")) * pending.extra.speed,
+        );
         for victim in attack_targets(battle, unit, true) {
             if pending.extra.hit.contains(&victim) {
                 continue;
@@ -2921,8 +3035,12 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
             let (px, py) = (vx - ox, vy - oy);
             let along = px * dx + py * dy;
             let half = entity_half(battle, victim);
-            if along + half >= previous && along - half <= travel && 0.0 < along
-                && along <= range && (px * dy - py * dx).abs() <= half + 0.3 {
+            if along + half >= previous
+                && along - half <= travel
+                && 0.0 < along
+                && along <= range
+                && (px * dy - py * dx).abs() <= half + 0.3
+            {
                 pending.extra.hit.push(victim);
                 hit_target(battle, unit, victim, pending.damage);
             }
@@ -2936,10 +3054,12 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
     }
     if mode == "rocket" {
         let target = pending.target.expect("Rocket Spear target");
-        if battle.entity_alive(target) && match target {
-            EntityRef::Unit(victim) => battle.unit(victim).indirect_targetable(battle),
-            _ => true,
-        } {
+        if battle.entity_alive(target)
+            && match target {
+                EntityRef::Unit(victim) => battle.unit(victim).indirect_targetable(battle),
+                _ => true,
+            }
+        {
             heroes::damage_target(battle, target, pending.damage);
             heroes::blast(battle, x, y, 0.9, pending.damage, Some(target), 1.0, false);
         }
@@ -2954,7 +3074,9 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
         for &victim in &targets {
             if let EntityRef::Unit(reference) = victim {
                 let victim_unit = battle.unit(reference);
-                if victim_unit.flying == flying && geom::dist(victim_unit.x, victim_unit.y, x, y) <= pending.radius {
+                if victim_unit.flying == flying
+                    && geom::dist(victim_unit.x, victim_unit.y, x, y) <= pending.radius
+                {
                     hit_target(battle, unit, victim, pending.damage);
                 }
             }
@@ -2971,7 +3093,13 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
                 _ => true,
             }
         {
-            hit_target_bonus(battle, unit, target, pending.damage, pending.extra.monolith_bonus);
+            hit_target_bonus(
+                battle,
+                unit,
+                target,
+                pending.damage,
+                pending.extra.monolith_bonus,
+            );
             if battle.unit(unit).kit.is_some() {
                 heroes::on_hit_extra(battle, unit, target);
             }
@@ -2986,7 +3114,16 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
         }
         return;
     }
-    area_hit(battle, unit, x, y, pending.radius, pending.damage, true, None);
+    area_hit(
+        battle,
+        unit,
+        x,
+        y,
+        pending.radius,
+        pending.damage,
+        true,
+        None,
+    );
     if mode == "meteor" {
         spawn_meteormite(
             battle,
@@ -3003,25 +3140,21 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
     if (mode == "leap" && u.name_id == Name::Firemite) || u.name_id == Name::FlameFlinger {
         // units.py:2040-2094: each impact resolves its projectile's HitSpell.
         let projectile = if unit.team == Team::Def && u.name_id == Name::Firemite {
-            let row = battle.catalog.game_data(
-                "characters",
-                "Firemite Spawn_DEF",
-                u.level.as_ref(),
-            );
-            battle.catalog.game_data(
-                "projectiles",
-                row.at("Projectile").str(),
-                None,
-            )
+            let row =
+                battle
+                    .catalog
+                    .game_data("characters", "Firemite Spawn_DEF", u.level.as_ref());
+            battle
+                .catalog
+                .game_data("projectiles", row.at("Projectile").str(), None)
         } else {
             projectile_data(battle, u, false)
         };
         let level = Level::Int(game_required_int(projectile, "HitSpellLevel"));
-        let spell = battle.catalog.game_data(
-            "spells",
-            projectile.at("HitSpell").str(),
-            Some(&level),
-        );
+        let spell =
+            battle
+                .catalog
+                .game_data("spells", projectile.at("HitSpell").str(), Some(&level));
         let hits = game_required_int(spell, "NumberOfHits");
         let gap = game_required_int(spell, "TimeBetweenHitsMS") as f64 / 1000.0;
         let radius = game_required_int(spell, "Radius") as f64 / 100.0;
@@ -3091,7 +3224,8 @@ pub fn strike(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
 fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     let t = battle.t;
     let sp = Arc::clone(&battle.unit(unit).spec);
-    if sp.attack == Tag::None && !(battle.unit(unit).name_id == Name::RuinWitch && unit.team == Team::Def)
+    if sp.attack == Tag::None
+        && !(battle.unit(unit).name_id == Name::RuinWitch && unit.team == Team::Def)
     {
         return;
     }
@@ -3118,9 +3252,15 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     }
     let ordinary = damage;
     damage *= rage;
-    let rocket = battle.unit(unit).kit.as_ref()
+    let rocket = battle
+        .unit(unit)
+        .kit
+        .as_ref()
         .is_some_and(|kit| kit.has("Rocket Spear") && kit.spear_shots > 0);
-    let noble_iron = battle.unit(unit).kit.as_ref()
+    let noble_iron = battle
+        .unit(unit)
+        .kit
+        .as_ref()
         .is_some_and(|kit| kit.has("Noble Iron") && kit.spear_shots > 0);
     if battle.unit(unit).kit.is_some() {
         let u = battle.unit(unit);
@@ -3146,8 +3286,10 @@ fn strike_effect(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
         return;
     }
     if SPATIAL_TROOPS.contains(&battle.unit(unit).name_id)
-        || matches!(sp.attack, Tag::Suicide | Tag::Spin | Tag::Chain | Tag::Bounce | Tag::Pierce
-    )
+        || matches!(
+            sp.attack,
+            Tag::Suicide | Tag::Spin | Tag::Chain | Tag::Bounce | Tag::Pierce
+        )
         || self_aoe_center(battle, unit)
     {
         spatial_strike(battle, unit, target, damage);
@@ -3244,7 +3386,13 @@ fn gauntlet_hit(battle: &mut Battle, unit: UnitRef, target: EntityRef, damage: f
     for defender in battle.defenders_near(x, y, radius) {
         let victim = battle.unit(defender);
         if EntityRef::Unit(defender) != target && !victim.flying && !victim.underground {
-            battle.hit_unit(defender, damage, None, "normal", Some(EntityRef::Unit(unit)));
+            battle.hit_unit(
+                defender,
+                damage,
+                None,
+                "normal",
+                Some(EntityRef::Unit(unit)),
+            );
         }
     }
 }
@@ -3257,9 +3405,14 @@ pub fn after_unit_hit(
     damage: f64,
     splash: bool,
 ) {
-    effects::damage_source(battle, Some(EntityRef::Unit(unit)), Tag::Secondary, |battle| {
-        after_unit_hit_effect(battle, unit, target, damage, splash);
-    });
+    effects::damage_source(
+        battle,
+        Some(EntityRef::Unit(unit)),
+        Tag::Secondary,
+        |battle| {
+            after_unit_hit_effect(battle, unit, target, damage, splash);
+        },
+    );
 }
 
 fn after_unit_hit_effect(
@@ -3277,7 +3430,8 @@ fn after_unit_hit_effect(
         crate::heroes::guardian_after_hit(battle, unit, target, damage);
     }
     let victim = battle.unit(target);
-    if sp.has_special(Special::HhPoison) && !(victim.kind == Tag::Guardian && victim.extra.waiting) {
+    if sp.has_special(Special::HhPoison) && !(victim.kind == Tag::Guardian && victim.extra.waiting)
+    {
         let u = battle.unit(unit);
         // units.py:2338-2367: Headhunter uses the shared, source-keyed poison ramp.
         let row = battle.catalog.game_unit_data(&u.name, u.level.as_ref());
@@ -3365,7 +3519,8 @@ fn after_unit_hit_effect(
             state.until = t + duration;
         }
     }
-    if splash && !SPATIAL_TROOPS.contains(&battle.unit(unit).name_id)
+    if splash
+        && !SPATIAL_TROOPS.contains(&battle.unit(unit).name_id)
         && matches!(sp.attack, Tag::Splash | Tag::Spin)
         && sp.splash > 0.0
         && !sp.has_special(Special::Logger)
@@ -3498,7 +3653,9 @@ fn heal_eligible(battle: &Battle, healer: UnitRef, ally: UnitRef, primary: bool)
         return false;
     }
     if healer.team == Team::Def
-        && !(matches!(a.kind, Tag::Cc | Tag::Hero | Tag::Summon | Tag::TrapSkeleton | Tag::Guardian
+        && !(matches!(
+            a.kind,
+            Tag::Cc | Tag::Hero | Tag::Summon | Tag::TrapSkeleton | Tag::Guardian
         ) || a.name_id == Name::Skeleton)
     {
         return false;
@@ -3531,7 +3688,11 @@ pub fn heal_effectiveness(battle: &mut Battle, healer: UnitRef, recipient: UnitR
     if !sources.iter().any(|(source, _)| *source == healer) {
         sources.push((healer, battle.t));
     }
-    battle.unit_mut(recipient).extra.healing_sources.clone_from(&sources);
+    battle
+        .unit_mut(recipient)
+        .extra
+        .healing_sources
+        .clone_from(&sources);
     sources.sort_by(|(a, at), (b, bt)| {
         at.partial_cmp(bt)
             .expect("healing timestamp")
@@ -3642,12 +3803,12 @@ fn act_healer_with_scratch(
                 eligible.sort_by(|a, b| {
                     let a = battle.unit(*a);
                     let b = battle.unit(*b);
-                    geom::dist(u.x, u.y, a.x, a.y)
-                        .total_cmp(&geom::dist(u.x, u.y, b.x, b.y))
+                    geom::dist(u.x, u.y, a.x, a.y).total_cmp(&geom::dist(u.x, u.y, b.x, b.y))
                 });
-                target = eligible.iter().copied().find(|candidate| {
-                    healer_grouped(battle.unit(*candidate), weighted, sp.splash)
-                });
+                target = eligible
+                    .iter()
+                    .copied()
+                    .find(|candidate| healer_grouped(battle.unit(*candidate), weighted, sp.splash));
             }
             eligible.clear();
             eligible.extend(target);
@@ -3688,13 +3849,11 @@ fn act_healer_with_scratch(
         return;
     }
     if sp.attack == Tag::Heal {
-        recipients.extend(
-            allies.iter().copied().filter(|ally| {
-                let ally_unit = battle.unit(*ally);
-                heal_eligible(battle, unit, *ally, false)
-                    && geom::dist(a.x, a.y, ally_unit.x, ally_unit.y) <= sp.splash
-            }),
-        );
+        recipients.extend(allies.iter().copied().filter(|ally| {
+            let ally_unit = battle.unit(*ally);
+            heal_eligible(battle, unit, *ally, false)
+                && geom::dist(a.x, a.y, ally_unit.x, ally_unit.y) <= sp.splash
+        }));
     } else {
         recipients.push(target);
         let mut current = target;
@@ -3771,7 +3930,8 @@ fn act_healer_with_scratch(
         }
         previous = ally;
         let amount = (if a.is_hero { hero_rate } else { rate }) * boost * effectiveness[index];
-        let mut pending = Pending::new(t + flight, a.x, a.y, 0.0, 0.0, false, false, source.clone());
+        let mut pending =
+            Pending::new(t + flight, a.x, a.y, 0.0, 0.0, false, false, source.clone());
         pending.team = unit.team;
         pending.extra.healing = Some(amount);
         pending.actor = Some(EntityRef::Unit(unit));
@@ -3783,9 +3943,10 @@ fn act_healer_with_scratch(
 
 // battle.py:858-869: the first live matching siege is manually released.
 pub fn release_siege(battle: &mut Battle, name: Option<&str>) -> bool {
-    let unit = battle.attackers_pool().find(|u| {
-        u.alive && u.kind == Tag::Siege && name.is_none_or(|name| u.name == name)
-    }).map(Unit::reference);
+    let unit = battle
+        .attackers_pool()
+        .find(|u| u.alive && u.kind == Tag::Siege && name.is_none_or(|name| u.name == name))
+        .map(Unit::reference);
     if let Some(unit) = unit {
         battle.kill(unit);
         true

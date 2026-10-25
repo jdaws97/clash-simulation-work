@@ -65,19 +65,29 @@ pub struct ArmyGenome {
 
 fn counts(value: Option<&Json>) -> Vec<UnitCount> {
     value.map_or_else(Vec::new, |value| {
-        value.obj().iter().filter_map(|(name, count)| {
-            let count = count.f64();
-            (count.is_finite() && count > 0.0 && count.fract() == 0.0 && count <= 10000.0)
-                .then(|| UnitCount {
-                    name: name.clone(),
-                    count: count as usize
-                })
-        }).collect()
+        value
+            .obj()
+            .iter()
+            .filter_map(|(name, count)| {
+                let count = count.f64();
+                (count.is_finite() && count > 0.0 && count.fract() == 0.0 && count <= 10000.0).then(
+                    || UnitCount {
+                        name: name.clone(),
+                        count: count as usize,
+                    },
+                )
+            })
+            .collect()
     })
 }
 
 pub fn counts_json(values: &[UnitCount]) -> Json {
-    Json::Obj(values.iter().map(|unit| (unit.name.clone(), number(unit.count))).collect())
+    Json::Obj(
+        values
+            .iter()
+            .map(|unit| (unit.name.clone(), number(unit.count)))
+            .collect(),
+    )
 }
 
 pub fn normalize(values: &mut Vec<UnitCount>) {
@@ -85,11 +95,11 @@ pub fn normalize(values: &mut Vec<UnitCount>) {
     for unit in values.iter() {
         *merged.entry(unit.name.clone()).or_default() += unit.count;
     }
-    *values = merged.into_iter().filter(|(_, count)| *count > 0)
-        .map(|(name, count)| UnitCount {
-            name,
-            count
-        }).collect();
+    *values = merged
+        .into_iter()
+        .filter(|(_, count)| *count > 0)
+        .map(|(name, count)| UnitCount { name, count })
+        .collect();
 }
 
 impl ArmyGenome {
@@ -98,23 +108,41 @@ impl ArmyGenome {
     pub fn from_build(build: &Json) -> Self {
         let mut troops = counts(build.get("troops"));
         let mut cc = counts(build.get("cc"));
-        let siege = troops.iter().chain(&cc).find(|unit| armies::is_siege(&unit.name))
+        let siege = troops
+            .iter()
+            .chain(&cc)
+            .find(|unit| armies::is_siege(&unit.name))
             .map(|unit| unit.name.clone());
         troops.retain(|unit| !armies::is_siege(&unit.name));
         cc.retain(|unit| !armies::is_siege(&unit.name));
-        let (cc_spells, cc_troops) = cc.into_iter()
+        let (cc_spells, cc_troops) = cc
+            .into_iter()
             .partition(|unit| crate::plans::spell_key(&unit.name).is_some());
-        let heroes = array(build, "heroes").iter().map(|hero| {
-            let name = hero.str();
-            let spec = build.get("loadouts").and_then(|loadouts| loadouts.get(name));
-            let parts = spec.map_or(&[][..], Json::arr);
-            HeroChoice {
-                hero: name.to_owned(),
-                equipment: [0, 1].map(|index| parts.get(index).and_then(Json::opt_str).unwrap_or("")
-                    .to_owned()),
-                pet: parts.get(2).and_then(Json::opt_str).unwrap_or("").to_owned(),
-            }
-        }).collect();
+        let heroes = array(build, "heroes")
+            .iter()
+            .map(|hero| {
+                let name = hero.str();
+                let spec = build
+                    .get("loadouts")
+                    .and_then(|loadouts| loadouts.get(name));
+                let parts = spec.map_or(&[][..], Json::arr);
+                HeroChoice {
+                    hero: name.to_owned(),
+                    equipment: [0, 1].map(|index| {
+                        parts
+                            .get(index)
+                            .and_then(Json::opt_str)
+                            .unwrap_or("")
+                            .to_owned()
+                    }),
+                    pet: parts
+                        .get(2)
+                        .and_then(Json::opt_str)
+                        .unwrap_or("")
+                        .to_owned(),
+                }
+            })
+            .collect();
         Self {
             troops,
             spells: counts(build.get("spells")),
@@ -130,7 +158,12 @@ impl ArmyGenome {
     }
 
     pub fn normalize(&mut self) {
-        for values in [&mut self.troops, &mut self.spells, &mut self.cc_troops, &mut self.cc_spells] {
+        for values in [
+            &mut self.troops,
+            &mut self.spells,
+            &mut self.cc_troops,
+            &mut self.cc_spells,
+        ] {
             normalize(values);
         }
         self.heroes.sort_by(|a, b| a.hero.cmp(&b.hero));
@@ -216,7 +249,7 @@ impl ArmyGenome {
         if let Some(siege) = &self.siege {
             troops.push(UnitCount {
                 name: siege.clone(),
-                count: 1
+                count: 1,
             });
         }
         object([
@@ -228,27 +261,65 @@ impl ArmyGenome {
             ("troops", counts_json(&troops)),
             ("spells", counts_json(&self.spells)),
             ("cc", counts_json(&cc)),
-            ("heroes", Json::Arr(self.heroes.iter().map(|hero| string(&hero.hero)).collect())),
-            ("loadouts", Json::Obj(self.heroes.iter().map(|hero| {
-                (hero.hero.clone(), Json::Arr(vec![string(&hero.equipment[0]), string(&hero.equipment[1]), string(&hero.pet)]))
-            }).collect())),
+            (
+                "heroes",
+                Json::Arr(self.heroes.iter().map(|hero| string(&hero.hero)).collect()),
+            ),
+            (
+                "loadouts",
+                Json::Obj(
+                    self.heroes
+                        .iter()
+                        .map(|hero| {
+                            (
+                                hero.hero.clone(),
+                                Json::Arr(vec![
+                                    string(&hero.equipment[0]),
+                                    string(&hero.equipment[1]),
+                                    string(&hero.pet),
+                                ]),
+                            )
+                        })
+                        .collect(),
+                ),
+            ),
         ])
     }
 
     pub fn to_json(&self) -> Json {
         object([
             ("army", self.to_build()),
-            ("plan_genes", object([
-                ("family", string(&self.plan.family)),
-                ("angle_offset", Json::Num(self.plan.angle_offset)),
-                ("charge_side", string(&self.plan.charge_side)),
-                ("flank_offset", Json::Num(self.plan.flank_offset)),
-                ("snipe_mode", string(&self.plan.snipe_mode)),
-                ("tactics", Json::Arr(self.plan.tactics.iter().copied().map(Json::Num).collect())),
-                ("step_timing", Json::Obj(self.plan.step_timing.iter().map(|(key, value)| (key
-                    .clone(), Json::Num(*value))).collect())),
-                ("program", self.plan.program.as_ref().map_or(Json::Null, AttackProgram::to_json)),
-            ])),
+            (
+                "plan_genes",
+                object([
+                    ("family", string(&self.plan.family)),
+                    ("angle_offset", Json::Num(self.plan.angle_offset)),
+                    ("charge_side", string(&self.plan.charge_side)),
+                    ("flank_offset", Json::Num(self.plan.flank_offset)),
+                    ("snipe_mode", string(&self.plan.snipe_mode)),
+                    (
+                        "tactics",
+                        Json::Arr(self.plan.tactics.iter().copied().map(Json::Num).collect()),
+                    ),
+                    (
+                        "step_timing",
+                        Json::Obj(
+                            self.plan
+                                .step_timing
+                                .iter()
+                                .map(|(key, value)| (key.clone(), Json::Num(*value)))
+                                .collect(),
+                        ),
+                    ),
+                    (
+                        "program",
+                        self.plan
+                            .program
+                            .as_ref()
+                            .map_or(Json::Null, AttackProgram::to_json),
+                    ),
+                ]),
+            ),
         ])
     }
 
@@ -269,8 +340,11 @@ impl ArmyGenome {
             }
         }
         if let Some(values) = plan.get("step_timing") {
-            genome.plan.step_timing = values.obj().iter().map(|(key, value)| (key.clone(), value
-                .f64())).collect();
+            genome.plan.step_timing = values
+                .obj()
+                .iter()
+                .map(|(key, value)| (key.clone(), value.f64()))
+                .collect();
         }
         if let Some(value) = plan.get("program").filter(|value| !value.is_null()) {
             let program = AttackProgram::from_json(value)?;

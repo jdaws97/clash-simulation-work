@@ -16,7 +16,8 @@ impl Battle {
             || self.cc_queue.is_empty()
             || !b.alive
             || b.mode.as_deref() == Some("sleep")
-            || self.t < self.next_cc_exit {
+            || self.t < self.next_cc_exit
+        {
             return;
         }
         let (x, y) = (b.x, b.y);
@@ -38,19 +39,27 @@ impl Battle {
         for i in 0..self.cc_queue.len() {
             let entry = &self.cc_queue[i];
             let nums = self.catalog.numbers(&entry.name, &entry.level);
-            if !intruders.iter().any(|id| if self.unit(*id).flying {
-                nums.hits_air
-            } else {
-                nums.hits_ground
+            if !intruders.iter().any(|id| {
+                if self.unit(*id).flying {
+                    nums.hits_air
+                } else {
+                    nums.hits_ground
+                }
             }) {
                 continue;
             }
             let entry = self.cc_queue.remove(i);
-            self.spawn(&entry.name, Team::Def, x + 1.5, y, SpawnOptions {
-                level: Some(entry.level),
-                kind: Tag::Cc,
-                ..Default::default()
-            });
+            self.spawn(
+                &entry.name,
+                Team::Def,
+                x + 1.5,
+                y,
+                SpawnOptions {
+                    level: Some(entry.level),
+                    kind: Tag::Cc,
+                    ..Default::default()
+                },
+            );
             self.next_cc_exit = self.t + 0.3;
             self.cc_released = self.cc_queue.is_empty();
             return;
@@ -64,16 +73,20 @@ impl Battle {
         if *pref == Tag::Wall {
             return Some(self.walls.iter().any(|wall| wall.alive));
         }
-        if !matches!(pref, Tag::Defense | Tag::AirDefense | Tag::Resource | Tag::Building) {
+        if !matches!(
+            pref,
+            Tag::Defense | Tag::AirDefense | Tag::Resource | Tag::Building
+        ) {
             return None;
         }
         let th_active = self.th_active();
         Some(self.buildings.iter().any(|building| {
-            building.targetable(self.t) && match pref {
-                Tag::Defense | Tag::AirDefense => building.defense_target(th_active),
-                Tag::Resource => building.resource_target,
-                _ => true,
-            }
+            building.targetable(self.t)
+                && match pref {
+                    Tag::Defense | Tag::AirDefense => building.defense_target(th_active),
+                    Tag::Resource => building.resource_target,
+                    _ => true,
+                }
         }))
     }
 
@@ -106,7 +119,11 @@ impl Battle {
         let dt = self.dt;
         let u = self.unit_mut(reference);
         u.cooldown = (u.cooldown - dt).max(-dt);
-        let (attack, prefer, engages_units) = (u.spec.attack.clone(), u.spec.prefer.clone(), u.spec.engages_units);
+        let (attack, prefer, engages_units) = (
+            u.spec.attack.clone(),
+            u.spec.prefer.clone(),
+            u.spec.engages_units,
+        );
         if matches!(attack, Tag::Heal | Tag::HealChain) {
             units::act_healer(self, reference);
             return;
@@ -136,7 +153,8 @@ impl Battle {
             } else if prefer == Tag::Th
                 && u.target_kind.as_ref() == Some(&Tag::Destination)
                 && !u.flying
-                && t >= u.extra.next_blocker_check {
+                && t >= u.extra.next_blocker_check
+            {
                 self.unit_mut(reference).extra.next_blocker_check = t + 0.5;
                 target = None;
             } else if u.target_kind.as_ref() == Some(&Tag::Unit) {
@@ -187,8 +205,7 @@ impl Battle {
             // battle.py:1298-1305: Giant Giant may retaliate while defenses remain.
             let retaliates = matches!(u.name_id, Name::RoyalChampion | Name::GiantGiant);
             let pet = u.pet;
-            let retaliation =
-                retaliates || pet.is_some_and(|pet| self.unit(pet).attached(self));
+            let retaliation = retaliates || pet.is_some_and(|pet| self.unit(pet).attached(self));
             engages = retaliation || !preferred && !finishing;
             if preferred && matches!(target, Some(EntityRef::Unit(_))) && !retaliation {
                 target = None;
@@ -203,7 +220,10 @@ impl Battle {
             self.unit(reference).name_id,
             Name::GrandWarden | Name::ApprenticeWarden
         );
-        let attached = self.unit(reference).pet.is_some_and(|pet| self.unit(pet).attached(self));
+        let attached = self
+            .unit(reference)
+            .pet
+            .is_some_and(|pet| self.unit(pet).attached(self));
         if warden && !angry && !attached {
             let followed = units::follow_target(self, reference);
             let u = self.unit_mut(reference);
@@ -227,7 +247,11 @@ impl Battle {
             self.unit_mut(reference).extra.warden_group = false;
         }
         let u = self.unit(reference);
-        if engages && !angry && u.target_kind.as_ref() != Some(&Tag::Unit) && t >= u.extra.next_engage {
+        if engages
+            && !angry
+            && u.target_kind.as_ref() != Some(&Tag::Unit)
+            && t >= u.extra.next_engage
+        {
             self.unit_mut(reference).extra.next_engage = t + 0.5;
             if t < self.unit(reference).aware_until || self.ally_under_attack(reference) {
                 if let Some(foe) = self.nearest_defender(reference, 7.0, false) {
@@ -246,10 +270,13 @@ impl Battle {
         if self.unit(reference).name_id == Name::Dragon
             && !angry
             && target.is_some()
-            && !matches!(target, Some(EntityRef::Unit(_))) {
+            && !matches!(target, Some(EntityRef::Unit(_)))
+        {
             if let Some(foe) = self.nearest_defender(reference, 7.0, false) {
                 let origin = EntityRef::Unit(reference);
-                if units::target_distance(self, origin, EntityRef::Unit(foe)) < units::target_distance(self, origin, target.expect("dragon target")) {
+                if units::target_distance(self, origin, EntityRef::Unit(foe))
+                    < units::target_distance(self, origin, target.expect("dragon target"))
+                {
                     target = Some(EntityRef::Unit(foe));
                     self.unit_mut(reference).target_kind = Some(Tag::Unit);
                 }
@@ -269,9 +296,9 @@ impl Battle {
             self.unit_mut(reference).wall_target = None;
         }
         if let Some(wall) = self.unit(reference).wall_target {
-            if (spells::wall_jumped(self, wall)
-                || self.wall_mode(reference) == Tag::Ignore)
-                && self.unit(reference).kind != Tag::Siege {
+            if (spells::wall_jumped(self, wall) || self.wall_mode(reference) == Tag::Ignore)
+                && self.unit(reference).kind != Tag::Siege
+            {
                 self.unit_mut(reference).wall_target = None;
             }
         }
@@ -335,7 +362,10 @@ impl Battle {
                         continue;
                     }
                     if let Some(entry) = units::segment_entry(self, u.x, u.y, tx, ty, blocker) {
-                        if best.as_ref().map_or(true, |(previous, _)| entry < *previous) {
+                        if best
+                            .as_ref()
+                            .map_or(true, |(previous, _)| entry < *previous)
+                        {
                             best = Some((entry, blocker));
                         }
                     }
@@ -368,30 +398,50 @@ impl Battle {
         let mut pool = std::mem::take(&mut self.target_pool_scratch);
         pool.clear();
         if pref == Tag::AirDefense {
-            pool.extend(self.buildings.iter()
-                .filter(|b| b.key == "ad" && b.targetable(self.t)).map(|b| b.id));
+            pool.extend(
+                self.buildings
+                    .iter()
+                    .filter(|b| b.key == "ad" && b.targetable(self.t))
+                    .map(|b| b.id),
+            );
             if pool.is_empty() {
                 pref = Tag::Defense;
             }
         }
         if pref == Tag::Defense && pool.is_empty() {
             let th_active = self.th_active();
-            pool.extend(self.buildings.iter()
-                .filter(|b| b.defense_target(th_active) && b.targetable(self.t)).map(|b| b.id));
+            pool.extend(
+                self.buildings
+                    .iter()
+                    .filter(|b| b.defense_target(th_active) && b.targetable(self.t))
+                    .map(|b| b.id),
+            );
         }
         if pref == Tag::Resource && pool.is_empty() {
-            pool.extend(self.buildings.iter()
-                .filter(|b| b.resource_target && b.targetable(self.t)).map(|b| b.id));
+            pool.extend(
+                self.buildings
+                    .iter()
+                    .filter(|b| b.resource_target && b.targetable(self.t))
+                    .map(|b| b.id),
+            );
         }
         if pool.is_empty() {
-            pool.extend(self.buildings.iter().filter(|b| b.targetable(self.t)).map(|b| b.id));
+            pool.extend(
+                self.buildings
+                    .iter()
+                    .filter(|b| b.targetable(self.t))
+                    .map(|b| b.id),
+            );
         }
         let u = self.unit(reference);
         if pool.is_empty() {
             self.target_pool_scratch = pool;
             let u = self.unit(reference);
             // battle.py:1426-1432: Angry also prevents last-building retaliation.
-            if self.t >= u.extra.angry_until && u.spec.engages_units && (self.t < u.aware_until || self.ally_under_attack(reference)) {
+            if self.t >= u.extra.angry_until
+                && u.spec.engages_units
+                && (self.t < u.aware_until || self.ally_under_attack(reference))
+            {
                 if let Some(foe) = self.nearest_defender(reference, 7.0, false) {
                     return (Some(EntityRef::Unit(foe)), Some(Tag::Unit));
                 }
@@ -402,7 +452,8 @@ impl Battle {
             && self.wall_mode(reference) == Tag::Normal
             && !u.underground
             && pool.len() > 1
-            && u.name_id != Name::WallBreaker {
+            && u.name_id != Name::WallBreaker
+        {
             let chosen = self.path_target(reference, &pool);
             self.target_pool_scratch = pool;
             return (Some(EntityRef::Building(chosen)), Some(Tag::Building));
@@ -523,7 +574,8 @@ impl Battle {
                 return;
             }
             units::track_beam(self, reference, target);
-            if reference.team == Team::Atk && self.unit(reference).spec.has_special(Special::Burrow) {
+            if reference.team == Team::Atk && self.unit(reference).spec.has_special(Special::Burrow)
+            {
                 self.unit_mut(reference).underground = false;
             }
             let u = self.unit(reference);
@@ -600,8 +652,9 @@ impl Battle {
         let u = self.unit_mut(reference);
         u.cooldown = (u.cooldown - dt).max(-dt);
         let mut target = match u.target {
-            Some(EntityRef::Unit(target)) => Some(target), None => None,
-            _ => panic!("defender target is not a unit")
+            Some(EntityRef::Unit(target)) => Some(target),
+            None => None,
+            _ => panic!("defender target is not a unit"),
         };
         if target.is_some_and(|id| !self.unit(id).alive || !self.unit(id).targetable(self)) {
             target = None;
@@ -661,11 +714,7 @@ impl Battle {
             }
             // Both minima follow attacker_order and keep the first tie. If
             // every eligible hero is outside the leash, Python chooses None.
-            target = if hero_available {
-                best_hero
-            } else {
-                best
-            };
+            target = if hero_available { best_hero } else { best };
         }
         if target.is_some() && target.map(EntityRef::Unit) != self.unit(reference).target {
             // battle.py:2071-2072: defenders use the same target-aware windup.
@@ -683,12 +732,14 @@ impl Battle {
             }
             if let Some(home) = self.unit(reference).home {
                 let u = self.unit_mut(reference);
-                u.extra.patrol_state = Some(if (u.x, u.y) != home {
-                    "returning"
-                } else {
-                    "patrolling"
-                }
-                .to_owned());
+                u.extra.patrol_state = Some(
+                    if (u.x, u.y) != home {
+                        "returning"
+                    } else {
+                        "patrolling"
+                    }
+                    .to_owned(),
+                );
                 self.move_towards(reference, EntityRef::Unit(reference), Some(home));
             }
             return;

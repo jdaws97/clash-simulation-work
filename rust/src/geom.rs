@@ -186,7 +186,11 @@ mod crt {
             assert!(!module.is_null(), "cannot load ucrtbase.dll");
             let find = |name: &[u8]| {
                 let f = GetProcAddress(module, name.as_ptr());
-                assert!(!f.is_null(), "ucrtbase.dll lacks {}", String::from_utf8_lossy(name));
+                assert!(
+                    !f.is_null(),
+                    "ucrtbase.dll lacks {}",
+                    String::from_utf8_lossy(name)
+                );
                 f
             };
             Crt {

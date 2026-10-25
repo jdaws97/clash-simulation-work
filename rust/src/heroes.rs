@@ -99,18 +99,34 @@ pub struct Dash {
 
 // heroes.py:28-30.
 pub fn col(battle: &Battle, name: &str, level: &Level, fragments: &[&str], default: f64) -> f64 {
-    let keys: Vec<_> = fragments.iter().map(|fragment| format!("~{fragment}")).collect();
+    let keys: Vec<_> = fragments
+        .iter()
+        .map(|fragment| format!("~{fragment}"))
+        .collect();
     let keys: Vec<_> = keys.iter().map(String::as_str).collect();
-    battle.catalog.stats.get(name, level, &keys, Some(default)).expect("numeric default")
+    battle
+        .catalog
+        .stats
+        .get(name, level, &keys, Some(default))
+        .expect("numeric default")
 }
 
 // heroes.py:574-578: use the same CSV range for scouting and activation.
 pub fn spear_range(battle: &Battle) -> f64 {
-    game_float(battle.catalog.game_data("special_abilities", "RocketSpears", None), "AttackRange") / 100.0
+    game_float(
+        battle
+            .catalog
+            .game_data("special_abilities", "RocketSpears", None),
+        "AttackRange",
+    ) / 100.0
 }
 
 // heroes.py:1504-1518: the current target determines the forward arrow band.
-pub fn arrow_geometry(battle: &Battle, hero: UnitRef, target: Option<EntityRef>) -> (f64, f64, f64, f64) {
+pub fn arrow_geometry(
+    battle: &Battle,
+    hero: UnitRef,
+    target: Option<EntityRef>,
+) -> (f64, f64, f64, f64) {
     let u = battle.unit(hero);
     let (dx, dy) = target.map_or(u.extra.facing, |target| {
         let (x, y) = battle.entity_position(target);
@@ -118,16 +134,27 @@ pub fn arrow_geometry(battle: &Battle, hero: UnitRef, target: Option<EntityRef>)
     });
     let distance = py_hypot(dx, dy);
     let distance = if distance == 0.0 { 1.0 } else { distance };
-    let data = battle.catalog.game_data("special_abilities", "ArcherQueenPierceProjectile", Some(&Level::Int(1)));
-    (dx / distance, dy / distance,
+    let data = battle.catalog.game_data(
+        "special_abilities",
+        "ArcherQueenPierceProjectile",
+        Some(&Level::Int(1)),
+    );
+    (
+        dx / distance,
+        dy / distance,
         distance + game_float(data, "PenetratingExtraRange") / 100.0,
-        game_float(data, "PenetratingRadius") / 100.0)
+        game_float(data, "PenetratingRadius") / 100.0,
+    )
 }
 
 // heroes.py:1521-1540: center-facing dash, bounded by the world edge.
 pub fn dash_geometry(battle: &Battle, x: f64, y: f64, facing: (f64, f64)) -> (f64, f64, f64, f64) {
     let world = battle.catalog.world as f64;
-    let data = battle.catalog.game_data("special_abilities", "DragonDukeDeadlyDashMapCenter", Some(&Level::Int(1)));
+    let data = battle.catalog.game_data(
+        "special_abilities",
+        "DragonDukeDeadlyDashMapCenter",
+        Some(&Level::Int(1)),
+    );
     let (mut dx, mut dy) = (world / 2.0 - x, world / 2.0 - y);
     let mut distance = py_hypot(dx, dy);
     if distance == 0.0 {
@@ -146,7 +173,12 @@ pub fn dash_geometry(battle: &Battle, x: f64, y: f64, facing: (f64, f64)) -> (f6
             travel = travel.min((0.5 - position) / direction);
         }
     }
-    (dx, dy, 0.0_f64.max(travel), game_float(data, "ActAsPenetratingRadius") / 100.0)
+    (
+        dx,
+        dy,
+        0.0_f64.max(travel),
+        game_float(data, "ActAsPenetratingRadius") / 100.0,
+    )
 }
 
 // heroes.py:153,575,623,864: equipment levels map to ability/spell levels.
@@ -162,7 +194,12 @@ pub fn default_loadout(battle: &Battle, hero: &str) -> Option<HeroLoadout> {
         let loadout = loadouts.get(hero)?;
         return Some(HeroLoadout {
             hero: loadout.at("hero").str().to_owned(),
-            equipment: loadout.at("equipment").arr().iter().map(|v| v.str().to_owned()).collect(),
+            equipment: loadout
+                .at("equipment")
+                .arr()
+                .iter()
+                .map(|v| v.str().to_owned())
+                .collect(),
             pet: loadout.at("pet").opt_str().map(str::to_owned),
         });
     }
@@ -184,16 +221,30 @@ pub fn default_loadout(battle: &Battle, hero: &str) -> Option<HeroLoadout> {
 }
 
 // heroes.py:67-100: setup validation occurs before applying any equipment.
-fn pet_level(battle: &Battle, hero: UnitRef, loadout: &HeroLoadout, town_hall: i64) -> Option<Level> {
+fn pet_level(
+    battle: &Battle,
+    hero: UnitRef,
+    loadout: &HeroLoadout,
+    town_hall: i64,
+) -> Option<Level> {
     let name = loadout.pet.as_deref().filter(|name| !name.is_empty())?;
     let stats = &battle.catalog.stats;
-    assert!(stats.registry.get(name).is_some() && stats.record(name).at("kind").str() == "pet",
-        "{name} is not a pet");
-    let maximum = stats.max_level(name, town_hall)
+    assert!(
+        stats.registry.get(name).is_some() && stats.record(name).at("kind").str() == "pet",
+        "{name} is not a pet"
+    );
+    let maximum = stats
+        .max_level(name, town_hall)
         .unwrap_or_else(|| panic!("{name} is unavailable at Town Hall {town_hall}"));
-    let level = battle.plan.pet_level(name).cloned().unwrap_or(Level::Int(maximum));
-    assert!(matches!(&level, Level::Int(value) if 1 <= *value && *value <= maximum),
-        "Illegal {name} level {level} at Town Hall {town_hall}");
+    let level = battle
+        .plan
+        .pet_level(name)
+        .cloned()
+        .unwrap_or(Level::Int(maximum));
+    assert!(
+        matches!(&level, Level::Int(value) if 1 <= *value && *value <= maximum),
+        "Illegal {name} level {level} at Town Hall {town_hall}"
+    );
     let _ = stats.row(name, &level);
     let stashed = battle.portal_stash.iter().map(|value| match value {
         Value::Ref(EntityRef::Unit(unit)) => *unit,
@@ -204,10 +255,18 @@ fn pet_level(battle: &Battle, hero: UnitRef, loadout: &HeroLoadout, town_hall: i
         if unit.reference() == hero {
             continue;
         }
-        assert!(!unit.kit.as_ref().is_some_and(|kit| kit.pet_name.as_deref() == Some(name)),
-            "{name} is already assigned to {}", unit.name);
-        assert!(!(unit.kind == Tag::Pet && unit.name == name && unit.owner != Some(hero)),
-            "{name} is already assigned to another Hero");
+        assert!(
+            !unit
+                .kit
+                .as_ref()
+                .is_some_and(|kit| kit.pet_name.as_deref() == Some(name)),
+            "{name} is already assigned to {}",
+            unit.name
+        );
+        assert!(
+            !(unit.kind == Tag::Pet && unit.name == name && unit.owner != Some(hero)),
+            "{name} is already assigned to another Hero"
+        );
     }
     assert!(battle.unit(hero).pet.is_none(), "hero already has a pet");
     Some(level)
@@ -216,22 +275,46 @@ fn pet_level(battle: &Battle, hero: UnitRef, loadout: &HeroLoadout, town_hall: i
 // heroes.py:103-182: equip is called after strength, before league scaling.
 pub fn equip(battle: &mut Battle, hero: UnitRef) {
     let name = battle.unit(hero).name.clone();
-    let Some(mut loadout) = battle.plan.loadout(&name).cloned().or_else(|| default_loadout(battle, &name)) else {
+    let Some(mut loadout) = battle
+        .plan
+        .loadout(&name)
+        .cloned()
+        .or_else(|| default_loadout(battle, &name))
+    else {
         return;
     };
     // heroes.py:108-126: validate every slot before applying any boosts.
-    assert_eq!(loadout.hero, name, "Loadout for {} cannot be applied to {name}", loadout.hero);
-    assert!(loadout.equipment.len() <= 2, "{name} can equip at most 2 equipment items");
+    assert_eq!(
+        loadout.hero, name,
+        "Loadout for {} cannot be applied to {name}",
+        loadout.hero
+    );
+    assert!(
+        loadout.equipment.len() <= 2,
+        "{name} can equip at most 2 equipment items"
+    );
     let mut equipped = Vec::new();
     for equipment in &loadout.equipment {
-        assert!(!equipped.contains(&equipment), "Duplicate equipment for {name}: {equipment}");
+        assert!(
+            !equipped.contains(&equipment),
+            "Duplicate equipment for {name}: {equipment}"
+        );
         equipped.push(equipment);
         let stats = &battle.catalog.stats;
-        assert!(stats.registry.get(equipment).is_some() && stats.record(equipment).at("kind").str() == "equipment",
-            "{equipment} is not hero equipment");
-        let owner = stats.attrs(equipment).get("raw").and_then(|raw| raw.get("User"))
+        assert!(
+            stats.registry.get(equipment).is_some()
+                && stats.record(equipment).at("kind").str() == "equipment",
+            "{equipment} is not hero equipment"
+        );
+        let owner = stats
+            .attrs(equipment)
+            .get("raw")
+            .and_then(|raw| raw.get("User"))
             .and_then(crate::json::Json::opt_str);
-        assert!(owner == Some(name.as_str()), "{equipment} belongs to {owner:?}, not {name}");
+        assert!(
+            owner == Some(name.as_str()),
+            "{equipment} belongs to {owner:?}, not {name}"
+        );
     }
     let th = battle.plan.town_hall();
     if loadout.pet.as_deref().is_some_and(|pet| {
@@ -252,7 +335,8 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
             .filter(|(_, other)| other.hero != name)
             .filter_map(|(_, other)| other.pet.clone())
             .collect();
-        for reference in battle.attackers_pool()
+        for reference in battle
+            .attackers_pool()
             .map(Unit::reference)
             .chain(battle.portal_units())
         {
@@ -268,7 +352,9 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
             }
         }
         let stats = &battle.catalog.stats;
-        let mut pets: Vec<_> = stats.registry.obj()
+        let mut pets: Vec<_> = stats
+            .registry
+            .obj()
             .iter()
             .filter(|(_, record)| record.at("kind").str() == "pet")
             .map(|(name, _)| name.clone())
@@ -278,14 +364,16 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
                 stats::num(
                     stats.attrs(name).at("raw").at("Pet House Level Required"),
                     None,
-                ).expect("pet unlock level")
+                )
+                .expect("pet unlock level")
             };
             unlock(a).total_cmp(&unlock(b)).then_with(|| a.cmp(b))
         });
         let preferred = default_loadout(battle, &name)
             .expect("default hero loadout")
             .pet;
-        loadout.pet = preferred.into_iter()
+        loadout.pet = preferred
+            .into_iter()
             .chain(pets)
             .find(|pet| !assigned.contains(pet) && stats.max_level(pet, th).is_some());
     }
@@ -301,9 +389,18 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         if battle.catalog.stats.registry.get(equipment).is_none() {
             continue;
         }
-        let level = battle.plan.equipment_level(equipment).cloned()
+        let level = battle
+            .plan
+            .equipment_level(equipment)
+            .cloned()
             .filter(|level| !matches!(level, Level::Int(0)))
-            .or_else(|| battle.catalog.stats.max_level(equipment, th).map(Level::Int))
+            .or_else(|| {
+                battle
+                    .catalog
+                    .stats
+                    .max_level(equipment, th)
+                    .map(Level::Int)
+            })
             .expect("equipment available at Town Hall");
         kit.equip.push(equipment.clone());
         if let Some((_, previous)) = kit.levels.iter_mut().find(|(name, _)| name == equipment) {
@@ -312,10 +409,30 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
             kit.levels.push((equipment.clone(), level.clone()));
         }
         // stats.py:21-28,76-81: equipment boosts use the balance-adjusted catalog registry.
-        let hp = col(battle, equipment, &level, &["hitpoint increase", "hp increase"], 0.0);
-        let dps = col(battle, equipment, &level, &["damage per second increase", "dps increase"], 0.0);
-        let attack_speed = col(battle, equipment, &level,
-            &["hero boosts / attack speed increase", "hero boost / attack speed increase"], 0.0);
+        let hp = col(
+            battle,
+            equipment,
+            &level,
+            &["hitpoint increase", "hp increase"],
+            0.0,
+        );
+        let dps = col(
+            battle,
+            equipment,
+            &level,
+            &["damage per second increase", "dps increase"],
+            0.0,
+        );
+        let attack_speed = col(
+            battle,
+            equipment,
+            &level,
+            &[
+                "hero boosts / attack speed increase",
+                "hero boost / attack speed increase",
+            ],
+            0.0,
+        );
         let unit = battle.unit_mut(hero);
         unit.max_hp += hp;
         unit.base_max_hp += hp;
@@ -330,8 +447,13 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         } else {
             kit.regen += col(battle, equipment, &level, &["self healing per second"], 0.0);
         }
-        kit.hp_recovery += col(battle, equipment, &level,
-            &["hp recovery increase", "health recovery increase"], 0.0);
+        kit.hp_recovery += col(
+            battle,
+            equipment,
+            &level,
+            &["hp recovery increase", "health recovery increase"],
+            0.0,
+        );
         if matches!(equipment.as_str(), "Royal Gem" | "Stun Blaster") {
             kit.hp_recovery += col(battle, equipment, &level, &["health recovery"], 0.0);
         }
@@ -385,44 +507,15 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
                 ) / 100.0;
                 kit.reduction_until = 1e9;
             }
-            "Rocket Spear"
-            | "Revenge Deck"
-            | "Fire Heart"
-            | "Action Figure"
-            | "Giant Arrow"
-            | "Eternal Tome"
-            | "Rage Gem"
-            | "Fireball"
-            | "Rocket Backpack"
-            | "Spiky Ball"
-            | "Earthquake Boots"
-            | "Dark Orb"
-            | "Meteor Staff"
-            | "Barbarian Puppet"
-            | "Archer Puppet"
-            | "Hog Rider Puppet"
-            | "Healer Puppet"
-            | "Lavaloon Puppet"
-            | "Seeking Shield"
-            | "Haste Vial"
-            | "Heroic Torch"
-            | "Magic Mirror"
-            | "Henchmen Puppet"
-            | "Stun Blaster"
-            | "Noble Iron"
-            | "Rage Vial"
-            | "Giant Gauntlet"
-            | "Snake Bracelet"
-            | "Invisibility Vial"
-            | "Life Gem"
-            | "Healing Tome"
-            | "Royal Gem"
-            | "Frost Flake"
-            | "Dark Crown"
-            | "Metal Pants"
-            | "Portal Pendant"
-            | "Flame Blower"
-            | "Electro Fangs" => {}
+            "Rocket Spear" | "Revenge Deck" | "Fire Heart" | "Action Figure" | "Giant Arrow"
+            | "Eternal Tome" | "Rage Gem" | "Fireball" | "Rocket Backpack" | "Spiky Ball"
+            | "Earthquake Boots" | "Dark Orb" | "Meteor Staff" | "Barbarian Puppet"
+            | "Archer Puppet" | "Hog Rider Puppet" | "Healer Puppet" | "Lavaloon Puppet"
+            | "Seeking Shield" | "Haste Vial" | "Heroic Torch" | "Magic Mirror"
+            | "Henchmen Puppet" | "Stun Blaster" | "Noble Iron" | "Rage Vial"
+            | "Giant Gauntlet" | "Snake Bracelet" | "Invisibility Vial" | "Life Gem"
+            | "Healing Tome" | "Royal Gem" | "Frost Flake" | "Dark Crown" | "Metal Pants"
+            | "Portal Pendant" | "Flame Blower" | "Electro Fangs" => {}
             _ => panic!("unsupported hero equipment {equipment}"),
         }
     }
@@ -433,7 +526,13 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         let level = kit.lv("Noble Iron");
         let ability = battle.catalog.equipment_ability("Noble Iron", level);
         let shots = game_required_int(ability, "DeactivateAfterNumberOfHits");
-        let bonus = col(battle, "Noble Iron", level, &["damage per shot increase"], 0.0);
+        let bonus = col(
+            battle,
+            "Noble Iron",
+            level,
+            &["damage per shot increase"],
+            0.0,
+        );
         let range = col(battle, "Noble Iron", level, &["attack range"], 0.0);
         kit.spear_shots = shots;
         kit.spear_bonus = bonus;
@@ -441,8 +540,15 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         unit.extra.spear_base_range = Some(unit.range);
         unit.range = range;
     }
-    kit.hp_recovery += battle.catalog.stats.get(&name,
-        battle.unit(hero).level.as_ref().expect("hero level"), &["Health Recovery"], Some(0.0))
+    kit.hp_recovery += battle
+        .catalog
+        .stats
+        .get(
+            &name,
+            battle.unit(hero).level.as_ref().expect("hero level"),
+            &["Health Recovery"],
+            Some(0.0),
+        )
         .expect("numeric default");
     if let Some(pet) = loadout.pet.filter(|name| !name.is_empty()) {
         kit.phoenix = pet == "Phoenix";
@@ -465,7 +571,9 @@ pub fn equip(battle: &mut Battle, hero: UnitRef) {
         "Magic Mirror",
         "Henchmen Puppet",
         "Healer Puppet",
-    ].iter().any(|name| kit.has(name));
+    ]
+    .iter()
+    .any(|name| kit.has(name));
     let unit = battle.unit_mut(hero);
     unit.kit = Some(kit);
     if tracks_summons {
@@ -499,17 +607,37 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
     );
     let stats = &battle.catalog.stats;
     let attrs = stats.attrs(&name);
-    let hp = stats.get(&name, &level, &["hitpoints", "Hitpoints"], Some(2000.0)).expect("pet HP");
-    let mut dps = stats.get(&name, &level, &["dps", "Damage per Second", "~damage per second"], Some(0.0))
+    let hp = stats
+        .get(&name, &level, &["hitpoints", "Hitpoints"], Some(2000.0))
+        .expect("pet HP");
+    let mut dps = stats
+        .get(
+            &name,
+            &level,
+            &["dps", "Damage per Second", "~damage per second"],
+            Some(0.0),
+        )
         .expect("pet DPS");
     if name == "Unicorn" {
         dps = 0.0;
     }
-    let interval = attrs.get("attack_interval").and_then(|v| v.opt_f64()).filter(|v| *v != 0.0)
-        .or_else(|| attrs.get("attack_interval_ck").and_then(|v| v.opt_f64()).filter(|v| *v != 0.0))
+    let interval = attrs
+        .get("attack_interval")
+        .and_then(|v| v.opt_f64())
+        .filter(|v| *v != 0.0)
+        .or_else(|| {
+            attrs
+                .get("attack_interval_ck")
+                .and_then(|v| v.opt_f64())
+                .filter(|v| *v != 0.0)
+        })
         .unwrap_or(1.0);
     // heroes.py:232-234: pet construction bypasses unit_numbers' range override.
-    let range = *battle.catalog.pet_spawn_ranges.get(&name).expect("pet spawn range");
+    let range = *battle
+        .catalog
+        .pet_spawn_ranges
+        .get(&name)
+        .expect("pet spawn range");
     let speed = battle
         .catalog
         .resolved
@@ -639,12 +767,18 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
         pet.x = owner.x;
         pet.y = owner.y;
         pet.extra.brainwash_until = battle.t
-            + battle.catalog.stats.get(&name, &level, &["Brainwash Duration"], None)
+            + battle
+                .catalog
+                .stats
+                .get(&name, &level, &["Brainwash Duration"], None)
                 .expect("Brainwash duration");
         pet.extra.paused_timers.brainwash_until = true;
     }
     if name == "Spirit Fox" {
-        let duration = battle.catalog.stats.get(&name, &level, &["Invisibility Duration"], None)
+        let duration = battle
+            .catalog
+            .stats
+            .get(&name, &level, &["Invisibility Duration"], None)
             .expect("Fox invisibility duration");
         pet.invisible_until = pet.invisible_until.max(battle.t + duration);
         let until = battle.t + duration;
@@ -661,8 +795,16 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
         pet.invuln_until = 1e9;
     }
     if name == "Frosty" {
-        pet.extra.next_summon = battle.t + stats::num(
-            battle.catalog.stats.attrs(&name).at("raw").at("Summon Cooldown"), None)
+        pet.extra.next_summon = battle.t
+            + stats::num(
+                battle
+                    .catalog
+                    .stats
+                    .attrs(&name)
+                    .at("raw")
+                    .at("Summon Cooldown"),
+                None,
+            )
             .expect("Frosty summon cooldown");
     }
     if name == "Sneezy" {
@@ -692,7 +834,12 @@ pub fn tick(battle: &mut Battle, hero: UnitRef) {
         unit.hp = 0.0;
         spells::maybe_revive(battle, hero);
         let name = battle.unit(hero).name.clone();
-        battle.log_event(vec![round_decimal(t, 1).into(), "dies".into(), name.into(), hero.team.as_str().into()]);
+        battle.log_event(vec![
+            round_decimal(t, 1).into(),
+            "dies".into(),
+            name.into(),
+            hero.team.as_str().into(),
+        ]);
         return;
     }
     let regen = kit.regen;
@@ -705,8 +852,12 @@ pub fn tick(battle: &mut Battle, hero: UnitRef) {
         let level = kit.lv("Meteor Staff").clone();
         let mut candidates = targets(battle, true);
         if candidates.is_empty() {
-            candidates = battle.buildings.iter().filter(|b| battle.building_targetable(b.id))
-                .map(|b| EntityRef::Building(b.id)).collect();
+            candidates = battle
+                .buildings
+                .iter()
+                .filter(|b| battle.building_targetable(b.id))
+                .map(|b| EntityRef::Building(b.id))
+                .collect();
         }
         let u = battle.unit(hero);
         let mut best = None;
@@ -725,7 +876,12 @@ pub fn tick(battle: &mut Battle, hero: UnitRef) {
                 t + 0.8,
                 x,
                 y,
-                battle.catalog.stats.attrs("Meteor Staff").at("radius").f64(),
+                battle
+                    .catalog
+                    .stats
+                    .attrs("Meteor Staff")
+                    .at("radius")
+                    .f64(),
                 col(battle, "Meteor Staff", &level, &["damage per hit"], 0.0),
                 true,
                 true,
@@ -739,13 +895,24 @@ pub fn tick(battle: &mut Battle, hero: UnitRef) {
             });
         }
         let next = t + col(battle, "Meteor Staff", &level, &["cooldown time"], 0.0);
-        battle.unit_mut(hero).kit.as_mut().expect("hero kit").next_meteor = next;
+        battle
+            .unit_mut(hero)
+            .kit
+            .as_mut()
+            .expect("hero kit")
+            .next_meteor = next;
     }
     let kit = battle.unit(hero).kit.as_ref().expect("hero kit");
     if kit.has("Electro Boots") {
         let due = battle.unit(hero).extra.boots_next.unwrap_or(t);
         if t >= due || units::isclose(t, due) {
-            let damage = col(battle, "Electro Boots", kit.lv("Electro Boots"), &["aura damage per hit"], 0.0);
+            let damage = col(
+                battle,
+                "Electro Boots",
+                kit.lv("Electro Boots"),
+                &["aura damage per hit"],
+                0.0,
+            );
             let unit = battle.unit(hero);
             let (x, y) = (unit.x, unit.y);
             blast(battle, x, y, 4.5, damage, None, 0.25, false);
@@ -783,13 +950,7 @@ pub fn on_damaged(
             &["max summoned snakes"],
             54.0,
         ) as i64;
-        let snake_level = col(
-            battle,
-            "Snake Bracelet",
-            level,
-            &["snake level"],
-            10.0,
-        ) as i64;
+        let snake_level = col(battle, "Snake Bracelet", level, &["snake level"], 10.0) as i64;
         let unit = battle.unit(hero);
         let mut accumulated = unit.extra.snake_dmg + amount;
         let mut made = unit.extra.snakes;
@@ -818,28 +979,39 @@ pub fn on_damaged(
     let Some(source) = source else {
         return;
     };
-    if !kit.has("Revenge Deck") || !battle.entity_alive(source)
-        || matches!(effect, "trap" | "spell" | "death" | "aura" | "counter") {
+    if !kit.has("Revenge Deck")
+        || !battle.entity_alive(source)
+        || matches!(effect, "trap" | "spell" | "death" | "aura" | "counter")
+    {
         return;
     }
     if let EntityRef::Unit(unit) = source {
         let unit = battle.unit(unit);
         if unit.name_id == Name::Firemite && effect == "secondary"
             || unit.name_id == Name::ElectroDragon && effect == "chain"
-            || unit.spec.attack == Tag::Suicide || matches!(unit.name_id, Name::Yetimite | Name::Electromite) {
+            || unit.spec.attack == Tag::Suicide
+            || matches!(unit.name_id, Name::Yetimite | Name::Electromite)
+        {
             return;
         }
     }
     let (x, y) = battle.entity_position(source);
     let unit = battle.unit(hero);
-    let counter_range = battle.catalog.resolved
+    let counter_range = battle
+        .catalog
+        .resolved
         .at("revenge_ranges")
         .at(&kit.lv("Revenge Deck").to_string())
         .f64();
     if dist(x, y, unit.x, unit.y) > counter_range {
         return;
     }
-    let due = unit.extra.revenge_cd.iter().find(|(key, _)| *key == source).map_or(-1.0, |(_, at)| *at);
+    let due = unit
+        .extra
+        .revenge_cd
+        .iter()
+        .find(|(key, _)| *key == source)
+        .map_or(-1.0, |(_, at)| *at);
     if battle.t < due {
         return;
     }
@@ -851,12 +1023,29 @@ pub fn on_damaged(
         cds.push((source, t + 0.8));
     }
     let kit = battle.unit(hero).kit.as_ref().expect("hero kit");
-    let damage = col(battle, "Revenge Deck", kit.lv("Revenge Deck"), &["counter damage"], 225.0);
-    let heal = col(battle, "Revenge Deck", kit.lv("Revenge Deck"), &["heal per counter"], 0.0);
+    let damage = col(
+        battle,
+        "Revenge Deck",
+        kit.lv("Revenge Deck"),
+        &["counter damage"],
+        225.0,
+    );
+    let heal = col(
+        battle,
+        "Revenge Deck",
+        kit.lv("Revenge Deck"),
+        &["heal per counter"],
+        0.0,
+    );
     battle.unit_mut(hero).heal(heal);
-    effects::damage_source(battle, Some(EntityRef::Unit(hero)), Tag::Counter, |battle| {
-        damage_target(battle, source, damage);
-    });
+    effects::damage_source(
+        battle,
+        Some(EntityRef::Unit(hero)),
+        Tag::Counter,
+        |battle| {
+            damage_target(battle, source, damage);
+        },
+    );
 }
 
 // heroes.py:408-440.
@@ -982,24 +1171,52 @@ pub fn on_death(battle: &mut Battle, hero: UnitRef) -> bool {
     let unit = battle.unit(hero);
     let kit = unit.kit.as_ref().expect("hero kit");
     if kit.has("Fire Heart") && !unit.extra.fire_heart_done {
-        let damage = col(battle, "Fire Heart", kit.lv("Fire Heart"), &["damage on defeat"], 0.0);
+        let damage = col(
+            battle,
+            "Fire Heart",
+            kit.lv("Fire Heart"),
+            &["damage on defeat"],
+            0.0,
+        );
         let (x, y) = (unit.x, unit.y);
         battle.unit_mut(hero).extra.fire_heart_done = true;
         // heroes.py:508-512: Fire Heart reaches structures, walls and all defenders.
-        battle.splash_buildings(x, y, 4.0, damage, SplashBuildingsOptions {
-            walls: true,
-            ..Default::default()
-        });
-        battle.splash_units(x, y, 4.0, damage, true, true, SplashUnitsOptions {
-            team: Team::Def,
-            ..Default::default()
-        });
+        battle.splash_buildings(
+            x,
+            y,
+            4.0,
+            damage,
+            SplashBuildingsOptions {
+                walls: true,
+                ..Default::default()
+            },
+        );
+        battle.splash_units(
+            x,
+            y,
+            4.0,
+            damage,
+            true,
+            true,
+            SplashUnitsOptions {
+                team: Team::Def,
+                ..Default::default()
+            },
+        );
     }
     let kit = battle.unit(hero).kit.as_ref().expect("hero kit");
     if kit.phoenix && kit.pet_unit.is_some_and(|pet| battle.unit(pet).alive) {
         let egg = kit.pet_unit.expect("Phoenix egg");
-        let duration = battle.catalog.stats.get("Phoenix", kit.pet_level.as_ref().expect("pet level"),
-            &["Revive Duration"], Some(8.5)).expect("Phoenix revive duration");
+        let duration = battle
+            .catalog
+            .stats
+            .get(
+                "Phoenix",
+                kit.pet_level.as_ref().expect("pet level"),
+                &["Revive Duration"],
+                Some(8.5),
+            )
+            .expect("Phoenix revive duration");
         let until = battle.t + duration;
         let unit = battle.unit_mut(hero);
         let kit = unit.kit.as_mut().expect("hero kit");
@@ -1020,9 +1237,14 @@ pub fn on_death(battle: &mut Battle, hero: UnitRef) -> bool {
 
 // heroes.py:508-803: stable equipment priority, under ability provenance.
 pub fn activate(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
-    effects::damage_source(battle, Some(EntityRef::Unit(hero)), Tag::Ability, |battle| {
-        activate_effect(battle, hero, on_ko);
-    });
+    effects::damage_source(
+        battle,
+        Some(EntityRef::Unit(hero)),
+        Tag::Ability,
+        |battle| {
+            activate_effect(battle, hero, on_ko);
+        },
+    );
 }
 
 fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
@@ -1047,7 +1269,13 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
     }) {
         target = None;
     }
-    let mut equipment = battle.unit(hero).kit.as_ref().expect("hero kit").equip.clone();
+    let mut equipment = battle
+        .unit(hero)
+        .kit
+        .as_ref()
+        .expect("hero kit")
+        .equip
+        .clone();
     equipment.sort_by_key(|name| match name.as_str() {
         "Fireball" => 0,
         "Rocket Backpack" => 1,
@@ -1055,7 +1283,13 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
         _ => 2,
     });
     for name in equipment {
-        let level = battle.unit(hero).kit.as_ref().expect("hero kit").lv(&name).clone();
+        let level = battle
+            .unit(hero)
+            .kit
+            .as_ref()
+            .expect("hero kit")
+            .lv(&name)
+            .clone();
         match name.as_str() {
             "Giant Arrow" => {
                 let ability = battle.catalog.equipment_ability(&name, &level);
@@ -1081,11 +1315,22 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                 if let Some(victim) = current.filter(|_| count > 0) {
                     hit.push(victim);
                     let (x, y) = battle.entity_position(victim);
-                    let row = battle.catalog.game_data("projectiles", "BarbarianKingGearFootball", None);
+                    let row =
+                        battle
+                            .catalog
+                            .game_data("projectiles", "BarbarianKingGearFootball", None);
                     let speed = game_int(row, "Speed", 0) as f64 / 100.0;
                     let u = battle.unit(hero);
-                    let mut pending = Pending::new(t + dist(u.x, u.y, x, y) / speed,
-                        u.x, u.y, 0.0, damage, false, true, &u.name);
+                    let mut pending = Pending::new(
+                        t + dist(u.x, u.y, x, y) / speed,
+                        u.x,
+                        u.y,
+                        0.0,
+                        damage,
+                        false,
+                        true,
+                        &u.name,
+                    );
                     pending.extra.hero_impact = Some("ball".to_owned());
                     pending.extra.remaining = count as usize;
                     pending.extra.visited = hit;
@@ -1104,13 +1349,8 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                 let count = game_required_int(spell, "NumberOfHits");
                 let gap = game_required_int(spell, "TimeBetweenHitsMS") as f64 / 1000.0;
                 let u = battle.unit(hero);
-                let mut field = Field::new(
-                    "boots_quake",
-                    u.x,
-                    u.y,
-                    8.0,
-                    t + (count - 1) as f64 * gap,
-                );
+                let mut field =
+                    Field::new("boots_quake", u.x, u.y, 8.0, t + (count - 1) as f64 * gap);
                 field.value = game_float(spell, "BuildingDamagePermil") / 1000.0;
                 field.extra.troop = game_float(spell, "TroopDamagePermil") / 1000.0;
                 field.started = t;
@@ -1143,13 +1383,8 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
             }
             // heroes.py:654-677: active reduction, independent Rage, and shot bonus.
             "Giant Gauntlet" => {
-                let reduction = col(
-                    battle,
-                    &name,
-                    &level,
-                    &["incoming damage reduction"],
-                    0.0,
-                ) / 100.0;
+                let reduction =
+                    col(battle, &name, &level, &["incoming damage reduction"], 0.0) / 100.0;
                 let until = t + col(battle, &name, &level, &["ability duration"], 0.0);
                 let unit = battle.unit_mut(hero);
                 let kit = unit.kit.as_mut().expect("hero kit");
@@ -1206,8 +1441,7 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
             }
             "Action Figure" => {
                 let level = col(battle, &name, &level, &["giant giant level"], 10.0) as i64;
-                let (x, y) =
-                    summon_position(battle, hero, target, 0, 1, false, py_hypot(0.5, 0.5));
+                let (x, y) = summon_position(battle, hero, target, 0, 1, false, py_hypot(0.5, 0.5));
                 let unit = battle.unit(hero);
                 battle.spawn(
                     "Giant Giant",
@@ -1340,9 +1574,16 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                     }
                 }
                 let (x, y) = best.map_or((0.0, 0.0), |target| battle.entity_position(target));
-                let mut pending = Pending::new(t + 1.5, x, y,
+                let mut pending = Pending::new(
+                    t + 1.5,
+                    x,
+                    y,
                     col(battle, &name, &level, &["damage radius"], 0.0),
-                    col(battle, &name, &level, &["projectile damage"], 0.0), true, true, &unit.name);
+                    col(battle, &name, &level, &["projectile damage"], 0.0),
+                    true,
+                    true,
+                    &unit.name,
+                );
                 pending.extra.hero_impact = Some("blast".to_owned());
                 battle.add_pending(pending);
             }
@@ -1403,7 +1644,13 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                 let duration = col(battle, &name, &level, &["ability duration"], 10.0);
                 let speed = col(battle, &name, &level, &["speed increase"], 0.0) / 8.0;
                 let attack = 1.0
-                + col(battle, &name, &level, &["ability attributes / attack speed increase"], 0.0, ) / 100.0;
+                    + col(
+                        battle,
+                        &name,
+                        &level,
+                        &["ability attributes / attack speed increase"],
+                        0.0,
+                    ) / 100.0;
                 let source = StatusSource::Name(name.clone());
                 let unit = battle.unit_mut(hero);
                 let value = (speed, t + duration);
@@ -1461,9 +1708,8 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                         &unit.name,
                     );
                     pending.extra.hero_impact = Some("frost".to_owned());
-                    pending.extra.duration = col(
-                        battle, &name, &level, &["slow down duration"], 0.0,
-                    );
+                    pending.extra.duration =
+                        col(battle, &name, &level, &["slow down duration"], 0.0);
                     pending.actor = Some(EntityRef::Unit(hero));
                     pending.target = Some(target);
                     battle.add_pending(pending);
@@ -1471,13 +1717,8 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
             }
             // heroes.py:840-842.
             "Metal Pants" => {
-                let reduction = col(
-                    battle,
-                    &name,
-                    &level,
-                    &["incoming damage reduction"],
-                    0.0,
-                ) / 100.0;
+                let reduction =
+                    col(battle, &name, &level, &["incoming damage reduction"], 0.0) / 100.0;
                 let until = t + col(battle, &name, &level, &["ability duration"], 15.0);
                 let kit = battle.unit_mut(hero).kit.as_mut().expect("hero kit");
                 kit.reduction = reduction;
@@ -1517,34 +1758,25 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                         .rem_euclid(2.0 * std::f64::consts::PI)
                         - std::f64::consts::PI)
                         .abs();
-                    if offset <= half_angle
-                        && distance(battle, target, unit.x, unit.y) <= radius
-                    {
+                    if offset <= half_angle && distance(battle, target, unit.x, unit.y) <= radius {
                         damage_target(battle, target, damage);
                     }
                 }
             }
             // These pieces have passive effects only in Python's activate.
-            "Electro Boots"
-            | "Revenge Deck"
-            | "Fire Heart"
-            | "Rage Gem"
-            | "Meteor Staff"
-            | "Noble Iron"
-            | "Vampstache"
-            | "Snake Bracelet"
-            | "Frozen Arrow"
-            | "Monolith Arrow"
-            | "Life Gem"
-            | "Stick Horse"
-            | "Royal Gem"
-            | "Dark Crown"
+            "Electro Boots" | "Revenge Deck" | "Fire Heart" | "Rage Gem" | "Meteor Staff"
+            | "Noble Iron" | "Vampstache" | "Snake Bracelet" | "Frozen Arrow"
+            | "Monolith Arrow" | "Life Gem" | "Stick Horse" | "Royal Gem" | "Dark Crown"
             | "Electro Fangs" => {}
             _ => panic!("unsupported hero ability equipment {name}"),
         }
     }
     let name = battle.unit(hero).name.clone();
-    battle.log_event(vec![round_decimal(t, 1).into(), "ability".into(), name.into()]);
+    battle.log_event(vec![
+        round_decimal(t, 1).into(),
+        "ability".into(),
+        name.into(),
+    ]);
 }
 
 // heroes.py:898-921: movement updates the fallback facing even without a target.
@@ -1597,7 +1829,11 @@ fn boots_quake_hit(battle: &mut Battle, field: &mut Field) {
         }
         let id = building.id;
         let target = EntityRef::Building(id);
-        let cached = field.extra.quake_hits.iter().find(|(key, _)| *key == target);
+        let cached = field
+            .extra
+            .quake_hits
+            .iter()
+            .find(|(key, _)| *key == target);
         let count = if let Some((_, count)) = cached {
             *count
         } else {
@@ -1615,7 +1851,11 @@ fn boots_quake_hit(battle: &mut Battle, field: &mut Field) {
             continue;
         }
         let target = EntityRef::Unit(defender);
-        let cached = field.extra.quake_hits.iter().find(|(key, _)| *key == target);
+        let cached = field
+            .extra
+            .quake_hits
+            .iter()
+            .find(|(key, _)| *key == target);
         let count = if let Some((_, count)) = cached {
             *count
         } else {
@@ -1631,9 +1871,18 @@ fn boots_quake_hit(battle: &mut Battle, field: &mut Field) {
 
 // heroes.py:956-1147: delayed blasts and Dark Orb's swept path.
 pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
-    match pending.extra.hero_impact.as_deref().expect("hero impact mode") {
+    match pending
+        .extra
+        .hero_impact
+        .as_deref()
+        .expect("hero impact mode")
+    {
         "boots_quake" => {
-            let field = pending.extra.field.as_ref().expect("Earthquake Boots field");
+            let field = pending
+                .extra
+                .field
+                .as_ref()
+                .expect("Earthquake Boots field");
             boots_quake_hit(battle, &mut field.borrow_mut());
         }
         "lizard" => {
@@ -1666,7 +1915,11 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
             puppet(
                 battle,
                 hero,
-                pending.extra.equipment.as_deref().expect("puppet equipment"),
+                pending
+                    .extra
+                    .equipment
+                    .as_deref()
+                    .expect("puppet equipment"),
                 pending.extra.level.as_ref().expect("puppet level"),
                 pending.extra.first,
                 Some(pending.at),
@@ -1674,10 +1927,11 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
         }
         "frost" => {
             let target = pending.target.expect("Frost Flake target");
-            let targetable = battle.entity_alive(target) && match target {
-                EntityRef::Unit(unit) => battle.unit(unit).indirect_targetable(battle),
-                _ => true,
-            };
+            let targetable = battle.entity_alive(target)
+                && match target {
+                    EntityRef::Unit(unit) => battle.unit(unit).indirect_targetable(battle),
+                    _ => true,
+                };
             if targetable {
                 damage_target(battle, target, pending.damage);
                 let until = battle.t + pending.extra.duration;
@@ -1698,10 +1952,12 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
         "ball" => {
             let target = pending.target.expect("Spiky Ball target");
             (pending.x, pending.y) = battle.entity_position(target);
-            if battle.entity_alive(target) && match target {
-                EntityRef::Unit(unit) => battle.unit(unit).indirect_targetable(battle),
-                _ => true,
-            } {
+            if battle.entity_alive(target)
+                && match target {
+                    EntityRef::Unit(unit) => battle.unit(unit).indirect_targetable(battle),
+                    _ => true,
+                }
+            {
                 damage_target(battle, target, pending.damage);
             }
             pending.extra.remaining -= 1;
@@ -1714,7 +1970,9 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
             };
             pending.extra.visited.push(target);
             let (x, y) = battle.entity_position(target);
-            let row = battle.catalog.game_data("projectiles", "BarbarianKingGearFootball", None);
+            let row = battle
+                .catalog
+                .game_data("projectiles", "BarbarianKingGearFootball", None);
             let speed = game_int(row, "Speed", 0) as f64 / 100.0;
             pending.at += dist(pending.x, pending.y, x, y) / speed;
             pending.target = Some(target);
@@ -1724,12 +1982,25 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
         "arrow" => {
             let (dx, dy) = pending.extra.direction.expect("Giant Arrow direction");
             let previous = pending.extra.travel;
-            let row = battle.catalog.game_data("projectiles", "QueenPierceProjectile", None);
+            let row = battle
+                .catalog
+                .game_data("projectiles", "QueenPierceProjectile", None);
             let speed = game_int(row, "Speed", 0) as f64 / 100.0;
-            let travel = pending.extra.length.min((battle.t - pending.released_at.expect("Giant Arrow release")) * speed);
-            let targets: Vec<_> = battle.buildings.iter().map(|b| EntityRef::Building(b.id))
+            let travel = pending
+                .extra
+                .length
+                .min((battle.t - pending.released_at.expect("Giant Arrow release")) * speed);
+            let targets: Vec<_> = battle
+                .buildings
+                .iter()
+                .map(|b| EntityRef::Building(b.id))
                 .chain(battle.walls.iter().map(|w| EntityRef::Wall(w.id)))
-                .chain(battle.defenders_pool().map(|u| EntityRef::Unit(u.reference()))).collect();
+                .chain(
+                    battle
+                        .defenders_pool()
+                        .map(|u| EntityRef::Unit(u.reference())),
+                )
+                .collect();
             for target in targets {
                 if !battle.entity_alive(target) || pending.extra.visited.contains(&target) {
                     continue;
@@ -1754,9 +2025,12 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
                 let (x, y) = battle.entity_position(target);
                 let (px, py) = (x - pending.x, y - pending.y);
                 let along = px * dx + py * dy;
-                if along + half >= previous && along - half <= travel
-                    && 0.0 < along && along < pending.extra.length
-                    && (px * dy - py * dx).abs() <= half + pending.radius {
+                if along + half >= previous
+                    && along - half <= travel
+                    && 0.0 < along
+                    && along < pending.extra.length
+                    && (px * dy - py * dx).abs() <= half + pending.radius
+                {
                     pending.extra.visited.push(target);
                     let multiplier = if matches!(
                         target,
@@ -1893,17 +2167,25 @@ pub fn projectile_impact(battle: &mut Battle, mut pending: Pending) {
 
 // heroes.py:873-884: all buildings precede targetable ground defenders.
 fn ball_targets(battle: &Battle, hit: &[EntityRef]) -> Vec<EntityRef> {
-    let buildings: Vec<_> = battle.buildings.iter()
+    let buildings: Vec<_> = battle
+        .buildings
+        .iter()
         .map(|b| EntityRef::Building(b.id))
         .filter(|target| !hit.contains(target))
-        .filter(|target| matches!(target, EntityRef::Building(id) if battle.building_targetable(*id)))
+        .filter(
+            |target| matches!(target, EntityRef::Building(id) if battle.building_targetable(*id)),
+        )
         .collect();
     if !buildings.is_empty() {
         return buildings;
     }
-    battle.defenders_pool().filter(|u| {
-        !hit.contains(&EntityRef::Unit(u.reference())) && !u.flying && u.targetable(battle)
-    }).map(|u| EntityRef::Unit(u.reference())).collect()
+    battle
+        .defenders_pool()
+        .filter(|u| {
+            !hit.contains(&EntityRef::Unit(u.reference())) && !u.flying && u.targetable(battle)
+        })
+        .map(|u| EntityRef::Unit(u.reference()))
+        .collect()
 }
 
 fn nearest_center(battle: &Battle, candidates: &[EntityRef], x: f64, y: f64) -> Option<EntityRef> {
@@ -1963,7 +2245,16 @@ fn line(
     let magnitude = py_hypot(dx, dy);
     let magnitude = if magnitude == 0.0 { 1.0 } else { magnitude };
     // heroes.py:992-1022: normalize before multiplying along/cross distances.
-    let mut pending = Pending::new(battle.t + battle.dt, x, y, width, damage, true, true, &unit.name);
+    let mut pending = Pending::new(
+        battle.t + battle.dt,
+        x,
+        y,
+        width,
+        damage,
+        true,
+        true,
+        &unit.name,
+    );
     pending.extra.hero_impact = Some("arrow".to_owned());
     pending.extra.direction = Some((dx / magnitude, dy / magnitude));
     pending.extra.length = length;
@@ -1994,9 +2285,9 @@ fn puppet(
     }
     let count = col(battle, equipment, equipment_level, &[count_column], 1.0) as i64;
     let level = match level_column {
-        Some(column) => {
-            Some(Level::Int(col(battle, equipment, equipment_level, &[column], 0.0) as i64))
-        }
+        Some(column) => Some(Level::Int(
+            col(battle, equipment, equipment_level, &[column], 0.0) as i64,
+        )),
         None => battle.plan.researched_level(troop).cloned().flatten(),
     };
     // heroes.py:1188-1200: Hog/Healer Puppets also use three-unit batches.
@@ -2177,9 +2468,18 @@ pub fn dash_step(battle: &mut Battle, hero: UnitRef) {
         let unit = battle.unit(hero);
         let dash = unit.dash.as_ref().expect("active dash");
         let target = EntityRef::Building(building.id);
-        if building.alive && !dash.hit.contains(&target) && building.edge_distance(unit.x, unit.y) <= 1.5 {
+        if building.alive
+            && !dash.hit.contains(&target)
+            && building.edge_distance(unit.x, unit.y) <= 1.5
+        {
             let damage = dash.damage;
-            battle.unit_mut(hero).dash.as_mut().expect("active dash").hit.push(target);
+            battle
+                .unit_mut(hero)
+                .dash
+                .as_mut()
+                .expect("active dash")
+                .hit
+                .push(target);
             battle.hit_building(target, damage, None, "normal");
         }
     }
@@ -2190,8 +2490,20 @@ pub fn dash_step(battle: &mut Battle, hero: UnitRef) {
         let unit = battle.unit(defender);
         if !dash.hit.contains(&target) && unit.alive && !unit.underground {
             let damage = dash.damage;
-            battle.unit_mut(hero).dash.as_mut().expect("active dash").hit.push(target);
-            battle.hit_unit(defender, damage, None, "normal", Some(EntityRef::Unit(hero)));
+            battle
+                .unit_mut(hero)
+                .dash
+                .as_mut()
+                .expect("active dash")
+                .hit
+                .push(target);
+            battle.hit_unit(
+                defender,
+                damage,
+                None,
+                "normal",
+                Some(EntityRef::Unit(hero)),
+            );
         }
     }
     let dash = battle.unit(hero).dash.as_ref().expect("active dash");
@@ -2274,8 +2586,16 @@ pub fn blast(
     hero_mult: f64,
     walls: bool,
 ) {
-    let targets: Vec<_> = battle.buildings.iter().map(|b| EntityRef::Building(b.id))
-        .chain(battle.defenders_pool().map(|u| EntityRef::Unit(u.reference()))).collect();
+    let targets: Vec<_> = battle
+        .buildings
+        .iter()
+        .map(|b| EntityRef::Building(b.id))
+        .chain(
+            battle
+                .defenders_pool()
+                .map(|u| EntityRef::Unit(u.reference())),
+        )
+        .collect();
     for target in targets {
         if Some(target) == exclude || !battle.entity_alive(target) {
             continue;
@@ -2297,7 +2617,11 @@ pub fn blast(
             _ => unreachable!(),
         };
         if distance(battle, target, x, y) <= radius {
-            damage_target(battle, target, if hero { damage * hero_mult } else { damage });
+            damage_target(
+                battle,
+                target,
+                if hero { damage * hero_mult } else { damage },
+            );
         }
     }
     if walls {
@@ -2326,7 +2650,10 @@ fn moving_auras(battle: &mut Battle, warden: UnitRef, members: Option<&[UnitRef]
         return;
     }
     let source = StatusSource::Name(unit.id.0.to_string());
-    let members = members.map_or_else(|| battle.attackers_near(unit.x, unit.y, 9.0), |members| members.to_vec());
+    let members = members.map_or_else(
+        || battle.attackers_near(unit.x, unit.y, 9.0),
+        |members| members.to_vec(),
+    );
     for ally in members {
         let unit = battle.unit_mut(ally);
         if unit.name_id == Name::Totem {
@@ -2346,7 +2673,12 @@ fn moving_auras(battle: &mut Battle, warden: UnitRef, members: Option<&[UnitRef]
                 speed
             };
             let value = (t + 1.0, speed, reduction);
-            if let Some((_, old)) = unit.extra.torches.iter_mut().find(|(key, _)| *key == source) {
+            if let Some((_, old)) = unit
+                .extra
+                .torches
+                .iter_mut()
+                .find(|(key, _)| *key == source)
+            {
                 *old = value;
             } else {
                 unit.extra.torches.push((source.clone(), value));
@@ -2360,7 +2692,12 @@ pub fn apply_auras(battle: &mut Battle) {
     let t = battle.t;
     let mut combatants = std::mem::take(&mut battle.actor_scratch);
     combatants.clear();
-    combatants.extend(battle.attackers_pool().chain(battle.defenders_pool()).map(Unit::reference));
+    combatants.extend(
+        battle
+            .attackers_pool()
+            .chain(battle.defenders_pool())
+            .map(Unit::reference),
+    );
     let mut want = std::mem::take(&mut battle.aura_want_scratch);
     want.clear();
     for &reference in &combatants {
@@ -2384,19 +2721,51 @@ pub fn apply_auras(battle: &mut Battle) {
             continue;
         }
         let (percentage, cap, rage, radius) = if unit.name_id == Name::ApprenticeWarden {
-            (battle.catalog.stats.get("Apprentice Warden", unit.level.as_ref().expect("Warden level"),
-                &["Aura HP Increase"], None).expect("aura HP increase") / 100.0, f64::INFINITY, 0.0, 7.0)
+            (
+                battle
+                    .catalog
+                    .stats
+                    .get(
+                        "Apprentice Warden",
+                        unit.level.as_ref().expect("Warden level"),
+                        &["Aura HP Increase"],
+                        None,
+                    )
+                    .expect("aura HP increase")
+                    / 100.0,
+                f64::INFINITY,
+                0.0,
+                7.0,
+            )
         } else {
             moving_auras(battle, reference, None);
             let kit = battle.unit(reference).kit.as_ref();
             let (mut percentage, mut cap, mut rage) = (0.0, 0.0, 0.0);
             if let Some(kit) = kit {
                 if kit.has("Life Gem") {
-                    percentage = col(battle, "Life Gem", kit.lv("Life Gem"), &["% hp increase"], 0.0) / 100.0;
-                    cap = col(battle, "Life Gem", kit.lv("Life Gem"), &["max hp increase"], 0.0);
+                    percentage = col(
+                        battle,
+                        "Life Gem",
+                        kit.lv("Life Gem"),
+                        &["% hp increase"],
+                        0.0,
+                    ) / 100.0;
+                    cap = col(
+                        battle,
+                        "Life Gem",
+                        kit.lv("Life Gem"),
+                        &["max hp increase"],
+                        0.0,
+                    );
                 }
                 if kit.has("Rage Gem") {
-                    rage = col(battle, "Rage Gem", kit.lv("Rage Gem"), &["% damage increase"], 0.0) / 100.0;
+                    rage = col(
+                        battle,
+                        "Rage Gem",
+                        kit.lv("Rage Gem"),
+                        &["% damage increase"],
+                        0.0,
+                    ) / 100.0;
                 }
             }
             (percentage, cap, rage, 9.0)
@@ -2408,12 +2777,18 @@ pub fn apply_auras(battle: &mut Battle) {
                 continue;
             }
             let unit = battle.unit(ally);
-            if !unit.alive || dist(unit.x, unit.y, x, y) > radius || ally == reference
-                || unit.name_id == Name::Totem || matches!(unit.kind, Tag::Siege | Tag::SiegeIdle) {
+            if !unit.alive
+                || dist(unit.x, unit.y, x, y) > radius
+                || ally == reference
+                || unit.name_id == Name::Totem
+                || matches!(unit.kind, Tag::Siege | Tag::SiegeIdle)
+            {
                 continue;
             }
             if percentage != 0.0 {
-                if let Some((_, (previous_pct, previous_cap))) = want.iter_mut().find(|(unit, _)| *unit == ally) {
+                if let Some((_, (previous_pct, previous_cap))) =
+                    want.iter_mut().find(|(unit, _)| *unit == ally)
+                {
                     if (percentage * unit.base_max_hp).min(cap)
                         > (*previous_pct * unit.base_max_hp).min(*previous_cap)
                     {
@@ -2445,7 +2820,9 @@ pub fn apply_auras(battle: &mut Battle) {
     }
     for &reference in &combatants {
         if battle.unit(reference).alive {
-            let (percentage, cap) = want.iter().find(|(unit, _)| *unit == reference)
+            let (percentage, cap) = want
+                .iter()
+                .find(|(unit, _)| *unit == reference)
                 .map_or((0.0, 0.0), |(_, value)| *value);
             let ally = battle.unit_mut(reference);
             let transferred = std::mem::take(&mut ally.extra.meteor_aura_transfer);
@@ -2516,12 +2893,7 @@ pub fn guardian_death(battle: &mut Battle, guardian: UnitRef) {
 // change membership, and the primary victim's position stays live throughout.
 // Integration: replace units.rs's Logger TODO with
 // heroes::guardian_after_hit(battle, unit, target, damage).
-pub fn guardian_after_hit(
-    battle: &mut Battle,
-    guardian: UnitRef,
-    target: UnitRef,
-    damage: f64,
-) {
+pub fn guardian_after_hit(battle: &mut Battle, guardian: UnitRef, target: UnitRef, damage: f64) {
     let g = battle.unit(guardian);
     if !g.spec.has_special(Special::Logger) {
         return;
@@ -2630,19 +3002,13 @@ pub fn guardian_check(catalog: std::sync::Arc<crate::catalog::Catalog>) -> Resul
             assert_eq!(g.level, Some(Level::Int(expected_level)));
             assert_eq!(g.kind, Tag::Guardian);
             assert!(!g.is_hero);
-            assert_eq!(
-                g.home,
-                Some((battle.building(th).x, battle.building(th).y)),
-            );
+            assert_eq!(g.home, Some((battle.building(th).x, battle.building(th).y)),);
             assert_eq!(g.y, battle.building(th).y + 1.0);
             assert_eq!(g.hp.to_bits(), (numbers.hp * 1.2).to_bits());
             assert_eq!(g.dmg.to_bits(), (numbers.dmg * 1.2).to_bits());
             assert!(battle.building(th).weapon.is_none());
             assert!(!battle.is_defense_target(th));
-            assert_eq!(
-                spells::poison_factors(g, 100.0, 0.5, 0.6),
-                (0.0, 0.0, 0.0),
-            );
+            assert_eq!(spells::poison_factors(g, 100.0, 0.5, 0.6), (0.0, 0.0, 0.0),);
             let (x, y) = (g.x, g.y);
             let (trigger, leash) = match name {
                 "Longshot" => (19.0, 17.0),
@@ -2699,10 +3065,7 @@ pub fn guardian_check(catalog: std::sync::Arc<crate::catalog::Catalog>) -> Resul
             let mut battle = fixture(name, level, "ranked", "");
             let guardian = battle.guardian.expect("TH18 Guardian");
             let th = battle.th.expect("fixture Town Hall");
-            let (damage, speed) = (
-                battle.unit(guardian).dmg,
-                battle.unit(guardian).speed,
-            );
+            let (damage, speed) = (battle.unit(guardian).dmg, battle.unit(guardian).speed);
             battle.t = 4.0;
             battle.hit_building(EntityRef::Building(th), 1e9, None, "normal");
             guardians_tick(&mut battle);
@@ -2738,7 +3101,9 @@ pub fn guardian_check(catalog: std::sync::Arc<crate::catalog::Catalog>) -> Resul
             cases += 1;
         }
         for upgrading in [r#""guardian""#, r#""th""#] {
-            assert!(fixture(name, 1, "multiplayer", upgrading).guardian.is_none());
+            assert!(fixture(name, 1, "multiplayer", upgrading)
+                .guardian
+                .is_none());
             assert!(fixture(name, 1, "ranked", upgrading).guardian.is_some());
             cases += 2;
         }
@@ -2749,15 +3114,9 @@ pub fn guardian_check(catalog: std::sync::Arc<crate::catalog::Catalog>) -> Resul
         let g = battle.unit_mut(guardian);
         g.x = 10.0;
         g.y = 10.0;
-        let target = battle.spawn(
-            "Giant", Team::Atk, 21.5, 10.0, SpawnOptions::default(),
-        );
-        let tail = battle.spawn(
-            "Giant", Team::Atk, 27.0, 10.0, SpawnOptions::default(),
-        );
-        let buried = battle.spawn(
-            "Giant", Team::Atk, 23.5, 10.5, SpawnOptions::default(),
-        );
+        let target = battle.spawn("Giant", Team::Atk, 21.5, 10.0, SpawnOptions::default());
+        let tail = battle.spawn("Giant", Team::Atk, 27.0, 10.0, SpawnOptions::default());
+        let buried = battle.spawn("Giant", Team::Atk, 23.5, 10.5, SpawnOptions::default());
         battle.unit_mut(buried).underground = true;
         let siege = battle.spawn(
             "Giant",
@@ -2769,9 +3128,7 @@ pub fn guardian_check(catalog: std::sync::Arc<crate::catalog::Catalog>) -> Resul
                 ..Default::default()
             },
         );
-        let behind = battle.spawn(
-            "Giant", Team::Atk, 20.0, 10.0, SpawnOptions::default(),
-        );
+        let behind = battle.spawn("Giant", Team::Atk, 20.0, 10.0, SpawnOptions::default());
         let tail_hp = battle.unit(tail).hp;
         let buried_hp = battle.unit(buried).hp;
         let siege_hp = battle.unit(siege).hp;
@@ -2865,13 +3222,19 @@ pub fn summon_tick(battle: &mut Battle, unit: UnitRef) -> bool {
         let (x, y) = (u.x, u.y);
         units::area_hit(battle, unit, x, y, 1.8, damage, true, None);
         let u = battle.unit(unit);
-        battle.spawn("Lavaloon Pup", unit.team, u.x, u.y, SpawnOptions {
-            level: u.level.clone(),
-            kind: Tag::Summon,
-            owner: Some(unit),
-            group: u.group.clone(),
-            ..Default::default()
-        });
+        battle.spawn(
+            "Lavaloon Pup",
+            unit.team,
+            u.x,
+            u.y,
+            SpawnOptions {
+                level: u.level.clone(),
+                kind: Tag::Summon,
+                owner: Some(unit),
+                group: u.group.clone(),
+                ..Default::default()
+            },
+        );
         let next = battle.t + interval;
         battle.unit_mut(unit).extra.bomb_next = Some(next);
     }
@@ -2933,10 +3296,31 @@ pub fn summon_death(battle: &mut Battle, unit: UnitRef) {
         );
     }
     let u = battle.unit(unit);
-    let damage = battle.catalog.stats.get("Lavaloon", u.level.as_ref().expect("Lavaloon level"),
-        &["Damage when Destroyed"], None).expect("Lavaloon death damage");
-    let mut pending = Pending::new(battle.t + 0.416, u.x, u.y, 2.0, damage, false, true, &u.name);
-    pending.team = if unit.team == Team::Atk { Team::Def } else { Team::Atk };
+    let damage = battle
+        .catalog
+        .stats
+        .get(
+            "Lavaloon",
+            u.level.as_ref().expect("Lavaloon level"),
+            &["Damage when Destroyed"],
+            None,
+        )
+        .expect("Lavaloon death damage");
+    let mut pending = Pending::new(
+        battle.t + 0.416,
+        u.x,
+        u.y,
+        2.0,
+        damage,
+        false,
+        true,
+        &u.name,
+    );
+    pending.team = if unit.team == Team::Atk {
+        Team::Def
+    } else {
+        Team::Atk
+    };
     pending.extra.buildings = if unit.team == Team::Atk { damage } else { 0.0 };
     pending.actor = Some(EntityRef::Unit(unit));
     pending.effect = Some(Tag::Death);
@@ -2990,9 +3374,15 @@ pub fn new_member(battle: &mut Battle, reference: UnitRef) {
         }
     }
     let unit = battle.unit(reference);
-    let wardens: Vec<_> = battle.attackers_pool().filter(|warden| {
-        warden.alive && warden.name_id == Name::GrandWarden && dist(warden.x, warden.y, unit.x, unit.y) <= 9.0
-    }).map(Unit::reference).collect();
+    let wardens: Vec<_> = battle
+        .attackers_pool()
+        .filter(|warden| {
+            warden.alive
+                && warden.name_id == Name::GrandWarden
+                && dist(warden.x, warden.y, unit.x, unit.y) <= 9.0
+        })
+        .map(Unit::reference)
+        .collect();
     for warden in wardens {
         moving_auras(battle, warden, Some(&[reference]));
     }
@@ -3068,8 +3458,10 @@ pub fn stash(battle: &mut Battle, mut taken: Vec<UnitRef>, bonuses: (f64, f64, f
         // output/research/usage/rocket-backpack.md; cached Rocket_Backpack.txt:
         // https://clashofclans.fandom.com/wiki/Rocket_Backpack
         // The transported pet accompanies a mid-flight Recall for free.
-        let transported = battle.unit(reference)
-            .dash.as_ref()
+        let transported = battle
+            .unit(reference)
+            .dash
+            .as_ref()
             .and_then(|dash| dash.pet);
         if battle.unit(reference).dash.is_some() {
             end_dash(battle, reference);
@@ -3092,14 +3484,20 @@ pub fn stash(battle: &mut Battle, mut taken: Vec<UnitRef>, bonuses: (f64, f64, f
         u.extra.recalled = Some(t);
         u.extra.portal = Some(bonuses);
         u.alive = false;
-        battle.portal_stash.push(Value::Ref(EntityRef::Unit(reference)));
+        battle
+            .portal_stash
+            .push(Value::Ref(EntityRef::Unit(reference)));
     }
     battle.portal_ready_at = t;
 }
 
 // heroes.py:1429-1488: only explicitly named timers pause during Recall.
 fn resume_timers(unit: &mut Unit, now: f64) {
-    let recalled = unit.extra.recalled.take().expect("recalled unit needs a recall time");
+    let recalled = unit
+        .extra
+        .recalled
+        .take()
+        .expect("recalled unit needs a recall time");
     let elapsed = now - recalled;
     let e = &mut unit.extra;
     for (present, deadline) in [
@@ -3109,7 +3507,10 @@ fn resume_timers(unit: &mut Unit, now: f64) {
         (e.paused_timers.vial_until, &mut e.vial_until),
         (e.paused_timers.tome_until, &mut e.tome_until),
         (e.paused_timers.torch_until, &mut e.torch_until),
-        (e.paused_timers.haste_attack_until, &mut e.haste_attack_until),
+        (
+            e.paused_timers.haste_attack_until,
+            &mut e.haste_attack_until,
+        ),
         (e.paused_timers.angry_until, &mut e.angry_until),
         // heroes.py:1419-1421: Angry Jelly's attachment clock pauses in Recall.
         (e.paused_timers.brainwash_until, &mut e.brainwash_until),
@@ -3134,12 +3535,14 @@ fn resume_timers(unit: &mut Unit, now: f64) {
         *until += elapsed;
     }
     for (source, (_, _, until)) in &mut e.rage_effects {
-        if matches!(source, StatusSource::Name(name) if name == "Rage Vial" || name == "Barbarian Puppet") {
+        if matches!(source, StatusSource::Name(name) if name == "Rage Vial" || name == "Barbarian Puppet")
+        {
             *until += elapsed;
         }
     }
     for (source, (_, until)) in &mut e.haste_effects {
-        if matches!(source, StatusSource::Name(name) if name == "Haste Vial" || name == "Portal Pendant") {
+        if matches!(source, StatusSource::Name(name) if name == "Haste Vial" || name == "Portal Pendant")
+        {
             *until += elapsed;
         }
     }
@@ -3170,13 +3573,17 @@ fn resume_timers(unit: &mut Unit, now: f64) {
 
 // heroes.py:1314-1345: stable housing/time order, reuse existing unit identities.
 pub fn portal_redeploy(battle: &mut Battle, x: f64, y: f64) {
-    assert!(battle.can_deploy(x, y), "Portal redeployment requires a legal deployment tile");
+    assert!(
+        battle.can_deploy(x, y),
+        "Portal redeployment requires a legal deployment tile"
+    );
     let t = battle.t;
     let mut ordered: Vec<_> = battle.portal_units().collect();
     ordered.sort_by(|a, b| {
         let a = battle.unit(*a);
         let b = battle.unit(*b);
-        (-spells::interaction_housing(a)).cmp(&(-spells::interaction_housing(b)))
+        (-spells::interaction_housing(a))
+            .cmp(&(-spells::interaction_housing(b)))
             .then_with(|| a.spawned_at.total_cmp(&b.spawned_at))
     });
     let n = ordered.len();

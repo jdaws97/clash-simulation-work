@@ -25,7 +25,10 @@ impl PyRandom {
         if key.is_empty() {
             key.push(0);
         }
-        let mut rng = Self { mt: [0; N], index: N };
+        let mut rng = Self {
+            mt: [0; N],
+            index: N,
+        };
         rng.init_by_array(&key);
         rng
     }

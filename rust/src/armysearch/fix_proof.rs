@@ -114,14 +114,15 @@ fn native_openings(
         })
         .collect();
     let rows = Mutex::new(vec![None; plans.len()]);
-    let hook = |index: usize, _: &Job, battle: &crate::state::Battle, _: &crate::state::BattleResult| {
-        let Plan::Playbook(plan) = &battle.plan else {
-            panic!("round9 fixture bypassed PlaybookPlan");
+    let hook =
+        |index: usize, _: &Job, battle: &crate::state::Battle, _: &crate::state::BattleResult| {
+            let Plan::Playbook(plan) = &battle.plan else {
+                panic!("round9 fixture bypassed PlaybookPlan");
+            };
+            let log = plan.log_steps.iter().map(|(_, id)| id.clone()).collect();
+            let deployed = plan.deployed.iter().cloned().collect();
+            rows.lock().unwrap()[index] = Some(Opening { log, deployed });
         };
-        let log = plan.log_steps.iter().map(|(_, id)| id.clone()).collect();
-        let deployed = plan.deployed.iter().cloned().collect();
-        rows.lock().unwrap()[index] = Some(Opening { log, deployed });
-    };
     Runner::new(catalog, PreparedInputs::new(vec![layout], plans))
         .run_with_summary(&jobs, 1, Some(&hook))
         .map_err(|error| error.to_string())?;
@@ -240,7 +241,10 @@ fn hero_proof(
 ) -> Result<(), String> {
     let mut child = fixture(template);
     enable(account, compiler, &catalog, &mut child)?;
-    let replacement = account.roster.heroes.iter()
+    let replacement = account
+        .roster
+        .heroes
+        .iter()
         .find(|hero| !child.heroes.iter().any(|choice| &choice.hero == *hero))
         .ok_or("round9 proof needs an alternate hero")?
         .clone();
@@ -283,8 +287,24 @@ fn priority_proof(
 ) -> Result<(), String> {
     let mut parent = fixture(template);
     let mut steps = vec![
-        step("first", "deploy", "Healer", 1, "edge:main", "main", time(0.0)),
-        step("second", "deploy", "Barbarian", 1, "edge:main", "main", time(0.0)),
+        step(
+            "first",
+            "deploy",
+            "Healer",
+            1,
+            "edge:main",
+            "main",
+            time(0.0),
+        ),
+        step(
+            "second",
+            "deploy",
+            "Barbarian",
+            1,
+            "edge:main",
+            "main",
+            time(0.0),
+        ),
     ];
     for step in &mut steps {
         remove(step, "uncited");
@@ -320,7 +340,8 @@ fn priority_proof(
         .collect::<Result<Vec<_>, _>>()?;
     let rows = native_openings(catalog, plans, 0.1)?;
     require(
-        rows.iter().all(|row| row.log.first().is_some_and(|id| id == "first")),
+        rows.iter()
+            .all(|row| row.log.first().is_some_and(|id| id == "first")),
         "a local anchor mutation demoted the first ready action",
     )
 }
@@ -339,17 +360,28 @@ fn spell_proof(
     genome.cc_spells = genome.spells.clone();
     let mut steps = generic_steps(&genome);
     steps.retain(|step| {
-        text(step, "action", "") == "deploy"
-            && !crate::plans::is_hero(text(step, "what", ""))
+        text(step, "action", "") == "deploy" && !crate::plans::is_hero(text(step, "what", ""))
     });
     steps.extend(delayed_heroes(&genome));
     let mut brewed = step(
-        "late", "spell", "Rage Spell", 1, "edge:main", "main", time(20.0),
+        "late",
+        "spell",
+        "Rage Spell",
+        1,
+        "edge:main",
+        "main",
+        time(20.0),
     );
     put(&mut brewed, "origin", string("brewed"));
     steps.push(brewed);
     steps.push(step(
-        "early", "spell", "Rage Spell", 1, "edge:main", "main", time(0.0),
+        "early",
+        "spell",
+        "Rage Spell",
+        1,
+        "edge:main",
+        "main",
+        time(0.0),
     ));
     set_steps(&mut genome, steps);
     let mut program = genome.plan.program.as_ref().unwrap().clone();
@@ -363,7 +395,9 @@ fn spell_proof(
         "spell validity depends on step order",
     )?;
     program.steps.reverse();
-    let late = program.steps.iter()
+    let late = program
+        .steps
+        .iter()
         .position(|step| text(step, "id", "") == "late")
         .unwrap();
     for origin in ["", "unknown"] {
@@ -378,7 +412,9 @@ fn spell_proof(
     program.steps.reverse();
     program.validate(&genome)?;
     program.steps.reverse();
-    let early = program.steps.iter()
+    let early = program
+        .steps
+        .iter()
         .position(|step| text(step, "id", "") == "early")
         .unwrap();
     let mut overspent = program.clone();
@@ -405,9 +441,9 @@ fn spell_proof(
     let plan = account.compile(compiler, &catalog, &genome, 0.0, 123)?;
     let rows = native_openings(catalog, vec![plan], 30.0)?;
     require(
-        ["early", "late"].iter().all(|id| {
-            rows[0].log.iter().any(|entry| entry.as_str() == *id)
-        }),
+        ["early", "late"]
+            .iter()
+            .all(|id| rows[0].log.iter().any(|entry| entry.as_str() == *id)),
         "safe mixed-origin program did not cast both copies",
     )
 }
@@ -438,7 +474,13 @@ fn ground_proof(
     // The shared walk rule (F3) grounds Healers following the Warden at his
     // edge under any group, so start from Healers on the other flank: a real
     // air baseline that only the installed Warden walk below should ground.
-    if let Some(healer) = genome.plan.program.as_mut().unwrap().steps.iter_mut()
+    if let Some(healer) = genome
+        .plan
+        .program
+        .as_mut()
+        .unwrap()
+        .steps
+        .iter_mut()
         .find(|step| text(step, "what", "") == "Healer")
     {
         put(healer, "at", string("edge:funnel"));
@@ -449,19 +491,24 @@ fn ground_proof(
         !original.at("ground").bool(),
         "air fixture already selected ground mode",
     )?;
-    for anchor in ["unit:Grand Warden", "unit_ahead:Grand Warden", "edge:charge"] {
+    for anchor in [
+        "unit:Grand Warden",
+        "unit_ahead:Grand Warden",
+        "edge:charge",
+    ] {
         let mut child = genome.clone();
         let steps = &mut child.plan.program.as_mut().unwrap().steps;
-        let warden = steps.iter_mut()
+        let warden = steps
+            .iter_mut()
             .find(|step| {
-                text(step, "action", "") == "deploy"
-                    && text(step, "what", "") == "Grand Warden"
+                text(step, "action", "") == "deploy" && text(step, "what", "") == "Grand Warden"
             })
             .unwrap();
         let id = text(warden, "id", "").to_owned();
         put(warden, "at", string("edge:charge"));
         put(warden, "group", string("charge"));
-        let healer = steps.iter_mut()
+        let healer = steps
+            .iter_mut()
             .find(|step| text(step, "what", "") == "Healer")
             .unwrap();
         put(healer, "at", string(anchor));
@@ -477,7 +524,13 @@ fn ground_proof(
             "installed Healer-supported Warden stayed airborne",
         )?;
         if anchor == "edge:charge" {
-            let healer = child.plan.program.as_mut().unwrap().steps.iter_mut()
+            let healer = child
+                .plan
+                .program
+                .as_mut()
+                .unwrap()
+                .steps
+                .iter_mut()
                 .find(|step| text(step, "what", "") == "Healer")
                 .unwrap();
             put(healer, "when", time(0.0));

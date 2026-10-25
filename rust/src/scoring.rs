@@ -31,7 +31,12 @@ pub(crate) fn string(value: &Json, key: &str) -> Option<String> {
 }
 
 pub(crate) fn object(entries: Vec<(&str, Json)>) -> Json {
-    Json::Obj(entries.into_iter().map(|(k, v)| (k.to_owned(), v)).collect())
+    Json::Obj(
+        entries
+            .into_iter()
+            .map(|(k, v)| (k.to_owned(), v))
+            .collect(),
+    )
 }
 
 fn put<T>(entries: &mut Vec<(String, T)>, key: String, value: T) {
@@ -268,11 +273,9 @@ impl Strength {
             _ => None,
         };
         for build in observed.into_iter().flatten() {
-            let (Some(archetype), Some(th), Some(index)) = (
-                build.get("archetype"),
-                build.get("th"),
-                build.get("build"),
-            ) else {
+            let (Some(archetype), Some(th), Some(index)) =
+                (build.get("archetype"), build.get("th"), build.get("build"))
+            else {
                 break;
             };
             let key = format!("meta:{}-{}-{}", archetype.str(), th.i64(), index.i64());
@@ -325,7 +328,12 @@ impl Strength {
     }
 
     pub fn to_json(&self) -> Json {
-        Json::Obj(self.0.iter().map(|(k, v)| (k.clone(), Json::Num(*v))).collect())
+        Json::Obj(
+            self.0
+                .iter()
+                .map(|(k, v)| (k.clone(), Json::Num(*v)))
+                .collect(),
+        )
     }
 }
 
@@ -371,7 +379,10 @@ pub fn family_of(build: &Json) -> Option<String> {
         ("Super Dragon", "super-dragon"),
         ("Dragon Rider", "dragon-rider"),
     ] {
-        if troops.and_then(|v| v.get(troop)).is_some_and(|v| v.f64() >= 2.0) {
+        if troops
+            .and_then(|v| v.get(troop))
+            .is_some_and(|v| v.f64() >= 2.0)
+        {
             return Some(family.to_owned());
         }
     }
@@ -536,7 +547,10 @@ impl Observations {
                 (
                     "troops",
                     Json::Obj(
-                        troops.into_iter().map(|(key, count)| (key, Json::Num(count))).collect(),
+                        troops
+                            .into_iter()
+                            .map(|(key, count)| (key, Json::Num(count)))
+                            .collect(),
                     ),
                 ),
             ]);
@@ -645,7 +659,10 @@ impl ScoringData {
                     .obj()
                     .iter()
                     .map(|(id, name)| {
-                        (id.parse::<i64>().expect("troop share ID"), name.str().to_owned())
+                        (
+                            id.parse::<i64>().expect("troop share ID"),
+                            name.str().to_owned(),
+                        )
                     })
                     .collect()
             });
@@ -664,7 +681,11 @@ impl ScoringData {
             builds,
             observations,
             playbooks: value.get("playbooks").map_or_else(Vec::new, |values| {
-                values.arr().iter().map(|value| value.str().to_owned()).collect()
+                values
+                    .arr()
+                    .iter()
+                    .map(|value| value.str().to_owned())
+                    .collect()
             }),
         }
     }
@@ -706,7 +727,9 @@ impl ScoringData {
         let mut playbooks = Vec::new();
         for entry in std::fs::read_dir(directory.join("playbooks")).map_err(|e| e.to_string())? {
             let path = entry.map_err(|e| e.to_string())?.path();
-            if path.extension().is_some_and(|extension| extension == "json")
+            if path
+                .extension()
+                .is_some_and(|extension| extension == "json")
                 && !read(&path)?.is_null()
             {
                 if let Some(name) = path.file_stem().and_then(|s| s.to_str()) {
@@ -725,7 +748,10 @@ impl ScoringData {
                     .arr()
                     .iter()
                     .map(|troop| {
-                        (troop.at("_id").i64() - 4_000_000, troop.at("name").str().to_owned())
+                        (
+                            troop.at("_id").i64() - 4_000_000,
+                            troop.at("name").str().to_owned(),
+                        )
                     })
                     .collect::<Vec<_>>();
                 out.observations = Observations::from_lines(&lines, &names);
@@ -745,7 +771,11 @@ impl ScoringData {
             .collect();
         let mut coverage = Vec::new();
         for build in &rows {
-            increment(&mut coverage, build.at("archetype").str(), build.at("share").f64());
+            increment(
+                &mut coverage,
+                build.at("archetype").str(),
+                build.at("share").f64(),
+            );
         }
         let prior = self.meta.at("archetype_share_th18");
         let mut weights: Vec<f64> = rows
@@ -800,7 +830,8 @@ impl ScoringData {
         };
         let n = sum(counts.iter().map(|(_, count)| *count));
         let local = n / (n + 10.0);
-        let families: BTreeSet<String> = prior.iter().chain(counts).map(|(k, _)| k.clone()).collect();
+        let families: BTreeSet<String> =
+            prior.iter().chain(counts).map(|(k, _)| k.clone()).collect();
         let size = families.len() as f64;
         families
             .into_iter()
@@ -827,7 +858,9 @@ impl ScoringData {
                 .get("heroes")
                 .is_some_and(|values| values.arr().iter().any(|name| name.str() == hero))
             {
-                let available = build.get("troops").map_or(0, |v| number(v, "Healer", 0.0) as i64);
+                let available = build
+                    .get("troops")
+                    .map_or(0, |v| number(v, "Healer", 0.0) as i64);
                 out.push(Some((hero.to_owned(), healers.min(available))));
             }
         }
@@ -878,7 +911,9 @@ impl MetaOptions {
         if let Some(mix) = value.get("th_mix").filter(|v| !v.is_null()) {
             let mut entries = Vec::new();
             for (key, weight) in mix.obj() {
-                let th = key.parse::<i64>().map_err(|_| "th_mix needs integer Town Halls")?;
+                let th = key
+                    .parse::<i64>()
+                    .map_err(|_| "th_mix needs integer Town Halls")?;
                 entries.push((th, weight.f64()));
             }
             out.th_mix = Some(entries);
@@ -923,7 +958,9 @@ pub fn meta_th_mix(
         (mix, "BASELAB_TH_MIX")
     } else if observed.available {
         (
-            (0..3).map(|i| (16 + i as i64, observed.th_counts[i] + 1.0)).collect(),
+            (0..3)
+                .map(|i| (16 + i as i64, observed.th_counts[i] + 1.0))
+                .collect(),
             "ranked defenses + one per TH",
         )
     } else {
@@ -1013,11 +1050,15 @@ pub fn meta_scenarios(data: &ScoringData, options: &MetaOptions) -> Result<MetaS
                     return Err("budget side allocation must be finite".to_owned());
                 }
                 let sides = geom::round_half_even(requested);
-                (sides.max(SCOUT as f64).min(MAX_SIDES as f64) as usize, MAX_SIDES)
+                (
+                    sides.max(SCOUT as f64).min(MAX_SIDES as f64) as usize,
+                    MAX_SIDES,
+                )
             } else {
                 (options.n_angles, options.n_angles)
             };
-            let offset = 0.31 * *th as f64 + 0.07 * army.chars().count() as f64 + options.angle_offset;
+            let offset =
+                0.31 * *th as f64 + 0.07 * army.chars().count() as f64 + options.angle_offset;
             for (k, angle) in angles(sides, offset).into_iter().enumerate() {
                 for seed in &options.seeds {
                     for charge in &techniques {
@@ -1101,7 +1142,11 @@ fn better(left: &Outcome, right: &Outcome) -> bool {
 
 // evaluate.py:723-762: insertion-ordered groups/sides, lexicographic
 // itertools.combinations, and Python max's first occurrence on ties.
-pub fn scouted(scenarios: &[Scenario], results: &[Outcome], scout: Option<usize>) -> Vec<Selection> {
+pub fn scouted(
+    scenarios: &[Scenario],
+    results: &[Outcome],
+    scout: Option<usize>,
+) -> Vec<Selection> {
     let count = scenarios.len().min(results.len());
     let scout = scout.unwrap_or(SCOUT);
     if scout <= 1 {
@@ -1181,7 +1226,9 @@ fn round_decimal(value: f64, digits: usize) -> f64 {
     if !value.is_finite() {
         return value;
     }
-    format!("{value:.digits$}").parse().expect("rounded decimal")
+    format!("{value:.digits$}")
+        .parse()
+        .expect("rounded decimal")
 }
 
 #[derive(Clone, Debug)]
@@ -1295,7 +1342,9 @@ pub fn summarise(
         values.three += row.weight * three;
         values.troph += row.weight * trophies;
         let current = ev.worst_side.iter().find(|(name, _)| name == &key);
-        if current.is_none_or(|(_, (s, p, _))| r.stars > *s || (r.stars == *s && r.destruction > *p)) {
+        if current
+            .is_none_or(|(_, (s, p, _))| r.stars > *s || (r.stars == *s && r.destruction > *p))
+        {
             put(
                 &mut ev.worst_side,
                 key,
@@ -1386,7 +1435,10 @@ pub fn objective(ev: &Evaluation, mode: &str, holes: usize, per_tile: Option<f64
     if mode == "ranked" {
         ev.ranked_trophies - 0.00005 * ev.avg_destruction - penalty
     } else {
-        100.0 * (1.0 - ev.three_star_rate) - 10.0 * ev.avg_stars - 0.05 * ev.avg_destruction - penalty
+        100.0 * (1.0 - ev.three_star_rate)
+            - 10.0 * ev.avg_stars
+            - 0.05 * ev.avg_destruction
+            - penalty
     }
 }
 
@@ -1413,7 +1465,10 @@ impl PlanProvider for PreparedPlans {
             .indices
             .get(index)
             .ok_or("scenario has no prepared plan index")?;
-        let plan = self.plans.get(*plan).ok_or("prepared plan index out of range")?;
+        let plan = self
+            .plans
+            .get(*plan)
+            .ok_or("prepared plan index out of range")?;
         let expected = strength * skill(scenario.seed);
         if plan.at("strength").f64().to_bits() != expected.to_bits() {
             return Err("prepared plan strength differs from calibration * skill".to_owned());

@@ -24,9 +24,16 @@ pub enum Mutation {
 }
 
 pub const MUTATIONS: [Mutation; 10] = [
-    Mutation::Add, Mutation::Delete, Mutation::Anchor, Mutation::Trigger,
-    Mutation::Parameter, Mutation::Count, Mutation::Group, Mutation::Swap,
-    Mutation::Duplicate, Mutation::Aim,
+    Mutation::Add,
+    Mutation::Delete,
+    Mutation::Anchor,
+    Mutation::Trigger,
+    Mutation::Parameter,
+    Mutation::Count,
+    Mutation::Group,
+    Mutation::Swap,
+    Mutation::Duplicate,
+    Mutation::Aim,
 ];
 
 fn fresh_id(program: &AttackProgram) -> String {
@@ -40,7 +47,9 @@ fn fresh_id(program: &AttackProgram) -> String {
 }
 
 fn groups(program: &AttackProgram) -> Vec<String> {
-    let mut groups: Vec<_> = program.steps.iter()
+    let mut groups: Vec<_> = program
+        .steps
+        .iter()
         .filter(|step| matches!(text(step, "action", ""), "deploy" | "redeploy"))
         .map(|step| text(step, "group", "main").to_owned())
         .collect();
@@ -50,9 +59,23 @@ fn groups(program: &AttackProgram) -> Vec<String> {
 }
 
 fn anchors(program: &AttackProgram, genome: &ArmyGenome) -> Vec<String> {
-    let mut anchors: Vec<String> = ["edge:main", "edge:charge", "edge:funnel", "edge:left", "edge:right", "th",
-        "building:ad", "building:inferno", "building:mono", "building:cc", "building:scatter", "building:xbow"]
-        .into_iter().map(str::to_owned).collect();
+    let mut anchors: Vec<String> = [
+        "edge:main",
+        "edge:charge",
+        "edge:funnel",
+        "edge:left",
+        "edge:right",
+        "th",
+        "building:ad",
+        "building:inferno",
+        "building:mono",
+        "building:cc",
+        "building:scatter",
+        "building:xbow",
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .collect();
     for unit in unit_names(genome) {
         anchors.push(format!("unit:{unit}"));
         anchors.push(format!("unit_ahead:{unit}"));
@@ -79,13 +102,20 @@ pub(super) fn random_trigger(
 ) -> Json {
     let units: Vec<_> = unit_names(genome).into_iter().collect();
     let groups = groups(program);
-    let steps: Vec<_> = program.steps.iter().filter(|step| text(step, "id", "") != id).collect();
+    let steps: Vec<_> = program
+        .steps
+        .iter()
+        .filter(|step| text(step, "id", "") != id)
+        .collect();
     let spells: Vec<_> = spell_stock(genome).into_keys().collect();
     let choice = rng.index(if nested { 12 } else { 14 });
     match choice {
         0 => time(rng.unit() * 90.0),
         1 if !steps.is_empty() => object([
-            ("after", string(text(steps[rng.index(steps.len())], "id", ""))),
+            (
+                "after",
+                string(text(steps[rng.index(steps.len())], "id", "")),
+            ),
             ("delay", Json::Num(rng.unit() * 20.0)),
         ]),
         2 | 3 | 4 | 5 if !units.is_empty() => {
@@ -121,7 +151,10 @@ pub(super) fn random_trigger(
         12 | 13 => {
             let first = random_trigger(program, genome, id, rng, true);
             let second = random_trigger(program, genome, id, rng, true);
-            object([(if choice == 12 { "all" } else { "any" }, Json::Arr(vec![first, second]))])
+            object([(
+                if choice == 12 { "all" } else { "any" },
+                Json::Arr(vec![first, second]),
+            )])
         }
         _ => time(rng.unit() * 90.0),
     }
@@ -136,14 +169,25 @@ pub(super) fn random_trigger(
 /// vocabulary proposals. These are search hypotheses, not new oracle rules.
 fn prior(program: &AttackProgram, genome: &ArmyGenome, what: &str) -> Option<(String, Json)> {
     let groups = groups(program);
-    let group = groups.iter().find(|group| group.as_str() == "main").or_else(|| groups.first())?;
+    let group = groups
+        .iter()
+        .find(|group| group.as_str() == "main")
+        .or_else(|| groups.first())?;
     let inside = object([("group_inside", string(group))]);
     match what {
-        "Rage Spell" | "Healing Spell" | "Haste Spell" | "Super Bowler" => Some((format!("group:{group}"), inside)),
+        "Rage Spell" | "Healing Spell" | "Haste Spell" | "Super Bowler" => {
+            Some((format!("group:{group}"), inside))
+        }
         "Freeze Spell" => Some((format!("threat:{group}"), inside)),
-        "Poison Spell" => Some((format!("defenders:{group}"), object([("defenders_near", string(group))]))),
+        "Poison Spell" => Some((
+            format!("defenders:{group}"),
+            object([("defenders_near", string(group))]),
+        )),
         "Sneaky Goblin" => Some(("edge:funnel".to_owned(), time(0.0))),
-        "Healer" => genome.heroes.iter().find(|hero| hero.hero == "Archer Queen" || hero.hero == "Grand Warden")
+        "Healer" => genome
+            .heroes
+            .iter()
+            .find(|hero| hero.hero == "Archer Queen" || hero.hero == "Grand Warden")
             .map(|hero| (format!("unit:{}", hero.hero), time(5.0))),
         "Grand Warden" => Some(("building:cc".to_owned(), inside)),
         _ => None,
@@ -159,10 +203,18 @@ fn mark_changed(step: &mut Json) {
 fn remaining(program: &AttackProgram, genome: &ArmyGenome) -> Vec<(String, String, usize)> {
     let mut deploy = deploy_stock(genome);
     let mut spells = spell_stock(genome);
-    let mut abilities: BTreeMap<_, _> = genome.heroes.iter().map(|hero| (hero.hero.clone(), 1_usize)).collect();
+    let mut abilities: BTreeMap<_, _> = genome
+        .heroes
+        .iter()
+        .map(|hero| (hero.hero.clone(), 1_usize))
+        .collect();
     for step in &program.steps {
         let action = text(step, "action", "");
-        let what = if action == "recall" { "Recall Spell" } else { text(step, "what", "") };
+        let what = if action == "recall" {
+            "Recall Spell"
+        } else {
+            text(step, "what", "")
+        };
         let stock = match action {
             "deploy" => &mut deploy,
             "spell" | "recall" => &mut spells,
@@ -170,15 +222,20 @@ fn remaining(program: &AttackProgram, genome: &ArmyGenome) -> Vec<(String, Strin
             _ => continue,
         };
         let left = stock.get(what).copied().unwrap_or(0);
-        let used = if step.get("every").is_some() { left } else {
-            super::validate::amount(step, left, if action == "deploy" { left } else { 1 }).unwrap_or(left)
+        let used = if step.get("every").is_some() {
+            left
+        } else {
+            super::validate::amount(step, left, if action == "deploy" { left } else { 1 })
+                .unwrap_or(left)
         };
         stock.insert(what.to_owned(), left.saturating_sub(used));
     }
     let mut choices = Vec::new();
-    for (action, stock) in [("deploy", deploy),
-    ("spell", spells),
-    ("ability", abilities)] {
+    for (action, stock) in [
+        ("deploy", deploy),
+        ("spell", spells),
+        ("ability", abilities),
+    ] {
         for (name, left) in stock {
             if left > 0 {
                 choices.push((action.to_owned(), name, left));
@@ -186,13 +243,26 @@ fn remaining(program: &AttackProgram, genome: &ArmyGenome) -> Vec<(String, Strin
         }
     }
     if let Some(siege) = &genome.siege {
-        if !program.steps.iter().any(|step| text(step, "action", "") == "release_siege") {
+        if !program
+            .steps
+            .iter()
+            .any(|step| text(step, "action", "") == "release_siege")
+        {
             choices.push(("release_siege".to_owned(), siege.clone(), 1));
         }
     }
-    let recalled = program.steps.iter().filter(|step| text(step, "action", "") == "recall"
-        || text(step, "what", "") == "Recall Spell").count();
-    let redeployed = program.steps.iter().filter(|step| text(step, "action", "") == "redeploy").count();
+    let recalled = program
+        .steps
+        .iter()
+        .filter(|step| {
+            text(step, "action", "") == "recall" || text(step, "what", "") == "Recall Spell"
+        })
+        .count();
+    let redeployed = program
+        .steps
+        .iter()
+        .filter(|step| text(step, "action", "") == "redeploy")
+        .count();
     if recalled > redeployed {
         choices.push(("redeploy".to_owned(), String::new(), 1));
     }
@@ -227,14 +297,26 @@ fn adjust_parameter(when: &mut Json, rng: &mut Random) {
         return;
     };
     let value = low + rng.unit() * (high - low);
-    put(when, key, Json::Num(if key == "n" { value.floor() } else { value }));
+    put(
+        when,
+        key,
+        Json::Num(if key == "n" { value.floor() } else { value }),
+    );
 }
 
 /// Returns an invalid proposal with a reason instead of silently repairing
 /// mutation errors. The archive can therefore never contain invalid programs.
-pub fn apply(parent: &ArmyGenome, mutation: Mutation, rng: &mut Random) -> Result<ArmyGenome, String> {
+pub fn apply(
+    parent: &ArmyGenome,
+    mutation: Mutation,
+    rng: &mut Random,
+) -> Result<ArmyGenome, String> {
     let mut child = parent.clone();
-    let mut program = child.plan.program.take().ok_or("program mutation requires --programs on")?;
+    let mut program = child
+        .plan
+        .program
+        .take()
+        .ok_or("program mutation requires --programs on")?;
     let index = rng.index(program.steps.len());
     match mutation {
         Mutation::Add => {
@@ -252,11 +334,21 @@ pub fn apply(parent: &ArmyGenome, mutation: Mutation, rng: &mut Random) -> Resul
                     when = trigger;
                 }
             }
-            let count = if action == "deploy" { 1 + rng.index(*left) } else { 1 };
-            let action = if what == "Recall Spell" { "recall" } else { action };
+            let count = if action == "deploy" {
+                1 + rng.index(*left)
+            } else {
+                1
+            };
+            let action = if what == "Recall Spell" {
+                "recall"
+            } else {
+                action
+            };
             let groups = groups(&program);
             let group = groups.first().map_or("main", String::as_str);
-            program.steps.push(step(&id, action, what, count, &at, group, when));
+            program
+                .steps
+                .push(step(&id, action, what, count, &at, group, when));
         }
         Mutation::Delete => {
             program.steps.remove(index);
@@ -271,7 +363,9 @@ pub fn apply(parent: &ArmyGenome, mutation: Mutation, rng: &mut Random) -> Resul
             let id = text(&program.steps[index], "id", "");
             let mut when = random_trigger(&program, parent, id, rng, false);
             if rng.index(4) == 0 {
-                if let Some((_, trigger)) = prior(&program, parent, text(&program.steps[index], "what", "")) {
+                if let Some((_, trigger)) =
+                    prior(&program, parent, text(&program.steps[index], "what", ""))
+                {
                     when = trigger;
                 }
             }
@@ -280,14 +374,20 @@ pub fn apply(parent: &ArmyGenome, mutation: Mutation, rng: &mut Random) -> Resul
         }
         Mutation::Parameter => {
             if program.steps[index].get("every").is_some() && rng.index(2) == 0 {
-                put(&mut program.steps[index], "every", Json::Num(0.5 + rng.unit() * 20.0));
+                put(
+                    &mut program.steps[index],
+                    "every",
+                    Json::Num(0.5 + rng.unit() * 20.0),
+                );
             } else {
                 let key = if program.steps[index].get("until").is_some() && rng.index(3) == 0 {
                     "until"
                 } else {
                     "when"
                 };
-                let mut trigger = program.steps[index].get(key).cloned()
+                let mut trigger = program.steps[index]
+                    .get(key)
+                    .cloned()
                     .unwrap_or_else(|| time(0.0));
                 adjust_parameter(&mut trigger, rng);
                 put(&mut program.steps[index], key, trigger);
@@ -311,10 +411,14 @@ pub fn apply(parent: &ArmyGenome, mutation: Mutation, rng: &mut Random) -> Resul
                             "Recall Spell"
                         } else {
                             text(step, "what", "")
-                        }.to_owned();
+                        }
+                        .to_owned();
                         put(step, "every", Json::Num(2.0 + rng.unit() * 10.0));
-                        put(step, "until", object([("spells_left", string(spell)),
-                        ("n", number(0))]));
+                        put(
+                            step,
+                            "until",
+                            object([("spells_left", string(spell)), ("n", number(0))]),
+                        );
                     }
                 }
                 _ => return Err("count mutation requires deploy or cast".to_owned()),
@@ -323,7 +427,11 @@ pub fn apply(parent: &ArmyGenome, mutation: Mutation, rng: &mut Random) -> Resul
         }
         Mutation::Group => {
             let choices = ["main", "charge", "funnel", "left", "right", "duke"];
-            put(&mut program.steps[index], "group", string(choices[rng.index(choices.len())]));
+            put(
+                &mut program.steps[index],
+                "group",
+                string(choices[rng.index(choices.len())]),
+            );
             mark_changed(&mut program.steps[index]);
             repair_references(&mut program.steps, parent);
         }
@@ -355,14 +463,21 @@ pub fn apply(parent: &ArmyGenome, mutation: Mutation, rng: &mut Random) -> Resul
             let mut choices = anchors(&program, parent);
             choices.retain(|anchor| anchor != old);
             put(&mut duplicate, "id", string(id));
-            put(&mut duplicate, "at", string(&choices[rng.index(choices.len())]));
+            put(
+                &mut duplicate,
+                "at",
+                string(&choices[rng.index(choices.len())]),
+            );
             mark_changed(&mut duplicate);
             mark_changed(&mut program.steps[index]);
             program.steps.insert(index + 1, duplicate);
         }
         Mutation::Aim => {
             let step = &mut program.steps[index];
-            let hero = parent.heroes.iter().find(|hero| hero.hero == text(step, "what", ""))
+            let hero = parent
+                .heroes
+                .iter()
+                .find(|hero| hero.hero == text(step, "what", ""))
                 .ok_or("aim mutation requires a selected hero")?;
             if text(step, "action", "") != "ability" {
                 return Err("aim mutation requires ability".to_owned());
@@ -372,7 +487,11 @@ pub fn apply(parent: &ArmyGenome, mutation: Mutation, rng: &mut Random) -> Resul
                 choices.extend([Some("arrow"), Some("building:ad"), Some("building:cc")]);
             }
             if hero.equipment.iter().any(|item| item == "Fireball") {
-                choices.extend([Some("building:ad"), Some("building:cc"), Some("building:mono")]);
+                choices.extend([
+                    Some("building:ad"),
+                    Some("building:cc"),
+                    Some("building:mono"),
+                ]);
             }
             if hero.equipment.iter().any(|item| item == "Rocket Backpack") {
                 choices.push(Some("dash"));
@@ -395,13 +514,25 @@ pub fn random(parent: &ArmyGenome, rng: &mut Random) -> Result<ArmyGenome, Strin
     apply(parent, MUTATIONS[rng.index(MUTATIONS.len())], rng)
 }
 
-pub fn crossover(first: &ArmyGenome, second: &ArmyGenome, rng: &mut Random) -> Result<ArmyGenome, String> {
+pub fn crossover(
+    first: &ArmyGenome,
+    second: &ArmyGenome,
+    rng: &mut Random,
+) -> Result<ArmyGenome, String> {
     if super::army_identity(first) != super::army_identity(second) {
         return Err("program crossover requires the same army and loadout".to_owned());
     }
     let mut child = first.clone();
-    let mut program = first.plan.program.clone().ok_or("first parent has no program")?;
-    let other = second.plan.program.as_ref().ok_or("second parent has no program")?;
+    let mut program = first
+        .plan
+        .program
+        .clone()
+        .ok_or("first parent has no program")?;
+    let other = second
+        .plan
+        .program
+        .as_ref()
+        .ok_or("second parent has no program")?;
     let first_cut = rng.index(program.steps.len() + 1);
     let second_cut = rng.index(other.steps.len() + 1);
     program.steps.truncate(first_cut);

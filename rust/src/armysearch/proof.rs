@@ -12,11 +12,11 @@ use super::account::AccountRules;
 use super::eval::{Evaluator, NativeEvaluator};
 use super::genome::{ArmyGenome, PlanGenes, UnitCount};
 use super::novelty;
-use super::themed;
 use super::operators;
 use super::report;
 use super::score::{self, CandidateEstimate, Split, Stage, TargetManifest};
 use super::search::{self, Families, Objective, ProposalSettings, SearchState};
+use super::themed;
 use super::util::{encode, number, object, string, Random};
 
 fn require(condition: bool, message: &str) -> Result<(), String> {
@@ -30,7 +30,9 @@ fn require(condition: bool, message: &str) -> Result<(), String> {
 fn reverse_object_keys(value: &Json) -> Json {
     match value {
         Json::Obj(fields) => Json::Obj(
-            fields.iter().rev()
+            fields
+                .iter()
+                .rev()
                 .map(|(key, value)| (key.clone(), reverse_object_keys(value)))
                 .collect(),
         ),
@@ -54,34 +56,41 @@ impl Evaluator for TinyEvaluator<'_> {
     ) -> Result<CandidateEstimate, String> {
         self.calls.push(stage.split());
         let keys = score::allocate(self.manifest, stage, budget, 123)?;
-        let pick = (genome.plan.angle_offset * 16.0 / (2.0 * std::f64::consts::PI)).round() as usize;
+        let pick =
+            (genome.plan.angle_offset * 16.0 / (2.0 * std::f64::consts::PI)).round() as usize;
         let threads = self.threads;
         let rows = std::thread::scope(|scope| {
             let mut handles = Vec::new();
             for thread in 0..threads {
                 let keys = &keys;
                 handles.push(scope.spawn(move || {
-                    (thread..keys.len()).step_by(threads).map(|index| {
-                        let outcome = if pick == 7 {
-                            Outcome {
-                                stars: 3,
-                                destruction: 100.0,
-                                th_destroyed: true,
-                                time: 100.0
-                            }
-                        } else {
-                            Outcome {
-                                stars: 2,
-                                destruction: 50.0 + pick as f64,
-                                th_destroyed: true,
-                                time: 120.0
-                            }
-                        };
-                        (index, outcome)
-                    }).collect::<Vec<_>>()
+                    (thread..keys.len())
+                        .step_by(threads)
+                        .map(|index| {
+                            let outcome = if pick == 7 {
+                                Outcome {
+                                    stars: 3,
+                                    destruction: 100.0,
+                                    th_destroyed: true,
+                                    time: 100.0,
+                                }
+                            } else {
+                                Outcome {
+                                    stars: 2,
+                                    destruction: 50.0 + pick as f64,
+                                    th_destroyed: true,
+                                    time: 120.0,
+                                }
+                            };
+                            (index, outcome)
+                        })
+                        .collect::<Vec<_>>()
                 }));
             }
-            handles.into_iter().flat_map(|handle| handle.join().expect("tiny worker")).collect::<Vec<_>>()
+            handles
+                .into_iter()
+                .flat_map(|handle| handle.join().expect("tiny worker"))
+                .collect::<Vec<_>>()
         });
         let mut rows = rows;
         rows.sort_by_key(|(index, _)| *index);
@@ -95,34 +104,47 @@ fn tiny_proofs(
     seed: &ArmyGenome,
     account: &AccountRules,
 ) -> Result<(), String> {
-    let sides: Vec<_> = (0..8).map(|side| Scenario {
-        army: "scout-proof".to_owned(),
-        town_hall: 16,
-        angle: side as f64,
-        seed: 123,
-        weight: 1.0 / 8.0,
-        modifier: None,
-        group: 0,
-        tactic: Json::Null,
-        charge: None,
-        full_scout: false,
-    }).collect();
-    let outcomes: Vec<_> = (0..8).map(|side| Outcome {
-        stars: 2,
-        destruction: 50.0 + side as f64 * 6.0,
-        th_destroyed: true,
-        time: 100.0,
-    }).collect();
+    let sides: Vec<_> = (0..8)
+        .map(|side| Scenario {
+            army: "scout-proof".to_owned(),
+            town_hall: 16,
+            angle: side as f64,
+            seed: 123,
+            weight: 1.0 / 8.0,
+            modifier: None,
+            group: 0,
+            tactic: Json::Null,
+            charge: None,
+            full_scout: false,
+        })
+        .collect();
+    let outcomes: Vec<_> = (0..8)
+        .map(|side| Outcome {
+            stars: 2,
+            destruction: 50.0 + side as f64 * 6.0,
+            th_destroyed: true,
+            time: 100.0,
+        })
+        .collect();
     let selected = scoring::scouted(&sides, &outcomes, Some(2));
-    require(selected.len() == 28, "eight-side scouting did not enumerate 28 pairs")?;
+    require(
+        selected.len() == 28,
+        "eight-side scouting did not enumerate 28 pairs",
+    )?;
     let mut pair = 0;
     for first in 0..8 {
         for second in first + 1..8 {
-            require(selected[pair].scenario == second, "scouting chose a different pair winner")?;
+            require(
+                selected[pair].scenario == second,
+                "scouting chose a different pair winner",
+            )?;
             pair += 1;
         }
     }
-    require(scoring::attacker_trophies(3, 100.0) == 40 && scoring::attacker_trophies(2, 100.0) == 32, "ranked trophy direction or boundary changed")?;
+    require(
+        scoring::attacker_trophies(3, 100.0) == 40 && scoring::attacker_trophies(2, 100.0) == 32,
+        "ranked trophy direction or boundary changed",
+    )?;
     let mut candidates = Vec::new();
     for index in 0..16 {
         let mut genome = seed.clone();
@@ -134,7 +156,7 @@ fn tiny_proofs(
         let mut evaluator = TinyEvaluator {
             manifest,
             threads,
-            calls: Vec::new()
+            calls: Vec::new(),
         };
         let mut state = SearchState::new(123);
         search::assess_wave(
@@ -169,14 +191,25 @@ fn tiny_proofs(
             Objective::Ranked,
             account,
         );
-        require(encode(&state.to_json()) == encode(&restored.to_json()), "resume changed archive")?;
+        require(
+            encode(&state.to_json()) == encode(&restored.to_json()),
+            "resume changed archive",
+        )?;
         let best = state.elites(Objective::Ranked).remove(0);
-        require(best.genome.identity() == candidates[7]
-            .identity(), "tiny enumerable space missed known optimum")?;
-        require(evaluator.calls.iter().all(|split| *split == Split::Search), "holdout entered search")?;
+        require(
+            best.genome.identity() == candidates[7].identity(),
+            "tiny enumerable space missed known optimum",
+        )?;
+        require(
+            evaluator.calls.iter().all(|split| *split == Split::Search),
+            "holdout entered search",
+        )?;
         let archive = encode(&report::archive_json(&state));
         if let Some(expected) = &expected {
-            require(&archive == expected, "synthetic archive differs across thread counts")?;
+            require(
+                &archive == expected,
+                "synthetic archive differs across thread counts",
+            )?;
         }
         expected = Some(archive);
         // Adversarial holdout changes must leave all development keys/scores
@@ -192,7 +225,7 @@ fn tiny_proofs(
         let mut changed_eval = TinyEvaluator {
             manifest: &changed,
             threads,
-            calls: Vec::new()
+            calls: Vec::new(),
         };
         search::assess_wave(
             &mut isolated,
@@ -214,14 +247,30 @@ fn tiny_proofs(
             Objective::Ranked,
             account,
         );
-        require(encode(&report::archive_json(&state)) == encode(&report::archive_json(&isolated)), "holdout contents affected archive")?;
+        require(
+            encode(&report::archive_json(&state)) == encode(&report::archive_json(&isolated)),
+            "holdout contents affected archive",
+        )?;
         let keys = score::allocate(manifest, Stage::Quick, 9, 123)?;
-        require(keys.len() <= 9 && keys.iter().all(|key| manifest.targets[key.target].split == Split::Search), "budget or split allocation failure")?;
-        let development: BTreeSet<i64> = score::allocate(manifest, Stage::Confirm, 16, 123)?.iter()
-            .map(|key| key.seed).collect();
-        let holdout: BTreeSet<i64> = score::allocate(manifest, Stage::Holdout, 16, 123)?.iter()
-            .map(|key| key.seed).collect();
-        require(development.is_disjoint(&holdout), "holdout reused confirmation seeds")?;
+        require(
+            keys.len() <= 9
+                && keys
+                    .iter()
+                    .all(|key| manifest.targets[key.target].split == Split::Search),
+            "budget or split allocation failure",
+        )?;
+        let development: BTreeSet<i64> = score::allocate(manifest, Stage::Confirm, 16, 123)?
+            .iter()
+            .map(|key| key.seed)
+            .collect();
+        let holdout: BTreeSet<i64> = score::allocate(manifest, Stage::Holdout, 16, 123)?
+            .iter()
+            .map(|key| key.seed)
+            .collect();
+        require(
+            development.is_disjoint(&holdout),
+            "holdout reused confirmation seeds",
+        )?;
     }
     Ok(())
 }
@@ -398,7 +447,9 @@ fn descriptor_and_novelty_proofs(
     )?;
     same.plan.family = "synthetic-descriptor-playbook".to_owned();
     require(
-        novelty::report(&same, &[first], account).at("cited_playbook").bool(),
+        novelty::report(&same, &[first], account)
+            .at("cited_playbook")
+            .bool(),
         "cited playbook report is missing",
     )?;
     Ok(())
@@ -448,13 +499,17 @@ fn proposal_proofs(
             )?;
         }
         let mut state = SearchState::new(20261024);
-        let wave = search::proposals(&mut state, 20, templates, account, compiler, catalog, settings);
+        let wave = search::proposals(
+            &mut state, 20, templates, account, compiler, catalog, settings,
+        );
         require(
             wave.len() == 20 && wave.iter().all(|genome| families.allows(genome)),
             "family filtering or full batch generation failed",
         )?;
         let mut restored = report::roundtrip_state(&state, Objective::Ranked, account)?;
-        let next = search::proposals(&mut state, 20, templates, account, compiler, catalog, settings);
+        let next = search::proposals(
+            &mut state, 20, templates, account, compiler, catalog, settings,
+        );
         let replayed = search::proposals(
             &mut restored,
             20,
@@ -569,12 +624,21 @@ pub fn run(
                 Ok(genome)
             })
         } else if index % 11 == 0 {
-            let others: Vec<_> = templates.iter().filter(|other| other.plan.family == current.plan.family).collect();
+            let others: Vec<_> = templates
+                .iter()
+                .filter(|other| other.plan.family == current.plan.family)
+                .collect();
             if others.is_empty() {
                 operators::mutate(&current, templates, account, compiler, &catalog, &mut rng)
             } else {
-                operators::crossover(&current, others[rng.index(others
-                    .len())], account, compiler, &catalog, &mut rng)
+                operators::crossover(
+                    &current,
+                    others[rng.index(others.len())],
+                    account,
+                    compiler,
+                    &catalog,
+                    &mut rng,
+                )
             }
         } else {
             operators::mutate(&current, templates, account, compiler, &catalog, &mut rng)
@@ -582,9 +646,16 @@ pub fn run(
         match candidate {
             Ok(genome) => {
                 account.check(&genome)?;
-                let plan = account.compile(compiler, &catalog, &genome, genome.plan.angle_offset, 0)?;
-                require(!plan.at("observed").bool(), "observed replay exemption inherited")?;
-                require(plan.at("strength").f64().to_bits() == 1.0_f64.to_bits(), "strength changed")?;
+                let plan =
+                    account.compile(compiler, &catalog, &genome, genome.plan.angle_offset, 0)?;
+                require(
+                    !plan.at("observed").bool(),
+                    "observed replay exemption inherited",
+                )?;
+                require(
+                    plan.at("strength").f64().to_bits() == 1.0_f64.to_bits(),
+                    "strength changed",
+                )?;
                 accepted += 1;
                 current = genome;
             }
@@ -601,44 +672,78 @@ pub fn run(
     require(accepted > 100, "legality fuzz admitted too few genomes")?;
     let mut invalid = templates[0].clone();
     invalid.troops[0].count = 321;
-    require(account.check(&invalid).is_err(), "housing overflow admitted")?;
+    require(
+        account.check(&invalid).is_err(),
+        "housing overflow admitted",
+    )?;
     invalid = templates[0].clone();
     invalid.heroes[0].pet = invalid.heroes[1].pet.clone();
     require(account.check(&invalid).is_err(), "duplicate pet admitted")?;
     invalid = templates[0].clone();
     invalid.heroes[0].equipment[0] = invalid.heroes[1].equipment[0].clone();
-    require(account.check(&invalid).is_err(), "wrong-owner equipment admitted")?;
+    require(
+        account.check(&invalid).is_err(),
+        "wrong-owner equipment admitted",
+    )?;
     invalid = templates[0].clone();
     invalid.troops[0].name = "Meteor Golem".to_owned();
-    require(account.check(&invalid).is_err(), "Barracks19 troop admitted")?;
+    require(
+        account.check(&invalid).is_err(),
+        "Barracks19 troop admitted",
+    )?;
     let mut replay = templates[0].to_build();
     crate::armies::put(&mut replay, "observed", Json::Bool(true));
-    require(!ArmyGenome::from_build(&replay).to_build().at("observed")
-        .bool(), "observed seed inherited exemption")?;
+    require(
+        !ArmyGenome::from_build(&replay)
+            .to_build()
+            .at("observed")
+            .bool(),
+        "observed seed inherited exemption",
+    )?;
     let mut reordered = templates[0].clone();
     reordered.heroes.reverse();
     reordered.troops.reverse();
     for hero in &mut reordered.heroes {
         hero.equipment.reverse();
     }
-    require(reordered.identity() == templates[0].identity(), "canonical identity depends on collection order")?;
+    require(
+        reordered.identity() == templates[0].identity(),
+        "canonical identity depends on collection order",
+    )?;
     let original_plan = account.compile(compiler, &catalog, &templates[0], 0.0, 0)?;
     let reordered_plan = account.compile(compiler, &catalog, &reordered, 0.0, 0)?;
-    require(encode(&original_plan) == encode(&reordered_plan), "canonical genomes compiled in different iteration orders")?;
+    require(
+        encode(&original_plan) == encode(&reordered_plan),
+        "canonical genomes compiled in different iteration orders",
+    )?;
     // One search base and one independent holdout make the native fixture
     // small while exercising the actual plan compiler, Runner and archive.
-    let search_base = manifest.targets.iter().find(|target| target.split == Split::Search)
-        .ok_or("proof requires search base")?.clone();
-    let holdout_base = manifest.targets.iter().find(|target| target.split == Split::Holdout)
-        .ok_or("proof requires holdout base")?.clone();
+    let search_base = manifest
+        .targets
+        .iter()
+        .find(|target| target.split == Split::Search)
+        .ok_or("proof requires search base")?
+        .clone();
+    let holdout_base = manifest
+        .targets
+        .iter()
+        .find(|target| target.split == Split::Holdout)
+        .ok_or("proof requires holdout base")?
+        .clone();
     let small = TargetManifest {
-        targets: vec![search_base, holdout_base]
+        targets: vec![search_base, holdout_base],
     };
     tiny_proofs(&small, &templates[0], account)?;
     descriptor_and_novelty_proofs(account, &small, &templates[0])?;
     proposal_proofs(account, compiler, &catalog, templates)?;
     let themed_main_types = themed_proofs(account, compiler, &catalog)?;
-    let programs = super::program::proof::run(account, compiler, Arc::clone(&catalog), templates, iterations)?;
+    let programs = super::program::proof::run(
+        account,
+        compiler,
+        Arc::clone(&catalog),
+        templates,
+        iterations,
+    )?;
     let mut candidates: Vec<ArmyGenome> = templates.iter().take(2).cloned().collect();
     let main = account
         .roster
@@ -670,7 +775,15 @@ pub fn run(
     let mut expected = None;
     for threads in [1, 4, 16] {
         eprintln!("armysearch-proof native determinism threads={threads}");
-        let mut evaluator = NativeEvaluator::new(account, compiler, Arc::clone(&catalog), &small, 999, threads, None)?;
+        let mut evaluator = NativeEvaluator::new(
+            account,
+            compiler,
+            Arc::clone(&catalog),
+            &small,
+            999,
+            threads,
+            None,
+        )?;
         let mut state = SearchState::new(999);
         search::assess_wave(
             &mut state,
@@ -682,16 +795,31 @@ pub fn run(
             Objective::Ranked,
             account,
         );
-        require(!state.archive.is_empty(), "native battle proof produced no archive")?;
-        require(state.rejected.is_empty(), "native battle proof rejected a fixture")?;
+        require(
+            !state.archive.is_empty(),
+            "native battle proof produced no archive",
+        )?;
+        require(
+            state.rejected.is_empty(),
+            "native battle proof rejected a fixture",
+        )?;
         for elite in state.archive.values().flatten() {
             let replay = evaluator.evaluate(&elite.genome, Stage::Confirm, 8)?;
-            require(encode(&replay.to_json()) == encode(&elite.confirm.to_json()), "cache changed estimate")?;
+            require(
+                encode(&replay.to_json()) == encode(&elite.confirm.to_json()),
+                "cache changed estimate",
+            )?;
         }
-        require(evaluator.cache_hits > 0, "native cache proof had no cache hit")?;
+        require(
+            evaluator.cache_hits > 0,
+            "native cache proof had no cache hit",
+        )?;
         let archive = encode(&report::archive_json(&state));
         if let Some(expected) = &expected {
-            require(&archive == expected, "native archive differs for 1/4/16 threads")?;
+            require(
+                &archive == expected,
+                "native archive differs for 1/4/16 threads",
+            )?;
         }
         expected = Some(archive);
     }

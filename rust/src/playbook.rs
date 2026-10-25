@@ -7,7 +7,9 @@ use crate::geom::py_hypot;
 use crate::heroes;
 use crate::json::Json;
 use crate::labels::{Name, Tag};
-use crate::plans::{self, count, flag, number, set, spell_key, spell_name, text, truth, AttackPlan};
+use crate::plans::{
+    self, count, flag, number, set, spell_key, spell_name, text, truth, AttackPlan,
+};
 use crate::shared::SharedVec;
 use crate::state::*;
 use crate::stats::Level;
@@ -84,7 +86,10 @@ impl Trigger {
         } else if let Some(v) = w.get("hp_below") {
             Self::HpBelow(v.str().to_owned(), number(w, "frac", 0.5))
         } else if let Some(v) = w.get("spells_left") {
-            Self::SpellsLeft(spell_key(v.str()).unwrap_or(v.str()).to_owned(), number(w, "n", 0.0) as i64)
+            Self::SpellsLeft(
+                spell_key(v.str()).unwrap_or(v.str()).to_owned(),
+                number(w, "n", 0.0) as i64,
+            )
         } else if let Some(v) = w.get("dead") {
             Self::Dead(v.str().to_owned())
         } else if let Some(v) = w.get("defenders_near") {
@@ -143,24 +148,28 @@ impl Step {
             id: s.at("id").str().to_owned(),
             action: Action::parse(s.at("action").str()),
             what: s.get("what").and_then(Json::opt_str).map(str::to_owned),
-            count: s.get("count")
-                .filter(|v| !v.is_null()
-                && !matches!(v, Json::Str(name) if name == "all"))
-                .map(|v| {
-                match v {
+            count: s
+                .get("count")
+                .filter(|v| !v.is_null() && !matches!(v, Json::Str(name) if name == "all"))
+                .map(|v| match v {
                     Json::Str(v) => v.parse().expect("integer step count"),
                     _ => v.f64() as i64,
-                }
-            }),
+                }),
             at: text(s, "at", "edge:main").to_owned(),
             group: text(s, "group", "main").to_owned(),
             when: s.get("when").map_or(Trigger::Always, Trigger::parse),
             every: s.get("every").filter(|v| truth(v)).map(Json::f64),
             until: s.get("until").filter(|v| truth(v)).map(Trigger::parse),
             spread: s.get("spread").map(Json::f64),
-            level: s.get("level").filter(|v| !v.is_null()).map(Level::from_json),
+            level: s
+                .get("level")
+                .filter(|v| !v.is_null())
+                .map(Level::from_json),
             origin: s.get("origin").and_then(Json::opt_str).map(str::to_owned),
-            aim: s.get("aim").filter(|v| truth(v)).map(|v| v.str().to_owned()),
+            aim: s
+                .get("aim")
+                .filter(|v| truth(v))
+                .map(|v| v.str().to_owned()),
             completion: flag(s, "completion"),
             uncited: flag(s, "uncited"),
             skip_if_impossible: flag(s, "skip_if_impossible"),
@@ -212,19 +221,27 @@ pub struct PlaybookPlan {
 impl PlaybookPlan {
     pub fn load(p: &Json) -> Self {
         assert_eq!(p.at("$type").str(), "PlaybookPlan");
-        let hurt: Vec<_> = p.at("_hurt").obj().iter().map(|(key, value)| {
-            if let Some(group) = key.strip_prefix("engaged_since:") {
-                (HurtKey::Engaged(group.to_owned()), HurtValue::Since(value.f64()))
-            } else {
-                let unit = UnitId(key.parse().expect("unit id in hurt history"));
-                let history = value
-                    .arr()
-                    .iter()
-                    .map(|v| (v.arr()[0].f64(), v.arr()[1].f64()))
-                    .collect();
-                (HurtKey::Unit(unit), HurtValue::History(history))
-            }
-        }).collect();
+        let hurt: Vec<_> = p
+            .at("_hurt")
+            .obj()
+            .iter()
+            .map(|(key, value)| {
+                if let Some(group) = key.strip_prefix("engaged_since:") {
+                    (
+                        HurtKey::Engaged(group.to_owned()),
+                        HurtValue::Since(value.f64()),
+                    )
+                } else {
+                    let unit = UnitId(key.parse().expect("unit id in hurt history"));
+                    let history = value
+                        .arr()
+                        .iter()
+                        .map(|v| (v.arr()[0].f64(), v.arr()[1].f64()))
+                        .collect();
+                    (HurtKey::Unit(unit), HurtValue::History(history))
+                }
+            })
+            .collect();
         Self {
             attack: AttackPlan::load(p),
             steps: Rc::new(p.at("steps").arr().iter().map(Step::load).collect()),
@@ -239,29 +256,55 @@ impl PlaybookPlan {
             hurt: hurt.into(),
             hurt_indices: SharedVec::default(),
             no_target: plans::times(p, "_no_target").into(),
-            log_steps: p.at("log_steps")
+            log_steps: p
+                .at("log_steps")
                 .arr()
                 .iter()
                 .map(|v| (v.arr()[0].f64(), v.arr()[1].str().to_owned()))
                 .collect(),
-            deployed: p.get("_deployed")
-                .map_or_else(SharedVec::default, |v| v.arr().iter().map(|v| v.str().to_owned()).collect()),
+            deployed: p.get("_deployed").map_or_else(SharedVec::default, |v| {
+                v.arr().iter().map(|v| v.str().to_owned()).collect()
+            }),
             aim_since: plans::times(p, "_aim_t").into(),
             last_alive: number(p, "_last_alive", 0.0),
-            charge_edge: Cell::new(p.get("_charge_edge").map(|v| (v.arr()[0].f64(), v.arr()[1].f64()))),
+            charge_edge: Cell::new(
+                p.get("_charge_edge")
+                    .map(|v| (v.arr()[0].f64(), v.arr()[1].f64())),
+            ),
             next_fallback: number(p, "_next_fallback", 0.0),
-            step_spells: p.get("_step_spells")
+            step_spells: p
+                .get("_step_spells")
                 .map(|v| Rc::new(v.arr().iter().map(|v| v.str().to_owned()).collect())),
-            equipment_steps: p.get("_equipment_steps").map_or_else(SharedVec::default, |v| {
-                v.obj().iter().map(|(id, names)| {
-                    (id.clone(), names.arr().first().map(|name| name.str().to_owned()))
-                }).collect()
-            }),
-            ad_reservations: p.get("_ad_reservations").map_or_else(SharedVec::default, |v| {
-                v.obj().iter().map(|(id, buildings)| {
-                    (id.clone(), buildings.arr().iter().map(|b| BuildingId(b.usize())).collect())
-                }).collect()
-            }),
+            equipment_steps: p
+                .get("_equipment_steps")
+                .map_or_else(SharedVec::default, |v| {
+                    v.obj()
+                        .iter()
+                        .map(|(id, names)| {
+                            (
+                                id.clone(),
+                                names.arr().first().map(|name| name.str().to_owned()),
+                            )
+                        })
+                        .collect()
+                }),
+            ad_reservations: p
+                .get("_ad_reservations")
+                .map_or_else(SharedVec::default, |v| {
+                    v.obj()
+                        .iter()
+                        .map(|(id, buildings)| {
+                            (
+                                id.clone(),
+                                buildings
+                                    .arr()
+                                    .iter()
+                                    .map(|b| BuildingId(b.usize()))
+                                    .collect(),
+                            )
+                        })
+                        .collect()
+                }),
             constructed: Rc::new(Json::Obj(
                 p.obj()
                     .iter()
@@ -323,7 +366,9 @@ impl PlaybookPlan {
                     set(&mut context.reservations, kind.to_owned(), n);
                 }
             }
-            if Self::ad_target_count(step) > 0 && !done && !cancelled
+            if Self::ad_target_count(step) > 0
+                && !done
+                && !cancelled
                 && self.missing_equipment(battle, step, None).is_none()
             {
                 context.reserve_lightning = true;
@@ -345,15 +390,18 @@ impl PlaybookPlan {
                 "Dragon Duke",
                 "Grand Warden",
             ] {
-                let reserves = name == "Flame Flinger" && step.action == Action::ReleaseSiege
+                let reserves = name == "Flame Flinger"
+                    && step.action == Action::ReleaseSiege
                     && step.what.as_deref().is_none_or(|what| what == name);
                 // playbook.py:_snipe_available: a cited ability, or a step
                 // anchored on the hero (its Healers, Invisibility), keeps it.
-                let ability = step.action == Action::Ability
-                    && step.what.as_deref() == Some(name);
+                let ability = step.action == Action::Ability && step.what.as_deref() == Some(name);
                 let suffix = format!(":{name}");
                 let anchored = step.at.ends_with(&suffix)
-                    || step.aim.as_deref().is_some_and(|aim| aim.ends_with(&suffix));
+                    || step
+                        .aim
+                        .as_deref()
+                        .is_some_and(|aim| aim.ends_with(&suffix));
                 if reserves || ability || anchored {
                     if !context.unavailable.iter().any(|tool| tool == name) {
                         context.unavailable.push(name.to_owned());
@@ -367,7 +415,9 @@ impl PlaybookPlan {
     pub fn deployments(&mut self, battle: &mut Battle) -> Vec<Deployment> {
         self.sync_scouting(battle);
         let out = self.attack.opening_deployments(battle);
-        if self.attack.scouting_context
+        if self
+            .attack
+            .scouting_context
             .as_ref()
             .is_some_and(|context| context.used_spell_reservations.get())
         {
@@ -424,9 +474,10 @@ impl PlaybookPlan {
     // playbook.py:114-125: undeployed reserves keep the battle running.
     pub fn has_pending(&self) -> bool {
         self.inventory.iter().any(|(_, n)| *n != 0)
-            || self.steps.iter().any(|s| {
-                matches!(s.action, Action::Deploy | Action::Redeploy) && !self.done(&s.id)
-            })
+            || self
+                .steps
+                .iter()
+                .any(|s| matches!(s.action, Action::Deploy | Action::Redeploy) && !self.done(&s.id))
     }
 
     // playbook.py:127-165.
@@ -435,7 +486,9 @@ impl PlaybookPlan {
         // tick; this query runs through an immutable Battle snapshot.
         let auto_revive = self.auto_revive();
         if self.have("revive")
-            && battle.attackers_pool().any(|h| !h.alive && h.extra.revivable)
+            && battle
+                .attackers_pool()
+                .any(|h| !h.alive && h.extra.revivable)
             && (auto_revive
                 || self.steps.iter().any(|s| {
                     (!self.done(&s.id) || s.every.is_some())
@@ -446,7 +499,10 @@ impl PlaybookPlan {
         {
             return true;
         }
-        if battle.portal_units().any(|r| battle.unit(r).name_id != Name::Healer) {
+        if battle
+            .portal_units()
+            .any(|r| battle.unit(r).name_id != Name::Healer)
+        {
             return true;
         }
         // playbook.py:149-153: skipped non-healing reserves still need deployment.
@@ -461,8 +517,9 @@ impl PlaybookPlan {
             !self.done(&s.id)
                 && s.action == Action::Deploy
                 && s.what.as_deref() != Some("Healer")
-                && s.what.as_deref()
-                .is_some_and(|name| plans::is_hero(name) || count(&self.inventory, name) > 0)
+                && s.what
+                    .as_deref()
+                    .is_some_and(|name| plans::is_hero(name) || count(&self.inventory, name) > 0)
         })
     }
 
@@ -470,11 +527,13 @@ impl PlaybookPlan {
     fn edge_angle(&self, which: &str) -> f64 {
         let which = match which {
             "charge" => self.charge_side.as_str(),
-            "funnel" => if self.charge_side == "left" {
-                "right"
-            } else {
-                "left"
-            },
+            "funnel" => {
+                if self.charge_side == "left" {
+                    "right"
+                } else {
+                    "left"
+                }
+            }
             _ => which,
         };
         let offset = match which {
@@ -487,13 +546,19 @@ impl PlaybookPlan {
 
     // playbook.py:156-157.
     fn edge(&self, battle: &mut Battle, which: &str) -> (f64, f64) {
-        if which == "charge" && self.steps.iter().any(|step| step.action == Action::Deploy
-            && step.what.as_deref().is_some_and(plans::is_hero) && step.group == "charge")
+        if which == "charge"
+            && self.steps.iter().any(|step| {
+                step.action == Action::Deploy
+                    && step.what.as_deref().is_some_and(plans::is_hero)
+                    && step.group == "charge"
+            })
         {
             if let Some(point) = self.charge_edge.get() {
                 return point;
             }
-            let point = self.attack.charge_point(battle, self.edge_angle(which), 0.0);
+            let point = self
+                .attack
+                .charge_point(battle, self.edge_angle(which), 0.0);
             self.charge_edge.set(Some(point));
             return point;
         }
@@ -502,9 +567,10 @@ impl PlaybookPlan {
 
     // playbook.py:159-163.
     fn unit(&self, battle: &Battle, name: &str) -> Option<UnitRef> {
-        battle.attackers_pool().find(|u| {
-            u.alive && u.name == name && u.kind != Tag::HeroClone
-        }).map(Unit::reference)
+        battle
+            .attackers_pool()
+            .find(|u| u.alive && u.name == name && u.kind != Tag::HeroClone)
+            .map(Unit::reference)
     }
 
     // playbook.py:168-223: anchors retain first min/max ties.
@@ -535,7 +601,11 @@ impl PlaybookPlan {
                 let units = plans::main_units(battle, arg);
                 (!units.is_empty()).then(|| plans::centroid(battle, &units))
             }
-            "th" => battle.th.map(|id| battle.building(id)).filter(|b| b.alive).map(|b| (b.x, b.y)),
+            "th" => battle
+                .th
+                .map(|id| battle.building(id))
+                .filter(|b| b.alive)
+                .map(|b| (b.x, b.y)),
             "threat" => {
                 let mut units = plans::main_units(battle, arg);
                 if units.is_empty() {
@@ -548,15 +618,17 @@ impl PlaybookPlan {
                 let mut best = None;
                 for (id, _) in plans::threats_near(battle, x, y, 12.0) {
                     // playbook.py:218-226: hidden firing defenses are unavailable.
-                    if !battle.building_targetable(id) || unclaimed && self.attack.snipe_claimed.contains(&id) {
+                    if !battle.building_targetable(id)
+                        || unclaimed && self.attack.snipe_claimed.contains(&id)
+                    {
                         continue;
                     }
                     let b = battle.building(id);
                     let w = b.weapon.as_ref().expect("weapon");
                     let score = plans::threat(&b.key, 1.0);
-                    if (w.target.is_some()
-                        || !w.multi.is_empty())
-                        && best.is_none_or(|(s, _)| score > s) {
+                    if (w.target.is_some() || !w.multi.is_empty())
+                        && best.is_none_or(|(s, _)| score > s)
+                    {
                         best = Some((score, id));
                     }
                 }
@@ -566,16 +638,13 @@ impl PlaybookPlan {
                 })
             }
             "defenders" => {
-                let units = plans::main_units(battle, if arg.is_empty() {
-                    "main"
-                } else {
-                    arg
-                });
+                let units = plans::main_units(battle, if arg.is_empty() { "main" } else { arg });
                 if units.is_empty() {
                     return None;
                 }
                 let (x, y) = plans::centroid(battle, &units);
-                let defenders: Vec<_> = battle.defenders_pool()
+                let defenders: Vec<_> = battle
+                    .defenders_pool()
                     .filter(|u| u.alive && u.target.is_some() && u.dist(x, y) <= 8.0)
                     .map(Unit::reference)
                     .collect();
@@ -584,7 +653,8 @@ impl PlaybookPlan {
             "building" => {
                 let mut units = plans::main_units(battle, "main");
                 if units.is_empty() {
-                    units = battle.attackers_pool()
+                    units = battle
+                        .attackers_pool()
                         .filter(|u| u.alive)
                         .map(Unit::reference)
                         .collect();
@@ -601,7 +671,10 @@ impl PlaybookPlan {
                 let mut best = None;
                 let mut distance = f64::INFINITY;
                 for b in &battle.buildings {
-                    if b.alive && b.key == arg && !(unclaimed && self.attack.snipe_claimed.contains(&b.id)) {
+                    if b.alive
+                        && b.key == arg
+                        && !(unclaimed && self.attack.snipe_claimed.contains(&b.id))
+                    {
                         let d = b.dist(x, y);
                         if best.is_none() || d < distance {
                             best = Some((b.x, b.y));
@@ -616,21 +689,13 @@ impl PlaybookPlan {
     }
 
     // playbook.py:250-302: redirect within the anchor family, retaining first ties.
-    fn totem_anchor(
-        &self,
-        battle: &Battle,
-        at: &str,
-        position: (f64, f64),
-    ) -> Option<(f64, f64)> {
+    fn totem_anchor(&self, battle: &Battle, at: &str, position: (f64, f64)) -> Option<(f64, f64)> {
         if !self.attack.totem_covered(battle, position.0, position.1) {
             return Some(position);
         }
         let (kind, arg) = at.split_once(':').unwrap_or((at, ""));
         if kind == "defenders" {
-            let group = plans::main_units(
-                battle,
-                if arg.is_empty() { "main" } else { arg },
-            );
+            let group = plans::main_units(battle, if arg.is_empty() { "main" } else { arg });
             if group.is_empty() {
                 return None;
             }
@@ -697,7 +762,9 @@ impl PlaybookPlan {
         let (x, y) = (u.x as i32, u.y as i32);
         battle.live_no_deploy();
         [-2, 0, 2].iter().all(|dx| {
-            [-2, 0, 2].iter().all(|dy| battle.no_deploy_tile(x + dx, y + dy))
+            [-2, 0, 2]
+                .iter()
+                .all(|dy| battle.no_deploy_tile(x + dx, y + dy))
         })
     }
 
@@ -707,7 +774,8 @@ impl PlaybookPlan {
         let history = self.hurt_index(u.id).map(|index| &self.hurt[index]);
         let recent = history.and_then(|(_, value)| {
             if let HurtValue::History(history) = value {
-                history.iter()
+                history
+                    .iter()
                     .filter(|(t, _)| battle.t - t <= 2.0)
                     .map(|(_, hp)| *hp)
                     .reduce(f64::max)
@@ -717,8 +785,11 @@ impl PlaybookPlan {
         });
         let lost = recent.map_or(0.0, |hp| hp - u.hp);
         let locked = battle.buildings.iter().any(|b| {
-            b.alive && plans::threat(&b.key, 0.0) >= 4.0 && b.weapon.as_ref()
-                .is_some_and(|w| w.target == Some(unit) || w.multi.contains(&unit))
+            b.alive
+                && plans::threat(&b.key, 0.0) >= 4.0
+                && b.weapon
+                    .as_ref()
+                    .is_some_and(|w| w.target == Some(unit) || w.multi.contains(&unit))
         });
         lost >= fraction * u.max_hp || locked
     }
@@ -740,12 +811,15 @@ impl PlaybookPlan {
 
     // playbook.py:241-249.
     fn down(&self, battle: &Battle, name: &str) -> bool {
-        self.deployed.iter().any(|n| n == name) && self.unit(battle, name).is_none()
+        self.deployed.iter().any(|n| n == name)
+            && self.unit(battle, name).is_none()
             && !battle.portal_units().any(|r| {
                 let u = battle.unit(r);
                 u.name == name && u.kind != Tag::HeroClone
             })
-            && !battle.deployments[battle.next_deploy..].iter().any(|d| d.name == name)
+            && !battle.deployments[battle.next_deploy..]
+                .iter()
+                .any(|d| d.name == name)
             && (plans::is_hero(name) || count(&self.inventory, name) <= 0)
     }
 
@@ -754,15 +828,20 @@ impl PlaybookPlan {
         match trigger {
             Trigger::All(parts) => parts.iter().any(|part| self.impossible(battle, part)),
             Trigger::Any(parts) => parts.iter().all(|part| self.impossible(battle, part)),
-            _ => trigger.unit_condition().is_some_and(|name| self.down(battle, name)),
+            _ => trigger
+                .unit_condition()
+                .is_some_and(|name| self.down(battle, name)),
         }
     }
 
     // playbook.py:262-283.
     fn fallen(&self, battle: &Battle, step: &Step) -> Option<UnitRef> {
         let mut names = Vec::new();
-        if let Some(name) = step.at.strip_prefix("unit:")
-            .or_else(|| step.at.strip_prefix("unit_ahead:")) {
+        if let Some(name) = step
+            .at
+            .strip_prefix("unit:")
+            .or_else(|| step.at.strip_prefix("unit_ahead:"))
+        {
             names.push(name.to_owned());
         }
         step.when.revive_names(&mut names);
@@ -772,8 +851,8 @@ impl PlaybookPlan {
             if u.is_hero
                 && !u.alive
                 && u.extra.revivable
-                && (names.is_empty()
-                || names.contains(&u.name)) {
+                && (names.is_empty() || names.contains(&u.name))
+            {
                 let at = u.extra.ko_at.unwrap_or(0.0);
                 if best.is_none() || at > last {
                     best = Some(u.reference());
@@ -794,18 +873,27 @@ impl PlaybookPlan {
                     return parts.is_empty()
                         || parts.iter().any(|part| self.ready(battle, part, false));
                 }
-                let parts: Vec<_> = parts.iter()
+                let parts: Vec<_> = parts
+                    .iter()
                     .filter(|part| !(relax && self.impossible(battle, part)))
                     .collect();
                 parts.is_empty() || parts.iter().any(|part| self.ready(battle, part, relax))
             }
-            _ if relax && trigger.unit_condition()
-                .is_some_and(|name| self.down(battle, name)) => true,
+            _ if relax
+                && trigger
+                    .unit_condition()
+                    .is_some_and(|name| self.down(battle, name)) =>
+            {
+                true
+            }
             Trigger::Time(t) => battle.t >= *t,
-            Trigger::After(id, delay) => self.done.iter()
+            Trigger::After(id, delay) => self
+                .done
+                .iter()
                 .find(|(key, _)| key == id)
                 .is_some_and(|(_, at)| battle.t >= at + delay),
-            Trigger::Inside(name) => self.unit(battle, name)
+            Trigger::Inside(name) => self
+                .unit(battle, name)
                 .is_some_and(|u| self.inside(battle, u)),
             Trigger::GroupInside(group) => {
                 let units = plans::main_units(battle, group);
@@ -817,12 +905,15 @@ impl PlaybookPlan {
                 if inside >= needed {
                     return true;
                 }
-                let engaged = units.iter().filter(|r| {
-                    let u = battle.unit(**r);
-                    u.target.is_some_and(|r| battle.entity_alive(r)
-                        && !matches!(r, EntityRef::Unit(_)))
-                        && u.cooldown > 0.0
-                }).count();
+                let engaged = units
+                    .iter()
+                    .filter(|r| {
+                        let u = battle.unit(**r);
+                        u.target.is_some_and(|r| {
+                            battle.entity_alive(r) && !matches!(r, EntityRef::Unit(_))
+                        }) && u.cooldown > 0.0
+                    })
+                    .count();
                 let key = HurtKey::Engaged(group.clone());
                 if engaged >= needed {
                     let index = if let Some(index) = self.hurt.iter().position(|(k, _)| *k == key) {
@@ -856,23 +947,27 @@ impl PlaybookPlan {
                 let th = battle.building(th);
                 !th.alive || py_hypot(x - th.x, y - th.y) <= *radius
             }
-            Trigger::HeavyFire(name, fraction) => battle.attackers_pool()
-                .any(|u| u.alive
-                && u.name == *name
-                && u.kind != Tag::HeroClone
-                && self.heavy_fire(battle, u.reference(), *fraction)),
+            Trigger::HeavyFire(name, fraction) => battle.attackers_pool().any(|u| {
+                u.alive
+                    && u.name == *name
+                    && u.kind != Tag::HeroClone
+                    && self.heavy_fire(battle, u.reference(), *fraction)
+            }),
             Trigger::HpBelow(name, fraction) => self.unit(battle, name).is_some_and(|r| {
                 let u = battle.unit(r);
                 u.hp < fraction * u.max_hp
             }),
             Trigger::SpellsLeft(key, n) => count(&self.attack.spells, key) <= *n,
-            Trigger::Dead(name) => self.unit(battle, name)
-                .is_none() && self.deployed.contains(name) && !battle.portal_units()
-                .any(|r| {
-                    let u = battle.unit(r);
-                    u.name == *name && u.kind != Tag::HeroClone
-                }),
-            Trigger::DefendersNear(group) => self.anchor(battle, &format!("defenders:{group}"), false)
+            Trigger::Dead(name) => {
+                self.unit(battle, name).is_none()
+                    && self.deployed.contains(name)
+                    && !battle.portal_units().any(|r| {
+                        let u = battle.unit(r);
+                        u.name == *name && u.kind != Tag::HeroClone
+                    })
+            }
+            Trigger::DefendersNear(group) => self
+                .anchor(battle, &format!("defenders:{group}"), false)
                 .is_some(),
             Trigger::Destruction(amount) => battle.destruction() as f64 >= *amount,
         }
@@ -886,16 +981,30 @@ impl PlaybookPlan {
                 return false;
             }
             let at = text(&step.source, "at", "edge:charge");
-            let backpack = what == "Dragon Duke" && self.attack.has_backpack(battle)
+            let backpack = what == "Dragon Duke"
+                && self.attack.has_backpack(battle)
                 && matches!(at, "edge:charge" | "edge:funnel")
                 && !flag(&step.source, "at_cite");
             let position = if backpack {
-                self.attack.backpack_point(battle, self.edge_angle(at.split_once(':').expect("edge anchor").1), 0.0)
+                self.attack.backpack_point(
+                    battle,
+                    self.edge_angle(at.split_once(':').expect("edge anchor").1),
+                    0.0,
+                )
             } else {
                 position
             };
             let time = battle.t;
-            self.attack.drop_fixed_at(battle, what, position.0, position.1, &step.group, 0.3, time, backpack);
+            self.attack.drop_fixed_at(
+                battle,
+                what,
+                position.0,
+                position.1,
+                &step.group,
+                0.3,
+                time,
+                backpack,
+            );
             self.deployed.push(what.to_owned());
             return true;
         }
@@ -906,14 +1015,17 @@ impl PlaybookPlan {
         }
         let tap = battle.pace_tap * battle.pace;
         let started = battle.t;
-        if let Some(edge) = step.at.strip_prefix("edge:")
-            .filter(|_| n >= 3
-            && step.spread.is_none()
-            && !matches!(what, "Healer" | "Wall Breaker")) {
+        if let Some(edge) = step.at.strip_prefix("edge:").filter(|_| {
+            n >= 3 && step.spread.is_none() && !matches!(what, "Healer" | "Wall Breaker")
+        }) {
             let angle = self.edge_angle(edge);
             let width = ((n - 1) as f64).min(8.0);
             for i in 0..n {
-                let (x, y) = plans::edge_point(battle, angle, -width / 2.0 + width * i as f64 / (n - 1) as f64);
+                let (x, y) = plans::edge_point(
+                    battle,
+                    angle,
+                    -width / 2.0 + width * i as f64 / (n - 1) as f64,
+                );
                 self.attack.drop_at(
                     battle,
                     what,
@@ -982,22 +1094,33 @@ impl PlaybookPlan {
     ) -> Option<String> {
         let what = step.what.as_deref().unwrap_or("");
         if !self.equipment_steps.iter().any(|(id, _)| id == &step.id) {
-            let action = step.source.get("ability")
+            let action = step
+                .source
+                .get("ability")
                 .filter(|value| truth(value))
                 .map_or(step.id.as_str(), Json::str)
                 .replace('_', " ")
                 .to_lowercase();
-            let mut required = step.source.get("equipment")
+            let mut required = step
+                .source
+                .get("equipment")
                 .filter(|value| truth(value))
                 .map(|value| value.str().to_owned())
                 .or_else(|| {
-                    battle.catalog.stats.registry.obj().iter()
+                    battle
+                        .catalog
+                        .stats
+                        .registry
+                        .obj()
+                        .iter()
                         .find(|(name, record)| {
                             record.at("kind").str() == "equipment"
-                                && record.get("attrs")
+                                && record
+                                    .get("attrs")
                                     .and_then(|attrs| attrs.get("raw"))
                                     .and_then(|raw| raw.get("User"))
-                                    .and_then(Json::opt_str) == Some(what)
+                                    .and_then(Json::opt_str)
+                                    == Some(what)
                                 && action.contains(&name.to_lowercase())
                         })
                         .map(|(name, _)| name.clone())
@@ -1035,21 +1158,31 @@ impl PlaybookPlan {
             }
             self.equipment_steps.push((step.id.clone(), required));
         }
-        let required = self.equipment_steps.iter()
+        let required = self
+            .equipment_steps
+            .iter()
             .find(|(id, _)| id == &step.id)
             .and_then(|(_, required)| required.as_ref())?;
-        let loadout = self.attack.loadouts.iter()
+        let loadout = self
+            .attack
+            .loadouts
+            .iter()
             .find(|(name, _)| name == what)
             .map(|(_, loadout)| loadout.clone())
             .or_else(|| heroes::default_loadout(battle, what));
-        let equipped = unit.and_then(|reference| battle.unit(reference).kit.as_ref())
+        let equipped = unit
+            .and_then(|reference| battle.unit(reference).kit.as_ref())
             .map(|kit| kit.equip.as_slice())
             .or_else(|| loadout.as_ref().map(|loadout| loadout.equipment.as_slice()))
             .unwrap_or(&[]);
         (!equipped.contains(required)
             || self.attack.account_equipment
-                && !self.attack.equipment_levels.iter().any(|(name, _)| name == required))
-            .then(|| required.clone())
+                && !self
+                    .attack
+                    .equipment_levels
+                    .iter()
+                    .any(|(name, _)| name == required))
+        .then(|| required.clone())
     }
 
     // playbook.py:523-559: reserve only aimed damaging abilities and cited counts.
@@ -1066,12 +1199,15 @@ impl PlaybookPlan {
         let aim = step.aim.as_deref().unwrap_or("");
         if !matches!(aim, "arrow" | "building:ad")
             || aim == "arrow" && what != "Archer Queen"
-            || step.source.get("equipment")
+            || step
+                .source
+                .get("equipment")
                 .is_some_and(|value| value.opt_str() != Some(equipment))
         {
             return 0;
         }
-        let quotes = ["aim_cite", "cite"].iter()
+        let quotes = ["aim_cite", "cite"]
+            .iter()
             .flat_map(|key| step.source.get(key).into_iter().flat_map(Json::arr))
             .map(|cite| text(cite, "quote", ""))
             .collect::<Vec<_>>()
@@ -1102,7 +1238,8 @@ impl PlaybookPlan {
             return false;
         };
         let u = battle.unit(hero);
-        if u.kit.is_none() || u.ability_used
+        if u.kit.is_none()
+            || u.ability_used
             || self.missing_equipment(battle, step, Some(hero)).is_some()
         {
             return false;
@@ -1119,12 +1256,17 @@ impl PlaybookPlan {
         let line = kit.has("Giant Arrow") || kit.has("Rocket Backpack");
         let champion = u.name_id == Name::RoyalChampion
             && (kit.has("Rocket Spear") || kit.has("Seeking Shield"));
-        if Self::ad_target_count(step) > 0 && !fireball
+        if Self::ad_target_count(step) > 0
+            && !fireball
             && !battle.buildings.iter().any(|b| b.alive && b.key == "ad")
         {
             return false;
         }
-        if let Some(key) = step.aim.as_deref().and_then(|aim| aim.strip_prefix("building:")) {
+        if let Some(key) = step
+            .aim
+            .as_deref()
+            .and_then(|aim| aim.strip_prefix("building:"))
+        {
             if self.aim_building(battle, hero, key, Some(deadline), 1) {
                 return true;
             }
@@ -1134,7 +1276,13 @@ impl PlaybookPlan {
             return false;
         }
         if step.aim.as_deref() == Some("arrow") && Self::ad_target_count(step) > 0 {
-            if self.aim_building(battle, hero, "ad", Some(deadline), Self::ad_target_count(step)) {
+            if self.aim_building(
+                battle,
+                hero,
+                "ad",
+                Some(deadline),
+                Self::ad_target_count(step),
+            ) {
                 return true;
             }
             if battle.t >= deadline {
@@ -1143,7 +1291,9 @@ impl PlaybookPlan {
             return false;
         }
         if line {
-            return self.attack.line_ability(battle, hero, false, Some(deadline));
+            return self
+                .attack
+                .line_ability(battle, hero, false, Some(deadline));
         }
         if let Some(aim) = &step.aim {
             if self.attack.aim_cluster(battle, hero, aim) {
@@ -1158,15 +1308,27 @@ impl PlaybookPlan {
         true
     }
 
-    fn aim_building(&mut self, battle: &mut Battle, hero: UnitRef, key: &str, deadline: Option<f64>, count: usize) -> bool {
+    fn aim_building(
+        &mut self,
+        battle: &mut Battle,
+        hero: UnitRef,
+        key: &str,
+        deadline: Option<f64>,
+        count: usize,
+    ) -> bool {
         let u = battle.unit(hero);
         let (ux, uy) = (u.x, u.y);
-        let target = battle.buildings.iter().filter(|b| b.alive && b.key == key)
-            .min_by(|a, b| a.dist(ux, uy).total_cmp(&b.dist(ux, uy))).map(|b| b.id);
+        let target = battle
+            .buildings
+            .iter()
+            .filter(|b| b.alive && b.key == key)
+            .min_by(|a, b| a.dist(ux, uy).total_cmp(&b.dist(ux, uy)))
+            .map(|b| b.id);
         let kit = u.kit.as_ref().expect("hero kit");
         let Some(target) = target else {
-            if kit.has("Fireball") || u.name_id == Name::RoyalChampion
-                && (kit.has("Rocket Spear") || kit.has("Seeking Shield"))
+            if kit.has("Fireball")
+                || u.name_id == Name::RoyalChampion
+                    && (kit.has("Rocket Spear") || kit.has("Seeking Shield"))
             {
                 return self.attack.cluster_ability(battle, hero, false);
             }
@@ -1183,8 +1345,15 @@ impl PlaybookPlan {
             let Some((band, effect)) = self.attack.ability_band(battle, hero) else {
                 return false;
             };
-            let hits = battle.buildings.iter().filter(|b| b.key == key
-                && battle.building_targetable(b.id) && plans::band_hit(b, band, &effect.kind, effect.radius)).count();
+            let hits = battle
+                .buildings
+                .iter()
+                .filter(|b| {
+                    b.key == key
+                        && battle.building_targetable(b.id)
+                        && plans::band_hit(b, band, &effect.kind, effect.radius)
+                })
+                .count();
             if hits >= count {
                 return self.attack.fire_aimed(battle, hero, deadline);
             }
@@ -1193,7 +1362,8 @@ impl PlaybookPlan {
         if kit.has("Fireball") {
             let level = kit.lv("Fireball");
             let near = heroes::targets(battle, true).into_iter().min_by(|a, b| {
-                heroes::distance(battle, *a, ux, uy).total_cmp(&heroes::distance(battle, *b, ux, uy))
+                heroes::distance(battle, *a, ux, uy)
+                    .total_cmp(&heroes::distance(battle, *b, ux, uy))
             });
             let Some(near) = near else {
                 return false;
@@ -1218,7 +1388,10 @@ impl PlaybookPlan {
         if let Some(reference) = self.unit(battle, name) {
             let unit = battle.unit(reference);
             return !unit.ability_used
-                && unit.kit.as_ref().is_some_and(|kit| kit.has("Portal Pendant"));
+                && unit
+                    .kit
+                    .as_ref()
+                    .is_some_and(|kit| kit.has("Portal Pendant"));
         }
         let pending = self.steps.iter().any(|step| {
             step.action == Action::Deploy
@@ -1239,21 +1412,24 @@ impl PlaybookPlan {
             .map(|(_, loadout)| loadout.clone())
             .or_else(|| heroes::default_loadout(battle, name));
         loadout.is_some_and(|loadout| {
-            loadout.equipment.iter().any(|item| item == "Portal Pendant")
-        })
-            && (!self.attack.account_equipment
-                || self
-                    .attack
-                    .equipment_levels
-                    .iter()
-                    .any(|(item, _)| item == "Portal Pendant"))
+            loadout
+                .equipment
+                .iter()
+                .any(|item| item == "Portal Pendant")
+        }) && (!self.attack.account_equipment
+            || self
+                .attack
+                .equipment_levels
+                .iter()
+                .any(|(item, _)| item == "Portal Pendant"))
     }
 
     // playbook.py:471-501.
     fn cannot(&mut self, battle: &Battle, step: &Step) -> Option<String> {
         let what = step.what.as_deref().unwrap_or("");
         let target = if what != "Revive Spell" {
-            step.at.strip_prefix("unit:")
+            step.at
+                .strip_prefix("unit:")
                 .or_else(|| step.at.strip_prefix("unit_ahead:"))
         } else {
             None
@@ -1263,11 +1439,11 @@ impl PlaybookPlan {
             return Some(format!("{target} down"));
         }
         if step.action == Action::Deploy {
-            return (plans::is_hero(what)
-
-                && self.deployed.iter().any(|name| name == what)).then(|| format!("{what} already deployed"));
+            return (plans::is_hero(what) && self.deployed.iter().any(|name| name == what))
+                .then(|| format!("{what} already deployed"));
         }
-        let holding = step.action == Action::Ability && self.aim_since.iter().any(|(id, _)| id == &step.id);
+        let holding =
+            step.action == Action::Ability && self.aim_since.iter().any(|(id, _)| id == &step.id);
         if !holding && self.impossible(battle, &step.when) {
             return Some("waits on a unit that is down".to_owned());
         }
@@ -1286,8 +1462,7 @@ impl PlaybookPlan {
                         return Some(format!("{key} gone"));
                     }
                 }
-                if step.at == "th"
-                    && battle.th.is_none_or(|id| !battle.building(id).alive) {
+                if step.at == "th" && battle.th.is_none_or(|id| !battle.building(id).alive) {
                     return Some("Town Hall gone".to_owned());
                 }
             }
@@ -1386,10 +1561,9 @@ impl PlaybookPlan {
                 }
             }
         }
-        if battle.attackers_pool()
-            .any(|u| u.alive
-            && u.name_id != Name::Totem
-            && !matches!(u.kind, Tag::Pet | Tag::SiegeIdle)) {
+        if battle.attackers_pool().any(|u| {
+            u.alive && u.name_id != Name::Totem && !matches!(u.kind, Tag::Pet | Tag::SiegeIdle)
+        }) {
             self.last_alive = t;
         }
         let stalled = t - self.last_alive > 3.0;
@@ -1412,10 +1586,8 @@ impl PlaybookPlan {
                 if let Some(why) = why {
                     entry_time(&mut self.done, &step.id, t);
                     self.cancelled.push(step.id.clone());
-                    self.log_steps.push((
-                        round_decimal(t, 1),
-                        format!("{} (skipped: {why})", step.id),
-                    ));
+                    self.log_steps
+                        .push((round_decimal(t, 1), format!("{} (skipped: {why})", step.id)));
                 }
             }
         }
@@ -1423,7 +1595,8 @@ impl PlaybookPlan {
         if !self.attack.zap_done && self.attack.zap_ad != (0, 0) {
             self.fallback_spells(battle, true);
         }
-        let order = steps.iter()
+        let order = steps
+            .iter()
             .filter(|s| !(s.completion || s.uncited))
             .chain(steps.iter().filter(|s| s.completion || s.uncited));
         for step in order {
@@ -1436,20 +1609,28 @@ impl PlaybookPlan {
             }
             let mut forced = false;
             if step.every.is_some() && done {
-                let next = self.next.iter()
+                let next = self
+                    .next
+                    .iter()
                     .find(|(id, _)| id == &step.id)
                     .map_or(0.0, |(_, at)| *at);
-                if t < next || step.until.as_ref()
-                    .is_some_and(|until| self.ready(battle, until, false)) {
+                if t < next
+                    || step
+                        .until
+                        .as_ref()
+                        .is_some_and(|until| self.ready(battle, until, false))
+                {
                     continue;
                 }
-            } else if !(step.action == Action::Ability && self.aim_since.iter().any(|(id, _)| id == &step.id))
-                && !self.ready(battle, &step.when, false) {
+            } else if !(step.action == Action::Ability
+                && self.aim_since.iter().any(|(id, _)| id == &step.id))
+                && !self.ready(battle, &step.when, false)
+            {
                 forced = step.action == Action::Deploy
                     && (stalled
-                    || t >= LATE
-                    || self.impossible(battle, &step.when)
-                    && self.ready(battle, &step.when, true));
+                        || t >= LATE
+                        || self.impossible(battle, &step.when)
+                            && self.ready(battle, &step.when, true));
                 if !forced {
                     continue;
                 }
@@ -1487,9 +1668,7 @@ impl PlaybookPlan {
                     }
                     // playbook.py:839-851: wait when every suitable Totem area is covered.
                     let mut totem_covered = false;
-                    if step.action == Action::Spell
-                        && step.what.as_deref() == Some("Totem Spell")
-                    {
+                    if step.action == Action::Spell && step.what.as_deref() == Some("Totem Spell") {
                         if let Some(point) = position {
                             position = self.totem_anchor(battle, &step.at, point);
                             totem_covered = position.is_none();
@@ -1526,8 +1705,9 @@ impl PlaybookPlan {
                     match step.action {
                         Action::Deploy => self.deploy(battle, step, position),
                         Action::Spell | Action::Recall => self.spell(battle, step, position),
-                        Action::Redeploy if !battle.portal_stash.is_empty()
-                            && t >= battle.portal_ready_at => {
+                        Action::Redeploy
+                            if !battle.portal_stash.is_empty() && t >= battle.portal_ready_at =>
+                        {
                             let recalled: Vec<_> = battle.portal_units().collect();
                             for unit in recalled {
                                 battle.unit_mut(unit).group = step.group.clone();
@@ -1558,12 +1738,18 @@ impl PlaybookPlan {
             }
         }
         if t >= self.attack.busy_until {
-            let left = self.inventory.iter().find(|(name, n)| {
-                *n > 0 && !self.steps.iter()
-                    .any(|s| s.action == Action::Deploy
-                    && !self.done(&s.id)
-                    && s.what.as_ref() == Some(name))
-            }).map(|(name, n)| (name.clone(), *n));
+            let left = self
+                .inventory
+                .iter()
+                .find(|(name, n)| {
+                    *n > 0
+                        && !self.steps.iter().any(|s| {
+                            s.action == Action::Deploy
+                                && !self.done(&s.id)
+                                && s.what.as_ref() == Some(name)
+                        })
+                })
+                .map(|(name, n)| (name.clone(), *n));
             if let Some((name, n)) = left {
                 let step = Step::load(&Json::Obj(vec![
                     ("id".to_owned(), Json::Str(format!("late-{name}"))),
@@ -1574,7 +1760,8 @@ impl PlaybookPlan {
                 let point = self.edge(battle, "main");
                 self.deploy(battle, &step, point);
                 self.attack.busy_until = t + action_time(battle, Action::Deploy, n);
-                self.log_steps.push((round_decimal(t, 1), format!("late-{name}")));
+                self.log_steps
+                    .push((round_decimal(t, 1), format!("late-{name}")));
             }
         }
         self.fallback_spells(battle, false);
@@ -1629,30 +1816,40 @@ impl PlaybookPlan {
                         && !self.done(&step.id)
                         && !self.cancelled(&step.id)
                 })
-                && !battle.deployments[battle.next_deploy..].iter().any(|d| d.name == what)
+                && !battle.deployments[battle.next_deploy..]
+                    .iter()
+                    .any(|d| d.name == what)
             {
                 continue;
             }
             if !self.ad_reservations.iter().any(|(id, _)| id == &step.id) {
-                let at = steps.iter()
+                let at = steps
+                    .iter()
                     .find(|step| {
                         step.action == Action::Deploy && step.what.as_deref() == Some(what)
                     })
                     .map_or("edge:main", |step| step.at.as_str());
-                let position = self.anchor(battle, at, false)
+                let position = self
+                    .anchor(battle, at, false)
                     .unwrap_or_else(|| self.edge(battle, "main"));
-                let mut ads: Vec<_> = battle.buildings.iter()
+                let mut ads: Vec<_> = battle
+                    .buildings
+                    .iter()
                     .filter(|b| b.alive && b.key == "ad" && !reserved.contains(&b.id))
                     .map(|b| b.id)
                     .collect();
                 ads.sort_by(|a, b| {
-                    battle.building(*a).dist(position.0, position.1)
+                    battle
+                        .building(*a)
+                        .dist(position.0, position.1)
                         .total_cmp(&battle.building(*b).dist(position.0, position.1))
                 });
                 ads.truncate(count);
                 self.ad_reservations.push((step.id.clone(), ads));
             }
-            let ads = &self.ad_reservations.iter()
+            let ads = &self
+                .ad_reservations
+                .iter()
                 .find(|(id, _)| id == &step.id)
                 .expect("AD reservation")
                 .1;
@@ -1751,8 +1948,13 @@ impl PlaybookPlan {
             self.attack.busy_until = t + action_time(battle, Action::Spell, 1);
             return;
         }
-        if !battle.portal_stash.is_empty() && t >= battle.portal_ready_at && !self.steps.iter()
-            .any(|s| s.action == Action::Redeploy && !self.done(&s.id)) {
+        if !battle.portal_stash.is_empty()
+            && t >= battle.portal_ready_at
+            && !self
+                .steps
+                .iter()
+                .any(|s| s.action == Action::Redeploy && !self.done(&s.id))
+        {
             let (x, y) = self.attack.portal_point(battle);
             heroes::portal_redeploy(battle, x, y);
             self.attack.busy_until = t + action_time(battle, Action::Redeploy, 1);
@@ -1771,9 +1973,7 @@ impl PlaybookPlan {
                     .collect();
             }
         }
-        let left = self.attack.spells.iter()
-            .map(|(_, n)| n)
-            .sum::<i64>();
+        let left = self.attack.spells.iter().map(|(_, n)| n).sum::<i64>();
         if !self.attack.fallback_quakes.is_empty() {
             let (x, y) = self.attack.fallback_quakes.remove(0);
             if have(&self.attack, "eq") {
@@ -1797,12 +1997,20 @@ impl PlaybookPlan {
             self.attack.busy_until = t + action_time(battle, Action::Spell, 1);
             return;
         }
-        let held: Vec<_> = battle.attackers_pool().filter(|u| {
-            u.alive && u.is_hero && !u.ability_used && self.steps.iter()
-                .any(|s| s.action == Action::Ability
-                && !self.done(&s.id)
-                && s.what.as_ref() == Some(&u.name))
-        }).map(Unit::reference).collect();
+        let held: Vec<_> = battle
+            .attackers_pool()
+            .filter(|u| {
+                u.alive
+                    && u.is_hero
+                    && !u.ability_used
+                    && self.steps.iter().any(|s| {
+                        s.action == Action::Ability
+                            && !self.done(&s.id)
+                            && s.what.as_ref() == Some(&u.name)
+                    })
+            })
+            .map(Unit::reference)
+            .collect();
         for &hero in &held {
             battle.unit_mut(hero).ability_used = true;
         }

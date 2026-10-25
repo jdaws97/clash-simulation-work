@@ -43,11 +43,18 @@ pub const SPELL_NAMES: &[(&str, &str)] = &[
 ];
 
 pub fn spell_key(name: &str) -> Option<&'static str> {
-    SPELL_NAMES.iter().find(|(_, value)| *value == name).map(|(key, _)| *key)
+    SPELL_NAMES
+        .iter()
+        .find(|(_, value)| *value == name)
+        .map(|(key, _)| *key)
 }
 
 pub fn spell_name(key: &str) -> &'static str {
-    SPELL_NAMES.iter().find(|(name, _)| *name == key).expect("known spell key").1
+    SPELL_NAMES
+        .iter()
+        .find(|(name, _)| *name == key)
+        .expect("known spell key")
+        .1
 }
 
 pub fn is_hero(name: &str) -> bool {
@@ -96,7 +103,10 @@ pub fn threat(key: &str, default: f64) -> f64 {
 }
 
 pub fn count(items: &[(String, i64)], key: &str) -> i64 {
-    items.iter().find(|(name, _)| name == key).map_or(0, |(_, n)| *n)
+    items
+        .iter()
+        .find(|(name, _)| name == key)
+        .map_or(0, |(_, n)| *n)
 }
 
 pub fn set<K: PartialEq, V>(items: &mut Vec<(K, V)>, key: K, value: V) {
@@ -108,11 +118,17 @@ pub fn set<K: PartialEq, V>(items: &mut Vec<(K, V)>, key: K, value: V) {
 }
 
 pub fn number(value: &Json, key: &str, default: f64) -> f64 {
-    value.get(key).filter(|v| !v.is_null()).map_or(default, Json::f64)
+    value
+        .get(key)
+        .filter(|v| !v.is_null())
+        .map_or(default, Json::f64)
 }
 
 pub fn text<'a>(value: &'a Json, key: &str, default: &'a str) -> &'a str {
-    value.get(key).filter(|v| !v.is_null()).map_or(default, Json::str)
+    value
+        .get(key)
+        .filter(|v| !v.is_null())
+        .map_or(default, Json::str)
 }
 
 pub fn truth(value: &Json) -> bool {
@@ -131,22 +147,32 @@ pub fn flag(value: &Json, key: &str) -> bool {
 }
 
 pub fn levels(value: &Json, key: &str) -> Vec<(String, Option<Level>)> {
-    value.get(key).filter(|v| !v.is_null()).map_or_else(Vec::new, |v| {
-        v.obj().iter().map(|(name, lv)| {
-            (name.clone(), (!lv.is_null()).then(|| Level::from_json(lv)))
-        }).collect()
-    })
+    value
+        .get(key)
+        .filter(|v| !v.is_null())
+        .map_or_else(Vec::new, |v| {
+            v.obj()
+                .iter()
+                .map(|(name, lv)| (name.clone(), (!lv.is_null()).then(|| Level::from_json(lv))))
+                .collect()
+        })
 }
 
 pub fn counts(value: &Json, key: &str) -> Vec<(String, i64)> {
     value.get(key).map_or_else(Vec::new, |v| {
-        v.obj().iter().map(|(name, n)| (name.clone(), n.i64())).collect()
+        v.obj()
+            .iter()
+            .map(|(name, n)| (name.clone(), n.i64()))
+            .collect()
     })
 }
 
 pub fn times(value: &Json, key: &str) -> Vec<(String, f64)> {
     value.get(key).map_or_else(Vec::new, |v| {
-        v.obj().iter().map(|(name, n)| (name.clone(), n.f64())).collect()
+        v.obj()
+            .iter()
+            .map(|(name, n)| (name.clone(), n.f64()))
+            .collect()
     })
 }
 
@@ -188,7 +214,8 @@ struct LaterDrop {
 
 // plans.py:1197-1231: cargo and support steps are fixed at construction time.
 fn supported_cargo(plan: &Json) -> SharedVec<String> {
-    let Some(siege) = plan.get("siege")
+    let Some(siege) = plan
+        .get("siege")
         .and_then(Json::opt_str)
         .filter(|name| !name.is_empty())
     else {
@@ -219,7 +246,9 @@ fn supported_cargo(plan: &Json) -> SharedVec<String> {
             }
             let at = text(step, "at", "");
             matches!(at, "group:cargo" | "group:cc")
-                || at.strip_prefix("unit:").or_else(|| at.strip_prefix("unit_ahead:"))
+                || at
+                    .strip_prefix("unit:")
+                    .or_else(|| at.strip_prefix("unit_ahead:"))
                     == Some(name)
         });
         if matches!(name, "Super Archer" | "Super Wizard")
@@ -373,7 +402,8 @@ impl AttackPlan {
                 .arr()
                 .iter()
                 .map(|wave| Wave {
-                    units: wave.at("units")
+                    units: wave
+                        .at("units")
                         .arr()
                         .iter()
                         .map(|unit| (unit.arr()[0].str().to_owned(), unit.arr()[1].i64()))
@@ -382,43 +412,55 @@ impl AttackPlan {
                 })
                 .collect()
         };
-        let stock: Vec<_> = p.at("_spell_stock").arr().iter().map(|v| {
-            assert_eq!(v.at("$type").str(), "SpellStock");
-            let remaining = v.at("remaining").i64();
-            let level = v
-                .get("level")
-                .filter(|v| !v.is_null())
-                .map(Level::from_json);
-            assert!(
-                remaining <= 0 || level.is_some(),
-                "export live spell stock after resolving its constructed level"
-            );
-            SpellStock {
-                name: v.at("name").str().to_owned(),
-                origin: v.at("origin").str().to_owned(),
-                remaining,
-                level,
-            }
-        }).collect();
+        let stock: Vec<_> = p
+            .at("_spell_stock")
+            .arr()
+            .iter()
+            .map(|v| {
+                assert_eq!(v.at("$type").str(), "SpellStock");
+                let remaining = v.at("remaining").i64();
+                let level = v
+                    .get("level")
+                    .filter(|v| !v.is_null())
+                    .map(Level::from_json);
+                assert!(
+                    remaining <= 0 || level.is_some(),
+                    "export live spell stock after resolving its constructed level"
+                );
+                SpellStock {
+                    name: v.at("name").str().to_owned(),
+                    origin: v.at("origin").str().to_owned(),
+                    remaining,
+                    level,
+                }
+            })
+            .collect();
         Self {
             snipe_exposed: p.get("snipe_exposed").is_none_or(truth),
             snipe_mode: snipe_mode.to_owned(),
-            snipe_log: p.get("snipe_log").map_or_else(SharedVec::default, |v| {
-                v.arr().to_vec().into()
-            }),
-            snipe_deployed: p.get("_snipe_deployed").map_or_else(SharedVec::default, |v| {
-                v.arr().iter().map(|v| v.str().to_owned()).collect()
-            }),
-            snipe_assignments: p.get("_snipe_assignments").map_or_else(SharedVec::default, |v| {
-                v.obj()
-                    .iter()
-                    .map(|(name, value)| (name.clone(), DefenseSnipe::load(value)))
-                    .collect()
-            }),
-            snipe_claimed: p.get("_snipe_claimed").map_or_else(SharedVec::default, |v| {
-                v.arr().iter().map(|v| BuildingId(v.usize())).collect()
-            }),
-            snipe_lightning: p.get("_snipe_lightning")
+            snipe_log: p
+                .get("snipe_log")
+                .map_or_else(SharedVec::default, |v| v.arr().to_vec().into()),
+            snipe_deployed: p
+                .get("_snipe_deployed")
+                .map_or_else(SharedVec::default, |v| {
+                    v.arr().iter().map(|v| v.str().to_owned()).collect()
+                }),
+            snipe_assignments: p
+                .get("_snipe_assignments")
+                .map_or_else(SharedVec::default, |v| {
+                    v.obj()
+                        .iter()
+                        .map(|(name, value)| (name.clone(), DefenseSnipe::load(value)))
+                        .collect()
+                }),
+            snipe_claimed: p
+                .get("_snipe_claimed")
+                .map_or_else(SharedVec::default, |v| {
+                    v.arr().iter().map(|v| BuildingId(v.usize())).collect()
+                }),
+            snipe_lightning: p
+                .get("_snipe_lightning")
                 .filter(|v| !v.is_null())
                 .map(DefenseSnipe::load),
             snipe_lightning_at: number(p, "_snipe_lightning_at", 0.0),
@@ -427,33 +469,44 @@ impl AttackPlan {
             scouting_context: None,
             // plans.py:1117/1296 leave _fallback set (False) after a scan
             fallback: p.get("_fallback").is_some_and(|v| v.bool()),
-            cluster_casts: p.get("_cluster_casts").map_or_else(SharedVec::default, |v| {
-                v.arr()
-                    .iter()
-                    .map(|v| {
-                        (
-                            v.arr()[0].str().to_owned(),
-                            v.arr()[1].f64(),
-                            v.arr()[2].f64(),
-                        )
-                    })
-                    .collect()
-            }),
+            cluster_casts: p
+                .get("_cluster_casts")
+                .map_or_else(SharedVec::default, |v| {
+                    v.arr()
+                        .iter()
+                        .map(|v| {
+                            (
+                                v.arr()[0].str().to_owned(),
+                                v.arr()[1].f64(),
+                                v.arr()[2].f64(),
+                            )
+                        })
+                        .collect()
+                }),
             angle: p.at("angle").f64(),
             town_hall: p.at("town_hall").i64(),
             strength: p.at("strength").f64(),
             ground: p.at("ground").bool(),
-            loadouts: p.at("loadouts").obj().iter().map(|(name, v)| {
-                (name.clone(), HeroLoadout {
-                    hero: v.at("hero").str().to_owned(),
-                    equipment: v.at("equipment")
-                        .arr()
-                        .iter()
-                        .map(|s| s.str().to_owned())
-                        .collect(),
-                    pet: v.at("pet").opt_str().map(str::to_owned),
+            loadouts: p
+                .at("loadouts")
+                .obj()
+                .iter()
+                .map(|(name, v)| {
+                    (
+                        name.clone(),
+                        HeroLoadout {
+                            hero: v.at("hero").str().to_owned(),
+                            equipment: v
+                                .at("equipment")
+                                .arr()
+                                .iter()
+                                .map(|s| s.str().to_owned())
+                                .collect(),
+                            pet: v.at("pet").opt_str().map(str::to_owned),
+                        },
+                    )
                 })
-            }).collect(),
+                .collect(),
             troop_levels: levels(p, "troop_levels").into(),
             hero_levels: levels(p, "hero_levels").into(),
             equipment_levels: levels(p, "equipment_levels").into(),
@@ -465,7 +518,8 @@ impl AttackPlan {
             spells: counts(p, "spells").into(),
             cc_spells: counts(p, "cc_spells").into(),
             stock: stock.into(),
-            pol: p.at("pol")
+            pol: p
+                .at("pol")
                 .obj()
                 .iter()
                 .filter(|(_, v)| !v.is_null())
@@ -473,21 +527,25 @@ impl AttackPlan {
                 .collect(),
             auto_revive: flag(p, "auto_revive"),
             revive_delay: number(p, "revive_delay", 1.5),
-            freeze_first: p.at("freeze_first").arr().iter().map(|v| v.str().to_owned()).collect(),
+            freeze_first: p
+                .at("freeze_first")
+                .arr()
+                .iter()
+                .map(|v| v.str().to_owned())
+                .collect(),
             zap_ad: (p.at("zap_ad").arr()[0].i64(), p.at("zap_ad").arr()[1].i64()),
             zap_done: flag(p, "_zap_done"),
             zap_left: p
                 .get("_zap_left")
                 .map(|v| [v.arr()[0].i64(), v.arr()[1].i64()]),
-            fallback_quakes: p.get("_fallback_quakes").map_or_else(
-                SharedVec::default,
-                |v| {
+            fallback_quakes: p
+                .get("_fallback_quakes")
+                .map_or_else(SharedVec::default, |v| {
                     v.arr()
                         .iter()
                         .map(|point| (point.arr()[0].f64(), point.arr()[1].f64()))
                         .collect()
-                },
-            ),
+                }),
             cc_released: flag(p, "_cc_released"),
             siege_donated: flag(p, "siege_donated"),
             siege: p.get("siege").and_then(Json::opt_str).map(str::to_owned),
@@ -498,24 +556,27 @@ impl AttackPlan {
                 .filter(|v| !v.is_null())
                 .map(Json::i64),
             main_at: number(p, "_main_at", 0.0),
-            cast_log: p.at("_cast_log")
+            cast_log: p
+                .at("_cast_log")
                 .arr()
                 .iter()
                 .map(|v| (v.arr()[0].f64(), v.arr()[1].str().to_owned()))
                 .collect(),
-            totem_casts: p.get("_totem_casts").map_or_else(SharedVec::default, |casts| {
-                casts
-                    .arr()
-                    .iter()
-                    .map(|cast| {
-                        (
-                            cast.arr()[0].f64(),
-                            cast.arr()[1].f64(),
-                            cast.arr()[2].f64(),
-                        )
-                    })
-                    .collect()
-            }),
+            totem_casts: p
+                .get("_totem_casts")
+                .map_or_else(SharedVec::default, |casts| {
+                    casts
+                        .arr()
+                        .iter()
+                        .map(|cast| {
+                            (
+                                cast.arr()[0].f64(),
+                                cast.arr()[1].f64(),
+                                cast.arr()[2].f64(),
+                            )
+                        })
+                        .collect()
+                }),
             breakers: pairs("breakers").into(),
             cleanup: pairs("cleanup").into(),
             distracts: number(p, "_distracts", 0.0) as i64,
@@ -526,12 +587,14 @@ impl AttackPlan {
                     .map(|point| (point.arr()[0].f64(), point.arr()[1].f64()))
                     .collect()
             }),
-            funnel_heroes: p.at("funnel_heroes")
+            funnel_heroes: p
+                .at("funnel_heroes")
                 .arr()
                 .iter()
                 .map(|entry| (entry.arr()[0].str().to_owned(), entry.arr()[1].f64()))
                 .collect(),
-            flank: p.at("flank")
+            flank: p
+                .at("flank")
                 .arr()
                 .iter()
                 .map(|entry| {
@@ -544,17 +607,20 @@ impl AttackPlan {
                 .collect(),
             main: waves("main"),
             support: waves("support"),
-            push_heroes: p.at("push_heroes")
+            push_heroes: p
+                .at("push_heroes")
                 .arr()
                 .iter()
                 .map(|v| v.str().to_owned())
                 .collect(),
-            cc_names: p.at("cc_troops")
+            cc_names: p
+                .at("cc_troops")
                 .arr()
                 .iter()
                 .map(|entry| match entry {
                     Json::Str(name) => name.clone(),
-                    _ => entry.get("name")
+                    _ => entry
+                        .get("name")
                         .filter(|v| truth(v))
                         .unwrap_or_else(|| entry.at("type"))
                         .str()
@@ -563,7 +629,8 @@ impl AttackPlan {
                 .collect(),
             main_min: number(p, "main_min", 8.0),
             main_max: number(p, "main_max", 22.0),
-            charge_hero: p.get("charge_hero")
+            charge_hero: p
+                .get("charge_hero")
                 .and_then(Json::opt_str)
                 .map(str::to_owned),
             charge_n: number(p, "_charge_n", 0.0) as i64,
@@ -574,7 +641,8 @@ impl AttackPlan {
             recall_funnel: flag(p, "recall_funnel"),
             split_main: number(p, "split_main", 0.0),
             // plans.py:871: cleanup uses only names from the legacy recall tuples.
-            recalled: p.at("recalled")
+            recalled: p
+                .at("recalled")
                 .arr()
                 .iter()
                 .map(|v| v.arr()[0].str().to_owned())
@@ -596,7 +664,8 @@ impl AttackPlan {
                     .collect()
             }),
             phase: text(p, "_phase", "funnel").to_owned(),
-            entry: p.get("_entry")
+            entry: p
+                .get("_entry")
                 .filter(|v| !v.is_null())
                 .map(|v| (v.arr()[0].f64(), v.arr()[1].f64())),
             next_brain: number(p, "_next_brain", 0.0),
@@ -631,8 +700,8 @@ impl AttackPlan {
             "hero_hp" => 0.5,
             "hero_time" => 25.0,
             "warden_hurt" => 1.0 / 3.0,
-            "arrow_aim" | "dash_aim" | "angry_min" | "skeleton_on" | "bat_on"
-            | "eq_core_dist" | "distract_reach" | "deep_drop" | "tank_lead" => 0.0,
+            "arrow_aim" | "dash_aim" | "angry_min" | "skeleton_on" | "bat_on" | "eq_core_dist"
+            | "distract_reach" | "deep_drop" | "tank_lead" => 0.0,
             "lure_time" => -1.0,
             "arrow_reach" => 12.0,
             "arrow_threat" | "dash_threat" => 7.0,
@@ -643,7 +712,11 @@ impl AttackPlan {
     }
 
     pub fn last(&self, kind: &str) -> f64 {
-        self.cast_log.iter().rev().find(|(_, k)| k == kind).map_or(-100.0, |(t, _)| *t)
+        self.cast_log
+            .iter()
+            .rev()
+            .find(|(_, k)| k == kind)
+            .map_or(-100.0, |(t, _)| *t)
     }
 
     // plans.py:423-446: retain first matching stock, including donated level.
@@ -656,11 +729,16 @@ impl AttackPlan {
         level: Option<&Level>,
         origin: Option<&str>,
     ) -> usize {
-        let index = self.stock.iter().position(|s| {
-            s.name == name && s.remaining > 0
-                && origin.is_none_or(|origin| s.origin == origin)
-                && level.is_none_or(|level| s.level.as_ref() == Some(level))
-        }).unwrap_or_else(|| panic!("No matching {name} remaining"));
+        let index = self
+            .stock
+            .iter()
+            .position(|s| {
+                s.name == name
+                    && s.remaining > 0
+                    && origin.is_none_or(|origin| s.origin == origin)
+                    && level.is_none_or(|level| s.level.as_ref() == Some(level))
+            })
+            .unwrap_or_else(|| panic!("No matching {name} remaining"));
         let selected = self.stock[index]
             .level
             .clone()
@@ -671,7 +749,8 @@ impl AttackPlan {
         let remaining = count(&self.spells, key) - 1;
         set(&mut self.spells, key.to_owned(), remaining);
         battle.deployed_housing += 5 * battle.catalog.stats.attrs(name).at("housing").i64();
-        self.cast_log.push((round_decimal(battle.t, 1), key.to_owned()));
+        self.cast_log
+            .push((round_decimal(battle.t, 1), key.to_owned()));
         // plans.py:524-526: retain the unrounded time and original cast point.
         if key == "totem" {
             self.totem_casts.push((battle.t, x, y));
@@ -695,11 +774,15 @@ impl AttackPlan {
         }
         if self.siege_donated && self.siege.as_deref() == Some(name) {
             let castle = self.clan_castle_level.unwrap_or_else(|| {
-                battle.catalog.stats
+                battle
+                    .catalog
+                    .stats
                     .max_level("Clan Castle", self.town_hall)
                     .unwrap_or(0)
             });
-            let cap = battle.catalog.setup
+            let cap = battle
+                .catalog
+                .setup
                 .at("siege_donation_caps")
                 .at(name)
                 .get(&castle.min(13).to_string())
@@ -775,14 +858,19 @@ impl AttackPlan {
     pub fn has_offensive_pending(&self, battle: &Battle) -> bool {
         if self.auto_revive
             && self.have("revive")
-            && battle.attackers_pool().any(|hero| !hero.alive && hero.extra.revivable)
+            && battle
+                .attackers_pool()
+                .any(|hero| !hero.alive && hero.extra.revivable)
         {
             return true;
         }
-        if battle.portal_units().any(|r| battle.unit(r).name_id != Name::Healer)
+        if battle
+            .portal_units()
+            .any(|r| battle.unit(r).name_id != Name::Healer)
             || self.recalled.iter().any(|name| name != "Healer")
             || self.later.iter().any(|drop| drop.name != "Healer")
-            || self.cleanup
+            || self
+                .cleanup
                 .iter()
                 .chain(self.breakers.iter())
                 .any(|(name, n)| name != "Healer" && *n > 0)
@@ -794,7 +882,9 @@ impl AttackPlan {
                 || !self.push_heroes.is_empty()
                 || self.cc_names.iter().any(|name| name != "Healer")
                 || self.main.iter().any(|wave| {
-                    wave.units.iter().any(|(name, n)| name != "Healer" && *n > 0)
+                    wave.units
+                        .iter()
+                        .any(|(name, n)| name != "Healer" && *n > 0)
                 })
             {
                 return true;
@@ -802,7 +892,9 @@ impl AttackPlan {
         }
         matches!(self.phase.as_str(), "funnel" | "support")
             && self.support.iter().any(|wave| {
-                wave.units.iter().any(|(name, n)| name != "Healer" && *n > 0)
+                wave.units
+                    .iter()
+                    .any(|(name, n)| name != "Healer" && *n > 0)
             })
     }
 
@@ -843,15 +935,7 @@ impl AttackPlan {
     }
 
     // plans.py:667-692. Jitter consumes x before y, even when deployment relocates.
-    pub fn drop(
-        &self,
-        battle: &mut Battle,
-        name: &str,
-        x: f64,
-        y: f64,
-        group: &str,
-        jitter: f64,
-    ) {
+    pub fn drop(&self, battle: &mut Battle, name: &str, x: f64, y: f64, group: &str, jitter: f64) {
         let at = battle.t;
         self.drop_at(battle, name, x, y, group, jitter, at);
     }
@@ -882,8 +966,16 @@ impl AttackPlan {
         fixed_point: bool,
     ) {
         if jitter != 0.0 {
-            let jitter_x = battle.rng.as_mut().expect("battle rng").uniform(-jitter, jitter);
-            let jitter_y = battle.rng.as_mut().expect("battle rng").uniform(-jitter, jitter);
+            let jitter_x = battle
+                .rng
+                .as_mut()
+                .expect("battle rng")
+                .uniform(-jitter, jitter);
+            let jitter_y = battle
+                .rng
+                .as_mut()
+                .expect("battle rng")
+                .uniform(-jitter, jitter);
             if !fixed_point {
                 x += jitter_x;
                 y += jitter_y;
@@ -909,9 +1001,8 @@ impl AttackPlan {
         if deployment.time > battle.t {
             battle.deployments.push(deployment);
             // Stable sorting keeps existing equal-time drops before new taps.
-            battle.deployments[battle.next_deploy..].sort_by(|a, b| {
-                a.time.partial_cmp(&b.time).expect("deployment time")
-            });
+            battle.deployments[battle.next_deploy..]
+                .sort_by(|a, b| a.time.partial_cmp(&b.time).expect("deployment time"));
         } else {
             battle.deploy(deployment);
         }
@@ -956,7 +1047,10 @@ impl AttackPlan {
             }
         }
         if self.p("deep_drop") > 0.5 {
-            for &(x, y) in Self::sector_tiles(battle, self.angle, 0.7).iter().step_by(3) {
+            for &(x, y) in Self::sector_tiles(battle, self.angle, 0.7)
+                .iter()
+                .step_by(3)
+            {
                 if let Some(score) = Self::entry_score(battle, x, y, 0.0) {
                     if best.is_none_or(|previous| score < previous.0) {
                         best = Some((score, x, y));
@@ -972,7 +1066,8 @@ impl AttackPlan {
     fn sector_tiles(battle: &mut Battle, angle: f64, half_width: f64) -> Vec<(f64, f64)> {
         let center = battle.catalog.world as f64 / 2.0;
         let pi = std::f64::consts::PI;
-        battle.deploy_tiles()
+        battle
+            .deploy_tiles()
             .iter()
             .copied()
             .filter(|&(x, y)| {
@@ -992,8 +1087,8 @@ impl AttackPlan {
             if !b.alive || b.weapon.is_none() || threat(&b.key, 0.0) < 5.0 {
                 continue;
             }
-            let difference = (py_atan2(b.y - center, b.x - center) - angle + pi)
-                .rem_euclid(2.0 * pi) - pi;
+            let difference =
+                (py_atan2(b.y - center, b.x - center) - angle + pi).rem_euclid(2.0 * pi) - pi;
             if !(difference.abs() <= 0.8) {
                 continue;
             }
@@ -1020,7 +1115,8 @@ impl AttackPlan {
     // plans.py:766-768: destroyed counted buildings near the approach edge.
     fn funnel_progress(&self, battle: &mut Battle) -> usize {
         let (x, y) = edge_point(battle, self.angle, 0.0);
-        battle.buildings
+        battle
+            .buildings
             .iter()
             .filter(|b| !b.alive && b.counted && py_hypot(b.x - x, b.y - y) < 10.0)
             .count()
@@ -1037,8 +1133,8 @@ impl AttackPlan {
         } else if !self.cc_names.is_empty() && !self.cc_released {
             crate::units::release_cc_at(battle, ex, ey, "main", false);
         }
-        let second = (self.split_main > 0.05)
-            .then(|| edge_point(battle, self.angle + self.split_main, 0.0));
+        let second =
+            (self.split_main > 0.05).then(|| edge_point(battle, self.angle + self.split_main, 0.0));
         let mut k = 0;
         let mut tank_k = 0;
         let mut damage_k = 0;
@@ -1090,7 +1186,9 @@ impl AttackPlan {
         let (x, y, invisible_until) = (hero.x, hero.y, hero.invisible_until);
         let locked = battle.buildings.iter().any(|b| {
             b.alive
-                && b.weapon.as_ref().is_some_and(|w| w.target == Some(reference))
+                && b.weapon
+                    .as_ref()
+                    .is_some_and(|w| w.target == Some(reference))
                 && threat(&b.key, 0.0) >= 4.0
         });
         let t = battle.t;
@@ -1107,7 +1205,8 @@ impl AttackPlan {
             && (frac < self.charge_recall_hp || done)
         {
             self.use_spell(battle, "recall", x, y);
-            self.cast_log.push((round_decimal(t, 1), "recall_charge".to_owned()));
+            self.cast_log
+                .push((round_decimal(t, 1), "recall_charge".to_owned()));
         }
     }
 
@@ -1118,7 +1217,8 @@ impl AttackPlan {
         self.revive_knocked_out(battle, &Self::have, false);
         // Python retains the old list when portal_redeploy replaces the stash.
         self.battle_portal = !battle.portal_stash.is_empty();
-        let due: Vec<_> = self.later
+        let due: Vec<_> = self
+            .later
             .iter()
             .filter(|drop| drop.time <= t)
             .cloned()
@@ -1127,9 +1227,7 @@ impl AttackPlan {
         for drop in due {
             self.drop(battle, &drop.name, drop.x, drop.y, &drop.group, drop.jitter);
         }
-        let mut hold = self.charge_hero.is_some()
-            && self.phase == "funnel"
-            && !self.recall_funnel;
+        let mut hold = self.charge_hero.is_some() && self.phase == "funnel" && !self.recall_funnel;
         if !battle.portal_stash.is_empty()
             && t >= battle.portal_ready_at
             && self.recall_funnel
@@ -1185,7 +1283,8 @@ impl AttackPlan {
         }
         if !self.lured && self.p("lure_time") >= 0.0 && t >= self.p("lure_time") {
             self.lured = true;
-            let cc = battle.buildings
+            let cc = battle
+                .buildings
                 .iter()
                 .find(|b| b.key == "cc" && b.alive)
                 .map(|b| (b.x, b.y));
@@ -1234,7 +1333,8 @@ impl AttackPlan {
         } else {
             centroid(battle, &army)
         };
-        let mut far: Vec<_> = battle.buildings
+        let mut far: Vec<_> = battle
+            .buildings
             .iter()
             .filter(|b| b.alive && b.counted)
             .map(|b| (b.x, b.y))
@@ -1255,10 +1355,7 @@ impl AttackPlan {
     }
 
     // plans.py:1411-1417: consume the first positive cleanup reserve.
-    fn spare_troop(
-        &mut self,
-        mut inventory: Option<&mut Vec<(String, i64)>>,
-    ) -> Option<String> {
+    fn spare_troop(&mut self, mut inventory: Option<&mut Vec<(String, i64)>>) -> Option<String> {
         // Wiki: Army Camp, playbook fallbacks spend its shared undeployed stock.
         for entry in self.cleanup.iter_mut() {
             let left = inventory
@@ -1280,8 +1377,14 @@ impl AttackPlan {
         let mut best = (0.0, 0.0);
         let mut score = None;
         for k in 0..16 {
-            let point = edge_point(battle, self.angle + 2.0 * std::f64::consts::PI * k as f64 / 16.0, 0.0);
-            let n = battle.buildings.iter()
+            let point = edge_point(
+                battle,
+                self.angle + 2.0 * std::f64::consts::PI * k as f64 / 16.0,
+                0.0,
+            );
+            let n = battle
+                .buildings
+                .iter()
                 .filter(|b| b.alive && b.counted && b.dist(point.0, point.1) < 11.0)
                 .count();
             if score.is_none_or(|s| n > s) {
@@ -1311,31 +1414,48 @@ impl AttackPlan {
             let engaged = u.target.is_some() && t - u.spawned_at > 2.0;
             let mut fire = false;
             if u.name_id == Name::MinionPrince && kit.has("Portal Pendant") {
-                let near: Vec<_> = battle.attackers_near(u.x, u.y, 7.0).into_iter().filter(|r| {
-                    let a = battle.unit(*r);
-                    !a.is_hero && a.kind != Tag::Pet && a.name_id != Name::Totem
-                }).collect();
+                let near: Vec<_> = battle
+                    .attackers_near(u.x, u.y, 7.0)
+                    .into_iter()
+                    .filter(|r| {
+                        let a = battle.unit(*r);
+                        !a.is_hero && a.kind != Tag::Pet && a.name_id != Name::Totem
+                    })
+                    .collect();
                 if !near.is_empty() {
                     let (cx, cy) = centroid(battle, &near);
-                    let work = battle.buildings.iter()
+                    let work = battle
+                        .buildings
+                        .iter()
                         .any(|b| b.alive && b.counted && b.edge_distance(cx, cy) < 7.0);
-                    let hurt = near.iter().map(|r| {
-                        let a = battle.unit(*r);
-                        a.hp / a.max_hp
-                    }).sum::<f64>() / near.len() as f64;
+                    let hurt = near
+                        .iter()
+                        .map(|r| {
+                            let a = battle.unit(*r);
+                            a.hp / a.max_hp
+                        })
+                        .sum::<f64>()
+                        / near.len() as f64;
                     fire = near.len() >= 6 && (!work || hurt < 0.45) && t - u.spawned_at > 15.0;
                 } else {
                     fire = frac < 0.35;
                 }
             } else if u.name_id == Name::GrandWarden {
-                let near: Vec<_> = battle.attackers_near(u.x, u.y, 7.0).into_iter().filter(|r| {
-                    let a = battle.unit(*r);
-                    a.name_id != Name::Totem && !a.is_hero
-                }).collect();
-                let hurt = near.iter().filter(|r| {
-                    let a = battle.unit(**r);
-                    a.hp < 0.55 * a.max_hp
-                }).count();
+                let near: Vec<_> = battle
+                    .attackers_near(u.x, u.y, 7.0)
+                    .into_iter()
+                    .filter(|r| {
+                        let a = battle.unit(*r);
+                        a.name_id != Name::Totem && !a.is_hero
+                    })
+                    .collect();
+                let hurt = near
+                    .iter()
+                    .filter(|r| {
+                        let a = battle.unit(**r);
+                        a.hp < 0.55 * a.max_hp
+                    })
+                    .count();
                 fire = near.len() >= 5
                     && hurt as i64 >= (near.len() as f64 * self.p("warden_hurt") + 1e-9) as i64
                     || frac < self.p("warden_hp");
@@ -1352,15 +1472,15 @@ impl AttackPlan {
                 self.line_ability(battle, reference, frac < self.p("hero_hp"), None);
                 continue;
             } else if u.name_id == Name::DragonDuke {
-                if engaged && (frac < self.p("duke_hp")
-                    || u.target.is_some_and(|r| entity_is_defense(battle, r)))
+                if engaged
+                    && (frac < self.p("duke_hp")
+                        || u.target.is_some_and(|r| entity_is_defense(battle, r)))
                 {
                     self.fire_aimed(battle, reference, None);
                 }
                 continue;
-            } else if frac < self.p("hero_hp")
-                || engaged
-                && t - u.spawned_at > self.p("hero_time") {
+            } else if frac < self.p("hero_hp") || engaged && t - u.spawned_at > self.p("hero_time")
+            {
                 fire = true;
             }
             if fire {
@@ -1385,7 +1505,12 @@ impl AttackPlan {
         let mut targets: Vec<_> = battle
             .buildings
             .iter()
-            .filter(|b| b.alive && b.key == "ad" && !reserved.contains(&b.id) && !self.snipe_claimed.contains(&b.id))
+            .filter(|b| {
+                b.alive
+                    && b.key == "ad"
+                    && !reserved.contains(&b.id)
+                    && !self.snipe_claimed.contains(&b.id)
+            })
             .map(|b| ZapTarget {
                 id: b.id,
                 hp: b.hp,
@@ -1393,7 +1518,9 @@ impl AttackPlan {
             })
             .collect();
         targets.sort_by(|a, b| {
-            battle.building(a.id).dist(ex, ey)
+            battle
+                .building(a.id)
+                .dist(ex, ey)
                 .total_cmp(&battle.building(b.id).dist(ex, ey))
         });
         if targets.is_empty() {
@@ -1437,21 +1564,26 @@ impl AttackPlan {
                 continue;
             }
             if !reserved.is_empty() {
-                let stock = self.stock.iter()
+                let stock = self
+                    .stock
+                    .iter()
                     .find(|stock| stock.name == spell_name(kind) && stock.remaining > 0)
                     .expect("live zap stock");
                 let level = stock.level.as_ref().expect("resolved spell level");
-                let radius = battle.catalog.resolved
+                let radius = battle
+                    .catalog
+                    .resolved
                     .at("zap_radii")
                     .at(&format!("{}|{level}", stock.name))
                     .f64();
                 let safe = targets.iter().find(|target| {
                     let b = battle.building(target.id);
-                    target.hp > 1e-9 && battle.buildings.iter().all(|r| {
-                        !r.alive
-                            || !reserved.contains(&r.id)
-                            || r.edge_distance(b.x, b.y) > radius
-                    })
+                    target.hp > 1e-9
+                        && battle.buildings.iter().all(|r| {
+                            !r.alive
+                                || !reserved.contains(&r.id)
+                                || r.edge_distance(b.x, b.y) > radius
+                        })
                 });
                 let Some(safe) = safe else {
                     break;
@@ -1477,23 +1609,21 @@ impl AttackPlan {
                 return;
             }
         }
-        self.zap_done = self.zap_left.expect("zap budget").iter().all(|n| *n == 0)
-            || reserved.is_empty();
+        self.zap_done =
+            self.zap_left.expect("zap budget").iter().all(|n| *n == 0) || reserved.is_empty();
     }
 
     // plans.py:1104-1118: living Totems and casts within 5 s cover their radius.
     pub fn totem_covered(&self, battle: &Battle, x: f64, y: f64) -> bool {
         let radius = totem_radius(battle);
         if battle.attackers_pool().any(|unit| {
-            unit.alive
-                && unit.name_id == Name::Totem
-                && py_hypot(unit.x - x, unit.y - y) <= radius
+            unit.alive && unit.name_id == Name::Totem && py_hypot(unit.x - x, unit.y - y) <= radius
         }) {
             return true;
         }
-        self.totem_casts.iter().any(|&(time, tx, ty)| {
-            battle.t - time <= 5.0 && py_hypot(tx - x, ty - y) <= radius
-        })
+        self.totem_casts
+            .iter()
+            .any(|&(time, tx, ty)| battle.t - time <= 5.0 && py_hypot(tx - x, ty - y) <= radius)
     }
 
     // plans.py:1120-1141: both candidate and score loops retain threat order.
@@ -1536,18 +1666,27 @@ impl AttackPlan {
         inventory: Option<&mut Vec<(String, i64)>>,
         single_cast: bool,
     ) {
-        let stuck: Vec<_> = units.iter()
+        let stuck: Vec<_> = units
+            .iter()
             .copied()
-            .filter(|u| battle.unit(*u).wall_target.is_some_and(|w| battle.walls[w.0].alive))
+            .filter(|u| {
+                battle
+                    .unit(*u)
+                    .wall_target
+                    .is_some_and(|w| battle.walls[w.0].alive)
+            })
             .collect();
         if stuck.len() < 2 {
             return;
         }
         let w = battle.walls[battle.unit(stuck[0]).wall_target.expect("wall").0].clone();
-        let together = stuck.iter().filter(|r| {
-            let other = &battle.walls[battle.unit(**r).wall_target.expect("wall").0];
-            (other.x - w.x).abs() + (other.y - w.y).abs() <= 3.0
-        }).count();
+        let together = stuck
+            .iter()
+            .filter(|r| {
+                let other = &battle.walls[battle.unit(**r).wall_target.expect("wall").0];
+                (other.x - w.x).abs() + (other.y - w.y).abs() <= 3.0
+            })
+            .count();
         if together < 2 {
             return;
         }
@@ -1571,12 +1710,14 @@ impl AttackPlan {
             for _ in 0..n {
                 self.drop(battle, &self.breakers[index].0, cx, cy, "breach", 0.4);
             }
-            self.cast_log.push((round_decimal(battle.t, 1), "breach".to_owned()));
+            self.cast_log
+                .push((round_decimal(battle.t, 1), "breach".to_owned()));
             return;
         }
         if have(self, "jump") {
             self.use_spell(battle, "jump", w.x, w.y);
-            self.cast_log.push((round_decimal(battle.t, 1), "breach".to_owned()));
+            self.cast_log
+                .push((round_decimal(battle.t, 1), "breach".to_owned()));
         } else if have(self, "eq") && self.unreserved_spells("eq", self.fallback) >= 4 {
             if single_cast {
                 self.fallback_quakes = vec![(w.x, w.y); 3].into();
@@ -1585,7 +1726,8 @@ impl AttackPlan {
             for _ in 0..casts {
                 self.use_spell(battle, "eq", w.x, w.y);
             }
-            self.cast_log.push((round_decimal(battle.t, 1), "breach".to_owned()));
+            self.cast_log
+                .push((round_decimal(battle.t, 1), "breach".to_owned()));
         }
     }
 
@@ -1594,13 +1736,15 @@ impl AttackPlan {
         if self.supported_cargo.is_empty() {
             return None;
         }
-        let delivered: Vec<_> = battle.attackers_pool()
+        let delivered: Vec<_> = battle
+            .attackers_pool()
             .filter(|unit| {
                 self.supported_cargo.contains(&unit.name)
                     && unit.extra.deployment_source.as_deref() == Some("siege")
             })
             .collect();
-        let cargo: Vec<_> = battle.attackers_pool()
+        let cargo: Vec<_> = battle
+            .attackers_pool()
             .filter(|unit| {
                 unit.alive
                     && self.supported_cargo.contains(&unit.name)
@@ -1617,7 +1761,8 @@ impl AttackPlan {
         if !delivered.is_empty() || self.cc_released || battle.plan.cc_released() {
             return None;
         }
-        let mut carriers = battle.attackers_pool()
+        let mut carriers = battle
+            .attackers_pool()
             .filter(|unit| self.siege.as_deref() == Some(unit.name.as_str()))
             .peekable();
         if carriers.peek().is_some() && !carriers.any(|unit| unit.alive) {
@@ -1659,24 +1804,38 @@ impl AttackPlan {
             }
         }
         let (cx, cy) = centroid(battle, units);
-        let avg_hp = units.iter().map(|r| {
-            let u = battle.unit(*r);
-            u.hp / u.max_hp
-        }).sum::<f64>() / units.len() as f64;
-        let engaged = units.iter().filter(|r| {
-            let u = battle.unit(**r);
-            u.target.is_some() && u.cooldown > 0.0
-        }).count();
+        let avg_hp = units
+            .iter()
+            .map(|r| {
+                let u = battle.unit(*r);
+                u.hp / u.max_hp
+            })
+            .sum::<f64>()
+            / units.len() as f64;
+        let engaged = units
+            .iter()
+            .filter(|r| {
+                let u = battle.unit(**r);
+                u.target.is_some() && u.cooldown > 0.0
+            })
+            .count();
         if have(self, "freeze") {
-            let priority = |key: &str| self.freeze_first.iter()
-                .position(|k| k == key)
-                .map(|i| 100.0 - i as f64);
+            let priority = |key: &str| {
+                self.freeze_first
+                    .iter()
+                    .position(|k| k == key)
+                    .map(|i| 100.0 - i as f64)
+            };
             let mut threats = threats_near(battle, cx, cy, 12.0);
             threats.sort_by(|(a, _), (b, _)| {
                 let a = &battle.building(*a).key;
                 let b = &battle.building(*b).key;
-                let pa = priority(a).filter(|v| *v != 0.0).unwrap_or_else(|| threat(a, 1.0));
-                let pb = priority(b).filter(|v| *v != 0.0).unwrap_or_else(|| threat(b, 1.0));
+                let pa = priority(a)
+                    .filter(|v| *v != 0.0)
+                    .unwrap_or_else(|| threat(a, 1.0));
+                let pb = priority(b)
+                    .filter(|v| *v != 0.0)
+                    .unwrap_or_else(|| threat(b, 1.0));
                 pb.total_cmp(&pa)
             });
             for (id, d) in threats {
@@ -1692,13 +1851,14 @@ impl AttackPlan {
                     continue;
                 }
                 let w = b.weapon.as_ref().expect("weapon");
-                if (priority(&b.key).is_some() || threat(&b.key, 0.0) >= self.p("freeze_min_threat"))
-
+                if (priority(&b.key).is_some()
+                    || threat(&b.key, 0.0) >= self.p("freeze_min_threat"))
                     && d <= w.range + self.p("freeze_reach")
-                    && (w.target.is_some()
-                    || !w.multi.is_empty()) {
+                    && (w.target.is_some() || !w.multi.is_empty())
+                {
                     if self.p("freeze_min_units") > 0.0 {
-                        let in_range = units.iter()
+                        let in_range = units
+                            .iter()
                             .filter(|r| battle.unit(**r).dist(b.x, b.y) <= w.range)
                             .count();
                         if (in_range as f64) < self.p("freeze_min_units") {
@@ -1714,16 +1874,14 @@ impl AttackPlan {
                 }
             }
         }
-        if have(self, "totem")
-            && t - self.last("totem") > self.p("totem_gap") {
+        if have(self, "totem") && t - self.last("totem") > self.p("totem_gap") {
             let hot = threats_near(battle, cx, cy, 10.0);
             if hot.len() as f64 >= self.p("totem_min_threats") {
                 // plans.py:1324-1330: max(score, -distance), first complete tie.
                 let mut best: Option<(BuildingId, f64, f64)> = None;
                 for target in self.totem_targets(battle, &hot) {
-                    if best.is_none_or(|previous| {
-                        (target.2, -target.1) > (previous.2, -previous.1)
-                    }) {
+                    if best.is_none_or(|previous| (target.2, -target.1) > (previous.2, -previous.1))
+                    {
                         best = Some(target);
                     }
                 }
@@ -1763,17 +1921,16 @@ impl AttackPlan {
                 }
             }
         }
-        if have(self, "rage") && engaged >= 2
-            .max((units.len() as f64 * self.p("rage_engaged")) as usize)
-            && t - self.last("rage") > self.p("rage_gap") {
+        if have(self, "rage")
+            && engaged >= 2.max((units.len() as f64 * self.p("rage_engaged")) as usize)
+            && t - self.last("rage") > self.p("rage_gap")
+        {
             self.use_spell(battle, "rage", cx, cy);
             if single_cast {
                 return;
             }
         }
-        if have(self, "heal")
-            && avg_hp < self.p("heal_hp")
-            && t - self.last("heal") > 6.0 {
+        if have(self, "heal") && avg_hp < self.p("heal_hp") && t - self.last("heal") > 6.0 {
             self.use_spell(battle, "heal", cx, cy);
             if single_cast {
                 return;
@@ -1781,15 +1938,23 @@ impl AttackPlan {
         }
         if have(self, "invis")
             && t - self.last("invis") > self.p("invis_gap")
-            && cargo.as_ref().is_none_or(|units| !units.is_empty()) {
-            let hot = threats_near(battle, cx, cy, 11.0).iter().filter(|(id, _)| {
-                let b = battle.building(*id);
-                let w = b.weapon.as_ref().expect("weapon");
-                threat(&b.key, 0.0) >= 4.0 && (w.target.is_some() || !w.multi.is_empty())
-            }).count();
+            && cargo.as_ref().is_none_or(|units| !units.is_empty())
+        {
+            let hot = threats_near(battle, cx, cy, 11.0)
+                .iter()
+                .filter(|(id, _)| {
+                    let b = battle.building(*id);
+                    let w = b.weapon.as_ref().expect("weapon");
+                    threat(&b.key, 0.0) >= 4.0 && (w.target.is_some() || !w.multi.is_empty())
+                })
+                .count();
             if cargo.as_ref().is_some_and(|units| !units.is_empty())
-                || avg_hp < self.p("invis_hp") || hot as f64 >= self.p("invis_hot") {
-                let (x, y) = cargo.as_ref().filter(|units| !units.is_empty())
+                || avg_hp < self.p("invis_hp")
+                || hot as f64 >= self.p("invis_hot")
+            {
+                let (x, y) = cargo
+                    .as_ref()
+                    .filter(|units| !units.is_empty())
                     .map_or((cx, cy), |units| centroid(battle, units));
                 self.use_spell(battle, "invis", x, y);
                 if single_cast {
@@ -1799,8 +1964,11 @@ impl AttackPlan {
         }
         if have(self, "recall")
             && t - self.last("recall") > 6.0
-            && t - self.main_at > self.p("recall_after") {
-            let work = battle.buildings.iter()
+            && t - self.main_at > self.p("recall_after")
+        {
+            let work = battle
+                .buildings
+                .iter()
                 .any(|b| b.alive && b.counted && b.edge_distance(cx, cy) < 7.0);
             if units.len() >= 6 && (!work || avg_hp < self.p("recall_hp")) {
                 self.use_spell(battle, "recall", cx, cy);
@@ -1809,13 +1977,17 @@ impl AttackPlan {
                 }
             }
         }
-        if have(self, "clone")
-            && t - self.main_at > 1.0
-            && t - self.last("clone") > 1.0 {
-            let big: Vec<_> = cargo.as_deref().unwrap_or(units).iter().copied().filter(|r| {
-                let u = battle.unit(*r);
-                (cargo.is_some() || u.housing >= 10) && !u.extra.clone
-            }).collect();
+        if have(self, "clone") && t - self.main_at > 1.0 && t - self.last("clone") > 1.0 {
+            let big: Vec<_> = cargo
+                .as_deref()
+                .unwrap_or(units)
+                .iter()
+                .copied()
+                .filter(|r| {
+                    let u = battle.unit(*r);
+                    (cargo.is_some() || u.housing >= 10) && !u.extra.clone
+                })
+                .collect();
             if !big.is_empty() {
                 let (x, y) = centroid(battle, &big);
                 self.use_spell(battle, "clone", x, y);
@@ -1826,7 +1998,8 @@ impl AttackPlan {
         }
         if have(self, "haste")
             && t - self.main_at > self.p("haste_after")
-            && t - self.last("haste") > self.p("haste_gap") {
+            && t - self.last("haste") > self.p("haste_gap")
+        {
             self.use_spell(battle, "haste", cx, cy);
             if single_cast {
                 return;
@@ -1839,12 +2012,14 @@ impl AttackPlan {
             }
         }
         if have(self, "poison") {
-            let foes: Vec<_> = battle.defenders_pool()
+            let foes: Vec<_> = battle
+                .defenders_pool()
                 .filter(|d| d.alive && t >= d.active_at && d.dist(cx, cy) < 7.0)
                 .map(Unit::reference)
                 .collect();
-            if foes.len() as f64 >= self.p("poison_min") || foes.iter()
-                .any(|r| battle.unit(*r).is_hero) {
+            if foes.len() as f64 >= self.p("poison_min")
+                || foes.iter().any(|r| battle.unit(*r).is_hero)
+            {
                 let x = foes.iter().map(|r| battle.unit(*r).x).sum::<f64>() / foes.len() as f64;
                 let y = foes.iter().map(|r| battle.unit(*r).y).sum::<f64>() / foes.len() as f64;
                 self.use_spell(battle, "poison", x, y);
@@ -1868,16 +2043,21 @@ impl AttackPlan {
         single_cast: bool,
     ) {
         let t = battle.t;
-        if self.p("angry_min") > 0.0
-            && have(self, "angry")
-            && t - self.last("angry") > 6.0 {
-            let astray: Vec<_> = units.iter().copied().filter(|r| {
-                let u = battle.unit(*r);
-                u.target.is_some_and(|target| matches!(target, EntityRef::Building(_))
-                    && !entity_is_defense(battle, target))
-                    && battle.buildings.iter()
-                    .any(|b| b.alive && b.weapon.is_some() && b.dist(u.x, u.y) < 7.0)
-            }).collect();
+        if self.p("angry_min") > 0.0 && have(self, "angry") && t - self.last("angry") > 6.0 {
+            let astray: Vec<_> = units
+                .iter()
+                .copied()
+                .filter(|r| {
+                    let u = battle.unit(*r);
+                    u.target.is_some_and(|target| {
+                        matches!(target, EntityRef::Building(_))
+                            && !entity_is_defense(battle, target)
+                    }) && battle
+                        .buildings
+                        .iter()
+                        .any(|b| b.alive && b.weapon.is_some() && b.dist(u.x, u.y) < 7.0)
+                })
+                .collect();
             if astray.len() as f64 >= self.p("angry_min") {
                 let (x, y) = centroid(battle, &astray);
                 self.use_spell(battle, "angry", x, y);
@@ -1886,9 +2066,8 @@ impl AttackPlan {
                 }
             }
         }
-        if self.p("skeleton_on") > 0.5
-            && have(self, "skeleton")
-            && t - self.last("skeleton") > 8.0 {
+        if self.p("skeleton_on") > 0.5 && have(self, "skeleton") && t - self.last("skeleton") > 8.0
+        {
             for (id, _) in threats_near(battle, cx, cy, 12.0) {
                 let b = battle.building(id);
                 let w = b.weapon.as_ref().expect("weapon");
@@ -1902,17 +2081,13 @@ impl AttackPlan {
                 }
             }
         }
-        if self.p("bat_on") > 0.5
-            && have(self, "bat")
-            && t - self.last("bat") > 6.0 {
+        if self.p("bat_on") > 0.5 && have(self, "bat") && t - self.last("bat") > 6.0 {
             let hot = threats_near(battle, cx, cy, 10.0);
             if hot.len() >= 2 {
-                let x = hot.iter()
-                    .map(|(b, _)| battle.building(*b).x)
-                    .sum::<f64>() / hot.len() as f64;
-                let y = hot.iter()
-                    .map(|(b, _)| battle.building(*b).y)
-                    .sum::<f64>() / hot.len() as f64;
+                let x =
+                    hot.iter().map(|(b, _)| battle.building(*b).x).sum::<f64>() / hot.len() as f64;
+                let y =
+                    hot.iter().map(|(b, _)| battle.building(*b).y).sum::<f64>() / hot.len() as f64;
                 self.use_spell(battle, "bat", x, y);
                 if single_cast {
                     return;
@@ -1924,7 +2099,8 @@ impl AttackPlan {
         if d_core > 2.0
             && have(self, "eq")
             && self.unreserved_spells("eq", self.fallback) >= n_eq
-            && self.last("eq_core") < 0.0 {
+            && self.last("eq_core") < 0.0
+        {
             if let Some(th) = battle.th.map(|id| battle.building(id)).filter(|b| b.alive) {
                 if th.dist(cx, cy) <= d_core + 4.0 {
                     let (x, y) = (cx + (th.x - cx) * 0.6, cy + (th.y - cy) * 0.6);
@@ -1935,7 +2111,8 @@ impl AttackPlan {
                     for _ in 0..casts {
                         self.use_spell(battle, "eq", x, y);
                     }
-                    self.cast_log.push((round_decimal(t, 1), "eq_core".to_owned()));
+                    self.cast_log
+                        .push((round_decimal(t, 1), "eq_core".to_owned()));
                     if single_cast {
                         return;
                     }
@@ -1945,13 +2122,15 @@ impl AttackPlan {
         let reach = self.p("distract_reach");
         if reach > 2.0
             && self.distracts < round_half_even(self.p("distract_max")) as i64
-            && t - self.last("distract") > 3.0 {
+            && t - self.last("distract") > 3.0
+        {
             for (id, d) in threats_near(battle, cx, cy, 16.0) {
                 let b = battle.building(id);
                 let w = b.weapon.as_ref().expect("weapon");
                 if threat(&b.key, 0.0) >= self.p("distract_threat")
                     && w.range < d
-                    && d <= w.range + reach {
+                    && d <= w.range + reach
+                {
                     let (x, y) = (b.x + (b.x - cx), b.y + (b.y - cy));
                     let Some(name) = self.spare_troop(inventory.as_deref_mut()) else {
                         break;
@@ -1959,7 +2138,8 @@ impl AttackPlan {
                     let point = self.snipe_point(battle, x, y);
                     self.drop(battle, &name, point.0, point.1, "cleanup", 0.3);
                     self.distracts += 1;
-                    self.cast_log.push((round_decimal(t, 1), "distract".to_owned()));
+                    self.cast_log
+                        .push((round_decimal(t, 1), "distract".to_owned()));
                     break;
                 }
             }
@@ -2016,26 +2196,35 @@ pub fn edge_point(battle: &mut Battle, angle: f64, lateral: f64) -> (f64, f64) {
 
 // plans.py:879-880.
 pub fn main_units(battle: &Battle, group: &str) -> Vec<UnitRef> {
-    battle.attackers_pool()
-        .filter(|u| u.alive
-        && u.group == group
-        && u.name_id != Name::Totem
-        && u.kind != Tag::Pet)
+    battle
+        .attackers_pool()
+        .filter(|u| u.alive && u.group == group && u.name_id != Name::Totem && u.kind != Tag::Pet)
         .map(Unit::reference)
         .collect()
 }
 
 // plans.py:883-885.
 pub fn centroid(battle: &Battle, units: &[UnitRef]) -> (f64, f64) {
-    let w = units.iter().map(|r| battle.unit(*r).housing.max(1)).sum::<i64>() as f64;
-    let x = units.iter().map(|r| {
-        let u = battle.unit(*r);
-        u.x * u.housing.max(1) as f64
-    }).sum::<f64>() / w;
-    let y = units.iter().map(|r| {
-        let u = battle.unit(*r);
-        u.y * u.housing.max(1) as f64
-    }).sum::<f64>() / w;
+    let w = units
+        .iter()
+        .map(|r| battle.unit(*r).housing.max(1))
+        .sum::<i64>() as f64;
+    let x = units
+        .iter()
+        .map(|r| {
+            let u = battle.unit(*r);
+            u.x * u.housing.max(1) as f64
+        })
+        .sum::<f64>()
+        / w;
+    let y = units
+        .iter()
+        .map(|r| {
+            let u = battle.unit(*r);
+            u.y * u.housing.max(1) as f64
+        })
+        .sum::<f64>()
+        / w;
     (x, y)
 }
 
@@ -2073,15 +2262,24 @@ pub fn totem_radius(battle: &Battle) -> f64 {
 
 // plans.py:888-897.
 pub fn threats_near(battle: &Battle, x: f64, y: f64, radius: f64) -> Vec<(BuildingId, f64)> {
-    battle.buildings.iter().filter_map(|b| {
-        if !b.alive || b.weapon.is_none() || b.disabled(battle.t)
-            || battle.plan.attack().is_some_and(|plan| plan.snipe_claimed.contains(&b.id))
-        {
-            return None;
-        }
-        let d = b.dist(x, y);
-        (d <= radius).then_some((b.id, d))
-    }).collect()
+    battle
+        .buildings
+        .iter()
+        .filter_map(|b| {
+            if !b.alive
+                || b.weapon.is_none()
+                || b.disabled(battle.t)
+                || battle
+                    .plan
+                    .attack()
+                    .is_some_and(|plan| plan.snipe_claimed.contains(&b.id))
+            {
+                return None;
+            }
+            let d = b.dist(x, y);
+            (d <= radius).then_some((b.id, d))
+        })
+        .collect()
 }
 
 pub fn entity_is_defense(battle: &Battle, target: EntityRef) -> bool {
