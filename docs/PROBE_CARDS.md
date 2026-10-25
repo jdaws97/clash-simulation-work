@@ -2,7 +2,7 @@
 
 **Hypotheses, not game calibration.** The Rust alternatives are provisional.
 The CSV names and numbers establish candidate rules to test, not their meaning.
-Every fixture and result under `rust/fixtures/mechanics/` is declared synthetic.
+Every fixture and result under `fixtures/mechanics/` is declared synthetic.
 Do not mix these outcomes with real-game calibration records.
 
 Record the deployment release, first turn, first target, first wall strike, first
@@ -181,12 +181,12 @@ record whether the intended pre-reveal aim changes.
 . ~/.cargo/env
 export CARGO_TARGET_DIR=/tmp/clash-target-rm1
 export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
-cargo test --manifest-path rust/Cargo.toml --test mechanics
-cargo run --manifest-path rust/Cargo.toml --example mechanics_proof
-cargo run --manifest-path rust/Cargo.toml --example mechanics_proof -- summary
-cargo run --manifest-path rust/Cargo.toml --example mechanics_proof -- sizes
-cargo build --release --manifest-path rust/Cargo.toml --bin baselab-engine
-/tmp/clash-target-rm1/release/baselab-engine golden check rust/golden/cases.jsonl rust/golden/expected.jsonl
+cargo test --manifest-path Cargo.toml -p clash-engine --test mechanics
+cargo run --manifest-path Cargo.toml -p clash-engine --example mechanics_proof
+cargo run --manifest-path Cargo.toml -p clash-engine --example mechanics_proof -- summary
+cargo run --manifest-path Cargo.toml -p clash-engine --example mechanics_proof -- sizes
+cargo build --release --manifest-path Cargo.toml --bin baselab-engine
+/tmp/clash-target-rm1/release/baselab-engine golden check fixtures/golden/cases.jsonl fixtures/golden/expected.jsonl
 ```
 
 `demos.json` declares all four battles. `evidence.json` records before/after

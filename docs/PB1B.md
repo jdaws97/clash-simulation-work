@@ -464,8 +464,8 @@ held-out calibration, and a corrected controller can lower a seed's score.
 
 ## Verification
 
-- `cargo fmt --manifest-path rust/Cargo.toml --check`: passed.
-- `cargo test --offline --manifest-path rust/Cargo.toml`: **59 passed**, two documentation examples intentionally ignored.
+- `cargo fmt --manifest-path Cargo.toml --check`: passed.
+- `cargo test --offline --manifest-path Cargo.toml`: **59 passed**, two documentation examples intentionally ignored.
 - Battle golden check: **868/868**; two intentional A10 changes, 866 byte-identical cases.
 - Plan golden check: **1,354/1,354**; 522 changed old cases, 674 unchanged old cases, 158 new recipe controls.
 - `guardian-check`: **50/50** declared synthetic fixtures.

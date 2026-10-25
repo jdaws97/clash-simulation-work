@@ -17,8 +17,8 @@ are hypotheses pending the friendly-challenge cards in [PROBE_CARDS.md](PROBE_CA
 - JSON overrides in job `env.params` / `params` and `BASELAB_PARAMS_FILE`.
   Strict type/name/value checks; atomic application; isolated concurrent jobs.
 - Four complete before/after synthetic battles in
-  [demos.json](../rust/fixtures/mechanics/demos.json), with reproducible
-  [evidence.json](../rust/fixtures/mechanics/evidence.json).
+  [demos.json](../fixtures/mechanics/demos.json), with reproducible
+  [evidence.json](../fixtures/mechanics/evidence.json).
 - Probe cards T1–T5, W1–W2, C1 and H1 distinguish candidate limits, path/wall cost,
   memory, retarget causes/noise, wall holds, spatial grouping/waiting, crowding and
   pre-reveal information. Each specifies minimal staging, a controlled single
@@ -38,12 +38,12 @@ Build environment:
 . ~/.cargo/env
 export CARGO_TARGET_DIR=/tmp/clash-target-rm1
 export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
-cargo build --release --manifest-path rust/Cargo.toml --bin baselab-engine --example mechanics_proof
-cargo test --manifest-path rust/Cargo.toml --test mechanics
-/tmp/clash-target-rm1/release/baselab-engine golden check rust/golden/cases.jsonl rust/golden/expected.jsonl
+cargo build --release --manifest-path Cargo.toml --workspace --all-targets
+cargo test --manifest-path Cargo.toml -p clash-engine --test mechanics
+/tmp/clash-target-rm1/release/baselab-engine golden check fixtures/golden/cases.jsonl fixtures/golden/expected.jsonl
 /tmp/clash-target-rm1/release/baselab-engine guardian-check
 /tmp/clash-target-rm1/release/examples/mechanics_proof > /tmp/rm1-release-evidence.json
-cmp rust/fixtures/mechanics/evidence.json /tmp/rm1-release-evidence.json
+cmp fixtures/mechanics/evidence.json /tmp/rm1-release-evidence.json
 ```
 
 Results:

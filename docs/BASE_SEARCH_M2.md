@@ -57,7 +57,7 @@ Run in WSL, using only installed Rust tools:
 . ~/.cargo/env
 export CARGO_TARGET_DIR=/tmp/clash-target-bs
 export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
-cargo build --release --manifest-path rust/Cargo.toml --bin baselab-engine
+cargo build --release --manifest-path Cargo.toml --bin baselab-engine
 /tmp/clash-target-bs/release/baselab-engine basesearch-proof . /tmp/basesearch-m2-proof.json 2048
 rust/verify.sh /tmp/clash-target-bs
 ```

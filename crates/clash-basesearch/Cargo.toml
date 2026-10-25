@@ -1,0 +1,13 @@
+[package]
+name = "clash-basesearch"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+clash-data.workspace = true
+clash-layout.workspace = true
+clash-engine.workspace = true

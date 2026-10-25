@@ -137,15 +137,15 @@ From the repository root in WSL:
 . ~/.cargo/env
 export CARGO_TARGET_DIR=/tmp/clash-target
 export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
-cargo build --release --offline --manifest-path rust/Cargo.toml
+cargo build --release --offline --manifest-path Cargo.toml
 /tmp/clash-target/release/baselab-engine layout import-rules "$PWD" /tmp/base-rules-regenerated.json
 cmp rust/data/base_rules.json /tmp/base-rules-regenerated.json
 /tmp/clash-target/release/baselab-engine layout proof "$PWD" /tmp/layout-proof-final.json
 /tmp/clash-target/release/baselab-engine layout check rust/data/base_rules.json rust/data/target18.json
 /tmp/clash-target/release/baselab-engine layout roundtrip rust/data/target18.json /tmp/layout-export.json
-/tmp/clash-target/release/baselab-engine golden check rust/golden/cases.jsonl rust/golden/expected.jsonl --threads 16
+/tmp/clash-target/release/baselab-engine golden check fixtures/golden/cases.jsonl fixtures/golden/expected.jsonl --threads 16
 /tmp/clash-target/release/baselab-engine armysearch-proof --root "$PWD" --catalog "$BASELAB_CATALOG" --out /tmp/layout-armysearch-proof
-cargo fmt --manifest-path rust/Cargo.toml -- --check
+cargo fmt --manifest-path Cargo.toml -- --check
 ```
 
 Current unchanged SHA-256 identities:

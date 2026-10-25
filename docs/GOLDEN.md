@@ -3,7 +3,7 @@
 The original G1 oracle was the engine at `python-frozen`, commit
 `d774e17498a2f753aa05a094db67e5d2d1cb89ac`. Python/Rust setup and trace parity
 stages 1–9 passed 868/868 at that commit. G2 replaces platform C-runtime maths
-with fixed musl algorithms in `rust/src/detmath.rs` and re-records the Rust
+with fixed musl algorithms in `crates/clash-engine/src/detmath.rs` and re-records the Rust
 oracle in WSL. **Windows must now reproduce these expectations bit-exactly.**
 Python is frozen and is no longer a parity target. This suite runs Rust alone;
 it does not import Python, regenerate Python expectations, install crates, or
@@ -20,18 +20,32 @@ included.
 
 ## Run
 
+The G1/G2 workspace relocation preserves all three golden files byte-for-byte.
+Frozen SHA-256 values and before/after checks are recorded in
+[RESTRUCTURE_LOG.md](RESTRUCTURE_LOG.md). Runtime catalog and rules paths remain
+under `rust/data/`; source data under `data/` is unchanged. This relocation does
+not authorize recording new expectations.
+
 From the repository root in WSL:
 
 ```sh
 . ~/.cargo/env
-export CARGO_TARGET_DIR=/tmp/clash-target
+export CARGO_TARGET_DIR=/tmp/clash-target-ws
 export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
-cargo build --release --offline --manifest-path rust/Cargo.toml
-/tmp/clash-target/release/baselab-engine golden check rust/golden/cases.jsonl rust/golden/expected.jsonl --threads 16
+cargo build --workspace --all-targets --release --locked --offline --manifest-path Cargo.toml
+/tmp/clash-target-ws/release/clash golden check fixtures/golden/cases.jsonl fixtures/golden/expected.jsonl --threads 16
+/tmp/clash-target-ws/release/clash golden plans check fixtures/golden/plans.jsonl --root "$PWD"
+scripts/verify.sh /tmp/clash-target-ws
 ```
 
-On Windows, use the same arguments with `rust/target/release/baselab-engine.exe`
-after `cargo build --release --offline --manifest-path rust/Cargo.toml`. Set
+Outside the checkout, use absolute fixture paths and pass an absolute `--root`
+for plan checks. `BASELAB_CATALOG` selects the catalog explicitly. The gate runs
+both one-worker and four-worker battle checks against the same expected bytes,
+then plan, guardian, armysearch, layout, M2 and video checks. The
+`baselab-engine` compatibility binary accepts the same golden arguments.
+
+On Windows, use the same arguments with `target/release/clash.exe`
+after `cargo build --workspace --all-targets --release --locked --offline --manifest-path Cargo.toml`. Set
 `BASELAB_CATALOG` to the absolute path of `rust/data/catalog.json` if the binary
 or target directory has moved. The engine remains std-only. The current G2
 expectations were recorded and checked in WSL. Windows verification is pending
@@ -47,7 +61,7 @@ files, duplicate IDs, and a changed expected ID list/order fail the check.
 
 ## What is frozen
 
-`rust/golden/cases.jsonl` contains one self-contained object per line:
+`fixtures/golden/cases.jsonl` contains one self-contained object per line:
 
 ```json
 {"id":"my-synthetic-case","synthetic":true,"layout":{},"plan":{},"options":{"seed":123,"town_hall":18}}
@@ -118,11 +132,11 @@ needed. No full trace files or diagnostic sidecars need to be committed.
 2. Record to a temporary file with the intended engine:
 
    ```sh
-   /tmp/clash-target/release/baselab-engine golden record rust/golden/cases.jsonl /tmp/expected-next.jsonl --threads 16
-   /tmp/clash-target/release/baselab-engine golden check rust/golden/cases.jsonl /tmp/expected-next.jsonl --threads 1
-   /tmp/clash-target/release/baselab-engine golden check rust/golden/cases.jsonl /tmp/expected-next.jsonl --threads 16
-   cp /tmp/expected-next.jsonl rust/golden/expected.jsonl
-   cargo fmt --manifest-path rust/Cargo.toml -- --check
+   /tmp/clash-target-ws/release/clash golden record fixtures/golden/cases.jsonl /tmp/expected-next.jsonl --threads 16
+   /tmp/clash-target-ws/release/clash golden check fixtures/golden/cases.jsonl /tmp/expected-next.jsonl --threads 1
+   /tmp/clash-target-ws/release/clash golden check fixtures/golden/cases.jsonl /tmp/expected-next.jsonl --threads 16
+   cp /tmp/expected-next.jsonl fixtures/golden/expected.jsonl
+   cargo fmt --manifest-path Cargo.toml --all -- --check
    ```
 
 3. Commit the engine/fixture change together with the new expectations. Include
@@ -130,7 +144,7 @@ needed. No full trace files or diagnostic sidecars need to be committed.
    along with the source/evidence for mechanics changes. A list of changed
    IDs alone is insufficient. Do not silently bless an unexplained new hash.
 
-`golden record rust/golden/cases.jsonl rust/golden/expected.jsonl` also works
+`golden record fixtures/golden/cases.jsonl fixtures/golden/expected.jsonl` also works
 directly. Recording leaves an existing expected file alone if any battle fails;
 it refuses to overwrite the case file itself.
 
@@ -140,7 +154,7 @@ Create a declared synthetic layout and compile a plan entirely in Rust, for
 example:
 
 ```sh
-/tmp/clash-target/release/baselab-engine compile meta:mass-dragons-18-1 0.0 123 /tmp/plan.json --root "$PWD"
+/tmp/clash-target-ws/release/clash compile meta:mass-dragons-18-1 0.0 123 /tmp/plan.json --root "$PWD"
 ```
 
 Choose a build ID from the tracked army library (or pass a synthetic
@@ -162,7 +176,7 @@ $row = [ordered]@{
     options = [ordered]@{ seed = 123; town_hall = 18 }
 }
 $line = $row | ConvertTo-Json -Depth 100 -Compress
-$path = Join-Path $PWD 'rust/golden/cases.jsonl'
+$path = Join-Path $PWD 'fixtures/golden/cases.jsonl'
 [System.IO.File]::AppendAllText($path, $line + "`n", [System.Text.UTF8Encoding]::new($false))
 ```
 
@@ -414,7 +428,7 @@ establish that the new complete traces match the old Windows traces.
 | Rebuilt binary, installed recording | 868/868 | 16 | 5.261 |
 
 After these checks, the temporary recording replaces
-`rust/golden/expected.jsonl`. The fixture file and catalog keep their G1
+`fixtures/golden/expected.jsonl`. The fixture file and catalog keep their G1
 SHA-256 values. Current expectation SHA-256:
 
 `7bcf0c5f160aa1e98cbc7a76f9947fae9eb089cce1020cd7553f392565e1bbd5`.
@@ -510,7 +524,7 @@ and `-1.json` already failed baseline coverage because the current library inclu
 `custom:user-rr-oct25`, which those references omit.
 
 `compile-check` now defaults to the Rust compiled-plan oracle in
-`rust/golden/plans.jsonl`. Explicit `--reference FILE` comparisons remain available
+`fixtures/golden/plans.jsonl`. Explicit `--reference FILE` comparisons remain available
 for historical saved references; only an explicit `--python` requests the legacy
 Python exporter. Normal checking never starts Python.
 
@@ -528,15 +542,15 @@ From the repository root, using the PB1a WSL binary and absolute catalog path:
 . ~/.cargo/env
 export CARGO_TARGET_DIR=/tmp/clash-target-pb
 export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
-cargo build --release --offline --manifest-path rust/Cargo.toml
-/tmp/clash-target-pb/release/baselab-engine golden plans check rust/golden/plans.jsonl
+cargo build --workspace --all-targets --release --locked --offline --manifest-path Cargo.toml
+/tmp/clash-target-pb/release/clash golden plans check fixtures/golden/plans.jsonl
 cd rust
-/tmp/clash-target-pb/release/baselab-engine compile-check --playbooks 1
-/tmp/clash-target-pb/release/baselab-engine compile-check --playbooks 0
+/tmp/clash-target-pb/release/clash compile-check --playbooks 1
+/tmp/clash-target-pb/release/clash compile-check --playbooks 0
 ```
 
 After reviewing an intentional compiler or library change, record with
-`baselab-engine golden plans record rust/golden/plans.jsonl` from the repository
+`clash golden plans record fixtures/golden/plans.jsonl` from the repository
 root, then check both modes. Plan recording writes through a temporary file.
 The plan snapshot includes the concurrently corrected PB2 library; PB1a does not
 edit those source data files.

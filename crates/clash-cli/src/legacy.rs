@@ -1,0 +1,132 @@
+//! CLI for prepared jobs and reference battle exports; battle.py is the reference.
+
+use std::env;
+use std::fs::File;
+use std::io::{BufWriter, Write};
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::Instant;
+
+use crate::catalog::Catalog;
+use crate::{jobs, json, load, stats, trace};
+
+fn catalog_path() -> Result<PathBuf, String> {
+    if let Some(path) = env::var_os("BASELAB_CATALOG") {
+        return Ok(PathBuf::from(path));
+    }
+    Ok(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../rust/data/catalog.json"))
+}
+
+pub fn run(arguments: Vec<std::ffi::OsString>) -> Result<(), String> {
+    let mut args = arguments.into_iter();
+    let usage = "usage: baselab-engine trace <battle.json> <trace.txt> | run <battle.json>... | stats-check <cases.json> | setup-check <battle.json> <job.json> | trace-job <jobs.json> <k> <trace.txt> | jobs <jobs.json> <results.jsonl> [--threads N] | bench-runner <jobs.json> [--threads N] | golden record|check <cases.jsonl> <expected.jsonl> [--threads N] | golden plans record|check [plans.jsonl] [--root ROOT] | guardian-check";
+    let command = args.next().ok_or(usage)?;
+    let paths: Vec<PathBuf> = args.map(PathBuf::from).collect();
+    let command = command.to_str().ok_or(usage)?;
+    if command == "basesearch-proof" {
+        let catalog_path = catalog_path()?;
+        let catalog = Arc::new(Catalog::load(&catalog_path)?);
+        return crate::basesearch::proof::command(&paths, catalog, &catalog_path);
+    }
+    if command == "layout" {
+        let catalog_path = catalog_path()?;
+        let catalog = Arc::new(Catalog::load(&catalog_path)?);
+        return crate::layout_cli::command(&paths, catalog, &catalog_path);
+    }
+    if command == "golden" {
+        let catalog = Arc::new(Catalog::load(&catalog_path()?)?);
+        return crate::golden::command(&paths, catalog);
+    }
+    if matches!(command, "armysearch" | "armysearch-proof") {
+        let mut search_args = vec![PathBuf::from(command)];
+        search_args.extend(paths);
+        return crate::armysearch::main(&search_args);
+    }
+    if matches!(command, "score" | "score-check") {
+        let mut score_args = vec![PathBuf::from(command)];
+        score_args.extend(paths);
+        return crate::score_cli::main(&score_args);
+    }
+    if matches!(command, "compile" | "compile-check") {
+        let mut compile_args = vec![PathBuf::from(command)];
+        compile_args.extend(paths);
+        return crate::compile_cli::main(&compile_args);
+    }
+    if command == "guardian-check" && paths.is_empty() {
+        let catalog = Arc::new(Catalog::load(&catalog_path()?)?);
+        return crate::heroes::guardian_check(catalog);
+    }
+    if command == "stats-check" && paths.len() == 1 {
+        return stats_check(&paths[0]);
+    }
+    if matches!(
+        command,
+        "setup-check" | "trace-job" | "jobs" | "bench-runner"
+    ) {
+        let catalog = Arc::new(Catalog::load(&catalog_path()?)?);
+        return jobs::command(command, &paths, catalog);
+    }
+    if !matches!(command, "trace" | "run")
+        || paths.is_empty()
+        || command == "trace" && paths.len() != 2
+    {
+        return Err(usage.to_owned());
+    }
+    let catalog = Arc::new(Catalog::load(&catalog_path()?)?);
+    if command == "trace" {
+        let mut battle = load::load(&paths[0], catalog)?;
+        let file =
+            File::create(&paths[1]).map_err(|error| format!("{}: {error}", paths[1].display()))?;
+        let mut out = BufWriter::new(file);
+        trace::write_trace(&mut battle, &mut out)
+            .map_err(|error| format!("{}: {error}", paths[1].display()))?;
+        out.flush()
+            .map_err(|error| format!("{}: {error}", paths[1].display()))?;
+        return Ok(());
+    }
+    let mut total_ms = 0.0;
+    for path in &paths {
+        let mut battle = load::load(path, Arc::clone(&catalog))?;
+        let started = Instant::now();
+        let result = battle.run();
+        let milliseconds = started.elapsed().as_secs_f64() * 1000.0;
+        total_ms += milliseconds;
+        println!(
+            "{} stars={} destruction={} time={} ms_per_battle={:.3}",
+            path.display(),
+            result.stars,
+            result.destruction,
+            trace::py_float_repr(result.time),
+            milliseconds,
+        );
+    }
+    println!(
+        "battles={} ms_per_battle={:.3}",
+        paths.len(),
+        total_ms / paths.len() as f64,
+    );
+    Ok(())
+}
+
+/// stats.get over [name, level, [keys...], default] cases (written by
+/// rust_export.py stats-check): one line per case, the result's bits or None.
+fn stats_check(path: &PathBuf) -> Result<(), String> {
+    let catalog = Catalog::load(&catalog_path()?)?;
+    let text = std::fs::read_to_string(path).map_err(|error| error.to_string())?;
+    let cases = json::parse(&text).map_err(|error| error.to_string())?;
+    let mut out = String::new();
+    for case in cases.arr() {
+        let case = case.arr();
+        let level = stats::Level::from_json(&case[1]);
+        let keys: Vec<&str> = case[2].arr().iter().map(|k| k.str()).collect();
+        let value = catalog
+            .stats
+            .get(case[0].str(), &level, &keys, case[3].opt_f64());
+        match value {
+            Some(v) => out.push_str(&format!("{:016x}\n", v.to_bits())),
+            None => out.push_str("None\n"),
+        }
+    }
+    print!("{out}");
+    Ok(())
+}

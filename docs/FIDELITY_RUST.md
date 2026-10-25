@@ -12,7 +12,7 @@ Build from the repository root:
 
 ```sh
 CARGO_TARGET_DIR=/tmp/clash-rf1-target cargo build \
-  --manifest-path rust/Cargo.toml --offline --release --bin fidelity
+  --manifest-path Cargo.toml --offline --release --bin fidelity
 F=/tmp/clash-rf1-target/release/fidelity
 ```
 

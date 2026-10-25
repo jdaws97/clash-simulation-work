@@ -143,14 +143,14 @@ certify exact continuation. Freeze finalists/order/attacks before final data.
 ## Ownership and exit gates
 
 Layout owner: `rust/src/layout/**`, `rust/data/base_rules.json`, small
-`rust/fixtures/layout/**`. For M0/M1 the layout owner is integration lead for
+`fixtures/layout/**`. For M0/M1 the layout owner is integration lead for
 the narrow lib/main declarations, setup fallible-content call and scoring
 geometry adapter. Preserve all other writers' work. `rust/vidmine/**` belongs
 to its existing writer. Read-only reviewers do not gain write ownership.
 Future owners use the design's disjoint proposal/evaluation/search/oracle/
 reporting modules; shared-engine edits require integration coordination.
 
-Acceptance fixtures: `rust/fixtures/layout/{inventory,admission,geometry}.json`.
+Acceptance fixtures: `fixtures/layout/{inventory,admission,geometry}.json`.
 The Rust `layout proof` gate checks data regeneration, count snapshots,
 structured boundary verdicts, full synthetic packings, geometry, committed
 reference corpus, 100,000 deterministic mutations (every acceptance builds

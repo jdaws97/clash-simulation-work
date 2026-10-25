@@ -1,0 +1,23 @@
+[package]
+name = "clash-cli"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+clash-data.workspace = true
+clash-layout.workspace = true
+clash-engine.workspace = true
+clash-plans.workspace = true
+clash-scoring.workspace = true
+clash-armysearch.workspace = true
+clash-basesearch.workspace = true
+clash-fidelity.workspace = true
+clash-vidmine.workspace = true
+
+[[bin]]
+name = "clash"
+path = "src/main.rs"

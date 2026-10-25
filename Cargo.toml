@@ -1,0 +1,41 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/clash-data",
+    "crates/clash-layout",
+    "crates/clash-engine",
+    "crates/clash-plans",
+    "crates/clash-scoring",
+    "crates/clash-armysearch",
+    "crates/clash-basesearch",
+    "crates/clash-fidelity",
+    "crates/clash-vidmine",
+    "crates/clash-cli",
+]
+default-members = ["crates/clash-cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.dependencies]
+clash-data = { path = "crates/clash-data" }
+clash-layout = { path = "crates/clash-layout" }
+clash-engine = { path = "crates/clash-engine" }
+clash-plans = { path = "crates/clash-plans" }
+clash-scoring = { path = "crates/clash-scoring" }
+clash-armysearch = { path = "crates/clash-armysearch" }
+clash-basesearch = { path = "crates/clash-basesearch" }
+clash-fidelity = { path = "crates/clash-fidelity" }
+clash-vidmine = { path = "crates/clash-vidmine" }
+clash-cli = { path = "crates/clash-cli" }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "unwind"

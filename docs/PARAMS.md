@@ -138,7 +138,7 @@ Regenerate this table with the existing WSL toolchain (no installation):
 . ~/.cargo/env
 export CARGO_TARGET_DIR=/tmp/clash-target-rm1
 export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
-cargo run --manifest-path rust/Cargo.toml --example mechanics_proof -- params
+cargo run --manifest-path Cargo.toml -p clash-engine --example mechanics_proof -- params
 ```
 
 | Name | Default | Provenance | Unit | Meaning |

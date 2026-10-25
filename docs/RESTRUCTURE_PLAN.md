@@ -1,6 +1,23 @@
+G1/G2 status (2026-10-25): the root workspace now contains the ten requested
+crates and one `clash` CLI, with thin compatibility binaries. Source and shared
+fixtures have moved; `data/` and `rust/data/` remain in place. The strict offline
+gate is `scripts/verify.sh`, also reached through `rust/verify.sh`.
+See [RESTRUCTURE_LOG.md](RESTRUCTURE_LOG.md) for every moved file, helper
+extractions, frozen hashes and acceptance evidence. Clippy is absent from the
+installed WSL toolchain and is reported without downloading it.
+
+The inventory and target below are the original plan. G0's writers are merged
+at `24d25e7`; the current base-search and video union was used for G2. G3–G5,
+including Python ports/deletions, new dataimport/playbook tool crates, data
+reorganization, exact toolchain provisioning and Windows acceptance, remain
+later work. The rule importer is temporarily CLI-owned and generic snapshot
+readers are data-owned, so those future tool crates are not engine dependencies.
+
 Recommend a Cargo workspace with **five reusable libraries, six tool libraries, and one `clash` CLI**. Keep the attacker executor inside the simulation engine; move army composition and playbook fitting into `clash-plans`. Introduce `clash-data` to break the catalog/layout/runtime dependency cycle.
 
-This is a read-only plan based on the current checkout and both worktrees. No files, downloads, builds, or tests were performed. The inventory covers:
+The original read-only planning inventory used the checkout and both worktrees;
+no files, downloads, builds, or tests were performed during that planning pass.
+It covers:
 
 - **85** files under the main `rust/src`.
 - **12** additional base-search files in `../clash-lab-bs`.

@@ -23,34 +23,46 @@ changes the result. It is not a verified game mechanic. See
 
 For practical starting layouts and loadouts, see the [TH16 account-matched guide](docs/TH16_USE_NOW_GUIDE.md). It includes the approved recorded game levels, distinguishes creator recipes from untested adaptations, and checks housing against the pinned catalog. These recommendations are not simulator-validated rankings.
 
-Python 3.10 or newer is required. Runtime code uses the standard library; no
-account login, game process, network connection, or private player file is
-required for the portable suite. Run from the source checkout:
+Build the native Rust workspace offline in WSL with the installed toolchain:
 
-```console
-python -B verify.py
-python -B run.py --data data --output reports/catalog-audit.json audit
-python -B tools/run_full_army_regression.py
+```sh
+. ~/.cargo/env
+export CARGO_TARGET_DIR=/tmp/clash-target-ws
+cargo build --workspace --all-targets --release --locked --offline
+export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
+/tmp/clash-target-ws/release/clash --help
+scripts/verify.sh
 ```
 
-The combined-army runner repeats one 16-second synthetic lifecycle scenario and
-prints input, source, outcome, event, and resource fingerprints. It checks
-reproducibility and ownership; its distant single-target layout is not an
-army-strength benchmark. Complete-village builders are development tools and
-can encounter explicitly unsupported mechanics or numerical policies.
+The workspace uses only the Rust standard library. Its libraries live under
+`crates/`; `clash-engine` depends only on `clash-data` and `clash-layout`.
+The compiler, scoring, searches, fidelity and video tools have separate crates.
+`clash` accepts all former engine subcommands, plus `clash fidelity ...` and
+`clash video ...`. Compatibility binaries `baselab-engine`, `fidelity` and
+`vidmine` retain their arguments. Video processing still requires explicitly
+installed FFmpeg/FFprobe; its synthetic verification tests require no media.
 
-The suite uses a declared synthetic account and evidence fixtures. To verify
-the preserved private replay checkpoint separately, use
-`python -B verify.py --private-root PATH_TO_PRIVATE_CHECKPOINT`. This is optional,
-is never silently included in the portable result, and does not calibrate combat.
+`scripts/verify.sh` checks formatting, builds and tests every workspace target,
+then runs battle and plan goldens, guardian fixtures and native search/layout
+proofs. It never downloads components or regenerates fixtures. Clippy is strict
+when clean, otherwise advisory; a missing local component is reported.
+The script and its `rust/verify.sh` compatibility wrapper work from any directory:
 
-CI runs the portable suite and CLI on Ubuntu and Windows with Python 3.10 and
-3.12, plus Black 24.10.0. Formatting locally:
-
-```console
-python -m pip install black==24.10.0
-python -m black --check --workers 1 .
+```sh
+cd /tmp
+/absolute/path/to/clash-lab/scripts/verify.sh /tmp/clash-target-ws
 ```
+
+Shared regression inputs are under `fixtures/`. The pinned runtime catalog,
+rules and castle table stay at `rust/data/` during this migration; `data/` has
+not been reorganized. Set `BASELAB_CATALOG` to an explicit absolute path when
+selecting a catalog, and pass `--root` to compiler/search/fidelity commands
+outside the checkout. Account, calibration and observation defaults are
+unchanged; select private inputs explicitly for personal workflows.
+
+Python under `src/` and `tools/` is frozen for later capability ports and cleanup.
+The current native gate runs Rust only. See [the workspace migration record](docs/RESTRUCTURE_LOG.md)
+and [Rust runtime contract](docs/RUST_PORT.md) for scope and verification evidence.
 
 See [engine status and completion criteria](docs/ENGINE_STATUS.md),
 [working rules](AGENTS.md), and [third-party notices](THIRD_PARTY.md). Personal
