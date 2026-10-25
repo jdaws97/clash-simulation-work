@@ -273,6 +273,9 @@ pub fn wall_breaker_target(battle: &mut Battle, unit: UnitRef) -> Option<WallId>
 
 // units.py:166-221: equal scores use buildings before walls, then entity ID.
 pub fn follow_target(battle: &mut Battle, unit: UnitRef) -> Option<EntityRef> {
+    if battle.params.warden_spatial {
+        return battle.spatial_follow_target(unit).0;
+    }
     let mut scores = std::mem::take(&mut battle.follow_scores_scratch);
     scores.clear();
     let target = follow_target_with_scores(battle, unit, &mut scores);
@@ -290,9 +293,12 @@ fn follow_target_with_scores(
     let table = ww.at("weights");
     let u = battle.unit(unit);
     let (radius, threshold) = if u.name_id == Name::ApprenticeWarden {
-        (13.0, 10.0)
+        (
+            battle.params.apprentice_radius,
+            battle.params.apprentice_min_weight,
+        )
     } else {
-        (ww.at("vision_radius").f64(), ww.at("threshold").f64())
+        (battle.params.warden_radius, battle.params.warden_min_weight)
     };
     let mut total_weight = 0.0;
     for ally in battle.attackers_near_iter(u.x, u.y, radius) {
@@ -2133,10 +2139,11 @@ pub fn attack_ready(battle: &mut Battle, unit: UnitRef, target: EntityRef) -> bo
         return true;
     }
     let t = battle.t;
+    let delay = battle.params.mite_attack_windup;
     let u = battle.unit_mut(unit);
     if u.extra.attack_target != Some(target) {
         u.extra.attack_target = Some(target);
-        u.extra.attack_ready_at = t + 0.5;
+        u.extra.attack_ready_at = t + delay;
     }
     t >= u.extra.attack_ready_at
 }
@@ -2167,7 +2174,7 @@ pub fn target_distance(battle: &Battle, origin: EntityRef, target: EntityRef) ->
 
 // units.py:1267-1291: Python exports the CSV-derived cache into the catalog.
 pub fn new_target_delays(battle: &Battle) -> &HashMap<String, f64> {
-    &battle.catalog.new_target_delays
+    &battle.params.new_target_delays
 }
 
 // units.py:1649-1675: selection wait and the first-hit minimum on arrival.
@@ -2196,9 +2203,9 @@ pub fn new_target_windup(battle: &mut Battle, unit: UnitRef, target: EntityRef) 
     }
     if killed_delay == 0.0 && explicit_delay.is_none() {
         if u.name_id == Name::Dragon {
-            delay = 0.75;
+            delay = battle.params.dragon_arrival_windup;
         } else if range < 1.0 {
-            delay = delay.min(0.33);
+            delay = delay.min(battle.params.melee_arrival_windup);
         }
     }
     battle.unit_mut(unit).extra.arrival_windup = delay;
@@ -3718,12 +3725,12 @@ pub fn heal_effectiveness(battle: &mut Battle, healer: UnitRef, recipient: UnitR
 }
 
 // units.py:2708-2717: housing is nonnegative; stop once the group exceeds two.
-fn healer_grouped(target: &Unit, weighted: &[(f64, f64, i64)], radius: f64) -> bool {
-    let mut weight = 0;
+fn healer_grouped(target: &Unit, weighted: &[(f64, f64, f64)], radius: f64, minimum: f64) -> bool {
+    let mut weight = 0.0;
     for &(x, y, housing) in weighted {
         if geom::dist(target.x, target.y, x, y) <= radius {
             weight += housing;
-            if weight > 2 {
+            if weight > minimum {
                 return true;
             }
         }
@@ -3768,6 +3775,11 @@ fn act_healer_with_scratch(
         return;
     }
     let sp = Arc::clone(&battle.unit(unit).spec);
+    let splash = if battle.unit(unit).name_id == Name::Healer {
+        battle.params.healer_group_radius
+    } else {
+        sp.splash
+    };
     if unit.team == Team::Atk {
         allies.extend(battle.attackers_pool().map(Unit::reference));
     } else {
@@ -3787,11 +3799,26 @@ fn act_healer_with_scratch(
                 .filter(|ally| heal_eligible(battle, unit, *ally, false))
                 .map(|ally| {
                     let a = battle.unit(ally);
-                    (a.x, a.y, if a.is_hero { 25 } else { a.housing })
+                    (
+                        a.x,
+                        a.y,
+                        if a.is_hero {
+                            battle.params.healer_hero_weight
+                        } else {
+                            a.housing as f64
+                        },
+                    )
                 }),
         );
         if heal_ready {
-            eligible.retain(|target| healer_grouped(battle.unit(*target), weighted, sp.splash));
+            eligible.retain(|target| {
+                healer_grouped(
+                    battle.unit(*target),
+                    weighted,
+                    battle.params.healer_group_radius,
+                    battle.params.healer_group_min_housing,
+                )
+            });
         } else {
             let u = battle.unit(unit);
             let current = match u.target {
@@ -3800,7 +3827,12 @@ fn act_healer_with_scratch(
             };
             let mut target = [u.follow, current].into_iter().flatten().find(|candidate| {
                 eligible.contains(candidate)
-                    && healer_grouped(battle.unit(*candidate), weighted, sp.splash)
+                    && healer_grouped(
+                        battle.unit(*candidate),
+                        weighted,
+                        battle.params.healer_group_radius,
+                        battle.params.healer_group_min_housing,
+                    )
             });
             if target.is_none() {
                 if unit.team == Team::Def {
@@ -3814,10 +3846,14 @@ fn act_healer_with_scratch(
                     let b = battle.unit(*b);
                     geom::dist(u.x, u.y, a.x, a.y).total_cmp(&geom::dist(u.x, u.y, b.x, b.y))
                 });
-                target = eligible
-                    .iter()
-                    .copied()
-                    .find(|candidate| healer_grouped(battle.unit(*candidate), weighted, sp.splash));
+                target = eligible.iter().copied().find(|candidate| {
+                    healer_grouped(
+                        battle.unit(*candidate),
+                        weighted,
+                        battle.params.healer_group_radius,
+                        battle.params.healer_group_min_housing,
+                    )
+                });
             }
             eligible.clear();
             eligible.extend(target);
@@ -3861,7 +3897,7 @@ fn act_healer_with_scratch(
         recipients.extend(allies.iter().copied().filter(|ally| {
             let ally_unit = battle.unit(*ally);
             heal_eligible(battle, unit, *ally, false)
-                && geom::dist(a.x, a.y, ally_unit.x, ally_unit.y) <= sp.splash
+                && geom::dist(a.x, a.y, ally_unit.x, ally_unit.y) <= splash
         }));
     } else {
         recipients.push(target);
@@ -3929,13 +3965,15 @@ fn act_healer_with_scratch(
     let druid = u.name_id == Name::Druid;
     let source = u.source.clone();
     let target_unit = battle.unit(target);
-    let mut flight = geom::dist(u.x, u.y, target_unit.x, target_unit.y) / 12.0;
+    let mut flight =
+        geom::dist(u.x, u.y, target_unit.x, target_unit.y) / battle.params.healer_projectile_speed;
     let mut previous = target;
     for (index, ally) in recipients.iter().copied().enumerate() {
         let a = battle.unit(ally);
         if druid && index != 0 {
             let previous = battle.unit(previous);
-            flight += geom::dist(previous.x, previous.y, a.x, a.y) / 12.0;
+            flight += geom::dist(previous.x, previous.y, a.x, a.y)
+                / battle.params.healer_projectile_speed;
         }
         previous = ally;
         let amount = (if a.is_hero { hero_rate } else { rate }) * boost * effectiveness[index];

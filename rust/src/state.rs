@@ -1437,12 +1437,14 @@ pub struct PoisonState {
 pub struct HealerScratch {
     pub allies: Vec<UnitRef>,
     pub eligible: Vec<UnitRef>,
-    pub weighted: Vec<(f64, f64, i64)>,
+    pub weighted: Vec<(f64, f64, f64)>,
     pub recipients: Vec<UnitRef>,
     pub effectiveness: Vec<f64>,
 }
 
 pub struct Battle {
+    pub params: crate::params::Params,
+    pub target_memory: crate::fast_hash::FastMap<UnitRef, crate::targeting::TargetMemory>,
     pub cluster_cache: crate::plans::ClusterCache,
     pub opening_reachable: Option<Vec<bool>>,
     pub follow_scores_scratch: Vec<(EntityRef, f64)>,

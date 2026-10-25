@@ -11,6 +11,10 @@ path = "src/lib.rs"
 name = "baselab-engine"
 path = "src/main.rs"
 
+[[bin]]
+name = "fidelity"
+path = "src/fidelity/main.rs"
+
 [profile.release]
 opt-level = 3
 lto = "fat"

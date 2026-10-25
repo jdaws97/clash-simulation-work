@@ -976,13 +976,18 @@ impl AttackPlan {
         if !self.auto_revive {
             return;
         }
+        let delay = if self.revive_delay == 1.5 {
+            battle.params.revive_delay
+        } else {
+            self.revive_delay
+        };
         let heroes: Vec<_> = battle.attackers_pool().map(Unit::reference).collect();
         for reference in heroes {
             let hero = battle.unit(reference);
             if !hero.alive
                 && hero.extra.revivable
                 && have(self, "revive")
-                && battle.t >= hero.extra.ko_at.expect("KO time") + self.revive_delay
+                && battle.t >= hero.extra.ko_at.expect("KO time") + delay
             {
                 let (x, y) = (hero.x, hero.y);
                 self.use_spell(battle, "revive", x, y);
@@ -1072,7 +1077,7 @@ impl AttackPlan {
         let center = battle.catalog.world as f64 / 2.0;
         let mut nearest = None;
         let mut distance = 1e9;
-        for building in &battle.buildings {
+        for building in battle.visible_buildings() {
             if building.alive && building.counted {
                 let d = building.edge_distance(x, y);
                 if d < distance {
@@ -1142,7 +1147,7 @@ impl AttackPlan {
         let pi = std::f64::consts::PI;
         let angle = py_atan2(default.1 - center, default.0 - center);
         let mut target: Option<(f64, f64, f64, f64)> = None;
-        for b in &battle.buildings {
+        for b in battle.visible_buildings() {
             if !b.alive || b.weapon.is_none() || threat(&b.key, 0.0) < 5.0 {
                 continue;
             }
@@ -1175,8 +1180,7 @@ impl AttackPlan {
     fn funnel_progress(&self, battle: &mut Battle) -> usize {
         let (x, y) = edge_point(battle, self.angle, 0.0);
         battle
-            .buildings
-            .iter()
+            .visible_buildings()
             .filter(|b| !b.alive && b.counted && py_hypot(b.x - x, b.y - y) < 10.0)
             .count()
     }
@@ -1226,7 +1230,15 @@ impl AttackPlan {
             if self.snipe_deployed.contains(hero) {
                 continue;
             }
-            self.drop_at(battle, hero, ex, ey, "main", 0.5, available);
+            self.drop_at(
+                battle,
+                hero,
+                ex,
+                ey,
+                "main",
+                battle.params.hero_jitter,
+                available,
+            );
             available += action_time(battle, Action::Deploy, 1);
         }
         self.busy_until = available;
@@ -1249,7 +1261,7 @@ impl AttackPlan {
         let hero = battle.unit(reference);
         let frac = hero.hp / 1.0_f64.max(hero.max_hp);
         let (x, y, invisible_until) = (hero.x, hero.y, hero.invisible_until);
-        let locked = battle.buildings.iter().any(|b| {
+        let locked = battle.visible_buildings().any(|b| {
             b.alive
                 && b.weapon
                     .as_ref()
@@ -1370,8 +1382,7 @@ impl AttackPlan {
         if !self.lured && self.p("lure_time") >= 0.0 && t >= self.p("lure_time") {
             self.lured = true;
             let cc = battle
-                .buildings
-                .iter()
+                .visible_buildings()
                 .find(|b| b.key == "cc" && b.alive)
                 .map(|b| (b.x, b.y));
             if let Some((x, y)) = cc {
@@ -1383,7 +1394,7 @@ impl AttackPlan {
             }
         }
         if t >= self.next_brain && t >= self.busy_until {
-            self.next_brain = t + 0.5;
+            self.next_brain = t + battle.params.reaction_delay;
             self.hero_abilities(battle);
             if self.charge_hero.is_some() && self.last("recall_charge") < 0.0 {
                 let charge = main_units(battle, "charge");
@@ -1420,8 +1431,7 @@ impl AttackPlan {
             centroid(battle, &army)
         };
         let mut far: Vec<_> = battle
-            .buildings
-            .iter()
+            .visible_buildings()
             .filter(|b| b.alive && b.counted)
             .map(|b| (b.x, b.y))
             .collect();
@@ -1441,7 +1451,15 @@ impl AttackPlan {
                 let target = far[k % targets];
                 self.snipe_point(battle, target.0, target.1)
             };
-            self.drop_at(battle, name, x, y, "cleanup", 0.3, started + k as f64 * tap);
+            self.drop_at(
+                battle,
+                name,
+                x,
+                y,
+                "cleanup",
+                battle.params.cleanup_jitter,
+                started + k as f64 * tap,
+            );
         }
         if !names.is_empty() {
             self.busy_until = started
@@ -1482,8 +1500,7 @@ impl AttackPlan {
                 0.0,
             );
             let n = battle
-                .buildings
-                .iter()
+                .visible_buildings()
                 .filter(|b| b.alive && b.counted && b.dist(point.0, point.1) < 11.0)
                 .count();
             if score.is_none_or(|s| n > s) {
@@ -1524,8 +1541,7 @@ impl AttackPlan {
                 if !near.is_empty() {
                     let (cx, cy) = centroid(battle, &near);
                     let work = battle
-                        .buildings
-                        .iter()
+                        .visible_buildings()
                         .any(|b| b.alive && b.counted && b.edge_distance(cx, cy) < 7.0);
                     let hurt = near
                         .iter()
@@ -1602,8 +1618,7 @@ impl AttackPlan {
         self.zap_left.get_or_insert([self.zap_ad.0, self.zap_ad.1]);
         let (ex, ey) = edge_point(battle, self.angle, 0.0);
         let mut targets: Vec<_> = battle
-            .buildings
-            .iter()
+            .visible_buildings()
             .filter(|b| {
                 b.alive
                     && b.key == "ad"
@@ -1678,7 +1693,7 @@ impl AttackPlan {
                 let safe = targets.iter().find(|target| {
                     let b = battle.building(target.id);
                     target.hp > 1e-9
-                        && battle.buildings.iter().all(|r| {
+                        && battle.visible_buildings().all(|r| {
                             !r.alive
                                 || !reserved.contains(&r.id)
                                 || r.edge_distance(b.x, b.y) > radius
@@ -1868,7 +1883,7 @@ impl AttackPlan {
             return None;
         }
         let since = self.cargo_wait_since.get_or_insert(battle.t);
-        (battle.t - *since < 30.0).then(Vec::new)
+        (battle.t - *since < battle.params.opening_hold).then(Vec::new)
     }
 
     // plans.py:1253-1351. 'have' implements PlaybookPlan's fallback reservations.
@@ -2076,8 +2091,7 @@ impl AttackPlan {
             && t - self.main_at > self.p("recall_after")
         {
             let work = battle
-                .buildings
-                .iter()
+                .visible_buildings()
                 .any(|b| b.alive && b.counted && b.edge_distance(cx, cy) < 7.0);
             if units.len() >= 6 && (!work || avg_hp < self.p("recall_hp")) {
                 self.use_spell(battle, "recall", cx, cy);
@@ -2162,8 +2176,7 @@ impl AttackPlan {
                         matches!(target, EntityRef::Building(_))
                             && !entity_is_defense(battle, target)
                     }) && battle
-                        .buildings
-                        .iter()
+                        .visible_buildings()
                         .any(|b| b.alive && b.weapon.is_some() && b.dist(u.x, u.y) < 7.0)
                 })
                 .collect();
@@ -2245,7 +2258,14 @@ impl AttackPlan {
                         break;
                     };
                     let point = self.snipe_point(battle, x, y);
-                    self.drop(battle, &name, point.0, point.1, "cleanup", 0.3);
+                    self.drop(
+                        battle,
+                        &name,
+                        point.0,
+                        point.1,
+                        "cleanup",
+                        battle.params.cleanup_jitter,
+                    );
                     self.distracts += 1;
                     self.cast_log
                         .push((round_decimal(t, 1), "distract".to_owned()));
@@ -2372,8 +2392,7 @@ pub fn totem_radius(battle: &Battle) -> f64 {
 // plans.py:888-897.
 pub fn threats_near(battle: &Battle, x: f64, y: f64, radius: f64) -> Vec<(BuildingId, f64)> {
     battle
-        .buildings
-        .iter()
+        .visible_buildings()
         .filter_map(|b| {
             if !b.alive
                 || b.weapon.is_none()

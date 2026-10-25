@@ -1,7 +1,7 @@
 //! Native evaluate.py scoring. Ordered vectors mirror Python 3.10 dictionaries
 //! and sums; plans are supplied separately so M2 can replace prepared JSON.
 
-use std::collections::{BTreeSet, HashSet, VecDeque};
+use std::collections::BTreeSet;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -1356,62 +1356,7 @@ pub fn summarise(
 // deploy.py:22-34,63-95: expand only buildings other than Teslas and walls;
 // traps do not block deployment. Flood the full margin, then count pockets.
 pub fn hole_tiles(layout: &Json, sizes: &[(String, usize)], village: i64, margin: i64) -> usize {
-    let mut occupied = HashSet::new();
-    for building in layout.at("buildings").arr() {
-        let key = building.at("key").str();
-        if key == "tesla" {
-            continue;
-        }
-        let size = sizes
-            .iter()
-            .find(|(name, _)| name == key)
-            .unwrap_or_else(|| panic!("unknown building {key}"))
-            .1 as i64;
-        let x = building.at("x").i64();
-        let y = building.at("y").i64();
-        for dx in 0..size {
-            for dy in 0..size {
-                occupied.insert((x + dx, y + dy));
-            }
-        }
-    }
-    if let Some(walls) = layout.get("walls") {
-        for wall in walls.arr() {
-            occupied.insert((wall.arr()[0].i64(), wall.arr()[1].i64()));
-        }
-    }
-    let mut blocked = HashSet::new();
-    for (x, y) in occupied {
-        for dx in -1..=1 {
-            for dy in -1..=1 {
-                blocked.insert((x + dx, y + dy));
-            }
-        }
-    }
-    let lo = -margin;
-    let hi = village + margin;
-    let mut legal = HashSet::new();
-    let mut queue = VecDeque::new();
-    for x in lo..hi {
-        for y in lo..hi {
-            if !blocked.contains(&(x, y)) {
-                legal.insert((x, y));
-                if x == lo || x == hi - 1 || y == lo || y == hi - 1 {
-                    queue.push_back((x, y));
-                }
-            }
-        }
-    }
-    let mut seen: HashSet<_> = queue.iter().copied().collect();
-    while let Some((x, y)) = queue.pop_front() {
-        for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
-            let next = (x + dx, y + dy);
-            if legal.contains(&next) && seen.insert(next) {
-                queue.push_back(next);
-            }
-        }
-    }
-    legal.len() - seen.len()
+    crate::layout::geometry::hole_tiles_json(layout, sizes, village, margin)
 }
 
 // optimize.py:42-65: destruction is a ranked tie-breaker; war prioritizes 3*.

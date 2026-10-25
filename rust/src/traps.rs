@@ -9,7 +9,6 @@ use crate::stats::{self, Level};
 use crate::trace::round_decimal;
 
 // traps.py:29-67: preserve the multiplication used to derive each fuse.
-const FRAME_S: f64 = 1.5 / 35.0;
 const NO_TRIGGER: &[Name] = &[
     Name::SpellSkeleton,
     Name::Skeleton,
@@ -170,12 +169,12 @@ pub fn tick(battle: &mut Battle) {
             }
         }
         let fuse = match trap.key.as_str() {
-            "bomb" => 35.0 * FRAME_S,
-            "giant" => 37.0 * FRAME_S,
-            "giga" => 38.0 * FRAME_S,
-            "airbomb" | "seeking" => 7.0 * FRAME_S,
-            "tornado" => 8.0 * FRAME_S,
-            "spring" => 0.3,
+            "bomb" => 35.0 * battle.params.trap_frame_seconds,
+            "giant" => 37.0 * battle.params.trap_frame_seconds,
+            "giga" => 38.0 * battle.params.trap_frame_seconds,
+            "airbomb" | "seeking" => 7.0 * battle.params.trap_frame_seconds,
+            "tornado" => 8.0 * battle.params.trap_frame_seconds,
+            "spring" => battle.params.spring_delay,
             "skeleton" => 0.6,
             other => panic!("traps.py:171 unknown trap fuse {other}"),
         };
@@ -442,9 +441,10 @@ fn fire_effect_with_pushes(
             }
             let damage = tr.damage * if special { 0.5 } else { 1.0 };
             battle.hit_unit(target, damage, Some(&src), "trap", None);
+            let stun = battle.params.spring_stun;
             let unit = battle.unit_mut(target);
             if unit.alive && !matches!(unit.kind, Tag::Siege | Tag::SiegeIdle) {
-                unit.stun_until = unit.stun_until.max(t + 1.0);
+                unit.stun_until = unit.stun_until.max(t + stun);
             }
         }
         "skeleton" => {
@@ -623,7 +623,7 @@ pub fn tornado_tick(battle: &mut Battle, field: &mut Field) {
             } else {
                 [4.0, 3.0, 2.0, 1.0, 1.0]
             };
-            let speed = force[weight - 1] * percentage;
+            let speed = force[weight - 1] * percentage * battle.params.tornado_force_scale;
             let step = (distance - 0.7).min(speed * battle.dt);
             nx = unit.x + (field.x - unit.x) / distance * step;
             ny = unit.y + (field.y - unit.y) / distance * step;

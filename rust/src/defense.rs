@@ -263,6 +263,10 @@ pub fn reveal_tesla(battle: &mut Battle, owner: BuildingId) {
     if building.revealed || !building.alive {
         return;
     }
+    if battle.params.hidden_information {
+        let (x, y, half) = (building.x, building.y, building.half_hit);
+        battle.grid.block_square(x, y, half, true);
+    }
     battle.building_mut(owner).revealed = true;
     // output/research/usage/overgrowth-spell.md:36: a covered Tesla stays untargetable.
     // https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
@@ -300,6 +304,7 @@ pub fn reveal_tesla(battle: &mut Battle, owner: BuildingId) {
         .filter(|&reference| !tesla_keeps_target(battle, reference))
         .collect();
     for reference in retarget {
+        battle.force_retarget(reference, crate::targeting::ForcedRetarget::Tesla);
         let unit = battle.unit_mut(reference);
         unit.target = None;
         unit.wall_target = None;

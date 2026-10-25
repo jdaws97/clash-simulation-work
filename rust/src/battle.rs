@@ -12,8 +12,6 @@ use crate::trace::{exported_value, round_decimal, LogValue};
 use crate::{defense, effects, geom, heroes, spells, traps, units};
 
 pub(crate) const BUCKET: f64 = 4.0;
-const SCOUT_TIME: f64 = 30.0;
-const TH_ACTIVATION_DELAY: f64 = 0.5;
 
 pub struct SpawnOptions {
     pub level: Option<Level>,
@@ -52,7 +50,7 @@ impl Battle {
                 th.weapon.is_some() && !th.extra.unavailable
             })
         {
-            self.th_on_at = Some(self.t + TH_ACTIVATION_DELAY);
+            self.th_on_at = Some(self.t + self.params.th_activation_delay);
         }
     }
 
@@ -778,8 +776,8 @@ impl Battle {
             return;
         }
         if self.scouting {
-            self.scout_time = SCOUT_TIME.min(self.scout_time + self.dt);
-            if self.scout_time >= SCOUT_TIME {
+            self.scout_time = self.params.scout_time.min(self.scout_time + self.dt);
+            if self.scout_time >= self.params.scout_time {
                 self.start_battle();
             }
             return;

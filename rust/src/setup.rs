@@ -140,6 +140,7 @@ pub fn build(
     catalog: Arc<Catalog>,
 ) -> Result<Battle, crate::content::ContentError> {
     crate::content::validate_plan(plan_json)?;
+    crate::layout::admit::validate_engine_content(layout, options, &catalog)?;
     let modifier = options
         .get("modifier")
         .and_then(Json::opt_str)
@@ -179,6 +180,8 @@ fn build_validated(
         "crafting_phase",
         "crafting_date",
         "scouting",
+        "env",
+        "params",
     ]);
     assert!(
         !catalog.setup.is_null(),
@@ -187,6 +190,8 @@ fn build_validated(
     let empty_object = Json::Obj(Vec::new());
     let empty_array = Json::Arr(Vec::new());
     let env = catalog.setup.at("env");
+    let params = crate::params::Params::resolve(&catalog, env, options)
+        .unwrap_or_else(|error| panic!("job.params: {error}"));
     let modifiers = catalog
         .setup
         .at("modifiers")
@@ -195,6 +200,7 @@ fn build_validated(
     let deployments = deployments(plan_json, catalog.margin);
     let plan = load::plan(Node::new(plan_json, "plan"), &deployments);
     let mut battle = Battle {
+        target_memory: crate::fast_hash::FastMap::default(),
         cluster_cache: crate::plans::ClusterCache::default(),
         opening_reachable: None,
         follow_scores_scratch: Vec::new(),
@@ -213,10 +219,11 @@ fn build_validated(
         catalog: Arc::clone(&catalog),
         rng: Some(PyRandom::new(integer(options, "seed", 0))),
         dt: number(env, "dt", 0.1),
-        pace: number(env, "pace", 1.0),
-        pace_tap: number(env, "pace_tap", 0.133),
-        pace_switch: number(env, "pace_switch", 0.6),
-        pace_ability: number(env, "pace_ability", 0.3),
+        pace: params.pace,
+        pace_tap: params.pace_tap,
+        pace_switch: params.pace_switch,
+        pace_ability: params.pace_ability,
+        params,
         windup: boolean(env, "windup", true),
         fast_end: boolean(env, "fast_end", false),
         flyer_range: load::flyer_range(env),
@@ -529,9 +536,11 @@ fn setup_layout(battle: &mut Battle, layout: &Json, options: &Json) {
             if key == "cc" {
                 battle.cc_building = Some(building.id);
             }
-            battle
-                .grid
-                .block_square(building.x, building.y, building.half_hit, true);
+            if battle.attacker_knows_building(&building) {
+                battle
+                    .grid
+                    .block_square(building.x, building.y, building.half_hit, true);
+            }
         }
         battle.building_indices.push(Some(index));
         battle.buildings.push(building);

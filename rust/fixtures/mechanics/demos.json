@@ -1,0 +1,68 @@
+{
+  "synthetic": true,
+  "note": "Declared synthetic unit-mechanics battles; no real-game calibration. Unit coordinates below are world coordinates after the village margin. Prepared ally targets isolate Warden grouping.",
+  "cases": [
+    {
+      "id": "target-list",
+      "flag": "target_list",
+      "layout": {
+        "buildings": [
+          {"key": "gs", "x": 14, "y": 18},
+          {"key": "gs", "x": 14, "y": 23},
+          {"key": "gs", "x": 14, "y": 13},
+          {"key": "gs", "x": 5, "y": 35}
+        ],
+        "walls": [[12,10],[12,11],[12,12],[12,13],[12,14],[12,15],[12,16],[12,17],[12,18],[12,19],[12,20],[12,21],[12,22],[12,23],[12,24],[12,25],[12,26],[12,27],[12,28],[13,10],[14,10],[15,10],[16,10],[17,10],[18,10],[18,11],[18,12],[18,13],[18,14],[18,15],[18,16],[18,17],[18,18],[18,19],[18,20],[18,21],[18,22],[18,23],[18,24],[18,25],[18,26],[18,27],[18,28],[13,28],[14,28],[15,28],[16,28],[17,28]],
+        "traps": [], "heroes": [], "cc_troops": [],
+        "levels": {"gs": 1}, "wall_level": 1
+      },
+      "units": [{"name": "Barbarian", "team": "atk", "x": 8, "y": 22}],
+      "observe": 0
+    },
+    {
+      "id": "warden-spatial",
+      "flag": "warden_spatial",
+      "layout": {
+        "buildings": [{"key": "gs", "x": 29, "y": 18}, {"key": "gs", "x": 5, "y": 5}],
+        "walls": [], "traps": [], "heroes": [], "cc_troops": [], "levels": {"gs": 1}
+      },
+      "units": [
+        {"name": "Grand Warden", "team": "atk", "x": 20, "y": 20},
+        {"name": "Giant", "team": "atk", "x": 14, "y": 20, "target": 0},
+        {"name": "Giant", "team": "atk", "x": 14, "y": 21, "target": 0},
+        {"name": "Giant", "team": "atk", "x": 15, "y": 20, "target": 0},
+        {"name": "Giant", "team": "atk", "x": 15, "y": 21, "target": 1},
+        {"name": "Giant", "team": "atk", "x": 16, "y": 20, "target": 1},
+        {"name": "Giant", "team": "atk", "x": 9, "y": 20, "target": 1},
+        {"name": "Giant", "team": "atk", "x": 20, "y": 9, "target": 1},
+        {"name": "Giant", "team": "atk", "x": 20, "y": 31, "target": 1}
+      ],
+      "observe": 0
+    },
+    {
+      "id": "defender-separation",
+      "flag": "defender_separation",
+      "layout": {
+        "buildings": [{"key": "gs", "x": 30, "y": 20}],
+        "walls": [], "traps": [], "heroes": [], "cc_troops": [], "levels": {"gs": 1}
+      },
+      "units": [
+        {"name": "Giant", "team": "atk", "x": 5, "y": 20},
+        {"name": "Barbarian", "team": "def", "x": 20, "y": 20},
+        {"name": "Barbarian", "team": "def", "x": 20, "y": 20}
+      ],
+      "observe": 1
+    },
+    {
+      "id": "hidden-information",
+      "flag": "hidden_information",
+      "layout": {
+        "buildings": [{"key": "gs", "x": 24, "y": 20}, {"key": "tesla", "x": 18, "y": 19}, {"key": "gs", "x": 5, "y": 39}],
+        "walls": [], "traps": [{"key": "bomb", "x": 12, "y": 12}],
+        "heroes": [], "cc_troops": [], "levels": {"gs": 1, "tesla": 1}
+      },
+      "units": [{"name": "Barbarian", "team": "atk", "x": 8, "y": 23}],
+      "observe": 0
+    }
+  ]
+}

@@ -2045,9 +2045,13 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
     );
     let plan = plan(root.field("plan"), &deployments);
     let mut grid = Grid::new(catalog.world);
+    let params = crate::params::Params::resolve(&catalog, root.field("env").value, &Json::Null)
+        .unwrap_or_else(|error| panic!("env.params: {error}"));
     // battle.py:248-281: dead banners never block. Walls are restored in file order.
     for building in &buildings {
-        if building.alive {
+        if building.alive
+            && (!params.hidden_information || !building.hidden_tesla || building.revealed)
+        {
             grid.block_square(building.x, building.y, building.half_hit, true);
         }
     }
@@ -2089,6 +2093,7 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
             .iter()
             .all(|wall| wall.x == wall.tx as f64 + 0.5 && wall.y == wall.ty as f64 + 0.5);
     let mut battle = Battle {
+        target_memory: crate::fast_hash::FastMap::default(),
         cluster_cache: crate::plans::ClusterCache::default(),
         opening_reachable: None,
         follow_scores_scratch: Vec::new(),
@@ -2107,10 +2112,11 @@ pub fn from_json(value: &Json, catalog: Arc<Catalog>, path: &str) -> Battle {
         catalog,
         rng: Some(PyRandom::from_state(&words)),
         dt,
-        pace: env.optional("pace").map_or(1.0, |v| v.number()),
-        pace_tap: env.optional("pace_tap").map_or(0.133, |v| v.number()),
-        pace_switch: env.optional("pace_switch").map_or(0.6, |v| v.number()),
-        pace_ability: env.optional("pace_ability").map_or(0.3, |v| v.number()),
+        pace: params.pace,
+        pace_tap: params.pace_tap,
+        pace_switch: params.pace_switch,
+        pace_ability: params.pace_ability,
+        params,
         windup: env.field("windup").boolean(),
         fast_end: env.field("fast_end").boolean(),
         flyer_range: flyer_range(env.value),

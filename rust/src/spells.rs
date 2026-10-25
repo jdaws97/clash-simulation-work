@@ -14,9 +14,6 @@ use crate::{defense, traps, units};
 
 pub const NO_TRIGGER: &[Name] = &[Name::SpellSkeleton, Name::Skeleton, Name::Bat, Name::Totem];
 
-// spells.py:16: the reference's assumed spell bottle landing delay.
-pub const LAND_DELAY: f64 = 0.5;
-
 // spells.py:24: also used by Headhunter poison (units.py:2376).
 pub const POISON_HERO_MULT: f64 = 0.05;
 
@@ -344,7 +341,7 @@ fn burn(battle: &mut Battle, current: &mut Field) -> bool {
                 .collect();
         }
         let fraction = if field.extra.ramp {
-            1.0_f64.min((t - field.started) / battle.catalog.poison_ramp)
+            1.0_f64.min((t - field.started) / battle.params.poison_ramp)
         } else {
             1.0
         };
@@ -613,7 +610,7 @@ pub fn poison_states(battle: &mut Battle) {
                     .find(|(id, _)| *id == state.unit.id)
                     .expect("poison exposure")
                     .1
-                    / battle.catalog.poison_ramp,
+                    / battle.params.poison_ramp,
             )
         } else {
             1.0
@@ -904,7 +901,7 @@ pub fn cast_effect(
     let t = if name == "Revive Spell" {
         battle.t
     } else {
-        battle.t + 0.5
+        battle.t + battle.params.spell_landing_delay
     };
     battle.log_event(vec![
         round_decimal(battle.t, 1).into(),

@@ -15,9 +15,6 @@ use crate::state::*;
 use crate::stats::Level;
 use crate::trace::round_decimal;
 
-const AIM_WAIT: f64 = 10.0;
-const LATE: f64 = 150.0;
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
     Deploy,
@@ -700,7 +697,7 @@ impl PlaybookPlan {
                 };
                 let mut best = None;
                 let mut distance = f64::INFINITY;
-                for b in &battle.buildings {
+                for b in battle.visible_buildings() {
                     if b.alive
                         && b.key == arg
                         && !(unclaimed && self.attack.snipe_claimed.contains(&b.id))
@@ -903,7 +900,7 @@ impl PlaybookPlan {
             }
         });
         let lost = recent.map_or(0.0, |hp| hp - u.hp);
-        let locked = battle.buildings.iter().any(|b| {
+        let locked = battle.visible_buildings().any(|b| {
             b.alive
                 && plans::threat(&b.key, 0.0) >= 4.0
                 && b.weapon
@@ -1454,7 +1451,7 @@ impl PlaybookPlan {
         }
         self.sync_scouting(battle);
         let since = entry_time(&mut self.aim_since, &step.id, battle.t);
-        let deadline = since + AIM_WAIT;
+        let deadline = since + battle.params.aim_wait;
         if battle.t >= deadline {
             return self.attack.fire_aimed(battle, hero, Some(deadline));
         }
@@ -1466,7 +1463,7 @@ impl PlaybookPlan {
             && (kit.has("Rocket Spear") || kit.has("Seeking Shield"));
         if Self::ad_target_count(step) > 0
             && !fireball
-            && !battle.buildings.iter().any(|b| b.alive && b.key == "ad")
+            && !battle.visible_buildings().any(|b| b.alive && b.key == "ad")
         {
             return false;
         }
@@ -1478,7 +1475,7 @@ impl PlaybookPlan {
             if self.aim_building(battle, hero, key, Some(deadline), 1) {
                 return true;
             }
-            if battle.t - since >= AIM_WAIT {
+            if battle.t - since >= battle.params.aim_wait {
                 return self.attack.fire_aimed(battle, hero, Some(deadline));
             }
             return false;
@@ -1527,8 +1524,7 @@ impl PlaybookPlan {
         let u = battle.unit(hero);
         let (ux, uy) = (u.x, u.y);
         let target = battle
-            .buildings
-            .iter()
+            .visible_buildings()
             .filter(|b| b.alive && b.key == key)
             .min_by(|a, b| a.dist(ux, uy).total_cmp(&b.dist(ux, uy)))
             .map(|b| b.id);
@@ -1554,8 +1550,7 @@ impl PlaybookPlan {
                 return false;
             };
             let hits = battle
-                .buildings
-                .iter()
+                .visible_buildings()
                 .filter(|b| {
                     b.key == key
                         && battle.building_targetable(b.id)
@@ -1678,7 +1673,7 @@ impl PlaybookPlan {
                     return Some(format!("no {} left", spell_name(key)));
                 }
                 if let Some(key) = step.at.strip_prefix("building:") {
-                    if !battle.buildings.iter().any(|b| b.alive && b.key == key) {
+                    if !battle.visible_buildings().any(|b| b.alive && b.key == key) {
                         return Some(format!("{key} gone"));
                     }
                 }
@@ -1699,7 +1694,7 @@ impl PlaybookPlan {
                 }
                 if Self::ad_target_count(step) > 0
                     && what != "Grand Warden"
-                    && !battle.buildings.iter().any(|b| b.alive && b.key == "ad")
+                    && !battle.visible_buildings().any(|b| b.alive && b.key == "ad")
                 {
                     return Some("ad gone".to_owned());
                 }
@@ -1971,7 +1966,7 @@ impl PlaybookPlan {
             {
                 forced = step.action == Action::Deploy
                     && (stalled
-                        || t >= LATE
+                        || t >= battle.params.late_deployment
                         || self.impossible(battle, &step.when)
                             && self.ready(battle, &step.when, true));
                 if !forced {
@@ -2029,7 +2024,7 @@ impl PlaybookPlan {
                                     format!("{} (waiting: Totem area covered)", step.id),
                                 ));
                             }
-                            if t - since >= AIM_WAIT {
+                            if t - since >= battle.params.aim_wait {
                                 entry_time(&mut self.done, &step.id, t);
                                 self.cancelled.push(step.id.clone());
                                 let why = if totem_covered {
@@ -2128,7 +2123,7 @@ impl PlaybookPlan {
         if t >= self.attack.busy_until
             && self.attack.has_unreleased_cc()
             && (stalled
-                || t >= LATE
+                || t >= battle.params.late_deployment
                 || self.steps.iter().any(|step| {
                     step.action == Action::Deploy
                         && step.group == "main"
@@ -2215,8 +2210,7 @@ impl PlaybookPlan {
                     .anchor(battle, at, false)
                     .unwrap_or_else(|| self.edge(battle, "main"));
                 let mut ads: Vec<_> = battle
-                    .buildings
-                    .iter()
+                    .visible_buildings()
                     .filter(|b| b.alive && b.key == "ad" && !reserved.contains(&b.id))
                     .map(|b| b.id)
                     .collect();
@@ -2251,7 +2245,7 @@ impl PlaybookPlan {
         if t < self.next_fallback || t < self.attack.busy_until {
             return;
         }
-        self.next_fallback = t + 0.5;
+        self.next_fallback = t + battle.params.reaction_delay;
         if !opening {
             // Wiki: Hero abilities, a cited hold never suppresses low-HP rescue.
             // Match Python's one paced emergency action before spare spells.

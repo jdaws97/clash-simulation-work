@@ -1,0 +1,30 @@
+{
+  "synthetic": true,
+  "source": "Frozen src/baselab/mechanics.py INVENTORY/TRAP_INVENTORY, cross-checked by the Rust importer against local unlocks and merge recipes. Not real-game calibration.",
+  "common": {
+    "th": 1, "cc": 1, "ad": 4, "sweeper": 2, "bt": 2, "bh": 5,
+    "tesla": 5, "inferno": 3, "mono": 1, "mortar": 4, "scatter": 2,
+    "st": 2, "xbow": 4, "gm": 7, "ec": 7, "dd": 3, "gs": 4,
+    "es": 4, "ds": 1, "camp": 4, "barracks": 1, "dbarracks": 1,
+    "sf": 1, "dsf": 1, "lab": 1, "workshop": 1, "pethouse": 1,
+    "smith": 1, "herohall": 1, "helper": 1, "bob": 1, "banner": 4,
+    "crafting": 1
+  },
+  "town_halls": {
+    "16": {
+      "buildings": {"at": 4, "mat": 2, "cannon": 3, "ric": 2, "eagle": 1, "wt": 5, "mgt": 0, "firespitter": 0, "swt": 0, "revenge": 0},
+      "traps": {"bomb": 8, "spring": 9, "giant": 7, "airbomb": 7, "seeking": 8, "skeleton": 4, "tornado": 1, "giga": 0},
+      "walls": 325
+    },
+    "17": {
+      "buildings": {"at": 2, "mat": 3, "cannon": 0, "ric": 3, "eagle": 0, "wt": 5, "mgt": 1, "firespitter": 2, "swt": 0, "revenge": 0},
+      "traps": {"bomb": 8, "spring": 9, "giant": 8, "airbomb": 7, "seeking": 9, "skeleton": 4, "tornado": 1, "giga": 1},
+      "walls": 325
+    },
+    "18": {
+      "buildings": {"at": 2, "mat": 3, "cannon": 0, "ric": 3, "eagle": 0, "wt": 2, "mgt": 1, "firespitter": 2, "swt": 2, "revenge": 1},
+      "traps": {"bomb": 8, "spring": 9, "giant": 8, "airbomb": 8, "seeking": 9, "skeleton": 4, "tornado": 1, "giga": 1},
+      "walls": 325
+    }
+  }
+}

@@ -158,8 +158,7 @@ impl AttackPlan {
         mut reach: Option<f64>,
     ) -> Option<Cluster> {
         let defenses: Vec<_> = battle
-            .buildings
-            .iter()
+            .visible_buildings()
             .filter(|b| {
                 b.is_defense
                     && (battle.building_targetable(b.id)
@@ -309,7 +308,7 @@ impl AttackPlan {
         let center = battle.catalog.world as f64 / 2.0;
         let origin = edge_point(battle, angle, lateral);
         let direction = py_atan2(origin.1 - center, origin.0 - center);
-        let buildings: Vec<_> = battle.buildings.iter().map(|b| b.id).collect();
+        let buildings: Vec<_> = battle.visible_buildings().map(|b| b.id).collect();
         let mut candidates = Vec::new();
         for id in buildings {
             let b = battle.building(id);
@@ -511,8 +510,7 @@ impl AttackPlan {
         battle: &Battle,
     ) -> (Vec<(BuildingId, f64)>, Vec<(BuildingId, usize)>) {
         let mut targets: Vec<_> = battle
-            .buildings
-            .iter()
+            .visible_buildings()
             .filter(|b| b.alive)
             .map(|b| ZapTarget {
                 id: b.id,
@@ -675,8 +673,7 @@ impl AttackPlan {
         }
         let (hp, eq_hits) = self.cluster_state(battle);
         if battle
-            .buildings
-            .iter()
+            .visible_buildings()
             .any(|b| b.alive && b.key == "ad" && lookup(&hp, b.id, 0.0) > 1e-9)
         {
             return false;
@@ -768,7 +765,7 @@ impl AttackPlan {
         let (hp, eq_hits) = self.cluster_state(battle);
         let effects = self.cluster_effects(battle, key, available);
         let mut best: Option<(usize, BuildingId)> = None;
-        for building in &battle.buildings {
+        for building in battle.visible_buildings() {
             if !building.alive || !building.counted || self.snipe_claimed.contains(&building.id) {
                 continue;
             }
@@ -915,7 +912,7 @@ impl AttackPlan {
             return battle.t < until && deadline.is_none_or(|deadline| battle.t < deadline);
         }
         let pace = crate::playbook::action_time(battle, crate::playbook::Action::Spell, 1);
-        let wait = pace.max(spells::LAND_DELAY + 4.0 * 0.4);
+        let wait = pace.max(battle.params.spell_landing_delay + 4.0 * 0.4);
         if deadline.is_some_and(|deadline| battle.t + wait > deadline) {
             return false;
         }
@@ -931,8 +928,7 @@ impl AttackPlan {
         };
         let (x, y, dx, dy, length) = band;
         let mut targets: Vec<_> = battle
-            .buildings
-            .iter()
+            .visible_buildings()
             .filter(|b| {
                 b.is_defense
                     && battle.building_targetable(b.id)
@@ -1209,13 +1205,11 @@ impl AttackPlan {
         // output/research/usage/hidden-tesla.md: concealed Teslas are not scouted.
         // https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
         let others: Vec<_> = battle
-            .buildings
-            .iter()
+            .visible_buildings()
             .filter(|b| b.key != "wall" && (b.key != "tesla" || b.revealed))
             .collect();
         battle
-            .buildings
-            .iter()
+            .visible_buildings()
             .map(|b| {
                 let mut weight = threat(&b.key, 1.0);
                 if air_army {
@@ -1488,7 +1482,7 @@ impl AttackPlan {
         let flying = numbers.flying || name == "Grand Warden" && warden_air;
         let excluded_target = if flying { Tag::Ground } else { Tag::Air };
         let mut incoming = 0.0;
-        for defense in &battle.buildings {
+        for defense in battle.visible_buildings() {
             let Some(weapon) = &defense.weapon else {
                 continue;
             };
@@ -1539,7 +1533,7 @@ impl AttackPlan {
         }
         let n = battle.grid.n;
         let mut blocked = battle.grid.blocked.clone();
-        for b in &battle.buildings {
+        for b in battle.visible_buildings() {
             if b.key == "tesla" && !b.revealed {
                 let bound = |value| {
                     (round_half_even(value * RES as f64) as isize).clamp(0, n as isize) as usize
@@ -1637,8 +1631,7 @@ impl AttackPlan {
             return Vec::new();
         }
         let visible: Vec<_> = battle
-            .buildings
-            .iter()
+            .visible_buildings()
             .filter(|b| battle.building_targetable(b.id))
             .map(|b| b.id)
             .collect();
@@ -1648,8 +1641,7 @@ impl AttackPlan {
             .filter(|id| battle.is_defense_target(*id))
             .collect();
         let spell_defenses: Vec<_> = battle
-            .buildings
-            .iter()
+            .visible_buildings()
             .filter(|b| {
                 battle.is_defense_target(b.id) && damage_spell_targetable(battle, b, "lightning")
             })
@@ -1832,7 +1824,7 @@ impl AttackPlan {
                         (
                             dealt,
                             casts as f64 * action_time(battle, Action::Spell, 1)
-                                + spells::LAND_DELAY,
+                                + battle.params.spell_landing_delay,
                             0.0,
                             1.5 * casts as f64,
                         )
@@ -1844,7 +1836,7 @@ impl AttackPlan {
                     if kind != "lightning" {
                         if paired_quake && matches!(kind.as_str(), "arrow" | "dash") {
                             seconds += action_time(battle, Action::Spell, 1)
-                                .max(spells::LAND_DELAY + 4.0 * 0.4);
+                                .max(battle.params.spell_landing_delay + 4.0 * 0.4);
                             cost += 1.5;
                         }
                         cost += 2.0 * py_hypot(x - main_point.0, y - main_point.1)
@@ -1923,7 +1915,7 @@ impl AttackPlan {
         } else {
             -0.5
         };
-        let mut remaining: Vec<_> = battle.buildings.iter().map(|b| (b.id, b.hp)).collect();
+        let mut remaining: Vec<_> = battle.visible_buildings().map(|b| (b.id, b.hp)).collect();
         let weights = self.snipe_weights(battle);
         let mut selected = Vec::new();
         let mut used: Vec<String> = Vec::new();
@@ -1981,7 +1973,7 @@ impl AttackPlan {
         };
         let mut out = Vec::new();
         let mut at = 0.0;
-        let mut remaining: Vec<_> = battle.buildings.iter().map(|b| (b.id, b.hp)).collect();
+        let mut remaining: Vec<_> = battle.visible_buildings().map(|b| (b.id, b.hp)).collect();
         for chosen in self.selected_snipes(battle, &exposed) {
             if chosen.kind == "lightning" {
                 self.snipe_lightning = Some(chosen.clone());
@@ -2089,7 +2081,7 @@ impl AttackPlan {
             };
             if remaining > 0.0
                 && effects.iter().map(|effect| effect.damage).sum::<f64>() >= remaining
-                && battle.t + spells::LAND_DELAY <= 12.0
+                && battle.t + battle.params.spell_landing_delay <= 12.0
             {
                 let target = battle.building(chosen.target);
                 let (x, y) = (target.x, target.y);

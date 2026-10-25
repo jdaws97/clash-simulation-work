@@ -2,7 +2,7 @@
 
 use crate::battle::BUCKET;
 use crate::geom::py_hypot;
-use crate::grid::{Grid, TargetIdentity, GOAL_REACH_MIN, NORMAL_WALL_EXTRA, RES};
+use crate::grid::{Grid, TargetIdentity, GOAL_REACH_MIN, RES};
 use crate::labels::{Name, Tag};
 use crate::state::*;
 use crate::{effects, geom, units};
@@ -10,7 +10,24 @@ use crate::{effects, geom, units};
 impl Battle {
     // battle.py:_separate: neighboring buckets, pairs ordered by entity ID.
     pub fn separate(&mut self) {
-        let mut attackers: Vec<_> = self.attackers_pool().map(Unit::reference).collect();
+        self.separate_team(Team::Atk);
+        if self.params.defender_separation {
+            self.separate_team(Team::Def);
+        }
+    }
+
+    fn separate_team(&mut self, team: Team) {
+        let mut attackers: Vec<_> = if team == Team::Atk {
+            self.attackers_pool().map(Unit::reference).collect()
+        } else {
+            self.defenders_pool().map(Unit::reference).collect()
+        };
+        let air_radius = self.params.air_radius;
+        let ground_radius = self.params.ground_radius;
+        let housing_radius = self.params.ground_radius_per_housing;
+        let housing_cap = self.params.separation_housing_cap;
+        let push_fraction = self.params.separation_push;
+        let coincident_angle = self.params.separation_angle;
         attackers.sort_by_key(|unit| unit.id.0);
         for a in attackers {
             let ua = self.unit(a);
@@ -21,13 +38,20 @@ impl Battle {
             // (output/dragon-spacing/measure.md); ground keeps the housing term.
             let radius = |u: &Unit| {
                 if u.flying {
-                    0.35
+                    air_radius
                 } else {
-                    0.35 + 0.015 * 30.min(u.housing) as f64
+                    ground_radius + housing_radius * housing_cap.min(u.housing as f64)
                 }
             };
             let ra = radius(ua);
-            let mut neighbors = self.attackers_near(ua.x, ua.y, ra + 0.8);
+            let max_radius = 0.8_f64
+                .max(air_radius)
+                .max(ground_radius + housing_radius * housing_cap);
+            let mut neighbors = if team == Team::Atk {
+                self.attackers_near(ua.x, ua.y, ra + max_radius)
+            } else {
+                self.defenders_near(ua.x, ua.y, ra + max_radius)
+            };
             neighbors.sort_by_key(|unit| unit.id.0);
             for b in neighbors {
                 let ua = self.unit(a);
@@ -44,13 +68,14 @@ impl Battle {
                 }
                 let mut d = d2.sqrt();
                 let push = if d < 1e-6 {
-                    let angle = (ua.id.0 as f64 * 2.399).rem_euclid(2.0 * std::f64::consts::PI);
+                    let angle =
+                        (ua.id.0 as f64 * coincident_angle).rem_euclid(2.0 * std::f64::consts::PI);
                     dx = geom::py_cos(angle);
                     dy = geom::py_sin(angle);
                     d = 1.0;
-                    limit * 0.25
+                    limit * push_fraction
                 } else {
-                    (limit - d) * 0.25
+                    (limit - d) * push_fraction
                 };
                 let (ux, uy) = (dx / d * push, dy / d * push);
                 // battle.py:1381-1382: separation does not restart attack charges.
@@ -90,6 +115,7 @@ impl Battle {
         let u = self.unit(reference);
         if pushback && (u.x, u.y) != old_position {
             units::pushback_windup(self, reference);
+            self.force_retarget(reference, crate::targeting::ForcedRetarget::Default);
         }
     }
 
@@ -104,13 +130,10 @@ impl Battle {
         let u = self.unit(reference);
         let (x, y) = (u.x, u.y);
         let reach = units::effective_range(self, u).max(GOAL_REACH_MIN);
-        let costs = self.navigation_grid(reference).building_costs(
-            x,
-            y,
-            NORMAL_WALL_EXTRA,
-            &geometry,
-            reach,
-        );
+        let wall_extra = self.normal_wall_extra();
+        let costs = self
+            .navigation_grid(reference)
+            .building_costs(x, y, wall_extra, &geometry, reach);
         let mut k = 0;
         for i in 1..costs.len() {
             let (cx, cy, half) = geometry[i];
@@ -269,7 +292,7 @@ impl Battle {
             EntityRef::Trap(_) => panic!("navigation target is a trap"),
         };
         let wall_extra = match mode {
-            Tag::Normal => NORMAL_WALL_EXTRA,
+            Tag::Normal => self.normal_wall_extra(),
             Tag::Ignore | Tag::Fly => 0.0,
             _ => panic!("unknown wall mode {mode}"),
         };
@@ -298,15 +321,26 @@ impl Battle {
                         return;
                     }
                     self.unit_mut(reference).wall_target = Some(wall);
+                    if self.params.target_list {
+                        let until = self.t + self.params.selected_wall_time / 1000.0;
+                        let memory = self.target_memory.entry(reference).or_default();
+                        memory.selected_wall = Some(wall);
+                        memory.wall_until = until;
+                    }
                     return;
                 }
             }
         }
         if next.x == x && next.y == y {
+            let timeout = if self.params.target_list {
+                self.params.forget_target_time / 1000.0
+            } else {
+                self.params.stuck_timeout
+            };
             let dt = self.dt;
             let u = self.unit_mut(reference);
             u.stuck += dt;
-            if u.stuck > 2.0 {
+            if u.stuck > timeout {
                 u.target = None;
                 u.stuck = 0.0;
             }

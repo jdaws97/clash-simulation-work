@@ -1,0 +1,1809 @@
+{
+  "schema_version": 1.0,
+  "preset": "fully-merged-th16-18; model compatibility, not account ownership",
+  "patch": "local v18.200.9 / crafting phase 4",
+  "catalog_identity": "fnv128:8afb7618a8db19895a5a14b7b3c82dac",
+  "source_identity": "fnv128:bdcd3ce777b16d1ed0b946bd595e2602",
+  "village": 44.0,
+  "margin": 3.0,
+  "buildings": {
+    "th": {
+      "name": "Town Hall",
+      "size": 4.0,
+      "source": "rust/data/catalog.json#/building_types/th; data/clashking-static-data.json buildings[name=Town Hall].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "cc": {
+      "name": "Clan Castle",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/cc; data/clashking-static-data.json buildings[name=Clan Castle].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "ad": {
+      "name": "Air Defense",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/ad; data/clashking-static-data.json buildings[name=Air Defense].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "sweeper": {
+      "name": "Air Sweeper",
+      "size": 2.0,
+      "source": "rust/data/catalog.json#/building_types/sweeper; data/clashking-static-data.json buildings[name=Air Sweeper].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "at": {
+      "name": "Archer Tower",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/at; data/clashking-static-data.json buildings[name=Archer Tower].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "mat": {
+      "name": "Multi-Archer Tower",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/mat; data/clashking-static-data.json buildings[name=Multi-Archer Tower].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "cannon": {
+      "name": "Cannon",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/cannon; data/clashking-static-data.json buildings[name=Cannon].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "ric": {
+      "name": "Ricochet Cannon",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/ric; data/clashking-static-data.json buildings[name=Ricochet Cannon].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "bt": {
+      "name": "Bomb Tower",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/bt; data/clashking-static-data.json buildings[name=Bomb Tower].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "bh": {
+      "name": "Builder's Hut",
+      "size": 2.0,
+      "source": "rust/data/catalog.json#/building_types/bh; data/clashking-static-data.json buildings[name=Builder's Hut].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "eagle": {
+      "name": "Eagle Artillery",
+      "size": 4.0,
+      "source": "rust/data/catalog.json#/building_types/eagle; data/clashking-static-data.json buildings[name=Eagle Artillery].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "tesla": {
+      "name": "Hidden Tesla",
+      "size": 2.0,
+      "source": "rust/data/catalog.json#/building_types/tesla; data/clashking-static-data.json buildings[name=Hidden Tesla].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "inferno": {
+      "name": "Inferno Tower",
+      "size": 2.0,
+      "source": "rust/data/catalog.json#/building_types/inferno; data/clashking-static-data.json buildings[name=Inferno Tower].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "mono": {
+      "name": "Monolith",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/mono; data/clashking-static-data.json buildings[name=Monolith].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "mortar": {
+      "name": "Mortar",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/mortar; data/clashking-static-data.json buildings[name=Mortar].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "scatter": {
+      "name": "Scattershot",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/scatter; data/clashking-static-data.json buildings[name=Scattershot].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "st": {
+      "name": "Spell Tower",
+      "size": 2.0,
+      "source": "rust/data/catalog.json#/building_types/st; data/clashking-static-data.json buildings[name=Spell Tower].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "wt": {
+      "name": "Wizard Tower",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/wt; data/clashking-static-data.json buildings[name=Wizard Tower].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "xbow": {
+      "name": "X-Bow",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/xbow; data/clashking-static-data.json buildings[name=X-Bow].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "gm": {
+      "name": "Gold Mine",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/gm; data/clashking-static-data.json buildings[name=Gold Mine].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "ec": {
+      "name": "Elixir Collector",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/ec; data/clashking-static-data.json buildings[name=Elixir Collector].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "dd": {
+      "name": "Dark Elixir Drill",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/dd; data/clashking-static-data.json buildings[name=Dark Elixir Drill].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "gs": {
+      "name": "Gold Storage",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/gs; data/clashking-static-data.json buildings[name=Gold Storage].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "es": {
+      "name": "Elixir Storage",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/es; data/clashking-static-data.json buildings[name=Elixir Storage].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "ds": {
+      "name": "Dark Elixir Storage",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/ds; data/clashking-static-data.json buildings[name=Dark Elixir Storage].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "camp": {
+      "name": "Army Camp",
+      "size": 4.0,
+      "source": "rust/data/catalog.json#/building_types/camp; data/clashking-static-data.json buildings[name=Army Camp].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "barracks": {
+      "name": "Barracks",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/barracks; data/clashking-static-data.json buildings[name=Barracks].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "dbarracks": {
+      "name": "Dark Barracks",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/dbarracks; data/clashking-static-data.json buildings[name=Dark Barracks].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "sf": {
+      "name": "Spell Factory",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/sf; data/clashking-static-data.json buildings[name=Spell Factory].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "dsf": {
+      "name": "Dark Spell Factory",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/dsf; data/clashking-static-data.json buildings[name=Dark Spell Factory].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "lab": {
+      "name": "Laboratory",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/lab; data/clashking-static-data.json buildings[name=Laboratory].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "workshop": {
+      "name": "Workshop",
+      "size": 4.0,
+      "source": "rust/data/catalog.json#/building_types/workshop; data/clashking-static-data.json buildings[name=Workshop].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "pethouse": {
+      "name": "Pet House",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/pethouse; data/clashking-static-data.json buildings[name=Pet House].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "smith": {
+      "name": "Blacksmith",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/smith; data/clashking-static-data.json buildings[name=Blacksmith].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "herohall": {
+      "name": "Hero Hall",
+      "size": 4.0,
+      "source": "rust/data/catalog.json#/building_types/herohall; data/clashking-static-data.json buildings[name=Hero Hall].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "helper": {
+      "name": "Helper Hut",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/helper; data/clashking-static-data.json buildings[name=Helper Hut].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "bob": {
+      "name": "B.O.B's Hut",
+      "size": 2.0,
+      "source": "rust/data/catalog.json#/building_types/bob; data/clashking-static-data.json buildings[name=B.O.B's Hut].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "banner": {
+      "name": "Hero Banner",
+      "size": 2.0,
+      "source": "rust/data/catalog.json#/building_types/banner; data/clashking-static-data.json buildings[name=Hero Banner].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "mgt": {
+      "name": "Multi-Gear Tower",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/mgt; data/clashking-static-data.json buildings[name=Multi-Gear Tower].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "firespitter": {
+      "name": "Firespitter",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/firespitter; data/clashking-static-data.json buildings[name=Firespitter].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "swt": {
+      "name": "Super Wizard Tower",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/swt; data/clashking-static-data.json buildings[name=Super Wizard Tower].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "revenge": {
+      "name": "Revenge Tower",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/revenge; data/clashking-static-data.json buildings[name=Revenge Tower].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    },
+    "crafting": {
+      "name": "Crafting Station",
+      "size": 3.0,
+      "source": "rust/data/catalog.json#/building_types/crafting; data/clashking-static-data.json buildings[name=Crafting Station].width; src/baselab/mechanics.py _SIZE_FALLBACK"
+    }
+  },
+  "trap_footprints": {
+    "giga": {
+      "name": "Giga Bomb",
+      "size": 2.0,
+      "source": "rust/data/catalog.json#/trap_sizes; src/baselab/mechanics.py TRAP_SIZES"
+    },
+    "bomb": {
+      "name": "Bomb",
+      "size": 1.0,
+      "source": "rust/data/catalog.json#/trap_sizes; src/baselab/mechanics.py TRAP_SIZES"
+    },
+    "spring": {
+      "name": "Spring Trap",
+      "size": 1.0,
+      "source": "rust/data/catalog.json#/trap_sizes; src/baselab/mechanics.py TRAP_SIZES"
+    },
+    "giant": {
+      "name": "Giant Bomb",
+      "size": 2.0,
+      "source": "rust/data/catalog.json#/trap_sizes; src/baselab/mechanics.py TRAP_SIZES"
+    },
+    "airbomb": {
+      "name": "Air Bomb",
+      "size": 1.0,
+      "source": "rust/data/catalog.json#/trap_sizes; src/baselab/mechanics.py TRAP_SIZES"
+    },
+    "seeking": {
+      "name": "Seeking Air Mine",
+      "size": 1.0,
+      "source": "rust/data/catalog.json#/trap_sizes; src/baselab/mechanics.py TRAP_SIZES"
+    },
+    "skeleton": {
+      "name": "Skeleton Trap",
+      "size": 1.0,
+      "source": "rust/data/catalog.json#/trap_sizes; src/baselab/mechanics.py TRAP_SIZES"
+    },
+    "tornado": {
+      "name": "Tornado Trap",
+      "size": 1.0,
+      "source": "rust/data/catalog.json#/trap_sizes; src/baselab/mechanics.py TRAP_SIZES"
+    }
+  },
+  "unlocks": [
+    {
+      "town_hall": 1.0,
+      "name": "Army Camp",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/0/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 1.0,
+      "name": "Elixir Storage",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/0/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 1.0,
+      "name": "Gold Storage",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/0/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 1.0,
+      "name": "Elixir Collector",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/0/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 1.0,
+      "name": "Gold Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/0/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 1.0,
+      "name": "Barracks",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/0/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 1.0,
+      "name": "Cannon",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/0/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 1.0,
+      "name": "Clan Castle",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/0/unlocks/7/quantity"
+    },
+    {
+      "town_hall": 1.0,
+      "name": "Builder's Hut",
+      "quantity": 5.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/0/unlocks/8/quantity"
+    },
+    {
+      "town_hall": 1.0,
+      "name": "B.O.B's Hut",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/0/unlocks/9/quantity"
+    },
+    {
+      "town_hall": 2.0,
+      "name": "Elixir Collector",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/1/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 2.0,
+      "name": "Gold Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/1/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 2.0,
+      "name": "Cannon",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/1/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 2.0,
+      "name": "Wall",
+      "quantity": 25.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/1/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 2.0,
+      "name": "Archer Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/1/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 3.0,
+      "name": "Army Camp",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/2/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 3.0,
+      "name": "Elixir Storage",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/2/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 3.0,
+      "name": "Gold Storage",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/2/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 3.0,
+      "name": "Elixir Collector",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/2/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 3.0,
+      "name": "Gold Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/2/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 3.0,
+      "name": "Wall",
+      "quantity": 25.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/2/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 3.0,
+      "name": "Mortar",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/2/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 3.0,
+      "name": "Bomb",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/2/unlocks/7/quantity"
+    },
+    {
+      "town_hall": 3.0,
+      "name": "Laboratory",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/2/unlocks/8/quantity"
+    },
+    {
+      "town_hall": 4.0,
+      "name": "Elixir Collector",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/3/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 4.0,
+      "name": "Gold Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/3/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 4.0,
+      "name": "Wall",
+      "quantity": 25.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/3/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 4.0,
+      "name": "Archer Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/3/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 4.0,
+      "name": "Air Defense",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/3/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 4.0,
+      "name": "Spring Trap",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/3/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 4.0,
+      "name": "Hero Hall",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/3/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 5.0,
+      "name": "Army Camp",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/4/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 5.0,
+      "name": "Elixir Collector",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/4/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 5.0,
+      "name": "Gold Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/4/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 5.0,
+      "name": "Cannon",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/4/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 5.0,
+      "name": "Wall",
+      "quantity": 25.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/4/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 5.0,
+      "name": "Archer Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/4/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 5.0,
+      "name": "Wizard Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/4/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 5.0,
+      "name": "Bomb",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/4/unlocks/7/quantity"
+    },
+    {
+      "town_hall": 5.0,
+      "name": "Spell Factory",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/4/unlocks/8/quantity"
+    },
+    {
+      "town_hall": 5.0,
+      "name": "Air Bomb",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/4/unlocks/9/quantity"
+    },
+    {
+      "town_hall": 6.0,
+      "name": "Elixir Collector",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/5/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 6.0,
+      "name": "Gold Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/5/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 6.0,
+      "name": "Wall",
+      "quantity": 25.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/5/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 6.0,
+      "name": "Wizard Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/5/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 6.0,
+      "name": "Air Defense",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/5/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 6.0,
+      "name": "Mortar",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/5/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 6.0,
+      "name": "Spring Trap",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/5/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 6.0,
+      "name": "Giant Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/5/unlocks/7/quantity"
+    },
+    {
+      "town_hall": 6.0,
+      "name": "Air Sweeper",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/5/unlocks/8/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Army Camp",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Cannon",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Wall",
+      "quantity": 50.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Archer Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Air Defense",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Mortar",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Giant Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Bomb",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/7/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Hidden Tesla",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/8/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Dark Elixir Drill",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/9/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Dark Elixir Storage",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/10/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Seeking Air Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/11/quantity"
+    },
+    {
+      "town_hall": 7.0,
+      "name": "Dark Barracks",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/6/unlocks/12/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Elixir Storage",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Gold Storage",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Wall",
+      "quantity": 50.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Archer Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Wizard Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Mortar",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Spring Trap",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Giant Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/7/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Hidden Tesla",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/8/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Dark Spell Factory",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/9/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Dark Elixir Drill",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/10/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Air Bomb",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/11/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Seeking Air Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/12/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Skeleton Trap",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/13/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Bomb Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/14/quantity"
+    },
+    {
+      "town_hall": 8.0,
+      "name": "Blacksmith",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/7/unlocks/15/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Elixir Storage",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Gold Storage",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Elixir Collector",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Gold Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Wall",
+      "quantity": 25.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Archer Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Wizard Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Air Defense",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/7/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Giant Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/8/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Hidden Tesla",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/9/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "X-Bow",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/10/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Dark Elixir Drill",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/11/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Seeking Air Mine",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/12/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Air Sweeper",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/13/quantity"
+    },
+    {
+      "town_hall": 9.0,
+      "name": "Helper Hut",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/8/unlocks/14/quantity"
+    },
+    {
+      "town_hall": 10.0,
+      "name": "Cannon",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/9/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 10.0,
+      "name": "Wall",
+      "quantity": 25.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/9/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 10.0,
+      "name": "Archer Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/9/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 10.0,
+      "name": "Giant Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/9/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 10.0,
+      "name": "X-Bow",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/9/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 10.0,
+      "name": "Air Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/9/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 10.0,
+      "name": "Seeking Air Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/9/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 10.0,
+      "name": "Inferno Tower",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/9/unlocks/7/quantity"
+    },
+    {
+      "town_hall": 10.0,
+      "name": "Skeleton Trap",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/9/unlocks/8/quantity"
+    },
+    {
+      "town_hall": 10.0,
+      "name": "Bomb Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/9/unlocks/9/quantity"
+    },
+    {
+      "town_hall": 11.0,
+      "name": "Cannon",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/10/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 11.0,
+      "name": "Wall",
+      "quantity": 25.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/10/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 11.0,
+      "name": "Archer Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/10/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 11.0,
+      "name": "Wizard Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/10/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 11.0,
+      "name": "X-Bow",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/10/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 11.0,
+      "name": "Eagle Artillery",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/10/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 11.0,
+      "name": "Tornado Trap",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/10/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 12.0,
+      "name": "Spring Trap",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/11/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 12.0,
+      "name": "Giant Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/11/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 12.0,
+      "name": "Hidden Tesla",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/11/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 12.0,
+      "name": "Air Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/11/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 12.0,
+      "name": "Seeking Air Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/11/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 12.0,
+      "name": "Inferno Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/11/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 12.0,
+      "name": "Workshop",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/11/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 13.0,
+      "name": "Spring Trap",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/12/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 13.0,
+      "name": "Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/12/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 13.0,
+      "name": "Seeking Air Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/12/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 13.0,
+      "name": "Scattershot",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/12/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 14.0,
+      "name": "Wall",
+      "quantity": 25.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/13/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 14.0,
+      "name": "Giant Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/13/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 14.0,
+      "name": "Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/13/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 14.0,
+      "name": "Air Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/13/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 14.0,
+      "name": "Seeking Air Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/13/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 14.0,
+      "name": "Skeleton Trap",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/13/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 14.0,
+      "name": "Pet House",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/13/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 15.0,
+      "name": "Spell Tower",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/14/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 15.0,
+      "name": "Monolith",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/14/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 16.0,
+      "name": "Multi-Archer Tower",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/15/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 16.0,
+      "name": "Ricochet Cannon",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/15/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 17.0,
+      "name": "Archer Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/16/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 17.0,
+      "name": "Giant Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/16/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 17.0,
+      "name": "Seeking Air Mine",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/16/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 17.0,
+      "name": "Multi-Archer Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/16/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 17.0,
+      "name": "Ricochet Cannon",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/16/unlocks/4/quantity"
+    },
+    {
+      "town_hall": 17.0,
+      "name": "Firespitter",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/16/unlocks/5/quantity"
+    },
+    {
+      "town_hall": 17.0,
+      "name": "Giga Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/16/unlocks/6/quantity"
+    },
+    {
+      "town_hall": 17.0,
+      "name": "Multi-Gear Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/16/unlocks/7/quantity"
+    },
+    {
+      "town_hall": 18.0,
+      "name": "Wizard Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/17/unlocks/0/quantity"
+    },
+    {
+      "town_hall": 18.0,
+      "name": "Air Bomb",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/17/unlocks/1/quantity"
+    },
+    {
+      "town_hall": 18.0,
+      "name": "Crafting Station",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/17/unlocks/2/quantity"
+    },
+    {
+      "town_hall": 18.0,
+      "name": "Revenge Tower",
+      "quantity": 1.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/17/unlocks/3/quantity"
+    },
+    {
+      "town_hall": 18.0,
+      "name": "Super Wizard Tower",
+      "quantity": 2.0,
+      "source": "data/clashking-static-data.json#/buildings/1/levels/17/unlocks/4/quantity"
+    }
+  ],
+  "merges": [
+    {
+      "product": "Multi-Archer Tower",
+      "town_hall": 16.0,
+      "recipe": [
+        {
+          "name": "Archer Tower",
+          "_id": 1000009.0,
+          "geared_up": false,
+          "level": 21.0
+        },
+        {
+          "name": "Archer Tower",
+          "_id": 1000009.0,
+          "geared_up": false,
+          "level": 21.0
+        }
+      ],
+      "source": "data/clashking-static-data.json#/buildings/69/levels/0/merge_requirement"
+    },
+    {
+      "product": "Ricochet Cannon",
+      "town_hall": 16.0,
+      "recipe": [
+        {
+          "name": "Cannon",
+          "_id": 1000008.0,
+          "geared_up": false,
+          "level": 21.0
+        },
+        {
+          "name": "Cannon",
+          "_id": 1000008.0,
+          "geared_up": false,
+          "level": 21.0
+        }
+      ],
+      "source": "data/clashking-static-data.json#/buildings/70/levels/0/merge_requirement"
+    },
+    {
+      "product": "Town Hall",
+      "town_hall": 17.0,
+      "recipe": [
+        {
+          "name": "Eagle Artillery",
+          "_id": 1000031.0,
+          "geared_up": false,
+          "level": 7.0
+        }
+      ],
+      "source": "data/clashking-static-data.json#/buildings/1/levels/16/merge_requirement"
+    },
+    {
+      "product": "Multi-Gear Tower",
+      "town_hall": 17.0,
+      "recipe": [
+        {
+          "name": "Archer Tower",
+          "_id": 1000009.0,
+          "geared_up": true,
+          "level": 21.0
+        },
+        {
+          "name": "Cannon",
+          "_id": 1000008.0,
+          "geared_up": true,
+          "level": 21.0
+        }
+      ],
+      "source": "data/clashking-static-data.json#/buildings/64/levels/0/merge_requirement"
+    },
+    {
+      "product": "Super Wizard Tower",
+      "town_hall": 18.0,
+      "recipe": [
+        {
+          "name": "Wizard Tower",
+          "_id": 1000011.0,
+          "geared_up": false,
+          "level": 17.0
+        },
+        {
+          "name": "Wizard Tower",
+          "_id": 1000011.0,
+          "geared_up": false,
+          "level": 17.0
+        }
+      ],
+      "source": "data/clashking-static-data.json#/buildings/75/levels/0/merge_requirement"
+    }
+  ],
+  "overrides": [
+    "Town Hall=1: the upgraded structure is not itself an unlock",
+    "Hero Banner=4 at TH16-18: src/baselab/mechanics.py BUILDING_TYPES; Hero Hall registry levels[].wiki.Hero Slots",
+    "Crafting Station=1 optional at TH16-18: src/baselab/mechanics.py INVENTORY/OPTIONAL_KEYS; frozen seasonal model overrides static TH18-only unlock",
+    "Unlisted trap footprint=1; giant/giga=2: src/baselab/mechanics.py TRAP_SIZES"
+  ],
+  "optional_buildings": [
+    "crafting"
+  ],
+  "town_halls": {
+    "16": {
+      "buildings": {
+        "ad": 4.0,
+        "at": 4.0,
+        "banner": 4.0,
+        "barracks": 1.0,
+        "bh": 5.0,
+        "bob": 1.0,
+        "bt": 2.0,
+        "camp": 4.0,
+        "cannon": 3.0,
+        "cc": 1.0,
+        "crafting": 1.0,
+        "dbarracks": 1.0,
+        "dd": 3.0,
+        "ds": 1.0,
+        "dsf": 1.0,
+        "eagle": 1.0,
+        "ec": 7.0,
+        "es": 4.0,
+        "firespitter": 0.0,
+        "gm": 7.0,
+        "gs": 4.0,
+        "helper": 1.0,
+        "herohall": 1.0,
+        "inferno": 3.0,
+        "lab": 1.0,
+        "mat": 2.0,
+        "mgt": 0.0,
+        "mono": 1.0,
+        "mortar": 4.0,
+        "pethouse": 1.0,
+        "revenge": 0.0,
+        "ric": 2.0,
+        "scatter": 2.0,
+        "sf": 1.0,
+        "smith": 1.0,
+        "st": 2.0,
+        "sweeper": 2.0,
+        "swt": 0.0,
+        "tesla": 5.0,
+        "th": 1.0,
+        "workshop": 1.0,
+        "wt": 5.0,
+        "xbow": 4.0
+      },
+      "unmerged": {
+        "ad": 4.0,
+        "at": 8.0,
+        "banner": 4.0,
+        "barracks": 1.0,
+        "bh": 5.0,
+        "bob": 1.0,
+        "bt": 2.0,
+        "camp": 4.0,
+        "cannon": 7.0,
+        "cc": 1.0,
+        "crafting": 1.0,
+        "dbarracks": 1.0,
+        "dd": 3.0,
+        "ds": 1.0,
+        "dsf": 1.0,
+        "eagle": 1.0,
+        "ec": 7.0,
+        "es": 4.0,
+        "firespitter": 0.0,
+        "gm": 7.0,
+        "gs": 4.0,
+        "helper": 1.0,
+        "herohall": 1.0,
+        "inferno": 3.0,
+        "lab": 1.0,
+        "mat": 2.0,
+        "mgt": 0.0,
+        "mono": 1.0,
+        "mortar": 4.0,
+        "pethouse": 1.0,
+        "revenge": 0.0,
+        "ric": 2.0,
+        "scatter": 2.0,
+        "sf": 1.0,
+        "smith": 1.0,
+        "st": 2.0,
+        "sweeper": 2.0,
+        "swt": 0.0,
+        "tesla": 5.0,
+        "th": 1.0,
+        "workshop": 1.0,
+        "wt": 5.0,
+        "xbow": 4.0
+      },
+      "traps": {
+        "airbomb": 7.0,
+        "bomb": 8.0,
+        "giant": 7.0,
+        "giga": 0.0,
+        "seeking": 8.0,
+        "skeleton": 4.0,
+        "spring": 9.0,
+        "tornado": 1.0
+      },
+      "walls": 325.0,
+      "max_levels": {
+        "th": 17.0,
+        "cc": 12.0,
+        "ad": 14.0,
+        "sweeper": 7.0,
+        "at": 21.0,
+        "mat": 2.0,
+        "cannon": 21.0,
+        "ric": 2.0,
+        "bt": 11.0,
+        "bh": 6.0,
+        "eagle": 7.0,
+        "tesla": 15.0,
+        "inferno": 10.0,
+        "mono": 3.0,
+        "mortar": 16.0,
+        "scatter": 5.0,
+        "st": 3.0,
+        "wt": 16.0,
+        "xbow": 11.0,
+        "gm": 17.0,
+        "ec": 17.0,
+        "dd": 11.0,
+        "gs": 17.0,
+        "es": 17.0,
+        "ds": 11.0,
+        "camp": 12.0,
+        "barracks": 18.0,
+        "dbarracks": 13.0,
+        "sf": 9.0,
+        "dsf": 8.0,
+        "lab": 14.0,
+        "workshop": 8.0,
+        "pethouse": 10.0,
+        "smith": 9.0,
+        "herohall": 10.0,
+        "helper": 1.0,
+        "bob": 1.0,
+        "banner": 1.0,
+        "mgt": null,
+        "firespitter": null,
+        "swt": null,
+        "revenge": null,
+        "crafting": 1.0
+      },
+      "trap_max_levels": {
+        "giga": null,
+        "bomb": 12.0,
+        "spring": 11.0,
+        "giant": 10.0,
+        "airbomb": 11.0,
+        "seeking": 6.0,
+        "skeleton": 4.0,
+        "tornado": 3.0
+      },
+      "cc_capacity": 50.0,
+      "cc_laboratory_cap": 16.0,
+      "hero_slots": 4.0,
+      "wall_max_level": 17.0
+    },
+    "17": {
+      "buildings": {
+        "ad": 4.0,
+        "at": 2.0,
+        "banner": 4.0,
+        "barracks": 1.0,
+        "bh": 5.0,
+        "bob": 1.0,
+        "bt": 2.0,
+        "camp": 4.0,
+        "cannon": 0.0,
+        "cc": 1.0,
+        "crafting": 1.0,
+        "dbarracks": 1.0,
+        "dd": 3.0,
+        "ds": 1.0,
+        "dsf": 1.0,
+        "eagle": 0.0,
+        "ec": 7.0,
+        "es": 4.0,
+        "firespitter": 2.0,
+        "gm": 7.0,
+        "gs": 4.0,
+        "helper": 1.0,
+        "herohall": 1.0,
+        "inferno": 3.0,
+        "lab": 1.0,
+        "mat": 3.0,
+        "mgt": 1.0,
+        "mono": 1.0,
+        "mortar": 4.0,
+        "pethouse": 1.0,
+        "revenge": 0.0,
+        "ric": 3.0,
+        "scatter": 2.0,
+        "sf": 1.0,
+        "smith": 1.0,
+        "st": 2.0,
+        "sweeper": 2.0,
+        "swt": 0.0,
+        "tesla": 5.0,
+        "th": 1.0,
+        "workshop": 1.0,
+        "wt": 5.0,
+        "xbow": 4.0
+      },
+      "unmerged": {
+        "ad": 4.0,
+        "at": 9.0,
+        "banner": 4.0,
+        "barracks": 1.0,
+        "bh": 5.0,
+        "bob": 1.0,
+        "bt": 2.0,
+        "camp": 4.0,
+        "cannon": 7.0,
+        "cc": 1.0,
+        "crafting": 1.0,
+        "dbarracks": 1.0,
+        "dd": 3.0,
+        "ds": 1.0,
+        "dsf": 1.0,
+        "eagle": 1.0,
+        "ec": 7.0,
+        "es": 4.0,
+        "firespitter": 2.0,
+        "gm": 7.0,
+        "gs": 4.0,
+        "helper": 1.0,
+        "herohall": 1.0,
+        "inferno": 3.0,
+        "lab": 1.0,
+        "mat": 3.0,
+        "mgt": 1.0,
+        "mono": 1.0,
+        "mortar": 4.0,
+        "pethouse": 1.0,
+        "revenge": 0.0,
+        "ric": 3.0,
+        "scatter": 2.0,
+        "sf": 1.0,
+        "smith": 1.0,
+        "st": 2.0,
+        "sweeper": 2.0,
+        "swt": 0.0,
+        "tesla": 5.0,
+        "th": 1.0,
+        "workshop": 1.0,
+        "wt": 5.0,
+        "xbow": 4.0
+      },
+      "traps": {
+        "airbomb": 7.0,
+        "bomb": 8.0,
+        "giant": 8.0,
+        "giga": 1.0,
+        "seeking": 9.0,
+        "skeleton": 4.0,
+        "spring": 9.0,
+        "tornado": 1.0
+      },
+      "walls": 325.0,
+      "max_levels": {
+        "th": 18.0,
+        "cc": 13.0,
+        "ad": 15.0,
+        "sweeper": 7.0,
+        "at": 21.0,
+        "mat": 3.0,
+        "cannon": 21.0,
+        "ric": 3.0,
+        "bt": 12.0,
+        "bh": 7.0,
+        "eagle": 7.0,
+        "tesla": 16.0,
+        "inferno": 11.0,
+        "mono": 4.0,
+        "mortar": 17.0,
+        "scatter": 6.0,
+        "st": 4.0,
+        "wt": 17.0,
+        "xbow": 12.0,
+        "gm": 17.0,
+        "ec": 17.0,
+        "dd": 11.0,
+        "gs": 18.0,
+        "es": 18.0,
+        "ds": 12.0,
+        "camp": 13.0,
+        "barracks": 19.0,
+        "dbarracks": 13.0,
+        "sf": 9.0,
+        "dsf": 8.0,
+        "lab": 15.0,
+        "workshop": 9.0,
+        "pethouse": 11.0,
+        "smith": 10.0,
+        "herohall": 11.0,
+        "helper": 1.0,
+        "bob": 1.0,
+        "banner": 1.0,
+        "mgt": 2.0,
+        "firespitter": 2.0,
+        "swt": null,
+        "revenge": null,
+        "crafting": 1.0
+      },
+      "trap_max_levels": {
+        "giga": 3.0,
+        "bomb": 13.0,
+        "spring": 12.0,
+        "giant": 11.0,
+        "airbomb": 12.0,
+        "seeking": 7.0,
+        "skeleton": 4.0,
+        "tornado": 3.0
+      },
+      "cc_capacity": 55.0,
+      "cc_laboratory_cap": 16.0,
+      "hero_slots": 4.0,
+      "wall_max_level": 18.0
+    },
+    "18": {
+      "buildings": {
+        "ad": 4.0,
+        "at": 2.0,
+        "banner": 4.0,
+        "barracks": 1.0,
+        "bh": 5.0,
+        "bob": 1.0,
+        "bt": 2.0,
+        "camp": 4.0,
+        "cannon": 0.0,
+        "cc": 1.0,
+        "crafting": 1.0,
+        "dbarracks": 1.0,
+        "dd": 3.0,
+        "ds": 1.0,
+        "dsf": 1.0,
+        "eagle": 0.0,
+        "ec": 7.0,
+        "es": 4.0,
+        "firespitter": 2.0,
+        "gm": 7.0,
+        "gs": 4.0,
+        "helper": 1.0,
+        "herohall": 1.0,
+        "inferno": 3.0,
+        "lab": 1.0,
+        "mat": 3.0,
+        "mgt": 1.0,
+        "mono": 1.0,
+        "mortar": 4.0,
+        "pethouse": 1.0,
+        "revenge": 1.0,
+        "ric": 3.0,
+        "scatter": 2.0,
+        "sf": 1.0,
+        "smith": 1.0,
+        "st": 2.0,
+        "sweeper": 2.0,
+        "swt": 2.0,
+        "tesla": 5.0,
+        "th": 1.0,
+        "workshop": 1.0,
+        "wt": 2.0,
+        "xbow": 4.0
+      },
+      "unmerged": {
+        "ad": 4.0,
+        "at": 9.0,
+        "banner": 4.0,
+        "barracks": 1.0,
+        "bh": 5.0,
+        "bob": 1.0,
+        "bt": 2.0,
+        "camp": 4.0,
+        "cannon": 7.0,
+        "cc": 1.0,
+        "crafting": 1.0,
+        "dbarracks": 1.0,
+        "dd": 3.0,
+        "ds": 1.0,
+        "dsf": 1.0,
+        "eagle": 1.0,
+        "ec": 7.0,
+        "es": 4.0,
+        "firespitter": 2.0,
+        "gm": 7.0,
+        "gs": 4.0,
+        "helper": 1.0,
+        "herohall": 1.0,
+        "inferno": 3.0,
+        "lab": 1.0,
+        "mat": 3.0,
+        "mgt": 1.0,
+        "mono": 1.0,
+        "mortar": 4.0,
+        "pethouse": 1.0,
+        "revenge": 1.0,
+        "ric": 3.0,
+        "scatter": 2.0,
+        "sf": 1.0,
+        "smith": 1.0,
+        "st": 2.0,
+        "sweeper": 2.0,
+        "swt": 2.0,
+        "tesla": 5.0,
+        "th": 1.0,
+        "workshop": 1.0,
+        "wt": 6.0,
+        "xbow": 4.0
+      },
+      "traps": {
+        "airbomb": 8.0,
+        "bomb": 8.0,
+        "giant": 8.0,
+        "giga": 1.0,
+        "seeking": 9.0,
+        "skeleton": 4.0,
+        "spring": 9.0,
+        "tornado": 1.0
+      },
+      "walls": 325.0,
+      "max_levels": {
+        "th": 18.0,
+        "cc": 14.0,
+        "ad": 16.0,
+        "sweeper": 7.0,
+        "at": 21.0,
+        "mat": 4.0,
+        "cannon": 21.0,
+        "ric": 4.0,
+        "bt": 13.0,
+        "bh": 8.0,
+        "eagle": 7.0,
+        "tesla": 17.0,
+        "inferno": 12.0,
+        "mono": 5.0,
+        "mortar": 18.0,
+        "scatter": 7.0,
+        "st": 4.0,
+        "wt": 17.0,
+        "xbow": 13.0,
+        "gm": 17.0,
+        "ec": 17.0,
+        "dd": 11.0,
+        "gs": 19.0,
+        "es": 19.0,
+        "ds": 13.0,
+        "camp": 14.0,
+        "barracks": 19.0,
+        "dbarracks": 13.0,
+        "sf": 9.0,
+        "dsf": 8.0,
+        "lab": 16.0,
+        "workshop": 9.0,
+        "pethouse": 12.0,
+        "smith": 10.0,
+        "herohall": 12.0,
+        "helper": 1.0,
+        "bob": 1.0,
+        "banner": 1.0,
+        "mgt": 3.0,
+        "firespitter": 3.0,
+        "swt": 2.0,
+        "revenge": 2.0,
+        "crafting": 1.0
+      },
+      "trap_max_levels": {
+        "giga": 4.0,
+        "bomb": 14.0,
+        "spring": 13.0,
+        "giant": 12.0,
+        "airbomb": 13.0,
+        "seeking": 8.0,
+        "skeleton": 5.0,
+        "tornado": 3.0
+      },
+      "cc_capacity": 55.0,
+      "cc_laboratory_cap": 16.0,
+      "hero_slots": 4.0,
+      "wall_max_level": 19.0
+    }
+  },
+  "hero_guardian_max_levels": {
+    "Barbarian King": {
+      "16": 95.0,
+      "17": 100.0,
+      "18": 110.0
+    },
+    "Archer Queen": {
+      "16": 95.0,
+      "17": 100.0,
+      "18": 110.0
+    },
+    "Grand Warden": {
+      "16": 70.0,
+      "17": 75.0,
+      "18": 85.0
+    },
+    "Royal Champion": {
+      "16": 45.0,
+      "17": 50.0,
+      "18": 55.0
+    },
+    "Minion Prince": {
+      "16": 80.0,
+      "17": 90.0,
+      "18": 95.0
+    },
+    "Dragon Duke": {
+      "16": 15.0,
+      "17": 20.0,
+      "18": 25.0
+    },
+    "Longshot": {
+      "16": null,
+      "17": null,
+      "18": 5.0
+    },
+    "Smasher": {
+      "16": null,
+      "17": null,
+      "18": 5.0
+    },
+    "Logger": {
+      "16": null,
+      "17": null,
+      "18": 5.0
+    }
+  },
+  "mode_unlocks": {
+    "spell_tower": {
+      "rage": 1.0,
+      "poison": 2.0,
+      "invis": 3.0,
+      "eq": 4.0,
+      "quake": 4.0,
+      "earthquake": 4.0
+    },
+    "gear_minimum": {
+      "cannon": 7.0,
+      "at": 10.0,
+      "mortar": 8.0
+    },
+    "crafting": {
+      "phase": 4.0,
+      "start": "2026-08-01",
+      "end": "2026-12-31",
+      "modes": [
+        "cake",
+        "candle",
+        "hunter"
+      ]
+    },
+    "source": "rust/data/catalog.json#/setup/{spell_tower_unlocks,gear_minimum,crafting}; game_data.buildings.{Cannon,Archer Tower,Mortar}[].{GearUpCost,GearUpLevelRequirement}"
+  },
+  "capacity_source": "rust/data/catalog.json#/registry/{Hero Hall,Clan Castle}/levels/*/wiki/{Hero Slots,Troop Capacity,Laboratory Level Cap}; /setup/donated_laboratory",
+  "level_source": "rust/data/catalog.json#/registry/*/{levels,max_level}; levels[].{required_townhall,wiki.Town Hall Level Required}"
+}

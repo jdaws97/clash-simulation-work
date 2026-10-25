@@ -6,9 +6,8 @@ use crate::geom::round_half_even;
 
 pub const RES: usize = 2;
 pub const INF: f32 = 1_000_000_000.0;
-// battle.py:58-60: sqrt(0.5) / RES + 1e-6, and WALL_COST["normal"] / RES.
+// Grid discretization tolerance, not a tunable gameplay rule.
 pub const GOAL_REACH_MIN: f64 = std::f64::consts::FRAC_1_SQRT_2 / 2.0 + 0.000_001;
-pub const NORMAL_WALL_EXTRA: f64 = 12.0 / RES as f64;
 
 // pathing.py:20-24: both relaxation and next_step use this order.
 const NEIGHBORS: [(isize, isize); 8] = [
@@ -737,6 +736,25 @@ impl Grid {
             self.pool_spans.push(GoalSpan { start, end });
             start = end;
         }
+    }
+
+    /// Settle each candidate independently. `building_costs` deliberately stops
+    /// at the cheapest goal in the union and returns INF for more costly goals;
+    /// those sentinels must not be interpreted as unreachable by list ranking.
+    pub fn exact_building_costs(
+        &mut self,
+        x: f64,
+        y: f64,
+        wall_extra: f64,
+        geometry: &[(f64, f64, f64)],
+        reach: f64,
+    ) -> Vec<f64> {
+        geometry
+            .iter()
+            .map(|&building| {
+                f64::from(self.building_costs(x, y, wall_extra, &[building], reach)[0])
+            })
+            .collect()
     }
 
     pub fn building_costs(

@@ -2859,9 +2859,10 @@ pub fn guardians_tick(battle: &mut Battle) {
                 a.name_id != Name::Totem && t >= a.invisible_until && !a.underground
             });
         if near || th_down {
+            let delay = battle.params.guardian_activation_delay;
             let g = battle.unit_mut(guardian);
             g.extra.waiting = false;
-            g.active_at = t + 0.5;
+            g.active_at = t + delay;
         }
     }
     let g = battle.unit(guardian);
