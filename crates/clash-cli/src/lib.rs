@@ -57,6 +57,14 @@ pub fn run(mut arguments: Vec<OsString>) -> Result<(), String> {
             return clash_vidmine::run(text_arguments(arguments)?)
                 .map_err(|error| error.to_string());
         }
+        Some("dataimport") => {
+            arguments.remove(0);
+            return clash_dataimport::cli(&text_arguments(arguments)?);
+        }
+        Some("playbook") => {
+            arguments.remove(0);
+            return clash_playbook_tools::cli(&text_arguments(arguments)?);
+        }
         Some("simulate") => {
             arguments.remove(0);
             if arguments.first().and_then(|value| value.to_str()) == Some("bench") {

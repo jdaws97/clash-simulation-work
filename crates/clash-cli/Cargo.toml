@@ -17,6 +17,8 @@ clash-armysearch.workspace = true
 clash-basesearch.workspace = true
 clash-fidelity.workspace = true
 clash-vidmine.workspace = true
+clash-dataimport.workspace = true
+clash-playbook-tools.workspace = true
 
 [[bin]]
 name = "clash"

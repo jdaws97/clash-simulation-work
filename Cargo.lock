@@ -28,10 +28,12 @@ dependencies = [
  "clash-armysearch",
  "clash-basesearch",
  "clash-data",
+ "clash-dataimport",
  "clash-engine",
  "clash-fidelity",
  "clash-layout",
  "clash-plans",
+ "clash-playbook-tools",
  "clash-scoring",
  "clash-vidmine",
 ]
@@ -39,6 +41,14 @@ dependencies = [
 [[package]]
 name = "clash-data"
 version = "0.1.0"
+
+[[package]]
+name = "clash-dataimport"
+version = "0.1.0"
+dependencies = [
+ "clash-data",
+ "clash-layout",
+]
 
 [[package]]
 name = "clash-engine"
@@ -71,6 +81,13 @@ version = "0.1.0"
 dependencies = [
  "clash-data",
  "clash-engine",
+]
+
+[[package]]
+name = "clash-playbook-tools"
+version = "0.1.0"
+dependencies = [
+ "clash-data",
 ]
 
 [[package]]
