@@ -1,0 +1,1954 @@
+{
+ "name": "r18a",
+ "notes": "Source: output/ranked-bases-2026-10-25-th18/t18a-alexpate99.png; user-captured replay of their own ranked attack against AlexPate99, clan Lambrusco. Real screenshot transcription; no synthetic or real-game calibration claim. Captured UI shows 0% overall damage and 2m33s remaining. No destroyed building pad was confidently identified. Grid: {\"cx\": 1420.5, \"top\": -14.0, \"a\": 15.75, \"b\": 11.8125}; screen_x = cx + (x-y)*a; screen_y = top + (x+y)*b; 44x44 village, x down-right and y down-left. Checked against the four bottom Army Camp pads and walls across the village. Coordinates are top footprint tiles. TH18 Town Hall carries Inferno Artillery; the large log held by the Guardian identifies Logger. No Eagle Artillery is placed. cc_troops: [] because a replay has no defending Clan Castle troop panel. Empty means unknown/unobservable, not confirmed empty. The bottom deployment bar belongs to the attacker. attacker_army: Root Rider x4 L3; Balloon x2 L11; Healer x5 L9; Valkyrie x8 L11; purple masked unit x1 L4 (tentatively Headhunter; possibly Apprentice Warden); Minion x6 L11; Archer x2 L11; Ice Golem x2 L8; Super Wall Breaker x2 L11; Siege Barracks x1 L4. Heroes: Archer Queen 95 with owl-like pet 6 (tentatively Electro Owl), Dragon Duke 15 with Angry Jelly 8, Grand Warden 68 with Phoenix 8, Royal Champion 41 with Unicorn 10. Spells: Invisibility x5 L4; Recall x1 L5; Poison x1 L9; Overgrowth x1 L3; Freeze x1 L7; Rage x1 L7; Earthquake x1 L4. Final grey potion L5 has no displayed count and is unidentified. These are visible remaining counts, not a reconstructed initial army. See attacker_army.json and attacker-army.png. Defending banners: 12,21 Barbarian King (102); 22,12 Archer Queen (102); 25,29 Minion Prince (82); 29,25 Royal Champion (55). Hero sprites can stand away from their banner centers. Walls: automatic detector returned 807 candidates; inspected enlarged overlays, replaced with manually transcribed runs and removed footprint conflicts. Hidden Teslas and traps were not inferred. Uncertain: dsf 1 11: Identity is tentative: green-roofed structure is partly covered by a seasonal glowing reward effect marked 150. Recorded as the Dark Spell Factory; verify against an unobstructed frame. Uncertain: crafting 7 2 hunter: Purple poison/skull-like cannon on wheels is read as Hero Hunter. Crafted mode is tentative. Uncertain: revenge: No separate Revenge Tower confidently identified. Left unplaced; the missing inventory entry is not proof that it is absent from the actual village. Uncertain: tesla and traps: No exposed Hidden Tesla or identifiable trap was confidently located. No hidden positions were invented. Uncertain: footprints: Most pads are readable. Allow approximately one tile uncertainty for the partly obscured outer support buildings, especially barracks 39 34, sf 34 40, herohall 38 38, dsf 1 11, workshop 2 2, and small hero banners or sweepers. The replay timer overlaps the bottom Hero Hall. Uncertain: walls: Manual wall runs replace automatic false positives. Occlusion by tall defenses, heroes and Logger leaves unresolved segments and corner joins; the recorded wall set is not asserted to be all 325 walls. Uncertain: modes: Infernos are read as multi; green/cyan Spell Towers as invisibility. All four X-Bows are tentatively ground. Firespitters are tentatively S at 14,23 and E at 23,14; sweepers SW at 20,22 and SE at 22,20. Directions and modes are less certain than building identity. Uncertain: attacker_army: Purple masked level-4 troop is tentatively Headhunter, with Apprentice Warden an alternative. Queen pet is tentatively Electro Owl. The final grey level-5 potion has no displayed count and remains unidentified. Icon crops and counts are preserved for correction. Digitized from a screenshot; positions about +-1 tile; traps placed by heuristic (not visible in screenshots); built with the user's levels. Hidden Teslas not visible in the screenshot: 5 placed inside the walls at [(15, 20), (28, 12), (8, 7), (12, 28), (21, 15)] (assumed). CC troops not visible in a replay: layout.DEFAULT_CC assumed. Levels: TH18 maximum (defender levels unknown; the user's TH16 levels removed). Source: the user's own ranked attack replay vs AlexPate99 (user-reported result: 1 stars, 61% destruction). Reference/validation only, never a search seed.",
+ "buildings": [
+  {
+   "key": "workshop",
+   "x": 2,
+   "y": 2
+  },
+  {
+   "key": "crafting",
+   "x": 7,
+   "y": 2,
+   "mode": "hunter"
+  },
+  {
+   "key": "pethouse",
+   "x": 11,
+   "y": 2
+  },
+  {
+   "key": "helper",
+   "x": 15,
+   "y": 2
+  },
+  {
+   "key": "dd",
+   "x": 20,
+   "y": 2
+  },
+  {
+   "key": "ec",
+   "x": 23,
+   "y": 2
+  },
+  {
+   "key": "gm",
+   "x": 28,
+   "y": 2
+  },
+  {
+   "key": "ec",
+   "x": 32,
+   "y": 2
+  },
+  {
+   "key": "gm",
+   "x": 35,
+   "y": 5
+  },
+  {
+   "key": "ec",
+   "x": 37,
+   "y": 9
+  },
+  {
+   "key": "gm",
+   "x": 37,
+   "y": 12
+  },
+  {
+   "key": "ec",
+   "x": 40,
+   "y": 17
+  },
+  {
+   "key": "gm",
+   "x": 40,
+   "y": 21
+  },
+  {
+   "key": "camp",
+   "x": 39,
+   "y": 24
+  },
+  {
+   "key": "camp",
+   "x": 39,
+   "y": 29
+  },
+  {
+   "key": "barracks",
+   "x": 39,
+   "y": 34
+  },
+  {
+   "key": "dsf",
+   "x": 1,
+   "y": 11
+  },
+  {
+   "key": "herohall",
+   "x": 38,
+   "y": 38
+  },
+  {
+   "key": "sf",
+   "x": 34,
+   "y": 40
+  },
+  {
+   "key": "camp",
+   "x": 29,
+   "y": 39
+  },
+  {
+   "key": "camp",
+   "x": 24,
+   "y": 39
+  },
+  {
+   "key": "dd",
+   "x": 21,
+   "y": 40
+  },
+  {
+   "key": "ec",
+   "x": 17,
+   "y": 40
+  },
+  {
+   "key": "bob",
+   "x": 14,
+   "y": 36
+  },
+  {
+   "key": "gm",
+   "x": 10,
+   "y": 36
+  },
+  {
+   "key": "dd",
+   "x": 6,
+   "y": 34
+  },
+  {
+   "key": "ec",
+   "x": 3,
+   "y": 32
+  },
+  {
+   "key": "gm",
+   "x": 2,
+   "y": 28
+  },
+  {
+   "key": "ec",
+   "x": 1,
+   "y": 23
+  },
+  {
+   "key": "gm",
+   "x": 1,
+   "y": 20
+  },
+  {
+   "key": "lab",
+   "x": 1,
+   "y": 15
+  },
+  {
+   "key": "smith",
+   "x": 2,
+   "y": 7
+  },
+  {
+   "key": "at",
+   "x": 10,
+   "y": 7
+  },
+  {
+   "key": "es",
+   "x": 14,
+   "y": 7
+  },
+  {
+   "key": "dbarracks",
+   "x": 7,
+   "y": 10
+  },
+  {
+   "key": "gs",
+   "x": 7,
+   "y": 14
+  },
+  {
+   "key": "ds",
+   "x": 11,
+   "y": 11
+  },
+  {
+   "key": "ric",
+   "x": 11,
+   "y": 14
+  },
+  {
+   "key": "mat",
+   "x": 14,
+   "y": 11
+  },
+  {
+   "key": "cc",
+   "x": 14,
+   "y": 14
+  },
+  {
+   "key": "xbow",
+   "x": 8,
+   "y": 18,
+   "mode": "ground"
+  },
+  {
+   "key": "ad",
+   "x": 8,
+   "y": 21
+  },
+  {
+   "key": "inferno",
+   "x": 12,
+   "y": 18,
+   "mode": "multi"
+  },
+  {
+   "key": "bh",
+   "x": 15,
+   "y": 18
+  },
+  {
+   "key": "inferno",
+   "x": 19,
+   "y": 12,
+   "mode": "multi"
+  },
+  {
+   "key": "bh",
+   "x": 19,
+   "y": 15
+  },
+  {
+   "key": "xbow",
+   "x": 18,
+   "y": 8,
+   "mode": "ground"
+  },
+  {
+   "key": "ad",
+   "x": 21,
+   "y": 8
+  },
+  {
+   "key": "mortar",
+   "x": 25,
+   "y": 8
+  },
+  {
+   "key": "gs",
+   "x": 28,
+   "y": 8
+  },
+  {
+   "key": "banner",
+   "x": 12,
+   "y": 21
+  },
+  {
+   "key": "banner",
+   "x": 22,
+   "y": 12
+  },
+  {
+   "key": "firespitter",
+   "x": 14,
+   "y": 23,
+   "mode": "S"
+  },
+  {
+   "key": "firespitter",
+   "x": 23,
+   "y": 14,
+   "mode": "E"
+  },
+  {
+   "key": "th",
+   "x": 18,
+   "y": 18
+  },
+  {
+   "key": "st",
+   "x": 18,
+   "y": 22,
+   "mode": "invis"
+  },
+  {
+   "key": "st",
+   "x": 22,
+   "y": 18,
+   "mode": "invis"
+  },
+  {
+   "key": "sweeper",
+   "x": 20,
+   "y": 22,
+   "mode": "SW"
+  },
+  {
+   "key": "sweeper",
+   "x": 22,
+   "y": 20,
+   "mode": "SE"
+  },
+  {
+   "key": "bh",
+   "x": 22,
+   "y": 22
+  },
+  {
+   "key": "bh",
+   "x": 24,
+   "y": 20
+  },
+  {
+   "key": "mortar",
+   "x": 8,
+   "y": 25
+  },
+  {
+   "key": "es",
+   "x": 8,
+   "y": 28
+  },
+  {
+   "key": "scatter",
+   "x": 14,
+   "y": 27
+  },
+  {
+   "key": "bt",
+   "x": 11,
+   "y": 32
+  },
+  {
+   "key": "swt",
+   "x": 14,
+   "y": 31
+  },
+  {
+   "key": "ric",
+   "x": 18,
+   "y": 30
+  },
+  {
+   "key": "gs",
+   "x": 18,
+   "y": 27
+  },
+  {
+   "key": "mat",
+   "x": 21,
+   "y": 30
+  },
+  {
+   "key": "ad",
+   "x": 21,
+   "y": 26
+  },
+  {
+   "key": "wt",
+   "x": 18,
+   "y": 34
+  },
+  {
+   "key": "mortar",
+   "x": 21,
+   "y": 34
+  },
+  {
+   "key": "es",
+   "x": 24,
+   "y": 34
+  },
+  {
+   "key": "xbow",
+   "x": 25,
+   "y": 31,
+   "mode": "ground"
+  },
+  {
+   "key": "mgt",
+   "x": 28,
+   "y": 34
+  },
+  {
+   "key": "bh",
+   "x": 32,
+   "y": 32
+  },
+  {
+   "key": "at",
+   "x": 34,
+   "y": 29
+  },
+  {
+   "key": "wt",
+   "x": 34,
+   "y": 34
+  },
+  {
+   "key": "mono",
+   "x": 28,
+   "y": 28
+  },
+  {
+   "key": "banner",
+   "x": 25,
+   "y": 29
+  },
+  {
+   "key": "banner",
+   "x": 29,
+   "y": 25
+  },
+  {
+   "key": "scatter",
+   "x": 27,
+   "y": 14
+  },
+  {
+   "key": "bt",
+   "x": 32,
+   "y": 11
+  },
+  {
+   "key": "swt",
+   "x": 31,
+   "y": 14
+  },
+  {
+   "key": "es",
+   "x": 27,
+   "y": 18
+  },
+  {
+   "key": "ric",
+   "x": 30,
+   "y": 18
+  },
+  {
+   "key": "inferno",
+   "x": 34,
+   "y": 18,
+   "mode": "multi"
+  },
+  {
+   "key": "ad",
+   "x": 27,
+   "y": 21
+  },
+  {
+   "key": "mat",
+   "x": 30,
+   "y": 21
+  },
+  {
+   "key": "mortar",
+   "x": 34,
+   "y": 21
+  },
+  {
+   "key": "gs",
+   "x": 35,
+   "y": 24
+  },
+  {
+   "key": "xbow",
+   "x": 32,
+   "y": 25,
+   "mode": "ground"
+  },
+  {
+   "key": "tesla",
+   "x": 15,
+   "y": 20
+  },
+  {
+   "key": "tesla",
+   "x": 28,
+   "y": 12
+  },
+  {
+   "key": "tesla",
+   "x": 8,
+   "y": 7
+  },
+  {
+   "key": "tesla",
+   "x": 12,
+   "y": 28
+  },
+  {
+   "key": "tesla",
+   "x": 21,
+   "y": 15
+  }
+ ],
+ "walls": [
+  [
+   6,
+   7
+  ],
+  [
+   6,
+   8
+  ],
+  [
+   6,
+   9
+  ],
+  [
+   6,
+   10
+  ],
+  [
+   6,
+   11
+  ],
+  [
+   6,
+   12
+  ],
+  [
+   6,
+   13
+  ],
+  [
+   6,
+   14
+  ],
+  [
+   6,
+   15
+  ],
+  [
+   6,
+   16
+  ],
+  [
+   6,
+   17
+  ],
+  [
+   6,
+   18
+  ],
+  [
+   6,
+   19
+  ],
+  [
+   6,
+   20
+  ],
+  [
+   6,
+   21
+  ],
+  [
+   6,
+   22
+  ],
+  [
+   6,
+   23
+  ],
+  [
+   6,
+   24
+  ],
+  [
+   6,
+   25
+  ],
+  [
+   6,
+   26
+  ],
+  [
+   6,
+   27
+  ],
+  [
+   6,
+   28
+  ],
+  [
+   6,
+   29
+  ],
+  [
+   6,
+   30
+  ],
+  [
+   7,
+   6
+  ],
+  [
+   7,
+   7
+  ],
+  [
+   7,
+   17
+  ],
+  [
+   7,
+   24
+  ],
+  [
+   7,
+   30
+  ],
+  [
+   7,
+   31
+  ],
+  [
+   8,
+   6
+  ],
+  [
+   8,
+   17
+  ],
+  [
+   8,
+   24
+  ],
+  [
+   8,
+   31
+  ],
+  [
+   9,
+   6
+  ],
+  [
+   9,
+   17
+  ],
+  [
+   9,
+   24
+  ],
+  [
+   9,
+   31
+  ],
+  [
+   9,
+   32
+  ],
+  [
+   9,
+   33
+  ],
+  [
+   9,
+   34
+  ],
+  [
+   10,
+   6
+  ],
+  [
+   10,
+   10
+  ],
+  [
+   10,
+   11
+  ],
+  [
+   10,
+   12
+  ],
+  [
+   10,
+   13
+  ],
+  [
+   10,
+   14
+  ],
+  [
+   10,
+   15
+  ],
+  [
+   10,
+   16
+  ],
+  [
+   10,
+   17
+  ],
+  [
+   10,
+   24
+  ],
+  [
+   10,
+   34
+  ],
+  [
+   11,
+   6
+  ],
+  [
+   11,
+   10
+  ],
+  [
+   11,
+   18
+  ],
+  [
+   11,
+   19
+  ],
+  [
+   11,
+   20
+  ],
+  [
+   11,
+   21
+  ],
+  [
+   11,
+   22
+  ],
+  [
+   11,
+   23
+  ],
+  [
+   11,
+   24
+  ],
+  [
+   11,
+   25
+  ],
+  [
+   11,
+   26
+  ],
+  [
+   11,
+   27
+  ],
+  [
+   11,
+   28
+  ],
+  [
+   11,
+   29
+  ],
+  [
+   11,
+   30
+  ],
+  [
+   12,
+   6
+  ],
+  [
+   12,
+   10
+  ],
+  [
+   12,
+   26
+  ],
+  [
+   12,
+   30
+  ],
+  [
+   13,
+   6
+  ],
+  [
+   13,
+   10
+  ],
+  [
+   13,
+   26
+  ],
+  [
+   13,
+   30
+  ],
+  [
+   14,
+   6
+  ],
+  [
+   14,
+   10
+  ],
+  [
+   14,
+   26
+  ],
+  [
+   14,
+   30
+  ],
+  [
+   14,
+   34
+  ],
+  [
+   15,
+   6
+  ],
+  [
+   15,
+   10
+  ],
+  [
+   15,
+   26
+  ],
+  [
+   15,
+   30
+  ],
+  [
+   15,
+   34
+  ],
+  [
+   16,
+   6
+  ],
+  [
+   16,
+   10
+  ],
+  [
+   16,
+   26
+  ],
+  [
+   16,
+   30
+  ],
+  [
+   16,
+   34
+  ],
+  [
+   17,
+   6
+  ],
+  [
+   17,
+   7
+  ],
+  [
+   17,
+   8
+  ],
+  [
+   17,
+   9
+  ],
+  [
+   17,
+   10
+  ],
+  [
+   17,
+   11
+  ],
+  [
+   17,
+   12
+  ],
+  [
+   17,
+   13
+  ],
+  [
+   17,
+   14
+  ],
+  [
+   17,
+   15
+  ],
+  [
+   17,
+   16
+  ],
+  [
+   17,
+   17
+  ],
+  [
+   17,
+   18
+  ],
+  [
+   17,
+   19
+  ],
+  [
+   17,
+   20
+  ],
+  [
+   17,
+   21
+  ],
+  [
+   17,
+   22
+  ],
+  [
+   17,
+   23
+  ],
+  [
+   17,
+   24
+  ],
+  [
+   17,
+   25
+  ],
+  [
+   17,
+   26
+  ],
+  [
+   17,
+   27
+  ],
+  [
+   17,
+   28
+  ],
+  [
+   17,
+   29
+  ],
+  [
+   17,
+   30
+  ],
+  [
+   17,
+   31
+  ],
+  [
+   17,
+   32
+  ],
+  [
+   17,
+   33
+  ],
+  [
+   17,
+   34
+  ],
+  [
+   17,
+   35
+  ],
+  [
+   17,
+   36
+  ],
+  [
+   17,
+   37
+  ],
+  [
+   18,
+   6
+  ],
+  [
+   18,
+   11
+  ],
+  [
+   18,
+   17
+  ],
+  [
+   18,
+   25
+  ],
+  [
+   18,
+   33
+  ],
+  [
+   18,
+   38
+  ],
+  [
+   19,
+   6
+  ],
+  [
+   19,
+   11
+  ],
+  [
+   19,
+   17
+  ],
+  [
+   19,
+   25
+  ],
+  [
+   19,
+   33
+  ],
+  [
+   19,
+   38
+  ],
+  [
+   20,
+   6
+  ],
+  [
+   20,
+   11
+  ],
+  [
+   20,
+   17
+  ],
+  [
+   20,
+   25
+  ],
+  [
+   20,
+   33
+  ],
+  [
+   20,
+   38
+  ],
+  [
+   21,
+   6
+  ],
+  [
+   21,
+   11
+  ],
+  [
+   21,
+   17
+  ],
+  [
+   21,
+   25
+  ],
+  [
+   21,
+   33
+  ],
+  [
+   21,
+   38
+  ],
+  [
+   22,
+   6
+  ],
+  [
+   22,
+   11
+  ],
+  [
+   22,
+   17
+  ],
+  [
+   22,
+   25
+  ],
+  [
+   22,
+   33
+  ],
+  [
+   22,
+   38
+  ],
+  [
+   23,
+   6
+  ],
+  [
+   23,
+   11
+  ],
+  [
+   23,
+   17
+  ],
+  [
+   23,
+   25
+  ],
+  [
+   23,
+   33
+  ],
+  [
+   23,
+   38
+  ],
+  [
+   24,
+   6
+  ],
+  [
+   24,
+   7
+  ],
+  [
+   24,
+   8
+  ],
+  [
+   24,
+   9
+  ],
+  [
+   24,
+   10
+  ],
+  [
+   24,
+   11
+  ],
+  [
+   24,
+   17
+  ],
+  [
+   24,
+   25
+  ],
+  [
+   24,
+   26
+  ],
+  [
+   24,
+   27
+  ],
+  [
+   24,
+   28
+  ],
+  [
+   24,
+   29
+  ],
+  [
+   24,
+   30
+  ],
+  [
+   24,
+   31
+  ],
+  [
+   24,
+   32
+  ],
+  [
+   24,
+   33
+  ],
+  [
+   24,
+   38
+  ],
+  [
+   25,
+   6
+  ],
+  [
+   25,
+   11
+  ],
+  [
+   25,
+   17
+  ],
+  [
+   25,
+   25
+  ],
+  [
+   25,
+   38
+  ],
+  [
+   26,
+   6
+  ],
+  [
+   26,
+   11
+  ],
+  [
+   26,
+   12
+  ],
+  [
+   26,
+   13
+  ],
+  [
+   26,
+   14
+  ],
+  [
+   26,
+   15
+  ],
+  [
+   26,
+   16
+  ],
+  [
+   26,
+   17
+  ],
+  [
+   26,
+   18
+  ],
+  [
+   26,
+   19
+  ],
+  [
+   26,
+   20
+  ],
+  [
+   26,
+   21
+  ],
+  [
+   26,
+   22
+  ],
+  [
+   26,
+   23
+  ],
+  [
+   26,
+   38
+  ],
+  [
+   27,
+   6
+  ],
+  [
+   27,
+   11
+  ],
+  [
+   27,
+   17
+  ],
+  [
+   27,
+   24
+  ],
+  [
+   27,
+   38
+  ],
+  [
+   28,
+   6
+  ],
+  [
+   28,
+   11
+  ],
+  [
+   28,
+   17
+  ],
+  [
+   28,
+   24
+  ],
+  [
+   28,
+   31
+  ],
+  [
+   28,
+   32
+  ],
+  [
+   28,
+   33
+  ],
+  [
+   28,
+   37
+  ],
+  [
+   28,
+   38
+  ],
+  [
+   29,
+   6
+  ],
+  [
+   29,
+   11
+  ],
+  [
+   29,
+   17
+  ],
+  [
+   29,
+   24
+  ],
+  [
+   29,
+   31
+  ],
+  [
+   29,
+   38
+  ],
+  [
+   30,
+   6
+  ],
+  [
+   30,
+   7
+  ],
+  [
+   30,
+   11
+  ],
+  [
+   30,
+   12
+  ],
+  [
+   30,
+   13
+  ],
+  [
+   30,
+   14
+  ],
+  [
+   30,
+   15
+  ],
+  [
+   30,
+   16
+  ],
+  [
+   30,
+   17
+  ],
+  [
+   30,
+   24
+  ],
+  [
+   30,
+   31
+  ],
+  [
+   30,
+   38
+  ],
+  [
+   31,
+   7
+  ],
+  [
+   31,
+   8
+  ],
+  [
+   31,
+   9
+  ],
+  [
+   31,
+   10
+  ],
+  [
+   31,
+   17
+  ],
+  [
+   31,
+   24
+  ],
+  [
+   31,
+   25
+  ],
+  [
+   31,
+   26
+  ],
+  [
+   31,
+   27
+  ],
+  [
+   31,
+   38
+  ],
+  [
+   32,
+   9
+  ],
+  [
+   32,
+   17
+  ],
+  [
+   32,
+   24
+  ],
+  [
+   32,
+   28
+  ],
+  [
+   32,
+   38
+  ],
+  [
+   33,
+   9
+  ],
+  [
+   33,
+   17
+  ],
+  [
+   33,
+   18
+  ],
+  [
+   33,
+   19
+  ],
+  [
+   33,
+   20
+  ],
+  [
+   33,
+   21
+  ],
+  [
+   33,
+   22
+  ],
+  [
+   33,
+   23
+  ],
+  [
+   33,
+   24
+  ],
+  [
+   33,
+   28
+  ],
+  [
+   33,
+   29
+  ],
+  [
+   33,
+   30
+  ],
+  [
+   33,
+   31
+  ],
+  [
+   33,
+   38
+  ],
+  [
+   34,
+   9
+  ],
+  [
+   34,
+   17
+  ],
+  [
+   34,
+   28
+  ],
+  [
+   34,
+   38
+  ],
+  [
+   35,
+   10
+  ],
+  [
+   35,
+   11
+  ],
+  [
+   35,
+   12
+  ],
+  [
+   35,
+   13
+  ],
+  [
+   35,
+   14
+  ],
+  [
+   35,
+   15
+  ],
+  [
+   35,
+   16
+  ],
+  [
+   35,
+   28
+  ],
+  [
+   35,
+   38
+  ],
+  [
+   36,
+   17
+  ],
+  [
+   36,
+   28
+  ],
+  [
+   36,
+   38
+  ],
+  [
+   37,
+   17
+  ],
+  [
+   37,
+   28
+  ],
+  [
+   37,
+   37
+  ],
+  [
+   37,
+   38
+  ],
+  [
+   38,
+   18
+  ],
+  [
+   38,
+   19
+  ],
+  [
+   38,
+   20
+  ],
+  [
+   38,
+   21
+  ],
+  [
+   38,
+   22
+  ],
+  [
+   38,
+   23
+  ],
+  [
+   38,
+   24
+  ],
+  [
+   38,
+   25
+  ],
+  [
+   38,
+   26
+  ],
+  [
+   38,
+   27
+  ],
+  [
+   38,
+   28
+  ],
+  [
+   38,
+   29
+  ],
+  [
+   38,
+   30
+  ],
+  [
+   38,
+   31
+  ],
+  [
+   38,
+   32
+  ],
+  [
+   38,
+   33
+  ],
+  [
+   38,
+   34
+  ],
+  [
+   38,
+   35
+  ],
+  [
+   38,
+   36
+  ],
+  [
+   38,
+   37
+  ]
+ ],
+ "traps": [
+  {
+   "key": "bomb",
+   "x": 20,
+   "y": 37
+  },
+  {
+   "key": "bomb",
+   "x": 33,
+   "y": 35
+  },
+  {
+   "key": "bomb",
+   "x": 34,
+   "y": 32
+  },
+  {
+   "key": "bomb",
+   "x": 36,
+   "y": 33
+  },
+  {
+   "key": "bomb",
+   "x": 22,
+   "y": 29
+  },
+  {
+   "key": "bomb",
+   "x": 13,
+   "y": 9
+  },
+  {
+   "key": "bomb",
+   "x": 34,
+   "y": 24
+  },
+  {
+   "key": "bomb",
+   "x": 32,
+   "y": 37
+  },
+  {
+   "key": "spring",
+   "x": 7,
+   "y": 22
+  },
+  {
+   "key": "spring",
+   "x": 39,
+   "y": 22
+  },
+  {
+   "key": "spring",
+   "x": 12,
+   "y": 20
+  },
+  {
+   "key": "spring",
+   "x": 36,
+   "y": 19
+  },
+  {
+   "key": "spring",
+   "x": 10,
+   "y": 5
+  },
+  {
+   "key": "spring",
+   "x": 22,
+   "y": 39
+  },
+  {
+   "key": "spring",
+   "x": 37,
+   "y": 31
+  },
+  {
+   "key": "spring",
+   "x": 5,
+   "y": 26
+  },
+  {
+   "key": "spring",
+   "x": 11,
+   "y": 17
+  },
+  {
+   "key": "giant",
+   "x": 27,
+   "y": 25
+  },
+  {
+   "key": "giant",
+   "x": 16,
+   "y": 38
+  },
+  {
+   "key": "giant",
+   "x": 31,
+   "y": 34
+  },
+  {
+   "key": "giant",
+   "x": 35,
+   "y": 8
+  },
+  {
+   "key": "giant",
+   "x": 36,
+   "y": 15
+  },
+  {
+   "key": "giant",
+   "x": 33,
+   "y": 7
+  },
+  {
+   "key": "giant",
+   "x": 24,
+   "y": 18
+  },
+  {
+   "key": "giant",
+   "x": 25,
+   "y": 27
+  },
+  {
+   "key": "airbomb",
+   "x": 13,
+   "y": 17
+  },
+  {
+   "key": "airbomb",
+   "x": 26,
+   "y": 26
+  },
+  {
+   "key": "airbomb",
+   "x": 19,
+   "y": 7
+  },
+  {
+   "key": "airbomb",
+   "x": 26,
+   "y": 5
+  },
+  {
+   "key": "airbomb",
+   "x": 18,
+   "y": 5
+  },
+  {
+   "key": "airbomb",
+   "x": 12,
+   "y": 24
+  },
+  {
+   "key": "airbomb",
+   "x": 5,
+   "y": 21
+  },
+  {
+   "key": "airbomb",
+   "x": 21,
+   "y": 14
+  },
+  {
+   "key": "seeking",
+   "x": 26,
+   "y": 7
+  },
+  {
+   "key": "seeking",
+   "x": 40,
+   "y": 20
+  },
+  {
+   "key": "seeking",
+   "x": 27,
+   "y": 35
+  },
+  {
+   "key": "seeking",
+   "x": 5,
+   "y": 18
+  },
+  {
+   "key": "seeking",
+   "x": 36,
+   "y": 18
+  },
+  {
+   "key": "seeking",
+   "x": 20,
+   "y": 24
+  },
+  {
+   "key": "seeking",
+   "x": 37,
+   "y": 22
+  },
+  {
+   "key": "seeking",
+   "x": 5,
+   "y": 22
+  },
+  {
+   "key": "seeking",
+   "x": 35,
+   "y": 20
+  },
+  {
+   "key": "skeleton",
+   "x": 34,
+   "y": 20,
+   "mode": "air"
+  },
+  {
+   "key": "skeleton",
+   "x": 20,
+   "y": 7,
+   "mode": "air"
+  },
+  {
+   "key": "skeleton",
+   "x": 16,
+   "y": 22,
+   "mode": "ground"
+  },
+  {
+   "key": "skeleton",
+   "x": 7,
+   "y": 19,
+   "mode": "ground"
+  },
+  {
+   "key": "tornado",
+   "x": 14,
+   "y": 19
+  },
+  {
+   "key": "giga",
+   "x": 24,
+   "y": 22
+  }
+ ],
+ "cc_troops": [
+  "Dragon",
+  "Dragon",
+  "Headhunter",
+  "Archer",
+  "Archer",
+  "Archer",
+  "Archer"
+ ],
+ "heroes": [
+  "Barbarian King",
+  "Archer Queen",
+  "Minion Prince",
+  "Royal Champion"
+ ],
+ "town_hall": 18,
+ "guardian": "Logger"
+}

@@ -1,0 +1,1870 @@
+{
+ "name": "r18b",
+ "notes": "Source: output/ranked-bases-2026-10-25-th18/t18b-dakine.png, 2796x1290 pixels. User-captured replay of their own ranked attack against #dakine#. Real screenshot observations, not synthetic fixtures or real-game engine calibration. Grid: {\"cx\": 1403.2, \"top\": -147.14, \"a\": 18.83784, \"b\": 14.142857}. Projection: screen_x = cx + (x-y)*a; screen_y = top + (x+y)*b. Village is 44x44. Coordinates identify the top tile of each footprint. Fit checked against distant Gold Mine pad corners, outer walls and buildings at the bottom and sides. Visible cyan pad borders lie about 2 pixels inside their lower tile corner. TH18 blue-white Town Hall with Inferno Artillery and a Guardian. No Eagle Artillery is included. Guardian is provisionally Smasher, level 5; see uncertainties. cc_troops is empty: this is a REPLAY, which has no defending Clan Castle troop panel. The bottom deployment bar belongs to the ATTACKER. No defending CC composition has been inferred from it. Defending banners: red (18,15) Barbarian King 110; green (25,29) Archer Queen 110; purple (16,25) Grand Warden 85; blue (28,19) Royal Champion 55. Heroes can stand away from their banner during replay animation. Pet House (1,26) identified by green roof, treasure nest, purple banner and feed bowl. Dark Barracks (37,15) identified by white fur/paw-print roof, consistent with its Druid-era appearance. Glowing campfires are Army Camps, not Teslas or traps. Dormant low roofed turret (30,24) is Revenge Tower. The two matching wooden-arm catapults in the core are Scattershots (20,15) and (22,28); the blue/gold weapon on the right flank (26,12) is the third Ricochet Cannon. Walls: digitize.py walls initially returned 660 candidates. After building exclusion, original candidates plus a blue-gray cap pass were checked in labeled crops; false building/UI/hero detections were removed and visible missed rails/posts added manually. Final count is 274. Original detector output and wall-review-decisions.json are preserved. Confidence: medium overall; grid fit and building counts are stronger than obscured pad anchors, hidden walls, Guardian identity and some modes. This is not a verified exact reconstruction. See uncertainties.json for the complete uncertainty list. attacker_army: {\"source\": \"Bottom deployment bar of the user's attack replay\", \"counts_are\": \"Remaining quantities visible in this frame, not starting army totals\", \"troops\": [{\"name\": \"Root Rider\", \"count\": 4, \"level\": 3}, {\"name\": \"Balloon\", \"count\": 2, \"level\": 11}, {\"name\": \"Healer\", \"count\": 5, \"level\": 9}, {\"name\": \"Valkyrie\", \"count\": 8, \"level\": 11}, {\"name\": \"Apprentice Warden\", \"count\": 1, \"level\": 4}, {\"name\": \"Minion\", \"count\": 6, \"level\": 11}, {\"name\": \"Archer\", \"count\": 2, \"level\": 14}, {\"name\": \"Ice Golem\", \"count\": 2, \"level\": 8}, {\"name\": \"Super Wall Breaker\", \"count\": 4, \"level\": 11}], \"siege\": [{\"name\": \"Troop Launcher\", \"count\": 1, \"level\": 4, \"icon\": \"Red shield, white X on the spring, barrel wheels\"}], \"heroes_and_pets\": [{\"hero\": \"Archer Queen\", \"level\": 95, \"count\": 1, \"pet\": \"Electro Owl\", \"pet_level\": 6}, {\"hero\": \"Dragon Duke\", \"level\": 15, \"count\": 1, \"pet\": \"Phoenix\", \"pet_level\": 8}, {\"hero\": \"Grand Warden\", \"level\": 68, \"count\": 1, \"pet\": \"Poison Lizard\", \"pet_level\": 8}, {\"hero\": \"Royal Champion\", \"level\": 41, \"count\": 1, \"pet\": \"Unicorn\", \"pet_level\": 10}], \"spell_slots_left_to_right\": [{\"name\": \"Invisibility Spell\", \"count\": 5, \"level\": 4, \"icon\": \"Green translucent vial with bubbles\", \"confidence\": \"high\"}, {\"name\": \"Recall Spell\", \"count\": 1, \"level\": 5, \"icon\": \"Pink potion encircled by white rings\", \"confidence\": \"medium\", \"alternative\": \"Revive Spell\"}, {\"name\": \"Poison Spell\", \"count\": 1, \"level\": 9, \"icon\": \"Orange vial and skulls\", \"confidence\": \"high\"}, {\"name\": \"Overgrowth Spell\", \"count\": 1, \"level\": 3, \"icon\": \"Green potion encircled by roots\", \"confidence\": \"high\"}, {\"name\": \"Freeze Spell\", \"count\": 1, \"level\": 7, \"icon\": \"Blue frozen vial\", \"confidence\": \"high\"}, {\"name\": \"Rage Spell\", \"count\": 1, \"level\": 7, \"icon\": \"Large purple potion\", \"confidence\": \"high\"}, {\"name\": \"Totem Spell\", \"count\": 1, \"level\": 4, \"icon\": \"Thin blue-gray vial over fractured dark ground\", \"confidence\": \"medium\"}, {\"name\": null, \"tentative_name\": \"Earthquake Spell\", \"count\": null, \"level\": 5, \"icon\": \"Grayed wide bottle containing a patterned stone-like slab\", \"confidence\": \"low\", \"observation\": \"No quantity numeral; grayed slot. Zero remaining is inferred, not printed.\", \"inferred_remaining\": 0, \"alternative\": \"Revive Spell\"}], \"icon_crops\": [\"attacker-army.png\", \"army-unit-5.png\", \"army-first.png\", \"army-siege.png\", \"army-heroes.png\", \"army-spells.png\", \"army-gray-spell.png\"], \"defending_cc_troops_can_be_read_here\": false} Hidden content: No Hidden Tesla or trap is confidently exposed. Five Teslas and all traps remain unplaced. Walls: 274 visible wall tiles retained after contact-sheet and overlay review. The difference from the 325 maximum is 51; this is not proof that all 51 are actually present. Tall sprites and UI hide some possible segments. Unseen segments were not filled to meet inventory. Occluded core coordinates: Town Hall, four surrounding Builder Huts, two Sweepers, Spell Towers and core Scattershots have obscured pad edges; allow approximately one tile of position uncertainty despite the non-overlapping ring arrangement. Outer coordinates: Archer Towers, Multi-Archer Towers, northeastern camp at (21,4), Laboratory at (37,28), and hero banners have approximately one tile of position uncertainty. These are observations with estimated anchors, not exact measured pad corners. Guardian: Probable Smasher, level 5, from the round plated helmet and blue armored body. Helmet and weapon overlap the northern X-Bow; Longshot is not fully excluded. The layout explicitly records Smasher rather than inheriting Longshot. Defense modes: Infernos appear multi; cyan Spell Tower bottles support Invisibility. X-Bows are recorded as both, but their pitch is obscured. Firespitter facings E at (16,22) and W at (27,21) are estimated from heads/claws; cardinal directions refer to village tile axes. Multi-Gear Tower long range is supported by its visible large bow; Crafting Station hunter by the skull/card mechanism. Attacker spell identities: Pink level-5 slot is provisionally Recall (Revive alternative); blue-gray level-4 slot is provisionally Totem. The grayed level-5 final spell has no displayed count and remains unidentified, with Earthquake/Revive alternatives. Raw icon crops and literal counts are retained. Destroyed buildings: No separate, confidently identifiable destroyed-building rubble or pad was found. The outlined square beside the Workshop is treated as part of the Workshop graphic; no second building was invented there. Digitized from a screenshot; positions about +-1 tile; traps placed by heuristic (not visible in screenshots); built with the user's levels. Hidden Teslas not visible in the screenshot: 0 placed inside the walls at [] (assumed). CC troops not visible in a replay: layout.DEFAULT_CC assumed. Levels: TH18 maximum (defender levels unknown; the user's TH16 levels removed). Source: the user's own ranked attack replay vs #dakine# (user-reported result: 2 stars, None% destruction). Reference/validation only, never a search seed. Hidden Teslas: 5 placed in free 2x2 spots within 12 tiles of the Town Hall, farthest-point spread, at [(28, 26), (11, 20), (22, 12), (17, 32), (32, 19)] (assumed; the 274-wall transcription leaves diagonal gaps so the inside-the-walls rule found no spots).",
+ "buildings": [
+  {
+   "key": "th",
+   "x": 21,
+   "y": 21
+  },
+  {
+   "key": "cc",
+   "x": 38,
+   "y": 25
+  },
+  {
+   "key": "ad",
+   "x": 12,
+   "y": 7
+  },
+  {
+   "key": "ad",
+   "x": 7,
+   "y": 31
+  },
+  {
+   "key": "ad",
+   "x": 36,
+   "y": 12
+  },
+  {
+   "key": "ad",
+   "x": 31,
+   "y": 36
+  },
+  {
+   "key": "sweeper",
+   "x": 21,
+   "y": 19
+  },
+  {
+   "key": "sweeper",
+   "x": 23,
+   "y": 25
+  },
+  {
+   "key": "at",
+   "x": 5,
+   "y": 25
+  },
+  {
+   "key": "at",
+   "x": 12,
+   "y": 35
+  },
+  {
+   "key": "mat",
+   "x": 8,
+   "y": 12
+  },
+  {
+   "key": "mat",
+   "x": 12,
+   "y": 29
+  },
+  {
+   "key": "mat",
+   "x": 36,
+   "y": 31
+  },
+  {
+   "key": "ric",
+   "x": 15,
+   "y": 6
+  },
+  {
+   "key": "ric",
+   "x": 26,
+   "y": 12
+  },
+  {
+   "key": "ric",
+   "x": 28,
+   "y": 37
+  },
+  {
+   "key": "bt",
+   "x": 18,
+   "y": 5
+  },
+  {
+   "key": "bt",
+   "x": 25,
+   "y": 38
+  },
+  {
+   "key": "bh",
+   "x": 11,
+   "y": 16
+  },
+  {
+   "key": "bh",
+   "x": 19,
+   "y": 21
+  },
+  {
+   "key": "bh",
+   "x": 21,
+   "y": 25
+  },
+  {
+   "key": "bh",
+   "x": 23,
+   "y": 19
+  },
+  {
+   "key": "bh",
+   "x": 25,
+   "y": 23
+  },
+  {
+   "key": "inferno",
+   "x": 15,
+   "y": 19,
+   "mode": "multi"
+  },
+  {
+   "key": "inferno",
+   "x": 24,
+   "y": 16,
+   "mode": "multi"
+  },
+  {
+   "key": "inferno",
+   "x": 20,
+   "y": 28,
+   "mode": "multi"
+  },
+  {
+   "key": "mono",
+   "x": 5,
+   "y": 17
+  },
+  {
+   "key": "mortar",
+   "x": 9,
+   "y": 9
+  },
+  {
+   "key": "mortar",
+   "x": 9,
+   "y": 34
+  },
+  {
+   "key": "mortar",
+   "x": 34,
+   "y": 9
+  },
+  {
+   "key": "mortar",
+   "x": 34,
+   "y": 34
+  },
+  {
+   "key": "scatter",
+   "x": 22,
+   "y": 28
+  },
+  {
+   "key": "scatter",
+   "x": 20,
+   "y": 15
+  },
+  {
+   "key": "st",
+   "x": 19,
+   "y": 23,
+   "mode": "invis"
+  },
+  {
+   "key": "st",
+   "x": 25,
+   "y": 21,
+   "mode": "invis"
+  },
+  {
+   "key": "wt",
+   "x": 5,
+   "y": 14
+  },
+  {
+   "key": "wt",
+   "x": 29,
+   "y": 12
+  },
+  {
+   "key": "xbow",
+   "x": 18,
+   "y": 18,
+   "mode": "both"
+  },
+  {
+   "key": "xbow",
+   "x": 18,
+   "y": 25,
+   "mode": "both"
+  },
+  {
+   "key": "xbow",
+   "x": 25,
+   "y": 18,
+   "mode": "both"
+  },
+  {
+   "key": "xbow",
+   "x": 25,
+   "y": 25,
+   "mode": "both"
+  },
+  {
+   "key": "mgt",
+   "x": 14,
+   "y": 11,
+   "mode": "long"
+  },
+  {
+   "key": "firespitter",
+   "x": 16,
+   "y": 22,
+   "mode": "E"
+  },
+  {
+   "key": "firespitter",
+   "x": 27,
+   "y": 21,
+   "mode": "W"
+  },
+  {
+   "key": "swt",
+   "x": 14,
+   "y": 15
+  },
+  {
+   "key": "swt",
+   "x": 12,
+   "y": 26
+  },
+  {
+   "key": "revenge",
+   "x": 30,
+   "y": 24
+  },
+  {
+   "key": "crafting",
+   "x": 18,
+   "y": 10,
+   "mode": "hunter"
+  },
+  {
+   "key": "gm",
+   "x": 2,
+   "y": 11
+  },
+  {
+   "key": "gm",
+   "x": 2,
+   "y": 29
+  },
+  {
+   "key": "gm",
+   "x": 11,
+   "y": 41
+  },
+  {
+   "key": "gm",
+   "x": 25,
+   "y": 41
+  },
+  {
+   "key": "gm",
+   "x": 32,
+   "y": 40
+  },
+  {
+   "key": "gm",
+   "x": 40,
+   "y": 11
+  },
+  {
+   "key": "gm",
+   "x": 38,
+   "y": 18
+  },
+  {
+   "key": "ec",
+   "x": 3,
+   "y": 32
+  },
+  {
+   "key": "ec",
+   "x": 17,
+   "y": 41
+  },
+  {
+   "key": "ec",
+   "x": 28,
+   "y": 41
+  },
+  {
+   "key": "ec",
+   "x": 40,
+   "y": 32
+  },
+  {
+   "key": "ec",
+   "x": 31,
+   "y": 2
+  },
+  {
+   "key": "ec",
+   "x": 28,
+   "y": 6
+  },
+  {
+   "key": "ec",
+   "x": 25,
+   "y": 5
+  },
+  {
+   "key": "dd",
+   "x": 5,
+   "y": 38
+  },
+  {
+   "key": "dd",
+   "x": 38,
+   "y": 39
+  },
+  {
+   "key": "dd",
+   "x": 15,
+   "y": 36
+  },
+  {
+   "key": "gs",
+   "x": 8,
+   "y": 4
+  },
+  {
+   "key": "gs",
+   "x": 4,
+   "y": 35
+  },
+  {
+   "key": "gs",
+   "x": 35,
+   "y": 4
+  },
+  {
+   "key": "gs",
+   "x": 39,
+   "y": 35
+  },
+  {
+   "key": "es",
+   "x": 4,
+   "y": 8
+  },
+  {
+   "key": "es",
+   "x": 8,
+   "y": 39
+  },
+  {
+   "key": "es",
+   "x": 39,
+   "y": 8
+  },
+  {
+   "key": "es",
+   "x": 31,
+   "y": 7
+  },
+  {
+   "key": "ds",
+   "x": 28,
+   "y": 29
+  },
+  {
+   "key": "camp",
+   "x": 4,
+   "y": 21
+  },
+  {
+   "key": "camp",
+   "x": 21,
+   "y": 4
+  },
+  {
+   "key": "camp",
+   "x": 21,
+   "y": 38
+  },
+  {
+   "key": "camp",
+   "x": 38,
+   "y": 21
+  },
+  {
+   "key": "barracks",
+   "x": 41,
+   "y": 26
+  },
+  {
+   "key": "dbarracks",
+   "x": 37,
+   "y": 15
+  },
+  {
+   "key": "dsf",
+   "x": 14,
+   "y": 40
+  },
+  {
+   "key": "sf",
+   "x": 30,
+   "y": 16
+  },
+  {
+   "key": "lab",
+   "x": 37,
+   "y": 28
+  },
+  {
+   "key": "workshop",
+   "x": 0,
+   "y": 40
+  },
+  {
+   "key": "pethouse",
+   "x": 1,
+   "y": 26
+  },
+  {
+   "key": "smith",
+   "x": 16,
+   "y": 1
+  },
+  {
+   "key": "herohall",
+   "x": 40,
+   "y": 0
+  },
+  {
+   "key": "helper",
+   "x": 28,
+   "y": 1
+  },
+  {
+   "key": "bob",
+   "x": 1,
+   "y": 18
+  },
+  {
+   "key": "banner",
+   "x": 18,
+   "y": 15
+  },
+  {
+   "key": "banner",
+   "x": 25,
+   "y": 29
+  },
+  {
+   "key": "banner",
+   "x": 28,
+   "y": 19
+  },
+  {
+   "key": "banner",
+   "x": 16,
+   "y": 25
+  },
+  {
+   "key": "tesla",
+   "x": 28,
+   "y": 26
+  },
+  {
+   "key": "tesla",
+   "x": 11,
+   "y": 20
+  },
+  {
+   "key": "tesla",
+   "x": 22,
+   "y": 12
+  },
+  {
+   "key": "tesla",
+   "x": 17,
+   "y": 32
+  },
+  {
+   "key": "tesla",
+   "x": 32,
+   "y": 19
+  }
+ ],
+ "walls": [
+  [
+   3,
+   20
+  ],
+  [
+   3,
+   21
+  ],
+  [
+   3,
+   22
+  ],
+  [
+   3,
+   23
+  ],
+  [
+   3,
+   24
+  ],
+  [
+   3,
+   25
+  ],
+  [
+   4,
+   19
+  ],
+  [
+   4,
+   20
+  ],
+  [
+   4,
+   25
+  ],
+  [
+   4,
+   26
+  ],
+  [
+   4,
+   27
+  ],
+  [
+   4,
+   28
+  ],
+  [
+   5,
+   28
+  ],
+  [
+   5,
+   29
+  ],
+  [
+   5,
+   30
+  ],
+  [
+   5,
+   31
+  ],
+  [
+   6,
+   13
+  ],
+  [
+   6,
+   32
+  ],
+  [
+   6,
+   33
+  ],
+  [
+   6,
+   34
+  ],
+  [
+   7,
+   34
+  ],
+  [
+   8,
+   8
+  ],
+  [
+   8,
+   9
+  ],
+  [
+   8,
+   10
+  ],
+  [
+   8,
+   20
+  ],
+  [
+   8,
+   21
+  ],
+  [
+   8,
+   22
+  ],
+  [
+   8,
+   23
+  ],
+  [
+   8,
+   24
+  ],
+  [
+   8,
+   25
+  ],
+  [
+   8,
+   34
+  ],
+  [
+   8,
+   35
+  ],
+  [
+   8,
+   36
+  ],
+  [
+   8,
+   37
+  ],
+  [
+   9,
+   8
+  ],
+  [
+   9,
+   17
+  ],
+  [
+   9,
+   18
+  ],
+  [
+   9,
+   19
+  ],
+  [
+   9,
+   20
+  ],
+  [
+   9,
+   25
+  ],
+  [
+   9,
+   26
+  ],
+  [
+   9,
+   27
+  ],
+  [
+   9,
+   28
+  ],
+  [
+   9,
+   37
+  ],
+  [
+   10,
+   8
+  ],
+  [
+   10,
+   15
+  ],
+  [
+   10,
+   17
+  ],
+  [
+   10,
+   25
+  ],
+  [
+   10,
+   28
+  ],
+  [
+   10,
+   29
+  ],
+  [
+   10,
+   30
+  ],
+  [
+   10,
+   37
+  ],
+  [
+   11,
+   6
+  ],
+  [
+   11,
+   8
+  ],
+  [
+   11,
+   13
+  ],
+  [
+   11,
+   14
+  ],
+  [
+   11,
+   22
+  ],
+  [
+   11,
+   23
+  ],
+  [
+   11,
+   30
+  ],
+  [
+   11,
+   32
+  ],
+  [
+   11,
+   37
+  ],
+  [
+   11,
+   38
+  ],
+  [
+   11,
+   39
+  ],
+  [
+   12,
+   12
+  ],
+  [
+   12,
+   13
+  ],
+  [
+   12,
+   19
+  ],
+  [
+   12,
+   24
+  ],
+  [
+   12,
+   32
+  ],
+  [
+   12,
+   33
+  ],
+  [
+   12,
+   39
+  ],
+  [
+   13,
+   10
+  ],
+  [
+   13,
+   11
+  ],
+  [
+   13,
+   12
+  ],
+  [
+   13,
+   17
+  ],
+  [
+   13,
+   33
+  ],
+  [
+   13,
+   34
+  ],
+  [
+   13,
+   39
+  ],
+  [
+   14,
+   5
+  ],
+  [
+   14,
+   19
+  ],
+  [
+   14,
+   22
+  ],
+  [
+   14,
+   23
+  ],
+  [
+   14,
+   34
+  ],
+  [
+   14,
+   39
+  ],
+  [
+   15,
+   10
+  ],
+  [
+   15,
+   26
+  ],
+  [
+   15,
+   30
+  ],
+  [
+   15,
+   34
+  ],
+  [
+   15,
+   35
+  ],
+  [
+   16,
+   5
+  ],
+  [
+   16,
+   10
+  ],
+  [
+   16,
+   29
+  ],
+  [
+   16,
+   32
+  ],
+  [
+   16,
+   35
+  ],
+  [
+   17,
+   4
+  ],
+  [
+   17,
+   5
+  ],
+  [
+   17,
+   9
+  ],
+  [
+   17,
+   10
+  ],
+  [
+   17,
+   11
+  ],
+  [
+   17,
+   17
+  ],
+  [
+   17,
+   28
+  ],
+  [
+   17,
+   35
+  ],
+  [
+   17,
+   40
+  ],
+  [
+   18,
+   9
+  ],
+  [
+   18,
+   14
+  ],
+  [
+   18,
+   31
+  ],
+  [
+   18,
+   34
+  ],
+  [
+   18,
+   36
+  ],
+  [
+   19,
+   9
+  ],
+  [
+   19,
+   30
+  ],
+  [
+   19,
+   33
+  ],
+  [
+   19,
+   36
+  ],
+  [
+   20,
+   3
+  ],
+  [
+   20,
+   4
+  ],
+  [
+   20,
+   8
+  ],
+  [
+   20,
+   9
+  ],
+  [
+   20,
+   36
+  ],
+  [
+   20,
+   37
+  ],
+  [
+   20,
+   41
+  ],
+  [
+   20,
+   42
+  ],
+  [
+   21,
+   3
+  ],
+  [
+   21,
+   8
+  ],
+  [
+   21,
+   37
+  ],
+  [
+   21,
+   42
+  ],
+  [
+   22,
+   3
+  ],
+  [
+   22,
+   8
+  ],
+  [
+   22,
+   11
+  ],
+  [
+   22,
+   31
+  ],
+  [
+   22,
+   34
+  ],
+  [
+   22,
+   37
+  ],
+  [
+   22,
+   42
+  ],
+  [
+   23,
+   3
+  ],
+  [
+   23,
+   8
+  ],
+  [
+   23,
+   11
+  ],
+  [
+   23,
+   14
+  ],
+  [
+   23,
+   31
+  ],
+  [
+   23,
+   34
+  ],
+  [
+   23,
+   37
+  ],
+  [
+   23,
+   42
+  ],
+  [
+   24,
+   3
+  ],
+  [
+   24,
+   8
+  ],
+  [
+   24,
+   37
+  ],
+  [
+   24,
+   42
+  ],
+  [
+   25,
+   3
+  ],
+  [
+   25,
+   4
+  ],
+  [
+   25,
+   8
+  ],
+  [
+   25,
+   9
+  ],
+  [
+   25,
+   13
+  ],
+  [
+   25,
+   35
+  ],
+  [
+   25,
+   36
+  ],
+  [
+   26,
+   4
+  ],
+  [
+   26,
+   9
+  ],
+  [
+   26,
+   11
+  ],
+  [
+   26,
+   15
+  ],
+  [
+   26,
+   33
+  ],
+  [
+   26,
+   36
+  ],
+  [
+   27,
+   4
+  ],
+  [
+   27,
+   9
+  ],
+  [
+   27,
+   36
+  ],
+  [
+   28,
+   4
+  ],
+  [
+   28,
+   9
+  ],
+  [
+   28,
+   10
+  ],
+  [
+   28,
+   35
+  ],
+  [
+   28,
+   36
+  ],
+  [
+   29,
+   5
+  ],
+  [
+   29,
+   10
+  ],
+  [
+   29,
+   35
+  ],
+  [
+   30,
+   5
+  ],
+  [
+   30,
+   10
+  ],
+  [
+   30,
+   11
+  ],
+  [
+   30,
+   34
+  ],
+  [
+   30,
+   35
+  ],
+  [
+   30,
+   40
+  ],
+  [
+   31,
+   5
+  ],
+  [
+   31,
+   6
+  ],
+  [
+   31,
+   11
+  ],
+  [
+   31,
+   22
+  ],
+  [
+   31,
+   27
+  ],
+  [
+   31,
+   32
+  ],
+  [
+   31,
+   34
+  ],
+  [
+   31,
+   39
+  ],
+  [
+   31,
+   40
+  ],
+  [
+   32,
+   5
+  ],
+  [
+   32,
+   6
+  ],
+  [
+   32,
+   11
+  ],
+  [
+   32,
+   12
+  ],
+  [
+   32,
+   29
+  ],
+  [
+   32,
+   31
+  ],
+  [
+   32,
+   33
+  ],
+  [
+   32,
+   34
+  ],
+  [
+   32,
+   39
+  ],
+  [
+   33,
+   6
+  ],
+  [
+   33,
+   12
+  ],
+  [
+   33,
+   13
+  ],
+  [
+   33,
+   17
+  ],
+  [
+   33,
+   26
+  ],
+  [
+   33,
+   32
+  ],
+  [
+   33,
+   33
+  ],
+  [
+   33,
+   39
+  ],
+  [
+   34,
+   6
+  ],
+  [
+   34,
+   7
+  ],
+  [
+   34,
+   8
+  ],
+  [
+   34,
+   13
+  ],
+  [
+   34,
+   14
+  ],
+  [
+   34,
+   15
+  ],
+  [
+   34,
+   19
+  ],
+  [
+   34,
+   22
+  ],
+  [
+   34,
+   23
+  ],
+  [
+   34,
+   30
+  ],
+  [
+   34,
+   31
+  ],
+  [
+   34,
+   32
+  ],
+  [
+   34,
+   37
+  ],
+  [
+   34,
+   38
+  ],
+  [
+   34,
+   39
+  ],
+  [
+   35,
+   8
+  ],
+  [
+   35,
+   15
+  ],
+  [
+   35,
+   16
+  ],
+  [
+   35,
+   17
+  ],
+  [
+   35,
+   27
+  ],
+  [
+   35,
+   28
+  ],
+  [
+   35,
+   29
+  ],
+  [
+   35,
+   37
+  ],
+  [
+   36,
+   8
+  ],
+  [
+   36,
+   17
+  ],
+  [
+   36,
+   18
+  ],
+  [
+   36,
+   19
+  ],
+  [
+   36,
+   20
+  ],
+  [
+   36,
+   25
+  ],
+  [
+   36,
+   26
+  ],
+  [
+   36,
+   27
+  ],
+  [
+   36,
+   28
+  ],
+  [
+   36,
+   37
+  ],
+  [
+   37,
+   8
+  ],
+  [
+   37,
+   9
+  ],
+  [
+   37,
+   10
+  ],
+  [
+   37,
+   11
+  ],
+  [
+   37,
+   20
+  ],
+  [
+   37,
+   21
+  ],
+  [
+   37,
+   22
+  ],
+  [
+   37,
+   23
+  ],
+  [
+   37,
+   24
+  ],
+  [
+   37,
+   25
+  ],
+  [
+   37,
+   34
+  ],
+  [
+   37,
+   35
+  ],
+  [
+   37,
+   36
+  ],
+  [
+   37,
+   37
+  ],
+  [
+   38,
+   11
+  ],
+  [
+   38,
+   34
+  ],
+  [
+   39,
+   11
+  ],
+  [
+   39,
+   12
+  ],
+  [
+   39,
+   13
+  ],
+  [
+   39,
+   14
+  ],
+  [
+   39,
+   31
+  ],
+  [
+   39,
+   32
+  ],
+  [
+   39,
+   33
+  ],
+  [
+   39,
+   34
+  ],
+  [
+   40,
+   14
+  ],
+  [
+   40,
+   17
+  ],
+  [
+   40,
+   28
+  ],
+  [
+   40,
+   29
+  ],
+  [
+   40,
+   30
+  ],
+  [
+   41,
+   14
+  ],
+  [
+   41,
+   15
+  ],
+  [
+   41,
+   16
+  ],
+  [
+   41,
+   17
+  ],
+  [
+   41,
+   18
+  ],
+  [
+   41,
+   19
+  ],
+  [
+   41,
+   20
+  ],
+  [
+   41,
+   25
+  ],
+  [
+   42,
+   20
+  ],
+  [
+   42,
+   21
+  ],
+  [
+   42,
+   22
+  ],
+  [
+   42,
+   23
+  ],
+  [
+   42,
+   24
+  ],
+  [
+   42,
+   25
+  ]
+ ],
+ "traps": [
+  {
+   "key": "bomb",
+   "x": 30,
+   "y": 9
+  },
+  {
+   "key": "bomb",
+   "x": 9,
+   "y": 16
+  },
+  {
+   "key": "bomb",
+   "x": 35,
+   "y": 33
+  },
+  {
+   "key": "bomb",
+   "x": 30,
+   "y": 15
+  },
+  {
+   "key": "bomb",
+   "x": 36,
+   "y": 29
+  },
+  {
+   "key": "bomb",
+   "x": 11,
+   "y": 29
+  },
+  {
+   "key": "bomb",
+   "x": 27,
+   "y": 15
+  },
+  {
+   "key": "bomb",
+   "x": 40,
+   "y": 31
+  },
+  {
+   "key": "spring",
+   "x": 7,
+   "y": 28
+  },
+  {
+   "key": "spring",
+   "x": 31,
+   "y": 10
+  },
+  {
+   "key": "spring",
+   "x": 33,
+   "y": 34
+  },
+  {
+   "key": "spring",
+   "x": 8,
+   "y": 7
+  },
+  {
+   "key": "spring",
+   "x": 29,
+   "y": 25
+  },
+  {
+   "key": "spring",
+   "x": 29,
+   "y": 28
+  },
+  {
+   "key": "spring",
+   "x": 26,
+   "y": 17
+  },
+  {
+   "key": "spring",
+   "x": 22,
+   "y": 18
+  },
+  {
+   "key": "spring",
+   "x": 35,
+   "y": 12
+  },
+  {
+   "key": "giant",
+   "x": 41,
+   "y": 29
+  },
+  {
+   "key": "giant",
+   "x": 12,
+   "y": 14
+  },
+  {
+   "key": "giant",
+   "x": 24,
+   "y": 14
+  },
+  {
+   "key": "giant",
+   "x": 5,
+   "y": 11
+  },
+  {
+   "key": "giant",
+   "x": 16,
+   "y": 30
+  },
+  {
+   "key": "giant",
+   "x": 3,
+   "y": 14
+  },
+  {
+   "key": "giant",
+   "x": 1,
+   "y": 15
+  },
+  {
+   "key": "giant",
+   "x": 24,
+   "y": 10
+  },
+  {
+   "key": "airbomb",
+   "x": 36,
+   "y": 39
+  },
+  {
+   "key": "airbomb",
+   "x": 8,
+   "y": 38
+  },
+  {
+   "key": "airbomb",
+   "x": 11,
+   "y": 26
+  },
+  {
+   "key": "airbomb",
+   "x": 24,
+   "y": 12
+  },
+  {
+   "key": "airbomb",
+   "x": 33,
+   "y": 15
+  },
+  {
+   "key": "airbomb",
+   "x": 43,
+   "y": 10
+  },
+  {
+   "key": "airbomb",
+   "x": 25,
+   "y": 31
+  },
+  {
+   "key": "airbomb",
+   "x": 24,
+   "y": 27
+  },
+  {
+   "key": "seeking",
+   "x": 13,
+   "y": 16
+  },
+  {
+   "key": "seeking",
+   "x": 14,
+   "y": 3
+  },
+  {
+   "key": "seeking",
+   "x": 17,
+   "y": 12
+  },
+  {
+   "key": "seeking",
+   "x": 31,
+   "y": 41
+  },
+  {
+   "key": "seeking",
+   "x": 23,
+   "y": 32
+  },
+  {
+   "key": "seeking",
+   "x": 13,
+   "y": 22
+  },
+  {
+   "key": "seeking",
+   "x": 37,
+   "y": 7
+  },
+  {
+   "key": "seeking",
+   "x": 35,
+   "y": 39
+  },
+  {
+   "key": "seeking",
+   "x": 22,
+   "y": 14
+  },
+  {
+   "key": "skeleton",
+   "x": 24,
+   "y": 13,
+   "mode": "air"
+  },
+  {
+   "key": "skeleton",
+   "x": 18,
+   "y": 17,
+   "mode": "air"
+  },
+  {
+   "key": "skeleton",
+   "x": 18,
+   "y": 35,
+   "mode": "ground"
+  },
+  {
+   "key": "skeleton",
+   "x": 9,
+   "y": 21,
+   "mode": "ground"
+  },
+  {
+   "key": "tornado",
+   "x": 28,
+   "y": 24
+  },
+  {
+   "key": "giga",
+   "x": 18,
+   "y": 28
+  }
+ ],
+ "cc_troops": [
+  "Dragon",
+  "Dragon",
+  "Headhunter",
+  "Archer",
+  "Archer",
+  "Archer",
+  "Archer"
+ ],
+ "heroes": [
+  "Barbarian King",
+  "Archer Queen",
+  "Grand Warden",
+  "Royal Champion"
+ ],
+ "town_hall": 18,
+ "guardian": "Smasher"
+}
