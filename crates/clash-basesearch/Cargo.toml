@@ -11,3 +11,6 @@ workspace = true
 clash-data.workspace = true
 clash-layout.workspace = true
 clash-engine.workspace = true
+clash-plans.workspace = true
+clash-scoring.workspace = true
+clash-armysearch.workspace = true

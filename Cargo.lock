@@ -16,9 +16,12 @@ dependencies = [
 name = "clash-basesearch"
 version = "0.1.0"
 dependencies = [
+ "clash-armysearch",
  "clash-data",
  "clash-engine",
  "clash-layout",
+ "clash-plans",
+ "clash-scoring",
 ]
 
 [[package]]

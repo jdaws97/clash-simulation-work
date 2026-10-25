@@ -1,0 +1,8 @@
+{
+  "evidence": "Recorded native Rust visible-scouting output on declared synthetic inputs; not Python parity or real-game calibration",
+  "recipe": "M2 TH16 Grid/Edge seed 73; first admitted root-rider seed; fully researched synthetic TH16 account; compiler pace 1 and gaps 0/0; group 128; legend1; stat skill; two sides and three hidden priors",
+  "outcome": [3, 100, true, 128.8],
+  "source": 1,
+  "planning_battles": 6,
+  "execution_battles": 1
+}

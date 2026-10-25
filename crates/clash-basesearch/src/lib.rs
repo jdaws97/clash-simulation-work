@@ -1,12 +1,27 @@
-//! M2 proposal search. All public candidates pass layout admission; randomness
+//! Native base search. All public candidates pass layout admission; randomness
 //! belongs to a logical proposal, never to a worker or battle simulation.
 pub mod anneal;
+pub mod archive;
+pub mod checkpoint;
+pub mod cli;
+pub mod completion_proof;
 pub mod crossover;
+pub mod diagnostics;
+pub mod eval;
 pub mod generate;
 pub mod operators;
+pub mod oracle;
 pub mod proof;
+pub mod psro;
+pub mod race;
 pub mod repair;
+pub mod report;
+pub mod search;
 mod spatial;
+mod util;
+
+#[cfg(test)]
+mod completion_tests;
 
 use std::sync::Arc;
 
@@ -85,3 +100,12 @@ impl ProposalRng {
 }
 
 pub use clash_engine::*;
+
+fn scoring_outcome(result: &clash_engine::state::BattleResult) -> clash_scoring::scoring::Outcome {
+    clash_scoring::scoring::Outcome {
+        stars: result.stars as i64,
+        destruction: result.destruction as f64,
+        th_destroyed: result.th_destroyed,
+        time: result.time,
+    }
+}

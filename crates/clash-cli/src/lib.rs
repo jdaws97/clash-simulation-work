@@ -93,6 +93,14 @@ pub fn run(mut arguments: Vec<OsString>) -> Result<(), String> {
             arguments.remove(1);
             arguments[0] = OsString::from("basesearch-proof");
         }
+        Some("basesearch") => {
+            return clash_basesearch::cli::main(
+                &arguments
+                    .iter()
+                    .map(std::path::PathBuf::from)
+                    .collect::<Vec<_>>(),
+            )
+        }
         _ => {}
     }
     legacy::run(arguments)
