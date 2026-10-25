@@ -76,6 +76,13 @@ impl AttackProgram {
     }
 
     pub fn normalize(&mut self) {
+        for step in &mut self.steps {
+            if step.get("allocated_count").is_some() && text(step, "action", "") == "deploy" {
+                if let Some(count @ Json::Num(_)) = step.get("count").cloned() {
+                    put(step, "allocated_count", count);
+                }
+            }
+        }
         self.steps = self.steps.iter().map(canonical).collect();
         self.seed_steps = self.seed_steps.iter().map(canonical).collect();
     }
@@ -380,7 +387,11 @@ fn fit_counts(steps: &mut Vec<Json>, genome: &ArmyGenome) {
             amount
         };
         pool.insert(name.to_owned(), left - reserve);
+        let deploy = action == "deploy";
         put(step, "count", number(amount));
+        if deploy && step.get("allocated_count").is_some() {
+            put(step, "allocated_count", number(amount));
+        }
         remove(step, "level");
         true
     });

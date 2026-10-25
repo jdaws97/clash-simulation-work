@@ -303,7 +303,8 @@
      "t": 122.4,
      "quote": "use your recall spell on the royal"
     }
-   ]
+   ],
+   "packet": "recall-to-smash"
   },
   {
    "id": "main_ice",
@@ -328,7 +329,8 @@
      "t": 169.4,
      "quote": "Deploy one ice golem first, followed by the"
     }
-   ]
+   ],
+   "packet": "recall-to-smash"
   },
   {
    "id": "completion_minion_corner",
@@ -375,7 +377,9 @@
      "t": 255.8,
      "quote": "I spam the root riders"
     }
-   ]
+   ],
+   "primary": true,
+   "packet": "recall-to-smash"
   },
   {
    "id": "balloons",
@@ -395,7 +399,8 @@
      "t": 135,
      "quote": "two test balloons down, then the"
     }
-   ]
+   ],
+   "packet": "recall-to-smash"
   },
   {
    "id": "healers",
@@ -420,7 +425,8 @@
      "t": 184.7,
      "quote": "root riders, loons, healers, warden, and"
     }
-   ]
+   ],
+   "packet": "recall-to-smash"
   },
   {
    "id": "valkyries",
@@ -445,7 +451,8 @@
      "t": 109.5,
      "quote": "all the root riders, Valkyries, healers, and recalled heroes."
     }
-   ]
+   ],
+   "packet": "recall-to-smash"
   },
   {
    "id": "warden",
@@ -465,7 +472,8 @@
      "t": 136.1,
      "quote": "healers, the warden, the sky wagon, and"
     }
-   ]
+   ],
+   "packet": "recall-to-smash"
   },
   {
    "id": "sky_wagon",
@@ -490,7 +498,9 @@
      "t": 246.9,
      "quote": "Valkyries, Warden, Healers, Royal Champion, and the new siege, the Sky Wagon,"
     }
-   ]
+   ],
+   "packet": "recall-to-smash",
+   "siege_role": "siege"
   },
   {
    "id": "rc_main",
@@ -515,7 +525,8 @@
      "t": 174.6,
      "quote": "Make sure to deploy the rc a little"
     }
-   ]
+   ],
+   "packet": "recall-to-smash"
   },
   {
    "id": "funnel_ice",
@@ -540,7 +551,8 @@
      "t": 248.2,
      "quote": "ahead and use a second ice golem out in"
     }
-   ]
+   ],
+   "packet": "recall-to-smash"
   },
   {
    "id": "completion_apprentice_main",
@@ -593,7 +605,8 @@
      "t": 95.9,
      "quote": "we're going to drop the queen, shoot the"
     }
-   ]
+   ],
+   "packet": "recall-to-smash"
   },
   {
    "id": "queen_arrow",
@@ -619,7 +632,8 @@
      "t": 112.9,
      "quote": "any invis towers anything like that."
     }
-   ]
+   ],
+   "packet": "recall-to-smash"
   },
   {
    "id": "duke",
@@ -648,7 +662,8 @@
      "t": 266.6,
      "quote": "prince. Here, we use our dragon duke."
     }
-   ]
+   ],
+   "packet": "recall-to-smash"
   },
   {
    "id": "completion_quake_duke_cc",
@@ -679,7 +694,7 @@
      "video": "QCrKyyMDYr4",
      "t": 705,
      "quote": "Notice how my earthquake spell allows me",
-     "verified_t": 705.0
+     "verified_t": 705
     },
     {
      "video": "QCrKyyMDYr4",
@@ -785,7 +800,8 @@
      "t": 145.6,
      "quote": "ability until we're getting closer to"
     }
-   ]
+   ],
+   "packet": "recall-to-smash"
   },
   {
    "id": "rc_spear",
@@ -979,7 +995,8 @@
        "t": 385.4,
        "quote": "it. Our fox went down, too risky. So,"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     }
    ],
    "support": 5,
@@ -1117,7 +1134,8 @@
        "t": 171.7,
        "quote": "invisibility [music] spells, immediately recall both heroes back to your army."
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "funnel_ice",
@@ -1137,7 +1155,8 @@
        "t": 327.8,
        "quote": "another corner and then release Ice Golems first."
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "sky_wagon",
@@ -1157,7 +1176,9 @@
        "t": 84.6,
        "quote": "backed up with the siege barrack."
       }
-     ]
+     ],
+     "packet": "recall-to-smash",
+     "siege_role": "siege"
     },
     {
      "id": "main_ice",
@@ -1177,7 +1198,8 @@
        "t": 107.7,
        "quote": "release an ice golem in the middle"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "warden",
@@ -1202,7 +1224,8 @@
        "t": 192.6,
        "quote": "middle backed up with the recalled"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "rage",
@@ -1270,7 +1293,8 @@
        "t": 188.2,
        "quote": "with the Dragon Duke or by using a few troops to funnel him in."
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "duke_backpack",
@@ -1321,7 +1345,8 @@
        "t": 94,
        "quote": "is we're going to drop an ice golem"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "queen_arrow",
@@ -1355,7 +1380,8 @@
        "t": 211,
        "quote": "and the arrow and just placed down the"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "main_ice",
@@ -1380,7 +1406,8 @@
        "t": 107.7,
        "quote": "release an ice golem in the middle"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     }
    ],
    "support": 3,
@@ -1448,7 +1475,8 @@
        "t": 184.7,
        "quote": "the earthquake spell,"
       }
-     ]
+     ],
+     "objective": "duke-opening"
     },
     {
      "id": "recall",
@@ -1469,7 +1497,11 @@
        "t": 184.7,
        "quote": "and the rocket backpack to clear this section and establish the funnel."
       }
-     ]
+     ],
+     "packet": "recall-to-smash",
+     "objective": "duke-opening",
+     "objective_at": "building:mono",
+     "aim": "building:mono"
     },
     {
      "id": "completion_rocket_charge",
@@ -1557,7 +1589,8 @@
        "t": 252.3,
        "quote": "Then I finished the setup with the queen"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "main_ice",
@@ -1577,7 +1610,8 @@
        "t": 169.4,
        "quote": "Deploy one ice golem first, followed by the"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "rc_main",
@@ -1597,7 +1631,8 @@
        "t": 199.2,
        "quote": "root riders. Deploy the RC behind the"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     }
    ],
    "support": 1,
@@ -1607,7 +1642,13 @@
      "t": 91.8,
      "quote": "around using the flame blower and the rocket backpack to create your initial funnel."
     }
-   ]
+   ],
+   "required_loadouts": {
+    "Dragon Duke": [
+     "Flame Blower",
+     "Rocket Backpack"
+    ]
+   }
   },
   {
    "name": "Dragon Duke charge with Ice Block and delayed revival",
@@ -1679,7 +1720,9 @@
        "t": 265.3,
        "quote": "followed by the sky wagon,"
       }
-     ]
+     ],
+     "packet": "recall-to-smash",
+     "siege_role": "siege"
     },
     {
      "id": "main_ice",
@@ -1699,7 +1742,8 @@
        "t": 169.4,
        "quote": "Deploy one ice golem first, followed by the"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "rc_main",
@@ -1719,7 +1763,8 @@
        "t": 199.2,
        "quote": "root riders. Deploy the RC behind the"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "queen",
@@ -1739,7 +1784,8 @@
        "t": 512.6,
        "quote": "Normally, I like to use my archer queen on the outside"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "totem_revive",
@@ -1858,7 +1904,8 @@
        "t": 213,
        "quote": "went ahead and started our main army on"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     }
    ],
    "support": 2,
@@ -1878,7 +1925,8 @@
   {
    "name": "Barbarian King with the main army",
    "replaces": [
-    "duke"
+    "duke",
+    "warden"
    ],
    "steps": [
     {
@@ -1899,7 +1947,8 @@
        "t": 143.7,
        "quote": "riders, coco loons, healers, king,"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "king_ability",
@@ -1918,6 +1967,27 @@
        "video": "b46w2PUASJI",
        "t": 175.1,
        "quote": "ability and right after, use the king"
+      }
+     ],
+     "packet": "recall-to-smash"
+    },
+    {
+     "id": "warden",
+     "action": "deploy",
+     "what": "Grand Warden",
+     "count": 1,
+     "at": "edge:main",
+     "group": "main",
+     "when": {
+      "after": "duke",
+      "delay": 0
+     },
+     "packet": "recall-to-smash",
+     "cite": [
+      {
+       "video": "b46w2PUASJI",
+       "t": 143.7,
+       "quote": "riders, coco loons, healers, king,"
       }
      ]
     }
@@ -1956,7 +2026,8 @@
        "t": 138.7,
        "quote": "then the super archers. And then we're"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "totem",
@@ -2024,8 +2095,7 @@
      "at": "unit:Grand Warden",
      "group": "main",
      "when": {
-      "after": "overgrowth",
-      "delay": 0
+      "effect_expired": "overgrowth"
      },
      "support": 1,
      "cite": [
@@ -2033,8 +2103,14 @@
        "video": "QBJSv33_sIc",
        "t": 354.9,
        "quote": "as soon as the overgrowth expires, I use the eternal tome ability,"
+      },
+      {
+       "video": "QBJSv33_sIc",
+       "t": 354.9,
+       "quote": "hall. Then, as soon as the overgrowth"
       }
-     ]
+     ],
+     "packet": "recall-to-smash"
     },
     {
      "id": "rc_spear",
@@ -2090,12 +2166,49 @@
   "QBJSv33_sIc describes a continuous Royal Champion and Grand Warden walk without a narrated Recall. Its Town Hall variant above extracts the Overgrowth and saved-Spear policy. Overgrowth expiration and exact Town Hall arrival are not available triggers, and the source states no numeric wait. The required zero-delay fallback cannot enforce the narrated expiration timing or guarantee Rocket Spear targets the Town Hall.",
   "The narration does not supply a complete executable deployment schedule for every carried utility troop or every spell. Unspecified default uses of Earthquakes, the remaining Totem, Rocket Balloons, Apprentice Warden, cleanup troops and the remaining Balloon are intentionally unscheduled. No repeat interval, cleanup percentage, automatic siege release or troop batch is invented.",
   "Variants are alternative substitutions and are not automatically cumulative. Variants introducing different troops, heroes, equipment, spells or siege machines require their stated source composition; the default army does not supply those additional inventories. Reused step ids preserve dependency references and do not necessarily retain their original action meaning.",
-  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py)."
+  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py).",
+  "PB1b: recipe selects an explicit named source/variant; an ambiguous inventory retains repair-only selection. packet preserves the input action clock, primary marks the main cohort, objective binds one building, and effect prerequisites use actual cast expiry. Source inventory/loadout and frame-verification holds remain in force. These are controller policies and synthetic regression evidence, not real-game calibration."
  ],
  "check": {
   "steps_kept": 21,
   "steps_dropped": 0,
   "reasons": {},
   "dangling_after": []
+ },
+ "recipes": {
+  "default": [],
+  "variant-1": [
+   "Recall early rather than risk the Royal Champion or Spirit Fox"
+  ],
+  "variant-2": [
+   "Royal Champion and Grand Warden charge with four-second Invisibility and a Siege Barracks funnel"
+  ],
+  "variant-3": [
+   "Rocket Backpack and Giant Arrow setup before the main army"
+  ],
+  "variant-4": [
+   "Dragon Duke opening with Flame Blower, Earthquake and Angry Spell"
+  ],
+  "variant-5": [
+   "Dragon Duke charge with Ice Block and delayed revival"
+  ],
+  "variant-6": [
+   "Root Rider and Thrower main army"
+  ],
+  "variant-7": [
+   "Barbarian King with the main army"
+  ],
+  "variant-8": [
+   "Super Archers protected by an entry Totem"
+  ],
+  "variant-9": [
+   "Isolate the Town Hall with Overgrowth and save Rocket Spear for it"
+  ],
+  "L_LKqcL56NE": [
+   "Royal Champion and Grand Warden charge with four-second Invisibility and a Siege Barracks funnel"
+  ],
+  "QCrKyyMDYr4": [
+   "Dragon Duke opening with Flame Blower, Earthquake and Angry Spell"
+  ]
  }
 }

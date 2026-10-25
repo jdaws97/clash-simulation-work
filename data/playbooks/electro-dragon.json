@@ -361,7 +361,8 @@
      "t": 149.1,
      "quote": "Everything in there."
     }
-   ]
+   ],
+   "primary": true
   },
   {
    "id": "warden",
@@ -555,7 +556,8 @@
        "t": 37.6,
        "quote": "Two earthquakes,"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "zap_eq_2",
@@ -575,7 +577,8 @@
        "t": 37.6,
        "quote": "Two earthquakes,"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "zap_lightning_1",
@@ -595,7 +598,8 @@
        "t": 39.6,
        "quote": "six lightnings will get rid of most of that central compartment."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "zap_lightning_2",
@@ -615,7 +619,8 @@
        "t": 39.6,
        "quote": "six lightnings will get rid of most of that central compartment."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "zap_lightning_3",
@@ -635,7 +640,8 @@
        "t": 39.6,
        "quote": "six lightnings will get rid of most of that central compartment."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "zap_lightning_4",
@@ -655,7 +661,8 @@
        "t": 39.6,
        "quote": "six lightnings will get rid of most of that central compartment."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "zap_lightning_5",
@@ -675,7 +682,8 @@
        "t": 39.6,
        "quote": "six lightnings will get rid of most of that central compartment."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "zap_lightning_6",
@@ -695,7 +703,8 @@
        "t": 39.6,
        "quote": "six lightnings will get rid of most of that central compartment."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "zap_barracks",
@@ -715,7 +724,8 @@
        "t": 88.3,
        "quote": "Use your Siege Barracks on one side of the base to funnel."
       }
-     ]
+     ],
+     "siege_role": "siege"
     },
     {
      "id": "duke",
@@ -735,7 +745,8 @@
        "t": 88.3,
        "quote": "Use your Siege Barracks on one side of the base to funnel."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "edrags",
@@ -755,7 +766,9 @@
        "t": 49.2,
        "quote": "your Electro Dragons, your Grand Warden, your Minion Prince as quickly as possible."
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "opening-combination"
     }
    ],
    "support": 1,
@@ -798,7 +811,8 @@
        "t": 48.8,
        "quote": "Two earthquakes, three lightnings."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "rocket_eq_2",
@@ -818,7 +832,8 @@
        "t": 48.8,
        "quote": "Two earthquakes, three lightnings."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "rocket_lightning_1",
@@ -838,7 +853,8 @@
        "t": 48.8,
        "quote": "Two earthquakes, three lightnings."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "rocket_lightning_2",
@@ -858,7 +874,8 @@
        "t": 48.8,
        "quote": "Two earthquakes, three lightnings."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "rocket_lightning_3",
@@ -878,7 +895,8 @@
        "t": 48.8,
        "quote": "Two earthquakes, three lightnings."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "rocket_secondary_eq_1",
@@ -903,7 +921,8 @@
        "t": 38.3,
        "quote": "out spell towers with the rocket"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "rocket_secondary_eq_2",
@@ -928,7 +947,8 @@
        "t": 38.3,
        "quote": "out spell towers with the rocket"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "duke",
@@ -948,7 +968,8 @@
        "t": 79.7,
        "quote": "follow it up with the dragon duke with that rocket backpack."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "rocket_backpack",
@@ -969,7 +990,8 @@
        "t": 79.7,
        "quote": "follow it up with the dragon duke with that rocket backpack."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "queen",
@@ -989,7 +1011,8 @@
        "t": 137.2,
        "quote": "then an electro dragon or hero on the other side of the base"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "arrow",
@@ -1010,7 +1033,8 @@
        "t": 140.8,
        "quote": "your giant arrow take out some air defenses air sweepers"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "edrags",
@@ -1030,7 +1054,9 @@
        "t": 144.2,
        "quote": "electro dragons in the center."
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "opening-combination"
     }
    ],
    "support": 1,
@@ -1059,7 +1085,7 @@
      "action": "spell",
      "what": "Rage Spell",
      "count": 1,
-     "at": "edge:funnel",
+     "at": "cohort:edrags",
      "group": "main",
      "when": {
       "after": "edrags",
@@ -1071,6 +1097,11 @@
        "video": "vbPEc45cUK4",
        "t": 149.1,
        "quote": "I will rage the flank of this"
+      },
+      {
+       "video": "vbPEc45cUK4",
+       "t": 149.1,
+       "quote": "Everything in there. I will rage the"
       }
      ]
     },
@@ -1169,7 +1200,8 @@
        "t": 58.4,
        "quote": "funnel with two electro dragons each."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_edrags_funnel",
@@ -1188,7 +1220,8 @@
        "t": 58.4,
        "quote": "funnel with two electro dragons each."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_rage_charge",
@@ -1208,7 +1241,8 @@
        "t": 77.6,
        "quote": "going to go ahead and rage both of those"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_rage_funnel",
@@ -1228,7 +1262,8 @@
        "t": 77.6,
        "quote": "going to go ahead and rage both of those"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_ice",
@@ -1248,7 +1283,8 @@
        "t": 104.9,
        "quote": "spread out my ice golems."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_witches",
@@ -1268,7 +1304,9 @@
        "t": 112.8,
        "quote": "That way I can spread out my rune witches"
       }
-     ]
+     ],
+     "primary": true,
+     "packet": "opening-combination"
     },
     {
      "id": "ground_queen",
@@ -1288,7 +1326,8 @@
        "t": 123.5,
        "quote": "Then we'll drop all of our heroes"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_queen_ability",
@@ -1308,7 +1347,8 @@
        "t": 213.1,
        "quote": "I'm going to instantly pop the queen's ability"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_warden",
@@ -1328,7 +1368,8 @@
        "t": 123.5,
        "quote": "Then we'll drop all of our heroes"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_rc",
@@ -1348,7 +1389,8 @@
        "t": 123.5,
        "quote": "Then we'll drop all of our heroes"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_duke",
@@ -1368,7 +1410,8 @@
        "t": 123.5,
        "quote": "Then we'll drop all of our heroes"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_log",
@@ -1388,7 +1431,9 @@
        "t": 124.6,
        "quote": "We've got our log launcher in"
       }
-     ]
+     ],
+     "packet": "opening-combination",
+     "siege_role": "siege"
     },
     {
      "id": "ground_totem",
@@ -1408,7 +1453,8 @@
        "t": 126.4,
        "quote": "We're going to use our totem spells on the entry."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_wall_break",
@@ -1428,7 +1474,8 @@
        "t": 220.2,
        "quote": "Our wall breaks going in."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_tome",
@@ -1460,7 +1507,8 @@
        "t": 372.2,
        "quote": "our royal champion was really low"
       }
-     ]
+     ],
+     "packet": "opening-combination"
     },
     {
      "id": "ground_poison",
@@ -1479,7 +1527,8 @@
        "t": 508.3,
        "quote": "pull the CC. We're going to go ahead and poison that up."
       }
-     ]
+     ],
+     "packet": "opening-combination"
     }
    ],
    "support": 1,
@@ -1516,12 +1565,37 @@
   "In the ground variant, individual hero order is unspecified; the listed order serializes their deployment. Queen ability is immediate as stated. Super Wall Breaker count all commits the two listed breakers together, although the count per narrated placement is unknown. Wall-break and Totem ordering varies; the encoded order follows the protected-entry narration. heavy_fire approximates the Warden or Champion needing early protection without inventing an HP threshold.",
   "XtLqXV-ab6U also describes a Battle Blimp Town Hall snipe before the main deployment, with Super Yeti and Super Valkyrie, then Minion Prince on the left and Electro Dragons on the right. The vocabulary has no Town Hall-destroyed trigger, so this sequence is retained here without inventing a wait. Its suggested inventory adjustment is one fewer Revive and two Totems.",
   "Hero substitutions are source-specific: XtLqXV-ab6U suggests Royal Champion for an underleveled Duke; vbPEc45cUK4 suggests Barbarian King with Angry Jelly and Stick Horse, or Royal Champion with Rocket Spear and Seeking Shield. Complete substitute loadouts are unspecified.",
-  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py)."
+  "Steps marked completion: true were added from the source transcripts for units the consolidated playbook never deployed (docs/playbook-completion.md, merge_completion.py).",
+  "PB1b: recipe selects an explicit named source/variant; an ambiguous inventory retains repair-only selection. packet preserves the input action clock, primary marks the main cohort, objective binds one building, and effect prerequisites use actual cast expiry. Source inventory/loadout and frame-verification holds remain in force. These are controller policies and synthetic regression evidence, not real-game calibration."
  ],
  "check": {
   "steps_kept": 9,
   "steps_dropped": 0,
   "reasons": {},
   "dangling_after": []
+ },
+ "recipes": {
+  "default": [],
+  "variant-1": [
+   "Revenge Tower compartment Zapquake with Siege Barracks"
+  ],
+  "variant-2": [
+   "Rocket Backpack Zapquake with a secondary Spell Tower"
+  ],
+  "variant-3": [
+   "Rage-assisted flank and Skeleton distraction"
+  ],
+  "variant-4": [
+   "Four Electro Dragons funnel a Ruin Witch and hero push"
+  ],
+  "f-qsCT8GujY": [
+   "Rocket Backpack Zapquake with a secondary Spell Tower"
+  ],
+  "vbPEc45cUK4": [
+   "Rage-assisted flank and Skeleton distraction"
+  ],
+  "L8NYban_eLc": [
+   "Four Electro Dragons funnel a Ruin Witch and hero push"
+  ]
  }
 }

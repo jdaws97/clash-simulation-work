@@ -259,7 +259,8 @@
      "t": 243.8,
      "quote": "Now, Synthy starts the warden walk from the left side."
     }
-   ]
+   ],
+   "packet": "fireball-opening"
   },
   {
    "id": "furnaces",
@@ -289,7 +290,8 @@
      "t": 138,
      "quote": "We also want to use two furnaces with"
     }
-   ]
+   ],
+   "packet": "fireball-opening"
   },
   {
    "id": "archer_probe",
@@ -314,7 +316,8 @@
      "t": 137.9,
      "quote": "Have one archer to double check if there are any Tesla."
     }
-   ]
+   ],
+   "packet": "fireball-opening"
   },
   {
    "id": "rocket_snipe",
@@ -344,7 +347,8 @@
      "t": 265.8,
      "quote": "Here he uses one to take down the archer tower on the left,"
     }
-   ]
+   ],
+   "packet": "fireball-opening"
   },
   {
    "id": "ice_block",
@@ -374,7 +378,38 @@
      "t": 288.1,
      "quote": "an ice block spell to keep the warden exactly where he needs him."
     }
-   ]
+   ],
+   "packet": "fireball-opening"
+  },
+  {
+   "id": "fireball_mask",
+   "action": "spell",
+   "what": "Invisibility Spell",
+   "count": 1,
+   "at": "threat:charge",
+   "group": "charge",
+   "when": {
+    "after": "ice_block",
+    "delay": 0
+   },
+   "support": 2,
+   "cite": [
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 95,
+     "quote": "Then we're going to use the ice block"
+    },
+    {
+     "video": "12Z_sTAEOHw",
+     "t": 106.6,
+     "quote": "And any second now he's going to recall"
+    }
+   ],
+   "note": "Reordered 2026-10-24: 12Z_sTAEOHw casts Invisibility on the Warden while the Ice Block holds him, before the Fireball (the consolidation had it after the Healers, so the Warden walked unprotected).",
+   "packet": "fireball-opening",
+   "objective": "mask-fireball_mask",
+   "mask_for": "fireball-core",
+   "mask_hero": "Grand Warden"
   },
   {
    "id": "fireball",
@@ -385,8 +420,18 @@
    "at": "unit:Grand Warden",
    "group": "charge",
    "when": {
-    "after": "ice_block",
-    "delay": 0
+    "all": [
+     {
+      "after": "fireball_mask",
+      "delay": 0
+     },
+     {
+      "effect_active": "ice_block"
+     },
+     {
+      "effect_active": "fireball_mask"
+     }
+    ]
    },
    "support": 5,
    "cite": [
@@ -415,7 +460,11 @@
      "t": 292.4,
      "quote": "target the builder hut in the core with the fireball."
     }
-   ]
+   ],
+   "packet": "fireball-opening",
+   "objective": "fireball-core",
+   "objective_at": "building:mono",
+   "aim": "building:mono"
   },
   {
    "id": "quake_first",
@@ -445,7 +494,10 @@
      "t": 309.6,
      "quote": "He quickly uses the earthquakes because multiple builder huts are protecting the clan castle"
     }
-   ]
+   ],
+   "packet": "fireball-opening",
+   "objective": "fireball-core",
+   "after_success": "fireball"
   },
   {
    "id": "quake_second",
@@ -475,7 +527,10 @@
      "t": 309.6,
      "quote": "He quickly uses the earthquakes because multiple builder huts are protecting the clan castle"
     }
-   ]
+   ],
+   "packet": "fireball-opening",
+   "objective": "fireball-core",
+   "after_success": "fireball"
   },
   {
    "id": "healers",
@@ -495,7 +550,8 @@
      "t": 147.3,
      "quote": "healers"
     }
-   ]
+   ],
+   "packet": "fireball-opening"
   },
   {
    "id": "warden_totem",
@@ -529,11 +585,18 @@
    "action": "spell",
    "what": "Invisibility Spell",
    "count": 1,
-   "at": "unit_ahead:Grand Warden",
+   "at": "unit:Grand Warden",
    "group": "charge",
    "when": {
-    "after": "ice_block",
-    "delay": 0
+    "all": [
+     {
+      "after": "fireball",
+      "delay": 0
+     },
+     {
+      "heavy_fire": "Grand Warden"
+     }
+    ]
    },
    "support": 2,
    "cite": [
@@ -546,9 +609,15 @@
      "video": "12Z_sTAEOHw",
      "t": 100.7,
      "quote": "line up your invis"
+    },
+    {
+     "video": "pTmX2vmv4sc",
+     "t": 1349.1,
+     "quote": "king is attacking my warden. I hope. Are"
     }
    ],
-   "note": "Reordered 2026-10-24: 12Z_sTAEOHw casts Invisibility on the Warden while the Ice Block holds him, before the Fireball (the consolidation had it after the Healers, so the Warden walked unprotected)."
+   "note": "Reordered 2026-10-24: 12Z_sTAEOHw casts Invisibility on the Warden while the Ice Block holds him, before the Fireball (the consolidation had it after the Healers, so the Warden walked unprotected).",
+   "optional": true
   },
   {
    "id": "recall",
@@ -583,7 +652,8 @@
      "t": 227.5,
      "quote": "be used to recall him out and put him"
     }
-   ]
+   ],
+   "packet": "fireball-opening"
   },
   {
    "id": "warden_redeploy",
@@ -713,7 +783,8 @@
      "t": 344.7,
      "quote": "king and queen."
     }
-   ]
+   ],
+   "primary": true
   },
   {
    "id": "log_launcher",
@@ -738,7 +809,8 @@
      "t": 197,
      "quote": "along with the log launcher to"
     }
-   ]
+   ],
+   "siege_role": "siege"
   },
   {
    "id": "king_spiky_ball",
@@ -794,7 +866,8 @@
      "t": 436.8,
      "quote": "The duke comes in from the right"
     }
-   ]
+   ],
+   "packet": "duke-support"
   },
   {
    "id": "duke_rockets",
@@ -819,7 +892,8 @@
      "t": 438.3,
      "quote": "supported by the remaining super balloons and super minions"
     }
-   ]
+   ],
+   "packet": "duke-support"
   },
   {
    "id": "duke_super_minions",
@@ -839,7 +913,8 @@
      "t": 438.3,
      "quote": "supported by the remaining super balloons and super minions"
     }
-   ]
+   ],
+   "packet": "duke-support"
   },
   {
    "id": "duke_totem",
@@ -907,7 +982,8 @@
    "replaces": [
     "fireball",
     "warden_invisibility",
-    "duke_invisibility"
+    "duke_invisibility",
+    "fireball_mask"
    ],
    "steps": [
     {
@@ -933,7 +1009,11 @@
        "t": 408.2,
        "quote": "the rage tower, sorry. And look at the"
       }
-     ]
+     ],
+     "packet": "fireball-opening",
+     "objective": "mask-redirect_first",
+     "mask_for": "fireball-core",
+     "mask_hero": "Grand Warden"
     },
     {
      "id": "redirect_second",
@@ -958,7 +1038,11 @@
        "t": 408.2,
        "quote": "the rage tower, sorry. And look at the"
       }
-     ]
+     ],
+     "packet": "fireball-opening",
+     "objective": "mask-redirect_second",
+     "mask_for": "fireball-core",
+     "mask_hero": "Grand Warden"
     },
     {
      "id": "redirect_third",
@@ -983,7 +1067,11 @@
        "t": 408.2,
        "quote": "the rage tower, sorry. And look at the"
       }
-     ]
+     ],
+     "packet": "fireball-opening",
+     "objective": "mask-redirect_third",
+     "mask_for": "fireball-core",
+     "mask_hero": "Grand Warden"
     },
     {
      "id": "fireball",
@@ -994,8 +1082,21 @@
      "at": "unit:Grand Warden",
      "group": "charge",
      "when": {
-      "after": "redirect_third",
-      "delay": 0
+      "all": [
+       {
+        "after": "redirect_third",
+        "delay": 0
+       },
+       {
+        "effect_active": "redirect_first"
+       },
+       {
+        "effect_active": "redirect_second"
+       },
+       {
+        "effect_active": "redirect_third"
+       }
+      ]
      },
      "support": 2,
      "cite": [
@@ -1009,7 +1110,11 @@
        "t": 104.4,
        "quote": "fireball into the center of the base."
       }
-     ]
+     ],
+     "packet": "fireball-opening",
+     "objective": "fireball-core",
+     "objective_at": "building:mono",
+     "aim": "building:mono"
     }
    ],
    "support": 2,
@@ -1032,7 +1137,8 @@
     "ice_block",
     "fireball",
     "furnaces",
-    "warden_invisibility"
+    "warden_invisibility",
+    "fireball_mask"
    ],
    "steps": [
     {
@@ -1059,7 +1165,11 @@
        "t": 146,
        "quote": "fireball"
       }
-     ]
+     ],
+     "packet": "fireball-opening",
+     "objective": "fireball-core",
+     "objective_at": "building:mono",
+     "aim": "building:mono"
     },
     {
      "id": "furnaces",
@@ -1079,18 +1189,26 @@
        "t": 159.1,
        "quote": "I will even invest two furnaces because time is always an issue"
       }
-     ]
+     ],
+     "packet": "fireball-opening"
     },
     {
      "id": "warden_invisibility",
      "action": "spell",
      "what": "Invisibility Spell",
      "count": 1,
-     "at": "unit_ahead:Grand Warden",
+     "at": "unit:Grand Warden",
      "group": "charge",
      "when": {
-      "after": "rocket_snipe",
-      "delay": 0
+      "all": [
+       {
+        "after": "fireball",
+        "delay": 0
+       },
+       {
+        "heavy_fire": "Grand Warden"
+       }
+      ]
      },
      "support": 2,
      "cite": [
@@ -1108,9 +1226,15 @@
        "video": "pTmX2vmv4sc",
        "t": 95.8,
        "quote": "just actually just fireball this. It's"
+      },
+      {
+       "video": "pTmX2vmv4sc",
+       "t": 1349.1,
+       "quote": "king is attacking my warden. I hope. Are"
       }
      ],
-     "note": "Quick Fireball removes Ice Block, so the retained Invisibility must not depend on ice_block. This repairs reachability only; distinct offensive concealment and defensive protection windows remain engine-dependent."
+     "note": "Quick Fireball removes Ice Block, so the retained Invisibility must not depend on ice_block. This repairs reachability only; distinct offensive concealment and defensive protection windows remain engine-dependent.",
+     "optional": true
     }
    ],
    "support": 2,
@@ -1291,7 +1415,8 @@
        "t": 140.2,
        "quote": "funnel. Then the queen and king are"
       }
-     ]
+     ],
+     "primary": true
     }
    ],
    "support": 1,
@@ -1328,7 +1453,8 @@
        "t": 1055.8,
        "quote": "get the core out with the arrow and"
       }
-     ]
+     ],
+     "primary": true
     },
     {
      "id": "queen_giant_arrow",
@@ -1412,12 +1538,31 @@
   "The Giant Arrow variant retains pTmX2vmv4sc's opened-core shot with the logged equipment. Its cleared-approach prerequisite and exact firing line are not expressible in the listed vocabulary, so after Queen deployment with delay: 0 is an approximation. No shared Rocket Backpack activation timing is inferred from Stun Blaster or Revenge Deck actions.",
   "Wizard, Balloon, remaining cleanup Archer and Minion deployments have no additional precise shared placement-and-timing policy encoded here. Wall Breaker, Headhunter and Druid deployments are provided as a variant. Unallocated troops and spells remain in the logged army. No manual Log Launcher release time is stated.",
   "12Z_sTAEOHw and T7jZVhq_JU0 explicitly concern TH16; the other extractions do not state a numerical Town Hall level. 12Z_sTAEOHw describes TH16 attacks against TH18 bases under Legends modifiers and includes failed plans. These are source-described tactics, not real-game calibration results for the logged army.",
-  "2026-10-24 fix: warden_invisibility now follows ice_block (12Z_sTAEOHw ~100 s), not the Healers."
+  "2026-10-24 fix: warden_invisibility now follows ice_block (12Z_sTAEOHw ~100 s), not the Healers.",
+  "PB1b: recipe selects an explicit named source/variant; an ambiguous inventory retains repair-only selection. packet preserves the input action clock, primary marks the main cohort, objective binds one building, and effect prerequisites use actual cast expiry. Source inventory/loadout and frame-verification holds remain in force. These are controller policies and synthetic regression evidence, not real-game calibration."
  ],
  "check": {
   "steps_kept": 23,
   "steps_dropped": 0,
   "reasons": {},
   "dangling_after": []
+ },
+ "recipes": {
+  "default": [],
+  "variant-1": [
+   "Three-Invisibility Fireball redirect"
+  ],
+  "variant-2": [
+   "Quick Fireball before Healers and Furnaces"
+  ],
+  "variant-3": [
+   "Wall Breaker entry with Headhunters and Druid"
+  ],
+  "variant-4": [
+   "Early Spiky Ball to establish the hero funnel"
+  ],
+  "variant-5": [
+   "Giant Arrow through the opened core"
+  ]
  }
 }
