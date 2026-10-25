@@ -193,9 +193,10 @@ def compose(build: dict, angle: float = 0.0, seed: int = 0) -> AttackPlan:
         cc_troops=cc_troops,
         spells=spells,
         cc_spells=cc_spells,
-        ground=(
-            build["warden_mode"] == "ground" if "warden_mode" in build else not air
-        ),
+        ground=not air,
+        # output/research/usage/grand-warden.md: mode belongs to the hero.
+        # https://clashofclans.fandom.com/wiki/Grand_Warden
+        warden_mode=build.get("warden_mode"),
         zap_ad=(lightning, 0) if lightning >= 3 else (0, 0),
         loadouts=_loadouts(build, heroes),
         main_min=10.0 if air else 8.0,

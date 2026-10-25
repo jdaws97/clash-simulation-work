@@ -543,6 +543,10 @@
    "id": "king_ability",
    "action": "ability",
    "what": "Barbarian King",
+   "equipment": [
+    "Earthquake Boots",
+    "Spiky Ball"
+   ],
    "count": 1,
    "at": "unit:Barbarian King",
    "group": "main",

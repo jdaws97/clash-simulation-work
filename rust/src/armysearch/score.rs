@@ -240,6 +240,13 @@ pub(super) fn layout_identity(layout: &Json) -> String {
                 .map(|(x, y)| Json::Arr(vec![Json::Num(x as f64), Json::Num(y as f64)]))
                 .collect();
         }
+        // setup.rs:533: per-tile levels are keyed by coordinates, not order.
+        // Stable sorting preserves setup's first entry for duplicate tiles.
+        if let Some((_, Json::Arr(levels))) = items.iter_mut().find(|(key, _)| key == "wall_levels")
+        {
+            levels.sort_by_key(|entry| (entry.at("x").i64(), entry.at("y").i64()));
+            levels.dedup_by_key(|entry| (entry.at("x").i64(), entry.at("y").i64()));
+        }
     }
     // evaluate.py:467 groups the same battlefield independently of labels.
     // Sort object keys recursively; other arrays retain their execution order.

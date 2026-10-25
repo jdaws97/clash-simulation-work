@@ -637,16 +637,16 @@ pub fn opening_unit_damage(
     if travel != 0.0 && speed <= 0.0 {
         return 0.0;
     }
+    let ready_delay = delay;
     if travel != 0.0 {
         delay += travel / speed;
     }
-    if let Some(projectile) = units::projectile_speed(battle, u, false) {
+    let launch_delay = delay;
+    let projectile = units::projectile_speed(battle, u, false);
+    if let Some(projectile) = projectile {
         delay += separation.min(reach) / projectile;
     }
     let mut exposure = 0.0_f64.max(seconds - delay);
-    if exposure <= 0.0 {
-        return 0.0;
-    }
     let mut damage_rage = units::rage_boost(u, battle.t)
         .0
         .max(u.aura_dmg)
@@ -667,16 +667,39 @@ pub fn opening_unit_damage(
     if u.spec.has_special(crate::labels::Special::LongShot) && u.extra.long_shots > 0 {
         // output/research/usage/super-minion.md: three defensive Long Shots,
         // then normal pursuit. https://clashofclans.fandom.com/wiki/Super_Minion
-        // Same continuous cadence and CSV/ClashKing ranges as defense.py.
-        let long_exposure = exposure.min(u.extra.long_shots as f64 * interval / slow);
+        // Pursuit after the final launch overlaps cooldown/projectile flight
+        // (battle::act_defender; CSV/ClashKing ranges), as in defense.py.
+        let cadence = interval / slow;
+        let shots = u.extra.long_shots as f64;
+        let long_exposure = exposure.min(shots * cadence);
         let approach = 0.0_f64.max(separation.min(reach) - u.range);
         if approach != 0.0 {
-            let normal_exposure = if speed > 0.0 {
-                0.0_f64.max(exposure - long_exposure - approach / speed)
-            } else {
-                0.0
-            };
-            exposure = long_exposure + normal_exposure;
+            let mut normal_exposure = 0.0;
+            let mut baseline = 0.0;
+            if speed > 0.0 {
+                // characters.csv uses a different, slower normal projectile.
+                let normal_unit = battle.catalog.game_unit_data(&u.name, u.level.as_ref());
+                let normal_projectile = battle.catalog.game_data(
+                    "projectiles",
+                    normal_unit.at("Projectile").str(),
+                    None,
+                );
+                let normal_speed = game_required_int(normal_projectile, "Speed") as f64 / 100.0;
+                let flight = if normal_speed > 0.0 {
+                    separation.min(u.range) / normal_speed
+                } else {
+                    0.0
+                };
+                let normal_delay = launch_delay
+                    + (shots * cadence).max((shots - 1.0) * cadence + approach / speed)
+                    + flight;
+                normal_exposure = 0.0_f64.max(seconds - normal_delay);
+                // Preserve the zero-shot path's operation order for an exact floor.
+                let mut baseline_delay = ready_delay + 0.0_f64.max(separation - u.range) / speed;
+                baseline_delay += flight;
+                baseline = 0.0_f64.max(seconds - baseline_delay);
+            }
+            exposure = baseline.max(long_exposure + normal_exposure);
         }
     }
     let mut damage = u.dmg * exposure;

@@ -340,6 +340,7 @@
    "id": "opener",
    "action": "ability",
    "what": "Grand Warden",
+   "equipment": "Fireball",
    "count": 1,
    "at": "unit:Grand Warden",
    "group": "charge",

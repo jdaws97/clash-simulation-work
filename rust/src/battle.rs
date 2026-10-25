@@ -545,11 +545,12 @@ impl Battle {
             },
         );
         let strength = self.plan.strength();
-        let default_mode = if self.plan.attack().is_some_and(|p| !p.ground) {
-            "air"
-        } else {
-            "ground"
-        };
+        let default_mode = self.plan.attack().map_or("ground", |p| {
+            p.warden_mode
+                .as_deref()
+                .unwrap_or(if p.ground { "ground" } else { "air" })
+        });
+        let default_mode = default_mode.to_owned();
         let warden_air_range = if self.flyer_range == "gamedata" {
             self.catalog.game_ranges.get("Grand Warden|alt").copied()
         } else {
@@ -558,7 +559,7 @@ impl Battle {
         let unit = self.unit_mut(reference);
         // battle.py:469-480: Stage's default Warden mode is ground.
         if unit.name_id == Name::GrandWarden {
-            let mode = deployment.mode.as_deref().unwrap_or(default_mode);
+            let mode = deployment.mode.as_deref().unwrap_or(&default_mode);
             assert!(
                 mode == "air" || mode == "ground",
                 "Grand Warden mode must be air or ground"

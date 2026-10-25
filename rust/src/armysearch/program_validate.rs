@@ -283,6 +283,17 @@ pub fn equipment(step: &Json, genome: &ArmyGenome) -> Result<(), String> {
         .iter()
         .find(|choice| choice.hero == hero)
         .ok_or_else(|| format!("ability requires selected hero: {hero}"))?;
+    // output/research/usage/grand-warden.md: a cited paired activation needs
+    // both items. https://clashofclans.fandom.com/wiki/Grand_Warden
+    if let Some(Json::Arr(items)) = step.get("equipment") {
+        for item in items {
+            let item = item.str();
+            if !choice.equipment.iter().any(|equipment| equipment == item) {
+                return Err(format!("{hero} does not carry {item}"));
+            }
+        }
+        return Ok(());
+    }
     let description = text(step, "ability", text(step, "id", ""))
         .replace('_', " ")
         .to_lowercase();
@@ -413,21 +424,28 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
             return Err("program step must be an object".to_owned());
         }
         for key in [
-            "id",
-            "action",
-            "what",
-            "group",
-            "at",
-            "aim",
-            "origin",
-            "equipment",
-            "ability",
+            "id", "action", "what", "group", "at", "aim", "origin", "ability",
         ] {
             if step
                 .get(key)
                 .is_some_and(|value| !matches!(value, Json::Str(_)))
             {
                 return Err(format!("step {key} must be a string"));
+            }
+        }
+        if let Some(value) = step.get("equipment") {
+            let valid = match value {
+                Json::Str(_) => true,
+                Json::Arr(items) => {
+                    !items.is_empty()
+                        && items
+                            .iter()
+                            .all(|item| matches!(item, Json::Str(name) if !name.is_empty()))
+                }
+                _ => false,
+            };
+            if !valid {
+                return Err("step equipment must be a string or nonempty string array".to_owned());
             }
         }
         if !refs.ids.insert(name(step, "id")?.to_owned()) {
@@ -470,6 +488,7 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                 "at",
                 "when",
                 "every",
+                "recheck_when",
                 "until",
                 "aim",
                 "spread",
@@ -497,15 +516,7 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
                 return Err("unknown step field".to_owned());
             }
             for key in [
-                "id",
-                "action",
-                "what",
-                "group",
-                "at",
-                "aim",
-                "origin",
-                "equipment",
-                "ability",
+                "id", "action", "what", "group", "at", "aim", "origin", "ability",
             ] {
                 if let Some(value) = step.get(key) {
                     if !matches!(value, Json::Str(_))
@@ -519,7 +530,13 @@ pub fn validate(program: &AttackProgram, genome: &ArmyGenome) -> Result<(), Stri
             if group.is_empty() || group.len() > 64 {
                 return Err("invalid group label".to_owned());
             }
-            for key in ["completion", "uncited", "learned", "skip_if_impossible"] {
+            for key in [
+                "completion",
+                "uncited",
+                "learned",
+                "skip_if_impossible",
+                "recheck_when",
+            ] {
                 if step
                     .get(key)
                     .is_some_and(|value| !matches!(value, Json::Bool(_)))

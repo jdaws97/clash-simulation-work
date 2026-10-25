@@ -875,6 +875,33 @@
    ]
   }
  ],
+ "spell_support": [
+  {
+   "id": "support_thrower_invisibility",
+   "action": "spell",
+   "what": "Invisibility Spell",
+   "at": "unit:Thrower",
+   "group": "main",
+   "when": {
+    "heavy_fire": "Thrower"
+   },
+   "every": 4.5,
+   "recheck_when": true,
+   "until": {
+    "spells_left": "Invisibility Spell",
+    "n": 0
+   },
+   "completion": true,
+   "cite": [
+    {
+     "video": "OWBSVJa-H_E",
+     "t": 478.2,
+     "quote": "The invis is for the throwers cuz obviously we want our duke taking damage."
+    }
+   ],
+   "note": "output/research/usage/thrower.md: protect Throwers; https://www.youtube.com/watch?v=OWBSVJa-H_E. The 4.5-second interval retains the existing generic fallback assumption; this source establishes the recipient, not an exact cadence."
+  }
+ ],
  "variants": [
   {
    "name": "Troop Launcher for an open or short Town Hall route",
@@ -1342,6 +1369,7 @@
      "id": "giant_arrow",
      "action": "ability",
      "what": "Archer Queen",
+     "equipment": "Giant Arrow",
      "count": 1,
      "at": "unit:Archer Queen",
      "group": "charge",
@@ -1387,6 +1415,7 @@
      "id": "rocket_backpack",
      "action": "ability",
      "what": "Dragon Duke",
+     "equipment": "Rocket Backpack",
      "count": 1,
      "at": "unit:Dragon Duke",
      "group": "duke",
@@ -1479,6 +1508,7 @@
      "id": "mini_rocket",
      "action": "ability",
      "what": "Dragon Duke",
+     "equipment": "Rocket Backpack",
      "count": 1,
      "at": "unit:Dragon Duke",
      "group": "duke",

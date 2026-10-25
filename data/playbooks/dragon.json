@@ -314,6 +314,7 @@
    "id": "duke_ability",
    "action": "ability",
    "what": "Dragon Duke",
+   "equipment": "Rocket Backpack",
    "count": 1,
    "at": "unit:Dragon Duke",
    "group": "charge",
@@ -621,6 +622,10 @@
    "id": "warden_ability",
    "action": "ability",
    "what": "Grand Warden",
+   "equipment": [
+    "Eternal Tome",
+    "Healing Tome"
+   ],
    "count": 1,
    "at": "group:main",
    "group": "main",
@@ -659,6 +664,7 @@
    "id": "prince_ability",
    "action": "ability",
    "what": "Minion Prince",
+   "equipment": "Dark Orb",
    "count": 1,
    "at": "group:main",
    "group": "main",
@@ -855,6 +861,33 @@
      "quote": "Poison on the enemy heroes."
     }
    ]
+  }
+ ],
+ "spell_support": [
+  {
+   "id": "support_duke_invisibility",
+   "action": "spell",
+   "what": "Invisibility Spell",
+   "at": "unit:Dragon Duke",
+   "group": "charge",
+   "when": {
+    "after": "duke",
+    "delay": 4
+   },
+   "every": 10,
+   "until": {
+    "spells_left": "Invisibility Spell",
+    "n": 0
+   },
+   "completion": true,
+   "cite": [
+    {
+     "video": "t5yxQTXbY6w",
+     "t": 182.4,
+     "quote": "invisibility at 2 minutes 56 seconds, 2 minutes 46 seconds,"
+    }
+   ],
+   "note": "output/research/usage/invisibility-spell.md: sustained Duke charge; https://www.youtube.com/watch?v=t5yxQTXbY6w. Reuse the cited charge's schedule only when fitting left Invisibility unnamed. Existing pet-based cadence handling still applies."
   }
  ],
  "variants": [
@@ -1357,6 +1390,7 @@
      "id": "rc_ability",
      "action": "ability",
      "what": "Royal Champion",
+     "equipment": "Rocket Spear",
      "count": 1,
      "at": "unit:Royal Champion",
      "group": "charge",
@@ -1804,6 +1838,7 @@
      "id": "queen_ability",
      "action": "ability",
      "what": "Archer Queen",
+     "equipment": "Giant Arrow",
      "count": 1,
      "at": "unit:Archer Queen",
      "group": "funnel",
@@ -2050,6 +2085,7 @@
      "id": "queen_ability",
      "action": "ability",
      "what": "Archer Queen",
+     "equipment": "Giant Arrow",
      "count": 1,
      "at": "unit:Archer Queen",
      "group": "funnel",
@@ -2090,6 +2126,7 @@
      "id": "duke_ability",
      "action": "ability",
      "what": "Dragon Duke",
+     "equipment": "Rocket Backpack",
      "count": 1,
      "at": "unit:Dragon Duke",
      "group": "charge",

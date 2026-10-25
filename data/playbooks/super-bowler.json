@@ -1455,6 +1455,10 @@
    "id": "warden_ability",
    "action": "ability",
    "what": "Grand Warden",
+   "equipment": [
+    "Eternal Tome",
+    "Heroic Torch"
+   ],
    "count": 1,
    "at": "unit:Grand Warden",
    "group": "main",

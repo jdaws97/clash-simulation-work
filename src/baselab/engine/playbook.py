@@ -749,7 +749,13 @@ class PlaybookPlan(AttackPlan):
                     required = "Rocket Backpack"
                 elif aim.startswith("building:") and st["what"] == "Grand Warden":
                     required = "Fireball"
-            self._equipment_steps[st["id"]] = [required] if required else []
+            # output/research/usage/grand-warden.md: a cited paired activation
+            # names both items. https://clashofclans.fandom.com/wiki/Grand_Warden
+            self._equipment_steps[st["id"]] = (
+                required
+                if isinstance(required, list)
+                else [required] if required else []
+            )
         loadout = self.loadouts.get(st["what"]) or heroes.DEFAULT_LOADOUTS.get(
             st["what"]
         )
@@ -758,15 +764,18 @@ class PlaybookPlan(AttackPlan):
             if u is not None and u.kit is not None
             else (loadout.equipment if loadout is not None else ())
         )
-        return next(
-            (
-                name
-                for name in self._equipment_steps[st["id"]]
-                if name not in equipped
-                or (self.account_equipment and name not in self.equipment_levels)
-            ),
-            None,
-        )
+        names = self._equipment_steps[st["id"]]
+
+        def unusable(name):
+            return name not in equipped or (
+                self.account_equipment and name not in self.equipment_levels
+            )
+
+        # One press fires whichever listed item is equipped: a step citing two
+        # actives runs when at least one is usable (any-of), else it is skipped.
+        if names and all(unusable(name) for name in names):
+            return names[0]
+        return None
 
     def _ad_target_count(self, st):
         # Wiki: Giant Arrow, multiple Air Defenses can share a shot; the step's
@@ -784,7 +793,12 @@ class PlaybookPlan(AttackPlan):
             equipment is None
             or aim not in ("arrow", "building:ad")
             or (aim == "arrow" and st["what"] != "Archer Queen")
-            or st.get("equipment", equipment) != equipment
+            or equipment
+            not in (
+                st["equipment"]
+                if isinstance(st.get("equipment"), list)
+                else [st.get("equipment", equipment)]
+            )
         ):
             return 0
         quotes = " ".join(
@@ -1091,7 +1105,11 @@ class PlaybookPlan(AttackPlan):
                     why = "until reached"
                 if why:
                     # Wiki: Invisibility Spell, remaining copies can support other units.
-                    self._done.setdefault(st["id"], t)
+                    # output/research/usage/grand-warden.md: equipped abilities
+                    # share activation. A missing item never performed its step.
+                    # https://clashofclans.fandom.com/wiki/Grand_Warden
+                    if not why.startswith("missing "):
+                        self._done.setdefault(st["id"], t)
                     self._cancelled.add(st["id"])
                     self.log_steps.append(
                         (round(t, 1), st["id"] + " (skipped: " + why + ")")
@@ -1120,6 +1138,10 @@ class PlaybookPlan(AttackPlan):
                 if t < self._next.get(sid, 0.0) or (
                     s.get("until") and self._ready(battle, s["until"])
                 ):
+                    continue
+                # output/research/usage/invisibility-spell.md: support under
+                # pressure. https://clashofclans.fandom.com/wiki/Invisibility_Spell
+                if s.get("recheck_when") and not self._ready(battle, s.get("when")):
                     continue
             # Wiki: Hero Equipment, the original trigger only starts the bounded hold.
             elif not (act == "ability" and sid in self._aim_since) and not self._ready(
@@ -1471,9 +1493,14 @@ class PlaybookPlan(AttackPlan):
         if not main:
             # Wiki: Battle Blimp, cargo support continues without a surviving push.
             main = self._cargo_support(battle) or []
-            if not main:
+            if not main and any(
+                u.group == "main" and u.name != "Totem" and u.kind != "pet"
+                for u in battle.attackers
+            ):
                 # Wiki: Heroes, independent charges and funnel flanks still
                 # receive spare support after the main push has fallen.
+                # output/research/usage/dragon.md: support follows the push.
+                # https://www.youtube.com/watch?v=55I-qks9qdI
                 main = [
                     u
                     for u in battle.attackers
@@ -1499,7 +1526,9 @@ class PlaybookPlan(AttackPlan):
         mine = {
             st.get("what")
             for st in self.steps
-            if st["action"] == "ability" and st["id"] not in self._done
+            if st["action"] == "ability"
+            and st["id"] not in self._done
+            and st["id"] not in self._cancelled
         }
         held = [
             u
@@ -1594,12 +1623,12 @@ def pick_variants(
         account_equipment=account_equipment,
     )
 
-    def feasible(candidate, added):
+    def feasible(candidate, added, *, check_equipment=True):
         stock = {**inventory, **{hero: 1 for hero in heroes_in}}
         stock.update({SPELL_NAMES[k]: count for k, count in spells.items()})
         for st in candidate:
             usable = _usable(st, have, heroes_in, pets, candidate)
-            if st["action"] == "ability":
+            if check_equipment and st["action"] == "ability":
                 checker._equipment_steps = {}
                 usable = usable and not checker._missing_equipment(st)
             if not usable:
@@ -1642,7 +1671,9 @@ def pick_variants(
         if not requested and (
             not repl
             or all(_usable(x, have, heroes_in, pets, steps) for x in cur)
-            and feasible(steps, {x["id"] for x in cur})
+            # Missing equipment skips the cited step; it does not authorize
+            # silently replacing it with an ability that names no equipment.
+            and feasible(steps, {x["id"] for x in cur}, check_equipment=False)
         ):
             continue
         steps = candidate
@@ -1669,7 +1700,7 @@ def fit_steps(
     on such a unit inside an `all` / `any` is left out, and a deploy step
     whose whole trigger is one goes in with the main push. A redeploy step
     needs a Recall Spell to have something to redeploy. Troops the steps
-    never mention join the main push right after its first deploy: that
+    never mention join the main push right after its first troop deploy: that
     last rule is NOT from a source (real armies differ from the playbook's
     example army) and is marked "uncited". Unmentioned heroes inherit the
     place/group/trigger of a comparable cited hero, preferring an absent
@@ -1846,9 +1877,13 @@ def fit_steps(
         for x in kept
         if x["action"] == "deploy"
         and x.get("at", "edge:main") == "edge:main"
+        and x.get("group", "main") == "main"
         and x.get("what") not in heroes.HEROES
+        and stats.record(x["what"])["kind"] != "siege"
     ]
-    # the leftovers go with the main push: right after its first deploy
+    # output/research/usage/dragon.md: Dragons precede their supporting Riders.
+    # https://www.youtube.com/watch?v=55I-qks9qdI
+    # Policy: leftovers follow the variant's main troop, never its lead siege.
     anchor = {"after": main_deploys[0], "delay": 1.0} if main_deploys else {"t": 15.0}
     for x in orphans:  # nothing is left of its trigger: it goes with the main push
         x["when"] = dict(anchor) if x["id"] != anchor.get("after") else {"t": 15.0}
@@ -1923,6 +1958,22 @@ def _gaps():
         return None
     g = json.loads(p.read_text(encoding="utf-8"))
     return g["same_group"]["median"], g["group_change"]["median"]
+
+
+def add_spell_support(pb, steps, spells):
+    # output/research/usage/invisibility-spell.md: protect the cited recipient.
+    # https://clashofclans.fandom.com/wiki/Invisibility_Spell
+    # These source-backed fallbacks apply only when fitting left the spell
+    # unnamed and retained its recipient's deployment.
+    for step in pb.get("spell_support", []):
+        name = step["what"]
+        target = step["at"].split(":", 1)[1]
+        if not spells.get(SPELL_KEYS[name]) or any(
+            st["action"] == "spell" and st.get("what") == name for st in steps
+        ):
+            continue
+        if any(st["action"] == "deploy" and st.get("what") == target for st in steps):
+            steps.append(copy.deepcopy(step))
 
 
 def add_waits(steps: list) -> None:
@@ -2177,6 +2228,7 @@ def from_playbook(
         sp,
         cc=plan.cc_troops,
     )
+    add_spell_support(pb, plan.steps, sp)
     # data/custom-armies.json: explicit roles apply only to unreferenced groups.
     # Playbook group anchors and group conditions retain their original heroes.
     # Wiki: Healer Puppet, send the Queen alongside the main army in smash attacks.
@@ -2231,6 +2283,6 @@ def from_playbook(
     if "warden_mode" not in build and warden_walk(
         plan.steps, plan.inventory.get("Healer", 0) > 0
     ):
-        plan.ground = True
+        plan.warden_mode = "ground"
     plan.flank_offset, plan.charge_side = flank_offset, charge_side
     return plan

@@ -553,6 +553,8 @@ class Battle:
         if u.name == "Grand Warden":
             mode = getattr(d, "mode", None)
             if mode is None:
+                mode = getattr(self.plan, "warden_mode", None)
+            if mode is None:
                 mode = "ground" if getattr(self.plan, "ground", True) else "air"
             if mode not in ("air", "ground"):
                 raise ValueError("Grand Warden mode must be air or ground")

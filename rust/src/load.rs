@@ -1784,6 +1784,7 @@ pub fn plan(p: Node<'_>, deployments: &[Deployment]) -> Plan {
                 "cc_spells",
                 "spells",
                 "ground",
+                "warden_mode",
                 "auto_ability_on_ko",
                 "zap_ad",
                 "main_min",

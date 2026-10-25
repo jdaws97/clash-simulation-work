@@ -476,6 +476,7 @@ class AttackPlan:
     cc_spells: dict = field(default_factory=dict)  # Clan Castle spells (key -> count)
     spells: dict = field(default_factory=dict)  # key -> count (keys in SPELL_NAMES)
     ground: bool = True
+    warden_mode: str | None = None
     auto_ability_on_ko: bool = True
     zap_ad: tuple = (0, 0)  # (lightnings, quakes) opening on an air defense
     main_min: float = 8.0
@@ -1459,7 +1460,12 @@ class AttackPlan:
             seconds = action_time("deploy") + target.hp / dps
             seconds += distance / (5.0 if kind == "flinger" else 12.0)
             damage = target.hp  # Candidates taking over 12 s are rejected below.
-        flying = numbers["flying"] or (name == "Grand Warden" and not self.ground)
+        warden_air = (
+            self.warden_mode == "air"
+            if self.warden_mode is not None
+            else not self.ground
+        )
+        flying = numbers["flying"] or (name == "Grand Warden" and warden_air)
         incoming = 0.0
         for defense in battle.buildings:
             weapon = defense.weapon

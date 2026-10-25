@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 from . import effects, stats, units
 from .entities import Building, Pending, Unit, dist
-from .specs import game_data
+from .specs import game_data, game_unit_data
 
 
 class Weapon:
@@ -1156,14 +1156,14 @@ def opening_unit_damage(battle, u, x, y, flying, is_hero, seconds):
     speed = battle.speed_of(u)
     if travel and speed <= 0:
         return 0.0
+    ready_delay = delay
     if travel:
         delay += travel / speed
+    launch_delay = delay
     projectile = units.projectile_speed(u)
     if projectile is not None:
         delay += min(separation, reach) / projectile
     exposure = max(0.0, seconds - delay)
-    if exposure <= 0:
-        return 0.0
     rage = max(
         units.rage_boost(u, battle.t)[0], u.aura_dmg, u.extra.get("bell_damage", 1.0)
     )
@@ -1182,17 +1182,34 @@ def opening_unit_damage(battle, u, x, y, flying, is_hero, seconds):
     if "long_shot" in u.spec.special and u.extra.get("long_shots", 0) > 0:
         # output/research/usage/super-minion.md: three defensive Long Shots,
         # then normal-range pursuit. https://clashofclans.fandom.com/wiki/Super_Minion
-        # Keep the estimator's continuous cadence; budget the finite allowance
-        # before charging the additional approach (CSV/ClashKing ranges).
-        long_exposure = min(exposure, u.extra["long_shots"] * interval / slow)
+        # Pursuit starts after the last launch, overlapping its cooldown and
+        # projectile flight (battle._act_defender; CSV/ClashKing ranges).
+        cadence = interval / slow
+        shots = u.extra["long_shots"]
+        long_exposure = min(exposure, shots * cadence)
         approach = max(0.0, min(separation, reach) - u.range)
         if approach:
-            normal_exposure = (
-                max(0.0, exposure - long_exposure - approach / speed)
-                if speed > 0
-                else 0.0
-            )
-            exposure = long_exposure + normal_exposure
+            normal_exposure = baseline = 0.0
+            if speed > 0:
+                # characters.csv uses a different, slower normal projectile.
+                normal_projectile = game_unit_data(u.name, u.level)["Projectile"]
+                normal_speed = (
+                    int(game_data("projectiles", normal_projectile)["Speed"]) / 100.0
+                )
+                flight = (
+                    min(separation, u.range) / normal_speed if normal_speed > 0 else 0.0
+                )
+                normal_delay = (
+                    launch_delay
+                    + max(shots * cadence, (shots - 1) * cadence + approach / speed)
+                    + flight
+                )
+                normal_exposure = max(0.0, seconds - normal_delay)
+                # Preserve the zero-shot path's operation order for an exact floor.
+                baseline_delay = ready_delay + max(0.0, separation - u.range) / speed
+                baseline_delay += flight
+                baseline = max(0.0, seconds - baseline_delay)
+            exposure = max(baseline, long_exposure + normal_exposure)
     damage = u.dmg * exposure
     if u.spec.attack == "beam":
         starts = (0.0, 1.5, 3.0) if u.name == "Super Miner" else (0.0, 1.7, 3.2)

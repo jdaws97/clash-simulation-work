@@ -1481,7 +1481,11 @@ impl AttackPlan {
                 damage = target.hp;
             }
         }
-        let flying = numbers.flying || name == "Grand Warden" && !self.ground;
+        let warden_air = self
+            .warden_mode
+            .as_deref()
+            .map_or(!self.ground, |mode| mode == "air");
+        let flying = numbers.flying || name == "Grand Warden" && warden_air;
         let excluded_target = if flying { Tag::Ground } else { Tag::Air };
         let mut incoming = 0.0;
         for defense in &battle.buildings {

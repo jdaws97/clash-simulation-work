@@ -213,6 +213,7 @@ impl<'a> Compiler<'a> {
             plan.at("spells"),
             list(&plan, "cc_troops"),
         )?;
+        add_spell_support(pb, &mut steps, plan.at("spells"));
         apply_roles(&mut steps, build, &options.overrides);
         if let Some(gaps) = self.gaps {
             add_waits(&mut steps, gaps, self.pace);
@@ -247,7 +248,7 @@ impl<'a> Compiler<'a> {
         if build.get("warden_mode").is_none()
             && warden_walk(&steps, number(&inventory, "Healer", 0.0) > 0.0)
         {
-            put(&mut plan, "ground", Json::Bool(true));
+            put(&mut plan, "warden_mode", string("ground"));
         }
         put(&mut plan, "inventory", inventory);
         put(&mut plan, "steps", Json::Arr(steps));
@@ -281,10 +282,11 @@ impl<'a> Compiler<'a> {
             .filter(|value| truth(value))
             .unwrap_or(step.at("id"));
         let description = description.str().replace('_', " ").to_lowercase();
-        let mut required = step
-            .get("equipment")
-            .filter(|value| truth(value))
-            .map(|value| value.str().to_owned());
+        // A list of items is read below; only a single name seeds `required`.
+        let mut required = match step.get("equipment") {
+            Some(Json::Str(name)) if !name.is_empty() => Some(name.clone()),
+            _ => None,
+        };
         if required.is_none() {
             required = self
                 .stats
@@ -334,11 +336,20 @@ impl<'a> Compiler<'a> {
         }
         let fallback = armies::default_loadout(hero).unwrap_or_else(object);
         let loadout = plan.at("loadouts").get(hero).unwrap_or(&fallback);
-        required.is_some_and(|item| {
-            !list(loadout, "equipment").contains(&string(&item))
-                || flag(plan, "account_equipment")
-                    && plan.at("equipment_levels").get(&item).is_none()
-        })
+        let required: Vec<String> = match step.get("equipment") {
+            Some(Json::Arr(names)) if !names.is_empty() => {
+                names.iter().map(|name| name.str().to_owned()).collect()
+            }
+            _ => required.into_iter().collect(),
+        };
+        // playbook.py _missing_equipment: any-of; one press fires whichever
+        // listed item is equipped.
+        !required.is_empty()
+            && required.iter().all(|item| {
+                !list(loadout, "equipment").contains(&string(item))
+                    || flag(plan, "account_equipment")
+                        && plan.at("equipment_levels").get(item).is_none()
+            })
     }
 
     fn usable(
@@ -397,6 +408,7 @@ impl<'a> Compiler<'a> {
         heroes: &[Json],
         spells: &Json,
         plan: &Json,
+        check_equipment: bool,
     ) -> Result<bool, String> {
         let mut stock = inventory.clone();
         for hero in heroes {
@@ -407,7 +419,9 @@ impl<'a> Compiler<'a> {
         }
         for step in candidate {
             let usable = self.usable(step, inventory, heroes, spells, plan, candidate)
-                && (text(step, "action", "") != "ability" || !self.missing_equipment(step, plan));
+                && (!check_equipment
+                    || text(step, "action", "") != "ability"
+                    || !self.missing_equipment(step, plan));
             if !usable {
                 if added.iter().any(|id| id == text(step, "id", "")) {
                     return Ok(false);
@@ -486,7 +500,7 @@ impl<'a> Compiler<'a> {
                 .iter()
                 .map(|step| text(step, "id", "").to_owned())
                 .collect();
-            if !self.feasible(&candidate, &ids, inventory, heroes, spells, plan)? {
+            if !self.feasible(&candidate, &ids, inventory, heroes, spells, plan, true)? {
                 if requested {
                     return Err(format!(
                         "Infeasible playbook variant: {}",
@@ -504,7 +518,17 @@ impl<'a> Compiler<'a> {
                     || current
                         .iter()
                         .all(|step| self.usable(step, inventory, heroes, spells, plan, &steps))
-                        && self.feasible(&steps, &current_ids, inventory, heroes, spells, plan)?)
+                        // Missing equipment skips its step, rather than silently
+                        // substituting an ability with no named requirement.
+                        && self.feasible(
+                            &steps,
+                            &current_ids,
+                            inventory,
+                            heroes,
+                            spells,
+                            plan,
+                            false,
+                        )?)
             {
                 continue;
             }
@@ -902,12 +926,17 @@ pub fn fit_steps(
         .filter(|step| text(step, "action", "") == "deploy")
         .map(|step| field(step, "what"))
         .collect();
+    // output/research/usage/dragon.md: Dragons precede supporting Riders.
+    // https://www.youtube.com/watch?v=55I-qks9qdI
+    // Policy: leftovers follow the variant's main troop, never its lead siege.
     let anchor = kept
         .iter()
         .find(|step| {
             text(step, "action", "") == "deploy"
                 && text(step, "at", "edge:main") == "edge:main"
+                && text(step, "group", "main") == "main"
                 && !is_hero(text(step, "what", ""))
+                && !armies::is_siege(text(step, "what", ""))
         })
         .map_or_else(|| time(15.0), |step| after(text(step, "id", ""), 1.0));
     for step in &mut kept {
@@ -1000,6 +1029,32 @@ fn collect_groups(condition: &Json, groups: &mut Vec<String>) {
     for key in ["all", "any"] {
         for part in list(condition, key) {
             collect_groups(part, groups);
+        }
+    }
+}
+
+fn add_spell_support(pb: &Json, steps: &mut Vec<Json>, spells: &Json) {
+    // output/research/usage/invisibility-spell.md: protect the cited recipient.
+    // https://clashofclans.fandom.com/wiki/Invisibility_Spell
+    // Only fill an unnamed spell whose recipient still has a deployment.
+    for step in list(pb, "spell_support") {
+        let name = text(step, "what", "");
+        let target = text(step, "at", "")
+            .split_once(':')
+            .expect("support recipient")
+            .1;
+        if spell_key(name).is_none_or(|kind| number(spells, kind, 0.0) <= 0.0)
+            || steps.iter().any(|other| {
+                text(other, "action", "") == "spell" && text(other, "what", "") == name
+            })
+        {
+            continue;
+        }
+        if steps
+            .iter()
+            .any(|other| text(other, "action", "") == "deploy" && text(other, "what", "") == target)
+        {
+            steps.push(step.clone());
         }
     }
 }

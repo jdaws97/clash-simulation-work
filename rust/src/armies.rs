@@ -683,13 +683,13 @@ pub fn compose(
     put(&mut plan, "breakers", Json::Arr(breakers));
     // output/research/usage/grand-warden.md: preserve the replay's chosen mode.
     // https://clashofclans.fandom.com/wiki/Grand_Warden
-    let ground = match build.get("warden_mode") {
-        Some(Json::Str(mode)) if mode == "ground" => true,
-        Some(Json::Str(mode)) if mode == "air" => false,
-        None => !air,
+    let warden_mode = match build.get("warden_mode") {
+        Some(Json::Str(mode)) if matches!(mode.as_str(), "ground" | "air") => string(mode),
+        None => Json::Null,
         _ => return Err("Grand Warden mode must be air or ground".to_owned()),
     };
-    put(&mut plan, "ground", Json::Bool(ground));
+    put(&mut plan, "ground", Json::Bool(!air));
+    put(&mut plan, "warden_mode", warden_mode);
     put(
         &mut plan,
         "siege",

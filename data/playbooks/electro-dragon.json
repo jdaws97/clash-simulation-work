@@ -250,6 +250,7 @@
    "id": "arrow",
    "action": "ability",
    "what": "Archer Queen",
+   "equipment": "Giant Arrow",
    "count": 1,
    "at": "unit:Archer Queen",
    "group": "charge",
@@ -431,6 +432,7 @@
    "id": "orb",
    "action": "ability",
    "what": "Minion Prince",
+   "equipment": "Dark Orb",
    "count": 1,
    "at": "unit:Minion Prince",
    "group": "main",
@@ -497,6 +499,33 @@
     }
    ],
    "completion": true
+  }
+ ],
+ "spell_support": [
+  {
+   "id": "support_edrag_invisibility",
+   "action": "spell",
+   "what": "Invisibility Spell",
+   "at": "unit:Electro Dragon",
+   "group": "main",
+   "when": {
+    "heavy_fire": "Electro Dragon"
+   },
+   "every": 4.5,
+   "recheck_when": true,
+   "until": {
+    "spells_left": "Invisibility Spell",
+    "n": 0
+   },
+   "completion": true,
+   "cite": [
+    {
+     "title": "Invisibility Spell",
+     "url": "https://clashofclans.fandom.com/wiki/Invisibility_Spell",
+     "quote": "The Invisibility Spell can be used to buy time for slow troops such as Electro Dragons or Balloons under high DPS areas in order to survive longer."
+    }
+   ],
+   "note": "output/research/usage/invisibility-spell.md: main-army protection; https://clashofclans.fandom.com/wiki/Invisibility_Spell. The 4.5-second interval retains the existing generic fallback assumption; the source establishes the recipient and pressure condition."
   }
  ],
  "variants": [
@@ -915,6 +944,7 @@
      "id": "rocket_backpack",
      "action": "ability",
      "what": "Dragon Duke",
+     "equipment": "Rocket Backpack",
      "count": 1,
      "at": "unit:Dragon Duke",
      "group": "duke",
@@ -955,6 +985,7 @@
      "id": "arrow",
      "action": "ability",
      "what": "Archer Queen",
+     "equipment": "Giant Arrow",
      "count": 1,
      "at": "unit:Archer Queen",
      "group": "funnel",
@@ -1392,6 +1423,7 @@
      "id": "ground_tome",
      "action": "ability",
      "what": "Grand Warden",
+     "equipment": "Eternal Tome",
      "count": 1,
      "at": "unit:Grand Warden",
      "group": "main",

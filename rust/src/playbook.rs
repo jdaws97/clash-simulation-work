@@ -211,7 +211,7 @@ pub struct PlaybookPlan {
     charge_edge: Cell<Option<(f64, f64)>>,
     pub next_fallback: f64,
     pub step_spells: Option<Rc<Vec<String>>>,
-    pub equipment_steps: SharedVec<(String, Option<String>)>,
+    pub equipment_steps: SharedVec<(String, Vec<String>)>,
     pub ad_reservations: SharedVec<(String, Vec<BuildingId>)>,
     siege_landings: SharedVec<(String, (f64, f64))>,
     // Immutable construction inputs remain available for export inspection.
@@ -292,7 +292,11 @@ impl PlaybookPlan {
                         .map(|(id, names)| {
                             (
                                 id.clone(),
-                                names.arr().first().map(|name| name.str().to_owned()),
+                                names
+                                    .arr()
+                                    .iter()
+                                    .map(|name| name.str().to_owned())
+                                    .collect(),
                             )
                         })
                         .collect()
@@ -1155,30 +1159,30 @@ impl PlaybookPlan {
                 .map_or(step.id.as_str(), Json::str)
                 .replace('_', " ")
                 .to_lowercase();
-            let mut required = step
-                .source
-                .get("equipment")
-                .filter(|value| truth(value))
-                .map(|value| value.str().to_owned())
-                .or_else(|| {
-                    battle
-                        .catalog
-                        .stats
-                        .registry
-                        .obj()
-                        .iter()
-                        .find(|(name, record)| {
-                            record.at("kind").str() == "equipment"
-                                && record
-                                    .get("attrs")
-                                    .and_then(|attrs| attrs.get("raw"))
-                                    .and_then(|raw| raw.get("User"))
-                                    .and_then(Json::opt_str)
-                                    == Some(what)
-                                && action.contains(&name.to_lowercase())
-                        })
-                        .map(|(name, _)| name.clone())
-                });
+            // A list of items is read below; only a single name seeds `required`.
+            let mut required = match step.source.get("equipment") {
+                Some(Json::Str(name)) if !name.is_empty() => Some(name.clone()),
+                _ => None,
+            }
+            .or_else(|| {
+                battle
+                    .catalog
+                    .stats
+                    .registry
+                    .obj()
+                    .iter()
+                    .find(|(name, record)| {
+                        record.at("kind").str() == "equipment"
+                            && record
+                                .get("attrs")
+                                .and_then(|attrs| attrs.get("raw"))
+                                .and_then(|raw| raw.get("User"))
+                                .and_then(Json::opt_str)
+                                == Some(what)
+                            && action.contains(&name.to_lowercase())
+                    })
+                    .map(|(name, _)| name.clone())
+            });
             let aliases: &[(&str, &str)] = match what {
                 "Archer Queen" => &[
                     ("arrow", "Giant Arrow"),
@@ -1210,13 +1214,21 @@ impl PlaybookPlan {
                     required = Some("Fireball".to_owned());
                 }
             }
+            // output/research/usage/grand-warden.md: paired activation names
+            // both items. https://clashofclans.fandom.com/wiki/Grand_Warden
+            let required = match step.source.get("equipment") {
+                Some(Json::Arr(names)) if !names.is_empty() => {
+                    names.iter().map(|name| name.str().to_owned()).collect()
+                }
+                _ => required.into_iter().collect(),
+            };
             self.equipment_steps.push((step.id.clone(), required));
         }
         let required = self
             .equipment_steps
             .iter()
             .find(|(id, _)| id == &step.id)
-            .and_then(|(_, required)| required.as_ref())?;
+            .map(|(_, required)| required)?;
         let loadout = self
             .attack
             .loadouts
@@ -1229,14 +1241,22 @@ impl PlaybookPlan {
             .map(|kit| kit.equip.as_slice())
             .or_else(|| loadout.as_ref().map(|loadout| loadout.equipment.as_slice()))
             .unwrap_or(&[]);
-        (!equipped.contains(required)
-            || self.attack.account_equipment
-                && !self
-                    .attack
-                    .equipment_levels
-                    .iter()
-                    .any(|(name, _)| name == required))
-        .then(|| required.clone())
+        let unusable = |item: &String| {
+            !equipped.contains(item)
+                || self.attack.account_equipment
+                    && !self
+                        .attack
+                        .equipment_levels
+                        .iter()
+                        .any(|(name, _)| name == item)
+        };
+        // playbook.py _missing_equipment: any-of; one press fires whichever
+        // listed item is equipped.
+        if !required.is_empty() && required.iter().all(unusable) {
+            required.first().cloned()
+        } else {
+            None
+        }
     }
 
     // playbook.py:523-559: reserve only aimed damaging abilities and cited counts.
@@ -1256,7 +1276,10 @@ impl PlaybookPlan {
             || step
                 .source
                 .get("equipment")
-                .is_some_and(|value| value.opt_str() != Some(equipment))
+                .is_some_and(|value| match value {
+                    Json::Arr(names) => !names.iter().any(|name| name.opt_str() == Some(equipment)),
+                    _ => value.opt_str() != Some(equipment),
+                })
         {
             return 0;
         }
@@ -1683,7 +1706,12 @@ impl PlaybookPlan {
                     why = Some("until reached".to_owned());
                 }
                 if let Some(why) = why {
-                    entry_time(&mut self.done, &step.id, t);
+                    // output/research/usage/grand-warden.md: equipped abilities
+                    // share activation; a missing item did not perform the step.
+                    // https://clashofclans.fandom.com/wiki/Grand_Warden
+                    if !why.starts_with("missing ") {
+                        entry_time(&mut self.done, &step.id, t);
+                    }
                     self.cancelled.push(step.id.clone());
                     self.log_steps
                         .push((round_decimal(t, 1), format!("{} (skipped: {why})", step.id)));
@@ -1723,6 +1751,11 @@ impl PlaybookPlan {
                         .as_ref()
                         .is_some_and(|until| self.ready(battle, until, false))
                 {
+                    continue;
+                }
+                // output/research/usage/invisibility-spell.md: support under
+                // pressure. https://clashofclans.fandom.com/wiki/Invisibility_Spell
+                if flag(&step.source, "recheck_when") && !self.ready(battle, &step.when, false) {
                     continue;
                 }
             } else if !(step.action == Action::Ability
@@ -2104,9 +2137,15 @@ impl PlaybookPlan {
         let mut units = plans::main_units(battle, "main");
         if units.is_empty() {
             units = self.attack.cargo_support(battle).unwrap_or_default();
-            if units.is_empty() {
+            if units.is_empty()
+                && battle
+                    .attackers_pool()
+                    .any(|u| u.group == "main" && u.name_id != Name::Totem && u.kind != Tag::Pet)
+            {
                 // Wiki: Heroes, independent charges and surviving flanks still
                 // receive spare support after the main push has fallen.
+                // output/research/usage/dragon.md: support follows the push.
+                // https://www.youtube.com/watch?v=55I-qks9qdI
                 units = battle
                     .attackers_pool()
                     .filter(|u| u.alive && u.name_id != Name::Totem && u.kind != Tag::Pet)
@@ -2147,6 +2186,7 @@ impl PlaybookPlan {
                     && self.steps.iter().any(|s| {
                         s.action == Action::Ability
                             && !self.done(&s.id)
+                            && !self.cancelled(&s.id)
                             && s.what.as_ref() == Some(&u.name)
                     })
             })

@@ -328,6 +328,7 @@ pub struct AttackPlan {
     pub town_hall: i64,
     pub strength: f64,
     pub ground: bool,
+    pub warden_mode: Option<String>,
     pub loadouts: SharedVec<(String, HeroLoadout)>,
     pub troop_levels: SharedVec<(String, Option<Level>)>,
     pub hero_levels: SharedVec<(String, Option<Level>)>,
@@ -492,6 +493,10 @@ impl AttackPlan {
             town_hall: p.at("town_hall").i64(),
             strength: p.at("strength").f64(),
             ground: p.at("ground").bool(),
+            warden_mode: p
+                .get("warden_mode")
+                .and_then(Json::opt_str)
+                .map(str::to_owned),
             loadouts: p
                 .at("loadouts")
                 .obj()
