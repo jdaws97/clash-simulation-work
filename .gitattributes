@@ -1,0 +1,12 @@
+# One line-ending convention for every tool: Codex edits from WSL write LF,
+# so the working tree uses LF too (user, 2026-10-24). Windows scripts keep CRLF.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.exe binary
+*.mp4 binary
