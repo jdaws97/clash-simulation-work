@@ -185,7 +185,8 @@ fn proposals(
         let seed = state.rng.next_u64();
         let cursor = state.candidate_cursor;
         state.candidate_cursor += 1;
-        let fresh = state.archive.cells.is_empty() || cursor % settings.immigrant_every == 0;
+        let fresh =
+            state.archive.cells.is_empty() || cursor.is_multiple_of(settings.immigrant_every);
         let (base, lineage) = if fresh {
             let style = Style::ALL[state.rng.index(Style::ALL.len())];
             let zone = TownHallZone::ALL[state.rng.index(3)];
@@ -217,7 +218,7 @@ fn proposals(
             };
             // Half of parent draws are uniform over occupied cells; the other
             // half favor quality. Fresh immigrants retain an explicit quota.
-            let index = if cursor % 2 == 0 {
+            let index = if cursor.is_multiple_of(2) {
                 state.rng.index(ranked.len())
             } else {
                 state
@@ -240,7 +241,7 @@ fn proposals(
                 }
                 draw -= weight;
             }
-            let proposal = if cursor % settings.crossover_every == 0 && ranked.len() > 1 {
+            let proposal = if cursor.is_multiple_of(settings.crossover_every) && ranked.len() > 1 {
                 crate::crossover::crossover(
                     context,
                     parent,
@@ -424,7 +425,9 @@ pub fn wave(
         )?;
         state.archive.insert(elite)?;
     }
-    if (state.completed_waves + 1) % settings.oracle_every == 0 && settings.oracle_budget >= 28 {
+    if (state.completed_waves + 1).is_multiple_of(settings.oracle_every)
+        && settings.oracle_budget >= 28
+    {
         let ranked = state.archive.ranked();
         let mut targets = Vec::new();
         if let Some(strong) = ranked.first() {

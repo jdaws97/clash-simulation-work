@@ -408,8 +408,8 @@ impl AccountRules {
                 return Err(format!("tactic {index} outside supported bounds"));
             }
         }
-        for index in 0..19 {
-            if ![1, 4, 5, 9, 10].contains(&index) && plan.tactics[index] != TACTIC_DEFAULTS[index] {
+        for (index, default) in TACTIC_DEFAULTS.iter().enumerate() {
+            if ![1, 4, 5, 9, 10].contains(&index) && plan.tactics[index] != *default {
                 return Err(format!("inactive tactic {index} must remain frozen"));
             }
         }
@@ -632,7 +632,7 @@ impl AccountRules {
             crate::armies::put(
                 &mut plan,
                 "ground",
-                Json::Bool(!(air_space as f64 > 0.5 * main_space as f64)),
+                Json::Bool(air_space as f64 <= 0.5 * main_space as f64),
             );
         }
         super::program::install(&mut plan, genome)?;

@@ -12,7 +12,7 @@ fn rounded(value: f64) -> f64 {
 fn median(values: &mut [f64]) -> f64 {
     values.sort_by(f64::total_cmp);
     let mid = values.len() / 2;
-    if values.len() % 2 == 0 {
+    if values.len().is_multiple_of(2) {
         (values[mid - 1] + values[mid]) / 2.0
     } else {
         values[mid]

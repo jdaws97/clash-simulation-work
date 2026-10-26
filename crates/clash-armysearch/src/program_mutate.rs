@@ -118,7 +118,7 @@ pub(super) fn random_trigger(
             ),
             ("delay", Json::Num(rng.unit() * 20.0)),
         ]),
-        2 | 3 | 4 | 5 if !units.is_empty() => {
+        2..=5 if !units.is_empty() => {
             let key = match choice {
                 2 => "inside",
                 3 => "heavy_fire",
@@ -131,7 +131,7 @@ pub(super) fn random_trigger(
             }
             when
         }
-        6 | 7 | 8 if !groups.is_empty() => {
+        6..=8 if !groups.is_empty() => {
             let key = match choice {
                 6 => "group_inside",
                 7 => "near_th",

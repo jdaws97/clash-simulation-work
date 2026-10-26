@@ -225,7 +225,7 @@ fn exchange(values: &mut Vec<UnitCount>, roster: &[EligibleUnit], rng: &mut Rand
         let removed = if large {
             values[index].count
         } else {
-            1 + rng.index(values[index].count.max(1).min(4))
+            1 + rng.index(values[index].count.clamp(1, 4))
         };
         values[index].count = values[index].count.saturating_sub(removed);
     }

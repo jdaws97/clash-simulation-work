@@ -468,7 +468,7 @@ pub fn run(
             ));
             camera_samples.push(sample);
             frames.insert(time, (frame, estimate));
-            if frames.len() % 20 == 0 {
+            if frames.len().is_multiple_of(20) {
                 eprintln!(
                     "M4 {id} attack {number} frame {:.1}: {} inliers, reliable {}",
                     current_time,

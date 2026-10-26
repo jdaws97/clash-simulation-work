@@ -407,6 +407,7 @@ pub fn run(
     let raw = std::fs::OpenOptions::new()
         .create(true)
         .write(true)
+        .truncate(false)
         .open(&raw_path)
         .map_err(|error| error.to_string())?;
     if raw.metadata().map_err(|error| error.to_string())?.len() < state.raw_bytes {

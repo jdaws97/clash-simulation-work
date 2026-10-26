@@ -93,7 +93,7 @@ pub fn extract(
             clock.confidence
         )?;
         samples.push((t, clock.value, clock.confidence, box_source));
-        if samples.len() % 100 == 0 {
+        if samples.len().is_multiple_of(100) {
             eprintln!(
                 "cropped replay {t:.0}/{:.0}s ({:.1}s elapsed)",
                 regions.duration,

@@ -255,7 +255,7 @@ impl Battle {
             let total = group.iter().copied().map(weight).sum::<f64>();
             let distance = geom::dist(u.x, u.y, s.x, s.y);
             if total >= threshold
-                && best.as_ref().map_or(true, |(previous, d, _)| {
+                && best.as_ref().is_none_or(|(previous, d, _)| {
                     total > *previous || total == *previous && distance < *d
                 })
             {

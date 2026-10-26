@@ -56,10 +56,10 @@ pub fn tick(battle: &mut Battle) {
     // live field slots until all callbacks have finished, then filter by index.
     let count = battle.fields.len();
     let mut keep = vec![false; count];
-    for index in 0..count {
+    for (index, keep_field) in keep.iter_mut().enumerate() {
         let mut field = battle.fields[index].clone();
         if t < field.started {
-            keep[index] = true;
+            *keep_field = true;
             continue;
         }
         if field.kind == Tag::Tornado && t >= field.until {
@@ -69,8 +69,8 @@ pub fn tick(battle: &mut Battle) {
             continue;
         }
         let alive = apply(battle, &mut field);
-        keep[index] = alive && t < field.until;
-        if !keep[index] {
+        *keep_field = alive && t < field.until;
+        if !*keep_field {
             expire(battle, &field);
         }
         battle.fields[index] = field;
@@ -1943,79 +1943,6 @@ fn revive(battle: &mut Battle, hero: UnitRef, percentage: f64) {
     ]);
 }
 
-#[cfg(test)]
-mod phoenix_tests {
-    use super::*;
-    use crate::battle::SpawnOptions;
-    use crate::heroes::Kit;
-
-    #[test]
-    fn both_terminal_phoenix_paths_allow_revive_without_reusing_phoenix() {
-        for damage_death in [false, true] {
-            let mut battle = crate::test_support::battle();
-            let hero = battle.spawn(
-                "Dragon Duke",
-                Team::Atk,
-                10.0,
-                10.0,
-                SpawnOptions {
-                    kind: Tag::Hero,
-                    ..Default::default()
-                },
-            );
-            let mut kit = Kit::new("Dragon Duke");
-            kit.phoenix = false;
-            kit.doomed_at = Some(10.0);
-            battle.unit_mut(hero).kit = Some(kit);
-            battle.unit_mut(hero).ability_used = true;
-            battle.t = 10.0;
-            if damage_death {
-                battle.unit_mut(hero).hp = 0.0;
-                battle.kill(hero);
-            } else {
-                crate::heroes::tick(&mut battle, hero);
-            }
-            assert!(!battle.unit(hero).alive);
-            assert!(battle.unit(hero).extra.revivable);
-            assert_eq!(battle.unit(hero).kit.as_ref().unwrap().doomed_at, None);
-            battle.t = 20.0;
-            revive(&mut battle, hero, 0.5);
-            crate::heroes::tick(&mut battle, hero);
-            let unit = battle.unit(hero);
-            assert!(unit.alive);
-            assert!(unit.ability_used);
-            assert!(!unit.kit.as_ref().unwrap().phoenix);
-            battle.unit_mut(hero).hp = 0.0;
-            battle.kill(hero);
-            assert!(!battle.unit(hero).alive);
-        }
-    }
-
-    #[test]
-    fn revive_defensively_retires_an_expired_deadline() {
-        let mut battle = crate::test_support::battle();
-        let hero = battle.spawn(
-            "Dragon Duke",
-            Team::Atk,
-            10.0,
-            10.0,
-            SpawnOptions {
-                kind: Tag::Hero,
-                ..Default::default()
-            },
-        );
-        let mut kit = Kit::new("Dragon Duke");
-        kit.doomed_at = Some(5.0);
-        battle.unit_mut(hero).kit = Some(kit);
-        battle.unit_mut(hero).alive = false;
-        battle.t = 10.0;
-        revive(&mut battle, hero, 0.5);
-        crate::heroes::tick(&mut battle, hero);
-        assert!(battle.unit(hero).alive);
-        assert_eq!(battle.unit(hero).kit.as_ref().unwrap().doomed_at, None);
-    }
-}
-
 // spells.py:1154-1196: Totem bypasses ordinary spawn/equipment hooks.
 fn totem(battle: &mut Battle, f: &Field) -> bool {
     let spots = spawn_spots(battle, f.x, f.y, 7.0 / 2.0, false);
@@ -2134,4 +2061,77 @@ fn totem(battle: &mut Battle, f: &Field) -> bool {
         retarget(battle, EntityRef::Unit(reference));
     }
     false
+}
+
+#[cfg(test)]
+mod phoenix_tests {
+    use super::*;
+    use crate::battle::SpawnOptions;
+    use crate::heroes::Kit;
+
+    #[test]
+    fn both_terminal_phoenix_paths_allow_revive_without_reusing_phoenix() {
+        for damage_death in [false, true] {
+            let mut battle = crate::test_support::battle();
+            let hero = battle.spawn(
+                "Dragon Duke",
+                Team::Atk,
+                10.0,
+                10.0,
+                SpawnOptions {
+                    kind: Tag::Hero,
+                    ..Default::default()
+                },
+            );
+            let mut kit = Kit::new("Dragon Duke");
+            kit.phoenix = false;
+            kit.doomed_at = Some(10.0);
+            battle.unit_mut(hero).kit = Some(kit);
+            battle.unit_mut(hero).ability_used = true;
+            battle.t = 10.0;
+            if damage_death {
+                battle.unit_mut(hero).hp = 0.0;
+                battle.kill(hero);
+            } else {
+                crate::heroes::tick(&mut battle, hero);
+            }
+            assert!(!battle.unit(hero).alive);
+            assert!(battle.unit(hero).extra.revivable);
+            assert_eq!(battle.unit(hero).kit.as_ref().unwrap().doomed_at, None);
+            battle.t = 20.0;
+            revive(&mut battle, hero, 0.5);
+            crate::heroes::tick(&mut battle, hero);
+            let unit = battle.unit(hero);
+            assert!(unit.alive);
+            assert!(unit.ability_used);
+            assert!(!unit.kit.as_ref().unwrap().phoenix);
+            battle.unit_mut(hero).hp = 0.0;
+            battle.kill(hero);
+            assert!(!battle.unit(hero).alive);
+        }
+    }
+
+    #[test]
+    fn revive_defensively_retires_an_expired_deadline() {
+        let mut battle = crate::test_support::battle();
+        let hero = battle.spawn(
+            "Dragon Duke",
+            Team::Atk,
+            10.0,
+            10.0,
+            SpawnOptions {
+                kind: Tag::Hero,
+                ..Default::default()
+            },
+        );
+        let mut kit = Kit::new("Dragon Duke");
+        kit.doomed_at = Some(5.0);
+        battle.unit_mut(hero).kit = Some(kit);
+        battle.unit_mut(hero).alive = false;
+        battle.t = 10.0;
+        revive(&mut battle, hero, 0.5);
+        crate::heroes::tick(&mut battle, hero);
+        assert!(battle.unit(hero).alive);
+        assert_eq!(battle.unit(hero).kit.as_ref().unwrap().doomed_at, None);
+    }
 }

@@ -450,8 +450,8 @@ impl Grid {
                     for i in i0..i1 {
                         for j in j0..j1 {
                             let cell = self.index(i, j);
-                            self.cell_flags[cell] = u8::from(self.blocked[cell]) * BLOCKED
-                                | u8::from(self.wall[cell]) * WALL;
+                            self.cell_flags[cell] = (u8::from(self.blocked[cell]) * BLOCKED)
+                                | (u8::from(self.wall[cell]) * WALL);
                         }
                     }
                 }
@@ -471,7 +471,7 @@ impl Grid {
         // Public blocked/wall arrays are also copied into newly created Jump
         // grids. Derive these packed arrays lazily, once per grid version.
         for (cell, flags) in self.cell_flags.iter_mut().enumerate() {
-            *flags = u8::from(self.blocked[cell]) * BLOCKED | u8::from(self.wall[cell]) * WALL;
+            *flags = (u8::from(self.blocked[cell]) * BLOCKED) | (u8::from(self.wall[cell]) * WALL);
         }
         for cell in 0..self.neighbors.len() {
             self.move_masks[cell] = self.move_mask(cell);
@@ -917,7 +917,7 @@ impl Grid {
         // pathing.py:266-272: preserve stable version order when pruning.
         if self.cache.len() > 600 {
             self.cache
-                .sort_by(|first, second| second.version.cmp(&first.version));
+                .sort_by_key(|entry| std::cmp::Reverse(entry.version));
             while self.cache.len() > 400 {
                 let entry = self.cache.pop().expect("cache beyond retention limit");
                 if let Some(storage) = entry.storage {

@@ -215,7 +215,7 @@ impl Arguments {
         };
         if options.min_family < 2
             || options.grid < 3
-            || options.grid % 2 == 0
+            || options.grid.is_multiple_of(2)
             || options.max_correction <= 1.0
             || options.prior_sd <= 0.0
         {

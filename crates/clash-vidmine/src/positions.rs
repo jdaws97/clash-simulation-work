@@ -210,7 +210,7 @@ fn candidates(before: &Image, after: &Image, camera: Camera, bar_y: usize) -> Ve
                 }
             }
         }
-        if count < 2 || count > 400 {
+        if !(2..=400).contains(&count) {
             continue;
         }
         let score = sum / (count as f64).sqrt() / (1.0 + count as f64 / 60.0);

@@ -40,7 +40,7 @@ fn summary(errors: &mut [f64]) -> (f64, f64, f64) {
     }
     let n = errors.len();
     let mean = errors.iter().sum::<f64>() / n as f64;
-    let median = if n % 2 == 0 {
+    let median = if n.is_multiple_of(2) {
         (errors[n / 2 - 1] + errors[n / 2]) * 0.5
     } else {
         errors[n / 2]

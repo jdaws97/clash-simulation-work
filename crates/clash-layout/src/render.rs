@@ -258,7 +258,7 @@ impl Image {
         if raster.len() != out.pixels.len() * 3 {
             return Err("PPM raster length mismatch".to_owned());
         }
-        for (pixel, raw) in out.pixels.iter_mut().zip(raster.chunks_exact(3)) {
+        for (pixel, raw) in out.pixels.iter_mut().zip(raster.as_chunks::<3>().0) {
             pixel.copy_from_slice(raw);
         }
         Ok(out)
@@ -334,7 +334,14 @@ impl Image {
                         body[9],
                     ));
                 }
-                b"PLTE" => palette = body.chunks_exact(3).map(|v| [v[0], v[1], v[2]]).collect(),
+                b"PLTE" => {
+                    palette = body
+                        .as_chunks::<3>()
+                        .0
+                        .iter()
+                        .map(|v| [v[0], v[1], v[2]])
+                        .collect()
+                }
                 b"IDAT" => {
                     if data.len() + len > MAX_BYTES {
                         return Err("PNG compressed input too large".to_owned());

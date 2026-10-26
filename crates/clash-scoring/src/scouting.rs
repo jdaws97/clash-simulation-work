@@ -242,7 +242,7 @@ pub fn hidden_sample(layout: &Json, catalog: &Catalog, sample_seed: i64) -> Resu
         for name in names
             .iter()
             .copied()
-            .chain(std::iter::repeat("Archer").take(55))
+            .chain(std::iter::repeat_n("Archer", 55))
         {
             let space = scoring::number(
                 catalog.stats.attrs(name),

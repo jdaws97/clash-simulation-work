@@ -343,15 +343,15 @@ pub fn content_problems(layout: &Layout, catalog: &Catalog) -> AdmissionReport {
             );
             continue;
         };
-        if trap.mode.is_some()
-            && !(trap.key == "skeleton" && matches!(trap.mode, Some(Mode::Ground | Mode::Air)))
-        {
-            report.push(
-                "trap_mode",
-                &format!("{path}.mode"),
-                "skeleton ground/air, other traps have no mode",
-                string(trap.mode.unwrap().as_str()),
-            );
+        if let Some(mode) = trap.mode {
+            if !(trap.key == "skeleton" && matches!(mode, Mode::Ground | Mode::Air)) {
+                report.push(
+                    "trap_mode",
+                    &format!("{path}.mode"),
+                    "skeleton ground/air, other traps have no mode",
+                    string(mode.as_str()),
+                );
+            }
         }
         let lv = selected(
             catalog,

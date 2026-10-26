@@ -691,9 +691,9 @@ fn installed_coverage_proof(
     templates: &[ArmyGenome],
 ) -> Result<(), String> {
     let mut checked = false;
-    for template in templates
+    if let Some(template) = templates
         .iter()
-        .filter(|genome| genome.plan.family != "generic")
+        .find(|genome| genome.plan.family != "generic")
     {
         let mut genome = template.clone();
         enable(account, compiler, catalog, &mut genome)?;
@@ -717,7 +717,6 @@ fn installed_coverage_proof(
             }
         }
         checked = true;
-        break;
     }
     require(checked, "coverage proof requires a cited template")
 }

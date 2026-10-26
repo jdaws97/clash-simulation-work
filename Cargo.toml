@@ -24,6 +24,14 @@ publish = false
 [workspace.lints.rust]
 unsafe_code = "forbid"
 
+[workspace.lints.clippy]
+# Engine hot paths and tool entry points keep their explicit domain parameters.
+too_many_arguments = "allow"
+# Local tuple shapes remain visible where aliases would hide their field order.
+type_complexity = "allow"
+# Total label decoding and raw PRNG draws intentionally differ from standard traits.
+should_implement_trait = "allow"
+
 [workspace.dependencies]
 clash-data = { path = "crates/clash-data" }
 clash-layout = { path = "crates/clash-layout" }

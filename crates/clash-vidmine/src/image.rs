@@ -191,7 +191,9 @@ impl Mask {
     pub fn white(image: &Image, threshold: u8) -> Self {
         let data = image
             .data
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .map(|p| {
                 let lo = *p.iter().min().unwrap();
                 let hi = *p.iter().max().unwrap();

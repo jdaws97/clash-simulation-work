@@ -130,7 +130,7 @@ impl<'a> Compiler<'a> {
             None
         };
         let mut plan = if let Some((_, book)) = book {
-            self.from_playbook(book, &build, base, seed, options)?
+            self.compile_playbook(book, &build, base, seed, options)?
         } else {
             base
         };
@@ -160,7 +160,7 @@ impl<'a> Compiler<'a> {
 
     // playbook.py:1957-2100: only public dataclass fields are copied; implicit
     // InitVars and runtime state are freshly constructed, never copied.
-    fn from_playbook(
+    fn compile_playbook(
         &self,
         pb: &Json,
         build: &Json,

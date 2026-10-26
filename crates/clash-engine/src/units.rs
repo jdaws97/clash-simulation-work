@@ -2112,7 +2112,7 @@ pub fn valkyrie_position(
         let distance = geom::dist(u.x, u.y, x, y);
         if best
             .as_ref()
-            .map_or(true, |(previous, _, _)| distance < *previous)
+            .is_none_or(|(previous, _, _)| distance < *previous)
         {
             best = Some((distance, other.id, (x, y)));
         }
@@ -3576,15 +3576,12 @@ pub fn track_beam(battle: &mut Battle, unit: UnitRef, target: EntityRef) {
     let t = battle.t;
     let dt = battle.dt;
     let u = battle.unit_mut(unit);
-    let last = u.extra.beam_tick;
-    if u.extra.beam_target != Some(target) || last.is_none() {
-        u.extra.beam_time = Some(0.0);
-    } else {
-        let last = last.expect("beam tick");
-        if t - last <= dt + 1e-9 {
+    match (u.extra.beam_target == Some(target), u.extra.beam_tick) {
+        (true, Some(last)) if t - last <= dt + 1e-9 => {
             let time = u.extra.beam_time.as_mut().expect("beam time");
             *time += t - last;
-        } else {
+        }
+        _ => {
             u.extra.beam_time = Some(0.0);
         }
     }
