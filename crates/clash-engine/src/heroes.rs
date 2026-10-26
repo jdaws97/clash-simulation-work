@@ -645,7 +645,7 @@ fn spawn_pet(battle: &mut Battle, hero: UnitRef, kit: &mut Kit) {
         .at(&name)
         .f64();
     let flying = attrs.get("is_flying").is_some_and(|v| v.bool());
-    let hits_air = attrs.get("is_air_targeting").map_or(true, |v| v.bool());
+    let hits_air = attrs.get("is_air_targeting").is_none_or(|v| v.bool());
     // heroes.py:204 constructs UnitSpec directly, rather than spec(name).
     let mut spec = UnitSpec {
         name: name.clone(),

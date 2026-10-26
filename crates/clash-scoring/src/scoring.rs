@@ -387,9 +387,11 @@ impl Default for Observations {
 
 impl Observations {
     pub fn from_json(value: &Json) -> Self {
-        let mut out = Self::default();
-        out.available = value.at("available").bool();
-        out.invalid_rows = value.at("invalid_rows").usize();
+        let mut out = Self {
+            available: value.at("available").bool(),
+            invalid_rows: value.at("invalid_rows").usize(),
+            ..Self::default()
+        };
         for (i, th) in ["16", "17", "18"].into_iter().enumerate() {
             out.th_counts[i] = value.at("th_counts").at(th).f64();
             out.family_counts[i] = value

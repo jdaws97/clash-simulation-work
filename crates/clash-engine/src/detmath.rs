@@ -315,9 +315,9 @@ fn rem_pio2_large(x: &[f64], e0: i32) -> (i32, f64, f64) {
     let mut f = [0.0; 20];
     let mut fq = [0.0; 20];
     let mut q = [0.0; 20];
-    for i in 0..=jx + JK {
+    for (i, value) in f[..=jx + JK].iter_mut().enumerate() {
         let j = jv as i32 - jx as i32 + i as i32;
-        f[i] = if j < 0 { 0.0 } else { IPIO2[j as usize] as f64 };
+        *value = if j < 0 { 0.0 } else { IPIO2[j as usize] as f64 };
     }
     for i in 0..=JK {
         let mut fw = 0.0;

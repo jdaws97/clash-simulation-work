@@ -1718,9 +1718,7 @@ pub fn plan(p: Node<'_>, deployments: &[Deployment]) -> Plan {
                 equipment_levels: optional_levels(p.optional("equipment_levels")),
                 account_equipment: p.optional("account_equipment").is_some_and(|n| n.boolean()),
                 pet_levels: optional_levels(p.optional("pet_levels")),
-                auto_ability_on_ko: p
-                    .optional("auto_ability_on_ko")
-                    .map_or(true, |n| n.boolean()),
+                auto_ability_on_ko: p.optional("auto_ability_on_ko").is_none_or(|n| n.boolean()),
                 observed: p.optional("observed").is_some_and(|n| n.boolean()),
             }
         }

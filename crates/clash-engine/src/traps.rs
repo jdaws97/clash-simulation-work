@@ -685,7 +685,7 @@ pub fn tornado_move(battle: &mut Battle, reference: UnitRef, nx: f64, ny: f64, u
             enter = enter.max(a.min(b));
             leave = leave.min(a.max(b));
         }
-        if enter <= leave && first.map_or(true, |first| enter < first) {
+        if enter <= leave && first.is_none_or(|first| enter < first) {
             first = Some(enter);
         }
     }

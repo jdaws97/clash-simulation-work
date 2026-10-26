@@ -496,10 +496,10 @@ impl PlaybookPlan {
                         .aim
                         .as_deref()
                         .is_some_and(|aim| aim.ends_with(&suffix));
-                if reserves || ability || anchored {
-                    if !context.unavailable.iter().any(|tool| tool == name) {
-                        context.unavailable.push(name.to_owned());
-                    }
+                if (reserves || ability || anchored)
+                    && !context.unavailable.iter().any(|tool| tool == name)
+                {
+                    context.unavailable.push(name.to_owned());
                 }
             }
         }
@@ -2659,7 +2659,7 @@ impl PlaybookPlan {
                 continue;
             }
             let mut forced = false;
-            if step.every.is_some() && done {
+            if let (Some(every), true) = (step.every, done) {
                 let next = self
                     .next
                     .iter()
@@ -2679,7 +2679,7 @@ impl PlaybookPlan {
                         .iter()
                         .find(|(id, _)| id == &step.id)
                         .is_some_and(|(_, end)| {
-                            let previous = next - step.every.unwrap();
+                            let previous = next - every;
                             t < end - (end - previous) * fraction
                         })
                     {
@@ -2691,7 +2691,7 @@ impl PlaybookPlan {
                     .get("repeat_units_absent")
                     .and_then(Json::opt_str)
                 {
-                    let previous = next - step.every.unwrap();
+                    let previous = next - every;
                     if battle
                         .attackers_pool()
                         .any(|u| u.alive && u.name == name && u.spawned_at >= previous)

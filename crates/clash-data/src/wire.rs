@@ -130,10 +130,10 @@ pub fn sha256(bytes: &[u8]) -> String {
         padded.push(0);
     }
     padded.extend_from_slice(&((bytes.len() as u64) * 8).to_be_bytes());
-    for chunk in padded.chunks_exact(64) {
+    for chunk in padded.as_chunks::<64>().0 {
         let mut words = [0_u32; 64];
-        for (word, bytes) in words.iter_mut().zip(chunk.chunks_exact(4)) {
-            *word = u32::from_be_bytes(bytes.try_into().expect("four bytes"));
+        for (word, bytes) in words.iter_mut().zip(chunk.as_chunks::<4>().0) {
+            *word = u32::from_be_bytes(*bytes);
         }
         for i in 16..64 {
             let x = words[i - 15];
@@ -282,27 +282,6 @@ pub fn canonical(source: &str) -> Result<String, String> {
     value(source.as_bytes(), &mut 0)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn standard_sha_vectors_and_python_canonicalization() {
-        assert_eq!(
-            sha256(b""),
-            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        );
-        assert_eq!(
-            sha256(b"abc"),
-            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
-        );
-        assert_eq!(
-            canonical("{\"z\":1.0,\"é\":2,\"a\":[true,null,\"😀\"]}").unwrap(),
-            "{\"a\":[true,null,\"\\ud83d\\ude00\"],\"z\":1.0,\"\\u00e9\":2}"
-        );
-    }
-}
-
 /// Shared JSON serialization preserves the original wire representation.
 /// Python's float repr provides round trips including signed zero.
 pub fn to_json(value: &Json) -> String {
@@ -356,4 +335,33 @@ pub fn to_json(value: &Json) -> String {
     let mut out = String::new();
     write_value(&mut out, value);
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn standard_sha_vectors_and_python_canonicalization() {
+        assert_eq!(
+            sha256(b""),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
+        assert_eq!(
+            sha256(b"abc"),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+        assert_eq!(
+            sha256(b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"),
+            "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1"
+        );
+        assert_eq!(
+            sha256(&[b'a'; 1_000_000]),
+            "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0"
+        );
+        assert_eq!(
+            canonical("{\"z\":1.0,\"é\":2,\"a\":[true,null,\"😀\"]}").unwrap(),
+            "{\"a\":[true,null,\"\\ud83d\\ude00\"],\"z\":1.0,\"\\u00e9\":2}"
+        );
+    }
 }

@@ -139,12 +139,14 @@ impl ParameterValue for bool {
 impl Params {
     /// Precedence: registry < catalog env < process file < job env < job params.
     pub fn resolve(catalog: &Catalog, env: &Json, job: &Json) -> Result<Self, String> {
-        let mut params = Self::default();
-        params.new_target_delays = catalog.new_target_delays.clone();
-        params.poison_ramp = catalog.poison_ramp;
-        params.warden_radius = catalog.warden_weights.at("vision_radius").f64();
-        params.warden_min_weight = catalog.warden_weights.at("threshold").f64();
-        params.healer_group_radius = catalog.unit("Healer").spec.splash;
+        let mut params = Self {
+            new_target_delays: catalog.new_target_delays.clone(),
+            poison_ramp: catalog.poison_ramp,
+            warden_radius: catalog.warden_weights.at("vision_radius").f64(),
+            warden_min_weight: catalog.warden_weights.at("threshold").f64(),
+            healer_group_radius: catalog.unit("Healer").spec.splash,
+            ..Self::default()
+        };
         for key in ["pace", "pace_tap", "pace_switch", "pace_ability"] {
             if let Some(value) = env.get(key) {
                 params.set(key, value)?;

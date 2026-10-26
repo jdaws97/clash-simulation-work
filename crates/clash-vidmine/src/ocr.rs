@@ -150,7 +150,9 @@ impl Reader {
         let mask = if green {
             let data = image
                 .data
-                .chunks_exact(3)
+                .as_chunks::<3>()
+                .0
+                .iter()
                 .map(|p| {
                     u8::from(
                         p[1] > 130

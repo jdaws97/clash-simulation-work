@@ -152,7 +152,7 @@ fn wall_plan(style: Style, rng: &mut ProposalRng) -> Vec<Tile> {
         Style::Cram | Style::Scatter => {
             for y in (2..42).step_by(3) {
                 for x in 1..43 {
-                    if x % 6 < 4 && (x < 7 || x > 36 || y < 7 || y > 36) {
+                    if x % 6 < 4 && (!(7..=36).contains(&x) || !(7..=36).contains(&y)) {
                         walls.insert((x, y));
                     }
                 }
@@ -259,12 +259,7 @@ pub fn generate(
     plan.sort_by_key(|&p| (distance(p, (22, 22)), p));
     let mut board = Board::new();
     let structural = draft.walls.len().min(plan.len()).min(240);
-    for (wall, position) in draft
-        .walls
-        .iter_mut()
-        .zip(plan.into_iter())
-        .take(structural)
-    {
+    for (wall, position) in draft.walls.iter_mut().zip(plan).take(structural) {
         board.take(position, 1);
         wall.position = position;
     }

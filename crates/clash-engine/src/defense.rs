@@ -1447,7 +1447,7 @@ pub fn eagle(battle: &mut Battle, owner: BuildingId) {
         w.burst_left = w.extra.shells as i64;
     }
     let mut target = weapon(battle, owner).target;
-    if target.map_or(true, |unit| !battle.unit(unit).alive) {
+    if target.is_none_or(|unit| !battle.unit(unit).alive) {
         let range = weapon(battle, owner).range;
         let pool: Vec<_> = visible(battle, owner, range)
             .into_iter()
@@ -1719,7 +1719,7 @@ pub fn builders_tick(battle: &mut Battle) {
                 && dist(other.x, other.y, bx, by) <= repair_range
         };
         let mut target = builder.target;
-        if target.map_or(true, |target| !available(target)) {
+        if target.is_none_or(|target| !available(target)) {
             target = None;
             let mut best_ratio = 0.0;
             for other in &battle.buildings {
@@ -1923,7 +1923,7 @@ fn firespitter(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
         let unit = battle.unit(target);
         firespitter_in_sector(battle, owner, unit.x, unit.y)
     });
-    if target.map_or(true, |target| {
+    if target.is_none_or(|target| {
         let unit = battle.unit(target);
         !unit.alive || !unit.targetable(battle) || dist(unit.x, unit.y, bx, by) > w.range
     }) || !in_sector

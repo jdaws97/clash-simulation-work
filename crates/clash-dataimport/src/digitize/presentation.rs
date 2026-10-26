@@ -139,7 +139,7 @@ pub fn ruler(
     }
     for x in 0..image.width {
         let coordinate = origin.0 + x / zoom;
-        if coordinate % step == 0 && x % zoom == 0 {
+        if coordinate.is_multiple_of(step) && x % zoom == 0 {
             image.line(
                 (x as f64, 0.0),
                 (x as f64, image.height as f64),
@@ -151,7 +151,7 @@ pub fn ruler(
     }
     for y in 0..image.height {
         let coordinate = origin.1 + y / zoom;
-        if coordinate % step == 0 && y % zoom == 0 {
+        if coordinate.is_multiple_of(step) && y % zoom == 0 {
             image.line(
                 (0.0, y as f64),
                 (image.width as f64, y as f64),

@@ -615,16 +615,14 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
     } else {
         unit.cooldown += delay;
     }
-    if battle.unit(pet).name_id == Name::PoisonLizard {
-        if matches!(target, EntityRef::Unit(_)) {
-            // pets.py:350-360: attach poison to the newly released single shot.
-            for pending in &mut battle.pending[pending_start..] {
-                if pending.actor == Some(EntityRef::Unit(pet))
-                    && pending.target == Some(target)
-                    && pending.extra.troop_impact.as_deref() == Some("single")
-                {
-                    pending.extra.hero_impact = Some("lizard".to_owned());
-                }
+    if battle.unit(pet).name_id == Name::PoisonLizard && matches!(target, EntityRef::Unit(_)) {
+        // pets.py:350-360: attach poison to the newly released single shot.
+        for pending in &mut battle.pending[pending_start..] {
+            if pending.actor == Some(EntityRef::Unit(pet))
+                && pending.target == Some(target)
+                && pending.extra.troop_impact.as_deref() == Some("single")
+            {
+                pending.extra.hero_impact = Some("lizard".to_owned());
             }
         }
     }

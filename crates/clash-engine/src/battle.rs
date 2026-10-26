@@ -61,7 +61,7 @@ impl Battle {
 
     pub fn destruction(&self) -> usize {
         let total = self.total_counted.max(1);
-        (100 * self.destroyed_counted + total - 1) / total
+        (100 * self.destroyed_counted).div_ceil(total)
     }
 
     pub fn stars(&self) -> usize {

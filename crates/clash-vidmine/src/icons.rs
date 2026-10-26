@@ -204,7 +204,9 @@ impl Library {
     pub fn identify_card(&self, image: &Image) -> (Option<String>, f64) {
         let portrait = feature(image);
         let chroma: usize = portrait
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .map(|p| (*p.iter().max().unwrap() - *p.iter().min().unwrap()) as usize)
             .sum();
         if chroma < WIDTH * HEIGHT * 14 {

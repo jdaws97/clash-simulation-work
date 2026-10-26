@@ -25,16 +25,7 @@ esac
 cargo fmt --manifest-path "$MANIFEST" --all -- --check
 cargo build --manifest-path "$MANIFEST" --workspace --all-targets --release --locked --offline
 cargo test --manifest-path "$MANIFEST" --workspace --release --locked --offline
-if ! cargo clippy --version >"$TEMP/clippy-version.txt" 2>&1; then
-    printf '%s\n' 'Clippy is unavailable locally; no components will be downloaded.'
-    cat "$TEMP/clippy-version.txt"
-elif cargo clippy --manifest-path "$MANIFEST" --workspace --all-targets --release --locked --offline -- -D warnings >"$TEMP/clippy-strict.txt" 2>&1; then
-    cat "$TEMP/clippy-strict.txt"
-else
-    printf '%s\n' 'Clippy warnings are advisory during G1/G2; strict report follows.'
-    cat "$TEMP/clippy-strict.txt"
-    cargo clippy --manifest-path "$MANIFEST" --workspace --all-targets --release --locked --offline
-fi
+cargo clippy --manifest-path "$MANIFEST" --workspace --all-targets --release --locked --offline -- -D warnings
 
 FIXTURES="$ROOT/fixtures"
 "$BIN" golden check "$FIXTURES/golden/cases.jsonl" "$FIXTURES/golden/expected.jsonl" --threads 1

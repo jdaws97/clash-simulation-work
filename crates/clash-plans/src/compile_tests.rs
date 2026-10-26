@@ -33,7 +33,7 @@ fn unavailable_equipment_is_removed_and_nested_dependents_keep_delays() {
         );
         let base = armies::compose(&compiler.library, compiler.stats, &build, 0.0, 2).unwrap();
         let plan = compiler
-            .from_playbook(&book, &build, base.clone(), 2, &CompileOptions::default())
+            .compile_playbook(&book, &build, base.clone(), 2, &CompileOptions::default())
             .unwrap();
         let steps = list(&plan, "steps");
         assert!(!steps.iter().any(|step| text(step, "id", "") == "shot"));
@@ -51,7 +51,7 @@ fn unavailable_equipment_is_removed_and_nested_dependents_keep_delays() {
         put(&mut steps[1], "required", Json::Bool(true));
         put(&mut required, "steps", array(steps));
         assert!(compiler
-            .from_playbook(&required, &build, base, 2, &CompileOptions::default())
+            .compile_playbook(&required, &build, base, 2, &CompileOptions::default())
             .unwrap_err()
             .contains("Required ability shot"));
     });
@@ -283,7 +283,7 @@ fn declared_recipe_selects_additive_branch_and_enforces_all_loadout_items() {
         );
         let base = armies::compose(&compiler.library, compiler.stats, &build, 0.0, 2).unwrap();
         assert!(compiler
-            .from_playbook(&book, &build, base, 2, &Default::default())
+            .compile_playbook(&book, &build, base, 2, &Default::default())
             .unwrap_err()
             .contains("required loadout"));
         put(
@@ -293,7 +293,7 @@ fn declared_recipe_selects_additive_branch_and_enforces_all_loadout_items() {
         );
         let base = armies::compose(&compiler.library, compiler.stats, &build, 0.0, 2).unwrap();
         let plan = compiler
-            .from_playbook(&book, &build, base, 2, &Default::default())
+            .compile_playbook(&book, &build, base, 2, &Default::default())
             .unwrap();
         assert!(list(&plan, "steps")
             .iter()

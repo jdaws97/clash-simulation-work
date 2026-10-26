@@ -301,9 +301,11 @@ impl Battle {
                 }
             }
         }
-        if target.is_some() && target != self.unit(reference).target {
-            // battle.py:1598-1599: selection timing also inspects target distance.
-            units::new_target_windup(self, reference, target.expect("new attack target"));
+        if let Some(new_target) = target {
+            if target != self.unit(reference).target {
+                // battle.py:1598-1599: selection timing also inspects target distance.
+                units::new_target_windup(self, reference, new_target);
+            }
         }
         self.unit_mut(reference).target = target;
         units::update_burrow(self, reference, target);
@@ -372,8 +374,7 @@ impl Battle {
             pref = Tag::Any;
         }
         let u = self.unit(reference);
-        if pref == Tag::Th && self.th.is_some() {
-            let th = self.th.expect("Town Hall destination");
+        if let (Tag::Th, Some(th)) = (&pref, self.th) {
             let (tx, ty) = self.entity_position(EntityRef::Building(th));
             if !u.flying {
                 let mut best: Option<(f64, EntityRef)> = None;
@@ -390,10 +391,7 @@ impl Battle {
                         continue;
                     }
                     if let Some(entry) = units::segment_entry(self, u.x, u.y, tx, ty, blocker) {
-                        if best
-                            .as_ref()
-                            .map_or(true, |(previous, _)| entry < *previous)
-                        {
+                        if best.as_ref().is_none_or(|(previous, _)| entry < *previous) {
                             best = Some((entry, blocker));
                         }
                     }
@@ -664,8 +662,7 @@ impl Battle {
     pub fn act_defender(&mut self, reference: UnitRef) {
         let t = self.t;
         let u = self.unit(reference);
-        if u.name_id == Name::BarbarianKing && u.home.is_some() {
-            let (x, y) = u.home.expect("King home");
+        if let (Name::BarbarianKing, Some((x, y))) = (u.name_id, u.home) {
             let distance = crate::geom::dist(u.x, u.y, x, y);
             if distance > u.leash {
                 let leash = u.leash;
@@ -755,13 +752,11 @@ impl Battle {
             // every eligible hero is outside the leash, Python chooses None.
             target = if hero_available { best_hero } else { best };
         }
-        if target.is_some() && target.map(EntityRef::Unit) != self.unit(reference).target {
-            // battle.py:2071-2072: defenders use the same target-aware windup.
-            units::new_target_windup(
-                self,
-                reference,
-                EntityRef::Unit(target.expect("new defense target")),
-            );
+        if let Some(new_target) = target {
+            if target.map(EntityRef::Unit) != self.unit(reference).target {
+                // battle.py:2071-2072: defenders use the same target-aware windup.
+                units::new_target_windup(self, reference, EntityRef::Unit(new_target));
+            }
         }
         self.unit_mut(reference).target = target.map(EntityRef::Unit);
         let Some(target) = target else {

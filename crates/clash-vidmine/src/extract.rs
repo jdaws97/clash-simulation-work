@@ -663,7 +663,9 @@ fn result_screen(
             let patch = image.crop(rect(x - 15.0, y - 15.0, 30.0, 30.0));
             let fraction = patch
                 .data
-                .chunks_exact(3)
+                .as_chunks::<3>()
+                .0
+                .iter()
                 .filter(|p| p.iter().min().copied().unwrap() > 170)
                 .count() as f64
                 / (patch.w * patch.h) as f64;
@@ -1027,115 +1029,6 @@ pub fn extract(video_path: &Path, out: &Path, templates: &Path) -> io::Result<()
     crate::identity::video(video_path, out, templates)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn frame(t: f64, clock: u32) -> Frame {
-        Frame {
-            t,
-            phase: "attack",
-            clock: Reading {
-                value: Some(clock),
-                confidence: 0.9,
-                raw: String::new(),
-            },
-            damage: Reading::missing(),
-            stars: Some(0),
-            star_confidence: 1.0,
-            slots: vec![],
-            label_score: 1.0,
-        }
-    }
-
-    #[test]
-    fn separates_new_attack_and_keeps_internal_cut() {
-        // Declared synthetic fixture: a 30-second omitted interval, then a
-        // new battle. No image or game-calibration claims are made here.
-        let mut frames: Vec<Frame> = (0..100)
-            .map(|i| frame(i as f64 / 5.0, 180 - i / 5 - if i >= 50 { 30 } else { 0 }))
-            .collect();
-        frames.extend((0..50).map(|i| frame(20.0 + i as f64 / 5.0, 180 - i / 5)));
-        let attacks = segment(&frames);
-        assert_eq!(attacks.len(), 2);
-        assert!(attacks[0]
-            .cuts
-            .iter()
-            .any(|c| c.kind == "clock_discontinuity"));
-    }
-
-    #[test]
-    fn brief_ocr_error_does_not_mark_a_cut() {
-        let mut frames: Vec<Frame> = (0..100)
-            .map(|i| frame(i as f64 / 5.0, 180 - i / 5))
-            .collect();
-        for f in &mut frames[45..48] {
-            f.clock.value = Some(95);
-        }
-        let attacks = segment(&frames);
-        assert_eq!(attacks.len(), 1);
-        assert!(attacks[0].cuts.is_empty());
-    }
-
-    #[test]
-    fn obscured_hud_keeps_one_battle_and_speed_is_separate_from_cuts() {
-        // Declared synthetic 2x battle with an eight-second commentary overlay.
-        let mut frames: Vec<_> = (0..250)
-            .map(|i| frame(i as f64 / 5.0, 180 - i * 2 / 5))
-            .collect();
-        for f in &mut frames[70..110] {
-            f.phase = "other";
-            f.clock = Reading::missing();
-        }
-        let attacks = segment(&frames);
-        assert_eq!(attacks.len(), 1);
-        assert!(attacks[0].cuts.is_empty());
-    }
-
-    #[test]
-    fn count_decrease_requires_agreement_and_never_crosses_a_cut() {
-        let mut frames: Vec<Frame> = (0..60)
-            .map(|i| frame(i as f64 / 5.0, 180 - i / 5))
-            .collect();
-        for (i, f) in frames.iter_mut().enumerate() {
-            f.slots.push(Reading {
-                value: Some(if i < 20 {
-                    4
-                } else if i < 40 {
-                    3
-                } else {
-                    0
-                }),
-                confidence: 0.9,
-                raw: String::new(),
-            });
-        }
-        frames[10].slots[0].value = Some(0);
-        for frame in &mut frames[25..30] {
-            frame.slots[0].value = Some(31);
-        }
-        let attack = Attack {
-            start: 0,
-            end: 59,
-            prep_start: None,
-            cuts: vec![Cut {
-                t: 8.0,
-                before: Some(172),
-                after: Some(140),
-                kind: "clock_discontinuity",
-            }],
-        };
-        let events = deployments(&frames, &attack);
-        assert_eq!(events.len(), 1);
-        assert_eq!((events[0].before, events[0].after), (4, 3));
-    }
-
-    #[test]
-    fn json_escaping() {
-        assert_eq!(quoted("a\"b\n\\c"), "\"a\\\"b\\n\\\\c\"");
-    }
-}
-
 /// Rebuild intervals and events from saved observations; no replay decoding.
 pub fn resegment(root: &Path) -> io::Result<()> {
     use crate::json::Value;
@@ -1312,4 +1205,113 @@ pub fn resegment(root: &Path) -> io::Result<()> {
         fs::write(run_path, run.encode() + "\n")?;
     }
     fs::write(root.join("resegmentation.tsv"), changes)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn frame(t: f64, clock: u32) -> Frame {
+        Frame {
+            t,
+            phase: "attack",
+            clock: Reading {
+                value: Some(clock),
+                confidence: 0.9,
+                raw: String::new(),
+            },
+            damage: Reading::missing(),
+            stars: Some(0),
+            star_confidence: 1.0,
+            slots: vec![],
+            label_score: 1.0,
+        }
+    }
+
+    #[test]
+    fn separates_new_attack_and_keeps_internal_cut() {
+        // Declared synthetic fixture: a 30-second omitted interval, then a
+        // new battle. No image or game-calibration claims are made here.
+        let mut frames: Vec<Frame> = (0..100)
+            .map(|i| frame(i as f64 / 5.0, 180 - i / 5 - if i >= 50 { 30 } else { 0 }))
+            .collect();
+        frames.extend((0..50).map(|i| frame(20.0 + i as f64 / 5.0, 180 - i / 5)));
+        let attacks = segment(&frames);
+        assert_eq!(attacks.len(), 2);
+        assert!(attacks[0]
+            .cuts
+            .iter()
+            .any(|c| c.kind == "clock_discontinuity"));
+    }
+
+    #[test]
+    fn brief_ocr_error_does_not_mark_a_cut() {
+        let mut frames: Vec<Frame> = (0..100)
+            .map(|i| frame(i as f64 / 5.0, 180 - i / 5))
+            .collect();
+        for f in &mut frames[45..48] {
+            f.clock.value = Some(95);
+        }
+        let attacks = segment(&frames);
+        assert_eq!(attacks.len(), 1);
+        assert!(attacks[0].cuts.is_empty());
+    }
+
+    #[test]
+    fn obscured_hud_keeps_one_battle_and_speed_is_separate_from_cuts() {
+        // Declared synthetic 2x battle with an eight-second commentary overlay.
+        let mut frames: Vec<_> = (0..250)
+            .map(|i| frame(i as f64 / 5.0, 180 - i * 2 / 5))
+            .collect();
+        for f in &mut frames[70..110] {
+            f.phase = "other";
+            f.clock = Reading::missing();
+        }
+        let attacks = segment(&frames);
+        assert_eq!(attacks.len(), 1);
+        assert!(attacks[0].cuts.is_empty());
+    }
+
+    #[test]
+    fn count_decrease_requires_agreement_and_never_crosses_a_cut() {
+        let mut frames: Vec<Frame> = (0..60)
+            .map(|i| frame(i as f64 / 5.0, 180 - i / 5))
+            .collect();
+        for (i, f) in frames.iter_mut().enumerate() {
+            f.slots.push(Reading {
+                value: Some(if i < 20 {
+                    4
+                } else if i < 40 {
+                    3
+                } else {
+                    0
+                }),
+                confidence: 0.9,
+                raw: String::new(),
+            });
+        }
+        frames[10].slots[0].value = Some(0);
+        for frame in &mut frames[25..30] {
+            frame.slots[0].value = Some(31);
+        }
+        let attack = Attack {
+            start: 0,
+            end: 59,
+            prep_start: None,
+            cuts: vec![Cut {
+                t: 8.0,
+                before: Some(172),
+                after: Some(140),
+                kind: "clock_discontinuity",
+            }],
+        };
+        let events = deployments(&frames, &attack);
+        assert_eq!(events.len(), 1);
+        assert_eq!((events[0].before, events[0].after), (4, 3));
+    }
+
+    #[test]
+    fn json_escaping() {
+        assert_eq!(quoted("a\"b\n\\c"), "\"a\\\"b\\n\\\\c\"");
+    }
 }

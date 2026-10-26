@@ -156,7 +156,7 @@ fn native_scorer_equivalence_hidden_isolation_workers_cache_and_budget() {
         let diagnosis = crate::diagnostics::collect(
             context,
             &base,
-            &[row.clone()],
+            std::slice::from_ref(&row),
             "visible-test",
             &mut evaluator,
         )
@@ -414,7 +414,8 @@ fn enumerable_archive_optimum_and_per_cell_winners() {
         .unwrap();
         let descriptor = definition.describe(context, &base).unwrap();
         let row = synthetic_row(0, "known-payoff", 1.0, 2, 50.0 + index as f64 * 6.0);
-        let objective = eval::objective(&[row.clone()], "ranked", 0, Some(0.0)).unwrap();
+        let objective =
+            eval::objective(std::slice::from_ref(&row), "ranked", 0, Some(0.0)).unwrap();
         truth
             .entry(descriptor.cell)
             .and_modify(|value| *value = value.max(objective))
@@ -562,7 +563,7 @@ fn paired_reports_holdout_isolation_and_replayable_jobs() {
         interval.at("interval"),
         &Json::Arr(vec![Json::Num(0.0), Json::Num(0.0)])
     );
-    let prepared = crate::report::prepared_jobs(&[&base], &[rows.clone()]);
+    let prepared = crate::report::prepared_jobs(&[&base], std::slice::from_ref(&rows));
     let inputs = crate::runner::PreparedInputs::from_json(&prepared);
     let jobs = inputs.jobs.clone();
     let replay = crate::runner::Runner::new(context().catalog.clone(), inputs)

@@ -300,11 +300,14 @@ fn one(
 }
 
 fn at(curve: &[Json], time: f64) -> f64 {
-    curve
-        .iter()
-        .filter(|point| point.arr()[0].f64() <= time + 1e-9)
-        .last()
-        .map_or(0.0, |point| point.arr()[1].f64())
+    let mut last = None;
+    // Inspect every point in input order, including malformed earlier rows.
+    for point in curve {
+        if point.arr()[0].f64() <= time + 1e-9 {
+            last = Some(point);
+        }
+    }
+    last.map_or(0.0, |point| point.arr()[1].f64())
 }
 
 pub fn event_metric(real: f64, tolerance: f64, times: &[Option<f64>]) -> Json {

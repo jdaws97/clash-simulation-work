@@ -202,10 +202,8 @@ impl Stats {
                 }
             } else {
                 let key = key.to_lowercase();
-                if let Some((_, value)) = row.iter().find(|(name, _)| *name == key) {
-                    if let Some(number) = value {
-                        return Some(*number);
-                    }
+                if let Some((_, Some(number))) = row.iter().find(|(name, _)| *name == key) {
+                    return Some(*number);
                 }
             }
         }

@@ -145,7 +145,7 @@ fn job_parameters_are_isolated_between_concurrent_battles() {
 #[test]
 fn catalog_delays_have_named_overrides() {
     let (mut battle, _) = fixture(0, false);
-    let (&ref name, &default) = battle.params.new_target_delays.iter().next().unwrap();
+    let (name, &default) = battle.params.new_target_delays.iter().next().unwrap();
     let name = name.clone();
     battle
         .params

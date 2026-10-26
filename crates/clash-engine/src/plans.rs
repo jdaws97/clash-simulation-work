@@ -882,8 +882,8 @@ impl AttackPlan {
             }
             if !self.snipe_deployed.contains(&out[i].name) {
                 let started = out[i].time.max(available);
-                for k in i..end {
-                    out[k].time = out[k].time.max(started + (k - i) as f64 * tap);
+                for (offset, deployment) in out[i..end].iter_mut().enumerate() {
+                    deployment.time = deployment.time.max(started + offset as f64 * tap);
                 }
             }
             available = available.max(out[end - 1].time + action_time(battle, Action::Deploy, 1));
@@ -919,18 +919,17 @@ impl AttackPlan {
         {
             return true;
         }
-        if self.phase == "funnel" {
-            if self.siege.as_ref().is_some_and(|name| !name.is_empty())
+        if self.phase == "funnel"
+            && (self.siege.as_ref().is_some_and(|name| !name.is_empty())
                 || !self.push_heroes.is_empty()
                 || self.cc_names.iter().any(|name| name != "Healer")
                 || self.main.iter().any(|wave| {
                     wave.units
                         .iter()
                         .any(|(name, n)| name != "Healer" && *n > 0)
-                })
-            {
-                return true;
-            }
+                }))
+        {
+            return true;
         }
         matches!(self.phase.as_str(), "funnel" | "support")
             && self.support.iter().any(|wave| {
@@ -1153,7 +1152,10 @@ impl AttackPlan {
             }
             let difference =
                 (py_atan2(b.y - center, b.x - center) - angle + pi).rem_euclid(2.0 * pi) - pi;
-            if !(difference.abs() <= 0.8) {
+            if !matches!(
+                difference.abs().partial_cmp(&0.8),
+                Some(std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
+            ) {
                 continue;
             }
             let weight = threat(&b.key, 0.0);
