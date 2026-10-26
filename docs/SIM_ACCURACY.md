@@ -3,7 +3,8 @@
 Passing native regression checks establishes repeatability over pinned inputs;
 it does not establish agreement with the game. Keep synthetic fixtures, public
 source claims, model assumptions and measured observations distinguishable.
-The dated [October 20 scorecard](history/SIM_ACCURACY_2026-10-20.md) is historical.
+The dated [October 20 scorecard](history/SIM_ACCURACY_2026-10-20.md) is historical;
+current dated results are in [the fidelity results log](FIDELITY_RESULTS.md).
 
 | Question | Current evidence workflow |
 | --- | --- |
