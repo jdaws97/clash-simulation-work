@@ -1,0 +1,27 @@
+> Historical record, archived by G4 on 2026-10-25. Status claims, Python
+> commands and removed source paths below describe their dated revision. Use
+> [the current documentation](../../README.md) for supported workflows. Local artifact paths
+> were updated for retrieval; their contents and calibration claims are unchanged.
+
+Separate corrective delta over 72153b37f3ce813f30f6d9ca733b5ef449342029
+
+T2: Electro Titan aura uses exact pulse-time comparisons. A positive first delay
+is retained by next_boundary and cannot fire early under a spatial epsilon.
+Skipped boundaries reject. Positive delay/cadence additions that cannot advance
+their floating-point clock reject explicitly rather than inventing an epsilon.
+Spatial geometry tolerance remains a distance policy, not a pulse-time policy.
+The integration scheduler must admit every exact returned future boundary; this
+domain patch does not alter the integration-owned solver or raw-kernel guards.
+
+T3: Ruin Knight fixture declares the shared supported route convention
+travel_seconds_plus_nominal_clearance. Compiler rejects unsupported route costs.
+The focused probe loads parent plus all child reserves and constructs shared
+WallRouting, checking terminal approach and the explicit doubled wall weapon.
+This establishes router admission only. Earlier rubble lifecycle microchecks and
+this admission probe do not establish full wall movement/attack/death integration.
+
+45 bounded component checks pass. No full simulation or native-crash probe ran.
+Acceptance remains: only Titan was wired in audited integration snapshot 98cbc1e;
+the remaining domain deltas were unapplied there and have no full-battle claim.
+Raw unbound Golem fail-open remediation belongs to the integration owner.
+No new game-fidelity or calibration claim, data capture or shared-file edit.

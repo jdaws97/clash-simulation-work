@@ -1,0 +1,69 @@
+> Historical record, archived by G4 on 2026-10-25. Status claims, Python
+> commands and removed source paths below describe their dated revision. Use
+> [the current documentation](../../README.md) for supported workflows. Local artifact paths
+> were updated for retrieval; their contents and calibration claims are unchanged.
+
+RE-1 / RE-2 equipment clock correction for original task-18 reviewer
+
+Base: bd9e4a0f89ad8c138cf030dbcd7cded333019799
+Base tree: 6cf11b72d2702a825620d9bea865d2d913b9ee33
+Separate isolated clock-fix-work; original equipment-work remains unchanged.
+Apply this delta AFTER equipment-pet-remaining-net.patch. Do not export ancestry.
+
+Root causes and correction
+
+Poison Lizard treated deadlines within spatial EPSILON as reached. This let a
+strictly earlier unrelated event take a pulse before Recall and could expire
+or reset a still-live exposure. Owned pulse, refresh and expiry comparisons
+are now exact deadline comparisons. A call past an unsettled owned boundary
+is rejected, including the immediate next representable float. Same-time
+refresh-before-pulse ordering is preserved, and expiry remains exclusive.
+
+Rocket used end-EPSILON to finish despite its [start,end) demands contract.
+It now retains demands strictly before end, finishes at end, and rejects a
+skipped end. A strictly positive remaining Freeze interval still interrupts;
+no time tolerance grants an early thaw. Geometry tolerances are unchanged.
+
+New domain helper equipment_event_clock.advancing_deadline validates positive
+finite intervals and finite, strictly advancing sums. It never uses nextafter,
+an epsilon bump, rounded buckets or a minimum time quantum. Rocket validates
+the derived duration/end before recording activation or publishing state.
+Poison validates new exposure expiry and first/next pulse deadlines; an initial
+pulse must remain strictly before expiry. Unsupported numeric inputs raise
+InputError rather than accepting a zero-duration dash or nonadvancing loop.
+
+Bounded acceptance
+
+Three test methods bundle exact audit cases and neighboring controls; no broad
+field-by-field test expansion. The unchanged reviewed source fails these tests.
+- RE-1: after hit0, unrelated resolve.24999999995 then Recall/resolve.25 now
+  matches the no-neighbor control (HP1000, zero poison pulses). A nonrecalled
+  victim still receives exactly7.5 at.25. Duplicate resolve does not repeat it.
+  Immediate-predecessor and immediate-successor floats guard strict deadlines.
+  Pre-expiry refresh preserves age/grid; removal occurs only at exact expiry.
+- RE-2: start0, endpoint(10,3.5), speed10, end.95. Resolve.94999999995 preserves
+  all four demands and produces no end event. Exact.95 releases once at x10.
+  Immediate-predecessor/successor controls and positive Freeze-gap control pass.
+- RE-2: speed1e18/start100 now raises InputError before state or charge latch.
+  The same speed/start0 has a representable positive duration and completes
+  without a divide-by-zero. Derived overflow and nonadvancing Lizard clocks
+  reject explicitly. No artificial deadline widening is introduced.
+
+Scope and remaining integration dependencies
+
+MonolithArrowLedger, DarkCrownLedger, their source helper/evidence, existing six
+component tests and all compiler guards are byte-for-byte unchanged. The two
+corrected runtimes are still standalone, explicit uncalibrated components.
+
+No shared HitStatusCombat, spatial activation eligibility, damage protection,
+relative-contact solver or scheduler code was edited. In particular shared
+HitStatusCombat.prepare still expires slow entries using time+EPSILON; its
+strict slow-expiry/cooldown-work contract must be reviewed by the sole kernel
+owner before full-battle admission. The new expiry tests establish the owned
+poison exposure ledger, not corrected shared slow expiry. Shared _active and
+relative-contact geometry also retain their existing tolerances. This patch
+does not establish arbitrary ultra-short contact-geometry accuracy.
+
+All six original items retain full-battle guards. No new gameplay sources,
+capture, memory collection, publication or whole-battle calibration.
+Independent correction acceptance remains for the original task-18 reviewer.

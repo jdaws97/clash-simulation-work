@@ -13,8 +13,11 @@ private/
 *.zip
 *.gz
 
-# simulator lab: generated output, the 69 MB local wiki mirror (rebuilt by
-# tools/baselab/wiki_mirror.py) and dated backup copies of data files
+# Local observations, transcripts, research, digitizer inputs and retained
+# evidence are private working data. See local/README.md for the local index.
+/local/
+
+# Disposable generated output, wiki acquisition cache and dated data backups.
 output/
 data/wiki/
 data/*-pre-*.json

@@ -1,0 +1,31 @@
+> Predecessor Python filenames and parity procedures in this document are
+> historical provenance from `f04706c`. Deleted tools are not runnable; see
+> [the current documentation](../README.md) for native commands and remaining Python ports.
+
+> Historical record, archived by G4 on 2026-10-25. Status claims, Python
+> commands and removed source paths below describe their dated revision. Use
+> [the current documentation](../README.md) for supported workflows. Local artifact paths
+> were updated for retrieval; their contents and calibration claims are unchanged.
+
+# When does the sim match the game?
+
+Goal from the user (2026-10-18): keep going until the simulation matches the game, using any source (wiki, game data, video transcripts, guides, pictures, the user's real battles). "Be skeptical of everything. Don't trust, verify."
+
+The sim counts as matching only when every check below passes. Each line is measured by a script, not judged by eye.
+
+| # | Check | Target | How it is measured | Status (2026-10-20, round 8: after two bug-hunt passes) |
+|---|---|---|---|---|
+| 1 | Unit, building, spell and equipment numbers | Agree with two independent sources | ClashKing game data vs engine, plus wiki for anything ClashKing lacks (`$TEMP/xcheck.py`, to move into `tools/baselab/xcheck_stats.py`) | Corrected 2026-10-20: the old check compared ClashKing with its own copy. Against what the engine reads, 103 level rows differ (wiki columns overriding game data: Lavaloon ~10% low, Flame Flinger, Super Hog Rider, Barbarian King L1, event troops); fix in progress |
+| 2 | Mechanics | Every mechanic used by meta armies passes a wiki-fact test | `tools/baselab/mechanic_tests.py`: small staged battles with a known wiki answer (time to kill, damage per hit, heal rate, trigger rules) | 7/7 pass (Inferno ramp, Healer on troops and heroes, Root Rider wall break, Freeze); 13 Codex category audits running |
+| 3 | Attack plays | Every scripted step cites a real player's description | Playbooks in `local/sources/playbooks/`, every step quote-checked against its transcript | extraction running (211 transcripts) |
+| 4 | Army strength without fudge | Every calibrated TH16 build within 0.85–1.15 | `tools/baselab/calibrate_meta.py --techniques` | Round 8: Throwers 1.04 pass / 1.21; Dragons 0.83; Root Riders 1.21 / 1.17 (all within about 0.2 of 1.0) |
+| 5 | Real defenses replayed | Brier clearly below the always-guess-the-average baseline, and destruction error under 4 points, with at least 40 real defenses | `tools/baselab/replay_log.py data/live/battles.jsonl` | Round 8, 12 defenses (Warden gear now decoded): sim P(3★) 62% vs real 67%, star bias -0.04, destruction error 5.6 pts (best yet); Brier 0.268 vs 0.222 baseline (fail: a few confident misses, e.g. an Archer 3★ predicted 21%, a Yeti 17%). Needs 40 defenses |
+| 6 | Real attack times | Sim time to finish within 15% of the user's real attack times for the same army | `replay_log.py`: sim time to 3-star vs real `battleTime` on real 3-star defenses | Round 8, 8 defenses: sim/real 0.80 (just under the target; round 7 0.84). Fixed by player pacing and the waits measured from the source videos (4.5 s within a phase, 16.6 s between; `tools/baselab/step_gaps.py`); neither was tuned to this check (round 5: 0.64) |
+| 7 | Real base ordering | The sim agrees with the user's live tests: the hole-free base is weaker than ranked-funnel1 for the user's armies (Throwers excepted) | `tools/baselab/adaptive_check.py` with playbook attackers | Round 8 (side picked on seeds 700-704, scored on fresh 800-809; the old same-seed method inflated best-side 3★ by ~10 points): **pass**. Best side: hole-free 58% vs funnel1 52%; user's Root Riders 90% vs 50% (15.2 vs 11.9 units left), Druids 50% vs 10%; Thrower build 1 does worse on hole-free (10% vs 30%), as the user found. All sides: 22.2% vs 20.8% |
+| 8 | The user's own armies | Sim destruction with the user's armies within 10 points of their real attacks | The user's attacks in `data/live/battles.jsonl` (bases unknown, so only the level of strength is compared) | Air army: real ranked 76-89% vs TH17, sim 60-66% vs TH16 (fail, ~20 points weak). Druid/Ruin Witch: real 3★ x2 and 64%, sim 80-94% |
+
+Notes:
+- Ground truth is scarce. Checks 5 and 6 get stronger every day as `clash-battlelog-snapshot` adds battles to `data/live/battles.jsonl`. Record every base change in `data/live/base-history.json`, so replays use the right layout.
+- A check is never passed by tuning against the test data itself. Calibration uses the reference bases; replays are held out.
+- Anything taken from Codex or a transcript is verified before it changes the engine (quote check, wiki, or game data).
+- Check 7 with a red-team attacker (docs/history/REDTEAM.md: the best cited attack per base, scored on fresh seeds; 2026-10-20). Root Riders: hole-free is weaker than funnel1 (39.4 vs 36.2 trophies). Druids: funnel1 looks weaker (29.1 vs 25.5) once it is attacked well. Neither army picks the Eagle side of hole-free.

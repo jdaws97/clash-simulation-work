@@ -1,7 +1,7 @@
 # PB1a engine, fitter and executor fixes
 
 Implemented D1, D2, A1–A4 and A11–A14 from
-[`consolidated.md`](../output/playbook-review/consolidated.md). A5–A10 and A15
+[`consolidated.md`](../local/reviews/playbooks/consolidated.md). A5–A10 and A15
 remain for PB1b. All execution and verification used Rust in WSL, offline,
 with `CARGO_TARGET_DIR=/tmp/clash-target-pb` and the repository catalog.
 No Python files were edited or executed, and nothing was installed or downloaded.
@@ -114,7 +114,7 @@ rewires source triggers before inferred pacing is applied. Configured delays are
 preserved; population-inferred waits are recomputed for the surviving actions.
 
 Detailed local logs and the Rust replay helper are under
-[`output/playbook-review/pb1a`](../output/playbook-review/pb1a/). Private decoded
+[`local/reviews/playbooks/pb1a`](../local/reviews/playbooks/pb1a/). Private decoded
 fixtures remain only in `/tmp/pb1a`, outside Git.
 
 ## Verification

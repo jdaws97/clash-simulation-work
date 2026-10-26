@@ -1,6 +1,10 @@
+> Predecessor Python filenames and parity procedures in this document are
+> historical provenance from `f04706c`. Deleted tools are not runnable; see
+> [the current documentation](README.md) for native commands and remaining Python ports.
+
 # Consolidating playbooks into one executable playbook per army family
 
-Input: every `output/sources/playbooks/<VIDEO_ID>.json` with `"relevant": true` and the given `army_family`. Each is a quote-checked extraction of one video (see docs/playbook-extraction.md). The matching transcripts are in `output/sources/transcripts/<VIDEO_ID>.json`.
+Input: every `local/sources/playbooks/<VIDEO_ID>.json` with `"relevant": true` and the given `army_family`. Each is a quote-checked extraction of one video (see docs/playbook-extraction.md). The matching transcripts are in `local/sources/transcripts/<VIDEO_ID>.json`.
 
 Output: one JSON object, the playbook the simulator plays (`src/baselab/engine/playbook.py`). Write it in this exact shape:
 

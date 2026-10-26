@@ -1,6 +1,6 @@
 # Audit ledger
 
-Findings from the Codex category audits (output/checks/audit-*.md). Quote check: wiki quotes found in the local wiki copy / quotes given. Status: open, applied, rejected (with reason) or deferred.
+Findings from the Codex category audits (local/research/audits/audit-*.md). Quote check: wiki quotes found in the local wiki copy / quotes given. Status: open, applied, rejected (with reason) or deferred.
 
 | id | category | mechanic | verdict | quotes found | status |
 |---|---|---|---|---|---|

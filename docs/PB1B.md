@@ -1,7 +1,7 @@
 # PB1b: recipe, packet, cohort and objective semantics
 
 PB1b implements A5–A10 and the cited A15 controller dependencies from
-[the consolidated review](../output/playbook-review/consolidated.md), then applies
+[the consolidated review](../local/reviews/playbooks/consolidated.md), then applies
 its dependent playbook corrections. These are declared synthetic diagnostic
 replays of source inventories on existing layouts, not real-game calibration.
 No Python files were edited or executed; builds and helpers use Rust in WSL,
@@ -158,7 +158,7 @@ incompatibilities are retained and reported. Unresolved source allocation/level
 exceptions remain synthetic diagnostic controls rather than exact legal armies.
 
 Artifacts and Rust helpers are in ignored
-[`output/playbook-review/pb1b`](../output/playbook-review/pb1b/). Complete step logs,
+[`local/reviews/playbooks/pb1b`](../local/reviews/playbooks/pb1b/). Complete step logs,
 active-field windows, binding IDs/modes/HP, plans and rejection reasons are saved
 there. The focused table below reports battle seconds; the full paired outcome
 matrix follows it. Score changes are observations, not acceptance targets.
@@ -434,7 +434,7 @@ Rider inputs and all 200 compiled side/seed plans against the working tree.
 Final Meteor/Bowler data-only corrections are outside the Root Rider experiment;
 the final tree must still produce exactly those same 200 Root Rider plans.
 
-Reports stay in ignored `output/fidelity-rust/pb1b-before-th18.json`,
+Reports stay in ignored `local/fidelity/pb1b-before-th18.json`,
 `pb1b-after-th18.json` and the baseline confirmation
 `pb1b-before-current-locked.json`. The comparison below
 uses **TH18 maximum levels and saved/default CC**, separately from the empty and

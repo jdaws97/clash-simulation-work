@@ -10,10 +10,10 @@ those units, and write steps for them in the executor vocabulary.
 
 - The playbook: `data/playbooks/<FAMILY>.json` (its `steps`, `army`, `sources`).
 - The units to cover (given in the prompt).
-- Transcripts: `output/sources/transcripts/<VIDEO_ID>.json`, field `lines`
+- Transcripts: `local/sources/transcripts/<VIDEO_ID>.json`, field `lines`
   is a list of `[seconds, text]`. Read the transcripts listed in the
   playbook's `sources` first; you may also read the per-video extractions
-  `output/sources/playbooks/<VIDEO_ID>.json`.
+  `local/sources/playbooks/<VIDEO_ID>.json`.
 
 ## Output
 

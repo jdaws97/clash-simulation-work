@@ -1,3 +1,7 @@
+> Predecessor Python filenames and parity procedures in this document are
+> historical provenance from `f04706c`. Deleted tools are not runnable; see
+> [the current documentation](README.md) for native commands and remaining Python ports.
+
 # Friendly-challenge measurement shot list
 
 Campaign plan, 2026-10-22. Build these small test areas in a spare layout, record
@@ -5,7 +9,7 @@ a challenge, then reuse the layout for the listed variants. Most runs need only
 15–40 seconds of useful footage. Finish or surrender after the observation.
 One person can deploy, record live, then record a zoomed replay of that attack.
 
-Priorities follow [GAP_ANALYSIS.md §4](GAP_ANALYSIS.md#4-troop-and-defense-behaviour-the-engine-approximates-hm):
+Priorities follow [GAP_ANALYSIS.md §4](history/GAP_ANALYSIS.md#4-troop-and-defense-behaviour-the-engine-approximates-hm):
 **H** can change the winning base; **M** can reverse close rankings; **L** is an
 edge case. These are impact categories, not measured trophy effects. **H17+**
 means high impact against attackers with that content, including attacks on a

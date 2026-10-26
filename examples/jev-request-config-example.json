@@ -1,6 +1,0 @@
-{
-  "model": "jev-latest",
-  "maximum_choice_options": 255,
-  "instructions": "Choose one explicitly legal action using the supplied state. Do not infer unknown game statistics. Use the wait choice when the evidence does not support spending a resource.",
-  "status": "DOCUMENTED_ALIAS_EXAMPLE_NOT_PINNED_FOR_REPRODUCIBLE_MODEL_EVALUATION"
-}

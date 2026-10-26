@@ -1,3 +1,7 @@
+> Predecessor Python filenames and parity procedures in this document are
+> historical provenance from `f04706c`. Deleted tools are not runnable; see
+> [the current documentation](README.md) for native commands and remaining Python ports.
+
 # Native playbook and research pipeline
 
 `clash playbook` implements the deterministic playbook/research workflow in
@@ -12,6 +16,11 @@ when working with another corpus. Inputs in another checkout can remain
 read-only. Acquisition caches, transcripts, prompts, provider replies, research
 reports and job receipts belong in ignored local storage, never in Git.
 
+G4 moved the corpus to `local/sources` and research to `local/research`.
+Until the lead applies the listed Rust defaults, pass `--sources local/sources`
+for commands that discover the corpus and explicit `--transcripts`/queue paths.
+See [CLEANUP_G4.md](CLEANUP_G4.md).
+
 ## Commands and file contracts
 
 ```sh
@@ -19,30 +28,30 @@ reports and job receipts belong in ignored local storage, never in Git.
 # ordinary rows, a JSON array, or JSONL). Repeat for another family.
 clash playbook harvest --family dragon --input search.json \
   --query 'th17 hydra attack strategy' --date 2026-10-25 \
-  --out output/sources/videos.jsonl
+  --out local/sources/videos.jsonl
 
 # Import a stored transcript, yt-dlp json3 subtitles, or format-3 timedtext XML.
 clash playbook transcript VIDEO --input captions.json3 \
-  --transcripts output/sources/transcripts
+  --transcripts local/sources/transcripts
 
 # Check every committed playbook and write detailed per-citation diagnostics.
-clash playbook verify --all --transcripts output/sources/transcripts \
-  --report output/sources/citation-report.json
+clash playbook verify --all --transcripts local/sources/transcripts \
+  --report local/sources/citation-report.json
 
 # Check a raw extraction offline; --dry suppresses its checked JSON write.
-clash playbook verify --extracted VIDEO --sources output/sources
+clash playbook verify --extracted VIDEO --sources local/sources
 
 # Consolidate supplied model output into an executable source playbook.
-clash playbook consolidate dragon --sources output/sources \
-  --transcripts output/sources/transcripts --out data/playbooks/dragon.json
+clash playbook consolidate dragon --sources local/sources \
+  --transcripts local/sources/transcripts --out data/playbooks/dragon.json
 
 # Merge verified additions, or inspect without writing with --dry.
-clash playbook complete dragon --input output/sources/completion/dragon.raw \
-  --transcripts output/sources/transcripts --dry
+clash playbook complete dragon --input local/sources/completion/dragon.raw \
+  --transcripts local/sources/transcripts --dry
 
 # Recompute timing data, excluding test-* playbooks as the frozen tool did.
-clash playbook gaps --transcripts output/sources/transcripts \
-  --out output/sources/playbook-gaps.candidate.json
+clash playbook gaps --transcripts local/sources/transcripts \
+  --out local/sources/playbook-gaps.candidate.json
 ```
 
 `videos.jsonl` retains one row per video with `id`, `title`, `channel`, `age`,
@@ -109,8 +118,8 @@ consolidation enforces stronger checks and recognizes the current executor.
 ```sh
 # Compare to saved Python outputs, without running Python or changing data.
 clash playbook verify --all --legacy \
-  --sources /path/to/read-only/output/sources \
-  --transcripts /path/to/read-only/output/sources/transcripts \
+  --sources /path/to/read-only/local/sources \
+  --transcripts /path/to/read-only/local/sources/transcripts \
   --check-recorded --report /tmp/playbook-equivalence.json
 ```
 
@@ -132,11 +141,11 @@ clash playbook harvest --family dragon --provider yt-dlp.exe --pages 2
 
 # Subtitles and metadata only; no video or audio download.
 clash playbook transcript VIDEO --fetch --provider yt-dlp.exe \
-  --transcripts output/sources/transcripts
+  --transcripts local/sources/transcripts
 
 # Inspect extraction jobs first, then explicitly invoke a configured provider.
-clash playbook extract --transcripts output/sources/transcripts
-clash playbook extract --transcripts output/sources/transcripts \
+clash playbook extract --transcripts local/sources/transcripts
+clash playbook extract --transcripts local/sources/transcripts \
   --run --provider /path/to/codex-ask --workers 3
 ```
 
@@ -161,14 +170,14 @@ mandatory native evidence validation.
 ## Research and audit bookkeeping
 
 ```sh
-clash playbook queue import --input subjects.tsv --out output/research/queue.tsv
-clash playbook queue usage --queue output/research/queue.tsv
-clash playbook queue usage --queue output/research/queue.tsv \
-  --brief output/research/brief-entity.txt --run \
+clash playbook queue import --input subjects.tsv --out local/research/queue.tsv
+clash playbook queue usage --queue local/research/queue.tsv
+clash playbook queue usage --queue local/research/queue.tsv \
+  --brief local/research/brief-entity.txt --run \
   --provider /path/to/codex-research --workers 4 --passes 2
-clash playbook queue audit --input output/research/usage \
-  --brief output/research/brief-gap.txt --out output/research/gaps \
-  --skip output/research/gaps/skip-event.txt
+clash playbook queue audit --input local/research/usage \
+  --brief local/research/brief-gap.txt --out local/research/gaps \
+  --skip local/research/gaps/skip-event.txt
 ```
 
 Queue rows are `kind<TAB>name`. Slugs follow the shell scripts' ASCII lowercase
@@ -190,7 +199,7 @@ These receipts are local bookkeeping, not proof of factual research accuracy.
 ## Port receipt (2026-10-25)
 
 All twelve committed `data/playbooks/*.json` files were read against the main
-checkout's read-only `output/sources/transcripts` (346 stored transcripts).
+checkout's read-only `local/sources/transcripts` (346 stored transcripts).
 No source data, golden, Python file, shared crate or Git metadata was edited.
 
 - Frozen scope: **1,054/1,054 citations verified**, no validation errors.

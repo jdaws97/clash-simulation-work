@@ -1,3 +1,7 @@
+> Predecessor Python filenames and parity procedures in this document are
+> historical provenance from `f04706c`. Deleted tools are not runnable; see
+> [the current documentation](README.md) for native commands and remaining Python ports.
+
 # Visible scouting and oracle comparison (RW1, 2026-10-25)
 
 `score` defaults to `scout_policy: "visible"`. It predicts candidate sides on
@@ -61,12 +65,12 @@ The following are declared modelling assumptions, not measured probabilities:
   original hidden layout. Priors currently cover defender TH16–18.
 
 The visibility distinction is supported by
-`output/research/usage/hidden-tesla.md` and
-`output/research/usage/clan-castle-lure-and-kill.md`, citing the
+`local/research/usage/hidden-tesla.md` and
+`local/research/usage/clan-castle-lure-and-kill.md`, citing the
 [Hidden Tesla reference](https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village)
 and [Clan Castle reference](https://clashofclans.fandom.com/wiki/Clan_Castle).
 The proposed ensemble method comes from R5 in
-[RUST_REVIEW_2026-10-25.md](RUST_REVIEW_2026-10-25.md) and
+[RUST_REVIEW_2026-10-25.md](history/RUST_REVIEW_2026-10-25.md) and
 [SIMULATION_METHODS_RESEARCH.md](SIMULATION_METHODS_RESEARCH.md).
 These sources do not establish a calibrated hidden-state distribution. Future
 priors need held-out observations; this implementation makes no targeting,
@@ -107,7 +111,7 @@ validate these means or establish an improvement in game accuracy.
 
 - Before changes: the G2 golden suite passed 868/868. R1/R7/R9's prior failure
   paths are documented and code-verified in the Rust review. D1/D2 in
-  `output/research/gap-triage.md`, `gaps/dragon.md` U14 and
+  `local/research/gap-triage.md`, `gaps/dragon.md` U14 and
   `gaps/greedy-raven.md` identify modifier and account admission restrictions.
 - After changes: a tracked-files-only copy plus RW1 files at `/tmp/fresh-rw1`
   contained no `data/wiki`, `output`, `rust/target` or old target directories.
@@ -175,7 +179,7 @@ review, D1/D2 audits and the cited catalog/wiki sources above.
 | `rust/src/lib.rs:13`, `:36` | Register content validation and scouting modules. |
 | `docs/RUST_PORT.md:1` | Current Rust reference/golden/maths/build/input contract. |
 | `docs/ENGINE_STATUS.md:1` | Mark preserved v29 status as legacy and point to current Rust docs. |
-| `docs/GAP_ANALYSIS.md:1`, `:149` | Retire the stale unfinished-Rust-path claim and update scouting/reference status. |
+| `docs/history/GAP_ANALYSIS.md:1`, `:149` | Retire the stale unfinished-Rust-path claim and update scouting/reference status. |
 | `docs/MOVE_LIBRARY_DESIGN.md:127`, `:286`, `:298` | Rust-owned compiler/controller/vocabulary milestones and golden checks; account/modifier restrictions resolved. |
 | `docs/SCOUTING.md:1` | Policies, priors, budget, reproducible experiment parameters, comparison and validation evidence. |
 

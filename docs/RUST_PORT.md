@@ -1,9 +1,9 @@
 # Rust reference engine (2026-10-25)
 
-Rust is the executable reference. Python is frozen at `python-frozen` and is
-retained for history and legacy tooling. New rules and compiler changes belong
-in Rust; Python parity is retired. Preserve the separate v29 baseline and its
-unsupported-content checks.
+Rust is the executable reference. Python remains only for the unported workflows
+and dependencies listed in [CLEANUP_G4.md](CLEANUP_G4.md). New rules and compiler
+changes belong in Rust; Python parity is retired. Preserve the separate v29
+baseline and its unsupported-content checks.
 
 G1/G2 now use the root Cargo workspace. The checked WSL compiler is
 `rustc 1.99.1 (58cf8f9c3 2026-10-13)`; no older MSRV is claimed and no toolchain
@@ -18,10 +18,12 @@ profile. `cargo tree -p clash-engine --offline` contains only `clash-data` and
 | Battle runtime and attacker executor | `crates/clash-engine/src/`, including `plans/attacker.rs` |
 | Army composition and playbook compilation/fitting | `crates/clash-plans/src/` |
 | Scoring and scouting | `crates/clash-scoring/src/` |
-| Army search, base proposals, fidelity, video | `crates/clash-{armysearch,basesearch,fidelity,vidmine}/src/` |
+| Army/base search, fidelity, video | `crates/clash-{armysearch,basesearch,fidelity,vidmine}/src/` |
+| Catalog construction, battle logs/snapshots and digitization | `crates/clash-dataimport/src/` |
+| Playbook evidence, authoring queues and research jobs | `crates/clash-playbook-tools/src/` |
 | CLI dispatch, jobs, checks and local rule derivation | `crates/clash-cli/src/` |
 
-Rule import orchestration stays in CLI until the later dataimport port. Shared
+Rule import orchestration stays in CLI. Shared
 share-code parsing and snapshot/hash semantics are data-owned; observed-build
 construction remains fidelity-owned. Engine private tests read frozen synthetic
 prepared plans in `fixtures/playbooks/executor.jsonl`; plans tests separately
@@ -55,11 +57,14 @@ failing build/test/check commands propagate their exit status directly. Battle
 goldens run at one and four workers. Armysearch checks one/four/sixteen workers;
 the full M2 proof checks one/four/sixteen/one workers. Clippy is advisory if the
 existing code is not warning-clean, and a missing local component is reported
-without installing it. On this WSL toolchain Clippy is unavailable.
+without installing it. G1/G2 recorded unavailable Clippy. The G4 toolchain has
+Clippy; its pre-existing failure is tracked in [CLEANUP_G4.md](CLEANUP_G4.md)
+and belongs to the separate lane F source work.
 
-`clash` preserves every previous engine command and adds `fidelity` and `video`
-namespaces. `simulate run|trace|jobs|bench`, `plan compile|check`,
-`armysearch run|proof`, and `basesearch proof` are additional aliases. The
+`clash` exposes `fidelity`, `video`, `dataimport` and `playbook` namespaces.
+`simulate run|trace|jobs|bench`, `plan compile|check`,
+`armysearch run|proof`, and `basesearch proof` are additional aliases. Native
+base search also provides `run`, `smoke` and `proof-completion`. The
 `baselab-engine`, `fidelity`, and `vidmine` binaries simply forward arguments.
 See [RESTRUCTURE_LOG.md](RESTRUCTURE_LOG.md) for the complete rename inventory
 and frozen hashes. No Python source was changed or executed in G1/G2.

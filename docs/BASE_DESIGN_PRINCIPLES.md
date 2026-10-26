@@ -35,7 +35,7 @@ The Spring Trap behavior above is the October 6 2025 rework (S, [Supercell](http
 
 ## 1. The attack meta and how each attack picks its side
 
-**Meta shares.** These are TrophyCoach ranked data for TH18, already in `docs/RESEARCH-2026-10.md`:
+**Meta shares.** These are TrophyCoach ranked data for TH18, already in `docs/history/RESEARCH-2026-10.md`:
 
 | Army | Share | 3★ rate |
 |---|---|---|

@@ -1,156 +1,45 @@
-> Legacy v29 status: the document below describes the preserved engine, not
-> the current Rust reference. For current setup, fixed-tick navigation,
-> platform-identical maths and the golden gate, see [RUST_PORT.md](RUST_PORT.md)
-> and [GOLDEN.md](GOLDEN.md). Python is frozen at `python-frozen`.
+# Current engine scope
 
-# Engine status and next decisions
+Rust is the executable reference in the root Cargo workspace. The preserved v29
+and October 3 checkouts remain separate and untouched. The
+[runtime contract](RUST_PORT.md), [golden policy](GOLDEN.md),
+[scouting contract](SCOUTING.md) and [parameter inventory](PARAMS.md) describe
+current behavior. `scripts/verify.sh` is the offline acceptance gate.
 
-This is a preserved v29 conditional combat engine with a stabilization layer.
-Passing tests verify the declared software contracts, not live Clash of Clans
-accuracy. No complete held-out battle calibration or reliable army win-rate
-ranking has been established.
+Catalog presence does not establish executable support. Admission rejects
+unsupported equipment, pets and event content before a battle. Preserve those
+checks, deterministic arithmetic, ordered randomness and the frozen goldens.
+The native gate checks regression behavior; it does not certify game accuracy.
 
-## Architecture
+Native base search now includes evaluation, racing, QD, bounded attacker
+refinement, diagnostics and winner reports; see its
+[implementation and limits](../crates/clash-basesearch/README.md).
+[Catalog regeneration](DATA_PIPELINE.md),
+[battle-log/snapshot ingestion](../crates/clash-fidelity/PORT_LC.md),
+[digitization](../crates/clash-dataimport/src/digitize/README.md) and
+[playbook validation](PLAYBOOK_PIPELINE.md) have native commands.
 
-`Catalog`, account planning, army legality, and layout validation feed entity
-adapters. The spatial kernel combines target selection, four-neighbor ground
-routing, continuous event boundaries, attacks, projectiles, status effects,
-healing, deaths, traps, reinforcements, heroes, pets, and siege components.
-`full_battle` binds finite resources and adds scoring and termination. Closed-loop
-control can apply explicitly supplied response delays and placement errors.
+Remaining work includes:
 
-The shared kernel and adapters are large integration points. Changes to event
-ordering, ownership, or finite-resource accounting require one integration owner.
-Do not implement new mechanics through independent edits to these files.
+- Wiki acquisition, HTML table normalization, patch/source auditing and the
+  general data manifest still use Python. Native catalog building consumes an
+  existing normalized mirror; it does not refresh that mirror.
+- Aggregate-target and per-build/meta calibration, policy fitting, and surrogate
+  training have no complete native command. Their Python import closure remains;
+  native replay, defense calibration and CV do not replace those fitting modes.
+- Held-out game observations, sensitivity analysis and source-owner review are
+  still needed. The playbook lane records a wiki-only support citation and timing
+  corpus drift. Native synthetic proofs are not calibration evidence.
+- Historical concerns about target choice, crowding, Warden grouping, hidden
+  information, siege/CC release, tornado dynamics and animation timing require
+  current Rust verification and controlled measurements. The dated
+  [gap inventory](history/GAP_ANALYSIS.md) and
+  [engine review](history/RUST_REVIEW_2026-10-25.md) retain the unresolved questions;
+  their old Python status statements are not current verdicts.
+- G4 moved retained output into ignored `local/`. Rust defaults and source
+  citations awaiting the lead's patch are enumerated in [CLEANUP_G4.md](CLEANUP_G4.md).
+  Data reorganization, toolchain provisioning and Windows acceptance remain
+  separate integration work.
 
-## Supported scope and assumptions
-
-v29 adds Lightning, Earthquake, Poison, Invisibility, and Overgrowth to the
-previously integrated components. Its ruleset is
-`spatial-attack-spells-kernel-v29`; scope is
-`attack_spells_battle_exhaustion_extended_hero_roster_sector`. Inputs require an
-explicit `attack_spells` list, including `[]` when no such cast is selected.
-
-The conditional recipe integration adds seven selected troops, four equipment
-items, Frosty with explicit Frostmite statistics, paid Totem/Recall, and Log
-Launcher. See [the recipe binding map](legacy/RECIPE_BINDING_MAP.md). Complete TH17/18
-scenario assembly and the experimental Revenge Tower contract are documented in
-[higher-TH scenarios](legacy/HIGHER_TH_SCENARIOS.md). Compilation does not establish
-complete battle execution or game accuracy.
-
-Behavior remains conditional on explicit geometry, quantity, stacking, visibility,
-projectile, targeting, and timing policies. Unit collisions, Warden following,
-automatic hero activation, and many selectable entities remain unsupported.
-Selected unsupported content must fail explicitly. Catalog presence is not
-equivalent to combat support.
-
-Electro Titan is connected through explicit opt-in to the paid troop adapter,
-shared aura clock, health settlement and short synthetic full-battle contracts.
-Recall composition and positive pulse timing have corrective integration checks;
-independent acceptance is tracked per frozen checkpoint, not inferred from tests.
-Druid and the other attacking extension runtimes remain unbound at the general
-entry point. Raw unbound lifecycle models now reject before execution.
-
-Flame Flinger and Siege Barracks join Log Launcher and the three original siege
-carriers in conditional shared dispatch. Their short synthetic battle contracts
-cover released damage, finite payload ownership and generated Barracks resources;
-the Flinger overlap and positive final-tail corrections have independent bounded
-conditional acceptance at `da093e6eeacc677d056bbfce85642e92bbed8cf8`.
-Drill, Troop Launcher and Sky Wagon remain unbound. Logger discovery explicitly
-reports unavailable until projectile, pushback and continuation are connected.
-Optional Inferno fuel now gates the shared weapon rather than being discarded.
-
-Ice Block's ordinary troop weapon/movement path is now bound and tested through
-paid battles, including defensive Ice Golem death-Freeze overlap in both orders.
-Secondary lifecycle recipients fail closed; selected core hero loadouts now bind
-under the subsequent [spell lifecycle checkpoint](legacy/SPELL_LIFECYCLE_CHECKPOINT.md).
-The Jump/Tornado expiry correction uses a legal shared ground exit after capture.
-See [the clock checkpoint](legacy/SPELL_CLOCK_CHECKPOINT.md) for exact scope and limits.
-
-Bat, Skeleton and Jump now have explicit v29 shared bindings and paid battle
-regressions. They require `advanced_spell_binding` as well as the complete spell
-policy dictionary. Bat/Skeleton have conditional independent acceptance; the
-Jump correction and later Ice/Clone/Revive/Angry bindings await recheck. Clone
-supports ordinary fresh troop/spell-unit lifecycles; Revive and Angry enforce
-the documented core hero and targeting limits. No
-updated coverage percentage or full-game fidelity claim follows from this work.
-
-## Numerical limits
-
-The full-air development benchmark exposed an attracting Dragon Duke isolation
-boundary: isolated Duke stops at the longer weapon range; a nearby moving ally
-removes isolation; Duke chases faster, exits the radius, and stops again.
-Opposing one-sided motion creates repeated near-zero events.
-
-Stabilization rejects immediate reversal of a committed isolation contact with a
-diagnostic identifying actors, time, radius, and the unresolved policy. It does
-not invent hysteresis, sampled updates, or sliding/contact dynamics. Completing
-that battle requires evidence or an explicit experimental policy for this case.
-An opt-in [sampled-isolation policy](legacy/DUKE_CONTACT_EXPERIMENT.md) now provides a
-finite experimental continuation, with explicit timing/provenance and separate
-sensitivity checks. Strict rejection remains the default. Its cadence is not a
-measured game mechanic.
-
-An older full-village step comparison agreed on stars, destruction, and end time
-but diverged in late event positions/timing. Outcome agreement alone is not
-trajectory convergence. Compare the same code and input fingerprints, declare
-tolerances before inspecting results, and retain the first divergent event.
-
-## Evidence boundaries
-
-Evidence integrity alone does not establish correct patch, exact layout,
-equipment, defensive modes, trap positions, or battle-clock alignment. Synthetic
-portable fixtures validate evidence schemas and mechanics; they are not
-observations. These contracts have no calibrated full-battle validation.
-
-The previous ground development battle reached three stars under its declared
-parameters. The full-air benchmark completes only under the explicitly selected
-sampled-isolation policy; strict isolation still rejects the unresolved contact.
-The [consolidated recipe checkpoint](legacy/CONSOLIDATED_RECIPE_CHECKPOINT.md) separates
-exact-recipe compilation, bounded execution attempts and remaining blockers.
-One exact-recipe attempt also ended in native process failure `0xC0000005` with
-no outcome. A bounded runner mitigation stopped cooperatively without recurrence;
-the cause and complete-battle reliability remain unresolved.
-Neither benchmark supports ranking real armies or recommending a base.
-Recommendations must distinguish current
-game observations, expert examples, model experiments, and unknowns.
-
-## Completion criteria
-
-1. A clean checkout runs without user-specific files, preserves meaningful
-   assertions, and passes the bounded CI matrix on its exact commit.
-2. Representative combined-army checks catch illegal capacity, duplicate/lost
-   ownership, incorrect payload/pet/clone lifecycle, and nondeterminism.
-3. Harmful numerical non-progress is detected, with unresolved dynamics explicit.
-4. Candidate layouts have complete legal inventories and usable coordinates or
-   source-verified copy links, with separate ranked and war/CWL objectives.
-5. Attack recipes specify all capacities, heroes/equipment/pets, siege and Clan
-   Castle, plus deployment cues and unsupported-model limitations.
-6. Any accuracy claim uses held-out observed battles with matching input state;
-   synthetic success never substitutes for calibration.
-
-Testing is bounded by risk. Preserve useful existing coverage; add only checks
-that detect consequential simulation errors. Test count and coverage percentage
-are not success criteria.
-
-## Updating after a game patch
-
-Put new CSVs in `data/gamecsv/<version>/`, then run
-`python3 -B tools/baselab/patch_update.py plan --csv data/gamecsv/<version>`.
-This prints the reader pins to review, wiki/registry/Rust catalog rebuild commands,
-and calibrations and saved scores to invalidate; it runs no downloads or battles.
-`wiki_mirror.py fetch` checks remote revisions and refreshes changed pages;
-`--force` refreshes all pages and `--dry-run` inventories the cache offline.
-Reparse refreshed pages with `wiki_tables.py` before rebuilding the registry.
-
-Run `python3 -B tools/baselab/data_manifest.py check` before and after updates.
-`build` writes a deterministic content/source-version snapshot; after regenerating
-registry/catalog, use `build --record-derived data/registry.json --record-derived
-rust/data/catalog.json`. Ordinary builds preserve previous input bindings.
-Legacy files without regeneration evidence remain `UNVERIFIED`; a snapshot does
-not establish calibration validity. Pass the proof checks before recalibrating,
-re-scoring finalists or searching. Record each regenerated calibration with
-`build --record-derived <calibration-path>` (or embed `provenance.input_hash` using
-the manifest's `calibration_input_hash`), then save the final `manifest_hash` with
-new results. Older hashes mark saved scores stale; unversioned winners need
-re-scoring. The manifest records paths and hashes, not private input contents.
+The [documentation index](README.md) separates current contracts from dated
+research, milestone receipts and retired prototype procedures.

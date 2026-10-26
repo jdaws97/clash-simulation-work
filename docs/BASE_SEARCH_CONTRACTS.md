@@ -1,10 +1,11 @@
 # Base search contracts, M0 / schema 1
 
-Status: M0 contracts and M1 layout implementation. Rust is the reference;
-Python is frozen and is read only. This contract follows the complete
-[design](BASE_SEARCH_RUST_DESIGN.md), [review R3](RUST_REVIEW_2026-10-25.md),
+Scope: the M0 contracts and M1 layout implementation. Rust is the reference.
+The native M3–M6 coordinator is documented in
+[clash-basesearch](../crates/clash-basesearch/README.md). This contract follows the complete
+[design](BASE_SEARCH_RUST_DESIGN.md), [review R3](history/RUST_REVIEW_2026-10-25.md),
 and [golden policy](GOLDEN.md). Evidence here is model/synthetic correctness,
-not real-game calibration. M2–M6 are outside this milestone.
+not real-game calibration. The historical milestone receipts are under `history/`.
 
 ## Schemas and admission
 

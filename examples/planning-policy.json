@@ -1,7 +1,0 @@
-{
-  "mode": "ranked",
-  "recipient_level_rule": "unique_capacity_match",
-  "super_troops": [
-    "super-wall-breaker"
-  ]
-}

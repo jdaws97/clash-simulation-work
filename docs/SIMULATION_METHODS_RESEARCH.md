@@ -1,3 +1,7 @@
+> Predecessor Python filenames and parity procedures in this document are
+> historical provenance from `f04706c`. Deleted tools are not runnable; see
+> [the current documentation](README.md) for native commands and remaining Python ports.
+
 # How to simulate Clash of Clans as exactly as possible: methods and experiments (2026-10-25)
 
 Question: what would a "perfect" Clash of Clans simulator take, which ways of

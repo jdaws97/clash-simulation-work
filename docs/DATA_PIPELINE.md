@@ -1,3 +1,7 @@
+> Predecessor Python filenames and parity procedures in this document are
+> historical provenance from `f04706c`. Deleted tools are not runnable; see
+> [the current documentation](README.md) for native commands and remaining Python ports.
+
 # Native catalog source pipeline
 
 `clash dataimport catalog` constructs the runtime catalog from source inputs.

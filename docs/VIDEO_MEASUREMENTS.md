@@ -6,7 +6,7 @@ Measured from public YouTube attack footage (60 fps, frame by frame; the speed f
 
 | item | engine value | measured (median, spread, n) | confidence | sources (video id @ time) |
 |---|---|---|---|---|
-| 9 Ice Golem death freeze, outer ring | uniform freeze | **The edge thaws ~1.0 s before the centre** (0.84-1.07 s, n=2 frame-checked + 1 automatic); edge/centre duration ratio ~0.90 (0.89-0.91); total ~9.3-9.7 s | low-medium | pHPMdLcXveY @ 1216.2, @ 199.3, @ 862.1 (auto); still: `docs/video-evidence/icegolem-freeze-pHPMdLcXveY-207.jpg` |
+| 9 Ice Golem death freeze, outer ring | uniform freeze | **The edge thaws ~1.0 s before the centre** (0.84-1.07 s, n=2 frame-checked + 1 automatic); edge/centre duration ratio ~0.90 (0.89-0.91); total ~9.3-9.7 s | low-medium | pHPMdLcXveY @ 1216.2, @ 199.3, @ 862.1 (auto); still: `local/evidence/video/icegolem-freeze-pHPMdLcXveY-207.jpg` |
 | 8 Freeze Spell, outer ring | uniform freeze | not measured (no clean single-spell sample). The game data already has it: `spells.csv` FreezeOuterTimeMS = 0.9 x FreezeTimeMS (L7: 5.5 s inner, 4.95 s outer) | game data, not video | - |
 | 1 Bomb trigger -> blast | 1.5 s | not measured | - | - |
 | 2 Giant Bomb trigger -> blast | 1.59 s | not measured (candidates hidden under spell effects or too small) | - | iK1yGLjF2Us @ ~820, aRUj8A45u4A @ 556 (unusable) |
@@ -32,7 +32,7 @@ Measured from public YouTube attack footage at 60 fps (two clips at 30 fps), fra
 | 11 Slot switch | 0.6 s | not measured (set by the player's hand, varies widely) | - | - |
 | 10 Melee arrival -> first hit | first hit on arrival | ~0.33 s (Super Yeti onto a cannon: crown stops advancing -> building HP bar appears), +-0.1 s, n=1 | low | AAawYGfV-AE @ 352.03 |
 | 10 Ranged entering range -> first hit | first hit on arrival | not measured (10 overlapping E-Drags, cannot pair bolts with dragons) | - | XtLqXV-ab6U @ ~190 |
-| 12 Battle Blimp at the TH | breaks over TH centre, no death blast | **Stops ~1-2 tiles outside the TH edge, not over the centre; area blast ~0.35 s after it stops** (~12 walls/buildings incl. the TH get HP bars in the same frame); CC troops out ~1.15 s after the blast. n=1 clean, 1 weak, 1 inconclusive | medium | XtLqXV-ab6U @ 174.45-175.95 (still: `docs/video-evidence/12-XtLqXV-ab6U-174.jpg`), w4RTiOi6C_w @ ~330.5 (weak), kCIDOAubL28 @ ~455 (inconclusive) |
+| 12 Battle Blimp at the TH | breaks over TH centre, no death blast | **Stops ~1-2 tiles outside the TH edge, not over the centre; area blast ~0.35 s after it stops** (~12 walls/buildings incl. the TH get HP bars in the same frame); CC troops out ~1.15 s after the blast. n=1 clean, 1 weak, 1 inconclusive | medium | XtLqXV-ab6U @ 174.45-175.95 (still: `local/evidence/video/12-XtLqXV-ab6U-174.jpg`), w4RTiOi6C_w @ ~330.5 (weak), kCIDOAubL28 @ ~455 (inconclusive) |
 | 14 Earthquake Boots activation -> first shock, interval | instant | not measured: in all 3 samples the boots fire inside a pile of yetis/spells with the camera moving | - | dMcpXZ_wc8Q @ 830.63, AAawYGfV-AE @ 379.37, yI1ZdPZswNM @ 358.0 |
 | 15 Druid heal chain size | 4 | not measured (heal links unreadable at YouTube resolution) | - | dMcpXZ_wc8Q @ ~131, AAawYGfV-AE @ ~362 |
 | 16 Wall Breaker next to a building | no damage | not measured (breakers not visible in zoomed-out footage) | - | dMcpXZ_wc8Q @ 974, JEM-kTBTmz4 @ ~507 |

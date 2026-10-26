@@ -1,7 +1,0 @@
-{
-  "id": "declared-wall-solver-resolution-study",
-  "source": "explicit-software-sensitivity-study-not-game-tick-rate-or-player-data",
-  "maximum_step_seconds": [0.1, 0.05, 0.025],
-  "acceptance_tolerance": null,
-  "note": "Report the spread; no game-fidelity or sufficient-resolution claim is made without a calibrated tolerance."
-}

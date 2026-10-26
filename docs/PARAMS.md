@@ -151,7 +151,7 @@ cargo run --manifest-path Cargo.toml -p clash-engine --example mechanics_proof -
 | `ground_radius` | 0.35 | assumed | tiles | Ground separation base radius |
 | `ground_radius_per_housing` | 0.015 | assumed | tiles/housing | Ground separation housing contribution |
 | `separation_housing_cap` | 30 | assumed | housing | Cap on ground radius housing contribution |
-| `air_radius` | 0.35 | measured | tiles | Dragon spacing estimate; output/dragon-spacing/measure.md |
+| `air_radius` | 0.35 | measured | tiles | Dragon spacing estimate; local/evidence/dragon-spacing/measure.md |
 | `separation_push` | 0.25 | assumed | overlap/tick | Each member receives this fraction of overlap |
 | `separation_angle` | 2.399 | assumed | radians/id | Deterministic direction for coincident units |
 | `stuck_timeout` | 2 | assumed | seconds | Legacy no-waypoint timeout |

@@ -4,7 +4,7 @@ Rule from the user (2026-10-18): every attack the simulator plays must come from
 
 ## Input
 
-`output/sources/transcripts/<VIDEO_ID>.json` holds the title, channel, description and `lines`, a list of `[seconds, text]` caption lines. Most captions are auto-generated, so names get garbled ("valkyy's", "route riders"). Correct a name only when the intended name is certain.
+`local/sources/transcripts/<VIDEO_ID>.json` holds the title, channel, description and `lines`, a list of `[seconds, text]` caption lines. Most captions are auto-generated, so names get garbled ("valkyy's", "route riders"). Correct a name only when the intended name is certain.
 
 ## Output
 

@@ -1,3 +1,12 @@
+G4 status (2026-10-25): replaced/unused Python and stale procedures are
+removed, required unported Python remains, and valuable output moved to ignored
+`local/`. Sections 3–4 below are the original planning inventory, not the current
+file list. See [CLEANUP_G4.md](CLEANUP_G4.md) for decisions and pending Rust paths.
+
+> Predecessor Python filenames and parity procedures in this document are
+> historical provenance from `f04706c`. Deleted tools are not runnable; see
+> [the current documentation](README.md) for native commands and remaining Python ports.
+
 G1/G2 status (2026-10-25): the root workspace now contains the ten requested
 crates and one `clash` CLI, with thin compatibility binaries. Source and shared
 fixtures have moved; `data/` and `rust/data/` remain in place. The strict offline
@@ -231,7 +240,7 @@ Generated does **not** automatically mean untracked: the runtime catalog, normal
 
 Place shared goldens in `fixtures/golden/`, because they span engine execution and plan compilation. Keep test implementations in their owning crates.
 
-The existing golden design already makes battle cases self-contained. Preserve that property and every byte of the three golden files. [Current golden contract](docs/GOLDEN.md)
+The existing golden design already makes battle cases self-contained. Preserve that property and every byte of the three golden files. [Current golden contract](GOLDEN.md)
 
 ---
 
@@ -299,7 +308,7 @@ All fidelity files are accounted for:
 
 The decoder split prevents the data-import tool from acquiring a scoring dependency merely because the existing decoder also constructs simulation builds.
 
-The base-search worktree currently contains **M2 proposals**, not the complete evaluator/QD coordinator. Its own report says M3 evaluation and M4 search remain outstanding. [M2 implementation report](/mnt/c/Users/jarod/Documents/clash-lab-bs/docs/BASE_SEARCH_M2.md)
+The base-search worktree currently contains **M2 proposals**, not the complete evaluator/QD coordinator. Its own report says M3 evaluation and M4 search remain outstanding. [M2 implementation report](history/BASE_SEARCH_M2.md)
 
 Every current base-search file moves to `clash-basesearch`:
 
@@ -440,7 +449,7 @@ All paths below are under `tools/baselab/`.
 | `rust_spike.py` | UNUSED production path; superseded port spike | Delete. Retain useful independent fixture assertions in Rust first. S. |
 | `engine_coverage.py` | USED patch/coverage workflow | Native coverage/check manifest. Python line coverage is retired; preserve mechanic/entity exercise reporting separately. M. |
 
-`rust_export.py` is not just a JSON copier. It resolves registry overrides, specs and summons, CSV tables, equipment abilities, spell radii, pet ranges/speeds, weapon profiles, donation requirements, setup tables and environment defaults. Deleting it before those constructors are ported leaves the runtime catalog unmaintainable. [Catalog construction](tools/baselab/rust_export.py:70)
+`rust_export.py` is not just a JSON copier. It resolves registry overrides, specs and summons, CSV tables, equipment abilities, spell radii, pet ranges/speeds, weapon profiles, donation requirements, setup tables and environment defaults. Deleting it before those constructors are ported leaves the runtime catalog unmaintainable. Catalog construction (historical `tools/baselab/rust_export.py` at `f04706c`)
 
 **Army, policy, search, comparison and report tools**
 
@@ -546,7 +555,7 @@ Remove `data/extracted-stat-selection.json` if its only remaining consumer is th
 
 **Python execution hidden in Rust**
 
-`compile_cli.rs` can invoke Python with an embedded exporter or an optional `tools/baselab/plan_reference.py`. That standalone file is currently absent. The default native `compile-check` path already uses plan goldens; explicit Python comparison retains the dependency. [Reference adapter](rust/src/compile_cli.rs:350)
+`compile_cli.rs` can invoke Python with an embedded exporter or an optional `tools/baselab/plan_reference.py`. That standalone file is currently absent. The default native `compile-check` path already uses plan goldens; explicit Python comparison retains the dependency. [Reference adapter](../crates/clash-cli/src/compile_cli.rs)
 
 Final disposition:
 
@@ -708,7 +717,7 @@ The base-search report records a blocked verification state from its own earlier
 
 **G1 — establish the native gate before moving modules**
 
-Replace the current verification script’s output-grep-based build/test checks. A failing Cargo command must fail directly; its output does not need to contain a particular word. [Current script](rust/verify.sh)
+Replace the current verification script’s output-grep-based build/test checks. A failing Cargo command must fail directly; its output does not need to contain a particular word. [Current script](../rust/verify.sh)
 
 The workspace gate should run:
 
