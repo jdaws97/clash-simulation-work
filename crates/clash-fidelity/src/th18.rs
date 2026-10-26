@@ -141,7 +141,11 @@ pub fn command(
     let real = read(&real_path)?;
     let army = "custom:user-rr-oct25";
     let build = compiler.library.build_by_id(army)?;
-    let strength = replay::strengths(&args.root, &args.calibration())?.get(army);
+    let strength = if args.flag("--raw") || args.value("--strength", "calibrated") == "raw" {
+        1.0
+    } else {
+        replay::strengths(&args.root, &args.calibration())?.get(army)
+    };
     let replicates = args.integer("--replicates", if args.flag("--quick") { 1 } else { 5 })?;
     let angles = args.integer("--angles", 8)?;
     let threads = args.integer("--threads", 4)?;
