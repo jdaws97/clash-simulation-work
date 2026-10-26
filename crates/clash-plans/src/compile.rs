@@ -2856,7 +2856,7 @@ impl Compiler<'_> {
 
     /// Search admission rules use the actual account, never replay exceptions.
     /// plans.py:674-839 supplies roster/boost/level rules; production unlocks
-    /// additionally use registry.attrs.raw and data/source/your-levels.json.
+    /// additionally use registry.attrs.raw and the account levels (clash_data::private).
     pub fn account_legal(&self, build: &Json, plan: &Json) -> Vec<String> {
         let mut out = self.legal(plan);
         if let Ok(housing) = self.housing(plan) {
@@ -2893,7 +2893,8 @@ impl Compiler<'_> {
                 }
             }
         }
-        if plan.at("town_hall").i64() != number(self.library.user.at("levels"), "gm", 16.0) as i64 {
+        // The account Town Hall is levels.th (16 when absent); "gm" is the Gold Mine.
+        if plan.at("town_hall").i64() != number(self.library.user.at("levels"), "th", 16.0) as i64 {
             out.push("Army Town Hall differs from account Town Hall".to_owned());
         }
         let levels = self.library.user.at("levels");

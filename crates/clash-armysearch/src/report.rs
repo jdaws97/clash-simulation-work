@@ -104,9 +104,10 @@ fn input_files(root: &Path, catalog: &Path) -> Result<Vec<PathBuf>, String> {
         catalog.to_owned(),
         std::env::current_exe().map_err(|error| error.to_string())?,
     ];
-    // armies.rs overlays the latest ClashKing inventory onto your-levels.json.
-    let live = root.join("data/source/live/player-latest.json");
-    if live.is_file() {
+    // armies.rs overlays the latest private ClashKing inventory onto the account.
+    if let Some(live) =
+        clash_data::private::live(root, "player-latest.json").filter(|path| path.is_file())
+    {
         paths.push(live);
     }
     // meta_armies.py:61-104 and playbook.py:1957-2100 read both library
@@ -115,6 +116,7 @@ fn input_files(root: &Path, catalog: &Path) -> Result<Vec<PathBuf>, String> {
     for (directory, recursive) in [
         (root.join("crates"), true),
         (root.join("data/source"), false),
+        (root.join("data/source/accounts"), false),
         (root.join("data/source/playbooks"), true),
         (root.join("data/generated"), true),
     ] {
@@ -145,7 +147,7 @@ pub(super) fn fingerprint_proof(
     let mut required = vec![
         catalog.to_owned(),
         root.join("data/source").join(crate::armies::META_FILE),
-        root.join("data/source/your-levels.json"),
+        clash_data::private::account(root),
         root.join("data/generated/clan_castle.json"),
     ];
     for name in [

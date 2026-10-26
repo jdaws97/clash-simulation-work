@@ -23,3 +23,9 @@ data/source/wiki/
 data/source/*-pre-*.json
 .claude/worktrees/
 /target/
+
+# Player-private inputs (account levels, battle log, memory-read layouts) belong
+# in private/ (see crates/clash-data/src/private.rs); never track them here.
+data/source/live/
+data/source/your-levels*.json
+/target-ws/

@@ -221,13 +221,17 @@ pub fn fingerprint(root: &Path, extra: &[&Path]) -> Result<Json, String> {
         "data/source/baselab-calibration.json",
         "data/source/attacker-policy.json",
         "data/source/playbook-gaps.json",
-        "data/source/your-levels.json",
-        "data/source/live/player-latest.json",
     ] {
         let path = root.join(path);
         if path.is_file() {
             paths.push(path);
         }
+    }
+    paths.push(clash_data::private::account(root));
+    if let Some(live) =
+        clash_data::private::live(root, "player-latest.json").filter(|path| path.is_file())
+    {
+        paths.push(live);
     }
     for path in extra {
         paths.push(path.to_path_buf());

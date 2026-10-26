@@ -11,6 +11,7 @@ pub mod json;
 pub mod labels;
 pub mod node;
 pub mod plan_wire;
+pub mod private;
 pub mod snapshots;
 pub mod stats;
 pub mod wire;

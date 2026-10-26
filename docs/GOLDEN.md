@@ -1053,3 +1053,20 @@ literal 0.37 variant/override probe. No fixture angle was rounded for execution.
 | new; playbook; yeti:recipe:Protect the charging Dragon Duke with Invisibility | 0.370000/1 | C5 (new recipe fixture) |
 | new; playbook; yeti:recipe:Siege Barracks counter-funnel with a later Queen ability | 0.370000/1 | C5 (new recipe fixture) |
 | new; playbook; yeti:recipe:Wait for the last friendly Ice Golem before Torch and Rage | 0.370000/1 | C5 (new recipe fixture) |
+
+## P1: plan goldens pinned to the public account (2026-10-25)
+
+Player data moved out of Git into `private/` (see `crates/clash-data/src/private.rs`).
+`golden plans record|check` now replaces the compiler's account with the synthetic
+`data/source/accounts/public-th16.json` (every non-seasonal item at its TH16 cap,
+from `clash dataimport account caps --th 16`), so the check gives the same answer
+with or without local private data. 416 of 1,354 plan cases were re-recorded; every
+difference is an account level (troop, spell, hero, equipment or pet level, and the
+stocks and plan numbers derived from them). Battle goldens (`cases.jsonl`,
+`expected.jsonl`) embed their plans and did not change.
+
+The account Town Hall in `Compiler::account_legal` and armysearch's
+`AccountRules::load` now comes from `levels.th` (default 16; the live player
+snapshot's `townHallLevel` sets it). The port had read `levels.gm`, the Gold Mine
+level, which matched only by coincidence for the old account. The armysearch
+fingerprint now also covers `data/source/accounts/`.

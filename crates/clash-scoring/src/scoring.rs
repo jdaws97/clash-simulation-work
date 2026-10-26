@@ -714,7 +714,10 @@ impl ScoringData {
         }
         sources.push(("playbooks".to_owned(), Json::Arr(playbooks)));
         let mut out = Self::from_json(&Json::Obj(sources));
-        let battles = directory.join("live/battles.jsonl");
+        // The private battle log is optional; public checkouts have no observations.
+        let Some(battles) = clash_data::private::live(root, "battles.jsonl") else {
+            return Ok(out);
+        };
         match std::fs::read_to_string(&battles) {
             Ok(lines) => {
                 let raw = read(&directory.join("clashking-static-data.json"))?;

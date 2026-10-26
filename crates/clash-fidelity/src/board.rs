@@ -23,7 +23,7 @@ fn training_baseline(
         history::observations(
             &args.root,
             &path,
-            &args.path("--history", "data/source/live/base-history.json"),
+            &args.live_path("--history", "base-history.json")?,
             true,
             None,
         )?
@@ -252,8 +252,8 @@ pub fn cv(
                 &options,
                 &prior,
                 None,
-                &args.path("--log", "data/source/live/battles.jsonl"),
-                &args.path("--history", "data/source/live/base-history.json"),
+                &args.live_path("--log", "battles.jsonl")?,
+                &args.live_path("--history", "base-history.json")?,
                 &path,
                 &report_path,
             )?;
@@ -620,8 +620,8 @@ pub fn score_jobs(args: &Arguments) -> Result<Json, String> {
     }
     let (observations, skipped) = history::observations(
         &args.root,
-        &args.path("--log", "data/source/live/battles.jsonl"),
-        &args.path("--history", "data/source/live/base-history.json"),
+        &args.live_path("--log", "battles.jsonl")?,
+        &args.live_path("--history", "base-history.json")?,
         false,
         None,
     )?;
@@ -729,7 +729,7 @@ pub fn score_jobs(args: &Arguments) -> Result<Json, String> {
         history::observations(
             &args.root,
             &path,
-            &args.path("--history", "data/source/live/base-history.json"),
+            &args.live_path("--history", "base-history.json")?,
             true,
             None,
         )?

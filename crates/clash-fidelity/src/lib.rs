@@ -155,6 +155,16 @@ impl Arguments {
     pub fn optional_path(&self, key: &str) -> Option<PathBuf> {
         self.values.get(key).map(|value| resolve(&self.root, value))
     }
+    /// `key` if given, else `name` under the private live directory.
+    pub fn live_path(&self, key: &str, name: &str) -> Result<PathBuf, String> {
+        self.optional_path(key).map_or_else(
+            || {
+                clash_data::private::live(&self.root, name)
+                    .ok_or_else(|| format!("{key} is required when CLASH_PRIVATE=none"))
+            },
+            Ok,
+        )
+    }
     pub fn calibration(&self) -> PathBuf {
         self.optional_path("--calibration")
             .or_else(|| {
@@ -238,11 +248,11 @@ pub fn read_observations(
                 .first()
                 .map(|path| resolve(&args.root, path))
         })
-        .unwrap_or_else(|| args.root.join("data/source/live/battles.jsonl"));
+        .map_or_else(|| args.live_path("--log", "battles.jsonl"), Ok)?;
     let (mut rows, skipped) = history::observations(
         &args.root,
         &log,
-        &args.path("--history", "data/source/live/base-history.json"),
+        &args.live_path("--history", "base-history.json")?,
         historical,
         args.values.get("--base").map(String::as_str),
     )?;
@@ -337,8 +347,8 @@ pub fn run(arguments: Vec<String>) -> Result<(), String> {
                 ))
             });
             let prior = args.calibration();
-            let log = args.path("--log", "data/source/live/battles.jsonl");
-            let history = args.path("--history", "data/source/live/base-history.json");
+            let log = args.live_path("--log", "battles.jsonl")?;
+            let history = args.live_path("--history", "base-history.json")?;
             distinct_paths(&[&out, &report, &prior, &log, &history])?;
             let result = fit::calibrate(
                 &args.root,

@@ -35,7 +35,10 @@ pub fn command(args: &[PathBuf], stats: &Stats) -> Result<(), String> {
     }
     let root = crate::compile_cli::repo_root(root.as_deref())?;
     let path = path.unwrap_or_else(|| root.join("fixtures/golden/plans.jsonl"));
-    let compiler = Compiler::load(&root, stats)?;
+    let mut compiler = Compiler::load(&root, stats)?;
+    // Goldens pin the committed synthetic account, independent of private data.
+    compiler.library.user =
+        clash_data::wire::read(&root.join(clash_data::private::PUBLIC_ACCOUNT))?;
     if mode == "check" {
         return check(&path, &compiler, None);
     }

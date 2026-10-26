@@ -51,8 +51,8 @@ search configuration and video at the indicated paths. Output belongs in `local/
 clash simulate run local/battle.json
 clash compile custom:user-fireball-warden 0 123 local/plan.json --root "$PWD"
 clash score local/score-bundle.json --root "$PWD" --threads 4
-clash fidelity replay data/source/live/battles.jsonl --root "$PWD" --out local/replay.json
-clash armysearch run --root "$PWD" --account fixtures/accounts/sample-th16.json --out local/armysearch
+clash fidelity replay private/live/battles.jsonl --root "$PWD" --out local/replay.json
+clash armysearch run --root "$PWD" --account data/source/accounts/public-th16.json --out local/armysearch
 clash basesearch smoke --out local/basesearch --threads 4
 clash video probe /path/to/replay.mp4
 clash dataimport catalog --root "$PWD" --wiki-root data/source/wiki \
@@ -73,12 +73,15 @@ local transcripts. Missing sources are errors, not invented evidence.
 data/
   source/       Pinned external/model inputs: ClashKing snapshots, gamecsv,
                 balance overrides, mechanics evidence, armies, playbooks,
-                calibration priors, layouts/reference bases and legacy logs/accounts.
+                calibration priors, layouts/reference bases and the synthetic
+                public account (accounts/public-th16.json).
   generated/    catalog.json, registry.json, base_rules.json, clan_castle.json,
                 manifest.json and synthetic target17.json/target18.json.
   licenses/     Attribution/license files for the source snapshots.
 fixtures/       Declared regression inputs, including the frozen goldens.
 local/          Gitignored derived data, reports, transcripts and fit ancestry.
+private/        Gitignored player data: your-levels.json (account levels) and
+                live/ (battles.jsonl, player-latest.json, base-history.json).
 ```
 
 `data/source/catalog.json` is the distinct upstream catalog used by video identity
@@ -98,8 +101,14 @@ Existing provenance strings, source hashes, fit ancestry and historical manifest
 keys retain their original identities across relocation. New fits and search
 checkpoints receive new input fingerprints; old fits must not be relabeled.
 The [restructure log](docs/RESTRUCTURE_LOG.md) maps every moved file.
-Keep new personal inputs and replay observations in ignored `local/` or explicit
-`private/` paths. Never add credentials, raw captures or downloaded media to Git.
+Player data stays out of Git. Tools read `private/your-levels.json` and
+`private/live/` when they exist and otherwise fall back to the synthetic
+`data/source/accounts/public-th16.json` (regenerate it with
+`clash dataimport account caps --th 16 --out ...`). `CLASH_PRIVATE=none` forces
+public mode, and `CLASH_PRIVATE=DIR` selects another private directory. The
+verification gate and plan goldens always use public mode. Point the battle-log
+collector at `--out private/live`. Never add credentials, raw captures or
+downloaded media to Git.
 
 ## Verification
 

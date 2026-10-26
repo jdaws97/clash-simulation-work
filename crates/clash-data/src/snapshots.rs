@@ -166,7 +166,7 @@ pub fn setup(
             "legacy_historical_levels".to_owned(),
         ));
     }
-    let own = read(&root.join("data/source/your-levels.json"))?;
+    let own = read(&crate::private::account(root))?;
     for key in [
         "levels",
         "hero_levels",

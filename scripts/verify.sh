@@ -11,6 +11,8 @@ export PATH="$HOME/.cargo/bin:$PATH"
 export CARGO_TARGET_DIR="${1:-${CARGO_TARGET_DIR:-/tmp/clash-target-ws}}"
 mkdir -p "$CARGO_TARGET_DIR"
 export CARGO_TARGET_DIR="$(cd "$CARGO_TARGET_DIR" && pwd)"
+# Gate on public data only, exactly as a clean checkout or CI sees it.
+export CLASH_PRIVATE=none
 export CLASH_CATALOG="$ROOT/data/generated/catalog.json"
 TEMP="$(mktemp -d "${TMPDIR:-/tmp}/clash-verify.XXXXXXXX")"
 trap 'rm -rf "$TEMP"' EXIT
@@ -32,7 +34,7 @@ FIXTURES="$ROOT/fixtures"
 "$BIN" golden check "$FIXTURES/golden/cases.jsonl" "$FIXTURES/golden/expected.jsonl" --threads 4
 "$BIN" golden plans check "$FIXTURES/golden/plans.jsonl" --root "$ROOT"
 "$BIN" guardian-check
-"$BIN" armysearch-proof --root "$ROOT" --catalog "$CLASH_CATALOG" --account "$ROOT/data/source/your-levels.json" --fuzz 4096 --out "$TEMP/armysearch"
+"$BIN" armysearch-proof --root "$ROOT" --catalog "$CLASH_CATALOG" --account "$ROOT/data/source/accounts/public-th16.json" --fuzz 4096 --out "$TEMP/armysearch"
 "$BIN" layout proof "$ROOT" "$TEMP/layout.json"
 "$BIN" basesearch-proof "$ROOT" "$TEMP/basesearch.json"
 cargo test --manifest-path "$MANIFEST" -p clash-vidmine --release --locked --offline

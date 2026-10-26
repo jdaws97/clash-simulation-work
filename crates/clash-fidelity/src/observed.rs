@@ -22,7 +22,7 @@ const KEY_KINDS: [&str; 7] = ["ad", "inferno", "eagle", "scatter", "th", "mono",
 
 pub fn layout(args: &Arguments, path: &Path) -> Result<Json, String> {
     let mut layout = read(path)?;
-    let own = read(&args.root.join("data/source/your-levels.json"))?;
+    let own = read(&clash_data::private::account(&args.root))?;
     for key in ["levels", "wall_level", "hero_levels"] {
         if let Some(value) = own.get(key) {
             put(&mut layout, key, value.clone());

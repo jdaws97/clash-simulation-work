@@ -62,7 +62,8 @@ fn raw_requirement(record: &Json, key: &str) -> f64 {
 impl AccountRules {
     pub fn load(catalog: &Catalog, compiler: &Compiler<'_>) -> Result<Self, String> {
         let user = &compiler.library.user;
-        let town_hall = numeric(user.at("levels"), "gm", 0.0);
+        // Same key and default as Compiler::account_legal; "gm" is the Gold Mine.
+        let town_hall = numeric(user.at("levels"), "th", 16.0);
         if !(16.0..=18.0).contains(&town_hall) || town_hall.fract() != 0.0 {
             return Err("armysearch requires a TH16, TH17, or TH18 account".to_owned());
         }

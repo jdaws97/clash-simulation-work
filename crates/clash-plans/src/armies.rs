@@ -122,7 +122,7 @@ impl ArmyLibrary {
         Ok(Self {
             root: root.to_owned(),
             builds,
-            user: user_levels(&directory, stats)?,
+            user: user_levels(root, stats)?,
             policy: if policy_path.exists() {
                 read_json(&policy_path)?
             } else {
@@ -151,13 +151,21 @@ impl ArmyLibrary {
     }
 }
 
-fn user_levels(directory: &Path, stats: &Stats) -> Result<Json, String> {
-    let mut user = read_json(&directory.join("your-levels.json"))?;
-    let live = directory.join("live/player-latest.json");
-    if live.is_file() {
+fn user_levels(root: &Path, stats: &Stats) -> Result<Json, String> {
+    // Account levels are private (clash_data::private); clean checkouts use the
+    // committed synthetic account.
+    let mut user = read_json(&clash_data::private::account(root))?;
+    if let Some(live) =
+        clash_data::private::live(root, "player-latest.json").filter(|path| path.is_file())
+    {
         // ClashKing player inventory (snapshot_log.py), as meta_armies.user_levels.
         // Preserve measured buildings and skip unboosted Super Troop placeholders.
         let player = read_json(&live)?;
+        if let Some(town_hall) = player.get("townHallLevel").filter(|value| truth(value)) {
+            let mut levels = user.get("levels").cloned().unwrap_or_else(object);
+            put(&mut levels, "th", town_hall.clone());
+            put(&mut user, "levels", levels);
+        }
         for section in ["heroes", "heroEquipment", "troops", "spells"] {
             for item in list(&player, section) {
                 let name = item.at("name").str();
@@ -182,7 +190,7 @@ fn user_levels(directory: &Path, stats: &Stats) -> Result<Json, String> {
         put(
             &mut user,
             "live_source",
-            string("data/source/live/player-latest.json"),
+            string(&clash_data::private::display(root, &live)),
         );
     }
     Ok(user)
