@@ -72,6 +72,17 @@ rosters are filled in from the source screenshots. The TH18 r8 numbers here
 use the public TH16-cap account and are higher than the user-account run
 (1.44 / 1.60 / 1.88 / 1.44); compare only within a column.
 
+**r10 (refit after the roster correction, c4827ea).** Filling the five empty
+rosters with the modal ranked roster moves the fitted strengths back toward
+r8 (Dragons 0.78, Root Rider 1.05 / 1.15, Thrower 1.00 / 1.26), which supports
+the pool explanation for r9. On the same CV r10 is still worse than r8: sim 3★
+51.6%, Brier 0.283, MAE 9.02, joint log 2.50, RPS 0.152; TH18 visible means
+1.76 / 1.48 / 2.28 / 1.52. This comparison is biased toward r8: r8 was fitted on
+a pool that contained the user's own layout, the layout behind all 22 CV
+defenses, while r9/r10 never saw it. A fair verdict needs new held-out
+observations (defenses of a new layout, or friendly-challenge results). r8
+stays the default; r10 is pinned as a public prior for those future checks.
+
 ## 2026-10-26 — attacker gap investigation (d986b4f)
 
 **Data.** 22 held-out real defenses of the user's base (private battle log,
