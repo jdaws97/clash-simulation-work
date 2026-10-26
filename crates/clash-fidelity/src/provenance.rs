@@ -8,6 +8,11 @@ use clash_data::json::Json;
 use super::io::*;
 
 pub const R8_SHA256: &str = "821a486f0e481d58070b61099d0e102a410c3d4b02471efe5c6d71ebb0d565b8";
+pub const R9_SHA256: &str = "09ac236514e52142ef62fc4035fa58eb8c395a05874cc2920d8de2b85b78fd39";
+
+fn public_digest(digest: &str) -> bool {
+    digest.len() == 64 && matches!(digest, R8_SHA256 | R9_SHA256)
+}
 
 pub fn ancestry_ids(ancestry: &Json) -> Option<BTreeSet<String>> {
     let Json::Arr(priors) = ancestry else {
@@ -25,7 +30,7 @@ pub fn ancestry_ids(ancestry: &Json) -> Option<BTreeSet<String>> {
         let public = text(prior, "fit_status", "") == "not defense-fitted"
             && identities.is_empty()
             && matches!(prior.get("ancestry"), Some(Json::Arr(values)) if values.is_empty())
-            && text(prior, "sha256", "") == R8_SHA256;
+            && public_digest(text(prior, "sha256", ""));
         let digest = text(prior, "sha256", "");
         if !public
             && (digest.len() != 64
@@ -64,12 +69,9 @@ pub fn binding(root: &Path, calibration: &Path, report: Option<&Path>) -> Result
         .iter()
         .any(|(key, value)| key.starts_with("defense-th") || value.get("defense_group").is_some());
     if !defense_fitted {
-        let known = calibration.canonicalize().ok()
-            == root
-                .join("data/source/meta-calibration-r8.json")
-                .canonicalize()
-                .ok()
-            && hash == R8_SHA256;
+        // Byte identity, not a filename or a self-declared fit_status, admits
+        // these public priors. A caller may select an identical archived copy.
+        let known = public_digest(&hash);
         if known {
             put(&mut info, "fit_status", string("not defense-fitted"));
             put(&mut info, "ancestry", arr([]));
@@ -254,6 +256,47 @@ pub fn fingerprint(root: &Path, extra: &[&Path]) -> Result<Json, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn public_status_requires_pinned_bytes_even_in_recursive_ancestry() {
+        let prior = obj([
+            ("calibration", string("public-prior.json")),
+            ("sha256", string(R8_SHA256)),
+            ("fit_status", string("not defense-fitted")),
+            ("battle_ids", arr([])),
+            ("ancestry", arr([])),
+        ]);
+        assert_eq!(ancestry_ids(&arr([prior.clone()])), Some(BTreeSet::new()));
+        let mut forged = prior.clone();
+        put(&mut forged, "sha256", string("a".repeat(64)));
+        assert!(ancestry_ids(&arr([forged])).is_none());
+        let mut contaminated = prior;
+        put(&mut contaminated, "battle_ids", arr([string("held-out")]));
+        assert!(ancestry_ids(&arr([contaminated])).is_none());
+    }
+
+    #[test]
+    fn both_public_priors_bind_archived_copies_and_reject_changed_bytes() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let directory = std::env::temp_dir().join(format!("meta-priors-{}", std::process::id()));
+        std::fs::create_dir_all(&directory).unwrap();
+        for (name, digest) in [("r8", R8_SHA256), ("r9", R9_SHA256)] {
+            let source = root.join(format!("data/source/meta-calibration-{name}.json"));
+            assert_eq!(file_hash(&source).unwrap(), digest);
+            let copy = directory.join(format!("{name}.json"));
+            std::fs::copy(&source, &copy).unwrap();
+            let selected = binding(&root, &copy, None).unwrap();
+            assert_eq!(selected.ids, Some(BTreeSet::new()));
+            assert_eq!(text(&selected.info, "fit_status", ""), "not defense-fitted");
+            let snapshot = prior_snapshot(&root, &copy, None).unwrap();
+            assert_eq!(ancestry_ids(&arr([snapshot])), Some(BTreeSet::new()));
+            let mut bytes = std::fs::read(&copy).unwrap();
+            bytes.push(b' ');
+            std::fs::write(&copy, bytes).unwrap();
+            assert!(binding(&root, &copy, None).unwrap().ids.is_none());
+        }
+        std::fs::remove_dir_all(directory).unwrap();
+    }
 
     #[test]
     fn ancestry_requires_recursive_binding() {
