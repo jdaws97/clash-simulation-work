@@ -8,6 +8,7 @@ mod io;
 mod metrics;
 mod observed;
 mod provenance;
+mod tempo;
 mod th18;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -24,7 +25,7 @@ use io::*;
 
 const USAGE: &str = concat!(
     "fidelity decode CODE|LOG | replay [LOG] | check-a | board | calibrate | cv | ",
-    "observed REPLAY | th18 | proof | export-jobs | score-jobs PREPARED OUTCOMES ",
+    "observed REPLAY | tempo --video FILE --out FILE | th18 | proof | export-jobs | score-jobs PREPARED OUTCOMES ",
     "[--root ROOT] [--out FILE] [--threads N] [--seeds N] [--angles N] ",
     "[--attacker generic|playbook] [--scout-policy visible|random|oracle] ",
     "[--legacy-oracle] [--calibration FILE] [--calibration-report FILE]",
@@ -56,6 +57,7 @@ impl Arguments {
             "--full-scout",
         ];
         let valued = [
+            "--video",
             "--root",
             "--out",
             "--threads",
@@ -376,6 +378,7 @@ pub fn run(arguments: Vec<String>) -> Result<(), String> {
         "cv" => board::cv(&args, &compiler, Arc::clone(&catalog))?,
         "observed" => observed::command(&args, &compiler, Arc::clone(&catalog))?,
         "th18" => th18::command(&args, &compiler, Arc::clone(&catalog))?,
+        "tempo" => tempo::command(&args, &compiler, Arc::clone(&catalog))?,
         "proof" => board::proof(&args, &compiler, Arc::clone(&catalog))?,
         _ => return Err(USAGE.to_owned()),
     };

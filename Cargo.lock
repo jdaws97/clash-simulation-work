@@ -69,6 +69,7 @@ dependencies = [
  "clash-engine",
  "clash-plans",
  "clash-scoring",
+ "clash-vidmine",
 ]
 
 [[package]]

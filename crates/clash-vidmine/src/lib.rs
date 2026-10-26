@@ -16,6 +16,8 @@ mod replay;
 mod review;
 mod spatial;
 mod spatial_review;
+mod tempo;
+pub mod tempo_metrics;
 mod timing;
 mod townhall;
 mod video;
@@ -95,6 +97,7 @@ pub fn run(mut args: Vec<String>) -> io::Result<()> {
     args.insert(0, "vidmine".to_owned());
     let input = || argument(&args, 2, "video or directory").map(Path::new);
     match args.get(1).map(String::as_str) {
+        Some("tempo") => tempo::command(&args[2..]),
         Some("spatial-prepare") => {
             let out = argument(&args, 4, "output directory after --out")?;
             if argument(&args, 3, "--out")? != "--out" {
@@ -486,6 +489,7 @@ pub fn run(mut args: Vec<String>) -> io::Result<()> {
             ));
             println!("vidmine probe VIDEO [--out DIR]\nvidmine extract VIDEO --out DIR\nvidmine positions VIDEO --out DIR\nvidmine resegment DIR\nvidmine icons DIR\nvidmine timing DIR\nvidmine verify DIR\nvidmine summary DIR\nvidmine audit VIDEO --out DIR\nvidmine score DIR\nvidmine icon-cluster DIR\nvidmine icon-learn DIR\nvidmine icon-audit DIR\nvidmine label-hud|label-icons|label-positions DIR\nvidmine score-positions DIR\nvidmine cleanup\nvidmine bootstrap VIDEO clock|damage|count|counts TIME...\nvidmine bootstrap-box VIDEO KIND X Y W H TIME...\nvidmine label-crop VIDEO NAME TIME X Y W H\nvidmine sample VIDEO TIME /tmp/vidmine-work/frame.ppm");
             println!(concat!(
+                "vidmine tempo --in DIR --out FILE\n",
                 "vidmine identity DIR\n",
                 "vidmine identity-video VIDEO --out DIR\n",
                 "vidmine identity-caps DIR\n",
