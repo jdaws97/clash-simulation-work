@@ -130,6 +130,7 @@ pub fn verified_time(lines: &Lines, quote: &str, stated: Option<f64>) -> Option<
 pub struct Transcripts {
     directory: PathBuf,
     cache: BTreeMap<String, Option<Lines>>,
+    replays: Option<PathBuf>,
 }
 
 impl Transcripts {
@@ -137,7 +138,13 @@ impl Transcripts {
         Self {
             directory: directory.to_owned(),
             cache: BTreeMap::new(),
+            replays: None,
         }
+    }
+
+    pub fn with_replays(mut self, directory: &Path) -> Self {
+        self.replays = Some(directory.to_owned());
+        self
     }
 
     pub fn get(&mut self, video: &str) -> Result<Option<&Lines>, String> {
@@ -155,6 +162,41 @@ impl Transcripts {
     }
 
     pub fn verify(&mut self, cite: &Json) -> Result<Option<f64>, String> {
+        if let Some(replay) = cite.get("replay") {
+            let Some(directory) = &self.replays else {
+                return Ok(None);
+            };
+            let Some(name) = replay.opt_str() else {
+                return Err("replay citation needs a name".to_owned());
+            };
+            io::safe_name(name)?;
+            // An observation cites an exact recorded event, never an invented
+            // transcript quotation or a population timing estimate.
+            let section = text(cite, "section", "");
+            if !matches!(section, "deployments" | "spells" | "hero_abilities") {
+                return Err("replay citation needs an action section".to_owned());
+            }
+            let Some(time) = io::optional_number(cite.get("t"))? else {
+                return Err("replay citation needs a time".to_owned());
+            };
+            if !time.is_finite() || time < 0.0 {
+                return Err("replay citation time must be finite and nonnegative".to_owned());
+            }
+            let Some(Json::Obj(event)) = cite.get("event") else {
+                return Err("replay citation needs event fields".to_owned());
+            };
+            if event.is_empty() || cite.get("video").is_some() || cite.get("quote").is_some() {
+                return Err("replay citations use event fields, not video quotes".to_owned());
+            }
+            let record = io::read(&directory.join(format!("{name}.json")))?;
+            return Ok(list(&record, section)
+                .iter()
+                .any(|row| {
+                    row.get("t") == Some(&Json::Num(time))
+                        && event.iter().all(|(key, value)| row.get(key) == Some(value))
+                })
+                .then_some(time));
+        }
         let video = text(cite, "video", "");
         if video.is_empty() {
             return Ok(None);
@@ -163,6 +205,14 @@ impl Transcripts {
         Ok(self
             .get(video)?
             .and_then(|lines| verified_time(lines, text(cite, "quote", ""), stated)))
+    }
+}
+
+pub fn source_id(citation: &Json) -> String {
+    if let Some(Json::Str(replay)) = citation.get("replay") {
+        format!("replay:{replay}")
+    } else {
+        text(citation, "video", "").to_owned()
     }
 }
 

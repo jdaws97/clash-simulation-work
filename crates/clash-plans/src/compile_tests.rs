@@ -13,8 +13,135 @@ fn frozen_synthetic_executor_inputs_compile_identically() {
                 .unwrap();
             put(&mut prepared, "snipe_mode", string("off"));
             put(&mut prepared, "snipe_exposed", Json::Bool(false));
+            // The frozen executor fixture predates selection reporting.
+            remove(&mut prepared, "recipe_selection");
             assert_eq!(&prepared, fixture.at("prepared"));
         }
+    });
+}
+
+#[test]
+fn automatic_recipes_require_inherited_equipment_and_report_repair() {
+    with_compiler(|compiler| {
+        let book = json(
+            r#"{"steps":[
+            {"id":"queen","action":"deploy","what":"Archer Queen","count":1,"when":{"t":0}},
+            {"id":"shot","action":"ability","what":"Archer Queen","equipment":"Giant Arrow","when":{"after":"queen","delay":0}},
+            {"id":"main","action":"deploy","what":"Dragon","count":"all","when":{"after":"shot","delay":0}}
+        ],"recipes":{"default":[],"main-first":["main-first"]},"variants":[
+            {"name":"main-first","replaces":["queen","shot","main"],"steps":[
+                {"id":"main","action":"deploy","what":"Dragon","count":"all","when":{"t":0}}
+            ]}
+        ]}"#,
+        );
+        let inventory = json(r#"{"Dragon":2}"#);
+        let heroes = json(r#"["Archer Queen"]"#);
+        let plan = json(r#"{"loadouts":{"Archer Queen":{"equipment":["Magic Mirror"]}}}"#);
+        let selection = compiler
+            .select_recipe(&book, &inventory, heroes.arr(), &object(), &plan, &object())
+            .unwrap();
+        assert_eq!(selection.report.at("mode"), &string("feasible"));
+        assert_eq!(selection.report.at("recipe"), &string("main-first"));
+        assert_eq!(selection.steps.len(), 1);
+        let mut unsupported = book.clone();
+        remove(&mut unsupported, "variants");
+        remove(&mut unsupported, "recipes");
+        let fallback = compiler
+            .select_recipe(
+                &unsupported,
+                &inventory,
+                heroes.arr(),
+                &object(),
+                &plan,
+                &object(),
+            )
+            .unwrap();
+        assert_eq!(fallback.report.at("mode"), &string("repaired_hybrid"));
+        assert!(fallback.report.at("candidates").arr()[0]
+            .at("reasons")
+            .arr()
+            .iter()
+            .any(|reason| reason.str().contains("defining equipment")));
+        let equipped = json(r#"{"loadouts":{"Archer Queen":{"equipment":["Giant Arrow"]}}}"#);
+        let default = compiler
+            .select_recipe(
+                &book,
+                &inventory,
+                heroes.arr(),
+                &object(),
+                &equipped,
+                &object(),
+            )
+            .unwrap();
+        assert_eq!(default.report.at("recipe"), &string("default"));
+    });
+}
+
+#[test]
+fn rapid_dragons_keep_main_siege_heroes_and_cleanup_roles() {
+    with_compiler(|compiler| {
+        let build = json(
+            r#"{"th":18,"archetype":"mass-dragons","build":1,
+            "troops":{"Dragon":6,"Wizard":2},"spells":{"Freeze Spell":2},
+            "cc":{"Log Launcher":1},"heroes":["Dragon Duke"],
+            "loadouts":{"Dragon Duke":["Electro Fangs","Fire Heart"]}}"#,
+        );
+        let mut compiler = compiler;
+        compiler.gaps = Some((4.5, 16.6));
+        let plan = compiler
+            .plan_for_build(&build, 0.0, 2, &Default::default())
+            .unwrap();
+        assert_eq!(
+            plan.at("recipe_selection").at("recipe"),
+            &string("Rapid main-first Dragons")
+        );
+        let steps = list(&plan, "steps");
+        let step = |id| {
+            steps
+                .iter()
+                .find(|step| text(step, "id", "") == id)
+                .unwrap()
+        };
+        assert_eq!(step("rapid_dragons").at("when"), &time(0.0));
+        assert!(flag(step("rapid_dragons"), "primary"));
+        assert_eq!(
+            step("rapid_launcher").at("when"),
+            &after("rapid_dragons", 0.0)
+        );
+        assert_eq!(
+            step("rapid_duke_ability").at("when"),
+            &after("rapid_duke", 0.0)
+        );
+        assert!(flag(step("rapid_wizard_cleanup"), "reserved"));
+        assert_eq!(
+            step("rapid_wizard_cleanup").at("when").at("state"),
+            &string("destroyed")
+        );
+        assert!(!steps
+            .iter()
+            .any(|step| text(step, "id", "") == "duke_ability"));
+        let inventory = json(r#"{"Dragon":6}"#);
+        let book = &compiler
+            .playbooks
+            .iter()
+            .find(|(name, _)| name == "dragon")
+            .unwrap()
+            .1;
+        let selection = compiler
+            .select_recipe(
+                book,
+                &inventory,
+                &[],
+                &object(),
+                &json(r#"{"loadouts":{}}"#),
+                &object(),
+            )
+            .unwrap();
+        assert_eq!(
+            selection.report.at("mode"),
+            &string("repaired_hybrid"),
+            "the recorded Launcher is a defining unit"
+        );
     });
 }
 

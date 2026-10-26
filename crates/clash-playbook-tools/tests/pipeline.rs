@@ -53,6 +53,35 @@ fn save_transcript(directory: &Temporary, video: &str) {
 }
 
 #[test]
+fn replay_citations_bind_exact_observed_events_and_family_sources() {
+    let directory = Temporary::new();
+    directory.write("synthetic.json", r#"{"deployments":[{"unit":"Dragon","t":0.1}],"hero_abilities":[{"hero":"Dragon Duke","t":9.3}]}"#);
+    let mut sources = citations::Transcripts::new(directory.path()).with_replays(directory.path());
+    let cite = parse(
+        r#"{"replay":"synthetic","section":"deployments","t":0.1,"event":{"unit":"Dragon"}}"#,
+    );
+    assert_eq!(sources.verify(&cite).unwrap(), Some(0.1));
+    let mut wrong = cite.clone();
+    wire::put(&mut wrong, "t", Json::Num(0.2));
+    assert_eq!(sources.verify(&wrong).unwrap(), None);
+    wire::put(&mut wrong, "replay", string("../synthetic"));
+    assert!(sources.verify(&wrong).is_err());
+    let book = wire::obj([
+        ("sources", parse(r#"[{"replay":"synthetic"}]"#)),
+        (
+            "steps",
+            wire::arr([wire::obj([
+                ("id", string("dragons")),
+                ("action", string("deploy")),
+                ("what", string("Dragon")),
+                ("cite", wire::arr([cite])),
+            ])]),
+        ),
+    ]);
+    assert!(list(&verify::inspect(&book, &mut sources).unwrap(), "errors").is_empty());
+}
+
+#[test]
 fn frozen_normalization_location_and_timing_answers() {
     assert_eq!(
         citations::norm("  İCE—The QUEEN\t42% / café! "),

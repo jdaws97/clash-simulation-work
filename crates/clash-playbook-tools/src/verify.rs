@@ -11,7 +11,7 @@ pub fn source_ids(playbook: &Json) -> BTreeSet<String> {
         .iter()
         .map(|source| match source {
             Json::Str(video) => video.clone(),
-            _ => text(source, "video", "").to_owned(),
+            _ => citations::source_id(source),
         })
         .collect()
 }
@@ -25,7 +25,7 @@ pub fn good_cites(
     let mut good = Vec::new();
     for cite in list(item, "cite") {
         if sources.is_some_and(|sources| {
-            !sources.is_empty() && !sources.contains(text(cite, "video", ""))
+            !sources.is_empty() && !sources.contains(&citations::source_id(cite))
         }) {
             continue;
         }
@@ -152,7 +152,7 @@ fn strip_cites(
                     if let Json::Arr(cites) = child {
                         let mut good = Vec::new();
                         for cite in cites.iter() {
-                            if (sources.is_empty() || sources.contains(text(cite, "video", "")))
+                            if (sources.is_empty() || sources.contains(&citations::source_id(cite)))
                                 && transcripts.verify(cite)?.is_some()
                             {
                                 good.push(cite.clone());
@@ -232,7 +232,8 @@ fn inspect_internal(
             let mut supported = false;
             for (citation, cite) in list(item, key).iter().enumerate() {
                 let time = transcripts.verify(cite)?;
-                let family_source = sources.is_empty() || sources.contains(text(cite, "video", ""));
+                let family_source =
+                    sources.is_empty() || sources.contains(&citations::source_id(cite));
                 if time.is_some() {
                     verified += 1;
                 } else {
@@ -243,6 +244,7 @@ fn inspect_internal(
                     ("item", string(&label)),
                     ("citation", wire::num(citation as f64)),
                     ("video", string(text(cite, "video", ""))),
+                    ("replay", cite.get("replay").cloned().unwrap_or(Json::Null)),
                     ("verified_t", time.map_or(Json::Null, Json::Num)),
                     ("family_source", Json::Bool(family_source)),
                 ]));

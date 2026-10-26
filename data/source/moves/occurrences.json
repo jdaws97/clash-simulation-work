@@ -6677,6 +6677,1103 @@
     },
     {
       "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/0",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/0",
+      "kind": "variant_step",
+      "source_hash": "d05465451bb7232065c040355ba6202914a003c10019aa6708a86ba541d2ec41",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"count":"all","what":"Dragon"},
+        "objective": {"at":"edge:main","objective":"rapid-core","objective_at":"building:th"},
+        "placement": {},
+        "control": {"group":"main","id":"rapid_dragons","packet":"rapid-entry","primary":true,"when":{"t":0.0}},
+        "activation": {},
+        "support": {},
+        "completion": {},
+        "residual": {},
+        "action": "deploy"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/0/cite/0",
+            "citation": {"replay":"2026-10-21-maroon-machine","section":"deployments","t":0.1,"event":{"unit":"Dragon"}}
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/1",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/1",
+      "kind": "variant_step",
+      "source_hash": "d5c3d3ee1652201dbecd4e023c6d91db7f3ded0fc84b9ebdfb7b503f0268a5c6",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"count":"all","siege_role":"siege","what":"Log Launcher"},
+        "objective": {"at":"edge:main"},
+        "placement": {},
+        "control": {
+          "group": "main",
+          "id": "rapid_launcher",
+          "packet": "rapid-entry",
+          "when": {"after":"rapid_dragons","delay":0.0}
+        },
+        "activation": {},
+        "support": {},
+        "completion": {},
+        "residual": {},
+        "action": "deploy"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/1/cite/0",
+            "citation": {
+              "replay": "2026-10-21-maroon-machine",
+              "section": "deployments",
+              "t": 4.5,
+              "event": {"unit":"Log Launcher"}
+            }
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/2",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/2",
+      "kind": "variant_step",
+      "source_hash": "e071a75cfb4d4ca7d71e9c6b542b518ed1189518a60ea06d742eb9bed243428e",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"count":"all","what":"Dragon Duke"},
+        "objective": {"at":"edge:main"},
+        "placement": {},
+        "control": {
+          "group": "main",
+          "id": "rapid_duke",
+          "packet": "rapid-entry",
+          "when": {"after":"rapid_launcher","delay":0.0}
+        },
+        "activation": {},
+        "support": {"optional":true},
+        "completion": {},
+        "residual": {},
+        "action": "deploy"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/2/cite/0",
+            "citation": {
+              "replay": "2026-10-21-maroon-machine",
+              "section": "deployments",
+              "t": 8.9,
+              "event": {"unit":"Dragon Duke"}
+            }
+          },
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/2/cite/1",
+            "citation": {
+              "video": "k4aW1ytbOZ8",
+              "t": 227.9,
+              "quote": "spamming the Dragons, Dragon Duke kind of on the back end"
+            }
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/3",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/3",
+      "kind": "variant_step",
+      "source_hash": "488d3538684b9aa533d9ef5eb51ee9cfe9ad0786d70aa7c449a9313a10257a5d",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"what":"Dragon Duke"},
+        "objective": {"at":"unit:Dragon Duke"},
+        "placement": {},
+        "control": {
+          "group": "main",
+          "id": "rapid_duke_ability",
+          "packet": "rapid-entry",
+          "when": {"after":"rapid_duke","delay":0.0}
+        },
+        "activation": {},
+        "support": {"optional":true},
+        "completion": {},
+        "residual": {},
+        "action": "ability"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/3/cite/0",
+            "citation": {
+              "replay": "2026-10-21-maroon-machine",
+              "section": "hero_abilities",
+              "t": 9.3,
+              "event": {"hero":"Dragon Duke"}
+            }
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/4",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/4",
+      "kind": "variant_step",
+      "source_hash": "0ff79d3bee1e4b4b39f5dc6c651550d212826f3f50610b182c43c8d345e0fb69",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"count":"all","what":"Minion Prince"},
+        "objective": {"at":"edge:main"},
+        "placement": {},
+        "control": {
+          "group": "main",
+          "id": "rapid_prince",
+          "packet": "rapid-entry",
+          "when": {"after":"rapid_duke_ability","delay":0.0}
+        },
+        "activation": {},
+        "support": {"optional":true},
+        "completion": {},
+        "residual": {},
+        "action": "deploy"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/4/cite/0",
+            "citation": {
+              "replay": "2026-10-21-maroon-machine",
+              "section": "deployments",
+              "t": 10.1,
+              "event": {"unit":"Minion Prince"}
+            }
+          },
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/4/cite/1",
+            "citation": {
+              "video": "dwCMyiEttCw",
+              "t": 531.7,
+              "quote": "and finish the deployment with the Minion Prince and Grand Warden"
+            }
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/5",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/5",
+      "kind": "variant_step",
+      "source_hash": "b9d9f379ec3e374ec189310317f7ee978aadff28c1605f436df023be71102f11",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"count":"all","what":"Archer Queen"},
+        "objective": {"at":"edge:main"},
+        "placement": {},
+        "control": {
+          "group": "main",
+          "id": "rapid_queen",
+          "packet": "rapid-entry",
+          "when": {"after":"rapid_prince","delay":0.0}
+        },
+        "activation": {},
+        "support": {"optional":true},
+        "completion": {},
+        "residual": {},
+        "action": "deploy"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/5/cite/0",
+            "citation": {
+              "replay": "2026-10-21-maroon-machine",
+              "section": "deployments",
+              "t": 10.9,
+              "event": {"unit":"Archer Queen"}
+            }
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/6",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/6",
+      "kind": "variant_step",
+      "source_hash": "b16a6530eb0964368a0aa6b9995edad0ee19192857c90762a7b12900a2d8c870",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"count":"all","what":"Royal Champion"},
+        "objective": {"at":"edge:main"},
+        "placement": {},
+        "control": {
+          "group": "main",
+          "id": "rapid_champion",
+          "packet": "rapid-entry",
+          "when": {"after":"rapid_queen","delay":0.0}
+        },
+        "activation": {},
+        "support": {"optional":true},
+        "completion": {},
+        "residual": {},
+        "action": "deploy"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/6/cite/0",
+            "citation": {
+              "replay": "2026-10-21-maroon-machine",
+              "section": "deployments",
+              "t": 12.3,
+              "event": {"unit":"Royal Champion"}
+            }
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/7",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/7",
+      "kind": "variant_step",
+      "source_hash": "423172107478a0256772da21aee1a1f446c3132835f2c995e5d0b588a527783e",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"what":"Royal Champion"},
+        "objective": {"at":"unit:Royal Champion"},
+        "placement": {},
+        "control": {
+          "group": "main",
+          "id": "rapid_champion_ability",
+          "packet": "rapid-entry",
+          "when": {"after":"rapid_champion","delay":0.0}
+        },
+        "activation": {},
+        "support": {"optional":true},
+        "completion": {},
+        "residual": {},
+        "action": "ability"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/7/cite/0",
+            "citation": {
+              "replay": "2026-10-21-maroon-machine",
+              "section": "hero_abilities",
+              "t": 12.7,
+              "event": {"hero":"Royal Champion"}
+            }
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/8",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/8",
+      "kind": "variant_step",
+      "source_hash": "bbecfc610a0745cce62c521966a4c3869594bcfc40c49019c4a048619021440a",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"what":"Minion Prince"},
+        "objective": {"at":"unit:Minion Prince"},
+        "placement": {},
+        "control": {
+          "group": "main",
+          "id": "rapid_prince_ability",
+          "packet": "rapid-entry",
+          "when": {"after":"rapid_champion_ability","delay":0.0}
+        },
+        "activation": {},
+        "support": {"optional":true},
+        "completion": {},
+        "residual": {},
+        "action": "ability"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/8/cite/0",
+            "citation": {
+              "replay": "2026-10-21-maroon-machine",
+              "section": "hero_abilities",
+              "t": 13.1,
+              "event": {"hero":"Minion Prince"}
+            }
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/9",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/9",
+      "kind": "variant_step",
+      "source_hash": "c43af7b63432ccc61c8fc7827294743f2c5c9124a027cd52983773f9bcbf11e5",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"what":"Archer Queen"},
+        "objective": {"at":"unit:Archer Queen"},
+        "placement": {},
+        "control": {
+          "group": "main",
+          "id": "rapid_queen_ability",
+          "packet": "rapid-entry",
+          "when": {"after":"rapid_prince_ability","delay":0.0}
+        },
+        "activation": {},
+        "support": {"optional":true},
+        "completion": {},
+        "residual": {},
+        "action": "ability"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/9/cite/0",
+            "citation": {
+              "replay": "2026-10-21-maroon-machine",
+              "section": "hero_abilities",
+              "t": 13.1,
+              "event": {"hero":"Archer Queen"}
+            }
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/10",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/10",
+      "kind": "variant_step",
+      "source_hash": "efcfc6bb31da3d5c308d035e82590452ff266d877d055120358d317b88887a57",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"count":"all","what":"Grand Warden"},
+        "objective": {"at":"edge:main"},
+        "placement": {},
+        "control": {
+          "group": "main",
+          "id": "rapid_warden",
+          "packet": "rapid-entry",
+          "when": {"after":"rapid_queen_ability","delay":0.0}
+        },
+        "activation": {},
+        "support": {"optional":true},
+        "completion": {},
+        "residual": {},
+        "action": "deploy"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/10/cite/0",
+            "citation": {
+              "video": "dwCMyiEttCw",
+              "t": 531.7,
+              "quote": "and finish the deployment with the Minion Prince and Grand Warden"
+            }
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/11",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/11",
+      "kind": "variant_step",
+      "source_hash": "e5626a7e76d84a0a40831fff111b88057dd77f58c355c6c48a0de9fb482a583f",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"what":"Rage Spell"},
+        "objective": {"at":"group:main"},
+        "placement": {},
+        "control": {
+          "group": "main",
+          "id": "rapid_rage",
+          "packet": "rapid-entry",
+          "when": {"all":[{"after":"rapid_dragons","delay":0.0},{"heavy_fire":"main"}]}
+        },
+        "activation": {},
+        "support": {"optional":true},
+        "completion": {},
+        "residual": {},
+        "action": "spell"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/11/cite/0",
+            "citation": {"replay":"2026-10-21-maroon-machine","section":"spells","t":15.5,"event":{"spell":"Rage Spell"}}
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/12",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/12",
+      "kind": "variant_step",
+      "source_hash": "d1b931eecee8254bf3dcd0d5722809a281a0cbae059d1030940caf50ed81d2d6",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"what":"Freeze Spell"},
+        "objective": {"at":"threat:main"},
+        "placement": {},
+        "control": {
+          "group": "main",
+          "id": "rapid_freeze",
+          "packet": "rapid-entry",
+          "when": {"all":[{"after":"rapid_dragons","delay":0.0},{"heavy_fire":"main"}]}
+        },
+        "activation": {},
+        "support": {"optional":true},
+        "completion": {},
+        "residual": {},
+        "action": "spell"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/12/cite/0",
+            "citation": {"replay":"2026-10-21-maroon-machine","section":"spells","t":6.8,"event":{"spell":"Freeze Spell"}}
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
+      "instance_id": "data/source/playbooks/dragon.json#/variants/13/steps/13",
+      "source_file": "data/source/playbooks/dragon.json",
+      "pointer": "/variants/13/steps/13",
+      "kind": "variant_step",
+      "source_hash": "9ab9be94615f75192b6090b5a500d68dd1c832e216eb2ee3348f7622064933b4",
+      "status": "unresolved",
+      "reason": "New or changed source occurrence; technique assignment needs review.",
+      "move_id": null,
+      "definition_version": null,
+      "applicability": {
+        "attacker_town_hall": null,
+        "mode": null,
+        "patch": null,
+        "availability": "original_book_compiler_inventory_checks",
+        "army_hash": "256c116c6d87dd1365e5b6641cabb6b8a99bf648b108f7d832e9911d147581f1",
+        "catalog_identity": "data/generated/catalog.json; not a new compatibility claim",
+        "variant": {"name":"Rapid main-first Dragons"}
+      },
+      "parameters": {
+        "actor": {"count":"all","what":"Wizard"},
+        "objective": {"at":"edge:funnel"},
+        "placement": {},
+        "control": {
+          "group": "cleanup",
+          "id": "rapid_wizard_cleanup",
+          "when": {"objective":"rapid-core","state":"destroyed"}
+        },
+        "activation": {},
+        "support": {"optional":true,"reserved":true},
+        "completion": {},
+        "residual": {},
+        "action": "deploy"
+      },
+      "scope_unverified": [],
+      "evidence": {
+        "citations": [
+          {
+            "source_file": "data/source/playbooks/dragon.json",
+            "pointer": "/variants/13/steps/13/cite/0",
+            "citation": {"replay":"2026-10-21-maroon-machine","section":"deployments","t":62.3,"event":{"unit":"Wizard"}}
+          }
+        ],
+        "cite_present": true,
+        "annotations": {}
+      },
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": [],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      }
+    },
+    {
+      "schema_version": 2.0,
       "instance_id": "data/source/playbooks/druid-ruin-witch.json#/steps/0",
       "source_file": "data/source/playbooks/druid-ruin-witch.json",
       "pointer": "/steps/0",

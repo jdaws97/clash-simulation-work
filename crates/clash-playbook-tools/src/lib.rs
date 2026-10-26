@@ -193,7 +193,8 @@ fn report(options: &Options, value: &Json) -> Result<(), String> {
 }
 
 fn verify_command(options: &Options) -> Result<(), String> {
-    let mut transcripts = citations::Transcripts::new(&options.transcripts());
+    let mut transcripts = citations::Transcripts::new(&options.transcripts())
+        .with_replays(&options.root().join("data/source/replays"));
     if options.has("extracted") {
         let paths = raw_inputs(options, "playbooks")?;
         if paths.is_empty() {

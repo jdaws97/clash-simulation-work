@@ -23,7 +23,7 @@ fn production_registry_reconstructs_every_array_and_refreshes_without_drift() {
     let registry = MoveLibrary::from_json(&definitions, &occurrences).unwrap();
     let result = validate::check(&registry, &books).unwrap();
     assert_eq!(result.at("books"), &wire::num(11));
-    assert_eq!(result.at("occurrences"), &wire::num(740));
+    assert_eq!(result.at("occurrences"), &wire::num(754));
     assert_eq!(lower::check_books(&books, &registry).unwrap(), 11);
     assert_eq!(
         schema::canonical(&library::index(&books, Some(&occurrences)).unwrap()),

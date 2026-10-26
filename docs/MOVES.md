@@ -1,5 +1,16 @@
 # M1b typed cited move registry
 
+HA2 adds the explicitly observed rapid Dragon recipe, taking the corpus to
+**754 occurrences** and **84 variants**. Its **14 new occurrences remain
+explicitly unresolved** in the composition registry: their replay-event evidence
+is validated by `clash playbook verify`, but has not been admitted to the
+registry's video-quote-based technique scopes. There are now 726 mapped,
+27 unresolved and one unsupported occurrence; existing definition assignments
+and scope markers are unchanged. Archival lowering reconstructs all eleven books
+and matches all 1,358 compiled-plan controls (141 identical rejections).
+See the ignored [HA2 report](../local/ha2/report.md). The detailed M1b inventory
+below is the historical receipt.
+
 The registry indexes the eleven production playbooks, gives each occurrence a versioned
 technique assignment or an explicit unresolved/unsupported disposition, and
 reconstructs the original programs. It adds no search, human controller or

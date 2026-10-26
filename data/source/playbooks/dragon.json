@@ -28,7 +28,8 @@
   "twbdjMD07No",
   "vUaNIZU3eno",
   "vXLlpmek7X8",
-  "wanC6B7TJyk"
+  "wanC6B7TJyk",
+  {"replay": "2026-10-21-maroon-machine"}
  ],
  "army": {
   "troops": {
@@ -2569,9 +2570,221 @@
      "quote": "six lightning to take out other high-value targets."
     }
    ]
+  },
+  {
+   "name": "Rapid main-first Dragons",
+   "replaces": [
+    "rocket_balloons_bomb_tower", "rocket_balloons_air_defense",
+    "earthquake_opening_first", "earthquake_opening_second", "earthquake_opening_third",
+    "duke", "duke_ability", "queen", "queen_ability", "sky", "hound", "dragons", "riders",
+    "warden", "prince", "rage", "warden_ability", "prince_ability", "overgrowth",
+    "totem", "freeze", "archer_cleanup", "minion_cleanup", "poison"
+   ],
+   "support": 1,
+   "cite": [
+    {"replay": "2026-10-21-maroon-machine", "section": "deployments", "t": 0.1, "event": {"unit": "Dragon"}}
+   ],
+   "steps": [
+    {
+     "id": "rapid_dragons",
+     "action": "deploy",
+     "what": "Dragon",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "when": {"t": 0},
+     "primary": true,
+     "packet": "rapid-entry",
+     "objective": "rapid-core",
+     "objective_at": "building:th",
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "deployments", "t": 0.1, "event": {"unit": "Dragon"}}
+     ]
+    },
+    {
+     "id": "rapid_launcher",
+     "action": "deploy",
+     "what": "Log Launcher",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "siege_role": "siege",
+     "when": {"after": "rapid_dragons", "delay": 0},
+     "packet": "rapid-entry",
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "deployments", "t": 4.5, "event": {"unit": "Log Launcher"}}
+     ]
+    },
+    {
+     "id": "rapid_duke",
+     "action": "deploy",
+     "what": "Dragon Duke",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "optional": true,
+     "when": {"after": "rapid_launcher", "delay": 0},
+     "packet": "rapid-entry",
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "deployments", "t": 8.9, "event": {"unit": "Dragon Duke"}},
+      {"video": "k4aW1ytbOZ8", "t": 227.9, "quote": "spamming the Dragons, Dragon Duke kind of on the back end"}
+     ]
+    },
+    {
+     "id": "rapid_duke_ability",
+     "action": "ability",
+     "what": "Dragon Duke",
+     "at": "unit:Dragon Duke",
+     "group": "main",
+     "optional": true,
+     "when": {"after": "rapid_duke", "delay": 0},
+     "packet": "rapid-entry",
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "hero_abilities", "t": 9.3, "event": {"hero": "Dragon Duke"}}
+     ]
+    },
+    {
+     "id": "rapid_prince",
+     "action": "deploy",
+     "what": "Minion Prince",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "optional": true,
+     "when": {"after": "rapid_duke_ability", "delay": 0},
+     "packet": "rapid-entry",
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "deployments", "t": 10.1, "event": {"unit": "Minion Prince"}},
+      {"video": "dwCMyiEttCw", "t": 531.7, "quote": "and finish the deployment with the Minion Prince and Grand Warden"}
+     ]
+    },
+    {
+     "id": "rapid_queen",
+     "action": "deploy",
+     "what": "Archer Queen",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "optional": true,
+     "when": {"after": "rapid_prince", "delay": 0},
+     "packet": "rapid-entry",
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "deployments", "t": 10.9, "event": {"unit": "Archer Queen"}}
+     ]
+    },
+    {
+     "id": "rapid_champion",
+     "action": "deploy",
+     "what": "Royal Champion",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "optional": true,
+     "when": {"after": "rapid_queen", "delay": 0},
+     "packet": "rapid-entry",
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "deployments", "t": 12.3, "event": {"unit": "Royal Champion"}}
+     ]
+    },
+    {
+     "id": "rapid_champion_ability",
+     "action": "ability",
+     "what": "Royal Champion",
+     "at": "unit:Royal Champion",
+     "group": "main",
+     "optional": true,
+     "when": {"after": "rapid_champion", "delay": 0},
+     "packet": "rapid-entry",
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "hero_abilities", "t": 12.7, "event": {"hero": "Royal Champion"}}
+     ]
+    },
+    {
+     "id": "rapid_prince_ability",
+     "action": "ability",
+     "what": "Minion Prince",
+     "at": "unit:Minion Prince",
+     "group": "main",
+     "optional": true,
+     "when": {"after": "rapid_champion_ability", "delay": 0},
+     "packet": "rapid-entry",
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "hero_abilities", "t": 13.1, "event": {"hero": "Minion Prince"}}
+     ]
+    },
+    {
+     "id": "rapid_queen_ability",
+     "action": "ability",
+     "what": "Archer Queen",
+     "at": "unit:Archer Queen",
+     "group": "main",
+     "optional": true,
+     "when": {"after": "rapid_prince_ability", "delay": 0},
+     "packet": "rapid-entry",
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "hero_abilities", "t": 13.1, "event": {"hero": "Archer Queen"}}
+     ]
+    },
+    {
+     "id": "rapid_warden",
+     "action": "deploy",
+     "what": "Grand Warden",
+     "count": "all",
+     "at": "edge:main",
+     "group": "main",
+     "optional": true,
+     "when": {"after": "rapid_queen_ability", "delay": 0},
+     "packet": "rapid-entry",
+     "cite": [
+      {"video": "dwCMyiEttCw", "t": 531.7, "quote": "and finish the deployment with the Minion Prince and Grand Warden"}
+     ]
+    },
+    {
+     "id": "rapid_rage",
+     "action": "spell",
+     "what": "Rage Spell",
+     "at": "group:main",
+     "group": "main",
+     "optional": true,
+     "when": {"all": [{"after": "rapid_dragons", "delay": 0}, {"heavy_fire": "main"}]},
+     "packet": "rapid-entry",
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "spells", "t": 15.5, "event": {"spell": "Rage Spell"}}
+     ]
+    },
+    {
+     "id": "rapid_freeze",
+     "action": "spell",
+     "what": "Freeze Spell",
+     "at": "threat:main",
+     "group": "main",
+     "optional": true,
+     "when": {"all": [{"after": "rapid_dragons", "delay": 0}, {"heavy_fire": "main"}]},
+     "packet": "rapid-entry",
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "spells", "t": 6.8, "event": {"spell": "Freeze Spell"}}
+     ]
+    },
+    {
+     "id": "rapid_wizard_cleanup",
+     "action": "deploy",
+     "what": "Wizard",
+     "count": "all",
+     "at": "edge:funnel",
+     "group": "cleanup",
+     "optional": true,
+     "reserved": true,
+     "when": {"objective": "rapid-core", "state": "destroyed"},
+     "cite": [
+      {"replay": "2026-10-21-maroon-machine", "section": "deployments", "t": 62.3, "event": {"unit": "Wizard"}}
+     ]
+    }
+   ]
   }
  ],
  "notes": [
+  "HA2 rapid-main-first: the replay observation establishes Dragon line, main Log Launcher, then heroes and prompt abilities, with Wizards held for cleanup. Counts and exact elapsed seconds are observations, not fitted constants. This recipe deploys all available main Dragons rather than inventing a population reinforcement fraction; it does not reproduce the two later observed reinforcement taps. Hero presence is optional; each present hero keeps its own ability and the input clock. The replay's Duke has Electro Fangs/Fire Heart, not Rocket Backpack. No Giant Arrow or Backpack is assumed.",
+  "HA2 controller adaptations, SUSPECTED: Town Hall destruction is an observable core-completion cue for reserved Wizard cleanup, replacing a universal 62-second hold; edge:funnel approximates the recorded opposite-edge cleanup. Generic pressure/threat selectors approximate the recorded targeted Rage/Freeze, without adding recast cadence. The existing executor may spend surplus support independently. Transcript k4aW1ytbOZ8 supports Duke behind Dragons after a different RC opening; dwCMyiEttCw supports Prince/Warden behind a different air core. Neither establishes the complete recorded main-first recipe or population frequency. Only the replay establishes the full relative opening.",
   "All 27 relevant dragon playbooks were read. 7JaLtnvSFqM supplies only Clan Castle contents and no executable steps; it remains in sources without increasing tactical support.",
   "No complete army repeats. Among nine counted Hydra armies, seven Dragons with five Dragon Riders and eight Dragons with five Dragon Riders tie at two videos each. Seven Dragons is the most frequent Dragon count and five Dragon Riders is the most frequent Rider count. The army uses KYxypCKWh-E's seven/five composition, spells, payload and loadouts as the complete representative; 55I-qks9qdI shares its main troop core.",
   "KYxypCKWh-E lists three owned Sky Wagons and two donated Sky Wagons as available inventory. They are removed from the troop inventory and normalized to the one Sky Wagon actually deployed per attack. Clan Castle entries are flattened to the required shape.",

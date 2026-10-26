@@ -51,6 +51,10 @@ fn cite_times(
 ) -> Result<BTreeMap<String, Option<f64>>, String> {
     let mut times = BTreeMap::new();
     for cite in list(step, "cite") {
+        // Recorded battle events have a different clock from narration.
+        if cite.get("replay").is_some() {
+            continue;
+        }
         let located = transcripts.verify(cite)?;
         let stored = io::optional_number(cite.get("verified_t"))?;
         let stated = io::optional_number(cite.get("t"))?;

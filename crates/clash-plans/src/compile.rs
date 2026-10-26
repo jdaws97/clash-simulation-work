@@ -14,6 +14,9 @@ use crate::stats::{self, Level, Stats};
 #[path = "compile_tests.rs"]
 mod tests;
 
+#[path = "compile_selection.rs"]
+mod selection;
+
 #[derive(Clone, Debug)]
 pub struct CompileOptions {
     pub playbooks: bool,
@@ -215,8 +218,8 @@ impl<'a> Compiler<'a> {
             .get("__variants__")
             .and_then(|value| value.get("names"))
             .filter(|value| !value.is_null());
-        // Recipe dispatch is intentional. Ambiguous inventories retain the
-        // repair-only selector; a spare utility troop never chooses an opening.
+        // Explicit selection wins; otherwise evaluate complete source recipes
+        // against the actual inventory and equipped loadout before repairing.
         let recipe = options
             .overrides
             .get("__recipe__")
@@ -242,8 +245,20 @@ impl<'a> Compiler<'a> {
             return Err("Choose recipe or __variants__, not both".to_owned());
         }
         let selected = explicit_variants.or(recipe_variants.as_ref());
-        let variants =
-            self.pick_variants(pb, &inventory, heroes, plan.at("spells"), &plan, selected)?;
+        let variants = if selected.is_none() {
+            let selection = self.select_recipe(
+                pb,
+                &inventory,
+                heroes,
+                plan.at("spells"),
+                &plan,
+                &options.overrides,
+            )?;
+            put(&mut plan, "recipe_selection", selection.report);
+            selection.steps
+        } else {
+            self.expand_variants(pb, &inventory, heroes, plan.at("spells"), &plan, selected)?
+        };
         put(
             &mut plan,
             "primary_cohort",
@@ -534,7 +549,10 @@ impl<'a> Compiler<'a> {
                     || text(step, "action", "") != "ability"
                     || !self.missing_equipment(step, plan));
             if !usable {
-                if !optional && added.iter().any(|id| id == text(step, "id", "")) {
+                if !selection::optional_actor(step)
+                    && !optional
+                    && added.iter().any(|id| id == text(step, "id", ""))
+                {
                     return Ok(false);
                 }
                 continue;
@@ -594,6 +612,23 @@ impl<'a> Compiler<'a> {
 
     // playbook.py:1430-1526: sort is stable for equal support.
     pub fn pick_variants(
+        &self,
+        pb: &Json,
+        inventory: &Json,
+        heroes: &[Json],
+        spells: &Json,
+        plan: &Json,
+        selected: Option<&Json>,
+    ) -> Result<Vec<Json>, String> {
+        if selected.is_none() {
+            return self
+                .select_recipe(pb, inventory, heroes, spells, plan, &object())
+                .map(|selection| selection.steps);
+        }
+        self.expand_variants(pb, inventory, heroes, spells, plan, selected)
+    }
+
+    fn expand_variants(
         &self,
         pb: &Json,
         inventory: &Json,
@@ -679,7 +714,9 @@ impl<'a> Compiler<'a> {
             }
             if new.is_empty()
                 || !new.iter().all(|step| {
-                    optional_spell(step) || self.usable(step, inventory, heroes, spells, plan, &new)
+                    optional_spell(step)
+                        || selection::optional_actor(step)
+                        || self.usable(step, inventory, heroes, spells, plan, &new)
                 })
             {
                 continue;
@@ -1663,6 +1700,16 @@ fn add_spell_support(pb: &Json, steps: &mut Vec<Json>, spells: &Json) {
             .iter()
             .any(|other| text(other, "action", "") == "deploy" && text(other, "what", "") == target)
         {
+            // A complete replacement recipe may retain the hero without the
+            // charge phase named by this auxiliary policy. Do not attach that
+            // different opening's support to an unknown predecessor.
+            if step
+                .get("when")
+                .and_then(|when| when.get("after"))
+                .is_some_and(|id| !steps.iter().any(|other| other.get("id") == Some(id)))
+            {
+                continue;
+            }
             steps.push(step.clone());
         }
     }

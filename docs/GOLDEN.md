@@ -4,6 +4,43 @@
 
 # Rust golden regression suite
 
+## HA2 — feasible army openings (2026-10-26)
+
+This task intentionally changes automatic recipe selection, starting from
+`7a67925`. The compiler tries complete default/declared/standalone source
+recipes against actual actors, spell stock and equipped abilities before using
+the historical repair path. `recipe_selection` records candidate verdicts,
+the deterministic priority, the chosen recipe or `repaired_hybrid`, and zero
+additional scouting battles. See the ignored [HA2 report](../local/ha2/report.md)
+for evidence and paired results.
+
+The plan oracle was intentionally regenerated with `clash golden plans record`
+in public mode. Comparing every old row by its complete case and playbook mode:
+
+- **855 unchanged old rows**.
+- **499 selection-report-only changes**: removing `recipe_selection` makes each
+  complete row identical to its old value. There are **zero executable-plan or
+  rejection changes among the 1,354 existing rows**. These armies still need
+  repair because the current authored recipes do not fully fit their stock.
+- **Four new controls**: `dragon:variant:Rapid main-first Dragons` and
+  `dragon:recipe:Rapid main-first Dragons`, each with playbooks off/on at the
+  existing variant-control angle/seed. Generic controls compile unchanged;
+  playbook controls reject the inherited test army because it carries Sky Wagon,
+  whereas the cited new recipe requires Log Launcher. These rejection controls
+  do not claim to execute the recorded attack. A separate declared synthetic
+  compiler test exercises the admitted Dragon/Launcher/hero/reserved-Wizard path.
+
+The new plan total is **1,358**. No battle fixture or expected battle trace was
+changed: `cases.jsonl` remains SHA-256
+`cea706d86516a2100876f9aa4ec7cdd5de32f691202f9a6d049b64e690d172ab`,
+and `expected.jsonl` remains
+`40446127d538f7bab2a86ab9c7fcae8b3a725c4ceb462fd2d95236cb38af0ab4`.
+The old plan SHA-256 was
+`60dbb24903bb2c0443abf4624e0231e5f33e083492fac571b187a830dcc47958`.
+The new plan SHA-256 is
+`169d8eee9b9c3a580ac69bbf9531365e1dc0a8a8b495673807bfc1b433703eed`.
+Per-row comparison artifacts are in ignored `local/ha2/golden-differences.*`.
+
 The original G1 oracle was the engine at `python-frozen`, commit
 `d774e17498a2f753aa05a094db67e5d2d1cb89ac`. Python/Rust setup and trace parity
 stages 1–9 passed 868/868 at that commit. G2 replaces platform C-runtime maths
