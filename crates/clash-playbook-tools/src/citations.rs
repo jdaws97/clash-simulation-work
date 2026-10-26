@@ -31,12 +31,28 @@ pub fn norm(value: &str) -> String {
     result
 }
 
-/// Intentionally counts braces inside strings too, matching the frozen parser.
-/// A later opening brace is retried if the earlier candidate is invalid JSON.
+/// Scan outer objects first, ignoring braces inside JSON strings. A later
+/// opening brace is retried only if the earlier candidate is invalid JSON.
 pub fn parse_reply(reply: &str) -> Option<Json> {
     for (start, _) in reply.match_indices('{') {
         let mut depth = 0;
+        let mut in_string = false;
+        let mut escaped = false;
         for (offset, c) in reply[start..].char_indices() {
+            if in_string {
+                if escaped {
+                    escaped = false;
+                } else if c == '\\' {
+                    escaped = true;
+                } else if c == '"' {
+                    in_string = false;
+                }
+                continue;
+            }
+            if c == '"' {
+                in_string = true;
+                continue;
+            }
             if c == '{' {
                 depth += 1;
             } else if c == '}' {

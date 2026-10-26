@@ -472,3 +472,46 @@ fn snapshot_provenance_and_report_exclude_uncovered_and_duplicate_defenses() {
     assert_eq!(row.at("interval_95"), &arr([num(0.0), num(40.0)]));
     assert_eq!(number(&result, "uncovered_defenses", -1.0), 1.0);
 }
+
+#[test]
+fn share_codes_require_content_and_unique_sections() {
+    let decoder = Decoder::from_names(BTreeMap::new());
+    for code in [
+        "",
+        "garbage",
+        "u1x0u2x1",
+        "s1x0u1x0s2x1",
+        "h1h2",
+        "u",
+        "hiuds",
+        "junku1x0",
+    ] {
+        assert!(decoder.decode(code).is_err(), "accepted {code:?}");
+    }
+    assert!(decoder.decode("u1x0").is_ok());
+}
+
+#[test]
+fn decode_cli_propagates_missing_or_invalid_battle_identity() {
+    let directory = Directory::new();
+    let input = directory.0.join("battles.json");
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    for timestamp in [None, Some(num(42.0)), Some(string(""))] {
+        let mut record = obj([
+            ("battleType", string("ranked")),
+            ("armyShareCode", string("u1x0")),
+        ]);
+        if let Some(timestamp) = timestamp {
+            put(&mut record, "battleTimestamp", timestamp);
+        }
+        write(&input, &arr([record])).unwrap();
+        let error = super::cli::cli(&[
+            "decode".to_owned(),
+            input.display().to_string(),
+            "--root".to_owned(),
+            root.display().to_string(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("timestamp"), "{error}");
+    }
+}

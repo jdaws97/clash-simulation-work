@@ -111,6 +111,16 @@ pub fn validate_plan(plan: &Json) -> Result<(), ContentError> {
     if !matches!(kind, "AttackPlan" | "PlaybookPlan" | "Stage") {
         return Err(ContentError::unsupported("plan", kind));
     }
+    if kind == "PlaybookPlan" {
+        let Some(Json::Arr(steps)) = plan.get("steps") else {
+            return Err(ContentError::Invalid(
+                "playbook needs a steps array".to_owned(),
+            ));
+        };
+        for step in steps {
+            validate_playbook_step_types(step)?;
+        }
+    }
     if let Some(Json::Obj(loadouts)) = plan.get("loadouts") {
         if loadouts
             .iter()
@@ -132,6 +142,29 @@ pub fn validate_plan(plan: &Json) -> Result<(), ContentError> {
                     )));
                 }
             }
+        }
+    }
+    Ok(())
+}
+
+/// Shared authoring/executor checks for fields read as strings or numbers by
+/// Step::load. Null is allowed only where the executor treats it as absent.
+pub fn validate_playbook_step_types(step: &Json) -> Result<(), ContentError> {
+    if !matches!(step, Json::Obj(_)) {
+        return Err(ContentError::Invalid("step must be an object".to_owned()));
+    }
+    for key in ["what", "origin", "at", "group", "aim"] {
+        if let Some(value) = step.get(key).filter(|value| !value.is_null()) {
+            if !matches!(value, Json::Str(_)) {
+                return Err(ContentError::Invalid(format!("{key} needs a string")));
+            }
+        }
+    }
+    if let Some(value) = step.get("spread") {
+        if !matches!(value, Json::Num(number) if number.is_finite()) {
+            return Err(ContentError::Invalid(
+                "spread needs a finite number".to_owned(),
+            ));
         }
     }
     Ok(())

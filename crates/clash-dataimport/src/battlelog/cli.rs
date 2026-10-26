@@ -111,17 +111,9 @@ pub fn cli(args: &[String]) -> Result<(), String> {
                     .iter()
                     .filter(|battle| text(battle, "battleType", "") == "ranked")
                     .map(|battle| {
-                        decoder
-                            .decode(text(battle, "armyShareCode", ""))
-                            .map(|army| {
-                                obj([
-                                    (
-                                        "battle_id",
-                                        string(super::identity(battle).unwrap_or_default()),
-                                    ),
-                                    ("army", army),
-                                ])
-                            })
+                        let battle_id = super::identity(battle)?;
+                        let army = decoder.decode(text(battle, "armyShareCode", ""))?;
+                        Ok::<_, String>(obj([("battle_id", string(battle_id)), ("army", army)]))
                     })
                     .collect::<Result<Vec<_>, _>>()?)
             } else {

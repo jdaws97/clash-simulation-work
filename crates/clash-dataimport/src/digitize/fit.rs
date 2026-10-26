@@ -19,12 +19,9 @@ pub struct Anchor {
 
 impl Grid {
     pub fn from_json(value: &Json) -> Result<Self, String> {
-        let field = |key| {
-            value
-                .get(key)
-                .and_then(Json::opt_f64)
-                .filter(|v| v.is_finite())
-                .ok_or_else(|| format!("grid requires finite {key}"))
+        let field = |key| match value.get(key) {
+            Some(Json::Num(number)) if number.is_finite() => Ok(*number),
+            _ => Err(format!("grid requires finite numeric {key}")),
         };
         let grid = Self {
             cx: field("cx")?,

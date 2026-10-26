@@ -154,6 +154,7 @@ fn trigger(value: Option<&Json>, references: &mut Vec<String>) -> Result<(), Str
 }
 
 pub fn step_references(step: &Json) -> Result<Vec<String>, String> {
+    clash_data::content::validate_playbook_step_types(step).map_err(|error| error.to_string())?;
     if !matches!(step, Json::Obj(_)) {
         return Err("step must be an object".to_owned());
     }

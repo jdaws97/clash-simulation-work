@@ -1,6 +1,6 @@
 //! Executable, dependency-free acceptance checks. The receipt records checks
 //! actually executed here; the workspace tests add native battle/resume gates.
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use clash_scoring::scoring::{Outcome, Scenario};
 
@@ -40,6 +40,80 @@ pub(crate) fn synthetic_row(
         source_index: 0,
         plan: Json::Null,
     }
+}
+
+/// An adaptive family containing every subset of a finite sample domain. The
+/// selected incumbent memorizes training draws and is strong only there. Its
+/// exact population utility is below the fixed challenger in every trial.
+pub(crate) fn adaptive_racing_check() -> Result<Json, String> {
+    const TRIALS: usize = 32;
+    const GROUPS: usize = 4096;
+    const DOMAIN: usize = 1 << 20;
+    let strata = BTreeMap::from([("adaptive".to_owned(), 1.0)]);
+    let mut reused_false = 0;
+    let mut fresh_false = 0;
+    for trial in 0..TRIALS {
+        let mut training_rng = crate::ProposalRng::new(137 + trial as u64);
+        let mut validation_rng = crate::ProposalRng::new(99823 + trial as u64);
+        let training: Vec<_> = (0..GROUPS).map(|_| training_rng.index(DOMAIN)).collect();
+        let memorized: BTreeSet<_> = training.iter().copied().collect();
+        let child = (0..GROUPS)
+            .map(|group| synthetic_row(group, "adaptive", 1.0, 2, 50.0))
+            .collect::<Vec<_>>();
+        let child_utility = crate::eval::utility(child[0].outcome, "ranked");
+        let incumbent_mean = 40.0 * memorized.len() as f64 / DOMAIN as f64;
+        if child_utility <= incumbent_mean {
+            return Err("adaptive synthetic challenger must be better in population".to_owned());
+        }
+        for (reuse, false_count) in [(true, &mut reused_false), (false, &mut fresh_false)] {
+            let incumbent = (0..GROUPS)
+                .map(|group| {
+                    let draw = if reuse {
+                        training[group]
+                    } else {
+                        validation_rng.index(DOMAIN)
+                    };
+                    let (stars, destruction) = if memorized.contains(&draw) {
+                        (0, 0.0)
+                    } else {
+                        (3, 100.0)
+                    };
+                    synthetic_row(group, "adaptive", 1.0, stars, destruction)
+                })
+                .collect::<Vec<_>>();
+            for look in [512, 1024, 2048, GROUPS] {
+                if crate::race::paired(
+                    &child[..look],
+                    &incumbent[..look],
+                    &strata,
+                    "ranked",
+                    0.0,
+                    0.0125,
+                    look,
+                )?
+                .is_some_and(|interval| interval.upper < 0.0)
+                {
+                    *false_count += 1;
+                    break;
+                }
+            }
+        }
+    }
+    if reused_false != TRIALS || fresh_false != 0 {
+        return Err(format!(
+            "adaptive race regression: reused={reused_false}, fresh={fresh_false}, trials={TRIALS}"
+        ));
+    }
+    Ok(object([
+        ("evidence", string("declared synthetic adaptive subset family; exact finite-domain population means; not real-game calibration")),
+        ("trials", num(TRIALS)),
+        ("groups_per_trial", num(GROUPS)),
+        ("domain", num(DOMAIN)),
+        ("reused_false_eliminations", num(reused_false)),
+        ("fresh_false_eliminations", num(fresh_false)),
+        ("reused_false_elimination_rate", Json::Num(reused_false as f64 / TRIALS as f64)),
+        ("fresh_false_elimination_rate", Json::Num(fresh_false as f64 / TRIALS as f64)),
+    ]))
 }
 
 pub fn run() -> Result<Json, String> {
@@ -146,6 +220,7 @@ pub fn run() -> Result<Json, String> {
     let executable = std::fs::read(std::env::current_exe().map_err(|e| e.to_string())?)
         .map_err(|e| e.to_string())?;
     Ok(object([
+        ("adaptive_racing", adaptive_racing_check()?),
         ("schema", num(1)), ("evidence", string("declared enumerable synthetic outcomes; not real-game calibration")),
         ("executable_identity", string(crate::layout::json::identity(&executable))),
         ("enumerable_races", num(cases)), ("false_eliminations", num(false_eliminations)),

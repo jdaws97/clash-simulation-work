@@ -197,15 +197,18 @@ pub fn status(jobs: &[Job]) -> Json {
                     wire::file_hash(&job.output)
                         .is_ok_and(|hash| hash == text(receipt, "output_hash", ""))
                         && text(receipt, "status", "") == "complete"
-                        && receipt
-                            .get("job")
-                            .is_none_or(|saved| text(saved, "input_hash", "") == job.input_hash)
+                        && receipt.get("job").is_some_and(|saved| {
+                            text(saved, "input_hash", "") == job.input_hash
+                                && matches!(saved.get("prompt"), Some(Json::Str(prompt))
+                                    if wire::sha256(prompt.as_bytes()) == wire::sha256(job.prompt.as_bytes()))
+                        })
                 });
                 let complete = bytes > job.minimum_bytes as u64 && hash_matches;
                 obj([
                     ("id", string(&job.id)),
                     ("kind", string(&job.kind)),
                     ("name", string(&job.name)),
+                    ("prompt_hash", string(wire::sha256(job.prompt.as_bytes()))),
                     ("output", string(job.output.to_string_lossy())),
                     ("bytes", wire::num(bytes as f64)),
                     ("complete", Json::Bool(complete)),
@@ -228,6 +231,7 @@ fn run_one(job: &Job, provider: &Provider, passes: usize) -> Result<Json, String
         ("kind", string(&job.kind)),
         ("name", string(&job.name)),
         ("prompt", string(&job.prompt)),
+        ("prompt_hash", string(wire::sha256(job.prompt.as_bytes()))),
         ("input_hash", string(&job.input_hash)),
         ("provider", string(&provider.executable)),
         (

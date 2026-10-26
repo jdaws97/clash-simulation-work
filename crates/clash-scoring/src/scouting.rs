@@ -84,6 +84,19 @@ fn seed(scenario: &Scenario, domain: u64, sample: usize) -> i64 {
     ((domain << 48) | (hash & ((1 << 48) - 1))) as i64
 }
 
+/// Random draws used by one scouting group, exposed for manifest isolation
+/// checks. Side candidates deliberately share these common random numbers.
+pub fn sample_seeds(scenario: &Scenario) -> Vec<i64> {
+    let mut seeds = Vec::new();
+    for sample in 0..HIDDEN_SAMPLES {
+        seeds.push(seed(scenario, 1, sample));
+        seeds.push(seed(scenario, 2, sample));
+    }
+    seeds.push(seed(scenario, 3, 0));
+    seeds.push(seed(scenario, 4, 0));
+    seeds
+}
+
 fn square(x: i64, y: i64, size: usize) -> impl Iterator<Item = (i64, i64)> {
     (0..size as i64).flat_map(move |dx| (0..size as i64).map(move |dy| (x + dx, y + dy)))
 }

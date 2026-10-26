@@ -41,18 +41,33 @@ impl Decoder {
     }
 
     pub fn decode(&self, code: &str) -> Result<Json, String> {
+        if code.is_empty() {
+            return Err("empty army share code".to_owned());
+        }
         let mut sections = BTreeMap::new();
         let mut start = None;
         for (index, character) in code.char_indices() {
             if "hiuds".contains(character) {
                 if let Some((key, offset)) = start {
-                    sections.insert(key, &code[offset..index]);
+                    if sections.insert(key, &code[offset..index]).is_some() {
+                        return Err(format!("duplicate army share-code section {key}"));
+                    }
+                } else if index != 0 {
+                    return Err("army share code must start with a section".to_owned());
                 }
                 start = Some((character, index + 1));
             }
         }
         if let Some((key, offset)) = start {
-            sections.insert(key, &code[offset..]);
+            if sections.insert(key, &code[offset..]).is_some() {
+                return Err(format!("duplicate army share-code section {key}"));
+            }
+        }
+        if sections.is_empty() {
+            return Err("army share code has no sections".to_owned());
+        }
+        if sections.values().all(|section| section.is_empty()) {
+            return Err("army share code has no content".to_owned());
         }
         let mut out = obj([] as [(&str, Json); 0]);
         if let Some(heroes) = sections.get(&'h') {
@@ -151,7 +166,10 @@ impl Decoder {
 pub fn identity(battle: &Json) -> Result<String, String> {
     let timestamp = battle
         .get("battleTimestamp")
-        .and_then(Json::opt_str)
+        .and_then(|value| match value {
+            Json::Str(timestamp) if !timestamp.is_empty() => Some(timestamp.as_str()),
+            _ => None,
+        })
         .ok_or("missing timestamp")?;
     let th = number(battle, "opponentTownHallLevel", 0.0);
     let payload = format!(

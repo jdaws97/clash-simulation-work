@@ -91,7 +91,47 @@ pub struct Manifest {
     pub groups: Vec<Group>,
 }
 
+/// Stable role/name and user-seed mixing. The resulting stream is exactly
+/// representable in JSON and does not depend on a target or candidate order.
+pub(crate) fn manifest_seed(namespace: &str, seed: i64) -> i64 {
+    let mut hash = 0xcbf29ce484222325_u64;
+    for byte in namespace.bytes().chain(seed.to_le_bytes()) {
+        hash = (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3);
+    }
+    (hash & ((1 << 48) - 1)) as i64
+}
+
 impl Manifest {
+    pub(crate) fn seed_keys(&self) -> BTreeSet<String> {
+        let mut keys = BTreeSet::new();
+        for group in &self.groups {
+            for scenario in &group.scenarios {
+                keys.insert(format!("group/{}", scenario.group));
+                keys.insert(format!("plan/{}", scenario.seed));
+                for seed in clash_scoring::scouting::sample_seeds(scenario) {
+                    keys.insert(format!("scout/{seed}"));
+                }
+            }
+        }
+        keys
+    }
+
+    pub fn ensure_disjoint(manifests: &[&Self]) -> Result<(), String> {
+        let mut owners = BTreeMap::new();
+        for manifest in manifests {
+            manifest.validate()?;
+            for key in manifest.seed_keys() {
+                if let Some(previous) = owners.insert(key.clone(), &manifest.id) {
+                    return Err(format!(
+                        "cross-manifest seed collision: {previous} and {} share {key}",
+                        manifest.id
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn to_json(&self) -> Json {
         object([
             ("id", string(&self.id)),

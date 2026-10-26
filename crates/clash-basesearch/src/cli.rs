@@ -153,20 +153,34 @@ pub fn manifests(
     seed: i64,
     modifier: Option<String>,
 ) -> Result<Manifest, String> {
-    if population.is_empty() || groups < population.len() {
-        return Err("group budget cannot cover every declared population stratum".to_owned());
+    if population.is_empty() || groups / 5 < population.len() {
+        return Err(
+            "group budget must cover all five skill bins for every population entry".to_owned(),
+        );
     }
     let mut rows = Vec::new();
+    let stream = crate::eval::manifest_seed(namespace, seed);
     for index in 0..groups {
         let (genome, weight) = &population[index % population.len()];
-        rows.push(oracle::group_for(
+        let mut group = oracle::group_for(
             context,
             genome,
             namespace,
-            seed + index as i64,
+            (stream + index as i64).rem_euclid(1 << 48),
             *weight,
             modifier.clone(),
-        )?);
+        )?;
+        // Cross army identity with skill: each complete population pass
+        // advances one bin, even when the population size is divisible by five.
+        let skill_bin = (seed.rem_euclid(5) + (index / population.len()) as i64) % 5;
+        for plan in &mut group.plans {
+            clash_plans::armies::put(
+                plan,
+                "strength",
+                Json::Num(clash_scoring::scoring::skill(skill_bin)),
+            );
+        }
+        rows.push(group);
     }
     let manifest = Manifest {
         id: namespace.to_owned(),
@@ -236,10 +250,10 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
             ("waves", num(2)),
             ("batch", num(3)),
             ("physical_battles", num(2400)),
-            ("screen_groups", num(4)),
-            ("confirm_groups", num(4)),
-            ("gate_groups", num(4)),
-            ("final_groups", num(6)),
+            ("screen_groups", num(10)),
+            ("confirm_groups", num(10)),
+            ("gate_groups", num(10)),
+            ("final_groups", num(10)),
             ("oracle_budget", num(28)),
             ("archive_groups", num(2)),
             ("polish_attempts", num(1)),
@@ -451,6 +465,24 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
         settings.modifier.clone(),
     )?;
     let waves = integer(&config, "waves", 4)?;
+    let wave_screens = (0..waves)
+        .map(|wave| {
+            manifests(
+                &oracle_context,
+                &population,
+                &format!("screen-development/wave/{wave}"),
+                screen.groups.len(),
+                battle_seed,
+                settings.modifier.clone(),
+            )
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Manifest::ensure_disjoint(
+        &[&screen, &confirmation, &gate, &final_manifest]
+            .into_iter()
+            .chain(wave_screens.iter())
+            .collect::<Vec<_>>(),
+    )?;
     let limit = integer(&config, "physical_battles", 100_000)?;
     // Final manifests have a separate identity and never enter development
     // selection or checkpoint compatibility. Their outcomes are report-only.
@@ -551,12 +583,17 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
     let proof = crate::completion_proof::run()?;
     write(&out.join("proof-completion.json"), &proof)?;
     while state.completed_waves < waves {
+        let wave_screen = &wave_screens[state.completed_waves];
+        write(
+            &out.join(format!("screen-wave-{}.json", state.completed_waves)),
+            &wave_screen.to_json(),
+        )?;
         search::wave(
             &context,
             &settings,
             &mut state,
             &mut evaluator,
-            &screen,
+            wave_screen,
             &confirmation,
             &oracle_context,
             &seeds,

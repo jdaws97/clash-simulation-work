@@ -478,3 +478,31 @@ fn offensive_masks_select_distinct_buildings_without_hiding_the_goal() {
         .filter(|(name, _)| name.starts_with("mask"))
         .all(|(_, id)| *id != BuildingId(0)));
 }
+
+#[test]
+fn malformed_playbook_fields_return_setup_errors() {
+    let fixture = include_str!("../../../fixtures/playbooks/executor.jsonl")
+        .lines()
+        .next()
+        .map(json)
+        .unwrap();
+    let layout = json(
+        r#"{"buildings":[{"key":"gs","x":20,"y":20}],"walls":[],"traps":[],"heroes":[],"cc_troops":[],"levels":{"gs":1}}"#,
+    );
+    let options = json(r#"{"seed":2,"town_hall":18,"record":true}"#);
+    for (key, value) in [
+        ("what", Json::Obj(Vec::new())),
+        ("origin", Json::Obj(Vec::new())),
+        ("spread", Json::Null),
+    ] {
+        let mut prepared = fixture.at("prepared").clone();
+        let mut steps = prepared.at("steps").arr().to_vec();
+        put(&mut steps[0], key, value);
+        put(&mut prepared, "steps", Json::Arr(steps));
+        let result =
+            crate::setup::build(&layout, &prepared, &options, crate::test_support::catalog());
+        assert!(
+            matches!(result, Err(crate::content::ContentError::Invalid(message)) if message.contains(key))
+        );
+    }
+}

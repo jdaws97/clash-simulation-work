@@ -166,11 +166,13 @@ fn parse_tile(value: &Json) -> Result<Tile, String> {
     if row.len() != 2 {
         return Err("expected [x,y]".to_owned());
     }
-    let coord = |v: &Json| {
-        v.opt_f64()
-            .filter(|v| v.is_finite() && v.fract() == 0.0 && (0.0..44.0).contains(v))
-            .map(|v| v as i32)
-            .ok_or_else(|| "tile must be an integer in 0..43".to_owned())
+    let coord = |v: &Json| match v {
+        Json::Num(number)
+            if number.is_finite() && number.fract() == 0.0 && (0.0..44.0).contains(number) =>
+        {
+            Ok(*number as i32)
+        }
+        _ => Err("tile must be an integer in 0..43".to_owned()),
     };
     Ok((coord(&row[0])?, coord(&row[1])?))
 }
@@ -181,10 +183,9 @@ fn finite_pair(value: &Json) -> Result<(f64, f64), String> {
     if row.len() != 2 {
         return Err("expected numeric pair".to_owned());
     }
-    let coord = |v: &Json| {
-        v.opt_f64()
-            .filter(|v| v.is_finite())
-            .ok_or_else(|| "expected finite coordinate".to_owned())
+    let coord = |v: &Json| match v {
+        Json::Num(number) if number.is_finite() => Ok(*number),
+        _ => Err("expected finite numeric coordinate".to_owned()),
     };
     Ok((coord(&row[0])?, coord(&row[1])?))
 }
@@ -766,13 +767,18 @@ pub fn cli(args: &[String]) -> Result<(), String> {
         }
         "gallery" => {
             let paths = read(options.path("images")?)?;
-            let images = list(&paths)?
+            let paths = list(&paths)?
                 .iter()
-                .map(|v| {
-                    v.opt_str()
-                        .ok_or("image path must be a string".to_owned())
-                        .and_then(|p| Image::load(Path::new(p)))
+                .map(|value| match value {
+                    Json::Str(path) => Ok(PathBuf::from(path)),
+                    _ => Err("image path must be a string".to_owned()),
                 })
+                .collect::<Result<Vec<_>, _>>()?;
+            ensure_output(out, paths.iter().cloned())?;
+            ensure_output(&sibling_receipt(out), paths.iter().cloned())?;
+            let images = paths
+                .iter()
+                .map(|path| Image::load(path))
                 .collect::<Result<Vec<_>, _>>()?;
             presentation::gallery(
                 &images,
@@ -948,16 +954,16 @@ fn apply_symmetry(
         if indices.len() != 2 {
             return Err("symmetry pairs require two building indices".to_owned());
         }
-        let index = |v: &Json| {
-            v.opt_f64()
-                .filter(|v| {
-                    v.is_finite()
-                        && v.fract() == 0.0
-                        && *v >= 0.0
-                        && *v < layout.buildings.len() as f64
-                })
-                .map(|v| v as usize)
-                .ok_or("invalid symmetry building index")
+        let index = |value: &Json| match value {
+            Json::Num(number)
+                if number.is_finite()
+                    && number.fract() == 0.0
+                    && *number >= 0.0
+                    && *number < layout.buildings.len() as f64 =>
+            {
+                Ok(*number as usize)
+            }
+            _ => Err("invalid symmetry building index"),
         };
         let (a, b) = (index(&indices[0])?, index(&indices[1])?);
         if a == b || layout.buildings[a].key != layout.buildings[b].key {
@@ -1022,10 +1028,10 @@ fn convert(options: &Options, context: &Context, receipt: &mut Receipt) -> Resul
                     return Err("window must be [origin_x,origin_y,zoom]".to_owned());
                 }
                 let (ox, oy) = finite_pair(&arr([row[0].clone(), row[1].clone()]))?;
-                let zoom = row[2]
-                    .opt_f64()
-                    .filter(|v| v.is_finite() && *v > 0.0)
-                    .ok_or("invalid window zoom")?;
+                let zoom = match row[2] {
+                    Json::Num(number) if number.is_finite() && number > 0.0 => number,
+                    _ => return Err("invalid window zoom".to_owned()),
+                };
                 (ox + px / zoom, oy + py / zoom)
             };
             let margin = options.number("margin", 0.45)? + if key == "camp" { 0.3 } else { 0.0 };

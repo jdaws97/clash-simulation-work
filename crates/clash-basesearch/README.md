@@ -38,10 +38,10 @@ Example bounded run configuration:
   "waves": 2,
   "batch": 3,
   "physical_battles": 2400,
-  "screen_groups": 4,
-  "confirm_groups": 4,
-  "gate_groups": 4,
-  "final_groups": 6,
+  "screen_groups": 10,
+  "confirm_groups": 10,
+  "gate_groups": 10,
+  "final_groups": 10,
   "oracle_budget": 28,
   "oracle_every": 1,
   "archive_groups": 2,
@@ -64,8 +64,15 @@ without an event version, and never copies personal levels. An optional
 `population` array contains `{ "genome": <ArmyGenome JSON>, "weight": <positive
 number> }` entries. Without it, two admitted cited seeds form an explicitly
 declared model population; their discovery success does not establish real
-prevalence. Plans use native account legality, stat skill quantiles, uncalibrated
-strength 1, fixed compiler pace 1 and explicit zero fitted dependency gaps.
+prevalence. Plans use native account legality, the uncalibrated five-bin skill
+model, fixed compiler pace 1 and explicit zero fitted dependency gaps.
+Each manifest requires at least five groups per population entry, crossing
+each army with every skill bin. Bin counts per army differ by at most one.
+Manifest names namespace their random streams, and overlapping group, plan or
+scouting seeds across manifests are rejected before evaluation. Each search
+wave has a fresh screen; incumbents are reevaluated on it before paired racing.
+These extra incumbent battles count against the physical budget. Checkpoint
+schema 4 records consumed screen seeds and rejects reuse after resume.
 The manifest records the actual account, population, compiled plans and sources.
 War requires the attacker account TH to match the defender TH.
 

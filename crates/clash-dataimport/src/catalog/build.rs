@@ -310,9 +310,13 @@ pub(super) fn catalog(sources: &Sources) -> Result<Json, String> {
 
 fn environment_number(name: &str, fallback: f64) -> Result<f64, String> {
     std::env::var(name).map_or(Ok(fallback), |value| {
-        value
+        let number = value
             .parse::<f64>()
-            .map_err(|error| format!("{name}: {error}"))
+            .map_err(|error| format!("{name}: {error}"))?;
+        if !number.is_finite() {
+            return Err(format!("{name}: requires a finite number"));
+        }
+        Ok(number)
     })
 }
 
@@ -363,4 +367,25 @@ fn siege_caps(wiki: &std::path::Path) -> Result<Json, String> {
         put(&mut result, text(name), caps);
     }
     Ok(result)
+}
+
+#[cfg(test)]
+mod environment_tests {
+    use super::environment_number;
+
+    #[test]
+    fn numeric_environment_options_reject_nonfinite_values() {
+        // A dedicated variable avoids racing other catalog tests' environment.
+        let name = "CLASH_H1_SYNTHETIC_ENV_NUMBER";
+        for value in ["NaN", "inf", "-inf", "Infinity", "1e999"] {
+            std::env::set_var(name, value);
+            assert!(environment_number(name, 0.1)
+                .unwrap_err()
+                .contains("finite"));
+        }
+        std::env::set_var(name, "0.125");
+        assert_eq!(environment_number(name, 0.1).unwrap(), 0.125);
+        std::env::remove_var(name);
+        assert_eq!(environment_number(name, 0.1).unwrap(), 0.1);
+    }
 }

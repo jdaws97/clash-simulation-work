@@ -115,6 +115,7 @@ pub struct State {
     pub polished: bool,
     pub polish_log: Vec<Json>,
     pub annealing_temperature: f64,
+    pub used_screen_seeds: BTreeSet<String>,
 }
 
 impl State {
@@ -132,11 +133,16 @@ impl State {
             polished: false,
             polish_log: Vec::new(),
             annealing_temperature: 1.0,
+            used_screen_seeds: BTreeSet::new(),
         }
     }
 
     pub fn to_json(&self) -> Json {
         object([
+            (
+                "used_screen_seeds",
+                Json::Arr(self.used_screen_seeds.iter().map(string).collect()),
+            ),
             ("rng", string(self.rng.0.to_string())),
             ("completed_waves", num(self.completed_waves)),
             ("candidate_cursor", num(self.candidate_cursor)),
@@ -324,7 +330,34 @@ pub fn wave(
     settings.validate()?;
     screen.validate()?;
     confirmation.validate()?;
+    Manifest::ensure_disjoint(&[screen, confirmation])?;
+    let screen_seeds = screen.seed_keys();
+    if !state.used_screen_seeds.is_disjoint(&screen_seeds) {
+        return Err("racing requires fresh, disjoint screen samples for every wave".to_owned());
+    }
     let mut candidates = proposals(context, settings, state)?;
+    // Freeze the proposals and incumbents before observing this wave's data.
+    // Previous screen rows selected the parents and cannot be used to race.
+    let mut incumbent_rows = BTreeMap::<usize, Vec<Row>>::new();
+    if settings.racing {
+        for candidate in &candidates {
+            let cell = settings
+                .descriptors
+                .describe(context, &candidate.base)?
+                .cell;
+            if let Some(incumbent) = state.archive.cells.get(&cell) {
+                if let std::collections::btree_map::Entry::Vacant(entry) =
+                    incumbent_rows.entry(cell)
+                {
+                    entry.insert(evaluator.assess(
+                        &incumbent.base,
+                        screen,
+                        state.attacks.version,
+                    )?);
+                }
+            }
+        }
+    }
     let strata = screen.strata();
     let comparisons = (state.completed_waves + 1) as f64 * (state.completed_waves + 2) as f64;
     let alpha = settings.alpha / comparisons / candidates.len() as f64;
@@ -357,7 +390,7 @@ pub fn wave(
                     * per_tile;
                 if race::paired(
                     &candidate.screen,
-                    &incumbent.screen,
+                    &incumbent_rows[&descriptor.cell],
                     &strata,
                     &settings.mode,
                     delta,
@@ -470,6 +503,7 @@ pub fn wave(
         }
     }
     state.completed_waves += 1;
+    state.used_screen_seeds.extend(screen_seeds);
     state.annealing_temperature *= 0.95;
     Ok(())
 }

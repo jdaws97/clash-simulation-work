@@ -264,12 +264,30 @@ fn exact_checkpoint_waves_and_thread_counts() {
             budget,
             cache,
         };
+        let next_screen = Manifest {
+            id: "screen-wave-1".to_owned(),
+            groups: (20..22).map(|i| empty_group(i, None)).collect(),
+        };
+        let before_reuse = resumed.to_json();
+        let error = search::wave(
+            context(),
+            &settings,
+            &mut resumed,
+            &mut resumed_evaluator,
+            &screen,
+            &confirm,
+            &oracle_context,
+            &[],
+        )
+        .unwrap_err();
+        assert!(error.contains("fresh, disjoint"));
+        assert_eq!(resumed.to_json(), before_reuse);
         search::wave(
             context(),
             &settings,
             &mut state,
             &mut evaluator,
-            &screen,
+            &next_screen,
             &confirm,
             &oracle_context,
             &[],
@@ -280,7 +298,7 @@ fn exact_checkpoint_waves_and_thread_counts() {
             &settings,
             &mut resumed,
             &mut resumed_evaluator,
-            &screen,
+            &next_screen,
             &confirm,
             &oracle_context,
             &[],
@@ -301,13 +319,13 @@ fn exact_checkpoint_waves_and_thread_counts() {
                 },
                 cache: BTreeMap::new(),
             };
-            for _ in 0..2 {
+            for wave_screen in [&screen, &next_screen] {
                 search::wave(
                     context(),
                     &full_settings,
                     &mut full_state,
                     &mut full_evaluator,
-                    &screen,
+                    wave_screen,
                     &confirm,
                     &oracle_context,
                     &[],
@@ -591,4 +609,120 @@ fn paired_reports_holdout_isolation_and_replayable_jobs() {
     let mut wrong = rows.clone();
     wrong[0].group_id = "changed-lineage".to_owned();
     assert!(crate::report::paired_bootstrap(&rows, &wrong, "ranked", 27).is_err());
+}
+
+#[test]
+fn population_crosses_all_five_skill_bins() {
+    let compiler = compiler();
+    let account = AccountRules::load(&context().catalog, &compiler).unwrap();
+    let (seeds, _) =
+        clash_armysearch::operators::seeds(&root(), &account, &compiler, &context().catalog)
+            .unwrap();
+    let population = (0..5)
+        .map(|index| {
+            let mut genome = seeds[0].clone();
+            genome.plan.angle_offset = index as f64 * 0.1;
+            (genome, 1.0)
+        })
+        .collect::<Vec<_>>();
+    let oracle_context = OracleContext {
+        account: &account,
+        compiler: &compiler,
+        catalog: &context().catalog,
+    };
+    let manifest = crate::cli::manifests(
+        &oracle_context,
+        &population,
+        "screen-development",
+        50,
+        8191,
+        None,
+    )
+    .unwrap();
+    let mut counts = BTreeMap::<String, [usize; 5]>::new();
+    for group in &manifest.groups {
+        let strength = group.plans[0].at("strength").f64();
+        let bin = (0..5)
+            .find(|&bin| scoring::skill(bin as i64) == strength)
+            .unwrap();
+        counts.entry(group.stratum.clone()).or_default()[bin] += 1;
+        assert_eq!(group.plans[0].at("strength"), group.plans[1].at("strength"));
+    }
+    assert_eq!(counts.len(), 5);
+    assert!(counts.values().all(|bins| *bins == [2; 5]), "{counts:?}");
+    let error = crate::cli::manifests(&oracle_context, &population, "insufficient", 24, 8191, None)
+        .unwrap_err();
+    assert!(error.contains("all five skill bins"));
+}
+
+#[test]
+fn manifest_namespaces_prevent_reported_collision_and_check_detects_overlap() {
+    let compiler = compiler();
+    let account = AccountRules::load(&context().catalog, &compiler).unwrap();
+    let (seeds, _) =
+        clash_armysearch::operators::seeds(&root(), &account, &compiler, &context().catalog)
+            .unwrap();
+    let population = vec![(seeds[0].clone(), 1.0)];
+    let oracle_context = OracleContext {
+        account: &account,
+        compiler: &compiler,
+        catalog: &context().catalog,
+    };
+
+    // These settings previously made the screen and untouched final identical.
+    let screen = crate::cli::manifests(
+        &oracle_context,
+        &population,
+        "screen-development",
+        25,
+        3_298_534_983_151,
+        None,
+    )
+    .unwrap();
+    let final_manifest = crate::cli::manifests(
+        &oracle_context,
+        &population,
+        "final-untouched",
+        25,
+        99823 + (3 << 40),
+        None,
+    )
+    .unwrap();
+    Manifest::ensure_disjoint(&[&screen, &final_manifest]).unwrap();
+    assert_ne!(screen.groups[0].plans, final_manifest.groups[0].plans);
+    let mut collision = screen.clone();
+    collision.id = "different-name-same-samples".to_owned();
+    let error = Manifest::ensure_disjoint(&[&screen, &collision]).unwrap_err();
+    assert!(error.contains("cross-manifest seed collision"));
+    let same_seed_different_role = crate::cli::manifests(
+        &oracle_context,
+        &population,
+        "screen-development/wave/1",
+        50,
+        8191,
+        None,
+    )
+    .unwrap();
+    let same_seed_screen = crate::cli::manifests(
+        &oracle_context,
+        &population,
+        "screen-development",
+        50,
+        8191,
+        None,
+    )
+    .unwrap();
+    Manifest::ensure_disjoint(&[
+        &same_seed_screen,
+        &same_seed_different_role,
+        &final_manifest,
+    ])
+    .unwrap();
+}
+
+#[test]
+fn adaptive_racing_reuse_has_false_eliminations_and_fresh_samples_do_not() {
+    let proof = crate::completion_proof::adaptive_racing_check().unwrap();
+    assert_eq!(proof.at("reused_false_elimination_rate"), &Json::Num(1.0));
+    assert_eq!(proof.at("fresh_false_elimination_rate"), &Json::Num(0.0));
 }

@@ -119,7 +119,10 @@ fn frozen_reply_parser_and_extraction_verdict() {
         citations::check_extracted("no json", "synthetic", &captions()).unwrap(),
         parse(r#"{"video_id":"synthetic","parse_error":true}"#)
     );
-    assert!(citations::parse_reply(r#"{"note":"}"}"#).is_none());
+    assert_eq!(
+        citations::parse_reply(r#"{"note":"}"}"#),
+        Some(parse(r#"{"note":"}"}"#))
+    );
 }
 
 #[test]
@@ -533,5 +536,69 @@ fn cli_offline_import_consolidate_verify_and_queue_import() {
     assert_eq!(
         fs::read_to_string(out).unwrap(),
         "technique\tSynthetic knights\n"
+    );
+}
+
+#[test]
+fn malformed_executor_fields_fail_authoring_validation() {
+    for (field, value) in [
+        ("what", obj([] as [(&str, Json); 0])),
+        ("origin", obj([] as [(&str, Json); 0])),
+        ("spread", Json::Null),
+    ] {
+        let mut step = parse(r#"{"id":"synthetic","action":"deploy","uncited":true}"#);
+        wire::put(&mut step, field, value);
+        let errors = schema::validate(&obj([("steps", Json::Arr(vec![step]))]));
+        assert!(
+            errors.iter().any(|error| error.contains(field)),
+            "{errors:?}"
+        );
+    }
+}
+
+#[test]
+fn reply_scan_prefers_outer_object_and_respects_string_escapes() {
+    let outer = parse(
+        r#"{"steps":[],"notes":["}","{","escaped quote: \" }","backslash: \\"],"nested":{"steps":[{"id":"inner"}]}}"#,
+    );
+    let reply = format!("prose {{invalid}} ```json\n{}\n```", wire::encode(&outer));
+    assert_eq!(citations::parse_reply(&reply), Some(outer));
+}
+
+#[test]
+fn research_status_invalidates_a_changed_prompt() {
+    let directory = Temporary::new();
+    let queue = directory.write("queue.tsv", "synthetic\tSubject\n");
+    let mut jobs = research::usage_jobs(&queue, "original {NAME}", directory.path()).unwrap();
+    jobs[0].minimum_bytes = 0;
+    fs::write(&jobs[0].output, "declared synthetic output").unwrap();
+    let receipts = directory.path().join(".jobs");
+    fs::create_dir(&receipts).unwrap();
+    wire::write(
+        &receipts.join(format!("{}.json", jobs[0].id)),
+        &obj([
+            ("status", string("complete")),
+            (
+                "output_hash",
+                string(wire::file_hash(&jobs[0].output).unwrap()),
+            ),
+            (
+                "job",
+                obj([
+                    ("input_hash", string(&jobs[0].input_hash)),
+                    ("prompt", string(&jobs[0].prompt)),
+                ]),
+            ),
+        ]),
+    )
+    .unwrap();
+    assert_eq!(
+        research::status(&jobs).arr()[0].at("complete"),
+        &Json::Bool(true)
+    );
+    jobs[0].prompt = "changed brief only".to_owned();
+    assert_eq!(
+        research::status(&jobs).arr()[0].at("complete"),
+        &Json::Bool(false)
     );
 }

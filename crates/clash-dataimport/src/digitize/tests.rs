@@ -289,3 +289,52 @@ fn cli_keeps_sources_and_rejects_unknown_flags() {
     assert!(cli(&typo).unwrap_err().contains("unsupported --typo"));
     fs::remove_dir_all(directory).unwrap();
 }
+
+#[test]
+fn gallery_refuses_canonical_source_image_aliases() {
+    let directory = std::env::temp_dir().join(format!("clash-h1-gallery-{}", std::process::id()));
+    fs::create_dir_all(directory.join("nested")).unwrap();
+    let source = directory.join("source.ppm");
+    Image::new(2, 2, [19, 37, 53])
+        .unwrap()
+        .save(&source)
+        .unwrap();
+    let before = fs::read(&source).unwrap();
+    let manifest = directory.join("images.json");
+    write(&manifest, &arr([string(source.to_string_lossy())])).unwrap();
+    let output = directory.join("nested/../source.ppm");
+    let error = cli(&[
+        "gallery".to_owned(),
+        "--images".to_owned(),
+        manifest.display().to_string(),
+        "--out".to_owned(),
+        output.display().to_string(),
+    ])
+    .unwrap_err();
+    assert!(error.contains("output must differ"), "{error}");
+    assert_eq!(fs::read(&source).unwrap(), before);
+    assert!(!sibling_receipt(&source).exists());
+    fs::remove_dir_all(directory).unwrap();
+}
+
+#[test]
+fn malformed_digitizer_numbers_return_errors_without_unwinding() {
+    for value in [
+        string("oops"),
+        Json::Null,
+        Json::Bool(true),
+        obj([] as [(&str, Json); 0]),
+        num(f64::NAN),
+        num(f64::INFINITY),
+    ] {
+        let grid = obj([
+            ("cx", value.clone()),
+            ("top", num(0)),
+            ("a", num(1)),
+            ("b", num(1)),
+        ]);
+        assert!(Grid::from_json(&grid).unwrap_err().contains("cx"));
+        assert!(finite_pair(&arr([value.clone(), num(1)])).is_err());
+        assert!(parse_tile(&arr([value, num(1)])).is_err());
+    }
+}

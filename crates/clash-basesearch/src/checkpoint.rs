@@ -13,7 +13,7 @@ use crate::search::{Settings, State};
 use crate::util::{encode, fingerprint, num, object, read, string, u64_string, usize_field};
 use crate::{Context, ProposalRng};
 
-pub const SCHEMA: usize = 3;
+pub const SCHEMA: usize = 4;
 
 pub fn save(
     path: &Path,
@@ -140,6 +140,12 @@ pub fn resume(
         let mut state = State::new(0);
         state.rng = ProposalRng::new(u64_string(value, "rng")?);
         state.completed_waves = usize_field(value, "completed_waves")?;
+        state.used_screen_seeds = value
+            .at("used_screen_seeds")
+            .arr()
+            .iter()
+            .map(|value| value.str().to_owned())
+            .collect();
         state.candidate_cursor = usize_field(value, "candidate_cursor")?;
         state.race_looks = usize_field(value, "race_looks")?;
         state.race_eliminated = usize_field(value, "race_eliminated")?;
