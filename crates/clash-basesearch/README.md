@@ -1,3 +1,9 @@
+G4 cleanup follow-up (2026-10-25): replaced Python entry points and the
+digitizer scratch toolkit were removed after reference closure. Required
+unported Python workflows and their imports remain. The lane receipt below
+preserves its original scope; see [CLEANUP_G4.md](../../docs/CLEANUP_G4.md)
+for the current file inventory, local paths and pending Rust handoff.
+
 # Native base search, M3–M6
 
 This crate extends the admitted M2 proposals with a native evaluator, racing,

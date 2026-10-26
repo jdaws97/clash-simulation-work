@@ -1,3 +1,9 @@
+G4 cleanup follow-up (2026-10-25): replaced Python entry points and the
+digitizer scratch toolkit were removed after reference closure. Required
+unported Python workflows and their imports remain. The lane receipt below
+preserves its original scope; see [CLEANUP_G4.md](../../../../docs/CLEANUP_G4.md)
+for the current file inventory, local paths and pending Rust handoff.
+
 # Native screenshot digitizer (lane lD)
 
 The public entry point is `clash_dataimport::digitize::cli`; the already wired
@@ -140,7 +146,7 @@ Private replay command (the account is explicit, read only):
 . ~/.cargo/env
 CARGO_TARGET_DIR=/tmp/clash-target-lD cargo run --release --offline --locked \
   -p clash-cli --bin clash -- dataimport digitize replay \
-  --inputs /mnt/c/Users/jarod/Documents/clash-lab/output \
+  --inputs /mnt/c/Users/jarod/Documents/clash-lab/local/digitize \
   --references data/reference-bases \
   --account /mnt/c/Users/jarod/Documents/clash-lab/data/your-levels.json \
   --account-th 16 --out /tmp/clash-lD-replay

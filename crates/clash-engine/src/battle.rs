@@ -871,7 +871,7 @@ impl Battle {
         }
         // battle.py:940-947: retire list membership without invalidating ids.
         if self.attackers_pool().count() > 160 {
-            // output/research/usage/bag-of-frostmites.md: generated Frostmites
+            // local/research/usage/bag-of-frostmites.md: generated Frostmites
             // can die between plan ticks; retain their history before pruning.
             // https://clashofclans.fandom.com/wiki/Bag_of_Frostmites
             if let Plan::Playbook(plan) = &mut self.plan {

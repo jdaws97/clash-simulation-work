@@ -63,7 +63,7 @@ pub fn family_of(build: &Json) -> Option<&'static str> {
             ("Super Bowler", "super-bowler"),
             ("Meteor Golem", "meteor-golem"),
             ("Super Yeti", "yeti"),
-            // output/research/usage/yeti.md: no cited ordinary-Yeti book exists.
+            // local/research/usage/yeti.md: no cited ordinary-Yeti book exists.
             // https://clashofclans.fandom.com/wiki/Yeti
             ("Yeti", "ordinary-yeti"),
             ("Ruin Witch", "druid-ruin-witch"),
@@ -603,7 +603,7 @@ pub fn compose(
     );
     put(&mut plan, "cleanup", Json::Arr(cleanup));
     put(&mut plan, "breakers", Json::Arr(breakers));
-    // output/research/usage/grand-warden.md: preserve the replay's chosen mode.
+    // local/research/usage/grand-warden.md: preserve the replay's chosen mode.
     // https://clashofclans.fandom.com/wiki/Grand_Warden
     let warden_mode = match build.get("warden_mode") {
         Some(Json::Str(mode)) if matches!(mode.as_str(), "ground" | "air") => string(mode),

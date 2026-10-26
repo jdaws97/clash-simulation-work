@@ -416,7 +416,7 @@ fn setup_layout(battle: &mut Battle, layout: &Json, options: &Json) {
             );
         }
     }
-    // output/research/usage/archer-tower.md: the geared tower is merged.
+    // local/research/usage/archer-tower.md: the geared tower is merged.
     // https://clashofclans.fandom.com/wiki/Multi-Gear_Tower
     let placements = layout.at("buildings").arr();
     assert!(

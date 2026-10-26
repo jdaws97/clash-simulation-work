@@ -25,10 +25,10 @@ VIDMINE=/tmp/vidmine-target/release/vidmine
 
 ```sh
 "$VIDMINE" probe /path/to/video.mp4
-"$VIDMINE" extract /path/to/video.mp4 --out output/web-videos/video-id
-"$VIDMINE" positions /path/to/video.mp4 --out output/web-videos/video-id
-"$VIDMINE" summary output/web-videos > output/web-videos/vidmine-summary.tsv
-"$VIDMINE" verify output/web-videos
+"$VIDMINE" extract /path/to/video.mp4 --out local/web-videos/video-id
+"$VIDMINE" positions /path/to/video.mp4 --out local/web-videos/video-id
+"$VIDMINE" summary local/web-videos > local/evidence/web-videos/vidmine-summary.tsv
+"$VIDMINE" verify local/web-videos
 "$VIDMINE" cleanup
 ```
 
@@ -100,10 +100,10 @@ camera fit scores are measurements, not calibrated probabilities.
 ## Updates without source video
 
 ```sh
-"$VIDMINE" resegment output/web-videos
-"$VIDMINE" icons output/web-videos
-"$VIDMINE" timing output/web-videos
-"$VIDMINE" verify output/web-videos
+"$VIDMINE" resegment local/web-videos
+"$VIDMINE" icons local/web-videos
+"$VIDMINE" timing local/web-videos
+"$VIDMINE" verify local/web-videos
 ```
 
 `resegment` reads `readings.jsonl`, reconstructs intervals and count events,
@@ -155,13 +155,13 @@ is not suitable for automatic placement reconstruction yet.
 ## Reproducible reviews and template development
 
 ```sh
-"$VIDMINE" audit /path/to/video.mp4 --out output/web-videos/video-id
+"$VIDMINE" audit /path/to/video.mp4 --out local/web-videos/video-id
 # View /tmp/vidmine-work/video-id-audit.png and fill *_truth in spot-check.tsv.
-"$VIDMINE" score output/web-videos/video-id
-"$VIDMINE" icon-audit output/web-videos
+"$VIDMINE" score local/web-videos/video-id
+"$VIDMINE" icon-audit local/web-videos
 # View /tmp/vidmine-work/icon-audit.ppm; fill name_truth in icon-spot-check.tsv.
 # Position sheets are under /tmp/vidmine-work/positions/video-id/page-*.ppm.
-"$VIDMINE" score-positions output/web-videos/video-id
+"$VIDMINE" score-positions local/web-videos/video-id
 ```
 
 HUD audit selects ten deterministic uniform times using FNV-1a(video ID) and an
@@ -184,11 +184,11 @@ For this development pass, compact manual labels are retained in `m2-truth.tsv`,
 A blank truth is unlabeled; it never becomes a correct prediction by default.
 
 ```sh
-"$VIDMINE" icon-cluster output/web-videos
+"$VIDMINE" icon-cluster local/web-videos
 # View /tmp/vidmine-work/icons/page-*.ppm and label the generated clusters.
 # icon-reviewed-groups.tsv: name<TAB>space-separated cluster IDs.
 # icon-extra-labels.tsv: path<TAB>name for separately inspected crops.
-"$VIDMINE" icon-learn output/web-videos
+"$VIDMINE" icon-learn local/web-videos
 "$VIDMINE" bootstrap-box /path/to/video.mp4 clock-phone 576 102 128 26 120 130
 "$VIDMINE" label-crop /path/to/video.mp4 battle-phone-label 180 592 86 98 12
 "$VIDMINE" sample /path/to/video.mp4 90 /tmp/vidmine-work/example.ppm
@@ -205,12 +205,12 @@ glyph provenance. Tests use declared synthetic data, not real-game calibration.
 
 ```sh
 # Reprocess all saved slots/cards and JPEG league regions without source video.
-"$VIDMINE" identity output/web-videos
-"$VIDMINE" identity-caps output/web-videos
+"$VIDMINE" identity local/web-videos
+"$VIDMINE" identity-caps local/web-videos
 # Sample six bar/league views in each existing attack interval.
-"$VIDMINE" identity-video /path/to/video.mp4 --out output/web-videos/video-id
-"$VIDMINE" summary output/web-videos > output/web-videos/vidmine-summary.tsv
-"$VIDMINE" verify output/web-videos
+"$VIDMINE" identity-video /path/to/video.mp4 --out local/web-videos/video-id
+"$VIDMINE" summary local/web-videos > local/evidence/web-videos/vidmine-summary.tsv
+"$VIDMINE" verify local/web-videos
 ```
 
 Extraction invokes this pass automatically. The compiled crate needs its local
@@ -272,19 +272,19 @@ the small scale-normalized sprite library. Run M4 after M3.
 ## M3 template development and review
 
 ```sh
-"$VIDMINE" level-sheet output/web-videos/video-id
-"$VIDMINE" army-sheet output/web-videos/video-id
-"$VIDMINE" league-audit output/web-videos
-"$VIDMINE" identity-learn output/web-videos/m3-template-labels.tsv
-"$VIDMINE" card-learn output/web-videos/m3-icon-labels.tsv
+"$VIDMINE" level-sheet local/web-videos/video-id
+"$VIDMINE" army-sheet local/web-videos/video-id
+"$VIDMINE" league-audit local/web-videos
+"$VIDMINE" identity-learn local/evidence/web-videos/m3-template-labels.tsv
+"$VIDMINE" card-learn local/evidence/web-videos/m3-icon-labels.tsv
 "$VIDMINE" league-learn /tmp/vidmine-work/source.ppm Legend_I X Y W H
-"$VIDMINE" identity-audit output/web-videos
+"$VIDMINE" identity-audit local/web-videos
 # View /tmp/vidmine-work/m3/level-audit-*.ppm; explicitly write sample truths.
-"$VIDMINE" identity-label-audit output/web-videos output/web-videos/m3-review-labels.tsv
-"$VIDMINE" identity-freeze-audit output/web-videos
-"$VIDMINE" identity-learn-audit output/web-videos
-"$VIDMINE" identity-read-crops output/web-videos
-"$VIDMINE" identity-score output/web-videos
+"$VIDMINE" identity-label-audit local/web-videos local/evidence/web-videos/m3-review-labels.tsv
+"$VIDMINE" identity-freeze-audit local/web-videos
+"$VIDMINE" identity-learn-audit local/web-videos
+"$VIDMINE" identity-read-crops local/web-videos
+"$VIDMINE" identity-score local/web-videos
 "$VIDMINE" cleanup
 ```
 

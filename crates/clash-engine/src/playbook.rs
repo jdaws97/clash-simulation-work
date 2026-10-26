@@ -392,7 +392,7 @@ impl PlaybookPlan {
                     .iter()
                     .filter(|(name, _)| {
                         // playbook.py:113-123 records opening snipes in runtime log_steps.
-                        // output/research/usage/hero-sniping-of-exposed-defenses.md:
+                        // local/research/usage/hero-sniping-of-exposed-defenses.md:
                         // https://clashofclans.fandom.com/wiki/Rocket_Spear
                         // Keep that mutable log out of the immutable input snapshot.
                         !name.starts_with('_')
@@ -470,7 +470,7 @@ impl PlaybookPlan {
             if cancelled || done && step.every.is_none() || step.completion || step.uncited {
                 continue;
             }
-            // output/research/usage/grand-warden.md: equipment supplies abilities.
+            // local/research/usage/grand-warden.md: equipment supplies abilities.
             // https://clashofclans.fandom.com/wiki/Grand_Warden
             if step.action == Action::Ability
                 && self.missing_equipment(battle, step, None).is_some()
@@ -880,7 +880,7 @@ impl PlaybookPlan {
     fn inside(&self, battle: &Battle, unit: UnitRef) -> bool {
         let u = battle.unit(unit);
         let (x, y) = (u.x as i32, u.y as i32);
-        // output/research/usage/root-rider.md: Duke follows the Riders' entry.
+        // local/research/usage/root-rider.md: Duke follows the Riders' entry.
         // https://www.youtube.com/watch?v=C0lnvxJraoM&t=256
         // Policy: milestones retain the original deployment boundary.
         [-2, 0, 2].iter().all(|dx| {
@@ -917,7 +917,7 @@ impl PlaybookPlan {
                 .iter()
                 .any(|s| flag(&s.source, "primary") && self.done(&s.id) && !self.cancelled(&s.id));
         }
-        // output/research/usage/root-rider.md: support follows the main troops.
+        // local/research/usage/root-rider.md: support follows the main troops.
         // https://www.youtube.com/watch?v=g9UjZ9xFQOU&t=169
         let candidates: Vec<&Step> = self
             .steps
@@ -998,7 +998,7 @@ impl PlaybookPlan {
         step: &Step,
         pos: Option<(f64, f64)>,
     ) -> Option<(f64, f64)> {
-        // output/research/usage/invisibility-spell.md: cover advancing heroes.
+        // local/research/usage/invisibility-spell.md: cover advancing heroes.
         // https://clashofclans.fandom.com/wiki/Invisibility_Spell
         if step.what.as_deref() != Some("Invisibility Spell") || step.at != "group:charge" {
             return pos;
@@ -1222,7 +1222,7 @@ impl PlaybookPlan {
     }
 
     fn recoverable(&self, battle: &Battle, name: &str) -> bool {
-        // output/research/usage/revive-spell.md: unused abilities survive KO.
+        // local/research/usage/revive-spell.md: unused abilities survive KO.
         // https://clashofclans.fandom.com/wiki/Revive_Spell
         battle
             .attackers_pool()
@@ -1572,7 +1572,7 @@ impl PlaybookPlan {
             .strip_prefix("edge:")
             .filter(|_| n >= 3 && !matches!(what, "Healer" | "Wall Breaker"))
         {
-            // output/research/usage/archer.md: spread deployments avoid splash.
+            // local/research/usage/archer.md: spread deployments avoid splash.
             // A spread multiplier scales this formation, never selects a stack.
             // https://clashofclans.fandom.com/wiki/Archer
             let angle = self.edge_angle(edge);
@@ -1906,7 +1906,7 @@ impl PlaybookPlan {
                     required = Some("Fireball".to_owned());
                 }
             }
-            // output/research/usage/grand-warden.md: paired activation names
+            // local/research/usage/grand-warden.md: paired activation names
             // both items. https://clashofclans.fandom.com/wiki/Grand_Warden
             let required = match step.source.get("equipment") {
                 Some(Json::Arr(names)) if !names.is_empty() => {
@@ -2192,7 +2192,7 @@ impl PlaybookPlan {
     }
 
     fn pendant_possible(&self, battle: &Battle) -> bool {
-        // output/research/usage/minion-prince.md: Pendant recalls the Prince
+        // local/research/usage/minion-prince.md: Pendant recalls the Prince
         // and nearby allies for a later redeployment.
         // https://clashofclans.fandom.com/wiki/Portal_Pendant
         let name = "Minion Prince";
@@ -2459,7 +2459,7 @@ impl PlaybookPlan {
         let Some(unit) = unit else {
             return false;
         };
-        // output/research/usage/super-minion.md: release Blimp at the chosen cluster.
+        // local/research/usage/super-minion.md: release Blimp at the chosen cluster.
         // https://clashofclans.fandom.com/wiki/Battle_Blimp
         // Policy: bind once; half a tile is the arrival tolerance.
         let position = self
@@ -2485,7 +2485,7 @@ impl PlaybookPlan {
     // playbook.py:527-661: skip pass, cited steps, completion steps, rescue drops.
     pub fn on_tick(&mut self, battle: &mut Battle) {
         // output/hunt/r9/s2.out #4: pets, summons and cargo also arrive in battle.
-        // output/research/usage/archer-queen.md: Mirror clones are separate heroes.
+        // local/research/usage/archer-queen.md: Mirror clones are separate heroes.
         // https://clashofclans.fandom.com/wiki/Magic_Mirror
         for unit in battle.attackers_pool() {
             if unit.kind != Tag::HeroClone && !self.deployed.contains(&unit.name) {
@@ -2506,7 +2506,7 @@ impl PlaybookPlan {
                 }
             }
         }
-        // output/research/usage/root-rider.md: Recall closes the opener.
+        // local/research/usage/root-rider.md: Recall closes the opener.
         // https://www.youtube.com/watch?v=C0lnvxJraoM&t=165
         // Policy: hero loss closes it too, regardless of surviving cleanup.
         let steps = self.steps.clone();
@@ -2598,7 +2598,7 @@ impl PlaybookPlan {
                     why = Some("until reached".to_owned());
                 }
                 if let Some(why) = why {
-                    // output/research/usage/grand-warden.md: equipped abilities
+                    // local/research/usage/grand-warden.md: equipped abilities
                     // share activation; a missing item did not perform the step.
                     // https://clashofclans.fandom.com/wiki/Grand_Warden
                     if !why.starts_with("missing ") {
@@ -2699,7 +2699,7 @@ impl PlaybookPlan {
                         continue;
                     }
                 }
-                // output/research/usage/invisibility-spell.md: support under
+                // local/research/usage/invisibility-spell.md: support under
                 // pressure. https://clashofclans.fandom.com/wiki/Invisibility_Spell
                 if flag(&step.source, "recheck_when") && !self.ready(battle, &step.when, false) {
                     continue;
@@ -2803,7 +2803,7 @@ impl PlaybookPlan {
                                     battle.portal_units().any(|r| battle.unit(r).name == name)
                                 }) =>
                         {
-                            // output/research/usage/recall-spell.md: legal drops only.
+                            // local/research/usage/recall-spell.md: legal drops only.
                             // https://clashofclans.fandom.com/wiki/Recall_Spell
                             // Ordinary deploy's x-major, first-on-ties resolution.
                             let mut position = position;
@@ -2942,7 +2942,7 @@ impl PlaybookPlan {
                         && !self.cancelled(&step.id)
                 }))
         {
-            // output/research/usage/cleanup-troops-and-end-of-attack-play.md:
+            // local/research/usage/cleanup-troops-and-end-of-attack-play.md:
             // commit unused support with the push, or rescue a stalled attack.
             // https://www.youtube.com/watch?v=ahiJ-bgdmSE&t=2125
             let (x, y) = self.edge(battle, "main");
@@ -3162,7 +3162,7 @@ impl PlaybookPlan {
             {
                 // Wiki: Heroes, independent charges and surviving flanks still
                 // receive spare support after the main push has fallen.
-                // output/research/usage/dragon.md: support follows the push.
+                // local/research/usage/dragon.md: support follows the push.
                 // https://www.youtube.com/watch?v=55I-qks9qdI
                 units = battle
                     .attackers_pool()

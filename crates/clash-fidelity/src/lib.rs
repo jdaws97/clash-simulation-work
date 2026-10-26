@@ -326,7 +326,7 @@ pub fn run(arguments: Vec<String>) -> Result<(), String> {
             let settings = args.settings(true)?;
             let options = args.fit_options()?;
             let (rows, skipped) = read_observations(&args, true)?;
-            let out = args.path("--out", "output/fidelity-rust/calibration.json");
+            let out = args.path("--out", "local/fidelity/calibration.json");
             let report = args.optional_path("--report").unwrap_or_else(|| {
                 out.with_file_name(format!(
                     "report-{}",

@@ -816,7 +816,7 @@ pub fn compatible(compiler: &Compiler<'_>, genome: &ArmyGenome) -> Result<(), St
     if family == "generic" {
         return Ok(());
     }
-    // output/research/usage/super-dragon.md: the cited variant lives in dragon.json.
+    // local/research/usage/super-dragon.md: the cited variant lives in dragon.json.
     // https://clashofclans.fandom.com/wiki/Super_Dragon
     // Resolve the compiler's alias without changing the genome's family.
     let playbook_family = if family == "super-dragon" {

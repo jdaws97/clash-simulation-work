@@ -48,7 +48,7 @@ impl TargetManifest {
             Self::default_json()
         };
         // gap-triage D1 / gaps/dragon.md U14: preserve ranked difficulty.
-        // output/research/usage/dragon.md U14, Supercell battle modifiers:
+        // local/research/usage/dragon.md U14, Supercell battle modifiers:
         // https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/
         let modifier = match source.get("modifier") {
             None | Some(Json::Null) => None,

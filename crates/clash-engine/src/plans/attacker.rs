@@ -127,7 +127,7 @@ fn storage(key: &str) -> bool {
 }
 
 fn damage_spell_targetable(battle: &Battle, building: &Building, kind: &str) -> bool {
-    // output/research/usage/lightning-spell.md: Invisibility allows spell damage;
+    // local/research/usage/lightning-spell.md: Invisibility allows spell damage;
     // Overgrowth and unrevealed Teslas do not. Mirror spells tick/quake_hit.
     // https://clashofclans.fandom.com/wiki/Lightning_Spell
     if !building.alive
@@ -756,7 +756,7 @@ impl AttackPlan {
     }
 
     fn finish_damage_spell(&mut self, battle: &mut Battle, key: &str, available: i64) -> bool {
-        // output/research/usage/cleanup-troops-and-end-of-attack-play.md:
+        // local/research/usage/cleanup-troops-and-end-of-attack-play.md:
         // https://clashofclans.fandom.com/wiki/Lightning_Spell
         // Policy: the existing late phase, spare stock and actual kill breakpoints.
         if battle.t < 150.0 {
@@ -1023,7 +1023,7 @@ impl AttackPlan {
                     ) * battle.atk_hero_mult;
             }
             if kit.has("Seeking Shield") {
-                // output/research/usage/seeking-shield.md: fixed ability damage.
+                // local/research/usage/seeking-shield.md: fixed ability damage.
                 // https://clashofclans.fandom.com/wiki/Seeking_Shield
                 damage += heroes::col(
                     battle,
@@ -1202,7 +1202,7 @@ impl AttackPlan {
             },
             |context| count(&context.inventory, "Healer"),
         );
-        // output/research/usage/hidden-tesla.md: concealed Teslas are not scouted.
+        // local/research/usage/hidden-tesla.md: concealed Teslas are not scouted.
         // https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
         let others: Vec<_> = battle
             .visible_buildings()
@@ -1228,7 +1228,7 @@ impl AttackPlan {
                 } else if b.key == "ad" {
                     weight *= if healers != 0 { 0.5 } else { 0.0 };
                 } else if b.key == "sweeper" {
-                    // output/research/usage/air-sweeper.md: Sweepers displace Healers.
+                    // local/research/usage/air-sweeper.md: Sweepers displace Healers.
                     // https://clashofclans.fandom.com/wiki/Air_Sweeper
                     weight *= if healers != 0 { 0.5 } else { 0.0 };
                 }
@@ -1426,7 +1426,7 @@ impl AttackPlan {
             .catalog
             .numbers(name, &self.snipe_level(battle, name));
         let hero = is_hero(name);
-        // output/research/usage/archer-queen.md: equipment supplies passive HP.
+        // local/research/usage/archer-queen.md: equipment supplies passive HP.
         // https://clashofclans.fandom.com/wiki/Hero_Equipment
         // Match deploy: strength, equipment HP, then the ranked Hero modifier.
         let mut max_hp = numbers.hp * self.strength;
@@ -1465,7 +1465,7 @@ impl AttackPlan {
                 seconds += (shots - 1.0) * numbers.interval + distance / 12.0;
             }
             _ => {
-                // output/research/usage/flame-flinger.md: ranked penalties affect Heroes.
+                // local/research/usage/flame-flinger.md: ranked penalties affect Heroes.
                 // https://supercell.com/en/games/clashofclans/blog/news/upcoming-changes-to-ranked-mode/
                 let hero_mult = if hero { battle.atk_hero_mult } else { 1.0 };
                 let dps = 1.0_f64.max(numbers.dps * self.strength * hero_mult);
@@ -1698,7 +1698,7 @@ impl AttackPlan {
                 let end = |value: f64| {
                     (((value * RES as f64) as isize) + 1).min(n as isize).max(0) as usize
                 };
-                // output/research/usage/lightning-spell.md: spells need no approach.
+                // local/research/usage/lightning-spell.md: spells need no approach.
                 // https://clashofclans.fandom.com/wiki/Lightning_Spell
                 let accessible = kind == "lightning"
                     || (start(target.x - extent)..end(target.x + extent)).any(|i| {
@@ -2043,7 +2043,7 @@ impl AttackPlan {
 
     pub fn opening_actions(&mut self, battle: &mut Battle) -> bool {
         use crate::playbook::{action_time, Action};
-        // output/research/usage/hero-sniping-of-exposed-defenses.md:
+        // local/research/usage/hero-sniping-of-exposed-defenses.md:
         // https://clashofclans.fandom.com/wiki/Rocket_Spear
         // Claims predict the opening, not permanent destruction. Release any
         // survivor when the existing 12-second opening policy ends.
@@ -2063,7 +2063,7 @@ impl AttackPlan {
         {
             return false;
         }
-        // output/research/usage/lightning-spell.md: concealed buildings take spells.
+        // local/research/usage/lightning-spell.md: concealed buildings take spells.
         // https://clashofclans.fandom.com/wiki/Lightning_Spell
         if let Some(chosen) = self.snipe_lightning.clone().filter(|chosen| {
             self.snipe_lightning_left > 0

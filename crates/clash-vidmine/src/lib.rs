@@ -384,7 +384,7 @@ pub fn run(mut args: Vec<String>) -> io::Result<()> {
         Some("probe") => {
             let regions = probe::locate(input()?, Path::new(TEMPLATE_DIR))?;
             let default_out = format!(
-                "output/web-videos/{}",
+                "local/web-videos/{}",
                 input()?.file_stem().unwrap().to_string_lossy()
             );
             let out = args

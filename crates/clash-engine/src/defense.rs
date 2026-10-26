@@ -268,7 +268,7 @@ pub fn reveal_tesla(battle: &mut Battle, owner: BuildingId) {
         battle.grid.block_square(x, y, half, true);
     }
     battle.building_mut(owner).revealed = true;
-    // output/research/usage/overgrowth-spell.md:36: a covered Tesla stays untargetable.
+    // local/research/usage/overgrowth-spell.md:36: a covered Tesla stays untargetable.
     // https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
     // Apply residual coverage before comparing the newly revealed target.
     for index in 0..battle.fields.len() {
@@ -292,7 +292,7 @@ pub fn reveal_tesla(battle: &mut Battle, owner: BuildingId) {
             _ => {}
         }
     }
-    // output/research/usage/baby-dragon.md:16; verify/c2.out #9: only flying
+    // local/research/usage/baby-dragon.md:16; verify/c2.out #9: only flying
     // units keep a better current target (October 2020); ground units retarget.
     // https://clashofclans.fandom.com/wiki/Baby_Dragon
     // https://www.clash.ninja/blog/october-2020-update-is-here
@@ -384,7 +384,7 @@ pub fn on_destroyed(battle: &mut Battle, owner: BuildingId) {
 // defense.py:574-590: the bucket helper already applies the outer radius.
 fn ordered_attackers_near(battle: &Battle, x: f64, y: f64, radius: f64) -> Vec<UnitRef> {
     // output/hunt/r10/t3.out #2: bucket alignment must not decide target ties.
-    // output/research/usage/dealing-with-monolith-and-inferno-towers.md:
+    // local/research/usage/dealing-with-monolith-and-inferno-towers.md:
     // https://clashofclans.fandom.com/wiki/Monolith
     // Stable spawn IDs define candidate and accumulation order. This is a
     // deterministic tie policy, not a sourced game tie-break rule.
@@ -476,7 +476,7 @@ fn candle_targets(battle: &Battle, owner: BuildingId) -> usize {
     }
 }
 
-// output/research/usage/dealing-with-monolith-and-inferno-towers.md:
+// local/research/usage/dealing-with-monolith-and-inferno-towers.md:
 // https://clashofclans.fandom.com/wiki/Monolith
 // Policy estimate: uninterrupted lock, concentrated shots and sustained bursts.
 // Reuse combat hit damage without changing weapon or battle state.
@@ -494,7 +494,7 @@ pub fn opening_damage(
     if seconds <= 0.0 || w.ammunition == Some(0) || battle.building(owner).disabled(battle.t) {
         return 0.0;
     }
-    // output/research/usage/hero-sniping-of-exposed-defenses.md: TH16 must wake.
+    // local/research/usage/hero-sniping-of-exposed-defenses.md: TH16 must wake.
     // https://clashofclans.fandom.com/wiki/Town_Hall/Giga_Inferno
     if w.kind == Tag::GigaInferno && !battle.th_active() {
         return 0.0;
@@ -520,7 +520,7 @@ pub fn opening_damage(
     }
     let mut damage_rage = rage(battle, owner);
     if let Some((x, y)) = position {
-        // output/research/usage/spell-tower.md: Rage covers nearby weapons.
+        // local/research/usage/spell-tower.md: Rage covers nearby weapons.
         // https://clashofclans.fandom.com/wiki/Spell_Tower
         // Budget the 18 s field after its 1.2 s trigger without stacking Rage.
         for tower in &battle.buildings {
@@ -557,7 +557,7 @@ pub fn opening_damage(
     let mut extra_damage = 0.0;
     match w.kind {
         Tag::MultiArcher => damage *= 3.0,
-        // output/research/usage/crafting-station.md: unused flames concentrate.
+        // local/research/usage/crafting-station.md: unused flames concentrate.
         // https://clashofclans.fandom.com/wiki/Hot_Candle
         Tag::Candle => damage *= candle_targets(battle, owner) as f64,
         Tag::Cake => damage += w.extra.bomb * damage_rage,
@@ -601,7 +601,7 @@ pub fn opening_unit_damage(
     is_hero: bool,
     seconds: f64,
 ) -> f64 {
-    // output/research/usage/flame-flinger.md: Heroes, Guardians and CC guard lanes.
+    // local/research/usage/flame-flinger.md: Heroes, Guardians and CC guard lanes.
     // https://clashofclans.fandom.com/wiki/Flame_Flinger
     // Policy: uninterrupted pursuit/lock using executed hit/range/projectile data;
     // no hypothetical summons or unreleased Clan Castle troops.
@@ -611,7 +611,7 @@ pub fn opening_unit_damage(
         || u.extra.suspended
         || !battle.defender_in_leash(reference, x, y)
         || !hits_target
-        // output/research/usage/ruin-witch.md; ClashKing/characters.csv:
+        // local/research/usage/ruin-witch.md; ClashKing/characters.csv:
         // https://clashofclans.fandom.com/wiki/Ruin_Witch
         // The mother's no-attack rule is offensive only (units::strike).
         || matches!(u.spec.attack, Tag::Heal | Tag::HealChain)
@@ -670,7 +670,7 @@ pub fn opening_unit_damage(
     }
     let slow = effects::slow_mult(u, battle.t, false);
     if u.spec.has_special(crate::labels::Special::LongShot) && u.extra.long_shots > 0 {
-        // output/research/usage/super-minion.md: three defensive Long Shots,
+        // local/research/usage/super-minion.md: three defensive Long Shots,
         // then normal pursuit. https://clashofclans.fandom.com/wiki/Super_Minion
         // Pursuit after the final launch overlaps cooldown/projectile flight
         // (battle::act_defender; CSV/ClashKing ranges), as in defense.py.
@@ -1304,7 +1304,7 @@ pub fn cake(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
         weapon_mut(battle, owner).target = None;
         return;
     };
-    // output/research/usage/crafting-station.md: Cake exposes its firing target.
+    // local/research/usage/crafting-station.md: Cake exposes its firing target.
     // https://clashofclans.fandom.com/wiki/Cake-A-Pult
     weapon_mut(battle, owner).target = Some(target);
     let unit = battle.unit(target);
@@ -1903,7 +1903,7 @@ fn super_wizard(battle: &mut Battle, owner: BuildingId, damage_rage: f64) {
 }
 
 pub fn firespitter_in_sector(battle: &Battle, owner: BuildingId, x: f64, y: f64) -> bool {
-    // output/research/usage/firespitter.md: acquisition stays inside its sector.
+    // local/research/usage/firespitter.md: acquisition stays inside its sector.
     // https://supercell.com/en/games/clashofclans/blog/game-updates/the-town-hall-17-update-is-here-2/
     let building = battle.building(owner);
     let w = weapon(battle, owner);

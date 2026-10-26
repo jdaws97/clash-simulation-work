@@ -1305,7 +1305,7 @@ fn activate_effect(battle: &mut Battle, hero: UnitRef, on_ko: bool) {
                 let current = if target.is_some_and(|target| candidates.contains(&target)) {
                     target
                 } else {
-                    // output/research/usage/barbarian-king.md:19; initial targeting includes size.
+                    // local/research/usage/barbarian-king.md:19; initial targeting includes size.
                     // https://supercell.com/en/games/clashofclans/blog/release-notes/june-update-full-patch-notes/
                     candidates.iter().copied().min_by(|left, right| {
                         distance(battle, *left, u.x, u.y)
@@ -2847,7 +2847,7 @@ pub fn guardians_tick(battle: &mut Battle) {
     let t = battle.t;
     let th_down = battle.th.is_some_and(|th| !battle.building(th).alive);
     let g = battle.unit(guardian);
-    // output/research/usage/freeze-spell.md:20; frozen Guardians cannot activate.
+    // local/research/usage/freeze-spell.md:20; frozen Guardians cannot activate.
     // https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/
     if g.extra.waiting && t >= g.frozen_until {
         let trigger = g.extra.guardian_trigger.expect("Guardian trigger radius");
@@ -3457,7 +3457,7 @@ pub fn free_pet(battle: &Battle, reference: UnitRef) -> bool {
 // heroes.py:1248-1268: Recall and Portal Pendant share the same stash path.
 pub fn stash(battle: &mut Battle, mut taken: Vec<UnitRef>, bonuses: (f64, f64, f64)) {
     for reference in taken.clone() {
-        // output/research/usage/rocket-backpack.md; cached Rocket_Backpack.txt:
+        // local/research/usage/rocket-backpack.md; cached Rocket_Backpack.txt:
         // https://clashofclans.fandom.com/wiki/Rocket_Backpack
         // The transported pet accompanies a mid-flight Recall for free.
         let transported = battle

@@ -560,7 +560,7 @@ pub fn act(battle: &mut Battle, pet: UnitRef) {
         }
         return;
     }
-    // output/research/usage/diggy.md:27; stun includes attackable defenders.
+    // local/research/usage/diggy.md:27; stun includes attackable defenders.
     // https://supercell.com/en/games/clashofclans/blog/release-notes/get-ready-for-ranked-update/
     let unit = battle.unit(pet);
     if unit.name_id == Name::Diggy && unit.underground {

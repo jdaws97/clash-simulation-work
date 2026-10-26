@@ -206,7 +206,7 @@ pub fn cv(
     fit_settings.angles = 4;
     fit_settings.seeds = 1;
     let options = args.fit_options()?;
-    let directory = args.path("--fold-dir", "output/fidelity-rust/cv");
+    let directory = args.path("--fold-dir", "local/fidelity/cv");
     std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
     let prior = args.root.join("data/meta-calibration-r8.json");
     if file_hash(&prior)? != provenance::R8_SHA256 {

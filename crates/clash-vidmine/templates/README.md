@@ -52,7 +52,7 @@ All new glyph masks were clustered from native source crops with
 `bootstrap-box`, visually labeled in contact sheets under `/tmp/vidmine-work`,
 and normalized with the same 16×24 method as M1. Non-digit clusters (M/s/% and
 background fragments) were excluded. The timestamp-to-cluster logs are retained
-in `output/web-videos/*-bootstrap.log`. These are inspected development examples,
+in `local/web-videos/*-bootstrap.log`. These are inspected development examples,
 not independent validation or engine calibration.
 
 - HHRxAQs1egY clock: `[576,102,128,26]`, times 105–190 in ten-second steps
@@ -81,7 +81,7 @@ The separately labeled small RGB portrait features are documented in
 
 M3 adds 152 normalized level glyph variants, explicitly labeled from visible
 card digits. Coordinates and literal strings are in
-`output/web-videos/m3-template-labels.tsv`. Sources include the three supplied
+`local/evidence/web-videos/m3-template-labels.tsv`. Sources include the three supplied
 M3 videos at 30s, preserved mnJOtLowhqs first-attack crops, and frozen reviewed
 badge crops. A row with unsuitable segmentation at a particular threshold is
 skipped; no generated font or inferred level cap supplies a glyph label.

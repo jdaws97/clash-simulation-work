@@ -242,7 +242,7 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             }
             for reference in battle.attackers_near(f.x, f.y, f.radius) {
                 let u = battle.unit(reference);
-                // output/research/usage/battle-blimp.md: April made sieges immune
+                // local/research/usage/battle-blimp.md: April made sieges immune
                 // to TH14-16 poison, superseding the older game-data exception.
                 // https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/
                 if affected(u) || u.name_id == Name::Totem {
@@ -279,7 +279,7 @@ pub fn apply(battle: &mut Battle, f: &mut Field) -> bool {
             let Some(until) = invisibility_until(f, t) else {
                 return true;
             };
-            // output/research/usage/invisibility-spell.md: towers also use centres.
+            // local/research/usage/invisibility-spell.md: towers also use centres.
             // https://www.reddit.com/r/ClashOfClans/comments/1l4z2tu/guide_to_attacking_invisibility_spell_tower_bases/
             for building in &mut battle.buildings {
                 if building.alive && crate::geom::dist(building.x, building.y, f.x, f.y) <= f.radius
@@ -1735,7 +1735,7 @@ fn invis(battle: &mut Battle, f: &mut Field) -> bool {
         u.invisible_until = u.invisible_until.max(until);
     }
     if f.team == Team::Atk {
-        // output/research/usage/invisibility-spell.md: use building centres.
+        // local/research/usage/invisibility-spell.md: use building centres.
         // https://www.reddit.com/r/ClashOfClans/comments/1l4z2tu/guide_to_attacking_invisibility_spell_tower_bases/
         for b in &mut battle.buildings {
             if b.alive && crate::geom::dist(b.x, b.y, f.x, f.y) <= f.radius {
@@ -1851,7 +1851,7 @@ fn iceblock(battle: &mut Battle, f: &mut Field) -> bool {
     for reference in battle.attackers_near(f.x, f.y, f.radius) {
         let u = battle.unit(reference);
         // spells.py:860-861: Ice Block has no effect during Rocket Backpack.
-        // output/research/usage/ice-block-spell.md: October 2025 fixed
+        // local/research/usage/ice-block-spell.md: October 2025 fixed
         // underground recipients, superseding the stale wiki exclusion.
         // https://supercell.com/en/games/clashofclans/blog/release-notes/get-ready-for-ranked-update/
         if affected(u) && u.dash.is_none() {
@@ -1968,7 +1968,7 @@ fn totem(battle: &mut Battle, f: &Field) -> bool {
         Some(334.0),
     )
     .expect("Totem decay");
-    // output/research/usage/archer-queen.md and dark-crown.md: each Totem now
+    // local/research/usage/archer-queen.md and dark-crown.md: each Totem now
     // counts as one housing, including Monolith Arrow's deployment counter.
     // https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/
     let unit = Unit {

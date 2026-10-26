@@ -1,3 +1,7 @@
+> Predecessor Python filenames and parity procedures in this document are
+> historical provenance from `f04706c`. Deleted tools are not runnable; see
+> [the current documentation](../../docs/README.md) for native commands and remaining Python ports.
+
 # Lane lC: native observation ingestion and fidelity
 
 Worktree: `clash-lab-lC`, branch `port-lC`. No commit or index write.

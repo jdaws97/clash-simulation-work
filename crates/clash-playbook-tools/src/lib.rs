@@ -132,7 +132,7 @@ impl Options {
         self.path("root", Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
     }
     fn sources(&self) -> PathBuf {
-        self.path("sources", self.root().join("output/sources"))
+        self.path("sources", self.root().join("local/sources"))
     }
     fn transcripts(&self) -> PathBuf {
         self.path("transcripts", self.sources().join("transcripts"))
@@ -471,8 +471,8 @@ fn queue_command(options: &Options, extraction: bool) -> Result<(), String> {
     let root = options.root();
     let default_brief = match mode {
         "extract" => root.join("docs/playbook-extraction.md"),
-        "usage" | "status" | "run" => root.join("output/research/brief-entity.txt"),
-        "audit" => root.join("output/research/brief-gap.txt"),
+        "usage" | "status" | "run" => root.join("local/research/brief-entity.txt"),
+        "audit" => root.join("local/research/brief-gap.txt"),
         _ => return Err("queue mode must be usage|audit|status|run".to_owned()),
     };
     let brief_path = options.path("brief", default_brief);
@@ -493,15 +493,15 @@ fn queue_command(options: &Options, extraction: bool) -> Result<(), String> {
             &options.path("out", options.sources().join("playbooks")),
         )?,
         "audit" => research::audit_jobs(
-            &options.path("input", root.join("output/research/usage")),
+            &options.path("input", root.join("local/research/usage")),
             &brief,
-            &options.path("out", root.join("output/research/gaps")),
-            Some(&options.path("skip", root.join("output/research/gaps/skip-event.txt"))),
+            &options.path("out", root.join("local/research/gaps")),
+            Some(&options.path("skip", root.join("local/research/gaps/skip-event.txt"))),
         )?,
         _ => research::usage_jobs(
-            &options.path("queue", root.join("output/research/queue.tsv")),
+            &options.path("queue", root.join("local/research/queue.tsv")),
             &brief,
-            &options.path("out", root.join("output/research/usage")),
+            &options.path("out", root.join("local/research/usage")),
         )?,
     };
     let running = options.has("run") || mode == "run";

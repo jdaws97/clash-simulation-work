@@ -114,7 +114,7 @@ fn place(
 
 /// A strict visible-field projection: original traps, Tesla count/positions/
 /// levels, CC contents/levels, notes and arbitrary metadata are never consulted.
-/// output/research/usage/hidden-tesla.md and clan-castle-lure-and-kill.md:
+/// local/research/usage/hidden-tesla.md and clan-castle-lure-and-kill.md:
 /// https://clashofclans.fandom.com/wiki/Hidden_Tesla/Home_Village
 /// https://clashofclans.fandom.com/wiki/Clan_Castle
 pub fn hidden_sample(layout: &Json, catalog: &Catalog, sample_seed: i64) -> Result<Json, String> {

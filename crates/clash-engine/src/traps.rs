@@ -37,7 +37,7 @@ pub fn raw(battle: &Battle, name: &str, key: &str, default: Option<f64>) -> Opti
 // traps.py:114-123.
 pub fn housing(unit: &Unit) -> i64 {
     if unit.name_id == Name::Totem {
-        // output/research/usage/totem-spell.md:36; August fixed 20 to 1 housing.
+        // local/research/usage/totem-spell.md:36; August fixed 20 to 1 housing.
         // https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/
         return 1;
     }
@@ -95,7 +95,7 @@ pub fn eligible(battle: &Battle, trap: TrapId, unit: &Unit, t: f64) -> bool {
 // traps.py:149-173: trap Vec order and first-minimum ties are significant.
 pub fn tick(battle: &mut Battle) {
     let t = battle.t;
-    // output/research/usage/bomb.md: Bombs damage and knock back small troops.
+    // local/research/usage/bomb.md: Bombs damage and knock back small troops.
     // https://clashofclans.fandom.com/wiki/Bomb
     // Canonical order also stabilizes damage callbacks across serialization.
     let mut due_bombs: Vec<_> = battle
@@ -420,7 +420,7 @@ fn fire_effect_with_pushes(
             let unit = battle.unit(target);
             let special =
                 unit.is_hero || matches!(unit.kind, Tag::Pet | Tag::Siege | Tag::SiegeIdle);
-            // output/research/usage/spring-trap.md; verify/c1.out #5 corrects immunity:
+            // local/research/usage/spring-trap.md; verify/c1.out #5 corrects immunity:
             // springs can eject Totems when another troop triggers the trap.
             // https://clashofclans.fandom.com/wiki/Totem_Spell
             // https://www.mumuplayer.com/blog/clash-of-clans-th18-totem-spell.html

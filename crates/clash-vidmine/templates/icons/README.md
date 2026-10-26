@@ -12,7 +12,7 @@ probability. Mixed, occluded, shifted and absent portraits can remain unknown.
 `reviewed-clusters.tsv` records manually viewed original contact-sheet clusters;
 `reviewed-extra.tsv` records separately viewed M2 phone crops. The full cluster
 membership, representative manifest and development audit are in
-`output/web-videos/icon-*.tsv`. Original wf fragment media was replaced during
+`local/web-videos/icon-*.tsv`. Original wf fragment media was replaced during
 its M2 extraction, so old wf cluster IDs 330–359 were excluded from training;
 new phone crops were viewed separately. The classifier does not read metadata
 titles at runtime. Titles helped cross-check semantic labels during development.
@@ -24,7 +24,7 @@ The 40-icon audit is a development review used to correct labels, not a held-out
 accuracy estimate. Five sampled crops cannot identify one complete portrait.
 The remaining two abstentions are retained rather than guessed.
 
-To rebuild with unchanged source crops, run `icon-learn output/web-videos`.
+To rebuild with unchanged source crops, run `icon-learn local/web-videos`.
 Re-clustering overwrites cluster IDs and the blank label manifest, so do it in a
 separate output snapshot or preserve the reviewed manifest first. If videos are
 re-extracted and overwrite numbered icon files, view and relabel those new
@@ -40,7 +40,7 @@ plus the supplied video pixels and queued-video titles.
 
 The active library has 341 feature files after M3. The added small RGB variants
 come from manually inspected full-card geometry in the three M3 dev videos and
-frozen review crops. `output/web-videos/m3-icon-labels.tsv` records native-source
+frozen review crops. `local/evidence/web-videos/m3-icon-labels.tsv` records native-source
 rectangles; `m3-reviewed-icon-templates.tsv` records frozen source crops and
 literal names. Native bootstrap frames are at 30s for each video and 48.2s for
 n5-W8hHrRYs, stored temporarily under `/tmp/vidmine-work/m3` during learning.

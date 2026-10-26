@@ -3455,7 +3455,7 @@ fn after_unit_hit_effect(
             Some(&poison_level),
         );
         let duration = game_required_int(ability, "PoisonOnHitDuration") as f64 / 1000.0;
-        // output/research/usage/headhunter.md:18-23; L4 is absent from the older CSV.
+        // local/research/usage/headhunter.md:18-23; L4 is absent from the older CSV.
         // https://cocwiki.com/troops/headhunter
         let level = u.level.as_ref().expect("Headhunter level");
         let slow = battle
@@ -3650,7 +3650,7 @@ fn heal_eligible(battle: &Battle, healer: UnitRef, ally: UnitRef, primary: bool)
     if a.flying && !u.spec.heal_air {
         return false;
     }
-    // output/research/usage/unicorn.md: Healers cannot heal Unicorns.
+    // local/research/usage/unicorn.md: Healers cannot heal Unicorns.
     // https://clashofclans.fandom.com/wiki/Unicorn
     if u.name_id == Name::Healer && a.name_id == Name::Unicorn {
         return false;

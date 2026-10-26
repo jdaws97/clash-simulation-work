@@ -611,7 +611,7 @@ impl Battle {
             for reference in self.attackers_near(x, y, p.radius) {
                 let u = self.unit(reference);
                 if u.alive
-                    // output/research/usage/totem-spell.md: Totems stay fixed.
+                    // local/research/usage/totem-spell.md: Totems stay fixed.
                     // https://clashofclans.fandom.com/wiki/Totem_Spell
                     && u.name_id != Name::Totem
                     && !u.is_hero

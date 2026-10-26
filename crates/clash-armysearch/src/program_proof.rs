@@ -215,7 +215,7 @@ fn timing_fixture(
             "spell",
             "Rage Spell",
             1,
-            // output/research/usage/rage-spell.md: Rage has an 18-second duration.
+            // local/research/usage/rage-spell.md: Rage has an 18-second duration.
             // https://clashofclans.fandom.com/wiki/Rage_Spell
             // Spend the baseline on the reserve flank; :main waits for the push.
             "edge:right",

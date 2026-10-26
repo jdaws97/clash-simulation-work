@@ -317,7 +317,7 @@ pub fn equipment(step: &Json, genome: &ArmyGenome) -> Result<(), String> {
         .iter()
         .find(|choice| choice.hero == hero)
         .ok_or_else(|| format!("ability requires selected hero: {hero}"))?;
-    // output/research/usage/grand-warden.md: a cited paired activation needs
+    // local/research/usage/grand-warden.md: a cited paired activation needs
     // both items. https://clashofclans.fandom.com/wiki/Grand_Warden
     if let Some(Json::Arr(items)) = step.get("equipment") {
         for item in items {

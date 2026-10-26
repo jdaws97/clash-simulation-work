@@ -160,7 +160,7 @@ pub(super) fn random_trigger(
     }
 }
 
-/// Optional, weak priors derived by hand from output/research/usage/:
+/// Optional, weak priors derived by hand from local/research/usage/:
 /// rage-spell.md (dangerous engagements), freeze-spell.md (active threats),
 /// poison-spell.md (emerged defenders), healer.md (ground support),
 /// sneaky-goblin.md (resource funnels), super-bowler.md (protected core push),

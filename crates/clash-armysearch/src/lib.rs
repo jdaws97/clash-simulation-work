@@ -206,7 +206,7 @@ impl Config {
             account: argument("--account").cloned(),
             out: argument("--out")
                 .cloned()
-                .unwrap_or_else(|| root.join("rust/output/armysearch")),
+                .unwrap_or_else(|| root.join("local/armysearch")),
             batches: parse("--batches", 16)?,
             batch: parse("--batch", 32)?,
             seed,

@@ -114,7 +114,7 @@ impl<'a> Compiler<'a> {
         }
         let base = armies::compose(&self.library, self.stats, &build, angle, seed)?;
         let book = if options.playbooks {
-            // output/research/usage/super-dragon.md: use dragon.json's variant;
+            // local/research/usage/super-dragon.md: use dragon.json's variant;
             // ordinary Yeti has no cited book and keeps the generic plan.
             // https://clashofclans.fandom.com/wiki/Super_Dragon
             armies::family_of(&build)
@@ -276,7 +276,7 @@ impl<'a> Compiler<'a> {
         )?;
         normalize_recall_package(&mut steps, plan.at("spells"))?;
         add_spell_support(pb, &mut steps, plan.at("spells"));
-        // output/research/usage/invisibility-spell.md: cover the first hero
+        // local/research/usage/invisibility-spell.md: cover the first hero
         // independently of the second hero's gate.
         // https://clashofclans.fandom.com/wiki/Invisibility_Spell
         let charge: Vec<String> = steps
@@ -652,7 +652,7 @@ impl<'a> Compiler<'a> {
                 put(step, "variant", field(&variant, "name"));
             }
             validate_step_ids(&new)?;
-            // output/research/usage/root-rider.md: siege alternatives retain
+            // local/research/usage/root-rider.md: siege alternatives retain
             // the charge strategy. https://www.youtube.com/watch?v=C0lnvxJraoM&t=246
             let broken: Vec<Json> = current
                 .iter()
@@ -688,7 +688,7 @@ impl<'a> Compiler<'a> {
                 .iter()
                 .position(|step| replaces.contains(step.at("id")))
                 .unwrap_or(steps.len());
-            // output/research/usage/root-rider.md: preserve the chosen funnel/main roles.
+            // local/research/usage/root-rider.md: preserve the chosen funnel/main roles.
             // https://www.youtube.com/watch?v=C0lnvxJraoM&t=246
             // Clone before rewiring so a rejected variant cannot change retained steps.
             let mut candidate: Vec<Json> = steps
@@ -1475,7 +1475,7 @@ fn fit_steps_omitting(
         .filter(|step| text(step, "action", "") == "deploy")
         .map(|step| field(step, "what"))
         .collect();
-    // output/research/usage/dragon.md: Dragons precede supporting Riders.
+    // local/research/usage/dragon.md: Dragons precede supporting Riders.
     // https://www.youtube.com/watch?v=55I-qks9qdI
     // Policy: leftovers follow the variant's main troop, never its lead siege.
     let anchor = kept
@@ -1502,7 +1502,7 @@ fn fit_steps_omitting(
     ordered_inventory.sort_by(|a, b| a.0.cmp(&b.0));
     for (name, count) in &ordered_inventory {
         if truth(count) && !mentioned.contains(&string(name)) {
-            // output/research/usage/super-wall-breaker.md: breach with the push.
+            // local/research/usage/super-wall-breaker.md: breach with the push.
             // https://blueprintcoc.com/blogs/town-hall-16/top-3-th16-army-links
             let breach = matches!(name.as_str(), "Wall Breaker" | "Super Wall Breaker")
                 && anchor.get("after").is_some();
@@ -1643,7 +1643,7 @@ fn reviewed_spell_opportunities(book: &mut Json) {
 }
 
 fn add_spell_support(pb: &Json, steps: &mut Vec<Json>, spells: &Json) {
-    // output/research/usage/invisibility-spell.md: protect the cited recipient.
+    // local/research/usage/invisibility-spell.md: protect the cited recipient.
     // https://clashofclans.fandom.com/wiki/Invisibility_Spell
     // Only fill an unnamed spell whose recipient still has a deployment.
     for step in list(pb, "spell_support") {
@@ -1785,7 +1785,7 @@ fn fix_wait(
         .get("after")
         .and_then(|id| source.iter().find(|step| step.get("id") == Some(id)))
     {
-        // output/research/usage/root-rider.md: one paced smash deployment chain.
+        // local/research/usage/root-rider.md: one paced smash deployment chain.
         // https://www.youtube.com/watch?v=g9UjZ9xFQOU&t=169
         let smash = matches!(text(step, "action", ""), "deploy" | "redeploy")
             && text(step, "group", "main") == "main"
@@ -1916,7 +1916,7 @@ pub fn apply_overrides(steps: &mut [Json], overrides: &Json) -> Result<(), Strin
 }
 
 // playbook.py:warden_walk: compilation and learned installation share this rule.
-// output/research/usage/grand-warden-walk.md: Healers require ground mode.
+// local/research/usage/grand-warden-walk.md: Healers require ground mode.
 // https://clashofclans.fandom.com/wiki/Grand_Warden
 pub fn warden_walk(steps: &[Json], has_healers: bool) -> bool {
     has_healers
@@ -2455,7 +2455,7 @@ impl Compiler<'_> {
                 problems.push(error);
             }
         }
-        // output/research/usage/lavaloon.md: summons cannot occupy camps.
+        // local/research/usage/lavaloon.md: summons cannot occupy camps.
         // https://clashofclans.fandom.com/wiki/Lavaloon_Puppet
         // Inspect every kind independently of waivable level/count errors.
         for (name, count) in quantities(plan) {
@@ -2589,7 +2589,7 @@ impl Compiler<'_> {
         }
         // game data v18.200.9 / registry raw: Meteor Golem requires
         // Barracks 19; Sky Wagon requires Workshop 9 (TH16 maxima 18/8).
-        // output/research/usage/meteor-golem.md and sky-wagon.md.
+        // local/research/usage/meteor-golem.md and sky-wagon.md.
         let mut trained = quantities.clone();
         if flag(plan, "siege") && !flag(plan, "siege_donated") {
             trained.push((plan.at("siege").str().to_owned(), Json::Num(1.0)));

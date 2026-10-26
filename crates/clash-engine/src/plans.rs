@@ -94,7 +94,7 @@ pub fn threat(key: &str, default: f64) -> f64 {
         "scatter" => 8.0,
         "eagle" => 7.0,
         "xbow" | "mono" | "mgt" | "swt" => 5.0,
-        // output/research/usage/crafting-station.md: crafted weapons need counterplay.
+        // local/research/usage/crafting-station.md: crafted weapons need counterplay.
         // https://clashofclans.fandom.com/wiki/Crafting_Station
         "crafting" => 5.0,
         "firespitter" | "revenge" | "ad" | "ric" => 4.0,
@@ -254,7 +254,7 @@ fn supported_cargo(plan: &Json) -> SharedVec<String> {
                     .or_else(|| at.strip_prefix("unit_ahead:"))
                     == Some(name)
         });
-        // output/research/usage/super-minion.md: Blimp cargo needs reserved support.
+        // local/research/usage/super-minion.md: Blimp cargo needs reserved support.
         // https://clashofclans.fandom.com/wiki/Super_Minion
         if matches!(name, "Super Archer" | "Super Wizard" | "Super Minion")
             || siege == "Battle Blimp" && initial_clone && name == "Balloon"
@@ -945,7 +945,7 @@ impl AttackPlan {
     }
 
     pub fn has_deployable_cc(&self, battle: &Battle) -> bool {
-        // output/research/usage/cleanup-troops-and-end-of-attack-play.md:
+        // local/research/usage/cleanup-troops-and-end-of-attack-play.md:
         // spend remaining troops rather than ending with reserves onboard.
         // https://www.youtube.com/watch?v=ahiJ-bgdmSE&t=2125
         self.has_unreleased_cc()
@@ -1901,7 +1901,7 @@ impl AttackPlan {
         if battle.t < self.busy_until {
             return;
         }
-        // output/research/usage/earthquake-spell.md:18: four casts open walls.
+        // local/research/usage/earthquake-spell.md:18: four casts open walls.
         // https://www.gibiarena.com/en/clash-of-clans/upgrades/earthquake-spell
         // Generic openings must drain the same paced queue as playbook fallback.
         if !self.fallback_quakes.is_empty() {
@@ -1966,7 +1966,7 @@ impl AttackPlan {
             });
             for (id, d) in threats {
                 let b = battle.building(id);
-                // output/research/usage/freeze-spell.md: overlapping Freezes
+                // local/research/usage/freeze-spell.md: overlapping Freezes
                 // do not stack. Include bottles awaiting their landing tick.
                 // https://houseofclashers.com/home-village/spells-elixir/freeze-spell
                 if battle.fields.iter().any(|field| {

@@ -35,7 +35,7 @@ impl Battle {
                 continue;
             }
             // battle.py:_separate radius(): flyers use the measured base radius
-            // (output/dragon-spacing/measure.md); ground keeps the housing term.
+            // (local/evidence/dragon-spacing/measure.md); ground keeps the housing term.
             let radius = |u: &Unit| {
                 if u.flying {
                     air_radius
