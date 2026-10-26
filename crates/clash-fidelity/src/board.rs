@@ -205,12 +205,19 @@ pub fn cv(
     // Fitting uses a fixed sampling budget independent of evaluation settings.
     fit_settings.angles = 4;
     fit_settings.seeds = 1;
+    fit_settings.scout = args.integer("--scout", fit_settings.angles)?;
+    if fit_settings.scout > fit_settings.angles {
+        return Err("CV fitting scout exceeds its fixed four angles".to_owned());
+    }
     let options = args.fit_options()?;
     let directory = args.path("--fold-dir", "local/fidelity/cv");
     std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
-    let prior = args.root.join("data/source/meta-calibration-r8.json");
-    if file_hash(&prior)? != provenance::R8_SHA256 {
-        return Err("r8 prior hash differs from frozen public prior".to_owned());
+    let prior = args.path("--prior", "data/source/meta-calibration-r8.json");
+    let prior_binding = provenance::binding(&args.root, &prior, None)?;
+    if text(&prior_binding.info, "fit_status", "") != "not defense-fitted"
+        || prior_binding.ids.as_ref().is_none_or(|ids| !ids.is_empty())
+    {
+        return Err("CV requires a pinned public, not-defense-fitted prior (r8 or r9)".to_owned());
     }
     let mut folds = Vec::new();
     let mut held_out = BTreeSet::new();
@@ -308,8 +315,9 @@ pub fn cv(
         ),
         (
             "validation_status",
-            string("cross-validation; r8 prior; verified disjoint hash-bound ancestry"),
+            string("cross-validation; pinned public prior; verified disjoint hash-bound ancestry"),
         ),
+        ("prior", prior_binding.info),
         ("pooled", pool_fold_metrics(&folds)),
         (
             "pooled_duration_and_end_reasons",

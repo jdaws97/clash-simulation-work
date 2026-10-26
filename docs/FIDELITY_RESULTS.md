@@ -4,6 +4,74 @@ Dated, comparable results of the native fidelity checks. Newest first. Each
 entry names the engine commit, data, and settings, so later entries can be
 compared on the same footing. Raw outputs live in ignored `local/`.
 
+## 2026-10-26 — MF public meta refit (f3e0916)
+
+**CONFIRMED method.** Native `clash fidelity meta-fit` replaces the frozen
+`calibrate_meta.py` workflow. Every r8 `real` target comes from the matching
+build's `three_star` in the pinned 2026-10-15 TrophyCoach snapshot: same-TH,
+ranked battles, last 30 days at collection. This run uses the current engine
+at `f3e0916a5309b75df2f866e85b43bdb86d66b168` plus the MF adapter (hashes in
+r9), eight angles with 0.21-radian offset, full visible scouting with three
+hidden samples, playbooks, no league modifier, two replicates of every one
+of the five skill quantiles, 32 requested workers, and fixed common random
+numbers across strengths (100 committed outcomes per TH16 build/strength;
+40 per TH18 build/strength).
+`BASELAB_PARAMS_FILE`, `BASELAB_FLYER_RANGE`, `BASELAB_PACE` and `BASELAB_GAPS`
+were unset: engine/catalog defaults, compiler pace 1.0 and pinned gaps enabled.
+The search uses a five-point log grid on [0.4, 2.5], six log-bisection
+refinements and a fresh evaluation at the selected strength. Raw curves,
+isotonic projections, reversals, target errors and clamps are retained.
+
+The public TH16 prior uses only the ten pinned human ranked layouts in
+`ranked-2026-10-24`, equally weighted, with their existing levels and hidden
+defense hypotheses. These files already contain historical user-level
+assumptions; no new private account or defense data enters this fit. The ranked
+pool has five empty defending-hero rosters (rb01/05/06/08/10), plus the
+documented inferred hidden defenses; these are transcription assumptions,
+not confirmed empty real-game defenses. All are retained without inventing
+new source values. The old own-layout pool is excluded because including the
+layout defended in CV would leak held-out layout information into its prior.
+TH17/18 borrow the
+arithmetic mean of same-archetype TH16 builds, or 1.0 when absent, and remain
+uncalibrated. A separate fit of the 13 TH18 targets on the four ranked TH18
+transcriptions is **sensitivity only**; it never contributes to r9 or CV.
+At `python-frozen`, the fitter's top-level `reference-bases/*.json` glob
+would select the two own-base files and overlay the account's levels; the
+nested ranked collections would not enter that glob. Thus r8's CV comparison
+holds out defense outcomes, but its historical prior already saw the base
+layout; it is not a layout-held-out comparator.
+
+**Evaluation protocol.** r8 and r9 use the same stable-ID three folds, 20
+evaluation seeds, 32 requested workers, playbook attacker, eight full visible scouting candidates,
+and training-only constant baselines. Each fold refits its own defense
+corrections from its selected public prior (one replicate of five skill
+quantiles, four full visible sides, nine correction-grid points). Only these
+CV runs enable the existing read-only private archive. TH18 and Maroon replay
+checks use public mode and the public TH16-cap account; TH18 uses five
+replicates of five quantiles, TH18-max defenders, eight visible sides and the
+saved default CC. This account setting differs from the earlier historical
+user-inventory experiment, so compare the paired runs below with each other.
+All derived reports are under `local/fidelity/mf/`; commands are documented in
+[FIDELITY_RUST.md](FIDELITY_RUST.md).
+
+**Result: r9 is rejected; r8 stays the default.** Paired 20-seed CV on the
+same folds, and the TH18 check in public mode:
+
+| Prior | CV sim 3★ (real 68.2%) | Brier | Destruction MAE | Joint log | Star RPS | TH18 visible mean stars (real 1/2/2/3) |
+|---|---:|---:|---:|---:|---:|---|
+| r8 | 55.9% | 0.222 | 7.22 | 2.37 | 0.134 | 1.92 / 1.96 / 2.16 / 1.84 |
+| r9 | 50.7% | 0.288 | 8.81 | 2.26 | 0.146 | 1.36 / 1.36 / 1.80 / 1.72 |
+| constant | — | 0.219 | 8.17 | 1.36 | 0.102 | — |
+
+r9 lowers most strengths (Dragons 0.83 to 0.69, Root Rider 1.20 to 0.98), and
+the recorded human Dragon attack replays at 0.69, further from its real clear.
+The likely cause is the fitting pool: five of the ten ranked TH16 layouts have
+no defending heroes in their transcriptions, so they are easier than real
+Legend bases and every fitted strength comes out low. Refit only after those
+rosters are filled in from the source screenshots. The TH18 r8 numbers here
+use the public TH16-cap account and are higher than the user-account run
+(1.44 / 1.60 / 1.88 / 1.44); compare only within a column.
+
 ## 2026-10-26 — attacker gap investigation (d986b4f)
 
 **Data.** 22 held-out real defenses of the user's base (private battle log,

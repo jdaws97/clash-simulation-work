@@ -5,6 +5,7 @@ mod decode;
 mod fit;
 mod history;
 mod io;
+mod meta_fit;
 mod metrics;
 mod observed;
 mod provenance;
@@ -24,11 +25,12 @@ mod replay;
 use io::*;
 
 const USAGE: &str = concat!(
-    "fidelity decode CODE|LOG | replay [LOG] | check-a | board | calibrate | cv | ",
+    "fidelity decode CODE|LOG | replay [LOG] | check-a | board | calibrate | meta-fit | cv | ",
     "observed REPLAY | tempo --video FILE --out FILE | th18 | proof | export-jobs | score-jobs PREPARED OUTCOMES ",
     "[--root ROOT] [--out FILE] [--threads N] [--seeds N] [--angles N] ",
     "[--attacker generic|playbook] [--scout-policy visible|random|oracle] ",
-    "[--legacy-oracle] [--calibration FILE] [--calibration-report FILE]",
+    "[--legacy-oracle] [--calibration FILE] [--calibration-report FILE] [--prior FILE] ",
+    "[meta-fit: --replicates N --iterations N --lower X --upper X --town-hall 16|18 --curve-source FILE]",
 );
 
 pub struct Arguments {
@@ -69,6 +71,11 @@ impl Arguments {
             "--calibration",
             "--calibration-report",
             "--prior-report",
+            "--prior",
+            "--iterations",
+            "--lower",
+            "--upper",
+            "--curve-source",
             "--log",
             "--history",
             "--base",
@@ -334,6 +341,9 @@ pub fn run(arguments: Vec<String>) -> Result<(), String> {
         .map(|value| resolve(&args.root, value))
         .unwrap_or_else(|| clash_data::catalog::path(&args.root));
     let catalog = Arc::new(Catalog::load(&catalog_path)?);
+    if args.command == "meta-fit" && std::env::var("CLASH_PRIVATE").as_deref() != Ok("none") {
+        return Err("meta-fit requires CLASH_PRIVATE=none; public inputs only".to_owned());
+    }
     let compiler = Compiler::load(&args.root, &catalog.stats)?;
     let output = match args.command.as_str() {
         "replay" | "check-a" => board::check_a(&args, &compiler, Arc::clone(&catalog))?,
@@ -379,6 +389,7 @@ pub fn run(arguments: Vec<String>) -> Result<(), String> {
             };
         }
         "cv" => board::cv(&args, &compiler, Arc::clone(&catalog))?,
+        "meta-fit" => meta_fit::command(&args, &compiler, Arc::clone(&catalog), &catalog_path)?,
         "observed" => observed::command(&args, &compiler, Arc::clone(&catalog))?,
         "th18" => th18::command(&args, &compiler, Arc::clone(&catalog))?,
         "tempo" => tempo::command(&args, &compiler, Arc::clone(&catalog))?,

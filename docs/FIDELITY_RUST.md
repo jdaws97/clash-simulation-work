@@ -12,7 +12,8 @@ clash fidelity replay /private/archive/battles.jsonl --root "$PWD" \
   --calibration /private/fit.json --attacker playbook --threads 4 \
   --out local/fidelity/replay.json
 clash fidelity cv --root "$PWD" --log /private/archive/battles.jsonl \
-  --attacker playbook --threads 4 --fold-dir local/fidelity/cv \
+  --attacker playbook --threads 4 --prior data/source/meta-calibration-r8.json \
+  --fold-dir local/fidelity/cv \
   --out local/fidelity/cv.json
 clash fidelity board --root "$PWD" --fold-dir local/fidelity/cv \
   --out local/fidelity/board.json
@@ -44,6 +45,73 @@ use explicit paths and do not rewrite them to manufacture new provenance.
 The [RF1 record](history/FIDELITY_RF1.md) preserves dated results and legacy
 comparison procedures as history. They are not current execution instructions.
 
-Native defense fitting does not replace the retained Python aggregate-target
-`calibrate.py` or per-build/family `calibrate_meta.py` workflows. Their pending
-ports and dependencies are listed in [CLEANUP_G4.md](CLEANUP_G4.md).
+Public meta strengths can be refitted with the native aggregate-target port:
+
+```sh
+export CLASH_PRIVATE=none
+export CLASH_CATALOG="$PWD/data/generated/catalog.json"
+unset BASELAB_PARAMS_FILE BASELAB_FLYER_RANGE BASELAB_PACE BASELAB_GAPS
+clash fidelity meta-fit --root "$PWD" --replicates 2 --threads 32 \
+  --out local/fidelity/meta-calibration.json
+clash fidelity meta-fit --root "$PWD" --town-hall 18 --replicates 2 --threads 32 \
+  --out local/fidelity/meta-fit-th18-sensitivity.json
+```
+
+`meta-fit` requires public mode before loading the compiler. It fits the five
+TH16 builds with a `three_star` target in the pinned TrophyCoach snapshot
+`data/source/meta-armies-2026-10-15.json`, on the ten ranked TH16 transcriptions
+in `data/source/reference-bases/ranked-2026-10-24`. It retains their pinned
+levels, walls, heroes and hidden hypotheses; it does not read or overlay a live
+account. The old pool containing the user's own layout is excluded because
+that layout also underlies the held-out defense CV. TH17/18 retain the frozen
+borrowing rule: arithmetic mean of same-archetype TH16 strengths, otherwise
+1.0; these entries remain `uncalibrated`. The four ranked TH18 bases can be
+fitted separately with `--town-hall 18`; this is a sensitivity, never the r9
+prior or a held-out replay validation.
+
+The attacker uses the current playbook compiler (with explicit generic fallback
+when a family has no cited book), all eight visible scouting candidates, three
+hidden planning samples and all five equally weighted skill quantiles per
+replicate. `--angles`, `--replicates`, `--iterations`, `--lower` and `--upper`
+control the budget and search (defaults 8, 2, 6, 0.4, 2.5). `--seeds` is rejected:
+replicates always include all five quantiles. A five-point log grid precedes
+log bisection. Plan, hidden-state, planning and execution draws are fixed
+across strengths. Common randomness cannot guarantee monotonic game outcomes;
+equal-weight isotonic regression makes the search response monotone. Reports
+retain raw/projected curves, reversals, actual final-strength rates, target
+errors and boundary clamps. This is a finite public-pool fit, not an accuracy
+claim about the population behind TrophyCoach's last-30-day aggregate.
+
+The flat build mapping includes `_provenance`: engine HEAD, executable-source
+and public-data SHA-256 manifest, catalog and base hashes, settings and seed
+formulas. A changed input aborts the write. The manifest includes the fitter,
+replay adapter and executable engine/compiler/scoring closure; it excludes the
+prior-admission code containing r9's own digest, avoiding a circular hash. Git
+must resolve HEAD; a relocated Windows worktree running in WSL may need an
+explicit `GIT_DIR` pointing to its existing worktree metadata.
+
+CV accepts `--prior FILE` for either byte-pinned public r8 or r9, including an
+identical archived copy. The default remains r8. Unknown or altered priors and
+defense-fitted priors are rejected; a self-declared public status grants no
+ancestry exemption. Each fold refits from the selected prior, with stable-ID
+fold assignment, training-only constant baselines and disjoint hash-bound
+ancestry. Use separate output directories for a paired comparison:
+
+```sh
+# Set CLASH_PRIVATE to the existing read-only private archive for these CV runs.
+clash fidelity cv --attacker playbook --seeds 20 --threads 32 \
+  --prior data/source/meta-calibration-r8.json \
+  --fold-dir local/fidelity/cv-r8 --out local/fidelity/cv-r8.json
+clash fidelity cv --attacker playbook --seeds 20 --threads 32 \
+  --prior data/source/meta-calibration-r9.json \
+  --fold-dir local/fidelity/cv-r9 --out local/fidelity/cv-r9.json
+# Return to public mode for replay checks.
+CLASH_PRIVATE=none clash fidelity th18 --variants current --threads 12 \
+  --reference /path/to/existing/th18/results.json \
+  --calibration data/source/meta-calibration-r9.json --out local/fidelity/th18-r9.json
+CLASH_PRIVATE=none clash fidelity observed data/source/replays/2026-10-21-maroon-machine.json \
+  --calibration data/source/meta-calibration-r9.json --threads 6 --out local/fidelity/observed-r9.json
+```
+
+The historical Python `calibrate_meta.py` is replaced by `meta-fit`; the
+separate Python `calibrate.py` aggregate-target workflow remains unported.

@@ -135,9 +135,10 @@ pub fn command(
     compiler: &Compiler<'_>,
     catalog: Arc<Catalog>,
 ) -> Result<Json, String> {
-    let real_path = args
-        .root
-        .join("local/digitize/ranked-bases-2026-10-25-th18/results.json");
+    let real_path = args.path(
+        "--reference",
+        "local/digitize/ranked-bases-2026-10-25-th18/results.json",
+    );
     let real = read(&real_path)?;
     let army = "custom:user-rr-oct25";
     let build = compiler.library.build_by_id(army)?;
