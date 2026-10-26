@@ -9,9 +9,10 @@ use super::io::*;
 
 pub const R8_SHA256: &str = "821a486f0e481d58070b61099d0e102a410c3d4b02471efe5c6d71ebb0d565b8";
 pub const R9_SHA256: &str = "09ac236514e52142ef62fc4035fa58eb8c395a05874cc2920d8de2b85b78fd39";
+pub const R10_SHA256: &str = "338be3bba21f53ca98e5baf32b52314f829546158ab9665f658de01518ae250f";
 
 fn public_digest(digest: &str) -> bool {
-    digest.len() == 64 && matches!(digest, R8_SHA256 | R9_SHA256)
+    digest.len() == 64 && matches!(digest, R8_SHA256 | R9_SHA256 | R10_SHA256)
 }
 
 pub fn ancestry_ids(ancestry: &Json) -> Option<BTreeSet<String>> {
@@ -280,7 +281,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let directory = std::env::temp_dir().join(format!("meta-priors-{}", std::process::id()));
         std::fs::create_dir_all(&directory).unwrap();
-        for (name, digest) in [("r8", R8_SHA256), ("r9", R9_SHA256)] {
+        for (name, digest) in [("r8", R8_SHA256), ("r9", R9_SHA256), ("r10", R10_SHA256)] {
             let source = root.join(format!("data/source/meta-calibration-{name}.json"));
             assert_eq!(file_hash(&source).unwrap(), digest);
             let copy = directory.join(format!("{name}.json"));
