@@ -53,3 +53,18 @@ videos the TH16 sim is 17 points further ahead at 60 s (90% interval 6.5 to
 three-stars far less. Video three-star shares are selection-biased; the tempo
 shape is the more robust signal: humans keep acting past 90 s, the sim
 front-loads its whole army and then runs out.
+
+**Strength calibration (r8) check.** r8 scales each meta army's troop HP and
+damage between 0.83 (Dragons) and 1.20 (Root Rider, Thrower), fitted by the
+old Python tool on an older engine. Raw strength (1.0 for every army) makes the
+20-seed CV worse overall (3★ 42.7%, Brier 0.244, MAE 8.49) and lowers the TH18
+replays (visible mean stars 1.12 / 1.44 / 1.36 / 1.44). But diagnosis D5
+(`local/evidence/fidelity/diag/d5/report.md`) replays the user's one recorded
+Dragon attack with its exact actions: it clears in 1 of 6 runs at r8 and 5 of 6
+at strength 1.0, with an accurate destruction curve in both. The factors are
+stale and family-specific rather than uniformly wrong; they need a refit on
+the current engine against the same public targets (porting `calibrate_meta`).
+D5 also found the Dragon playbook forced into a hero-first two-flank opening
+when the army's equipment can't support it (Dragons enter at about 32 s; the
+recorded human dropped them at 0.1 s), but removing inferred waits alone
+lowers clears 36% to 28%, so no global speed-up was made.
