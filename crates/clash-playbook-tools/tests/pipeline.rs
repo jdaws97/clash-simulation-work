@@ -198,13 +198,10 @@ fn nested_dependencies_duplicates_and_cycles_are_checked() {
     for name in ["missing", "lost", "absent"] {
         assert!(errors.contains(&format!("unknown dependency {name}")));
     }
-    assert!(
-        schema::validate(&parse(
-            r#"{"steps":[{"id":"a","action":"wait","when":{"typo":1}}]}"#
-        ))
-        .len()
-            > 0
-    );
+    assert!(!schema::validate(&parse(
+        r#"{"steps":[{"id":"a","action":"wait","when":{"typo":1}}]}"#
+    ))
+    .is_empty());
 }
 
 #[test]

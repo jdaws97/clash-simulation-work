@@ -38,7 +38,7 @@ pub fn place(steps: Vec<Json>) -> Vec<Json> {
                             .is_some_and(|v| Some(v.str()) == reference)
                 })
                 .map(|(i, _)| i)
-                .last();
+                .next_back();
             let mut index = last_sibling.map_or(position + 1, |i| (position + 1).max(i + 1));
             while index < base.len() && completion(&base[index]) {
                 index += 1;
