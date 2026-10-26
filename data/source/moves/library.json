@@ -1,0 +1,3746 @@
+{
+  "schema_version": 2.0,
+  "catalog_sha256": "91f122ee1649c50fca3cda9bb4d36b837dd2714e071e025b010613a5424979cc",
+  "mechanic_dependencies": ["M2-observation-and-human-costs"],
+  "definitions": [
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "shoulder-clear",
+      "family": "cheap-shoulder-clearing",
+      "name": "Cheap shoulder clearing",
+      "purpose": "Clear outside buildings to maintain the intended route",
+      "actor_bindings": {
+        "allowed_kinds": ["troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Archer","Baby Dragon","Minion","Super Barbarian","Super Minion","Valkyrie","Wizard"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "completion",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.all[].inside",
+          "when.delay",
+          "when.t"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/base_reading/0",
+        "data/source/playbooks/dragon.json#/variants/3/steps/4",
+        "data/source/playbooks/druid-ruin-witch.json#/base_reading/1",
+        "data/source/playbooks/electro-dragon.json#/base_reading/4",
+        "data/source/playbooks/fireball-warden.json#/steps/21",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/13",
+        "data/source/playbooks/root-rider.json#/steps/3",
+        "data/source/playbooks/root-rider.json#/steps/6",
+        "data/source/playbooks/root-rider.json#/steps/27",
+        "data/source/playbooks/super-bowler.json#/steps/13",
+        "data/source/playbooks/super-bowler.json#/steps/14",
+        "data/source/playbooks/super-bowler.json#/base_reading/2",
+        "data/source/playbooks/super-minion-air.json#/steps/6",
+        "data/source/playbooks/super-minion-air.json#/steps/11",
+        "data/source/playbooks/super-minion-air.json#/steps/12",
+        "data/source/playbooks/super-minion-air.json#/variants/11/steps/0",
+        "data/source/playbooks/thrower.json#/steps/0",
+        "data/source/playbooks/thrower.json#/base_reading/0",
+        "data/source/playbooks/thrower.json#/variants/5/steps/5",
+        "data/source/playbooks/thrower.json#/variants/5/steps/6",
+        "data/source/playbooks/yeti.json#/steps/0",
+        "data/source/playbooks/yeti.json#/base_reading/4"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "trap-scout",
+      "family": "cheap-shoulder-clearing",
+      "name": "Trap and obstruction screening",
+      "purpose": "Screen a charge or main entry with expendable scouts",
+      "actor_bindings": {
+        "allowed_kinds": ["troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Archer","Balloon"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Retain expendable scouts and the screened charge/cohort; a test drop is not a damage wave",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": ["action","at","completion","count","group","id","packet","what","when","when.after","when.delay"],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/druid-ruin-witch.json#/steps/2",
+        "data/source/playbooks/fireball-warden.json#/steps/2",
+        "data/source/playbooks/meteor-golem.json#/variants/2/steps/1",
+        "data/source/playbooks/root-rider.json#/steps/8",
+        "data/source/playbooks/super-bowler.json#/steps/1",
+        "data/source/playbooks/super-bowler.json#/steps/17",
+        "data/source/playbooks/super-minion-air.json#/steps/4",
+        "data/source/playbooks/thrower.json#/steps/4",
+        "data/source/playbooks/thrower.json#/base_reading/7",
+        "data/source/playbooks/thrower.json#/variants/5/steps/2"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "heavy-funnel",
+      "family": "isolated-heavy-funnel",
+      "name": "Isolated heavy funnel",
+      "purpose": "Clear a separate flank with a self-contained damage cohort",
+      "actor_bindings": {
+        "allowed_kinds": ["troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": [
+          "Electro Dragon",
+          "Furnace",
+          "Ice Golem",
+          "Inferno Dragon",
+          "Meteor Golem",
+          "Super Archer",
+          "Super Yeti",
+          "Thrower"
+        ],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "primary",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.all[].heavy_fire",
+          "when.delay",
+          "when.group_inside",
+          "when.t"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/variants/4/steps/5",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/12",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/0/steps/0",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/3/steps/0",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/0",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/1",
+        "data/source/playbooks/fireball-warden.json#/steps/1",
+        "data/source/playbooks/fireball-warden.json#/variants/1/steps/1",
+        "data/source/playbooks/lavaloon.json#/steps/0",
+        "data/source/playbooks/lavaloon.json#/steps/1",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/8",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/10",
+        "data/source/playbooks/meteor-golem.json#/steps/1",
+        "data/source/playbooks/meteor-golem.json#/base_reading/1",
+        "data/source/playbooks/meteor-golem.json#/variants/1/steps/0",
+        "data/source/playbooks/root-rider.json#/steps/14",
+        "data/source/playbooks/root-rider.json#/variants/1/steps/0",
+        "data/source/playbooks/root-rider.json#/variants/1/steps/5",
+        "data/source/playbooks/root-rider.json#/variants/2/steps/2",
+        "data/source/playbooks/super-bowler.json#/steps/4",
+        "data/source/playbooks/super-minion-air.json#/variants/7/steps/0",
+        "data/source/playbooks/thrower.json#/steps/9",
+        "data/source/playbooks/thrower.json#/variants/5/steps/1",
+        "data/source/playbooks/thrower.json#/variants/5/steps/4",
+        "data/source/playbooks/thrower.json#/variants/6/steps/1",
+        "data/source/playbooks/yeti.json#/variants/2/steps/0",
+        "data/source/playbooks/yeti.json#/variants/2/steps/1"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "hero-walk",
+      "family": "hero-perimeter-walk",
+      "name": "Hero perimeter walk",
+      "purpose": "Establish a funnel edge with an autonomous hero",
+      "actor_bindings": {
+        "allowed_kinds": ["hero"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Archer Queen","Barbarian King","Royal Champion"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.all[].group_inside",
+          "when.delay",
+          "when.inside",
+          "when.n",
+          "when.spells_left",
+          "when.t"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/6",
+        "data/source/playbooks/dragon.json#/base_reading/3",
+        "data/source/playbooks/dragon.json#/variants/3/steps/2",
+        "data/source/playbooks/dragon.json#/variants/8/steps/1",
+        "data/source/playbooks/dragon.json#/variants/12/steps/0",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/25",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/3/steps/5",
+        "data/source/playbooks/electro-dragon.json#/steps/0",
+        "data/source/playbooks/electro-dragon.json#/base_reading/3",
+        "data/source/playbooks/electro-dragon.json#/variants/1/steps/9",
+        "data/source/playbooks/fireball-warden.json#/variants/4/steps/2",
+        "data/source/playbooks/lavaloon.json#/base_reading/1",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/9",
+        "data/source/playbooks/meteor-golem.json#/variants/4/steps/0",
+        "data/source/playbooks/root-rider.json#/steps/16",
+        "data/source/playbooks/root-rider.json#/variants/3/steps/5",
+        "data/source/playbooks/root-rider.json#/variants/4/steps/5",
+        "data/source/playbooks/super-bowler.json#/steps/11",
+        "data/source/playbooks/super-bowler.json#/variants/0/steps/3",
+        "data/source/playbooks/super-bowler.json#/variants/1/steps/3",
+        "data/source/playbooks/super-bowler.json#/variants/1/steps/4",
+        "data/source/playbooks/thrower.json#/steps/10",
+        "data/source/playbooks/thrower.json#/steps/11",
+        "data/source/playbooks/thrower.json#/variants/1/steps/0",
+        "data/source/playbooks/thrower.json#/variants/1/steps/2",
+        "data/source/playbooks/thrower.json#/variants/3/steps/3",
+        "data/source/playbooks/thrower.json#/variants/8/steps/6",
+        "data/source/playbooks/yeti.json#/steps/2",
+        "data/source/playbooks/yeti.json#/base_reading/5"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "defense-snipe",
+      "family": "exposed-defense-snipe",
+      "name": "Exposed defense snipe",
+      "purpose": "Remove a selected exposed defense with a small troop packet",
+      "actor_bindings": {
+        "allowed_kinds": ["troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Balloon","Rocket Balloon"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "completion",
+          "count",
+          "every",
+          "group",
+          "id",
+          "objective",
+          "objective_at",
+          "packet",
+          "per_target",
+          "reserved",
+          "route_hero",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].defenders_near",
+          "when.all[].delay",
+          "when.delay"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/0",
+        "data/source/playbooks/dragon.json#/steps/10",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/20",
+        "data/source/playbooks/fireball-warden.json#/steps/3",
+        "data/source/playbooks/fireball-warden.json#/steps/20",
+        "data/source/playbooks/fireball-warden.json#/base_reading/1",
+        "data/source/playbooks/lavaloon.json#/base_reading/9",
+        "data/source/playbooks/meteor-golem.json#/variants/3/steps/4",
+        "data/source/playbooks/root-rider.json#/steps/2",
+        "data/source/playbooks/root-rider.json#/steps/26",
+        "data/source/playbooks/root-rider.json#/variants/3/steps/3",
+        "data/source/playbooks/super-minion-air.json#/steps/3",
+        "data/source/playbooks/super-minion-air.json#/steps/30",
+        "data/source/playbooks/super-minion-air.json#/steps/31"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "breach",
+      "family": "directed-breach",
+      "name": "Directed breach",
+      "purpose": "Open wall access along the planned route",
+      "actor_bindings": {
+        "allowed_kinds": ["troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Super Wall Breaker","Wall Breaker"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Reserve actual Wall Breakers and a legal wall-access approach; generic recovery may not steal their stock",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": ["action","at","count","group","id","packet","what","when","when.after","when.delay","when.t"],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/druid-ruin-witch.json#/steps/16",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/3/steps/7",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/13",
+        "data/source/playbooks/fireball-warden.json#/variants/2/steps/0",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/34",
+        "data/source/playbooks/meteor-golem.json#/variants/1/steps/2",
+        "data/source/playbooks/super-bowler.json#/steps/3",
+        "data/source/playbooks/super-bowler.json#/steps/22",
+        "data/source/playbooks/super-minion-air.json#/steps/23",
+        "data/source/playbooks/thrower.json#/steps/7",
+        "data/source/playbooks/thrower.json#/variants/5/steps/8",
+        "data/source/playbooks/thrower.json#/variants/6/steps/4",
+        "data/source/playbooks/thrower.json#/variants/8/steps/0",
+        "data/source/playbooks/thrower.json#/variants/8/steps/5",
+        "data/source/playbooks/yeti.json#/steps/9"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "barracks-flank",
+      "family": "siege-barracks-flank",
+      "name": "Siege Barracks flank",
+      "purpose": "Clear the flank and deliver Barracks support",
+      "actor_bindings": {
+        "allowed_kinds": ["siege"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Siege Barracks"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the cited siege role, cargo and legal placement/release; retain source donation origin",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "siege_role",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.all[].inside",
+          "when.delay"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/variants/9/steps/0",
+        "data/source/playbooks/electro-dragon.json#/variants/0/steps/8",
+        "data/source/playbooks/root-rider.json#/variants/1/steps/6",
+        "data/source/playbooks/yeti.json#/variants/0/steps/0"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "flinger-clear",
+      "family": "flame-flinger-section-clear",
+      "name": "Flame Flinger section clear",
+      "purpose": "Clear a section from a safe siege position",
+      "actor_bindings": {
+        "allowed_kinds": ["siege"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Flame Flinger"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the cited siege role, cargo and legal placement/release; retain source donation origin",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "bind_before",
+          "count",
+          "group",
+          "id",
+          "objective",
+          "objective_at",
+          "siege_role",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.all[].objective",
+          "when.all[].state",
+          "when.delay",
+          "when.t"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/variants/8/steps/0",
+        "data/source/playbooks/super-minion-air.json#/steps/1",
+        "data/source/playbooks/super-minion-air.json#/base_reading/2",
+        "data/source/playbooks/super-minion-air.json#/base_reading/4",
+        "data/source/playbooks/super-minion-air.json#/variants/3/steps/0"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "queen-charge",
+      "family": "queen-healer-charge",
+      "name": "Queen and Healer charge stage",
+      "purpose": "Sustain a Queen opening to establish entry access",
+      "actor_bindings": {
+        "allowed_kinds": ["hero","troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Healer"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Bind the Queen opening and its actual Healer support; do not substitute a targeting command",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": ["action","at","count","group","id","packet","what","when","when.after","when.delay","when.t"],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/super-bowler.json#/steps/0",
+        "data/source/playbooks/super-bowler.json#/steps/2",
+        "data/source/playbooks/super-bowler.json#/base_reading/3",
+        "data/source/playbooks/super-bowler.json#/base_reading/4",
+        "data/source/playbooks/super-bowler.json#/base_reading/6"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "warden-walk",
+      "family": "warden-healer-walk",
+      "name": "Warden and Healer walk stage",
+      "purpose": "Prepare a Warden opening with supporting troops",
+      "actor_bindings": {
+        "allowed_kinds": ["hero","troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Grand Warden","Healer"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Bind the Warden opening and supporting cohort; preserve Fireball/equipment separation",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "completion",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "what",
+          "when",
+          "when.after",
+          "when.delay",
+          "when.inside",
+          "when.t"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/druid-ruin-witch.json#/steps/0",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/1",
+        "data/source/playbooks/druid-ruin-witch.json#/base_reading/4",
+        "data/source/playbooks/fireball-warden.json#/steps/0",
+        "data/source/playbooks/fireball-warden.json#/steps/9",
+        "data/source/playbooks/fireball-warden.json#/base_reading/5",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/0",
+        "data/source/playbooks/meteor-golem.json#/variants/2/steps/0",
+        "data/source/playbooks/meteor-golem.json#/variants/2/steps/2",
+        "data/source/playbooks/meteor-golem.json#/variants/3/steps/0",
+        "data/source/playbooks/root-rider.json#/variants/1/steps/2",
+        "data/source/playbooks/super-minion-air.json#/steps/0",
+        "data/source/playbooks/super-minion-air.json#/steps/7",
+        "data/source/playbooks/super-minion-air.json#/base_reading/5",
+        "data/source/playbooks/super-minion-air.json#/base_reading/6",
+        "data/source/playbooks/thrower.json#/variants/5/steps/0",
+        "data/source/playbooks/thrower.json#/variants/5/steps/3",
+        "data/source/playbooks/thrower.json#/variants/6/steps/0"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "rc-charge",
+      "family": "protected-rc-charge",
+      "name": "Protected Royal Champion charge stage",
+      "purpose": "Establish the funnel with a protected Royal Champion",
+      "actor_bindings": {
+        "allowed_kinds": ["hero"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Royal Champion"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Bind Royal Champion and protection stock; Fox survival and route remain source conditions",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": ["action","at","count","group","id","packet","what","when","when.after","when.delay","when.t"],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/variants/4/steps/0",
+        "data/source/playbooks/lavaloon.json#/steps/8",
+        "data/source/playbooks/lavaloon.json#/base_reading/5",
+        "data/source/playbooks/root-rider.json#/steps/0",
+        "data/source/playbooks/root-rider.json#/base_reading/0",
+        "data/source/playbooks/root-rider.json#/base_reading/1",
+        "data/source/playbooks/root-rider.json#/base_reading/3",
+        "data/source/playbooks/super-bowler.json#/variants/0/steps/0"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "duke-dive",
+      "family": "duke-dive",
+      "name": "Dragon Duke dive stage",
+      "purpose": "Clear a flank or objective using an isolated Duke",
+      "actor_bindings": {
+        "allowed_kinds": ["hero"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Dragon Duke"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Bind Dragon Duke and the cited isolated route; retain source equipment and pet context",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.all[].group_inside",
+          "when.delay",
+          "when.group_inside",
+          "when.inside",
+          "when.n",
+          "when.spells_left",
+          "when.t"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/4",
+        "data/source/playbooks/dragon.json#/base_reading/4",
+        "data/source/playbooks/dragon.json#/variants/0/steps/3",
+        "data/source/playbooks/dragon.json#/variants/3/steps/0",
+        "data/source/playbooks/dragon.json#/variants/4/steps/3",
+        "data/source/playbooks/dragon.json#/variants/8/steps/3",
+        "data/source/playbooks/dragon.json#/variants/12/steps/2",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/8",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/3/steps/6",
+        "data/source/playbooks/electro-dragon.json#/steps/2",
+        "data/source/playbooks/electro-dragon.json#/variants/0/steps/9",
+        "data/source/playbooks/electro-dragon.json#/variants/1/steps/7",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/10",
+        "data/source/playbooks/fireball-warden.json#/steps/19",
+        "data/source/playbooks/lavaloon.json#/steps/2",
+        "data/source/playbooks/lavaloon.json#/base_reading/2",
+        "data/source/playbooks/lavaloon.json#/base_reading/4",
+        "data/source/playbooks/lavaloon.json#/base_reading/7",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/12",
+        "data/source/playbooks/meteor-golem.json#/steps/0",
+        "data/source/playbooks/meteor-golem.json#/base_reading/0",
+        "data/source/playbooks/meteor-golem.json#/variants/2/steps/3",
+        "data/source/playbooks/root-rider.json#/steps/18",
+        "data/source/playbooks/root-rider.json#/variants/2/steps/0",
+        "data/source/playbooks/root-rider.json#/variants/3/steps/0",
+        "data/source/playbooks/root-rider.json#/variants/4/steps/0",
+        "data/source/playbooks/super-bowler.json#/steps/10",
+        "data/source/playbooks/super-bowler.json#/variants/0/steps/5",
+        "data/source/playbooks/super-bowler.json#/variants/1/steps/0",
+        "data/source/playbooks/super-minion-air.json#/steps/21",
+        "data/source/playbooks/thrower.json#/steps/1",
+        "data/source/playbooks/thrower.json#/base_reading/1",
+        "data/source/playbooks/thrower.json#/base_reading/2",
+        "data/source/playbooks/thrower.json#/base_reading/4",
+        "data/source/playbooks/thrower.json#/base_reading/5",
+        "data/source/playbooks/thrower.json#/variants/2/steps/8",
+        "data/source/playbooks/thrower.json#/variants/3/steps/5",
+        "data/source/playbooks/thrower.json#/variants/4/steps/0",
+        "data/source/playbooks/thrower.json#/variants/5/steps/9",
+        "data/source/playbooks/thrower.json#/variants/6/steps/5",
+        "data/source/playbooks/thrower.json#/variants/7/steps/0",
+        "data/source/playbooks/thrower.json#/variants/8/steps/4",
+        "data/source/playbooks/yeti.json#/steps/1",
+        "data/source/playbooks/yeti.json#/base_reading/0",
+        "data/source/playbooks/yeti.json#/base_reading/1",
+        "data/source/playbooks/yeti.json#/base_reading/2",
+        "data/source/playbooks/yeti.json#/base_reading/3"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "recall",
+      "family": "recall-extraction",
+      "name": "Recall extraction",
+      "purpose": "Extract eligible surviving charge actors for reuse",
+      "actor_bindings": {
+        "allowed_kinds": ["hero","spell"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Recall Spell"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Reserve Recall stock and actual capacity; only eligible surviving actors can enter the stash",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.all[].heavy_fire",
+          "when.all[].inside",
+          "when.delay",
+          "when.n",
+          "when.spells_left"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["recall"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/fireball-warden.json#/steps/12",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/7",
+        "data/source/playbooks/root-rider.json#/steps/4",
+        "data/source/playbooks/root-rider.json#/variants/0/steps/0",
+        "data/source/playbooks/root-rider.json#/variants/1/steps/4",
+        "data/source/playbooks/super-bowler.json#/steps/8",
+        "data/source/playbooks/super-minion-air.json#/steps/10",
+        "data/source/playbooks/super-minion-air.json#/variants/4/steps/0"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "redeploy",
+      "family": "redeployment-transfer",
+      "name": "Named redeployment",
+      "purpose": "Transfer recalled actors to the later entry",
+      "actor_bindings": {
+        "allowed_kinds": ["hero"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": [],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the named successful Recall and its matching stash; no actor may be manufactured",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": ["action","at","count","group","id","packet","what","when","when.after","when.delay"],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["redeploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/fireball-warden.json#/steps/13",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/19",
+        "data/source/playbooks/root-rider.json#/steps/13",
+        "data/source/playbooks/root-rider.json#/variants/1/steps/8",
+        "data/source/playbooks/super-bowler.json#/steps/15",
+        "data/source/playbooks/super-minion-air.json#/steps/14",
+        "data/source/playbooks/super-minion-air.json#/variants/5/steps/0"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "giant-arrow",
+      "family": "giant-arrow-line",
+      "name": "Giant Arrow line stage",
+      "purpose": "Remove defenses on a planned Queen firing line",
+      "actor_bindings": {
+        "allowed_kinds": ["hero"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": [],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Giant Arrow must be equipped; preserve automatic aim, bound objective and legal Queen placement",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "aim",
+          "at",
+          "count",
+          "equipment",
+          "group",
+          "id",
+          "objective",
+          "objective_at",
+          "packet",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.delay"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["ability"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/base_reading/1",
+        "data/source/playbooks/dragon.json#/variants/8/steps/2",
+        "data/source/playbooks/dragon.json#/variants/12/steps/1",
+        "data/source/playbooks/electro-dragon.json#/steps/1",
+        "data/source/playbooks/electro-dragon.json#/base_reading/0",
+        "data/source/playbooks/electro-dragon.json#/base_reading/1",
+        "data/source/playbooks/electro-dragon.json#/variants/1/steps/10",
+        "data/source/playbooks/fireball-warden.json#/variants/4/steps/1",
+        "data/source/playbooks/root-rider.json#/steps/17",
+        "data/source/playbooks/root-rider.json#/base_reading/4",
+        "data/source/playbooks/root-rider.json#/variants/2/steps/3",
+        "data/source/playbooks/super-minion-air.json#/steps/17",
+        "data/source/playbooks/super-minion-air.json#/base_reading/1",
+        "data/source/playbooks/super-minion-air.json#/base_reading/7",
+        "data/source/playbooks/super-minion-air.json#/variants/14/steps/1",
+        "data/source/playbooks/super-minion-air.json#/variants/15/steps/1",
+        "data/source/playbooks/thrower.json#/variants/3/steps/4",
+        "data/source/playbooks/yeti.json#/steps/3"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "backpack",
+      "family": "backpack-setup-dash",
+      "name": "Rocket Backpack crossing stage",
+      "purpose": "Remove defenses along an autonomous Duke crossing",
+      "actor_bindings": {
+        "allowed_kinds": ["hero"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Dragon Duke"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Rocket Backpack must be equipped; retain all-required Flame Blower pairing where declared",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "aim",
+          "at",
+          "count",
+          "equipment",
+          "group",
+          "id",
+          "objective",
+          "objective_at",
+          "packet",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.delay"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["ability"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/5",
+        "data/source/playbooks/dragon.json#/variants/12/steps/3",
+        "data/source/playbooks/electro-dragon.json#/base_reading/7",
+        "data/source/playbooks/electro-dragon.json#/variants/1/steps/8",
+        "data/source/playbooks/root-rider.json#/variants/2/steps/1",
+        "data/source/playbooks/root-rider.json#/variants/3/steps/2",
+        "data/source/playbooks/super-minion-air.json#/steps/22",
+        "data/source/playbooks/super-minion-air.json#/variants/9/steps/3",
+        "data/source/playbooks/super-minion-air.json#/variants/14/steps/2",
+        "data/source/playbooks/super-minion-air.json#/variants/15/steps/2",
+        "data/source/playbooks/thrower.json#/variants/3/steps/6",
+        "data/source/playbooks/thrower.json#/variants/4/steps/1"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "fireball",
+      "family": "fireball-setup",
+      "name": "Fireball preparation and removal stage",
+      "purpose": "Prepare the actual Fireball target and finish its cited objective",
+      "actor_bindings": {
+        "allowed_kinds": ["hero","spell"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Earthquake Spell","Grand Warden","Invisibility Spell"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Fireball must be equipped for activation; masks, clearing and follow-up Quakes retain their separate stock and success dependencies",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "after_success",
+          "aim",
+          "at",
+          "completion",
+          "count",
+          "equipment",
+          "group",
+          "id",
+          "mask_for",
+          "mask_hero",
+          "objective",
+          "objective_at",
+          "optional",
+          "packet",
+          "required",
+          "spell_budget",
+          "target_keys",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.all[].effect_active",
+          "when.all[].objective",
+          "when.all[].state",
+          "when.delay"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["ability","spell"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/druid-ruin-witch.json#/steps/5",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/6",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/7",
+        "data/source/playbooks/druid-ruin-witch.json#/base_reading/0",
+        "data/source/playbooks/druid-ruin-witch.json#/base_reading/5",
+        "data/source/playbooks/fireball-warden.json#/steps/5",
+        "data/source/playbooks/fireball-warden.json#/steps/6",
+        "data/source/playbooks/fireball-warden.json#/steps/7",
+        "data/source/playbooks/fireball-warden.json#/steps/8",
+        "data/source/playbooks/fireball-warden.json#/base_reading/0",
+        "data/source/playbooks/fireball-warden.json#/base_reading/2",
+        "data/source/playbooks/fireball-warden.json#/base_reading/3",
+        "data/source/playbooks/fireball-warden.json#/variants/0/steps/0",
+        "data/source/playbooks/fireball-warden.json#/variants/0/steps/1",
+        "data/source/playbooks/fireball-warden.json#/variants/0/steps/2",
+        "data/source/playbooks/fireball-warden.json#/variants/0/steps/3",
+        "data/source/playbooks/fireball-warden.json#/variants/1/steps/0",
+        "data/source/playbooks/lavaloon.json#/base_reading/15",
+        "data/source/playbooks/lavaloon.json#/base_reading/16",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/1",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/2",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/3",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/4",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/5",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/6",
+        "data/source/playbooks/meteor-golem.json#/base_reading/5",
+        "data/source/playbooks/meteor-golem.json#/variants/3/steps/1",
+        "data/source/playbooks/meteor-golem.json#/variants/3/steps/5",
+        "data/source/playbooks/meteor-golem.json#/variants/3/steps/6",
+        "data/source/playbooks/meteor-golem.json#/variants/3/steps/7",
+        "data/source/playbooks/meteor-golem.json#/variants/3/steps/8",
+        "data/source/playbooks/meteor-golem.json#/variants/3/steps/9",
+        "data/source/playbooks/meteor-golem.json#/variants/3/steps/10",
+        "data/source/playbooks/super-minion-air.json#/steps/2",
+        "data/source/playbooks/super-minion-air.json#/steps/13",
+        "data/source/playbooks/super-minion-air.json#/base_reading/0",
+        "data/source/playbooks/super-minion-air.json#/variants/7/steps/2",
+        "data/source/playbooks/super-minion-air.json#/variants/7/steps/3",
+        "data/source/playbooks/super-minion-air.json#/variants/14/steps/0",
+        "data/source/playbooks/super-minion-air.json#/variants/15/steps/0"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "zapquake",
+      "family": "zap-quake-package",
+      "name": "Earthquake and Zapquake damage stage",
+      "purpose": "Damage or remove the bound defense package with cited damage spells",
+      "actor_bindings": {
+        "allowed_kinds": ["spell"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Earthquake Spell","Lightning Spell"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Reserve each cited damage spell by origin; keep shared bound objectives and successful-shot follow-ups",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "after_success",
+          "at",
+          "completion",
+          "count",
+          "group",
+          "id",
+          "objective",
+          "optional",
+          "packet",
+          "spell_budget",
+          "target_keys",
+          "target_mode",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.all[].objective",
+          "when.all[].state",
+          "when.delay",
+          "when.t"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["spell"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/1",
+        "data/source/playbooks/dragon.json#/steps/2",
+        "data/source/playbooks/dragon.json#/steps/3",
+        "data/source/playbooks/dragon.json#/variants/0/steps/0",
+        "data/source/playbooks/dragon.json#/variants/0/steps/1",
+        "data/source/playbooks/dragon.json#/variants/0/steps/2",
+        "data/source/playbooks/dragon.json#/variants/12/steps/4",
+        "data/source/playbooks/dragon.json#/variants/12/steps/5",
+        "data/source/playbooks/dragon.json#/variants/12/steps/6",
+        "data/source/playbooks/dragon.json#/variants/12/steps/7",
+        "data/source/playbooks/dragon.json#/variants/12/steps/8",
+        "data/source/playbooks/dragon.json#/variants/12/steps/9",
+        "data/source/playbooks/dragon.json#/variants/12/steps/10",
+        "data/source/playbooks/dragon.json#/variants/12/steps/11",
+        "data/source/playbooks/dragon.json#/variants/12/steps/12",
+        "data/source/playbooks/dragon.json#/variants/12/steps/13",
+        "data/source/playbooks/electro-dragon.json#/base_reading/6",
+        "data/source/playbooks/electro-dragon.json#/variants/0/steps/0",
+        "data/source/playbooks/electro-dragon.json#/variants/0/steps/1",
+        "data/source/playbooks/electro-dragon.json#/variants/0/steps/2",
+        "data/source/playbooks/electro-dragon.json#/variants/0/steps/3",
+        "data/source/playbooks/electro-dragon.json#/variants/0/steps/4",
+        "data/source/playbooks/electro-dragon.json#/variants/0/steps/5",
+        "data/source/playbooks/electro-dragon.json#/variants/0/steps/6",
+        "data/source/playbooks/electro-dragon.json#/variants/0/steps/7",
+        "data/source/playbooks/electro-dragon.json#/variants/1/steps/0",
+        "data/source/playbooks/electro-dragon.json#/variants/1/steps/1",
+        "data/source/playbooks/electro-dragon.json#/variants/1/steps/2",
+        "data/source/playbooks/electro-dragon.json#/variants/1/steps/3",
+        "data/source/playbooks/electro-dragon.json#/variants/1/steps/4",
+        "data/source/playbooks/electro-dragon.json#/variants/1/steps/5",
+        "data/source/playbooks/electro-dragon.json#/variants/1/steps/6",
+        "data/source/playbooks/lavaloon.json#/steps/9",
+        "data/source/playbooks/root-rider.json#/steps/19",
+        "data/source/playbooks/root-rider.json#/variants/3/steps/1",
+        "data/source/playbooks/super-minion-air.json#/steps/19",
+        "data/source/playbooks/super-minion-air.json#/steps/20",
+        "data/source/playbooks/super-minion-air.json#/variants/9/steps/0",
+        "data/source/playbooks/super-minion-air.json#/variants/9/steps/1",
+        "data/source/playbooks/super-minion-air.json#/variants/9/steps/2",
+        "data/source/playbooks/super-minion-air.json#/variants/10/steps/0",
+        "data/source/playbooks/super-minion-air.json#/variants/10/steps/1",
+        "data/source/playbooks/super-minion-air.json#/variants/14/steps/3",
+        "data/source/playbooks/super-minion-air.json#/variants/14/steps/4",
+        "data/source/playbooks/super-minion-air.json#/variants/15/steps/3",
+        "data/source/playbooks/super-minion-air.json#/variants/15/steps/4",
+        "data/source/playbooks/thrower.json#/variants/2/steps/0",
+        "data/source/playbooks/thrower.json#/variants/2/steps/1",
+        "data/source/playbooks/thrower.json#/variants/2/steps/2",
+        "data/source/playbooks/thrower.json#/variants/2/steps/3",
+        "data/source/playbooks/thrower.json#/variants/2/steps/4",
+        "data/source/playbooks/thrower.json#/variants/2/steps/5",
+        "data/source/playbooks/thrower.json#/variants/2/steps/6",
+        "data/source/playbooks/thrower.json#/variants/2/steps/7",
+        "data/source/playbooks/thrower.json#/variants/3/steps/0",
+        "data/source/playbooks/thrower.json#/variants/3/steps/1",
+        "data/source/playbooks/thrower.json#/variants/3/steps/2",
+        "data/source/playbooks/thrower.json#/variants/4/steps/2",
+        "data/source/playbooks/thrower.json#/variants/4/steps/3",
+        "data/source/playbooks/thrower.json#/variants/4/steps/4",
+        "data/source/playbooks/thrower.json#/variants/4/steps/5",
+        "data/source/playbooks/thrower.json#/variants/4/steps/6"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "siege-payload",
+      "family": "siege-payload-delivery",
+      "name": "Siege delivery stage",
+      "purpose": "Deliver siege support or release its payload on the planned route",
+      "actor_bindings": {
+        "allowed_kinds": ["siege"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Battle Drill","Log Launcher","Sky Wagon","Troop Launcher"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the cited siege role, cargo and legal placement/release; retain source donation origin",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "ahead_of",
+          "at",
+          "completion",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "reserved",
+          "siege_role",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.all[].inside",
+          "when.delay",
+          "when.group_inside",
+          "when.inside"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy","release_siege"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/8",
+        "data/source/playbooks/dragon.json#/variants/0/steps/4",
+        "data/source/playbooks/dragon.json#/variants/4/steps/6",
+        "data/source/playbooks/dragon.json#/variants/12/steps/15",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/17",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/3/steps/4",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/11",
+        "data/source/playbooks/fireball-warden.json#/steps/17",
+        "data/source/playbooks/fireball-warden.json#/base_reading/4",
+        "data/source/playbooks/lavaloon.json#/steps/17",
+        "data/source/playbooks/lavaloon.json#/base_reading/12",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/20",
+        "data/source/playbooks/meteor-golem.json#/steps/7",
+        "data/source/playbooks/meteor-golem.json#/base_reading/6",
+        "data/source/playbooks/root-rider.json#/steps/12",
+        "data/source/playbooks/root-rider.json#/variants/4/steps/2",
+        "data/source/playbooks/super-bowler.json#/steps/21",
+        "data/source/playbooks/super-bowler.json#/variants/3/steps/0",
+        "data/source/playbooks/super-bowler.json#/variants/4/steps/0",
+        "data/source/playbooks/super-minion-air.json#/steps/18",
+        "data/source/playbooks/super-minion-air.json#/variants/0/steps/0",
+        "data/source/playbooks/super-minion-air.json#/variants/1/steps/0",
+        "data/source/playbooks/super-minion-air.json#/variants/2/steps/0",
+        "data/source/playbooks/super-minion-air.json#/variants/13/steps/0",
+        "data/source/playbooks/thrower.json#/steps/12",
+        "data/source/playbooks/thrower.json#/base_reading/6",
+        "data/source/playbooks/thrower.json#/base_reading/8",
+        "data/source/playbooks/thrower.json#/variants/0/steps/0",
+        "data/source/playbooks/yeti.json#/steps/4",
+        "data/source/playbooks/yeti.json#/variants/1/steps/0"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "ground-push",
+      "family": "ground-tank-damage-push",
+      "name": "Ground tank and damage push stage",
+      "purpose": "Commit the main ground cohort and accompanying heroes",
+      "actor_bindings": {
+        "allowed_kinds": ["hero","troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": [
+          "Apprentice Warden",
+          "Archer Queen",
+          "Electro Titan",
+          "Grand Warden",
+          "Ice Golem",
+          "Meteor Golem",
+          "Root Rider",
+          "Royal Champion",
+          "Super Archer",
+          "Super Bowler",
+          "Super Yeti",
+          "Thrower",
+          "Valkyrie",
+          "Yeti"
+        ],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "completion",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "primary",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.all[].group_inside",
+          "when.delay"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/druid-ruin-witch.json#/steps/10",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/13",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/15",
+        "data/source/playbooks/druid-ruin-witch.json#/base_reading/2",
+        "data/source/playbooks/druid-ruin-witch.json#/base_reading/3",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/1/steps/0",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/2/steps/0",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/2/steps/1",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/3/steps/1",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/3/steps/2",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/3/steps/3",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/4",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/5",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/6",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/8",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/9",
+        "data/source/playbooks/fireball-warden.json#/steps/14",
+        "data/source/playbooks/fireball-warden.json#/steps/15",
+        "data/source/playbooks/fireball-warden.json#/steps/16",
+        "data/source/playbooks/fireball-warden.json#/base_reading/6",
+        "data/source/playbooks/fireball-warden.json#/variants/2/steps/1",
+        "data/source/playbooks/fireball-warden.json#/variants/3/steps/1",
+        "data/source/playbooks/fireball-warden.json#/variants/4/steps/0",
+        "data/source/playbooks/meteor-golem.json#/steps/2",
+        "data/source/playbooks/meteor-golem.json#/steps/3",
+        "data/source/playbooks/meteor-golem.json#/steps/4",
+        "data/source/playbooks/meteor-golem.json#/steps/5",
+        "data/source/playbooks/meteor-golem.json#/steps/6",
+        "data/source/playbooks/meteor-golem.json#/variants/0/steps/0",
+        "data/source/playbooks/meteor-golem.json#/variants/1/steps/1",
+        "data/source/playbooks/meteor-golem.json#/variants/1/steps/3",
+        "data/source/playbooks/meteor-golem.json#/variants/2/steps/4",
+        "data/source/playbooks/meteor-golem.json#/variants/3/steps/2",
+        "data/source/playbooks/meteor-golem.json#/variants/3/steps/3",
+        "data/source/playbooks/meteor-golem.json#/variants/4/steps/1",
+        "data/source/playbooks/root-rider.json#/steps/5",
+        "data/source/playbooks/root-rider.json#/steps/7",
+        "data/source/playbooks/root-rider.json#/steps/10",
+        "data/source/playbooks/root-rider.json#/steps/11",
+        "data/source/playbooks/root-rider.json#/steps/15",
+        "data/source/playbooks/root-rider.json#/variants/1/steps/7",
+        "data/source/playbooks/root-rider.json#/variants/2/steps/4",
+        "data/source/playbooks/root-rider.json#/variants/3/steps/6",
+        "data/source/playbooks/root-rider.json#/variants/3/steps/7",
+        "data/source/playbooks/root-rider.json#/variants/4/steps/3",
+        "data/source/playbooks/root-rider.json#/variants/4/steps/4",
+        "data/source/playbooks/root-rider.json#/variants/5/steps/0",
+        "data/source/playbooks/root-rider.json#/variants/6/steps/0",
+        "data/source/playbooks/root-rider.json#/variants/6/steps/2",
+        "data/source/playbooks/root-rider.json#/variants/7/steps/0",
+        "data/source/playbooks/super-bowler.json#/steps/16",
+        "data/source/playbooks/super-bowler.json#/steps/18",
+        "data/source/playbooks/super-bowler.json#/steps/19",
+        "data/source/playbooks/super-bowler.json#/steps/20",
+        "data/source/playbooks/super-bowler.json#/base_reading/0",
+        "data/source/playbooks/super-bowler.json#/base_reading/5",
+        "data/source/playbooks/super-bowler.json#/variants/0/steps/6",
+        "data/source/playbooks/super-bowler.json#/variants/4/steps/1",
+        "data/source/playbooks/super-minion-air.json#/steps/15",
+        "data/source/playbooks/super-minion-air.json#/steps/16",
+        "data/source/playbooks/super-minion-air.json#/steps/24",
+        "data/source/playbooks/super-minion-air.json#/variants/8/steps/0",
+        "data/source/playbooks/thrower.json#/steps/3",
+        "data/source/playbooks/thrower.json#/steps/6",
+        "data/source/playbooks/thrower.json#/steps/8",
+        "data/source/playbooks/thrower.json#/base_reading/3",
+        "data/source/playbooks/thrower.json#/variants/3/steps/7",
+        "data/source/playbooks/thrower.json#/variants/4/steps/7",
+        "data/source/playbooks/thrower.json#/variants/5/steps/7",
+        "data/source/playbooks/thrower.json#/variants/6/steps/3",
+        "data/source/playbooks/thrower.json#/variants/7/steps/2",
+        "data/source/playbooks/thrower.json#/variants/8/steps/1",
+        "data/source/playbooks/thrower.json#/variants/8/steps/2",
+        "data/source/playbooks/thrower.json#/variants/8/steps/3",
+        "data/source/playbooks/yeti.json#/steps/6",
+        "data/source/playbooks/yeti.json#/steps/7",
+        "data/source/playbooks/yeti.json#/steps/8",
+        "data/source/playbooks/yeti.json#/steps/11",
+        "data/source/playbooks/yeti.json#/steps/12",
+        "data/source/playbooks/yeti.json#/variants/2/steps/2"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "air-line",
+      "family": "air-deployment-line",
+      "name": "Air deployment line stage",
+      "purpose": "Commit the main air cohort and accompanying heroes",
+      "actor_bindings": {
+        "allowed_kinds": ["hero","troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": [
+          "Dragon",
+          "Dragon Rider",
+          "Electro Dragon",
+          "Grand Warden",
+          "Inferno Dragon",
+          "Minion Prince",
+          "Super Dragon"
+        ],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": ["action","at","count","group","id","packet","primary","what","when","when.after","when.delay"],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/11",
+        "data/source/playbooks/dragon.json#/steps/12",
+        "data/source/playbooks/dragon.json#/steps/13",
+        "data/source/playbooks/dragon.json#/steps/14",
+        "data/source/playbooks/dragon.json#/variants/2/steps/0",
+        "data/source/playbooks/dragon.json#/variants/2/steps/1",
+        "data/source/playbooks/dragon.json#/variants/3/steps/7",
+        "data/source/playbooks/dragon.json#/variants/3/steps/8",
+        "data/source/playbooks/dragon.json#/variants/4/steps/7",
+        "data/source/playbooks/dragon.json#/variants/4/steps/8",
+        "data/source/playbooks/dragon.json#/variants/6/steps/0",
+        "data/source/playbooks/dragon.json#/variants/7/steps/1",
+        "data/source/playbooks/dragon.json#/variants/8/steps/4",
+        "data/source/playbooks/dragon.json#/variants/12/steps/14",
+        "data/source/playbooks/electro-dragon.json#/steps/3",
+        "data/source/playbooks/electro-dragon.json#/steps/4",
+        "data/source/playbooks/electro-dragon.json#/steps/5",
+        "data/source/playbooks/electro-dragon.json#/base_reading/2",
+        "data/source/playbooks/electro-dragon.json#/variants/0/steps/10",
+        "data/source/playbooks/electro-dragon.json#/variants/1/steps/11",
+        "data/source/playbooks/lavaloon.json#/steps/15",
+        "data/source/playbooks/lavaloon.json#/steps/16",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/18"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "lalo-sector",
+      "family": "hound-balloon-sector",
+      "name": "Hound and Balloon sector stage",
+      "purpose": "Tank and clear a defense sector with separate air packets",
+      "actor_bindings": {
+        "allowed_kinds": ["troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Balloon","Ice Hound","Lava Hound"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "primary",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.delay"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/9",
+        "data/source/playbooks/dragon.json#/variants/3/steps/6",
+        "data/source/playbooks/dragon.json#/variants/5/steps/0",
+        "data/source/playbooks/lavaloon.json#/steps/13",
+        "data/source/playbooks/lavaloon.json#/steps/14",
+        "data/source/playbooks/lavaloon.json#/steps/18",
+        "data/source/playbooks/lavaloon.json#/steps/19",
+        "data/source/playbooks/lavaloon.json#/steps/20",
+        "data/source/playbooks/lavaloon.json#/steps/21",
+        "data/source/playbooks/lavaloon.json#/steps/26",
+        "data/source/playbooks/lavaloon.json#/steps/27",
+        "data/source/playbooks/lavaloon.json#/steps/28",
+        "data/source/playbooks/lavaloon.json#/steps/29",
+        "data/source/playbooks/lavaloon.json#/base_reading/6",
+        "data/source/playbooks/lavaloon.json#/base_reading/8",
+        "data/source/playbooks/lavaloon.json#/base_reading/11",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/21",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/22",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/23",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/25",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/27",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/28",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/30",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/31"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "healing-wave",
+      "family": "healing-support-wave",
+      "name": "Healing support wave",
+      "purpose": "Support the advancing formation with Healers or Druids",
+      "actor_bindings": {
+        "allowed_kinds": ["troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Druid","Healer"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].cohort_absent",
+          "when.all[].delay",
+          "when.all[].heavy_fire",
+          "when.delay",
+          "when.heavy_fire"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/druid-ruin-witch.json#/variants/1/steps/1",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/1/steps/2",
+        "data/source/playbooks/fireball-warden.json#/variants/2/steps/3",
+        "data/source/playbooks/root-rider.json#/steps/9",
+        "data/source/playbooks/super-bowler.json#/variants/0/steps/7",
+        "data/source/playbooks/super-bowler.json#/variants/1/steps/5",
+        "data/source/playbooks/super-minion-air.json#/steps/27",
+        "data/source/playbooks/thrower.json#/steps/5",
+        "data/source/playbooks/yeti.json#/steps/10"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "clone-window",
+      "family": "clone-support-window",
+      "name": "Clone support window",
+      "purpose": "Clone an eligible supporting cohort during the cited opening",
+      "actor_bindings": {
+        "allowed_kinds": ["spell"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Clone Spell"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Reserve Clone stock and an eligible original cohort; clones remain distinct; overlap fraction is a controller assumption",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "count",
+          "every",
+          "group",
+          "id",
+          "recheck_when",
+          "repeat_effect_remaining",
+          "spell_budget",
+          "what",
+          "when",
+          "when.inside"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["spell"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": ["data/source/playbooks/thrower.json#/variants/6/steps/2"],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "defender-counter",
+      "family": "defending-unit-counter-deployment",
+      "name": "Defending unit counter",
+      "purpose": "Deploy a counter to defending heroes or Clan Castle troops",
+      "actor_bindings": {
+        "allowed_kinds": ["troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": [],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "completion",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].defenders_near",
+          "when.all[].delay",
+          "when.defenders_near",
+          "when.delay"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/druid-ruin-witch.json#/steps/18",
+        "data/source/playbooks/fireball-warden.json#/variants/2/steps/2",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/11",
+        "data/source/playbooks/root-rider.json#/steps/22",
+        "data/source/playbooks/super-bowler.json#/steps/31",
+        "data/source/playbooks/super-minion-air.json#/steps/28"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "rage-haste",
+      "family": "rage-haste-window",
+      "name": "Rage or Haste support window",
+      "purpose": "Accelerate useful damage or movement under the cited pressure",
+      "actor_bindings": {
+        "allowed_kinds": ["spell"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Angry Spell","Haste Spell","Rage Spell"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].any",
+          "when.all[].any[].heavy_fire",
+          "when.all[].delay",
+          "when.all[].group_inside",
+          "when.all[].heavy_fire",
+          "when.delay",
+          "when.group_inside",
+          "when.near_th"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["spell"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/15",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/3/steps/8",
+        "data/source/playbooks/electro-dragon.json#/variants/2/steps/0",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/2",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/3",
+        "data/source/playbooks/lavaloon.json#/steps/24",
+        "data/source/playbooks/lavaloon.json#/base_reading/17",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/26",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/29",
+        "data/source/playbooks/meteor-golem.json#/steps/9",
+        "data/source/playbooks/meteor-golem.json#/steps/12",
+        "data/source/playbooks/root-rider.json#/variants/1/steps/9",
+        "data/source/playbooks/root-rider.json#/variants/3/steps/4",
+        "data/source/playbooks/super-bowler.json#/steps/6",
+        "data/source/playbooks/super-bowler.json#/steps/24",
+        "data/source/playbooks/super-bowler.json#/steps/26",
+        "data/source/playbooks/super-bowler.json#/base_reading/9",
+        "data/source/playbooks/super-minion-air.json#/variants/8/steps/1",
+        "data/source/playbooks/yeti.json#/steps/14",
+        "data/source/playbooks/yeti.json#/variants/3/steps/1"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "freeze",
+      "family": "freeze-intervention",
+      "name": "Freeze intervention",
+      "purpose": "Interrupt a threatening defense or defending unit",
+      "actor_bindings": {
+        "allowed_kinds": ["spell"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Freeze Spell"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "completion",
+          "count",
+          "group",
+          "id",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].defender",
+          "when.all[].delay",
+          "when.all[].group",
+          "when.all[].group_inside",
+          "when.all[].heavy_fire",
+          "when.any",
+          "when.any[].heavy_fire",
+          "when.delay",
+          "when.heavy_fire"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["spell"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/20",
+        "data/source/playbooks/dragon.json#/variants/7/steps/5",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/14",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/21",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/22",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/3/steps/9",
+        "data/source/playbooks/lavaloon.json#/base_reading/21",
+        "data/source/playbooks/super-bowler.json#/steps/28",
+        "data/source/playbooks/thrower.json#/steps/18",
+        "data/source/playbooks/yeti.json#/steps/17"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "poison",
+      "family": "poison-response",
+      "name": "Poison response",
+      "purpose": "Suppress defending units threatening the formation",
+      "actor_bindings": {
+        "allowed_kinds": ["spell"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Poison Spell"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "after_success",
+          "at",
+          "completion",
+          "count",
+          "group",
+          "id",
+          "optional",
+          "packet",
+          "post_recall",
+          "spell_budget",
+          "what",
+          "when",
+          "when.all",
+          "when.all[].after",
+          "when.all[].defenders_near",
+          "when.all[].delay",
+          "when.defenders_near"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["spell"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/23",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/11",
+        "data/source/playbooks/electro-dragon.json#/steps/9",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/15",
+        "data/source/playbooks/lavaloon.json#/steps/30",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/15",
+        "data/source/playbooks/meteor-golem.json#/variants/1/steps/4",
+        "data/source/playbooks/root-rider.json#/steps/20",
+        "data/source/playbooks/super-bowler.json#/steps/7",
+        "data/source/playbooks/super-bowler.json#/steps/27",
+        "data/source/playbooks/super-bowler.json#/steps/33",
+        "data/source/playbooks/super-bowler.json#/variants/0/steps/2",
+        "data/source/playbooks/super-minion-air.json#/steps/9",
+        "data/source/playbooks/thrower.json#/steps/13",
+        "data/source/playbooks/yeti.json#/steps/18"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "decoy",
+      "family": "decoy-placement",
+      "name": "Decoy placement",
+      "purpose": "Distract threats while the intended cohort advances",
+      "actor_bindings": {
+        "allowed_kinds": ["spell"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Skeleton Spell","Totem Spell"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "completion",
+          "count",
+          "every",
+          "group",
+          "id",
+          "packet",
+          "recheck_when",
+          "repeat_units_absent",
+          "spell_budget",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].any",
+          "when.all[].any[].heavy_fire",
+          "when.all[].dead",
+          "when.all[].defenders_near",
+          "when.all[].delay",
+          "when.all[].group_inside",
+          "when.all[].heavy_fire",
+          "when.delay",
+          "when.group_inside",
+          "when.heavy_fire"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["spell"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/19",
+        "data/source/playbooks/dragon.json#/variants/7/steps/4",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/23",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/24",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/3/steps/10",
+        "data/source/playbooks/druid-ruin-witch.json#/variants/3/steps/11",
+        "data/source/playbooks/electro-dragon.json#/steps/8",
+        "data/source/playbooks/electro-dragon.json#/variants/2/steps/1",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/12",
+        "data/source/playbooks/fireball-warden.json#/steps/10",
+        "data/source/playbooks/fireball-warden.json#/steps/22",
+        "data/source/playbooks/lavaloon.json#/steps/31",
+        "data/source/playbooks/lavaloon.json#/base_reading/10",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/32",
+        "data/source/playbooks/meteor-golem.json#/steps/10",
+        "data/source/playbooks/meteor-golem.json#/base_reading/3",
+        "data/source/playbooks/root-rider.json#/steps/21",
+        "data/source/playbooks/root-rider.json#/variants/4/steps/6",
+        "data/source/playbooks/root-rider.json#/variants/7/steps/1",
+        "data/source/playbooks/super-bowler.json#/steps/29",
+        "data/source/playbooks/super-bowler.json#/variants/2/steps/0",
+        "data/source/playbooks/super-minion-air.json#/steps/29",
+        "data/source/playbooks/thrower.json#/steps/14",
+        "data/source/playbooks/thrower.json#/steps/16",
+        "data/source/playbooks/thrower.json#/steps/17",
+        "data/source/playbooks/thrower.json#/base_reading/10",
+        "data/source/playbooks/thrower.json#/variants/9/steps/0",
+        "data/source/playbooks/thrower.json#/variants/9/steps/1",
+        "data/source/playbooks/yeti.json#/steps/5",
+        "data/source/playbooks/yeti.json#/steps/16"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "overgrowth",
+      "family": "overgrowth-routing",
+      "name": "Overgrowth routing",
+      "purpose": "Suppress a compartment or shape the autonomous route",
+      "actor_bindings": {
+        "allowed_kinds": ["spell"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Overgrowth Spell"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "count",
+          "group",
+          "id",
+          "objective",
+          "packet",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].any",
+          "when.all[].any[].heavy_fire",
+          "when.all[].delay",
+          "when.all[].group_inside",
+          "when.all[].heavy_fire",
+          "when.delay",
+          "when.effect_expired",
+          "when.group_inside"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["spell"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/18",
+        "data/source/playbooks/dragon.json#/variants/7/steps/3",
+        "data/source/playbooks/dragon.json#/variants/11/steps/0",
+        "data/source/playbooks/dragon.json#/variants/11/steps/1",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/19",
+        "data/source/playbooks/lavaloon.json#/steps/22",
+        "data/source/playbooks/lavaloon.json#/base_reading/13",
+        "data/source/playbooks/root-rider.json#/steps/25",
+        "data/source/playbooks/root-rider.json#/base_reading/5",
+        "data/source/playbooks/root-rider.json#/variants/8/steps/0",
+        "data/source/playbooks/thrower.json#/steps/15",
+        "data/source/playbooks/thrower.json#/base_reading/9"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "revive",
+      "family": "protected-revive",
+      "name": "Protected Revive stage",
+      "purpose": "Return a fallen hero when useful survival is possible",
+      "actor_bindings": {
+        "allowed_kinds": ["spell"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Revive Spell"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Reserve Revive stock and an eligible fallen hero; retain protection and survival predicates",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "count",
+          "group",
+          "id",
+          "packet",
+          "what",
+          "when",
+          "when.all",
+          "when.all[].after",
+          "when.all[].dead",
+          "when.all[].delay",
+          "when.all[].group_inside",
+          "when.dead"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["spell"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/lavaloon.json#/steps/32",
+        "data/source/playbooks/lavaloon.json#/base_reading/18",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/24",
+        "data/source/playbooks/meteor-golem.json#/steps/13",
+        "data/source/playbooks/meteor-golem.json#/base_reading/4",
+        "data/source/playbooks/root-rider.json#/variants/4/steps/7",
+        "data/source/playbooks/thrower.json#/base_reading/11",
+        "data/source/playbooks/yeti.json#/steps/21",
+        "data/source/playbooks/yeti.json#/steps/22"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "equipment-window",
+      "family": "equipment-activation-window",
+      "name": "Equipment activation window",
+      "purpose": "Activate available equipment under the source conditions",
+      "actor_bindings": {
+        "allowed_kinds": ["hero"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Archer Queen","Barbarian King","Dragon Duke","Grand Warden","Minion Prince","Royal Champion"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require available equipment on the bound hero; source equipment arrays retain any-of semantics",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "aim",
+          "at",
+          "count",
+          "equipment",
+          "group",
+          "id",
+          "objective",
+          "objective_at",
+          "packet",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].any",
+          "when.all[].any[].defenders_near",
+          "when.all[].any[].heavy_fire",
+          "when.all[].dead",
+          "when.all[].delay",
+          "when.all[].effect_expired",
+          "when.all[].group_inside",
+          "when.all[].heavy_fire",
+          "when.all[].inside",
+          "when.all[].n",
+          "when.all[].spells_left",
+          "when.any",
+          "when.any[].heavy_fire",
+          "when.delay",
+          "when.effect_expired",
+          "when.group_inside",
+          "when.heavy_fire",
+          "when.inside",
+          "when.n",
+          "when.spells_left"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["ability"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/7",
+        "data/source/playbooks/dragon.json#/steps/16",
+        "data/source/playbooks/dragon.json#/steps/17",
+        "data/source/playbooks/dragon.json#/variants/3/steps/3",
+        "data/source/playbooks/dragon.json#/variants/3/steps/5",
+        "data/source/playbooks/dragon.json#/variants/4/steps/1",
+        "data/source/playbooks/dragon.json#/variants/4/steps/4",
+        "data/source/playbooks/dragon.json#/variants/7/steps/2",
+        "data/source/playbooks/dragon.json#/variants/10/steps/0",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/26",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/27",
+        "data/source/playbooks/electro-dragon.json#/steps/6",
+        "data/source/playbooks/electro-dragon.json#/steps/7",
+        "data/source/playbooks/electro-dragon.json#/base_reading/9",
+        "data/source/playbooks/electro-dragon.json#/variants/2/steps/2",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/7",
+        "data/source/playbooks/electro-dragon.json#/variants/3/steps/14",
+        "data/source/playbooks/fireball-warden.json#/steps/18",
+        "data/source/playbooks/fireball-warden.json#/variants/3/steps/0",
+        "data/source/playbooks/lavaloon.json#/steps/6",
+        "data/source/playbooks/lavaloon.json#/steps/10",
+        "data/source/playbooks/lavaloon.json#/steps/23",
+        "data/source/playbooks/lavaloon.json#/steps/25",
+        "data/source/playbooks/lavaloon.json#/base_reading/20",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/17",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/36",
+        "data/source/playbooks/meteor-golem.json#/steps/8",
+        "data/source/playbooks/meteor-golem.json#/steps/11",
+        "data/source/playbooks/meteor-golem.json#/variants/2/steps/5",
+        "data/source/playbooks/root-rider.json#/steps/23",
+        "data/source/playbooks/root-rider.json#/steps/24",
+        "data/source/playbooks/root-rider.json#/variants/1/steps/1",
+        "data/source/playbooks/root-rider.json#/variants/6/steps/1",
+        "data/source/playbooks/root-rider.json#/variants/8/steps/1",
+        "data/source/playbooks/root-rider.json#/variants/8/steps/2",
+        "data/source/playbooks/super-bowler.json#/steps/12",
+        "data/source/playbooks/super-bowler.json#/steps/23",
+        "data/source/playbooks/super-bowler.json#/steps/25",
+        "data/source/playbooks/super-bowler.json#/steps/30",
+        "data/source/playbooks/super-bowler.json#/base_reading/8",
+        "data/source/playbooks/super-bowler.json#/variants/0/steps/4",
+        "data/source/playbooks/super-bowler.json#/variants/1/steps/2",
+        "data/source/playbooks/super-bowler.json#/variants/5/steps/0",
+        "data/source/playbooks/super-minion-air.json#/steps/25",
+        "data/source/playbooks/super-minion-air.json#/variants/6/steps/0",
+        "data/source/playbooks/super-minion-air.json#/variants/8/steps/2",
+        "data/source/playbooks/thrower.json#/variants/1/steps/1",
+        "data/source/playbooks/thrower.json#/variants/7/steps/3",
+        "data/source/playbooks/yeti.json#/steps/13",
+        "data/source/playbooks/yeti.json#/steps/15",
+        "data/source/playbooks/yeti.json#/steps/19",
+        "data/source/playbooks/yeti.json#/variants/0/steps/1",
+        "data/source/playbooks/yeti.json#/variants/3/steps/0"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "protection-window",
+      "family": "spell-protection-window",
+      "name": "Spell protection window",
+      "purpose": "Protect a live actor with defensive Invisibility or Ice Block",
+      "actor_bindings": {
+        "allowed_kinds": ["spell"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Ice Block Spell","Invisibility Spell"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Reserve defensive Invisibility or Ice Block stock; distinguish defensive recipients from offensive Fireball masking",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "completion",
+          "count",
+          "every",
+          "group",
+          "id",
+          "mask_for",
+          "mask_hero",
+          "objective",
+          "optional",
+          "packet",
+          "recheck_when",
+          "spell_budget",
+          "until",
+          "until.dead",
+          "until.n",
+          "until.spells_left",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].all",
+          "when.all[].all[].after",
+          "when.all[].all[].delay",
+          "when.all[].all[].heavy_fire",
+          "when.all[].delay",
+          "when.all[].effect_expired",
+          "when.all[].heavy_fire",
+          "when.all[].inside",
+          "when.delay",
+          "when.heavy_fire",
+          "when.inside",
+          "when.t"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["spell"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/spell_support/0",
+        "data/source/playbooks/dragon.json#/variants/1/steps/0",
+        "data/source/playbooks/dragon.json#/variants/3/steps/1",
+        "data/source/playbooks/dragon.json#/variants/4/steps/2",
+        "data/source/playbooks/dragon.json#/variants/7/steps/0",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/3",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/4",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/9",
+        "data/source/playbooks/fireball-warden.json#/steps/4",
+        "data/source/playbooks/fireball-warden.json#/steps/11",
+        "data/source/playbooks/fireball-warden.json#/steps/23",
+        "data/source/playbooks/fireball-warden.json#/base_reading/7",
+        "data/source/playbooks/fireball-warden.json#/variants/1/steps/2",
+        "data/source/playbooks/lavaloon.json#/steps/3",
+        "data/source/playbooks/lavaloon.json#/steps/4",
+        "data/source/playbooks/lavaloon.json#/steps/5",
+        "data/source/playbooks/lavaloon.json#/steps/7",
+        "data/source/playbooks/lavaloon.json#/base_reading/19",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/14",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/16",
+        "data/source/playbooks/root-rider.json#/steps/1",
+        "data/source/playbooks/root-rider.json#/variants/1/steps/3",
+        "data/source/playbooks/root-rider.json#/variants/4/steps/1",
+        "data/source/playbooks/root-rider.json#/variants/4/steps/8",
+        "data/source/playbooks/super-bowler.json#/steps/5",
+        "data/source/playbooks/super-bowler.json#/variants/0/steps/1",
+        "data/source/playbooks/super-bowler.json#/variants/1/steps/1",
+        "data/source/playbooks/super-minion-air.json#/steps/8",
+        "data/source/playbooks/super-minion-air.json#/variants/7/steps/1",
+        "data/source/playbooks/thrower.json#/steps/2",
+        "data/source/playbooks/thrower.json#/spell_support/0",
+        "data/source/playbooks/thrower.json#/variants/7/steps/1",
+        "data/source/playbooks/yeti.json#/steps/20",
+        "data/source/playbooks/yeti.json#/variants/4/steps/0"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "cleanup",
+      "family": "safe-cleanup",
+      "name": "Safe cleanup",
+      "purpose": "Finish remaining outside buildings with retained troops",
+      "actor_bindings": {
+        "allowed_kinds": ["troop"],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": ["Archer","Baby Dragon","Furnace","Minion","Super Minion","Wizard"],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [
+          "action",
+          "at",
+          "completion",
+          "count",
+          "group",
+          "id",
+          "objective",
+          "packet",
+          "reserved",
+          "snipe",
+          "what",
+          "when",
+          "when.after",
+          "when.all",
+          "when.all[].after",
+          "when.all[].delay",
+          "when.all[].objective",
+          "when.all[].state",
+          "when.delay"
+        ],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": ["deploy"],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/dragon.json#/steps/21",
+        "data/source/playbooks/dragon.json#/steps/22",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/28",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/29",
+        "data/source/playbooks/druid-ruin-witch.json#/steps/30",
+        "data/source/playbooks/lavaloon.json#/steps/11",
+        "data/source/playbooks/lavaloon.json#/steps/12",
+        "data/source/playbooks/lavaloon.json#/steps/33",
+        "data/source/playbooks/lavaloon.json#/steps/34",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/33",
+        "data/source/playbooks/lavaloon.json#/variants/0/steps/35",
+        "data/source/playbooks/root-rider.json#/steps/28",
+        "data/source/playbooks/super-bowler.json#/steps/9",
+        "data/source/playbooks/super-bowler.json#/steps/32",
+        "data/source/playbooks/super-minion-air.json#/steps/5",
+        "data/source/playbooks/super-minion-air.json#/steps/26",
+        "data/source/playbooks/super-minion-air.json#/variants/12/steps/0"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    },
+    {
+      "schema_version": 2.0,
+      "definition_version": 2.0,
+      "move_id": "funnel-repair",
+      "family": "funnel-repair",
+      "name": "Funnel repair",
+      "purpose": "Remove outside buildings left behind by the opening",
+      "actor_bindings": {
+        "allowed_kinds": [],
+        "contract": "instance actor, origin, equipment and original cohort; cargo/clones/summons stay distinct",
+        "allowed_actors": [],
+        "scope_basis": "bound source actors literally named in that definition's exact occurrence citations; conservative lexical evidence, no role or synonym inference"
+      },
+      "applicability": {
+        "contract": "only original cited book context; family is provenance, not an army eligibility rule",
+        "catalog": "data/generated/catalog.json",
+        "mode": "source_unspecified"
+      },
+      "resource_requirements": {
+        "contract": "instance stock/count/origin, optional/shared budgets and Recall/siege commitments; existing compiler remains authoritative"
+      },
+      "static_preconditions": [
+        "Require the bound original actor/cohort and cited inventory, objective, legal placement and loadout",
+        "Bound actor/loadout available; existing inventory, legality and unsupported-content checks pass"
+      ],
+      "live_preconditions": ["Original when/until and success/effect/objective predicates; no new observation access"],
+      "parameters": {
+        "encoding": "typed_v2",
+        "supported_fields": [],
+        "adaptation": "typed operators within supported fields and strict actor/equipment evidence scope; legacy compiler validates inventory and mechanics"
+      },
+      "control": {
+        "allowed_actions": [],
+        "contract": "original trigger, predecessor IDs, repeat/timeout and cancellation policy; no scheduler added"
+      },
+      "completion": {
+        "success": "existing_executor_action_success",
+        "cancellation": "existing_executor_terminal_skip_or_failure",
+        "tactical_success": "not_established_by_action_completion"
+      },
+      "evidence": [
+        "data/source/playbooks/root-rider.json#/base_reading/2",
+        "data/source/playbooks/super-bowler.json#/base_reading/7"
+      ],
+      "evidence_scope": {
+        "actor": "inferred",
+        "purpose": "inferred",
+        "order": "inferred",
+        "geometry": "inferred",
+        "timing": "unspecified",
+        "verification": "source_citations_not_reverified"
+      },
+      "human_costs": {
+        "input_sequence": "original_record; serialized by existing executor",
+        "slots": null,
+        "taps": null,
+        "hold_duration": null,
+        "gesture_path": null,
+        "attention_region": null,
+        "observation_requirements": "source predicates; M2 observation permissions pending",
+        "status": "unmeasured; existing executor pacing retained"
+      },
+      "mechanic_dependencies": ["M2-observation-and-human-costs"],
+      "attribution": {
+        "sequence": "exact_source_record",
+        "parameter_adaptation": false,
+        "novel_composition": false,
+        "real_play_validation": "not_established"
+      },
+      "lowering": "typed_v2"
+    }
+  ]
+}

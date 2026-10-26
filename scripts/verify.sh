@@ -33,6 +33,7 @@ FIXTURES="$ROOT/fixtures"
 "$BIN" golden check "$FIXTURES/golden/cases.jsonl" "$FIXTURES/golden/expected.jsonl" --threads 1
 "$BIN" golden check "$FIXTURES/golden/cases.jsonl" "$FIXTURES/golden/expected.jsonl" --threads 4
 "$BIN" golden plans check "$FIXTURES/golden/plans.jsonl" --root "$ROOT"
+"$BIN" playbook moves check --root "$ROOT"
 "$BIN" guardian-check
 "$BIN" armysearch-proof --root "$ROOT" --catalog "$CLASH_CATALOG" --account "$ROOT/data/source/accounts/public-th16.json" --fuzz 4096 --out "$TEMP/armysearch"
 "$BIN" layout proof "$ROOT" "$TEMP/layout.json"

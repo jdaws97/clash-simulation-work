@@ -20,6 +20,7 @@ native acceptance. The root workspace and current workflows are Rust only;
 | [RM1_EVIDENCE.md](RM1_EVIDENCE.md) | Current Rust mechanics hypotheses, synthetic tests and evidence. |
 | [PB1A.md](PB1A.md) | Plan/compiler correction evidence and declared regression scope. |
 | [PB1B.md](PB1B.md) | Recipe/controller correction evidence and frozen plan scope. |
+| [MOVES.md](MOVES.md) | M1 cited move registry, occurrence mappings, role evidence and lossless lowering. |
 | [FIELD_PROFILING.md](FIELD_PROFILING.md) | Native path-field performance measurements. |
 | [BASE_SEARCH_CONTRACTS.md](BASE_SEARCH_CONTRACTS.md) | Core layout admission, identities and search contracts. |
 | [BASE_SEARCH_RUST_DESIGN.md](BASE_SEARCH_RUST_DESIGN.md) | Native search design; historical Python citations are provenance. |
