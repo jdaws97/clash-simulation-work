@@ -49,6 +49,7 @@ graph TD
     import --> data
     import --> layout
     books --> data
+    books --> plans
 ```
 
 `clash-engine` depends only on data and layout, including its test dependency
@@ -58,6 +59,9 @@ code. `clash-plans` owns army composition and compilation/fitting;
 `clash-scoring` owns scenario construction, scouting and result scoring.
 `clash-vidmine` preserves its independent JSON implementation and has no
 workspace dependencies. Provider processes and media utilities belong to tools.
+The cited move registry and lossless lowering live in `clash-plans::moves`;
+`clash-playbook-tools` hosts their authoring/check CLI. The registry does not
+change executor behavior or admit new move compositions.
 
 ## Data flow
 

@@ -9,3 +9,4 @@ workspace = true
 
 [dependencies]
 clash-data.workspace = true
+clash-plans.workspace = true

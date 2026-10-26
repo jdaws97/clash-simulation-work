@@ -5,6 +5,7 @@ pub mod complete;
 pub mod gaps;
 pub mod harvest;
 mod io;
+mod moves;
 pub mod research;
 pub mod schema;
 pub mod transcripts;
@@ -17,7 +18,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 const HELP: &str =
-    "clash playbook verify|consolidate|queue|harvest|transcript|extract|complete|gaps ...
+    "clash playbook verify|consolidate|queue|harvest|transcript|extract|complete|gaps|moves ...
+  moves index|check|lower [--root DIR] [--moves DIR] [--playbooks DIR]
+        [--out FILE_OR_DIR] [--report FILE] [--compiled] [--roles]
   verify [FAMILY|FILE ...] [--all] [--transcripts DIR] [--report FILE]
          [--check-recorded --sources DIR] [--extracted] [--legacy]
   consolidate [FAMILY ...] [--input RAW] [--out FILE] [--dry] [--legacy]
@@ -56,6 +59,8 @@ impl Options {
             "extracted",
             "help",
             "h",
+            "compiled",
+            "roles",
         ];
         let values = [
             "root",
@@ -77,6 +82,7 @@ impl Options {
             "pages",
             "max-age-days",
             "date",
+            "moves",
         ];
         while let Some(argument) = arguments.next() {
             if argument == "--" {
@@ -174,6 +180,7 @@ pub fn cli(args: &[String]) -> Result<(), String> {
         "transcript" => transcript_command(&options),
         "complete" => complete_command(&options),
         "gaps" => gaps_command(&options),
+        "moves" => moves::command(&options),
         _ => Err(format!("unknown playbook command {command}; use --help")),
     }
 }
