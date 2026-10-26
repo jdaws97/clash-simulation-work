@@ -40,7 +40,7 @@ impl Default for Settings {
             policy: ScoutPolicy::Visible,
             legacy: false,
             raw: false,
-            scout: 2,
+            scout: 8,
             techniques: false,
         }
     }

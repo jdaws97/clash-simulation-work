@@ -183,6 +183,7 @@ impl Arguments {
         } else {
             "generic"
         };
+        let angles = self.integer("--angles", if fit { 4 } else { 8 })?;
         let settings = replay::Settings {
             seeds: self.integer(
                 "--seeds",
@@ -194,13 +195,15 @@ impl Arguments {
                     5
                 },
             )?,
-            angles: self.integer("--angles", if fit { 4 } else { 8 })?,
+            angles,
             threads: self.integer("--threads", 1)?,
             attacker: self.value("--attacker", default_attacker).to_owned(),
             policy: ScoutPolicy::parse(self.value("--scout-policy", "visible"))?,
             legacy: self.flag("--legacy-oracle"),
             raw: self.flag("--raw") || self.value("--strength", "calibrated") == "raw",
-            scout: self.integer("--scout", 2)?,
+            // Human attackers scout every candidate side and take the best visible
+            // one (D4: best-of-all beats the best-of-two mixture on held-out CV).
+            scout: self.integer("--scout", angles)?,
             techniques: self.flag("--techniques"),
         };
         if settings.seeds == 0
