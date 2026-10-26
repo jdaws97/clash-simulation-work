@@ -4,6 +4,36 @@ Dated, comparable results of the native fidelity checks. Newest first. Each
 entry names the engine commit, data, and settings, so later entries can be
 compared on the same footing. Raw outputs live in ignored `local/`.
 
+## 2026-10-26 — human-style attacker lanes HA1 and HA2
+
+Both paired against 7a67925 on the same 22-defense CV (20 seeds, r8 prior,
+full visible scouting), the TH18 replays (user account), the TH16 video tempo
+check and the recorded Maroon attack.
+
+| | Sim 3★ (real 68.2%) | Brier (constant 0.219) | Destruction MAE (constant 8.17) | Failed median (real 173 s) |
+|---|---:|---:|---:|---:|
+| Baseline | 55.9% | 0.2225 | 7.22 | 123.8 s |
+| HA1 reactive spells (0.5 s delay) | 53.2% | 0.2164 | 7.43 | 124.9 s |
+| HA2 army-fitted recipes | 56.1% | **0.2190** | **6.79** | 123.3 s |
+
+**HA2 merged.** Recipe selection now picks a complete recipe the army can
+actually execute and only falls back to a repaired hybrid when none fits; the
+Dragon book gains a cited main-first recipe. Only two of 22 defenses change
+(Dragon armies), so the gain is small; Brier is now marginally below the
+constant predictor for the first time. TH18, tempo and observed replay are
+unchanged. Report: `local/evidence/ha2/report.md`.
+
+**HA1 rejected** (branch `ha1-reactive-spells`, report
+`docs/HA1_REACTIVE_SPELLS.md` on that branch). Six cited reactive rules for
+surplus spells moved Brier slightly but lowered the 3-star rate, worsened
+MAE, and barely changed tempo (sim still acts until about 60 s; videos until
+about 99 s). Reaction-delay sweep 0.3 / 0.5 / 0.8 s: Brier 0.222 / 0.216 / 0.253.
+
+The main gap is unchanged: the TH16 sim is still about 16 points ahead at
+60 s, stops acting by about 57 s, and 3-stars less than humans. The video
+curves show the gap opening between 30 and 60 s, when the sim's main army is
+already in the base.
+
 ## 2026-10-26 — MF public meta refit (f3e0916)
 
 **CONFIRMED method.** Native `clash fidelity meta-fit` replaces the frozen
