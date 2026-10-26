@@ -163,7 +163,7 @@ impl Arguments {
                     .filter(|value| !value.is_empty())
                     .map(|value| resolve(&self.root, &value))
             })
-            .unwrap_or_else(|| self.root.join("data/meta-calibration-r8.json"))
+            .unwrap_or_else(|| self.root.join("data/source/meta-calibration-r8.json"))
     }
     pub fn settings(&self, fit: bool) -> Result<replay::Settings, String> {
         let default_attacker = if std::env::var("BASELAB_REPLAY_PLAYBOOKS").as_deref() == Ok("1") {
@@ -238,11 +238,11 @@ pub fn read_observations(
                 .first()
                 .map(|path| resolve(&args.root, path))
         })
-        .unwrap_or_else(|| args.root.join("data/live/battles.jsonl"));
+        .unwrap_or_else(|| args.root.join("data/source/live/battles.jsonl"));
     let (mut rows, skipped) = history::observations(
         &args.root,
         &log,
-        &args.path("--history", "data/live/base-history.json"),
+        &args.path("--history", "data/source/live/base-history.json"),
         historical,
         args.values.get("--base").map(String::as_str),
     )?;
@@ -313,9 +313,12 @@ pub fn run(arguments: Vec<String>) -> Result<(), String> {
         };
         return emit(&args, &output);
     }
-    let catalog = Arc::new(Catalog::load(
-        &args.path("--catalog", "rust/data/catalog.json"),
-    )?);
+    let catalog_path = args
+        .values
+        .get("--catalog")
+        .map(|value| resolve(&args.root, value))
+        .unwrap_or_else(|| clash_data::catalog::path(&args.root));
+    let catalog = Arc::new(Catalog::load(&catalog_path)?);
     let compiler = Compiler::load(&args.root, &catalog.stats)?;
     let output = match args.command.as_str() {
         "replay" | "check-a" => board::check_a(&args, &compiler, Arc::clone(&catalog))?,
@@ -334,8 +337,8 @@ pub fn run(arguments: Vec<String>) -> Result<(), String> {
                 ))
             });
             let prior = args.calibration();
-            let log = args.path("--log", "data/live/battles.jsonl");
-            let history = args.path("--history", "data/live/base-history.json");
+            let log = args.path("--log", "data/source/live/battles.jsonl");
+            let history = args.path("--history", "data/source/live/base-history.json");
             distinct_paths(&[&out, &report, &prior, &log, &history])?;
             let result = fit::calibrate(
                 &args.root,

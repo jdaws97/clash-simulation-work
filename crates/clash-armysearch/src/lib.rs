@@ -83,14 +83,16 @@ pub struct Config {
 fn find_root() -> Result<PathBuf, String> {
     let current = std::env::current_dir().map_err(|error| error.to_string())?;
     for directory in current.ancestors() {
-        if directory.join("data/your-levels.json").exists() && directory.join("Cargo.toml").exists()
+        if directory.join("data/source/your-levels.json").exists()
+            && directory.join("Cargo.toml").exists()
         {
             return Ok(directory.to_owned());
         }
     }
     let executable = std::env::current_exe().map_err(|error| error.to_string())?;
     for directory in executable.ancestors().skip(1) {
-        if directory.join("data/your-levels.json").exists() && directory.join("Cargo.toml").exists()
+        if directory.join("data/source/your-levels.json").exists()
+            && directory.join("Cargo.toml").exists()
         {
             return Ok(directory.to_owned());
         }
@@ -201,7 +203,7 @@ impl Config {
         let config = Self {
             catalog: argument("--catalog")
                 .cloned()
-                .unwrap_or_else(|| root.join("rust/data/catalog.json")),
+                .unwrap_or_else(|| clash_data::catalog::path(&root)),
             manifest: argument("--manifest").cloned(),
             account: argument("--account").cloned(),
             out: argument("--out")

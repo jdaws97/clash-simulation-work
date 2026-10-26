@@ -19,7 +19,7 @@ battles were run in all, at ~19 battles/s on 4 threads. The angles were passed
 as 0, 45, ... 315 *radians*, which gives 8 unevenly spaced directions (0°, 48°,
 58°, 117°, 175°, 233°, 292°, 350°). Every comparison below uses the same 8
 directions, so the comparisons stand, but these are not evenly spaced sides.
-`data/wiki/tables/Clan_Castle.json` was a local placeholder, because the
+`data/source/wiki/tables/Clan_Castle.json` was a local placeholder, because the
 directory is gitignored (see RUST_REVIEW R1). It affects only the level of
 donated sieges.
 
@@ -143,7 +143,7 @@ The first is cheap to test: rerun r18d with the defense one level lower.
 Hasty-CR chose a 50 ms tick for Clash Royale because every timing field in
 that game's data is a multiple of 50
 ([Hasty-CR](https://github.com/amjaid/Hasty-CR)). The same test on
-`data/gamecsv/v18.200.9` (1,757 time values over 1 ms; movement speeds
+`data/source/gamecsv/v18.200.9` (1,757 time values over 1 ms; movement speeds
 excluded):
 - 92% are multiples of 50 ms.
 - Common exceptions: 256, 128, 192, 64 and 416 ms (multiples of 16),
@@ -206,7 +206,7 @@ a finer tick matters for exact replays, not for averages.
 |---|---|---|---|
 | **A. Game client as the oracle** (friendly challenges, recorded at 1x) | Exact game behaviour for controlled set-ups | Manual; only what the camera shows; slow | Best ground truth for single mechanics. Keep VIDEO_SHOTLIST.md |
 | **B. Capture replay input logs from the client** (memory or network) | Exact human inputs plus exact layout, the dataset everything else lacks | Reading or intercepting the client likely breaches Supercell's terms; risk to the account; format undocumented | Only with eyes open about the account risk. Would enable exact replay validation and imitation learning |
-| **C. Computer vision on 1x replays** (KataCR route) | Deployment positions and times, troop tracks and destruction curves, without touching the client | Detector training: sprites can be composited synthetically onto base images (`grid_overlay.py` already maps tiles to pixels). Expect about 0.25-tile and 1-frame (17 ms) accuracy | **Recommended data engine.** Replays at 4x lose the positions (`data/replays` notes) |
+| **C. Computer vision on 1x replays** (KataCR route) | Deployment positions and times, troop tracks and destruction curves, without touching the client | Detector training: sprites can be composited synthetically onto base images (`grid_overlay.py` already maps tiles to pixels). Expect about 0.25-tile and 1-frame (17 ms) accuracy | **Recommended data engine.** Replays at 4x lose the positions (`data/source/replays` notes) |
 | **D. Clean-room rule engine from client data** (current Rust engine, Hasty-CR) | Fast (~200 ms per battle), inspectable, extrapolates to new layouts and armies | Every unmeasured rule is a guess; chaos limits per-battle checks | Keep it as the core. Spend effort per 1a: AI rules from `globals.csv`, wind-ups, scouting, execution |
 | **E. Calibrated hybrid** (D plus simulation-based inference over uncertain constants, plus an outcome-level residual model) | Matches real star/% distributions with uncertainty | Needs about 40+ real battles with matching inputs; risk of fitting noise | Do once C supplies inputs. Use a Morris screen to pick the constants |
 | **F. Learned simulator / world model** (neural net trained on battles) | Very fast outcome prediction | Needs huge data, fails on unseen layouts, learns sim quirks if trained on D | Only as a search pre-screen surrogate, never as the judge |

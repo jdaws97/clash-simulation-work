@@ -9,11 +9,8 @@ use clash_engine::state::{Battle, BuildingId, EntityRef, Team, UnitRef};
 use clash_engine::wire::to_json;
 
 pub fn catalog() -> Arc<Catalog> {
-    let path = std::env::var_os("BASELAB_CATALOG")
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| {
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../rust/data/catalog.json")
-        });
+    let path =
+        clash_data::catalog::path(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."));
     Arc::new(Catalog::load(&path).expect("mechanics proof catalog"))
 }
 

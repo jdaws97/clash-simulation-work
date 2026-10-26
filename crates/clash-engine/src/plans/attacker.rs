@@ -1582,7 +1582,7 @@ impl AttackPlan {
                     continue;
                 }
                 // Navigation blocks building corners, but permits diagonal wall gaps.
-                // data/wiki/text/Wall_Home_Village.txt:30:
+                // data/source/wiki/text/Wall_Home_Village.txt:30:
                 // https://clashofclans.fandom.com/wiki/Wall/Home_Village
                 if di != 0 && dj != 0 && (blocked[i * n + nj] || blocked[ni * n + j]) {
                     continue;

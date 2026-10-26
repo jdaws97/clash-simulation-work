@@ -64,7 +64,7 @@ fn registry_rejects_invalid_overrides_atomically() {
 
 #[test]
 fn game_csv_globals_match_registry_values() {
-    let csv = include_str!("../../../data/gamecsv/v18.200.9/globals.csv");
+    let csv = include_str!("../../../data/source/gamecsv/v18.200.9/globals.csv");
     let params = Params::default();
     for (name, value) in [
         ("TARGET_LIST_SIZE", params.target_list_size),

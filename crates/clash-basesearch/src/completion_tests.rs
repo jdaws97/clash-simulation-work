@@ -25,9 +25,9 @@ fn root() -> PathBuf {
 fn context() -> &'static Context {
     static CONTEXT: OnceLock<Context> = OnceLock::new();
     CONTEXT.get_or_init(|| Context {
-        rules: Arc::new(BaseRules::load(&root().join("rust/data/base_rules.json")).unwrap()),
+        rules: Arc::new(BaseRules::load(&root().join("data/generated/base_rules.json")).unwrap()),
         catalog: Arc::new(
-            crate::catalog::Catalog::load(&root().join("rust/data/catalog.json")).unwrap(),
+            crate::catalog::Catalog::load(&root().join("data/generated/catalog.json")).unwrap(),
         ),
     })
 }

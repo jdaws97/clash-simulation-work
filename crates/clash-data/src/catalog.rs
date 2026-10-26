@@ -1,7 +1,7 @@
 //! Ports specs.py:19-48,401-503; rust_export.py:103-134 supplies all static data.
 
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use crate::fast_hash::FastMap as HashMap;
@@ -9,6 +9,20 @@ use crate::json::{self, Json};
 use crate::labels::{Special, Specials, Tag};
 use crate::node::Node;
 use crate::stats::{Level, Stats};
+
+/// An explicit runtime catalog override. The current name takes precedence
+/// over the legacy name when both are set.
+pub fn override_path() -> Option<PathBuf> {
+    std::env::var_os("CLASH_CATALOG")
+        .or_else(|| std::env::var_os("BASELAB_CATALOG"))
+        .map(PathBuf::from)
+}
+
+/// Resolve a runtime catalog for a workspace root; callers' explicit CLI or
+/// configuration paths take precedence over this environment/default lookup.
+pub fn path(root: &Path) -> PathBuf {
+    override_path().unwrap_or_else(|| root.join("data/generated/catalog.json"))
+}
 
 // Python int(cell), accepting both CSV text and resolved ClashKing numbers.
 pub fn game_int(row: &Json, key: &str, default: i64) -> i64 {
@@ -243,7 +257,7 @@ pub struct Catalog {
     /// specs.py:352-409: inherited game CSV rows, retaining per-entry level order.
     /// Includes buildings for defense.py projectile selection and geared Mortars.
     pub game_data: HashMap<String, HashMap<String, Vec<Json>>>,
-    /// units.py warden_weights(): data/warden-weights.json as read.
+    /// units.py warden_weights(): data/source/warden-weights.json as read.
     pub warden_weights: Json,
     /// spells.py:22: shared field-age/exposure ramp duration.
     pub poison_ramp: f64,

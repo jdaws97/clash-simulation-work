@@ -19,8 +19,7 @@ private/
 
 # Disposable generated output, wiki acquisition cache and dated data backups.
 output/
-data/wiki/
-data/*-pre-*.json
+data/source/wiki/
+data/source/*-pre-*.json
 .claude/worktrees/
-rust/target-*/
 /target/

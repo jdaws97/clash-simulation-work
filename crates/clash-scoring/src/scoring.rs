@@ -199,7 +199,7 @@ impl Strength {
     // evaluate.py:33-87: the environment selects only the meta file, and an
     // empty value selects the default. Missing/invalid files are independent.
     pub fn load(root: &Path) -> Self {
-        let directory = root.join("data");
+        let directory = root.join("data/source");
         let meta_path = std::env::var_os("BASELAB_CALIBRATION")
             .filter(|value| !value.is_empty())
             .map(std::path::PathBuf::from)
@@ -667,7 +667,7 @@ impl ScoringData {
 
     // evaluate.py:33-87 and meta_armies.py:61-68,301-304,405-455.
     pub fn load(root: &Path) -> Result<Self, String> {
-        let directory = root.join("data");
+        let directory = root.join("data/source");
         let calibration = std::env::var_os("BASELAB_CALIBRATION")
             .filter(|value| !value.is_empty())
             .map(std::path::PathBuf::from)

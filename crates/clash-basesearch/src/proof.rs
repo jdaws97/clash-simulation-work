@@ -910,7 +910,9 @@ pub fn command(args: &[PathBuf], catalog: Arc<Catalog>, catalog_path: &Path) -> 
     } else {
         1000
     };
-    let rules = Arc::new(BaseRules::load(&args[0].join("rust/data/base_rules.json"))?);
+    let rules = Arc::new(BaseRules::load(
+        &args[0].join("data/generated/base_rules.json"),
+    )?);
     let catalog_bytes = std::fs::read(catalog_path).map_err(|e| e.to_string())?;
     require(
         identity(&catalog_bytes) == rules.catalog_identity,
@@ -950,8 +952,8 @@ mod tests {
             .parent()
             .unwrap();
         let context = Context {
-            rules: Arc::new(BaseRules::load(&root.join("rust/data/base_rules.json")).unwrap()),
-            catalog: Arc::new(Catalog::load(&root.join("rust/data/catalog.json")).unwrap()),
+            rules: Arc::new(BaseRules::load(&root.join("data/generated/base_rules.json")).unwrap()),
+            catalog: Arc::new(Catalog::load(&root.join("data/generated/catalog.json")).unwrap()),
         };
         run(&context, 8).unwrap();
     }

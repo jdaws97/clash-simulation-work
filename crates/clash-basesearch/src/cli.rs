@@ -272,10 +272,12 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
         .get("catalog")
         .and_then(Json::opt_str)
         .map(PathBuf::from)
-        .unwrap_or_else(|| root.join("rust/data/catalog.json"));
+        .unwrap_or_else(|| clash_data::catalog::path(&root));
     let catalog = Arc::new(crate::catalog::Catalog::load(&catalog_path)?);
     let context = Context {
-        rules: Arc::new(BaseRules::load(&root.join("rust/data/base_rules.json"))?),
+        rules: Arc::new(BaseRules::load(
+            &root.join("data/generated/base_rules.json"),
+        )?),
         catalog: catalog.clone(),
     };
     let th = integer(&config, "town_hall", 16)? as i64;
@@ -473,7 +475,10 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
         ("compiler_policy", compiler.library.policy.clone()),
         ("compiler_pace", Json::Num(compiler.pace)),
         ("playbooks", Json::Obj(compiler.playbooks.clone())),
-        ("castle", read(&root.join("rust/data/clan_castle.json"))?),
+        (
+            "castle",
+            read(&root.join("data/generated/clan_castle.json"))?,
+        ),
         ("screen", screen.to_json()),
         ("confirmation", confirmation.to_json()),
         ("gate", gate.to_json()),

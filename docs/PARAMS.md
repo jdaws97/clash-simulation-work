@@ -1,6 +1,6 @@
 # Runtime mechanics parameters (RM1)
 
-`rust/src/params.rs` is the runtime registry. Every entry has a default,
+`crates/clash-engine/src/params.rs` is the runtime registry. Every entry has a default,
 provenance and unit. Parameters are resolved once per battle; jobs do not mutate
 shared catalog values or process environment. All four new behavior flags default
 to **false**. The default model retains the legacy route rule and float operation
@@ -50,7 +50,7 @@ measurement, not a new measurement made by this stream.
 
 All behavioral interpretations below are **hypotheses to validate with probes**.
 The numeric values themselves are checked against the committed
-`data/gamecsv/v18.200.9/globals.csv`. `TargetGroupsRange=1300` for Apprentice and
+`data/source/gamecsv/v18.200.9/globals.csv`. `TargetGroupsRange=1300` for Apprentice and
 Grand Warden corresponds to 13 tiles: **100 internal distance units = 1 tile**.
 Applying that distance scale to path cost or noise is a separate hypothesis.
 Applying a factor of 100 to Warden weights is another separate hypothesis.
@@ -137,7 +137,7 @@ Regenerate this table with the existing WSL toolchain (no installation):
 ```sh
 . ~/.cargo/env
 export CARGO_TARGET_DIR=/tmp/clash-target-rm1
-export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
+export CLASH_CATALOG="$PWD/data/generated/catalog.json"
 cargo run --manifest-path Cargo.toml -p clash-engine --example mechanics_proof -- params
 ```
 

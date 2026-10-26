@@ -12,7 +12,7 @@ pub fn catalog() -> Arc<Catalog> {
     Arc::clone(CATALOG.get_or_init(|| {
         Arc::new(
             Catalog::load(
-                &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../rust/data/catalog.json"),
+                &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/generated/catalog.json"),
             )
             .unwrap(),
         )

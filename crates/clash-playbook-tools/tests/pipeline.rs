@@ -206,7 +206,7 @@ fn nested_dependencies_duplicates_and_cycles_are_checked() {
 
 #[test]
 fn every_committed_playbook_uses_executor_vocabulary_and_valid_dependencies() {
-    let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/playbooks");
+    let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/source/playbooks");
     let mut checked = 0;
     for entry in fs::read_dir(directory).unwrap() {
         let path = entry.unwrap().path();

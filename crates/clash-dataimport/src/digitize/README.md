@@ -147,8 +147,8 @@ Private replay command (the account is explicit, read only):
 CARGO_TARGET_DIR=/tmp/clash-target-lD cargo run --release --offline --locked \
   -p clash-cli --bin clash -- dataimport digitize replay \
   --inputs /mnt/c/Users/jarod/Documents/clash-lab/local/digitize \
-  --references data/reference-bases \
-  --account /mnt/c/Users/jarod/Documents/clash-lab/data/your-levels.json \
+  --references data/source/reference-bases \
+  --account /mnt/c/Users/jarod/Documents/clash-lab/data/source/your-levels.json \
   --account-th 16 --out /tmp/clash-lD-replay
 ```
 

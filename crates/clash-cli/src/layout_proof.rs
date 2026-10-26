@@ -692,30 +692,32 @@ fn fuzz_one(
 }
 
 fn corpus_proof(root: &Path, rules: &BaseRules, catalog: Arc<Catalog>) -> Result<Json, String> {
-    let git = std::process::Command::new("git")
-        .current_dir(root)
-        .args([
-            "ls-files",
-            "-z",
-            "--",
-            "data/reference-bases/*.json",
-            "data/reference-bases/**/*.json",
-        ])
-        .output()
-        .map_err(|e| e.to_string())?;
-    require(
-        git.status.success(),
-        "git ls-files failed for committed corpus",
-    )?;
-    let mut paths: BTreeSet<_> = String::from_utf8(git.stdout)
-        .map_err(|e| e.to_string())?
-        .split('\0')
-        .filter(|s| !s.is_empty())
-        .map(str::to_owned)
-        .collect();
+    fn collect(root: &Path, directory: &Path, paths: &mut BTreeSet<String>) -> Result<(), String> {
+        for entry in std::fs::read_dir(directory).map_err(|error| error.to_string())? {
+            let path = entry.map_err(|error| error.to_string())?.path();
+            if path.is_dir() {
+                collect(root, &path, paths)?;
+            } else if path
+                .extension()
+                .is_some_and(|extension| extension == "json")
+            {
+                paths.insert(
+                    path.strip_prefix(root)
+                        .map_err(|error| error.to_string())?
+                        .to_string_lossy()
+                        .replace('\\', "/"),
+                );
+            }
+        }
+        Ok(())
+    }
+    // Read the declared source corpus even when its relocation is unstaged.
+    let mut paths = BTreeSet::new();
+    collect(root, &root.join("data/source/reference-bases"), &mut paths)?;
+    require(!paths.is_empty(), "reference layout corpus is empty")?;
     paths.extend([
-        "rust/data/target17.json".to_owned(),
-        "rust/data/target18.json".to_owned(),
+        "data/generated/target17.json".to_owned(),
+        "data/generated/target18.json".to_owned(),
     ]);
     let mut reports = Vec::new();
     for path in paths {
@@ -755,7 +757,7 @@ pub fn run(
     catalog: Arc<Catalog>,
     catalog_bytes: &[u8],
 ) -> Result<(), String> {
-    let rules = BaseRules::load(&root.join("rust/data/base_rules.json"))?;
+    let rules = BaseRules::load(&root.join("data/generated/base_rules.json"))?;
     require(
         rules.catalog_identity == identity(catalog_bytes),
         "rules/catalog identity mismatch",

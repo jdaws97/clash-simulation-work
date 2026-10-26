@@ -10,7 +10,7 @@ not real-game calibration. The historical milestone receipts are under `history/
 ## Schemas and admission
 
 The public Rust API is `baselab_engine::layout`. Its model types live in
-`rust/src/layout/model.rs`; `AdmittedLayout` lives in `admit.rs`. Layout schema
+`crates/clash-layout/src/model.rs`; `AdmittedLayout` lives in `admit.rs`. Layout schema
 1 retains legacy JSON fields: buildings, walls, traps, ordered heroes,
 cc_troops, guardian, levels, hero_levels, wall_level, wall_levels, town_hall,
 name and notes. Absent fields use frozen `Layout.from_json` defaults, except
@@ -74,7 +74,7 @@ catalog fingerprint mismatch; the proof regenerates the rules from inputs.
 ## Rules and geometry
 
 `layout import-rules <repo-root> <output.json>` derives rules schema 1 from
-`data/clashking-static-data.json` and the explicitly selected engine catalog.
+`data/source/clashking-static-data.json` and the explicitly selected engine catalog.
 It accumulates TH unlock quantities, consumes every first-level merge recipe
 per owned product and each TH-upgrade merge once, and retains exact source
 JSON pointers, source/catalog fingerprints, footprints, TH16–18 inventories,
@@ -143,10 +143,10 @@ certify exact continuation. Freeze finalists/order/attacks before final data.
 
 ## Ownership and exit gates
 
-Layout owner: `rust/src/layout/**`, `rust/data/base_rules.json`, small
+Layout owner: `crates/clash-layout/**`, `data/generated/base_rules.json`, small
 `fixtures/layout/**`. For M0/M1 the layout owner is integration lead for
 the narrow lib/main declarations, setup fallible-content call and scoring
-geometry adapter. Preserve all other writers' work. `rust/vidmine/**` belongs
+geometry adapter. Preserve all other writers' work. `crates/clash-vidmine/**` belongs
 to its existing writer. Read-only reviewers do not gain write ownership.
 Future owners use the design's disjoint proposal/evaluation/search/oracle/
 reporting modules; shared-engine edits require integration coordination.

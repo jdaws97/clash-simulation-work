@@ -72,9 +72,9 @@ Concrete examples:
 
 | Move | Requirements and parameters | Evidence |
 |---|---|---|
-| Protect an advancing RC | Bind the actual RC; select a leading spell circle; account for current protection and Fox survival. A ten-second cycle requires its supporting conditions. | [root-rider.json:199](../data/playbooks/root-rider.json:199), [redteam.py:345](../src/baselab/redteam.py:345) |
-| Recall a charge | Reserve Recall; check eligible actors and capacity; choose extraction deadline and redeployment job. Failed charge must take an explicit recovery branch. | [root-rider.json:284](../data/playbooks/root-rider.json:284) |
-| Protected Fireball setup | Require Fireball equipment; prepare its real automatic target through deployment and masking; serialize protection and activation inputs. | [fireball-warden.json:350](../data/playbooks/fireball-warden.json:350) |
+| Protect an advancing RC | Bind the actual RC; select a leading spell circle; account for current protection and Fox survival. A ten-second cycle requires its supporting conditions. | [root-rider.json:199](../data/source/playbooks/root-rider.json:199), [redteam.py:345](../src/baselab/redteam.py:345) |
+| Recall a charge | Reserve Recall; check eligible actors and capacity; choose extraction deadline and redeployment job. Failed charge must take an explicit recovery branch. | [root-rider.json:284](../data/source/playbooks/root-rider.json:284) |
+| Protected Fireball setup | Require Fireball equipment; prepare its real automatic target through deployment and masking; serialize protection and activation inputs. | [fireball-warden.json:350](../data/source/playbooks/fireball-warden.json:350) |
 | Sustain a Queen charge | Place Rage to cover the Healers and useful Queen movement; monitor the two formations separately. | [queen-charge-queen-walk.md:17](../local/research/usage/queen-charge-queen-walk.md:17) |
 
 A move’s objective must never become direct control over autonomous troop targeting. The Queen research explicitly distinguishes funneling from selecting her target at [queen-charge-queen-walk.md:15](../local/research/usage/queen-charge-queen-walk.md:15).
@@ -302,7 +302,7 @@ F14’s ownership remains with the current writer. Use its diagnostic as a regre
 Rust is the executable reference; Python is frozen at `python-frozen`. Executor
 changes must pass the Rust golden suite's per-tick traces, outcomes and RNG
 ordering, or explicitly review and re-record intended changes. Mathematical
-operations use the platform-identical implementations in `rust/src/detmath.rs`
+operations use the platform-identical implementations in `crates/clash-engine/src/detmath.rs`
 and `geom.rs`; see [RUST_PORT.md](RUST_PORT.md). Give human errors a separately
 specified deterministic stream, preserving existing RNG consumption.
 

@@ -2,8 +2,8 @@
   "synthetic": true,
   "source": "Declared tile geometry goldens: ring perimeter inclusive, remove listed wall tiles. Hole counts include the full three-tile margin. Not real-game calibration.",
   "corpus_holes": {
-    "rust/data/target17.json": {"four_way_hole_tiles": 24, "eight_way_hole_tiles": 20},
-    "rust/data/target18.json": {"four_way_hole_tiles": 17, "eight_way_hole_tiles": 17}
+    "data/generated/target17.json": {"four_way_hole_tiles": 24, "eight_way_hole_tiles": 20},
+    "data/generated/target18.json": {"four_way_hole_tiles": 17, "eight_way_hole_tiles": 17}
   },
   "cases": [
     {"id": "sealed", "ring": [10, 20], "remove": [], "center_outside": false, "compartments": [81], "holes": [49], "four_way_hole_tiles": 49},

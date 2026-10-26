@@ -214,7 +214,7 @@ glyph provenance. Tests use declared synthetic data, not real-game calibration.
 ```
 
 Extraction invokes this pass automatically. The compiled crate needs its local
-templates, `data/clashking-static-data.json` and `data/catalog.json`.
+templates, `data/source/clashking-static-data.json` and `data/source/catalog.json`.
 `m3-unit-caps.tsv` expands the static table
 file into own-unit caps per TH, combining `required_townhall`, laboratory,
 production-building, Hero Hall and Pet House requirements. Super units also

@@ -6,7 +6,7 @@ use super::stats::{self, numeric};
 use super::{empty, entries, field, items, merge, object, registry, specs, tables, text, Sources};
 
 pub(super) fn catalog(sources: &Sources) -> Result<Json, String> {
-    let raw = wire::read(&sources.root.join("data/clashking-static-data.json"))?;
+    let raw = wire::read(&sources.root.join("data/source/clashking-static-data.json"))?;
     let mut reg = registry::build(&raw, &sources.wiki)?;
     let csv = Tables::load(&sources.root)?;
     registry::repair_inferno(&mut reg, &csv)?;
@@ -16,7 +16,7 @@ pub(super) fn catalog(sources: &Sources) -> Result<Json, String> {
             .replace('\n', "\r\n")
             .as_bytes(),
     );
-    let overrides = wire::read(&sources.root.join("data/balance-overrides.json"))?;
+    let overrides = wire::read(&sources.root.join("data/source/balance-overrides.json"))?;
     stats::augment(&mut reg);
     stats::apply_overrides(&mut reg, &overrides, false)?;
     let mut ck = stats::ck_entries(&raw);
@@ -258,7 +258,7 @@ pub(super) fn catalog(sources: &Sources) -> Result<Json, String> {
         ("new_target_delays", csv.delays),
         (
             "warden_weights",
-            wire::read(&sources.root.join("data/warden-weights.json"))?,
+            wire::read(&sources.root.join("data/source/warden-weights.json"))?,
         ),
         ("poison_ramp", num(4)),
         ("game_ranges", csv.ranges),
@@ -273,7 +273,7 @@ pub(super) fn catalog(sources: &Sources) -> Result<Json, String> {
                         (
                             "balance_overrides",
                             string(wire::file_hash(
-                                &sources.root.join("data/balance-overrides.json"),
+                                &sources.root.join("data/source/balance-overrides.json"),
                             )?),
                         ),
                     ]),

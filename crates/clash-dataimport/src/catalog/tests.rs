@@ -55,7 +55,7 @@ fn equivalent(actual: &Json, expected: &Json) {
 #[test]
 fn csv_matches_recorded_export() {
     let source = sources();
-    let catalog = wire::read(&source.root.join("rust/data/catalog.json")).unwrap();
+    let catalog = wire::read(&source.root.join("data/generated/catalog.json")).unwrap();
     let tables = csv::Tables::load(&source.root).unwrap();
     equivalent(&tables.data, field(&catalog, "game_data"));
     equivalent(&tables.ranges, field(&catalog, "game_ranges"));
@@ -78,10 +78,10 @@ fn csv_matches_recorded_export() {
 #[test]
 fn specs_and_numbers_match_recorded_export() {
     let source = sources();
-    let catalog = wire::read(&source.root.join("rust/data/catalog.json")).unwrap();
+    let catalog = wire::read(&source.root.join("data/generated/catalog.json")).unwrap();
     let reg = field(&catalog, "registry");
-    let raw = wire::read(&source.root.join("data/clashking-static-data.json")).unwrap();
-    let overrides = wire::read(&source.root.join("data/balance-overrides.json")).unwrap();
+    let raw = wire::read(&source.root.join("data/source/clashking-static-data.json")).unwrap();
+    let overrides = wire::read(&source.root.join("data/source/balance-overrides.json")).unwrap();
     let mut ck = stats::ck_entries(&raw);
     stats::apply_overrides(&mut ck, &overrides, true).unwrap();
     let csv = csv::Tables::load(&source.root).unwrap();
@@ -148,7 +148,7 @@ fn complete_source_pipeline_matches_recorded_exports() {
     }
     let registry = build_registry(&sources).unwrap();
     let serialized = encoding::registry(&registry);
-    let pinned = required_text(&sources.root.join("data/registry.json")).unwrap();
+    let pinned = required_text(&sources.root.join("data/generated/registry.json")).unwrap();
     assert_eq!(
         wire::sha256(serialized.as_bytes()),
         wire::sha256(pinned.replace("\r\n", "\n").as_bytes()),
@@ -156,12 +156,12 @@ fn complete_source_pipeline_matches_recorded_exports() {
     );
     equivalent(
         &registry,
-        &wire::read(&sources.root.join("data/registry.json")).unwrap(),
+        &wire::read(&sources.root.join("data/generated/registry.json")).unwrap(),
     );
     let actual = build_catalog(&sources).unwrap();
     equivalent(
         &actual,
-        &wire::read(&sources.root.join("rust/data/catalog.json")).unwrap(),
+        &wire::read(&sources.root.join("data/generated/catalog.json")).unwrap(),
     );
 
     // Declared source perturbation: neither generated JSON exists in this root.
@@ -177,15 +177,15 @@ fn complete_source_pipeline_matches_recorded_exports() {
         }
     }
     let _cleanup = Cleanup(scratch.clone());
-    std::fs::create_dir_all(scratch.join("data/gamecsv/v18.200.9")).unwrap();
+    std::fs::create_dir_all(scratch.join("data/source/gamecsv/v18.200.9")).unwrap();
     for name in [
         "clashking-static-data.json",
         "balance-overrides.json",
         "warden-weights.json",
     ] {
         std::fs::copy(
-            sources.root.join("data").join(name),
-            scratch.join("data").join(name),
+            sources.root.join("data/source").join(name),
+            scratch.join("data/source").join(name),
         )
         .unwrap();
     }
@@ -198,10 +198,10 @@ fn complete_source_pipeline_matches_recorded_exports() {
         "special_abilities",
         "spells",
     ] {
-        let path = format!("data/gamecsv/v18.200.9/{name}.csv");
+        let path = format!("data/source/gamecsv/v18.200.9/{name}.csv");
         std::fs::copy(sources.root.join(&path), scratch.join(&path)).unwrap();
     }
-    let mut overrides = wire::read(&scratch.join("data/balance-overrides.json")).unwrap();
+    let mut overrides = wire::read(&scratch.join("data/source/balance-overrides.json")).unwrap();
     let Json::Arr(changes) = get_mut(&mut overrides, "overrides") else {
         unreachable!()
     };
@@ -209,7 +209,11 @@ fn complete_source_pipeline_matches_recorded_exports() {
         json::parse(r#"{"entity":"Barbarian","level":1,"field":"hitpoints","new_value":77}"#)
             .unwrap(),
     );
-    wire::write(&scratch.join("data/balance-overrides.json"), &overrides).unwrap();
+    wire::write(
+        &scratch.join("data/source/balance-overrides.json"),
+        &overrides,
+    )
+    .unwrap();
     let changed = build_catalog(&Sources {
         root: scratch.clone(),
         wiki: sources.wiki.clone(),
@@ -219,6 +223,6 @@ fn complete_source_pipeline_matches_recorded_exports() {
         field(field(field(&changed, "unit_numbers"), "Barbarian|1"), "hp"),
         &num(77)
     );
-    assert!(!scratch.join("data/registry.json").exists());
-    assert!(!scratch.join("rust/data/catalog.json").exists());
+    assert!(!scratch.join("data/generated/registry.json").exists());
+    assert!(!scratch.join("data/generated/catalog.json").exists());
 }

@@ -136,7 +136,11 @@ pub(crate) fn repo_root(explicit: Option<&Path>) -> Result<PathBuf, String> {
     }
     for candidate in candidates {
         for ancestor in candidate.ancestors() {
-            if ancestor.join("data").join(armies::META_FILE).exists() {
+            if ancestor
+                .join("data/source")
+                .join(armies::META_FILE)
+                .exists()
+            {
                 return Ok(ancestor.to_owned());
             }
         }
@@ -160,8 +164,7 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
     let catalog = args
         .catalog
         .clone()
-        .or_else(|| std::env::var_os("BASELAB_CATALOG").map(PathBuf::from))
-        .unwrap_or_else(|| root.join("rust/data/catalog.json"));
+        .unwrap_or_else(|| clash_data::catalog::path(&root));
     // Only the processed registry is needed: avoid loading all runtime tables.
     let catalog = armies::read_json(&catalog)?;
     let stats = Stats::new(field(&catalog, "registry"));

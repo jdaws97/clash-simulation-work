@@ -1,8 +1,8 @@
 # Rust reference engine (2026-10-25)
 
-Rust is the executable reference. Python remains only for the unported workflows
-and dependencies listed in [CLEANUP_G4.md](CLEANUP_G4.md). New rules and compiler
-changes belong in Rust; Python parity is retired. Preserve the separate v29
+Rust is the executable reference and supported workflows are Rust only. The
+earlier cleanup inventory is retained in [CLEANUP_G4.md](CLEANUP_G4.md).
+Python parity is retired. Preserve the separate v29
 baseline and its unsupported-content checks.
 
 G1/G2 now use the root Cargo workspace. The checked WSL compiler is
@@ -41,7 +41,7 @@ The engine is std-only, forbids unsafe code, and needs no downloads:
 ```sh
 . ~/.cargo/env
 export CARGO_TARGET_DIR=/tmp/clash-target-ws
-export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
+export CLASH_CATALOG="$PWD/data/generated/catalog.json"
 cargo build --workspace --all-targets --release --locked --offline --manifest-path Cargo.toml
 /tmp/clash-target-ws/release/clash compile custom:user-rr-oct25 0 123 /tmp/plan.json --root "$PWD"
 /tmp/clash-target-ws/release/clash guardian-check
@@ -55,11 +55,10 @@ The gate can also be invoked from `/tmp` using the absolute script path. It
 passes absolute catalog, fixture, root, account and temporary report paths;
 failing build/test/check commands propagate their exit status directly. Battle
 goldens run at one and four workers. Armysearch checks one/four/sixteen workers;
-the full M2 proof checks one/four/sixteen/one workers. Clippy is advisory if the
-existing code is not warning-clean, and a missing local component is reported
-without installing it. G1/G2 recorded unavailable Clippy. The G4 toolchain has
-Clippy; its pre-existing failure is tracked in [CLEANUP_G4.md](CLEANUP_G4.md)
-and belongs to the separate lane F source work.
+the full M2 proof checks one/four/sixteen/one workers. Clippy is strict with
+`-D warnings`; unavailable components and failing checks fail the gate without
+installing anything. Earlier Clippy limitations in G1/G2/G4 receipts are dated
+history, not the current gate policy.
 
 `clash` exposes `fidelity`, `video`, `dataimport` and `playbook` namespaces.
 `simulate run|trace|jobs|bench`, `plan compile|check`,
@@ -90,9 +89,9 @@ mismatch must be investigated, not accepted as another platform baseline.
 
 ## Inputs and scoring
 
-`rust/data/catalog.json` supplies resolved game statistics; the minimal sourced
-siege-cap table is `rust/data/clan_castle.json`. Synthetic default search targets
-are committed under `rust/data/target17.json` and `target18.json`. No wiki mirror
+`data/generated/catalog.json` supplies resolved game statistics; the minimal sourced
+siege-cap table is `data/generated/clan_castle.json`. Synthetic default search targets
+are committed under `data/generated/target17.json` and `target18.json`. No wiki mirror
 or generated `output/` file is required. Explicit paths, such as `--manifest`,
 `--catalog`, `--account`, score bundles and `BASELAB_CALIBRATION`, remain inputs
 chosen by the caller. Existing tracked account/library defaults are retained;

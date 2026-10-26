@@ -1,6 +1,6 @@
 # Completing a family playbook: the units it never deploys
 
-The consolidated playbooks in `data/playbooks/<family>.json` mostly narrate
+The consolidated playbooks in `data/source/playbooks/<family>.json` mostly narrate
 the clever parts of an attack (a hero charge, an ability, a recall). Many
 army units have no step at all, so the simulator falls back to an uncited
 dump. Your job: find, in the source transcripts, how players actually use
@@ -8,7 +8,7 @@ those units, and write steps for them in the executor vocabulary.
 
 ## Input
 
-- The playbook: `data/playbooks/<FAMILY>.json` (its `steps`, `army`, `sources`).
+- The playbook: `data/source/playbooks/<FAMILY>.json` (its `steps`, `army`, `sources`).
 - The units to cover (given in the prompt).
 - Transcripts: `local/sources/transcripts/<VIDEO_ID>.json`, field `lines`
   is a list of `[seconds, text]`. Read the transcripts listed in the

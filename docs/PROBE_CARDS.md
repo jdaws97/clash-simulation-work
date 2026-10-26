@@ -180,7 +180,7 @@ record whether the intended pre-reveal aim changes.
 ```sh
 . ~/.cargo/env
 export CARGO_TARGET_DIR=/tmp/clash-target-rm1
-export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
+export CLASH_CATALOG="$PWD/data/generated/catalog.json"
 cargo test --manifest-path Cargo.toml -p clash-engine --test mechanics
 cargo run --manifest-path Cargo.toml -p clash-engine --example mechanics_proof
 cargo run --manifest-path Cargo.toml -p clash-engine --example mechanics_proof -- summary

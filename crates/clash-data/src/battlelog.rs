@@ -14,7 +14,7 @@ impl Decoder {
     }
 
     pub fn load(root: &Path) -> Result<Self, String> {
-        let data = read(&root.join("data/clashking-static-data.json"))?;
+        let data = read(&root.join("data/source/clashking-static-data.json"))?;
         let mut names = BTreeMap::new();
         for (section, kind, offset) in [
             ("troops", "troop", 4_000_000),

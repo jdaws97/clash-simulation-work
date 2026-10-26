@@ -7,7 +7,7 @@ replays of source inventories on existing layouts, not real-game calibration.
 No Python files were edited or executed; builds and helpers use Rust in WSL,
 `CARGO_TARGET_DIR=/tmp/clash-target-pb`, the repository catalog and offline Cargo.
 Nothing was downloaded or installed. `rust/vidmine` and the preserved checkouts
-were not edited. An unrelated change to `data/live/player-latest.json` was left
+were not edited. An unrelated change to `data/source/live/player-latest.json` was left
 untouched; TH18 uses the existing custom build's explicit levels.
 
 ## Executable contract

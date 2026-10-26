@@ -84,7 +84,7 @@ pub fn family_of(build: &Json) -> Option<&'static str> {
 
 impl ArmyLibrary {
     pub fn load(root: &Path, stats: &Stats) -> Result<Self, String> {
-        let directory = root.join("data");
+        let directory = root.join("data/source");
         let meta = read_json(&directory.join(META_FILE))?;
         let observed_path = directory.join("observed-armies.json");
         let observed = if observed_path.exists() {
@@ -182,7 +182,7 @@ fn user_levels(directory: &Path, stats: &Stats) -> Result<Json, String> {
         put(
             &mut user,
             "live_source",
-            string("data/live/player-latest.json"),
+            string("data/source/live/player-latest.json"),
         );
     }
     Ok(user)

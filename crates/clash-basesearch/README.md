@@ -1,8 +1,7 @@
-G4 cleanup follow-up (2026-10-25): replaced Python entry points and the
-digitizer scratch toolkit were removed after reference closure. Required
-unported Python workflows and their imports remain. The lane receipt below
-preserves its original scope; see [CLEANUP_G4.md](../../docs/CLEANUP_G4.md)
-for the current file inventory, local paths and pending Rust handoff.
+G5a layout (2026-10-25): current workflows are Rust only. Runtime artifacts
+live in `data/generated/`, inputs in `data/source/`, and derived work in ignored
+`local/`. The lane receipt below preserves its original scope; see
+[ARCHITECTURE.md](../../docs/ARCHITECTURE.md) for current dependencies and paths.
 
 # Native base search, M3–M6
 

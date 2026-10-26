@@ -44,14 +44,14 @@ Preserve legacy JSON fields, including `wall_level` plus per-position `wall_leve
 
 Keep account levels fixed during layout optimization. CC composition, hero selection/banner assignment, defense modes, and guardian choice are legitimate search variables; upgrading equipment or buildings is a separate task.
 
-For inventory, derive a tracked normalized `rust/data/base_rules.json` using a **Rust-only importer**:
+For inventory, derive a tracked normalized `data/generated/base_rules.json` using a **Rust-only importer**:
 
 - Accumulate Town Hall unlock quantities.
 - Consume source buildings according to actual merge recipes.
 - Apply explicit, cited seasonal/model overrides.
 - Resolve owned counts and levels from a supplied account snapshot, or use a clearly labelled fully merged TH preset.
 
-The local data already contains unlock quantities and merge requirements, including geared AT+Cannon→MGT. `Catalog::BuildingType.count` alone is insufficient for TH-specific inventories. [clashking-static-data.json:969](../data/clashking-static-data.json:969), [clashking-static-data.json:1041](../data/clashking-static-data.json:1041), [clashking-static-data.json:9921](../data/clashking-static-data.json:9921), [catalog.rs:219](../crates/clash-data/src/catalog.rs)
+The local data already contains unlock quantities and merge requirements, including geared AT+Cannon→MGT. `Catalog::BuildingType.count` alone is insufficient for TH-specific inventories. [clashking-static-data.json:969](../data/source/clashking-static-data.json:969), [clashking-static-data.json:1041](../data/source/clashking-static-data.json:1041), [clashking-static-data.json:9921](../data/source/clashking-static-data.json:9921), [catalog.rs:219](../crates/clash-data/src/catalog.rs)
 
 **2. Legality and admission**
 
@@ -330,6 +330,6 @@ Assign disjoint ownership:
 | Oracle owner | `basesearch/{oracle,psro}.rs`, attack-archive schema and proofs. |
 | Reporting owner | `basesearch/{diagnostics,report,render}.rs`, report fixtures. |
 
-The integration lead alone edits `lib.rs`, `main.rs`, root module declarations, and shared files such as `setup.rs`, `scoring.rs`, `scouting.rs`, `runner.rs`, and `armysearch/*`. Owners deliver narrow integration patches against agreed interfaces. Keep `rust/vidmine/**` with its current writer and leave the playbook reviewers’ sources untouched.
+The integration lead alone edits `lib.rs`, `main.rs`, root module declarations, and shared files such as `setup.rs`, `scoring.rs`, `scouting.rs`, `runner.rs`, and `armysearch/*`. Owners deliver narrow integration patches against agreed interfaces. Keep `crates/clash-vidmine/**` with its current writer and leave the playbook reviewers’ sources untouched.
 
 Defer the surrogate until a measured equal-battle-budget experiment shows useful gains over direct Rust screening. Preserve evaluation logs and a proposal-filter interface now; any later surrogate gets an exploration quota and no authority to certify winners. [RUST_REVIEW_2026-10-25.md:249](history/RUST_REVIEW_2026-10-25.md:249)

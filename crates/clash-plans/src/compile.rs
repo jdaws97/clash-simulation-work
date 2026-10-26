@@ -50,7 +50,7 @@ pub struct Compiler<'a> {
 impl<'a> Compiler<'a> {
     pub fn load(root: &Path, stats: &'a Stats) -> Result<Self, String> {
         let library = ArmyLibrary::load(root, stats)?;
-        let mut paths = std::fs::read_dir(root.join("data/playbooks"))
+        let mut paths = std::fs::read_dir(root.join("data/source/playbooks"))
             .map_err(|error| error.to_string())?
             .map(|entry| {
                 entry
@@ -72,7 +72,7 @@ impl<'a> Compiler<'a> {
                 }
             }
         }
-        let gap_path = root.join("data/playbook-gaps.json");
+        let gap_path = root.join("data/source/playbook-gaps.json");
         let gaps = if std::env::var("BASELAB_GAPS").as_deref() != Ok("0") && gap_path.exists() {
             let value = armies::read_json(&gap_path)?;
             Some((
@@ -89,7 +89,7 @@ impl<'a> Compiler<'a> {
         if !pace.is_finite() {
             return Err("BASELAB_PACE must be finite".to_owned());
         }
-        let siege_caps = armies::read_json(&root.join("rust/data/clan_castle.json"))?;
+        let siege_caps = armies::read_json(&root.join("data/generated/clan_castle.json"))?;
         Ok(Self {
             library,
             stats,
@@ -2212,7 +2212,7 @@ impl Compiler<'_> {
         let table = list(&self.siege_caps, "tables")
             .iter()
             .find(|table| text(table, "heading", "") == "Siege Machine Level Cap");
-        // Derived wiki table: rust/data/clan_castle.json, Siege Machine Level Cap.
+        // Derived wiki table: data/generated/clan_castle.json, Siege Machine Level Cap.
         // https://clashofclans.fandom.com/wiki/Clan_Castle
         let value = table
             .and_then(|table| {
@@ -2856,7 +2856,7 @@ impl Compiler<'_> {
 
     /// Search admission rules use the actual account, never replay exceptions.
     /// plans.py:674-839 supplies roster/boost/level rules; production unlocks
-    /// additionally use registry.attrs.raw and data/your-levels.json.
+    /// additionally use registry.attrs.raw and data/source/your-levels.json.
     pub fn account_legal(&self, build: &Json, plan: &Json) -> Vec<String> {
         let mut out = self.legal(plan);
         if let Ok(housing) = self.housing(plan) {

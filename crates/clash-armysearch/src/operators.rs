@@ -23,7 +23,7 @@ pub fn seeds(
         .iter()
         .map(|build| build.value.clone())
         .collect();
-    let mut paths = std::fs::read_dir(root.join("data"))
+    let mut paths = std::fs::read_dir(root.join("data/source"))
         .map_err(|error| error.to_string())?
         .map(|entry| {
             entry

@@ -66,7 +66,7 @@ pub fn binding(root: &Path, calibration: &Path, report: Option<&Path>) -> Result
     if !defense_fitted {
         let known = calibration.canonicalize().ok()
             == root
-                .join("data/meta-calibration-r8.json")
+                .join("data/source/meta-calibration-r8.json")
                 .canonicalize()
                 .ok()
             && hash == R8_SHA256;
@@ -96,7 +96,7 @@ pub fn binding(root: &Path, calibration: &Path, report: Option<&Path>) -> Result
         ));
         candidates.push(calibration.with_extension("report.json"));
         {
-            let directory = root.join("data");
+            let directory = root.join("data/source");
             if let Ok(entries) = std::fs::read_dir(directory) {
                 let mut paths: Vec<_> = entries
                     .flatten()
@@ -210,19 +210,19 @@ pub fn fingerprint(root: &Path, extra: &[&Path]) -> Result<Json, String> {
     }
     let mut paths = Vec::new();
     visit(&root.join("crates"), &mut paths)?;
-    visit(&root.join("rust/data"), &mut paths)?;
-    visit(&root.join("data/playbooks"), &mut paths)?;
+    visit(&root.join("data/generated"), &mut paths)?;
+    visit(&root.join("data/source/playbooks"), &mut paths)?;
     for path in [
         "Cargo.toml",
-        "data/clashking-static-data.json",
-        "data/meta-armies-2026-10-15.json",
-        "data/observed-armies.json",
-        "data/custom-armies.json",
-        "data/baselab-calibration.json",
-        "data/attacker-policy.json",
-        "data/playbook-gaps.json",
-        "data/your-levels.json",
-        "data/live/player-latest.json",
+        "data/source/clashking-static-data.json",
+        "data/source/meta-armies-2026-10-15.json",
+        "data/source/observed-armies.json",
+        "data/source/custom-armies.json",
+        "data/source/baselab-calibration.json",
+        "data/source/attacker-policy.json",
+        "data/source/playbook-gaps.json",
+        "data/source/your-levels.json",
+        "data/source/live/player-latest.json",
     ] {
         let path = root.join(path);
         if path.is_file() {

@@ -22,7 +22,7 @@ const KEY_KINDS: [&str; 7] = ["ad", "inferno", "eagle", "scatter", "th", "mono",
 
 pub fn layout(args: &Arguments, path: &Path) -> Result<Json, String> {
     let mut layout = read(path)?;
-    let own = read(&args.root.join("data/your-levels.json"))?;
+    let own = read(&args.root.join("data/source/your-levels.json"))?;
     for key in ["levels", "wall_level", "hero_levels"] {
         if let Some(value) = own.get(key) {
             put(&mut layout, key, value.clone());
@@ -515,7 +515,7 @@ pub fn all(
     compiler: &Compiler<'_>,
     catalog: Arc<Catalog>,
 ) -> Result<Json, String> {
-    let mut paths: Vec<_> = std::fs::read_dir(args.root.join("data/replays"))
+    let mut paths: Vec<_> = std::fs::read_dir(args.root.join("data/source/replays"))
         .map_err(|error| error.to_string())?
         .flatten()
         .map(|entry| entry.path())

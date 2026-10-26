@@ -4,7 +4,7 @@ Research compiled 2026-10-20 for the ranked (Legend) and war base search. Read-o
 
 ## How to read this
 
-- **Source quality.** Strongest: the game data in `data/gamecsv/v18.200.9` (G), the local wiki mirror (W), and Supercell posts (S). Next: named-builder write-ups on Blueprint CoC (B; Sawan, Pekkachu, Krispy, Ninj, Trottino, Ghost) and TrophyCoach guides and data (T). Weak: SEO and base-selling blogs: cocbasedrop (C), BoostRoom (R), AllClash (A). C contains at least one invented mechanic (see Contested). Blueprint sells bases, so its claims about results are marketing. Its descriptions of *what a builder did* are still useful evidence of practice.
+- **Source quality.** Strongest: the game data in `data/source/gamecsv/v18.200.9` (G), the local wiki mirror (W), and Supercell posts (S). Next: named-builder write-ups on Blueprint CoC (B; Sawan, Pekkachu, Krispy, Ninj, Trottino, Ghost) and TrophyCoach guides and data (T). Weak: SEO and base-selling blogs: cocbasedrop (C), BoostRoom (R), AllClash (A). C contains at least one invented mechanic (see Contested). Blueprint sells bases, so its claims about results are marketing. Its descriptions of *what a builder did* are still useful evidence of practice.
 - **Confidence** counts independent source families. G and W count as one "mechanics" family when W restates G.
 - **Sim use** is either a **generator rule** (a hard or soft constraint during layout generation) or a **measurable test** (a score computed from simulated battles).
 - Reddit could not be fetched directly. Reddit items come from a Codex lead and are marked unverified.
@@ -251,7 +251,7 @@ Supercell's [July 9 2026 balance post](https://supercell.com/en/games/clashofcla
 | 1★ at d% | 5 + floor(d/9) | 25–35 (e.g. 1★ 90% = 15, so 25) |
 | 0★ | | 40 |
 
-Ties break on average attack destruction, then on **lowest average destruction conceded**. In Legend I, defenses and defending heroes are buffed, attacking heroes are nerfed, and traps are not buffed except the Tornado (W). Legend I has 8 battles per day (`data/mode-rules.json`, S).
+Ties break on average attack destruction, then on **lowest average destruction conceded**. In Legend I, defenses and defending heroes are buffed, attacking heroes are nerfed, and traps are not buffed except the Tornado (W). Legend I has 8 battles per day (`data/source/mode-rules.json`, S).
 
 **6.2 Design goal.**
 - Your log shows 10 of 13 defenses three-starred. Turning a 3★ into a high-percentage 2★ earns about 8–10 trophies. Turning a 2★ into a 1★ (TH survives) earns about 15 more.
@@ -295,9 +295,9 @@ Ties break on average attack destruction, then on **lowest average destruction c
 ## Sources
 
 **Game data and wiki**
-- `data/gamecsv/v18.200.9/{traps,characters,special_abilities}.csv`
-- `data/catalog.json` (trap counts)
-- Wiki mirror `data/wiki/text/`: Fireball, Giant_Arrow, Rocket_Spear, Rocket_Backpack, Root_Rider, Thrower, Dragon, Dragon_Rider, Electro_Dragon, Super_Yeti, Healer, Druid, Totem_Spell, Overgrowth_Spell, Eagle_Artillery, Monolith, Scattershot, Inferno_Tower, X-Bow, Air_Defense, Air_Sweeper, Spell_Tower, Town_Hall_Giga_Inferno_TH16, Clan_Castle, Hero_Banner, Ranked_Battles, and all trap pages.
+- `data/source/gamecsv/v18.200.9/{traps,characters,special_abilities}.csv`
+- `data/source/catalog.json` (trap counts)
+- Wiki mirror `data/source/wiki/text/`: Fireball, Giant_Arrow, Rocket_Spear, Rocket_Backpack, Root_Rider, Thrower, Dragon, Dragon_Rider, Electro_Dragon, Super_Yeti, Healer, Druid, Totem_Spell, Overgrowth_Spell, Eagle_Artillery, Monolith, Scattershot, Inferno_Tower, X-Bow, Air_Defense, Air_Sweeper, Spell_Tower, Town_Hall_Giga_Inferno_TH16, Clan_Castle, Hero_Banner, Ranked_Battles, and all trap pages.
 
 **Supercell**
 - [Ranked update and Spring rework (2025-10-06)](https://supercell.com/en/games/clashofclans/blog/release-notes/get-ready-for-ranked-update/)

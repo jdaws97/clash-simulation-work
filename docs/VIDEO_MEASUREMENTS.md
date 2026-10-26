@@ -2,7 +2,7 @@
 
 ## Traps and defenses
 
-Measured from public YouTube attack footage (60 fps, frame by frame; the speed factor comes from the on-screen battle timer). Full samples are in `data/video-measurements-traps.json`. Only one item could be measured reliably; the others are marked not measured, with the reason in the JSON.
+Measured from public YouTube attack footage (60 fps, frame by frame; the speed factor comes from the on-screen battle timer). Full samples are in `data/source/video-measurements-traps.json`. Only one item could be measured reliably; the others are marked not measured, with the reason in the JSON.
 
 | item | engine value | measured (median, spread, n) | confidence | sources (video id @ time) |
 |---|---|---|---|---|
@@ -23,7 +23,7 @@ Notes:
 
 ## Troops and deploys
 
-Measured from public YouTube attack footage at 60 fps (two clips at 30 fps), frame by frame. Every segment's speed was checked against the on-screen battle timer over >= 8 s, and all were 1.0x. Full samples are in `data/video-measurements-troops.json`.
+Measured from public YouTube attack footage at 60 fps (two clips at 30 fps), frame by frame. Every segment's speed was checked against the on-screen battle timer over >= 8 s, and all were 1.0x. Full samples are in `data/source/video-measurements-troops.json`.
 
 | item | engine value | measured (median, spread, n) | confidence | sources (video id @ time) |
 |---|---|---|---|---|
@@ -40,6 +40,6 @@ Measured from public YouTube attack footage at 60 fps (two clips at 30 fps), fra
 
 Notes:
 - Deploy rate: 0.133 s per troop (8 game frames at 60 fps) held across two players and two troop types, with no drift. The engine's 0.15 s is about 13% slow.
-- Battle Blimp: the game data agrees with the video. `data/gamecsv/v18.200.9/characters.csv` has Battle Blimp AttackRange 150 (1.5 tiles), DieDamage 700-1100, DieDamageRadius 300 (3 tiles), DieDamageDelay 700 ms. The engine's "over the TH centre, no death blast" looks wrong on both counts. The blimp's HP bar was still almost full at the blast, so it broke on reaching its target, not from defense fire.
+- Battle Blimp: the game data agrees with the video. `data/source/gamecsv/v18.200.9/characters.csv` has Battle Blimp AttackRange 150 (1.5 tiles), DieDamage 700-1100, DieDamageRadius 300 (3 tiles), DieDamageDelay 700 ms. The engine's "over the TH centre, no death blast" looks wrong on both counts. The blimp's HP bar was still almost full at the blast, so it broke on reaching its target, not from defense fire.
 - Melee arrival -> first hit: the one sample points to a ~0.3 s wind-up, but with n=1 in a crowded line it is not enough to change the engine.
 - Items 14, 15 and 16 need clean, zoomed-in 60 fps recordings (shot list section B). Live-commentary and guide videos are too zoomed out and cluttered for them.

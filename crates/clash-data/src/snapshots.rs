@@ -143,8 +143,12 @@ pub fn setup(
     let path = base.unwrap_or_else(|| {
         periods
             .first()
-            .map_or("data/reference-bases/your-base.json", |entry| {
-                text(entry, "layout", "data/reference-bases/your-base.json")
+            .map_or("data/source/reference-bases/your-base.json", |entry| {
+                text(
+                    entry,
+                    "layout",
+                    "data/source/reference-bases/your-base.json",
+                )
             })
     });
     let mut layout = read(&resolve(root, path))?;
@@ -162,7 +166,7 @@ pub fn setup(
             "legacy_historical_levels".to_owned(),
         ));
     }
-    let own = read(&root.join("data/your-levels.json"))?;
+    let own = read(&root.join("data/source/your-levels.json"))?;
     for key in [
         "levels",
         "hero_levels",

@@ -23,7 +23,7 @@
   "recorded": "2026-10-03 11:47 local (phone screen recording, 59 fps, landscape 2796x1290)",
   "speed": "1x for the first ~4 video s, then 4x: the 'Replay ends in' countdown drops 4 s per video second",
   "time_base": "countdown read once per video second (resolution 4 battle s). Battle 1 (timeout): t = 180 - countdown (the damage panel appears at countdown 2m59). Battle 2 (3-star): t = 100 - countdown, first deploy estimated at countdown ~1m40 (+-4 s).",
-  "layout": "data/reference-bases/your-base.json (same day: screenshot IMG_4219, 2026-10-03)",
+  "layout": "data/source/reference-bases/your-base.json (same day: screenshot IMG_4219, 2026-10-03)",
   "defense_log_frame": "video 57.5 s: Ranked Battle -> Defense Log card for both battles (armies, result, trophies)",
   "extracted_by": "Claude, 2026-10-22, from per-second crops of the timer and Overall Damage panel; armies from the troop bar and the defense-log card"
  },

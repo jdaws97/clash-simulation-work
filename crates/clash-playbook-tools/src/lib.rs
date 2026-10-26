@@ -138,7 +138,7 @@ impl Options {
         self.path("transcripts", self.sources().join("transcripts"))
     }
     fn playbooks(&self) -> PathBuf {
-        self.path("playbooks", self.root().join("data/playbooks"))
+        self.path("playbooks", self.root().join("data/source/playbooks"))
     }
     fn provider(&self) -> Result<research::Provider, String> {
         Ok(research::Provider {
@@ -571,7 +571,7 @@ fn gaps_command(options: &Options) -> Result<(), String> {
     let (output, tally) = gaps::measure(&options.playbooks(), &mut transcripts)?;
     if !options.has("dry") {
         io::write(
-            &options.path("out", options.root().join("data/playbook-gaps.json")),
+            &options.path("out", options.root().join("data/source/playbook-gaps.json")),
             &output,
         )?;
     }

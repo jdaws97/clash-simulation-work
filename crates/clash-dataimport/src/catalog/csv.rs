@@ -64,7 +64,7 @@ impl Tables {
             "spells",
         ] {
             let path = root
-                .join("data/gamecsv/v18.200.9")
+                .join("data/source/gamecsv/v18.200.9")
                 .join(format!("{table}.csv"));
             let rows = parse(&required_text(&path)?)?;
             let header = rows

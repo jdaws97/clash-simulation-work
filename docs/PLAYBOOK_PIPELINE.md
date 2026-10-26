@@ -16,10 +16,10 @@ when working with another corpus. Inputs in another checkout can remain
 read-only. Acquisition caches, transcripts, prompts, provider replies, research
 reports and job receipts belong in ignored local storage, never in Git.
 
-G4 moved the corpus to `local/sources` and research to `local/research`.
-Until the lead applies the listed Rust defaults, pass `--sources local/sources`
-for commands that discover the corpus and explicit `--transcripts`/queue paths.
-See [CLEANUP_G4.md](CLEANUP_G4.md).
+The corpus defaults to `local/sources`, transcripts to its `transcripts/`
+subdirectory, and reviewed playbooks to `data/source/playbooks`. Research lives
+under `local/research`. Explicit paths select another corpus. See
+[ARCHITECTURE.md](ARCHITECTURE.md) and [CLEANUP_G4.md](CLEANUP_G4.md).
 
 ## Commands and file contracts
 
@@ -43,7 +43,7 @@ clash playbook verify --extracted VIDEO --sources local/sources
 
 # Consolidate supplied model output into an executable source playbook.
 clash playbook consolidate dragon --sources local/sources \
-  --transcripts local/sources/transcripts --out data/playbooks/dragon.json
+  --transcripts local/sources/transcripts --out data/source/playbooks/dragon.json
 
 # Merge verified additions, or inspect without writing with --dry.
 clash playbook complete dragon --input local/sources/completion/dragon.raw \
@@ -198,7 +198,7 @@ These receipts are local bookkeeping, not proof of factual research accuracy.
 
 ## Port receipt (2026-10-25)
 
-All twelve committed `data/playbooks/*.json` files were read against the main
+All twelve committed `data/source/playbooks/*.json` files were read against the main
 checkout's read-only `local/sources/transcripts` (346 stored transcripts).
 No source data, golden, Python file, shared crate or Git metadata was edited.
 

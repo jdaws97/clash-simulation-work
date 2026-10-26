@@ -21,12 +21,12 @@ refinement, diagnostics and winner reports; see its
 
 Remaining work includes:
 
-- Wiki acquisition, HTML table normalization, patch/source auditing and the
-  general data manifest still use Python. Native catalog building consumes an
-  existing normalized mirror; it does not refresh that mirror.
+- Native catalog building consumes an existing normalized mirror; it does not
+  refresh that mirror. Acquisition, HTML normalization and general source
+  auditing need separate native acceptance before being supported workflows.
 - Aggregate-target and per-build/meta calibration, policy fitting, and surrogate
-  training have no complete native command. Their Python import closure remains;
-  native replay, defense calibration and CV do not replace those fitting modes.
+  research need capability-specific native acceptance. Native replay, defense
+  calibration and CV do not by themselves replace those fitting modes.
 - Held-out game observations, sensitivity analysis and source-owner review are
   still needed. The playbook lane records a wiki-only support citation and timing
   corpus drift. Native synthetic proofs are not calibration evidence.
@@ -36,10 +36,10 @@ Remaining work includes:
   [gap inventory](history/GAP_ANALYSIS.md) and
   [engine review](history/RUST_REVIEW_2026-10-25.md) retain the unresolved questions;
   their old Python status statements are not current verdicts.
-- G4 moved retained output into ignored `local/`. Rust defaults and source
-  citations awaiting the lead's patch are enumerated in [CLEANUP_G4.md](CLEANUP_G4.md).
-  Data reorganization, toolchain provisioning and Windows acceptance remain
-  separate integration work.
+- Retained output and current tool defaults use ignored `local/`. G5a separates
+  `data/source/` and `data/generated/` and removes `rust/`; see
+  [ARCHITECTURE.md](ARCHITECTURE.md). Toolchain provisioning and Windows
+  acceptance remain separate integration work.
 
 The [documentation index](README.md) separates current contracts from dated
 research, milestone receipts and retired prototype procedures.

@@ -42,6 +42,7 @@ pub fn run(mut arguments: Vec<OsString>) -> Result<(), String> {
                 "clash guardian-check | armysearch ... | armysearch-proof ...\n",
                 "clash layout ... | basesearch-proof ...\n",
                 "clash fidelity ... | video ...\n",
+                "clash dataimport catalog|battlelog|digitize ... | playbook ...\n",
                 "Aliases: simulate run|trace|jobs|bench; plan compile|check; ",
                 "armysearch run|proof; basesearch proof; vidmine ...\n",
                 "Existing subcommand arguments are preserved."

@@ -183,7 +183,7 @@ impl TargetManifest {
         for index in 1..=10 {
             targets.push(object([
                 ("id", string(format!("rb{index:02}"))),
-                ("path", string(format!("data/reference-bases/ranked-2026-10-24/rb{index:02}.json"))),
+                ("path", string(format!("data/source/reference-bases/ranked-2026-10-24/rb{index:02}.json"))),
                 ("weight", Json::Num(1.0)),
                 ("split", string(if index <= 8 {
                     "search"
@@ -196,19 +196,19 @@ impl TargetManifest {
         for (id, path, weight, provenance) in [
             (
                 "your-base",
-                "data/reference-bases/your-base.json",
+                "data/source/reference-bases/your-base.json",
                 1.0,
                 "account layout",
             ),
             (
                 "target17",
-                "rust/data/target17.json",
+                "data/generated/target17.json",
                 0.25,
                 "generated TH17 target; synthetic",
             ),
             (
                 "target18",
-                "rust/data/target18.json",
+                "data/generated/target18.json",
                 0.25,
                 "generated TH18 target; synthetic",
             ),

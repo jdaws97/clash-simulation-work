@@ -79,7 +79,7 @@ pathing, collision, wind-up or execution-noise rule changes.
 ## Four-base development comparison
 
 Inputs: the four existing real-layout transcriptions under
-`data/reference-bases/ranked-th18-2026-10-25/r18{a,b,c,d}.json`;
+`data/source/reference-bases/ranked-th18-2026-10-25/r18{a,b,c,d}.json`;
 `custom:user-rr-oct25`, user TH16 inventory, playbooks enabled, r8 calibration,
 no league modifier. All angles are **radians**: `2*pi*k/8`, k=0..7.
 
@@ -114,7 +114,7 @@ validate these means or establish an improvement in game accuracy.
   `local/research/gap-triage.md`, `gaps/dragon.md` U14 and
   `gaps/greedy-raven.md` identify modifier and account admission restrictions.
 - After changes: a tracked-files-only copy plus RW1 files at `/tmp/fresh-rw1`
-  contained no `data/wiki`, `output`, `rust/target` or old target directories.
+  contained no `data/source/wiki`, `output`, `rust/target` or old target directories.
   It built offline into `/tmp/clash-fresh-target`, compiled the custom RR army,
   passed 50/50 guardian fixtures, the full 4,096 legality + 4,096 program
   mutation proof (including 1/4/16-worker determinism), and 868/868 goldens.
@@ -144,9 +144,9 @@ validate these means or establish an improvement in game accuracy.
   `python3 -B verify.py` entry point is absent in this checkout.
 
 The minimal donation-cap artifact preserves its source URL, revision and
-retrieval time in `rust/data/clan_castle.json`; it agrees with the catalog's
+retrieval time in `data/generated/clan_castle.json`; it agrees with the catalog's
 existing `setup.siege_donation_caps`. The generated TH17/18 targets were copied
-into `rust/data/target17.json` and `target18.json` with synthetic names and
+into `data/generated/target17.json` and `target18.json` with synthetic names and
 without original notes/provenance. Runtime readers no longer depend on ignored
 wiki/output files. Caller-selected manifests, catalogs, account snapshots,
 score bundles and calibration paths remain explicit external inputs.
@@ -159,8 +159,8 @@ review, D1/D2 audits and the cited catalog/wiki sources above.
 | File:line | RW1 change |
 | --- | --- |
 | `rust/src/compile.rs:88`, `:1673`, `:2283`, `:2321` | Committed donation table; missing/invalid cap errors; supported-loadout preflight; data-derived account capacity enforcement. |
-| `rust/data/clan_castle.json:1` | Minimal nine-siege, eight-Castle-column table with original source/revision/time. |
-| `rust/data/target17.json:1`, `rust/data/target18.json:1` | Sanitized, declared synthetic generated targets formerly read from ignored output. |
+| `data/generated/clan_castle.json:1` | Minimal nine-siege, eight-Castle-column table with original source/revision/time. |
+| `data/generated/target17.json:1`, `data/generated/target18.json:1` | Sanitized, declared synthetic generated targets formerly read from ignored output. |
 | `rust/src/armysearch/score.rs:44`, `:172`, `:205` | Validate/retain/serialize manifest modifier; use committed default target paths. |
 | `rust/src/armysearch/report.rs:119`, `:349`, `:438` | Fingerprint committed Rust data instead of wiki mirror; report modifier, oracle label, attacker TH and account capacities. |
 | `rust/src/armysearch/account.rs:63` | TH16–18 admission, catalog/building-derived capacities, supported inventory filtering and actual-TH plan compilation/check/repair. |

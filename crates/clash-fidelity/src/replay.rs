@@ -48,10 +48,10 @@ impl Default for Settings {
 
 pub fn strengths(root: &Path, calibration: &Path) -> Result<Strength, String> {
     Ok(Strength::from_sources(
-        &read(&root.join("data/baselab-calibration.json"))?,
+        &read(&root.join("data/source/baselab-calibration.json"))?,
         &read(calibration)?,
-        &read(&root.join("data/observed-armies.json"))?,
-        &read(&root.join("data/custom-armies.json"))?,
+        &read(&root.join("data/source/observed-armies.json"))?,
+        &read(&root.join("data/source/custom-armies.json"))?,
     ))
 }
 

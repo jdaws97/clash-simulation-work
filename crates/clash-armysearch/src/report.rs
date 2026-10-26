@@ -105,7 +105,7 @@ fn input_files(root: &Path, catalog: &Path) -> Result<Vec<PathBuf>, String> {
         std::env::current_exe().map_err(|error| error.to_string())?,
     ];
     // armies.rs overlays the latest ClashKing inventory onto your-levels.json.
-    let live = root.join("data/live/player-latest.json");
+    let live = root.join("data/source/live/player-latest.json");
     if live.is_file() {
         paths.push(live);
     }
@@ -114,9 +114,9 @@ fn input_files(root: &Path, catalog: &Path) -> Result<Vec<PathBuf>, String> {
     // even when --catalog points outside the repository, plus balance inputs.
     for (directory, recursive) in [
         (root.join("crates"), true),
-        (root.join("data"), false),
-        (root.join("data/playbooks"), true),
-        (root.join("rust/data"), true),
+        (root.join("data/source"), false),
+        (root.join("data/source/playbooks"), true),
+        (root.join("data/generated"), true),
     ] {
         collect(&directory, &mut paths, recursive)?;
     }
@@ -144,9 +144,9 @@ pub(super) fn fingerprint_proof(
     let paths = input_files(root, catalog)?;
     let mut required = vec![
         catalog.to_owned(),
-        root.join("data").join(crate::armies::META_FILE),
-        root.join("data/your-levels.json"),
-        root.join("rust/data/clan_castle.json"),
+        root.join("data/source").join(crate::armies::META_FILE),
+        root.join("data/source/your-levels.json"),
+        root.join("data/generated/clan_castle.json"),
     ];
     for name in [
         "custom-armies.json",
@@ -155,15 +155,15 @@ pub(super) fn fingerprint_proof(
         "balance-overrides.json",
         "playbook-gaps.json",
     ] {
-        let path = root.join("data").join(name);
+        let path = root.join("data/source").join(name);
         if path.exists() {
             required.push(path);
         }
     }
-    collect(&root.join("data/playbooks"), &mut required, true)?;
+    collect(&root.join("data/source/playbooks"), &mut required, true)?;
     let identity = input_identity(root, catalog, &object([]), manifest)?;
     let baseline = crate::json::parse(&identity).map_err(|error| error.to_string())?;
-    let playbook_directory = root.join("data/playbooks");
+    let playbook_directory = root.join("data/source/playbooks");
     let mut timing_edits = 0;
     for path in &required {
         if !paths.contains(path) {

@@ -27,7 +27,7 @@ fn consume(counts: &mut BTreeMap<String, usize>, key: &str, count: usize) -> Res
 
 /// Derive from the local snapshot, with named compatibility/model overrides.
 pub fn derive(root: &Path, catalog: &Catalog, catalog_bytes: &[u8]) -> Result<Json, String> {
-    let source_path = root.join("data/clashking-static-data.json");
+    let source_path = root.join("data/source/clashking-static-data.json");
     let source_bytes = std::fs::read(&source_path).map_err(|e| e.to_string())?;
     let source = crate::json::parse(std::str::from_utf8(&source_bytes).map_err(|e| e.to_string())?)
         .map_err(|e| e.to_string())?;
@@ -41,6 +41,8 @@ pub fn derive(root: &Path, catalog: &Catalog, catalog_bytes: &[u8]) -> Result<Js
     let mut merges = Vec::new();
     let mut quantities = BTreeMap::<String, usize>::new();
     let mut snapshots = Vec::new();
+    // These are frozen provenance identifiers, not filesystem readers. Keep
+    // the original references so relocation preserves the pinned rules bytes.
     let source_ref = |pointer: String| string(format!("data/clashking-static-data.json#{pointer}"));
     for (level_index, row) in th.at("levels").arr().iter().enumerate() {
         let th_level = row.at("level").i64();

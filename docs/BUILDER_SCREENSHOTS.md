@@ -4,7 +4,7 @@ Ten current TH16 bases from named builders. Their web images are too poor to cop
 
 For each: open the layout link on your PC (it opens Clash of Clans), copy the layout into an empty layout slot, then in the layout editor take **two screenshots**: the normal editor view (whole village visible, zoomed out) and the **traps view**. About 2 minutes per base.
 
-Save them as `data/builder-bases/screens/<id>-editor.png` and `<id>-traps.png` (id from the table). Full screen resolution, PNG or JPG.
+Save them as `data/source/builder-bases/screens/<id>-editor.png` and `<id>-traps.png` (id from the table). Full screen resolution, PNG or JPG.
 
 | id | base | builder | date | layout link |
 |---|---|---|---|---|
@@ -19,6 +19,6 @@ Save them as `data/builder-bases/screens/<id>-editor.png` and `<id>-traps.png` (
 | clashchamps-101661 | Clash Champs base #101661 | Brunios | 2026-09-11 | https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAARQAAAAJNQ6gNgZpSLnypTdMjHOEr |
 | clashchamps-101710 | Clash Champs base #101710 | Xyclone | 2026-09-20 | https://link.clashofclans.com/en/?action=OpenLayout&id=TH16%3AHV%3AAAAAAgAAAAMsw6CYYkXhOjHU6sR8_2CQ |
 
-Already done from a clean image: Blueprint's ranked base (2026-06-22), `data/builder-bases/blueprint-ranked-2026-06.json`.
+Already done from a clean image: Blueprint's ranked base (2026-06-22), `data/source/builder-bases/blueprint-ranked-2026-06.json`.
 
 Note: the AllClash war link above looks shorter than the others and may be cut off; skip it if it does not open.

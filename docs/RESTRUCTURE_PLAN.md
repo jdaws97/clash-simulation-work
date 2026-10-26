@@ -1,3 +1,14 @@
+G5a status (2026-10-25): the twelve-crate root workspace uses `data/source/`,
+`data/generated/` and `data/licenses/`. The `rust/` directory, including its
+verification forwarder, is removed. Use `scripts/verify.sh`; the supported
+workflows are Rust only. See [ARCHITECTURE.md](ARCHITECTURE.md) and the appended
+[G5a receipt](RESTRUCTURE_LOG.md). Windows acceptance remains separate.
+
+The status paragraphs and sections below retain the original planning history.
+The current layout keeps existing source filenames directly under
+`data/source/`, including its separate video catalog, to preserve source identity
+and simple directory-based readers. Historical old paths describe provenance.
+
 G4 status (2026-10-25): replaced/unused Python and stale procedures are
 removed, required unported Python remains, and valuable output moved to ignored
 `local/`. Sections 3–4 below are the original planning inventory, not the current
@@ -717,7 +728,7 @@ The base-search report records a blocked verification state from its own earlier
 
 **G1 — establish the native gate before moving modules**
 
-Replace the current verification script’s output-grep-based build/test checks. A failing Cargo command must fail directly; its output does not need to contain a particular word. [Current script](../rust/verify.sh)
+Replace the current verification script’s output-grep-based build/test checks. A failing Cargo command must fail directly; its output does not need to contain a particular word. [Current script](../scripts/verify.sh)
 
 The workspace gate should run:
 

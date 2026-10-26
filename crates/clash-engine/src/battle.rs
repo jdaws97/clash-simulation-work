@@ -331,7 +331,7 @@ impl Battle {
         }
         let mut seen: HashSet<_> = queue.iter().copied().collect();
         while let Some((x, y)) = queue.pop() {
-            // data/wiki/text/Wall_Home_Village.txt:30: diagonal gaps are passable.
+            // data/source/wiki/text/Wall_Home_Village.txt:30: diagonal gaps are passable.
             // https://clashofclans.fandom.com/wiki/Wall/Home_Village
             for (dx, dy) in [
                 (1, 0),

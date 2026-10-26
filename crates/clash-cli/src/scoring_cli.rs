@@ -56,7 +56,7 @@ pub fn main(args: &[PathBuf]) -> Result<(), String> {
         });
     let mut options = Options {
         root,
-        catalog: std::env::var_os("BASELAB_CATALOG").map(PathBuf::from),
+        catalog: clash_data::catalog::override_path(),
         threads: std::thread::available_parallelism().map_or(1, usize::from),
         replay: false,
         battles: false,
@@ -149,7 +149,7 @@ fn score_bundle(bundle: &Json, options: &Options, replay: bool) -> Result<Json, 
         let path = options
             .catalog
             .clone()
-            .unwrap_or_else(|| options.root.join("rust/data/catalog.json"));
+            .unwrap_or_else(|| options.root.join("data/generated/catalog.json"));
         Some(Arc::new(Catalog::load(&path)?))
     } else {
         None

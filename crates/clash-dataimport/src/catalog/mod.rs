@@ -79,14 +79,14 @@ pub struct Sources {
 impl Sources {
     pub fn new(root: impl Into<PathBuf>) -> Self {
         let root = root.into();
-        let wiki = root.join("data/wiki");
+        let wiki = root.join("data/source/wiki");
         Self { root, wiki }
     }
 }
 
 /// Rebuild the unmodified registry intermediate from ClashKing and the wiki.
 pub fn build_registry(sources: &Sources) -> Result<Json, String> {
-    let raw = wire::read(&sources.root.join("data/clashking-static-data.json"))?;
+    let raw = wire::read(&sources.root.join("data/source/clashking-static-data.json"))?;
     let mut registry = registry::build(&raw, &sources.wiki)?;
     registry::repair_inferno(&mut registry, &csv::Tables::load(&sources.root)?)?;
     Ok(registry)

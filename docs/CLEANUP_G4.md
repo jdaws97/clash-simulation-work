@@ -1,5 +1,12 @@
 # Cleanup G4 — 2026-10-25
 
+G5a follow-up: current workflows are Rust only, data now lives under
+`data/source/`, `data/generated/` and `data/licenses/`, and `rust/` is removed.
+Current paths, defaults and acceptance are documented in
+[ARCHITECTURE.md](ARCHITECTURE.md) and [RESTRUCTURE_LOG.md](RESTRUCTURE_LOG.md).
+The inventory, pending-path list and acceptance status below are the original
+G4 receipt, not instructions for the current checkout.
+
 Checkout: `/mnt/c/Users/jarod/Documents/clash-lab`, branch `sim-accuracy`,
 starting HEAD `f04706c`. No commit, index write or download was performed.
 No `.rs` file or `Cargo.toml` was edited; `data/` was not modified. Protected

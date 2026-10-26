@@ -11,10 +11,9 @@ use crate::catalog::Catalog;
 use crate::{jobs, json, load, stats, trace};
 
 fn catalog_path() -> Result<PathBuf, String> {
-    if let Some(path) = env::var_os("BASELAB_CATALOG") {
-        return Ok(PathBuf::from(path));
-    }
-    Ok(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../rust/data/catalog.json"))
+    Ok(clash_data::catalog::path(
+        &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."),
+    ))
 }
 
 pub fn run(arguments: Vec<std::ffi::OsString>) -> Result<(), String> {

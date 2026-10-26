@@ -19,7 +19,7 @@
   "size": "2512x1096",
   "speed": "2x for the whole battle: the Replay-ends-in countdown drops 1 s every 15 video frames from frame ~200 to the end (1 s per 30 frames only in the first ~6.7 s of video, before any deployment, i.e. the 2x button was pressed then).",
   "time_base": "battle t = (video frame - 212) / 15; frame 212 = first Dragon. Check: countdown 0 and 100% at frame 1460 -> t = 83.2 s vs battleTime 83 s. Resolution 1/15 s.",
-  "layout": "data/reference-bases/your-base-2026-10-21.json",
+  "layout": "data/source/reference-bases/your-base-2026-10-21.json",
   "tile_coords": "layout tiles 0..43 (x down-right, y down-left from the top corner); drops outside the base have x or y outside 0..43"
  },
  "deployments": [

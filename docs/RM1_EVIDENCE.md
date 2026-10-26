@@ -37,7 +37,7 @@ Build environment:
 ```sh
 . ~/.cargo/env
 export CARGO_TARGET_DIR=/tmp/clash-target-rm1
-export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
+export CLASH_CATALOG="$PWD/data/generated/catalog.json"
 cargo build --release --manifest-path Cargo.toml --workspace --all-targets
 cargo test --manifest-path Cargo.toml -p clash-engine --test mechanics
 /tmp/clash-target-rm1/release/baselab-engine golden check fixtures/golden/cases.jsonl fixtures/golden/expected.jsonl

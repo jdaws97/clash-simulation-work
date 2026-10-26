@@ -40,8 +40,8 @@ pub(crate) struct Context {
 impl Context {
     fn load(root: &Path) -> Result<Self, String> {
         Ok(Self {
-            catalog: Arc::new(Catalog::load(&root.join("rust/data/catalog.json"))?),
-            rules: BaseRules::load(&root.join("rust/data/base_rules.json"))?,
+            catalog: Arc::new(Catalog::load(&clash_data::catalog::path(root))?),
+            rules: BaseRules::load(&root.join("data/generated/base_rules.json"))?,
         })
     }
     pub(crate) fn admission(&self, layout: &Layout, full: bool) -> Json {

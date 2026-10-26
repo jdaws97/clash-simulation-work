@@ -188,7 +188,7 @@ pub fn command(
     let inputs = provenance::fingerprint(&args.root, &[&real_path, &args.calibration()])?;
     for base in ["r18a", "r18b", "r18c", "r18d"] {
         let source = args.root.join(format!(
-            "data/reference-bases/ranked-th18-2026-10-25/{base}.json"
+            "data/source/reference-bases/ranked-th18-2026-10-25/{base}.json"
         ));
         let original = read(&source)?;
         let observed = list(&real, "attacks")

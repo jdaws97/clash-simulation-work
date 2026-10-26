@@ -27,7 +27,8 @@ included.
 The G1/G2 workspace relocation preserves all three golden files byte-for-byte.
 Frozen SHA-256 values and before/after checks are recorded in
 [RESTRUCTURE_LOG.md](RESTRUCTURE_LOG.md). Runtime catalog and rules paths remain
-under `rust/data/`; source data under `data/` is unchanged. This relocation does
+under `data/generated/`; pinned source inputs now live under `data/source/`.
+The legacy `rust/` directory is removed. This relocation does
 not authorize recording new expectations.
 
 From the repository root in WSL:
@@ -35,7 +36,7 @@ From the repository root in WSL:
 ```sh
 . ~/.cargo/env
 export CARGO_TARGET_DIR=/tmp/clash-target-ws
-export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
+export CLASH_CATALOG="$PWD/data/generated/catalog.json"
 cargo build --workspace --all-targets --release --locked --offline --manifest-path Cargo.toml
 /tmp/clash-target-ws/release/clash golden check fixtures/golden/cases.jsonl fixtures/golden/expected.jsonl --threads 16
 /tmp/clash-target-ws/release/clash golden plans check fixtures/golden/plans.jsonl --root "$PWD"
@@ -43,14 +44,15 @@ scripts/verify.sh /tmp/clash-target-ws
 ```
 
 Outside the checkout, use absolute fixture paths and pass an absolute `--root`
-for plan checks. `BASELAB_CATALOG` selects the catalog explicitly. The gate runs
+for plan checks. `CLASH_CATALOG` selects the catalog explicitly and takes
+precedence over the supported legacy `BASELAB_CATALOG` name. The gate runs
 both one-worker and four-worker battle checks against the same expected bytes,
 then plan, guardian, armysearch, layout, M2 and video checks. The
 `baselab-engine` compatibility binary accepts the same golden arguments.
 
 On Windows, use the same arguments with `target/release/clash.exe`
 after `cargo build --workspace --all-targets --release --locked --offline --manifest-path Cargo.toml`. Set
-`BASELAB_CATALOG` to the absolute path of `rust/data/catalog.json` if the binary
+`CLASH_CATALOG` to the absolute path of `data/generated/catalog.json` if the binary
 or target directory has moved. The engine remains std-only. The current G2
 expectations were recorded and checked in WSL. Windows verification is pending
 with the caller; a Windows mismatch must be investigated, not accepted as a
@@ -288,7 +290,7 @@ Original G1 baseline SHA-256 values (before G2):
 
 - `cases.jsonl`: `cea706d86516a2100876f9aa4ec7cdd5de32f691202f9a6d049b64e690d172ab`
 - `expected.jsonl`: `4edfee14d4975d9f283dcd3cb56afebc6c96322af2915c42a5a16f84a6ecffb7`
-- `rust/data/catalog.json`: `91f122ee1649c50fca3cda9bb4d36b837dd2714e071e025b010613a5424979cc`
+- `data/generated/catalog.json`: `91f122ee1649c50fca3cda9bb4d36b837dd2714e071e025b010613a5424979cc`
 
 ## G2: platform-identical maths
 
@@ -545,7 +547,7 @@ From the repository root, using the PB1a WSL binary and absolute catalog path:
 ```sh
 . ~/.cargo/env
 export CARGO_TARGET_DIR=/tmp/clash-target-pb
-export BASELAB_CATALOG="$PWD/rust/data/catalog.json"
+export CLASH_CATALOG="$PWD/data/generated/catalog.json"
 cargo build --workspace --all-targets --release --locked --offline --manifest-path Cargo.toml
 /tmp/clash-target-pb/release/clash golden plans check fixtures/golden/plans.jsonl
 cd rust

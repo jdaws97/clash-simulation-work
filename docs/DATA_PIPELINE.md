@@ -4,8 +4,15 @@
 
 # Native catalog source pipeline
 
+G5a layout: pinned inputs are in `data/source/`, runtime outputs in
+`data/generated/`, and attribution in `data/licenses/`. The separate upstream
+`data/source/catalog.json` serves video identity analysis. It is never the engine
+catalog. `CLASH_CATALOG` selects an alternate runtime catalog, with
+`BASELAB_CATALOG` honored as a lower-precedence legacy alias. Historical hash
+identities are preserved; no pinned output was regenerated for this move.
+
 `clash dataimport catalog` constructs the runtime catalog from source inputs.
-It never reads `rust/data/catalog.json` or `data/registry.json`. The native builder and its declarations
+It never reads `data/generated/catalog.json` or `data/generated/registry.json`. The native builder and its declarations
 live entirely in `crates/clash-dataimport/src/catalog/`.
 
 ```sh
@@ -20,7 +27,7 @@ cargo build -p clash-cli --bin clash --release --locked --offline
 ```
 
 `--root` defaults to the workspace containing the executable's source;
-`--wiki-root` defaults to `ROOT/data/wiki`. Both can be set explicitly. There is
+`--wiki-root` defaults to `ROOT/data/source/wiki`. Both can be set explicitly. There is
 no sibling-checkout discovery, download, Python execution, account overlay, or
 network dependency. The ignored mirror must be supplied for regeneration;
 ordinary engine verification still uses the committed runtime catalog offline.
@@ -28,7 +35,7 @@ Missing required source files are errors before catalog output is written.
 
 ## Inputs and transformations
 
-1. `data/clashking-static-data.json` supplies home-village records, exact level
+1. `data/source/clashking-static-data.json` supplies home-village records, exact level
    numbers, combat stats, equipment ability levels, and targeting flags.
 2. Normalized wiki `tables/*.json` supplies infobox attributes, level and charge
    rows, and ability columns. `text/*.txt` supplies registry mechanic notes;
@@ -36,7 +43,7 @@ Missing required source files are errors before catalog output is written.
    defenses and equipment released after the ClashKing snapshot. Home Village
    pages take precedence over unqualified pages. Summon subpages are explicit
    in `registry.rs`. Temporary Meteor Golem tables remain excluded.
-3. The resulting 253-record registry reproduces `data/registry.json` as parsed
+3. The resulting 253-record registry reproduces `data/generated/registry.json` as parsed
    JSON and reproduces its LF bytes through the native registry encoder.
    Its historical Inferno Dragon L12 repair is reconstructed from the
    exact `characters.csv` VisualLevel/DPS/DPSLv2/DPSLv3 cells (91/182/1820),
@@ -45,11 +52,11 @@ Missing required source files are errors before catalog output is written.
    No new level or value is inferred from array position.
 4. Runtime registry additions preserve Birthday Boom, Yellow Card, Lavaloon
    Pup and the Monolith/Multi-Gear Tower charge rows from `stats.py`.
-   `data/balance-overrides.json` schema 1 then applies explicit replacement
+   `data/source/balance-overrides.json` schema 1 then applies explicit replacement
    totals to both the registry and ClashKing source view. Missing override
    entities/levels in the registry are errors; ClashKing omissions retain the
    legacy missing-field fallback.
-5. `data/gamecsv/v18.200.9/{buildings,characters,heroes,pets,projectiles,
+5. `data/source/gamecsv/v18.200.9/{buildings,characters,heroes,pets,projectiles,
    special_abilities,spells}.csv` supplies mechanics absent from ClashKing.
    CSV cells inherit within each named entry, reset at the next entry, and
    retain ordered rows. Mechanic lookup clamps positional levels exactly as
@@ -62,7 +69,7 @@ Missing required source files are errors before catalog output is written.
    event troops remain excluded. The existing engine rejection code is intact.
 7. Resolve unit/summon profiles, 1,782 unit-number rows, equipment abilities,
    pet ranges/speeds, spell radii, tower/mortar profiles and donation research
-   limits. Merge `data/warden-weights.json`; obtain siege donation limits from
+   limits. Merge `data/source/warden-weights.json`; obtain siege donation limits from
    the distinct `tables/Clan_Castle.json` Siege Machine Level Cap table.
    Serialize the complete 256-record runtime registry and 146 unit profiles.
 
@@ -107,7 +114,7 @@ native wire writer uses compact JSON and a final LF; the old exporter also
 distinguished integral float spellings. The old catalog `note` string is
 retained for payload compatibility. The native registry encoder preserves
 indentation, field order and the registry schema's integer/float spellings,
-reproducing `data/registry.json` byte-for-byte in this LF checkout.
+reproducing `data/generated/registry.json` byte-for-byte in this LF checkout.
 
 The catalog retains the legacy `resolved.source_hashes` fields. The registry
 field identifies the rebuilt registry intermediate serialized with **CRLF**: the pinned
@@ -136,11 +143,11 @@ CLASH_CATALOG_WIKI=/path/to/local/wiki \
   complete_source_pipeline -- --ignored --nocapture
 
 # Run after regeneration; uses the new catalog without altering the pinned one.
-BASELAB_CATALOG=/tmp/catalog-rebuilt.json "$CARGO_TARGET_DIR/release/clash" \
+CLASH_CATALOG=/tmp/catalog-rebuilt.json "$CARGO_TARGET_DIR/release/clash" \
   golden check fixtures/golden/cases.jsonl fixtures/golden/expected.jsonl --threads 1
-BASELAB_CATALOG=/tmp/catalog-rebuilt.json "$CARGO_TARGET_DIR/release/clash" \
+CLASH_CATALOG=/tmp/catalog-rebuilt.json "$CARGO_TARGET_DIR/release/clash" \
   golden check fixtures/golden/cases.jsonl fixtures/golden/expected.jsonl --threads 4
-BASELAB_CATALOG=/tmp/catalog-rebuilt.json "$CARGO_TARGET_DIR/release/clash" \
+CLASH_CATALOG=/tmp/catalog-rebuilt.json "$CARGO_TARGET_DIR/release/clash" \
   golden plans check fixtures/golden/plans.jsonl --root "$PWD"
 scripts/verify.sh "$CARGO_TARGET_DIR"
 ```
@@ -162,7 +169,7 @@ sources and declared synthetic fixtures, not real-game calibration.
 ## Lane lB acceptance receipt (WSL, 2026-10-25)
 
 The release source-acceptance test passed with the mirror explicitly selected
-as `/mnt/c/Users/jarod/Documents/clash-lab/data/wiki`. It verified every one
+as `/mnt/c/Users/jarod/Documents/clash-lab/data/source/wiki`. It verified every one
 of the 961 input hashes, the complete registry and catalog, and a declared
 source perturbation: a temporary source root contained neither generated JSON
 file, and adding a Barbarian L1 HP override changed the rebuilt HP to 77.

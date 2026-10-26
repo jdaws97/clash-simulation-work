@@ -23,7 +23,7 @@ fn training_baseline(
         history::observations(
             &args.root,
             &path,
-            &args.path("--history", "data/live/base-history.json"),
+            &args.path("--history", "data/source/live/base-history.json"),
             true,
             None,
         )?
@@ -208,7 +208,7 @@ pub fn cv(
     let options = args.fit_options()?;
     let directory = args.path("--fold-dir", "local/fidelity/cv");
     std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
-    let prior = args.root.join("data/meta-calibration-r8.json");
+    let prior = args.root.join("data/source/meta-calibration-r8.json");
     if file_hash(&prior)? != provenance::R8_SHA256 {
         return Err("r8 prior hash differs from frozen public prior".to_owned());
     }
@@ -252,8 +252,8 @@ pub fn cv(
                 &options,
                 &prior,
                 None,
-                &args.path("--log", "data/live/battles.jsonl"),
-                &args.path("--history", "data/live/base-history.json"),
+                &args.path("--log", "data/source/live/battles.jsonl"),
+                &args.path("--history", "data/source/live/base-history.json"),
                 &path,
                 &report_path,
             )?;
@@ -467,7 +467,10 @@ fn check_c(
 ) -> Result<Json, String> {
     let data = ScoringData::load(&args.root)?;
     let strength = replay::strengths(&args.root, &args.calibration())?;
-    let layout = observed::layout(args, &args.root.join("data/reference-bases/your-base.json"))?;
+    let layout = observed::layout(
+        args,
+        &args.root.join("data/source/reference-bases/your-base.json"),
+    )?;
     let settings = args.settings(false)?;
     let mut rates = obj([] as [(&str, Json); 0]);
     for th in [16, 17] {
@@ -617,8 +620,8 @@ pub fn score_jobs(args: &Arguments) -> Result<Json, String> {
     }
     let (observations, skipped) = history::observations(
         &args.root,
-        &args.path("--log", "data/live/battles.jsonl"),
-        &args.path("--history", "data/live/base-history.json"),
+        &args.path("--log", "data/source/live/battles.jsonl"),
+        &args.path("--history", "data/source/live/base-history.json"),
         false,
         None,
     )?;
@@ -726,7 +729,7 @@ pub fn score_jobs(args: &Arguments) -> Result<Json, String> {
         history::observations(
             &args.root,
             &path,
-            &args.path("--history", "data/live/base-history.json"),
+            &args.path("--history", "data/source/live/base-history.json"),
             true,
             None,
         )?

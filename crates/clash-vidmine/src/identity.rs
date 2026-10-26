@@ -131,7 +131,7 @@ impl Catalog {
         }
         let super_text = fs::read_to_string(Path::new(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../data/catalog.json"
+            "/../../data/source/catalog.json"
         )))?;
         let supplement = Value::parse(&super_text)?;
         let parents: BTreeMap<_, _> = supplement
@@ -627,7 +627,7 @@ fn infer(cards: &[Value], catalog: &Catalog) -> Value {
         ("best_method", Value::from("smallest consistent TH with at least three readable constraints; underleveling allows higher TH; not an exact identity")),
         ("status", Value::from(status)),
         ("missing_cards", Value::from(missing as f64)),
-        ("catalog", Value::from("data/clashking-static-data.json: TH/lab/production/hero/pet caps; data/catalog.json: super parent-level unlocks")),
+        ("catalog", Value::from("data/source/clashking-static-data.json: TH/lab/production/hero/pet caps; data/source/catalog.json: super parent-level unlocks")),
         ("catalog_fingerprint", Value::from(catalog.fingerprint.as_str())),
         ("catalog_max_th", Value::from(catalog.max_th as f64)),
         ("evidence", Value::Array(evidence)),
@@ -1109,7 +1109,7 @@ pub fn resized(image: &Image, w: usize, h: usize) -> Image {
 fn data_path() -> &'static Path {
     Path::new(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../data/clashking-static-data.json"
+        "/../../data/source/clashking-static-data.json"
     ))
 }
 
